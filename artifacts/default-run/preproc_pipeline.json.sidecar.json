@@ -1,0 +1,28 @@
+{
+  "metadata_version": 1,
+  "generated_at": "2025-10-05T08:54:34.220281+00:00",
+  "artifact": {
+    "path": "artifacts/default-run/preproc_pipeline.json",
+    "name": "preproc_pipeline.json",
+    "size": 1842,
+    "sha256": "fb19c1a324a52761ae8c08b91649e3d0b859b29c577ff4ecb1e61e3721001c0c",
+    "modified_at": "2025-10-05T08:54:34.181871+00:00"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  },
+  "dependencies": {
+    "torch": "2.8.0+cu128",
+    "stable_baselines3": "2.7.0",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "optuna": "3.6.2"
+  },
+  "extra": {
+    "kind": "feature_pipeline",
+    "split_version": null,
+    "train_start_ts": 1672531200,
+    "train_end_ts": 1698796799
+  }
+}

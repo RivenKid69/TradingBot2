@@ -1,0 +1,26 @@
+{
+  "metadata_version": 1,
+  "generated_at": "2025-10-05T09:00:13.730040+00:00",
+  "artifact": {
+    "path": "artifacts/default-run/trials/vec_normalize_train_0.pkl",
+    "name": "vec_normalize_train_0.pkl",
+    "size": 1686,
+    "sha256": "7f8dabcf8c1edd8126aa6b7ae38f9c71282daa0ba42b869d9810419f01b66400",
+    "modified_at": "2025-10-05T09:00:13.769001+00:00"
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "platform": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  },
+  "dependencies": {
+    "torch": "2.8.0+cu128",
+    "stable_baselines3": "2.7.0",
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "optuna": "3.6.2"
+  },
+  "extra": {
+    "kind": "vecnorm_stats",
+    "phase": "train"
+  }
+}

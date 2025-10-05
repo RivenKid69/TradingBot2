@@ -1,0 +1,19 @@
+{
+  "rows": 3,
+  "by_role": {
+    "train": 2,
+    "val": 1,
+    "test": 0,
+    "none": 0
+  },
+  "symbols": [
+    "BTCUSDT"
+  ],
+  "coverage": {
+    "start_ts": 1672531200,
+    "end_ts": 1672531320
+  },
+  "split_version": null,
+  "inferred_test": false,
+  "dataset_path": "artifacts/training_dataset.parquet"
+}

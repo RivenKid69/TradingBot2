@@ -1,0 +1,83 @@
+{
+  "stats": {
+    "open": {
+      "mean": 14186.115418037281,
+      "std": 12696.021188403656
+    },
+    "high": {
+      "mean": 14229.052499999998,
+      "std": 12733.918526760237
+    },
+    "low": {
+      "mean": 14143.291754385962,
+      "std": 12658.537673655454
+    },
+    "close": {
+      "mean": 14187.39824904057,
+      "std": 12697.093149916253
+    },
+    "volume": {
+      "mean": 74537.26192543858,
+      "std": 121078.20400703125
+    },
+    "quote_asset_volume": {
+      "mean": 351181632.06144565,
+      "std": 461426117.9584963
+    },
+    "number_of_trades": {
+      "mean": 123653.64672423246,
+      "std": 121530.95702674022
+    },
+    "taker_buy_base_asset_volume": {
+      "mean": 37142.948133292215,
+      "std": 60593.33726154496
+    },
+    "taker_buy_quote_asset_volume": {
+      "mean": 175067112.7099803,
+      "std": 232359468.96040818
+    },
+    "time_since_last_event_hours": {
+      "mean": 0.0,
+      "std": 1.0
+    },
+    "is_high_importance": {
+      "mean": 0.0,
+      "std": 1.0
+    },
+    "close_orig": {
+      "mean": 14187.39824904057,
+      "std": 12697.093149916253
+    },
+    "close_prev": {
+      "mean": 14186.843603838246,
+      "std": 12696.419970467852
+    },
+    "fear_greed_value": {
+      "mean": 51.651315789473685,
+      "std": 9.273448138311942
+    }
+  },
+  "metadata": {
+    "created_at_utc": "2025-10-05T08:54:34.206451+00:00",
+    "filters": {
+      "train_mask_column": "wf_role",
+      "train_mask_values": [
+        "train"
+      ],
+      "train_start_ts": 1672531200,
+      "train_end_ts": 1698796799,
+      "timestamp_column": "timestamp",
+      "train_intervals": [
+        {
+          "start_ts": 1672531200,
+          "end_ts": 1698796799
+        }
+      ]
+    },
+    "train_rows_by_symbol": {
+      "BTCUSDT": 7296,
+      "ETHUSDT": 7296
+    },
+    "train_rows_total": 14592
+  }
+}
