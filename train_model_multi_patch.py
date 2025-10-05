@@ -18,6 +18,8 @@
 # 2. Добавлена компиляция модели (`torch.compile`) для значительного ускорения.
 # 3. Цикл оценки вынесен в быстрый Cython-модуль.
 
+from __future__ import annotations
+
 import os
 import glob
 import json
@@ -727,6 +729,51 @@ def objective(trial: optuna.Trial,
 
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
+    def _get_model_param_value(cfg: TrainConfig, key: str):
+        try:
+            model_cfg = getattr(cfg, "model", None)
+            if model_cfg is None:
+                return None
+            params_obj = getattr(model_cfg, "params", None)
+            if params_obj is None:
+                return None
+            if isinstance(params_obj, Mapping):
+                return params_obj.get(key)
+            getter = getattr(params_obj, "get", None)
+            if callable(getter):
+                try:
+                    return getter(key)
+                except Exception:
+                    pass
+            if hasattr(params_obj, key):
+                return getattr(params_obj, key)
+            if hasattr(params_obj, "__dict__"):
+                if key in params_obj.__dict__:
+                    return params_obj.__dict__.get(key)
+            dict_method = getattr(params_obj, "dict", None)
+            if callable(dict_method):
+                try:
+                    params_dict = dict_method()
+                except TypeError:
+                    params_dict = None
+                if isinstance(params_dict, Mapping):
+                    return params_dict.get(key)
+        except Exception:
+            return None
+        return None
+
+    def _coerce_optional_float(value, key: str):
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Invalid value '{value}' for '{key}' (expected float-compatible) in cfg.model.params"
+            )
+
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "trade_frequency_penalty": trial.suggest_float("trade_frequency_penalty", 1e-5, 5e-4, log=True),
@@ -747,16 +794,36 @@ def objective(trial: optuna.Trial,
         "atr_multiplier": trial.suggest_float("atr_multiplier", 1.5, 3.0),
         "trailing_atr_mult": trial.suggest_float("trailing_atr_mult", 1.0, 2.0),
         "tp_atr_mult": trial.suggest_float("tp_atr_mult", 2.0, 4.0),
-        "cql_alpha": trial.suggest_float("cql_alpha", 0.1, 10.0, log=True),
-        "cql_beta": trial.suggest_float("cql_beta", 1.0, 10.0),
-        "cvar_alpha": trial.suggest_float("cvar_alpha", 0.01, 0.20),
         "momentum_factor": trial.suggest_float("momentum_factor", 0.1, 0.7),
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
-        "cvar_weight": trial.suggest_float("cvar_weight", 0.1, 2.0, log=True),
         "vf_coef": trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
         "v_range_ema_alpha": trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
     }
+
+    cql_alpha_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cql_alpha"), "cql_alpha")
+    if cql_alpha_cfg is not None:
+        params["cql_alpha"] = cql_alpha_cfg
+    else:
+        params["cql_alpha"] = trial.suggest_float("cql_alpha", 0.1, 10.0, log=True)
+
+    cql_beta_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cql_beta"), "cql_beta")
+    if cql_beta_cfg is not None:
+        params["cql_beta"] = cql_beta_cfg
+    else:
+        params["cql_beta"] = trial.suggest_float("cql_beta", 1.0, 10.0)
+
+    cvar_alpha_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cvar_alpha"), "cvar_alpha")
+    if cvar_alpha_cfg is not None:
+        params["cvar_alpha"] = cvar_alpha_cfg
+    else:
+        params["cvar_alpha"] = trial.suggest_float("cvar_alpha", 0.01, 0.20)
+
+    cvar_weight_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cvar_weight"), "cvar_weight")
+    if cvar_weight_cfg is not None:
+        params["cvar_weight"] = cvar_weight_cfg
+    else:
+        params["cvar_weight"] = trial.suggest_float("cvar_weight", 0.1, 2.0, log=True)
     # 1. Определяем окно самого "медленного" индикатора на основе статических параметров.
     #    Эти параметры передаются в C++ симулятор.
     #    (В данном проекте они жестко заданы в TradingEnv, но для надежности берем их из HPO)
