@@ -1015,13 +1015,21 @@ def objective(trial: optuna.Trial,
     policy_kwargs["optimizer_scheduler_fn"] = scheduler_fn
     DistributionalPPO = _get_distributional_ppo()
 
+    use_torch_compile_cfg = _get_model_param_value(cfg, "use_torch_compile")
+    if isinstance(use_torch_compile_cfg, str):
+        use_torch_compile = use_torch_compile_cfg.strip().lower() in {"1", "true", "yes", "on"}
+    elif use_torch_compile_cfg is None:
+        use_torch_compile = False
+    else:
+        use_torch_compile = bool(use_torch_compile_cfg)
+
     tb_log_path: Path | None = None
     if tensorboard_log_dir is not None:
         tb_log_path = tensorboard_log_dir / f"trial_{trial.number:03d}"
         tb_log_path.mkdir(parents=True, exist_ok=True)
 
     model = DistributionalPPO(
-        use_torch_compile=True,
+        use_torch_compile=use_torch_compile,
         v_range_ema_alpha=params["v_range_ema_alpha"],
         policy=CustomActorCriticPolicy,
         env=env_tr,
