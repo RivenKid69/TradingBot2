@@ -59,6 +59,7 @@ algo:
     lock_price_offset: true
     lock_ttl: true
     fixed_type: MARKET
+    long_only: true            # <-- ВКЛЮЧАЕМ лонг-онли из конфига
 
 quantizer:
   filters_path: "data/binance_filters.json"
