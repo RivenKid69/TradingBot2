@@ -12,7 +12,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 
 import yaml
-from pydantic import BaseModel, Field, root_validator, model_validator
+from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
 import logging
 import math
 
@@ -721,6 +721,7 @@ class AdvRuntimeConfig(BaseModel):
 
 
 class CommonRunConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
     run_id: Optional[str] = Field(
         default=None, description="Идентификатор запуска; если None — генерируется."
     )

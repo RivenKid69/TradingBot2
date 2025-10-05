@@ -173,7 +173,12 @@ def _file_sha256(path: str | None) -> str | None:
         return None
 
 
-def _wrap_action_space_if_needed(env, bins_vol: int = 101):
+def _wrap_action_space_if_needed(
+    env,
+    bins_vol: int = 101,
+    *,
+    action_overrides: dict[str, object] | None = None,
+):
     """
     If env.action_space is Dict with expected keys, wrap it into MultiDiscrete.
     Otherwise return as is.
@@ -184,7 +189,11 @@ def _wrap_action_space_if_needed(env, bins_vol: int = 101):
             keys = set(getattr(env.action_space, "spaces", {}).keys())
             expected = {"price_offset_ticks", "ttl_steps", "type", "volume_frac"}
             if expected.issubset(keys):
-                return DictToMultiDiscreteActionWrapper(env, bins_vol=bins_vol)
+                return DictToMultiDiscreteActionWrapper(
+                    env,
+                    bins_vol=bins_vol,
+                    action_overrides=action_overrides,
+                )
     except Exception:
         # If anything goes wrong, fail open (no wrapping)
         return env
@@ -727,6 +736,71 @@ def objective(trial: optuna.Trial,
 
     bins_vol = _extract_bins_vol_from_cfg(cfg, default=101)
 
+    def _resolve_nested(cfg_obj, attr: str):
+        if cfg_obj is None:
+            return None
+        if isinstance(cfg_obj, Mapping):
+            return cfg_obj.get(attr)
+        try:
+            value = getattr(cfg_obj, attr)
+        except AttributeError:
+            value = None
+        if value is not None:
+            return value
+        for extra_name in ("__dict__", "__pydantic_extra__", "model_extra"):
+            try:
+                extra = getattr(cfg_obj, extra_name)
+            except AttributeError:
+                extra = None
+            if isinstance(extra, Mapping) and attr in extra:
+                return extra.get(attr)
+        return None
+
+    def _coerce_bool(value: object) -> bool:
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+        return bool(value)
+
+    def _extract_action_overrides_from_cfg(cfg_obj) -> dict[str, object]:
+        algo_cfg = _resolve_nested(cfg_obj, "algo")
+        actions_cfg = _resolve_nested(algo_cfg, "actions")
+        if actions_cfg is None:
+            return {}
+        if hasattr(actions_cfg, "dict"):
+            try:
+                actions_payload = actions_cfg.dict()
+            except TypeError:
+                actions_payload = None
+        else:
+            actions_payload = None
+        if actions_payload is None:
+            if isinstance(actions_cfg, Mapping):
+                actions_payload = dict(actions_cfg)
+            else:
+                payload = {}
+                for extra_name in ("__dict__", "__pydantic_extra__", "model_extra"):
+                    try:
+                        extra = getattr(actions_cfg, extra_name)
+                    except AttributeError:
+                        extra = None
+                    if isinstance(extra, Mapping):
+                        payload.update(extra)
+                actions_payload = payload
+        if not isinstance(actions_payload, Mapping):
+            return {}
+        overrides: dict[str, object] = {}
+        if "lock_price_offset" in actions_payload:
+            overrides["lock_price_offset"] = _coerce_bool(
+                actions_payload.get("lock_price_offset")
+            )
+        if "lock_ttl" in actions_payload:
+            overrides["lock_ttl"] = _coerce_bool(actions_payload.get("lock_ttl"))
+        if "fixed_type" in actions_payload:
+            overrides["fixed_type"] = actions_payload.get("fixed_type")
+        return overrides
+
+    action_overrides = _extract_action_overrides_from_cfg(cfg)
+
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
     def _get_model_param_value(cfg: TrainConfig, key: str):
@@ -916,7 +990,11 @@ def objective(trial: optuna.Trial,
                 seed=unique_seed,
             )
             setattr(env, "selected_symbol", symbol)
-            env = _wrap_action_space_if_needed(env, bins_vol=bins_vol)
+            env = _wrap_action_space_if_needed(
+                env,
+                bins_vol=bins_vol,
+                action_overrides=action_overrides,
+            )
             return env
         return _init
 
@@ -974,7 +1052,11 @@ def objective(trial: optuna.Trial,
             leak_guard=leak_guard_val,
         )
         setattr(env, "selected_symbol", symbol)
-        env = _wrap_action_space_if_needed(env, bins_vol=bins_vol)
+        env = _wrap_action_space_if_needed(
+            env,
+            bins_vol=bins_vol,
+            action_overrides=action_overrides,
+        )
         return env
 
     val_env_fns = [
@@ -1124,7 +1206,11 @@ def objective(trial: optuna.Trial,
                     leak_guard=LeakGuard(LeakConfig(**leak_guard_kwargs)),
                 )
                 setattr(env, "selected_symbol", symbol)
-                env = _wrap_action_space_if_needed(env, bins_vol=bins_vol)
+                env = _wrap_action_space_if_needed(
+                    env,
+                    bins_vol=bins_vol,
+                    action_overrides=action_overrides,
+                )
                 return env
 
             check_model_compat(str(train_stats_path))
@@ -1653,7 +1739,11 @@ def main():
                     leak_guard=LeakGuard(LeakConfig(**leak_guard_kwargs))
                 )
                 setattr(env, "selected_symbol", symbol)
-                env = _wrap_action_space_if_needed(env, bins_vol=bins_vol)
+                env = _wrap_action_space_if_needed(
+                    env,
+                    bins_vol=bins_vol,
+                    action_overrides=action_overrides,
+                )
                 return env
 
             eval_env_fns: list[Callable[[], TradingEnv]] = []

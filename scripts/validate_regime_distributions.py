@@ -39,13 +39,22 @@ class _DummyEnv:
         return 0, 0.0, False, info
 
 
-def _wrap_action_space_if_needed(env, bins_vol: int = 101):
+def _wrap_action_space_if_needed(
+    env,
+    bins_vol: int = 101,
+    *,
+    action_overrides: dict[str, object] | None = None,
+):
     try:
         if isinstance(env.action_space, spaces.Dict):
             keys = set(getattr(env.action_space, "spaces", {}).keys())
             expected = {"price_offset_ticks", "ttl_steps", "type", "volume_frac"}
             if expected.issubset(keys):
-                return DictToMultiDiscreteActionWrapper(env, bins_vol=bins_vol)
+                return DictToMultiDiscreteActionWrapper(
+                    env,
+                    bins_vol=bins_vol,
+                    action_overrides=action_overrides,
+                )
     except Exception:
         return env
     return env
