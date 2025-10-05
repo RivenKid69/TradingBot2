@@ -846,6 +846,23 @@ def objective(trial: optuna.Trial,
             return None
         return None
 
+    def _coerce_optional_int(value, key: str):
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            raise ValueError(
+                f"Invalid value '{value}' for '{key}' (expected integer) in cfg.model.params"
+            )
+        if isinstance(value, int):
+            return int(value)
+        try:
+            coerced = int(value)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Invalid value '{value}' for '{key}' (expected integer) in cfg.model.params"
+            )
+        return coerced
+
     def _coerce_optional_float(value, key: str):
         if value is None:
             return None
@@ -929,10 +946,29 @@ def objective(trial: optuna.Trial,
     #    как в сигнальной линии MACD.
     warmup_period = slowest_window * 2
 
+    num_atoms_cfg = _coerce_optional_int(_get_model_param_value(cfg, "num_atoms"), "num_atoms")
+    v_min_cfg = _coerce_optional_float(_get_model_param_value(cfg, "v_min"), "v_min")
+    v_max_cfg = _coerce_optional_float(_get_model_param_value(cfg, "v_max"), "v_max")
+
+    num_atoms = num_atoms_cfg if num_atoms_cfg is not None else 51
+    v_min = v_min_cfg if v_min_cfg is not None else -1.0
+    v_max = v_max_cfg if v_max_cfg is not None else 1.0
+
+    if num_atoms < 1:
+        raise ValueError("Invalid configuration: 'num_atoms' must be >= 1 in cfg.model.params")
+    if v_max <= v_min:
+        raise ValueError(
+            "Invalid configuration: 'v_max' must be greater than 'v_min' in cfg.model.params"
+        )
+
+    print(f"[cfg override] value head: num_atoms={num_atoms}, v_min={v_min}, v_max={v_max}")
+
     policy_arch_params = {
         "hidden_dim": params["hidden_dim"],
         "use_memory": True,
-        "num_atoms": 51,  
+        "num_atoms": num_atoms,
+        "v_min": v_min,
+        "v_max": v_max,
     }
 
     if not train_data_by_token: raise ValueError("Нет данных для обучения в этом trial.")

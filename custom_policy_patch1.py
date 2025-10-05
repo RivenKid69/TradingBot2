@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.optim import Optimizer
 import numpy as np
 from gymnasium import spaces
-from typing import Tuple, Type, Optional, Dict, Any, Callable
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
@@ -122,9 +122,40 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         
         self.use_memory = True  # Память обеспечивается рекуррентными слоями SB3
 
-        self.num_atoms = arch_params.get("num_atoms", 51)
-        self.v_min = -1.0  # Начальное значение-заглушка
-        self.v_max = 1.0
+        def _coerce_arch_float(value: Optional[float], fallback: float, key: str) -> float:
+            if value is None:
+                return fallback
+            if isinstance(value, (int, float)):
+                return float(value)
+            try:
+                return float(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid '{key}' value in policy arch params: {value}") from exc
+
+        def _coerce_arch_int(value: Optional[int], fallback: int, key: str) -> int:
+            if value is None:
+                return fallback
+            if isinstance(value, bool):
+                raise ValueError(f"Invalid '{key}' value in policy arch params: {value}")
+            if isinstance(value, int):
+                return int(value)
+            try:
+                coerced = int(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid '{key}' value in policy arch params: {value}") from exc
+            return coerced
+
+        self.num_atoms = _coerce_arch_int(arch_params.get("num_atoms"), 51, "num_atoms")
+        self.v_min = _coerce_arch_float(arch_params.get("v_min"), -1.0, "v_min")
+        self.v_max = _coerce_arch_float(arch_params.get("v_max"), 1.0, "v_max")
+        if self.num_atoms < 1:
+            raise ValueError(
+                f"Invalid 'num_atoms' for distributional value head: {self.num_atoms} (must be >= 1)"
+            )
+        if self.v_max <= self.v_min:
+            raise ValueError(
+                f"Invalid value range for distributional value head: v_min={self.v_min}, v_max={self.v_max}"
+            )
 
         self.optimizer_scheduler_fn = optimizer_scheduler_fn
 
