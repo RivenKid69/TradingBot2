@@ -1,0 +1,88 @@
+# Operational settings for the runtime environment
+clock_sync:
+  refresh_sec: 300        # How often to resync clocks in seconds
+  warn_threshold_ms: 500  # Log warning if drift exceeds this many milliseconds
+  kill_threshold_ms: 2000 # Terminate if drift exceeds this many milliseconds
+  max_step_ms: 1000       # Max single adjustment step in milliseconds
+  attempts: 5             # Number of sync attempts before giving up
+
+ws_dedup:
+  enabled: true
+  persist_path: state/last_bar_seen.json
+  log_skips: true
+
+kill_switch:
+  feed_lag_ms: 60000       # Enter safe mode if worst feed lag exceeds this; 0 disables
+  ws_failures: 100         # Enter safe mode if WS failures exceed this count; 0 disables
+  error_rate: 0.2          # Enter safe mode if signal error rate exceeds this fraction; 0 disables
+  enabled: false           # Enable or disable the ops kill switch
+  error_limit: 0           # Maximum allowed consecutive errors; 0 disables
+  duplicate_limit: 0       # Maximum allowed duplicate signals; 0 disables
+  stale_intervals_limit: 0 # Maximum allowed stale intervals; 0 disables
+  reset_cooldown_sec: 60   # Cooldown period before counters reset in seconds
+  flag_path: null          # File path acting as external kill flag
+  alert_command: null      # Command to execute when kill switch triggers
+  # Manual reset: delete the flag file or call ops_kill_switch.manual_reset()
+
+shutdown:
+  grace_period: 5.0           # Seconds to wait between stop and flush phases
+  drain_policy: graceful      # How to drain outstanding work
+  timeouts:
+    stop: 10.0                # Seconds to wait for stop callbacks
+    flush: 10.0               # Seconds to wait for flush callbacks
+    finalize: 5.0             # Seconds to wait for finalize callbacks
+
+ttl:
+  enabled: false
+  ttl_seconds: 60
+  out_csv: null
+  dedup_persist: null
+
+throttle:
+  enabled: false              # disable throttling
+  global:
+    rps: 0.0                  # requests per second; 0 disables
+    burst: 0                  # burst capacity
+  symbol:
+    rps: 0.0                  # per-symbol RPS limit
+    burst: 0
+  mode: drop                  # drop or queue
+  queue:
+    max_items: 0              # queue size when mode=queue
+    ttl_ms: 0                 # item lifetime in ms
+  time_source: "monotonic"
+
+retry:
+  enabled: true               # set to false to restore legacy non-retrying behavior
+  max_attempts: 5             # maximum number of retry attempts; 0 disables
+  backoff_base_s: 0.5         # initial delay before first retry in seconds
+  max_backoff_s: 5.0          # maximum backoff time in seconds
+  classify:                   # map error patterns to kill-switch categories
+    http_5xx: rest            # HTTP 5xx responses counted as REST errors
+    http_429: rest            # rate-limit responses counted as REST errors
+    network_timeout: rest     # network timeouts counted as REST errors
+    websocket_error: ws       # websocket disconnects counted as WS errors
+
+runtime:
+  queue:
+    capacity: 1000            # event bus capacity; 0 for unbounded
+    drop_policy: newest       # "newest" drops incoming, "oldest" drops oldest
+
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true
+    windows:
+      enabled: true
+    anomaly:
+      enabled: true
+    extreme:
+      enabled: true
+    policy:
+      enabled: true
+    risk:
+      enabled: true
+    publish:
+      enabled: true
+

@@ -1,0 +1,98 @@
+rest_budget:
+  # Global rate limiter applied to every request unless overridden below.
+  limits:
+    global:
+      qps: 8            # Target requests per second across all endpoints.
+      burst: 16         # Maximum burst size before throttling kicks in.
+      jitter_ms: 50     # Randomised jitter added before sleeps to avoid sync.
+      cooldown_sec: 5   # Optional cooldown when the global bucket is exhausted.
+    endpoints:
+      # Endpoint specific overrides inherit from the global limiter.
+      klines:
+        qps: 5
+        burst: 10
+      exchangeInfo:
+        qps: 0.1
+        burst: 1
+        min_refresh_days: 1  # Minimum age before forcing a refresh when cached.
+  cache:
+    path: "cache/http"         # Directory where REST responses are cached.
+    ttl_days: 7                 # Expiration window for cached responses.
+    mode: "read_write"          # Set to read or off to disable storing new entries.
+  checkpoint:
+    enabled: true               # Toggle on-disk progress checkpoints between runs.
+    path: "state/offline_checkpoint.json"
+  concurrency:
+    workers: 4                  # Number of worker threads dispatching HTTP requests.
+    batch_size: 500             # Max in-flight futures per producer before blocking.
+  shuffle:
+    enabled: true               # Shuffle symbol order to spread load across runs.
+  dynamic_from_headers: false   # Respect Binance weight headers when available.
+
+datasets:
+  train:
+    version: "v2025.10-train"
+    start: "2017-07-14T00:00:00Z"
+    end: "2025-03-31T23:59:59Z"
+    seasonality:
+      input:
+        start: "2017-06-01T00:00:00Z"
+        end: "2025-03-31T23:59:59Z"
+      output_path: "data/latency/liquidity_latency_seasonality_train.json"
+      verification_hash: null
+    adv:
+      input:
+        start: "2017-07-14T00:00:00Z"
+        end: "2025-03-31T23:59:59Z"
+      output_path: "data/adv/train.parquet"
+      verification_hash: null
+    fees:
+      input:
+        start: "2017-07-14T00:00:00Z"
+        end: "2025-03-31T23:59:59Z"
+      output_path: "data/fees/train_fees.json"
+      verification_hash: null
+  val:
+    version: "v2025.10-val"
+    start: "2025-04-01T00:00:00Z"
+    end: "2025-06-30T23:59:59Z"
+    seasonality:
+      input:
+        start: "2024-10-01T00:00:00Z"
+        end: "2025-06-30T23:59:59Z"
+      output_path: "data/latency/liquidity_latency_seasonality_val.json"
+      verification_hash: null
+    adv:
+      input:
+        start: "2025-04-01T00:00:00Z"
+        end: "2025-06-30T23:59:59Z"
+      output_path: "data/adv/val.parquet"
+      verification_hash: null
+    fees:
+      input:
+        start: "2025-04-01T00:00:00Z"
+        end: "2025-06-30T23:59:59Z"
+      output_path: "data/fees/val_fees.json"
+      verification_hash: null
+  test:
+    version: "v2025.10-test"
+    start: "2025-07-01T00:00:00Z"
+    end: "2025-09-30T23:59:59Z"
+    seasonality:
+      input:
+        start: "2025-01-01T00:00:00Z"
+        end: "2025-09-30T23:59:59Z"
+      output_path: "data/latency/liquidity_latency_seasonality_test.json"
+      verification_hash: null
+    adv:
+      input:
+        start: "2025-07-01T00:00:00Z"
+        end: "2025-09-30T23:59:59Z"
+      output_path: "data/adv/test.parquet"
+      verification_hash: null
+    fees:
+      input:
+        start: "2025-07-01T00:00:00Z"
+        end: "2025-09-30T23:59:59Z"
+      output_path: "data/fees/test_fees.json"
+      verification_hash: null

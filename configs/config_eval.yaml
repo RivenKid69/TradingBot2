@@ -1,0 +1,89 @@
+mode: eval
+run_id: eval-run
+logs_dir: logs
+artifacts_dir: artifacts
+seasonality_log_level: INFO
+execution_profile: MKT_OPEN_NEXT_H1
+execution_params:
+  slippage_bps: 0.0
+  limit_offset_bps: 0.0  # e.g. 25 for 0.25% offset when using LIMIT_MID_BPS
+  ttl_steps: 0           # e.g. 5 to cancel after 5 simulation steps
+  tif: GTC               # e.g. IOC or FOK
+execution:
+  mode: bar
+  entry_mode: default         # Entry mode for fills; ``default`` preserves legacy behaviour.
+  clip_to_bar:                # Controls clipping of simulated prices to the bar range.
+    enabled: true             # true keeps prices within [low, high] of the current bar.
+    strict_open_fill: false   # true forces clipped open-price fills; false keeps legacy behaviour.
+execution_config:
+  notional_threshold: 10000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Optional SHA256 hash of the above liquidity multipliers for integrity checking
+liquidity_seasonality_hash: null
+# Optional path to 168 hourly liquidity overrides multiplied with the above multipliers
+liquidity_seasonality_override_path: null
+# Optional path to 168 hourly latency multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Set false to ignore liquidity and latency multipliers
+use_seasonality: true
+input:
+  trades_path: "data/trades.csv"
+
+latency:
+  use_seasonality: true          # Enable hourly latency multipliers
+  latency_seasonality_path: null # Optional override; defaults to global latency_seasonality_path
+  refresh_period_days: 30        # Refresh cadence for latency multipliers (days)
+  seasonality_default: 1.0       # Fallback multiplier when seasonality data is unavailable
+  base_ms: 250
+  jitter_ms: 50
+  spike_p: 0.01
+  spike_mult: 5.0
+  timeout_ms: 2500
+  retries: 1
+  seed: 0  # RNG seed; seasonality multipliers do not affect RNG state
+risk:
+  enabled: true
+  max_abs_position_qty: 0.0
+  max_abs_position_notional: 0.0
+  max_order_notional: 0.0
+  max_orders_per_min: 60
+  max_orders_window_s: 60
+  daily_loss_limit: 0.0
+  pause_seconds_on_violation: 300
+  daily_reset_utc_hour: 0
+  max_entries_per_day: null
+  # Aggregate exposure controls (optional; null/0 disables)
+  max_total_notional: null        # Hard cap on total net notional across instruments
+  max_total_exposure_pct: null    # Hard cap on exposure as a fraction of equity
+  exposure_buffer_frac: 0.0       # Fractional buffer applied before tripping the caps
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/eval.csv"]
+      timeframe: "1m"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

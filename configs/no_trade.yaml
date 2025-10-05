@@ -1,0 +1,37 @@
+# Recommended no-trade configuration with structured dynamic guard defaults.
+no_trade:
+  maintenance:
+    format: "HH:MM-HH:MM"      # "HH:MM-HH:MM" for inline daily windows, use "json"/"csv"/"auto" for external files
+    path: null                  # optional external calendar (relative to this YAML); see data/maintenance/example_schedule.json
+    funding_buffer_min: 5
+    daily_utc:
+      - "00:00-00:05"
+      - "08:00-08:05"
+      - "16:00-16:05"
+    custom_ms: []
+  dynamic:
+    enabled: false              # master switch; keeps legacy guards disabled by default
+    guard:
+      enable: false             # legacy flag (still honoured for backwards compatibility)
+      log_reason: true          # emit guard reason to logs when triggered
+      volatility:
+        window: 180             # rolling sigma window (bars)
+        min_periods: null       # optional override for sigma min periods
+        pctile_window: null     # optional override for percentile window
+        pctile_min_periods: null
+        abs: 0.015              # block if volatility exceeds 1.5%
+        pctile: 0.995           # ...or top 0.5% percentile
+      spread:
+        window: 21              # ATR/spread window (bars)
+        min_periods: null
+        pctile_window: null
+        pctile_min_periods: null
+        abs_bps: 15.0           # block if spreads widen beyond 15 bps
+        pctile: 0.995           # ...or top 0.5% percentile
+    hysteresis:
+      ratio: 0.2                # require 20% improvement before unblocking
+      cooldown_bars: 20         # keep guard active for 20 bars after recovery
+    next_bars_block:
+      anomaly: 20               # optional block for N bars after anomaly detection
+# The loader still accepts legacy top-level keys (funding_buffer_min, daily_utc,
+# custom_ms, dynamic_guard) and merges them into this structure.

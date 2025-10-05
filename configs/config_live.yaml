@@ -1,0 +1,154 @@
+mode: live
+run_id: live-run
+logs_dir: logs
+artifacts_dir: artifacts
+seasonality_log_level: INFO
+# Runtime settings are defined in runtime.yaml
+runtime_config: runtime.yaml
+execution_config:
+  notional_threshold: 10000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 20.0
+max_signals_per_sec: 5.0
+backoff_base_s: 2.0
+max_backoff_s: 60.0
+execution_profile: MKT_OPEN_NEXT_H1
+execution_params:
+  slippage_bps: 0.0
+  limit_offset_bps: 0.0  # e.g. 25 for 0.25% offset when using LIMIT_MID_BPS
+  ttl_steps: 0           # e.g. 5 to cancel after 5 simulation steps
+  tif: GTC               # e.g. IOC or FOK
+execution:
+  mode: bar
+timing:
+  enforce_closed_bars: true
+  timeframe_ms: 60000
+  close_lag_ms: 2000
+clock_sync:
+  refresh_sec: 300        # How often to resync clocks in seconds
+  warn_threshold_ms: 500  # Log warning if drift exceeds this many milliseconds
+  kill_threshold_ms: 2000 # Terminate if drift exceeds this many milliseconds
+  max_step_ms: 1000       # Max single adjustment step in milliseconds
+  attempts: 5             # Number of sync attempts before giving up
+
+shutdown:
+  grace_period: 5.0           # Seconds to wait between stop and flush phases
+  drain_policy: graceful      # How to drain outstanding work
+  timeouts:
+    stop: 10.0                # Seconds to wait for stop callbacks
+    flush: 10.0               # Seconds to wait for flush callbacks
+    finalize: 5.0             # Seconds to wait for finalize callbacks
+ttl:
+  enabled: false
+  ttl_seconds: 60
+  mode: relative
+  guard_ms: 5000
+  absolute_failsafe_ms: 900000
+  state_path: state/ttl_state.json
+  out_csv: null
+  dedup_persist: null
+api:
+  api_key: null
+  api_secret: null
+data:
+  timeframe: "1m"  # symbols are loaded from data/universe/symbols.json
+# Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Optional SHA256 hash of the above liquidity multipliers for integrity checking
+liquidity_seasonality_hash: null
+# Optional path to 168 hourly liquidity overrides multiplied with the above multipliers
+liquidity_seasonality_override_path: null
+# Optional path to 168 hourly latency multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Set false to ignore liquidity and latency multipliers
+use_seasonality: true
+latency:
+  use_seasonality: true          # Enable hourly latency multipliers
+  latency_seasonality_path: null # Optional override; defaults to global latency_seasonality_path
+  refresh_period_days: 30        # Refresh cadence for latency multipliers (days)
+  seasonality_default: 1.0       # Fallback multiplier when seasonality data is unavailable
+  base_ms: 250
+  jitter_ms: 50
+  spike_p: 0.01
+  spike_mult: 5.0
+  timeout_ms: 2500
+  retries: 1
+  seed: 0  # RNG seed; seasonality multipliers do not affect RNG state
+  vol_metric: sigma          # Rolling volatility input used to scale latency adjustments
+  vol_window: 120            # Window (bars) for the volatility metric
+  volatility_gamma: 0.0      # Power/exponent applied to the normalised volatility factor
+  zscore_clip: 3.0           # Clip z-score used when normalising volatility
+  min_ms: 0                  # Lower bound applied after adjustments
+  max_ms: 10000              # Upper bound applied after adjustments
+  debug_log: false           # Emit detailed latency sampling logs
+  vol_debug_log: false       # Emit volatility diagnostics at DEBUG level for latency
+risk:
+  enabled: true
+  max_abs_position_qty: 0.0
+  max_abs_position_notional: 0.0
+  max_order_notional: 0.0
+  max_orders_per_min: 60
+  max_orders_window_s: 60
+  daily_loss_limit: 0.0
+  pause_seconds_on_violation: 300
+  daily_reset_utc_hour: 0  # Час начала нового дня в UTC для PnL и дневных лимитов
+  max_entries_per_day: null  # Максимум новых входов за день; null/-1 = без лимита (счёт по daily_reset_utc_hour, UTC)
+  # Aggregate exposure controls (optional; null/0 disables)
+  max_total_notional: null        # Hard cap on total net notional across instruments
+  max_total_exposure_pct: null    # Hard cap on exposure as a fraction of equity
+  exposure_buffer_frac: 0.0       # Fractional buffer applied before tripping the caps
+quantizer:
+  filters_path: "data/binance_filters.json"
+  # strict_filters=true → строго придерживаться актуальных фильтров; false включает мягкий фолбек к кешу/легаси-логике.
+  # Поле strict остаётся легаси-алиасом для strict_filters и может опускаться в новых конфигурациях.
+  strict_filters: true
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30
+  refresh_on_start: false
+ 
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true
+    windows:
+      enabled: true
+    anomaly:
+      enabled: true
+    extreme:
+      enabled: true
+    policy:
+      enabled: true
+    risk:
+      enabled: true
+    ttl:
+      enabled: true
+    dedup:
+      enabled: true
+    throttle:
+      enabled: true
+    publish:
+      enabled: true
+components:
+  market_data:
+    target: impl_binance_public:BinancePublicBarSource
+    params:
+      timeframe: "1m"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}

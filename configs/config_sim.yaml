@@ -1,0 +1,269 @@
+mode: sim
+run_id: default-run
+logs_dir: logs
+artifacts_dir: artifacts
+seasonality_log_level: INFO
+execution_profile: MKT_OPEN_NEXT_H1
+execution_params:
+  slippage_bps: 0.0
+  limit_offset_bps: 0.0  # e.g. 25 for 0.25% offset when using LIMIT_MID_BPS
+  ttl_steps: 0           # e.g. 5 to cancel after 5 simulation steps
+  tif: GTC               # e.g. IOC or FOK
+execution:
+  mode: bar
+  intrabar_price_model: "bridge"  # Модель заполнения внутри бара (например: linear, bridge, reference).
+  timeframe_ms: 3600000           # Размер базового бара в миллисекундах (H1 = 60 минут = 3_600_000 мс).
+  reference_prices_path: null     # Путь к M1-референсу для режима intrabar "reference"; оставьте null для bridge/linear.
+  use_latency_from: null
+  latency_constant_ms: null
+  entry_mode: default         # Режим входа для симулятора; default соответствует текущему легаси-поведению.
+  clip_to_bar:                # Настройки клипа цен по диапазону последнего бара.
+    enabled: true             # true удерживает цены в пределах [low, high] бара (легаси-поведение).
+    strict_open_fill: false   # true → строго применять клип к открытиям; false оставляет прежнюю логику.
+  bar_capacity_base:
+    enabled: false           # Переключатель ограничения объёма сделок по ADV базовой валюты.
+    capacity_frac_of_ADV_base: 1.0  # Доля дневного ADV (1.0 = 100%), доступная в каждом баре после пересчёта.
+    adv_base_path: "data/liquidity/adv_base.json"  # JSON с дневным ADV по базовой валюте.
+    # Формат файла: {"meta": {...}, "data": {"SYMBOL": {"adv_base": <float>, "days": <int>,
+    #   "days_total": <int>, "last_day": "<ISO8601>"}, ...}}; значения указываются в базовой валюте.
+    floor_base: null         # Минимальный дневной ADV (в базовой валюте): используется как фолбек и нижняя граница.
+    timeframe_ms: null       # Необязательный override размера бара (в мс) для конвертации дневного ADV в per-bar.
+  bridge:
+    intrabar_price_model: "bridge"  # Пример конфигурации для симулятора в режиме моста (bridge adapter).
+    timeframe_ms: 3600000           # Должен совпадать с целевым таймфреймом бара.
+    reference_prices_path: null     # Опциональный путь к M1-референсу для bridge/reference адаптера.
+    use_latency_from: null
+    latency_constant_ms: null
+execution_config:
+  notional_threshold: 10000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Optional SHA256 hash of the above liquidity multipliers for integrity checking
+liquidity_seasonality_hash: null
+# Optional path to 168 hourly liquidity overrides multiplied with the above multipliers
+liquidity_seasonality_override_path: null
+# Optional path to 168 hourly latency multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Set false to ignore liquidity and latency multipliers
+use_seasonality: true
+
+market: spot
+
+data:
+  timeframe: "1m"  # symbols are loaded from data/universe/symbols.json
+
+model:
+  algo: "ppo"
+  params: {}
+
+quantizer:
+  filters_path: "data/binance_filters.json"
+  # strict_filters=true → строго придерживаться актуальных фильтров; false включает мягкий фолбек к кешу/легаси-логике.
+  # Поле strict остаётся легаси-алиасом для strict_filters и может опускаться в новых конфигурациях.
+  strict_filters: true
+  # quantize_mode управляет округлением; "inward" (дефолт) поджимает цену/объём внутрь биржевых ограничений.
+  quantize_mode: "inward"
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30
+  refresh_on_start: false
+
+# Runtime ADV dataset configuration (see ``configs/adv.yaml`` for documentation).
+adv:
+  enabled: false
+  path: null
+  dataset: null
+  window_days: 30
+  refresh_days: 7
+  auto_refresh: true
+  missing_symbol_policy: warn
+  default_quote: null
+  floor_quote: null
+  seasonality_path: null
+  seasonality_profile: null
+
+fees:
+  path: null                     # Путь к JSON/YAML с ставками по символам; null → использовать data/fees/fees_by_symbol.json.
+  refresh_days: null             # Каденс проверки устаревания таблицы (в днях); null отключает проверку (по умолчанию).
+  maker_bps: null                # null → брать базовую ставку из авто-обновлённой таблицы; число → жёсткий override.
+  taker_bps: null                # null → брать тейкерскую ставку из авто-обновления; число → жёсткий override.
+  use_bnb_discount: null         # null → авто (используем скидку, если snapshot содержит множители); true/false → override.
+  maker_discount_mult: null      # null → множитель мейкера из snapshot (или 1.0/0.75 по умолчанию); число → override.
+  taker_discount_mult: null      # null → множитель тейкера из snapshot (или 1.0/0.75); число → override.
+  vip_tier: null                 # Номер VIP-уровня (int) для табличных ставок; null → использовать значения по умолчанию.
+  maker_share_default: null      # Override базовой доли maker [0..1]; null → использовать 0.5 из блока maker_taker_share.
+  spread_cost_maker_bps: null    # Override доп. издержек maker (bps) при разделении потока; null → 0.0 по умолчанию.
+  spread_cost_taker_bps: null    # Override доп. издержек taker (bps) при разделении потока; null → 0.0 по умолчанию.
+  taker_fee_override_bps: null   # Жёсткий override тейкерской комиссии (bps) после скидок; null → без override.
+  rounding:
+    enabled: true               # Включить округление комиссий; false → возвращать сырые значения без пост-обработки.
+    step: null                  # Override шага округления (например 0.0001); null → использовать commission_step из фильтров/таблицы.
+    mode: "up"                 # Режим относительно шага: up (ceil, дефолт Binance) | nearest | down.
+    minimum_fee: null           # Минимальная комиссия после округления; null → без нижней границы.
+    maximum_fee: null           # Максимальная комиссия после округления; null → без верхней границы.
+  settlement:
+    enabled: false              # Платить комиссии альтернативным активом (например, BNB); false → оставаться в котируемой валюте.
+    mode: null                  # Жёсткий режим расчёта (bnb/quote/auto); null → авто по аккаунту или таблице комиссий.
+    currency: null              # Код валюты расчёта (например, "BNB"); null → использовать mode/значения биржи.
+    prefer_discount_asset: false  # true → запрашивать скидочную валюту при доступности; false → без приоритета.
+  maker_taker_share:
+    enabled: false               # Включить расчёт доли maker/taker; false → использовать maker_share_default.
+    mode: "fixed"                # Режим: fixed | model | predictor; fixed → всегда брать maker_share_default.
+    maker_share_default: 0.5     # Базовая доля maker, когда модель неактивна/нет фичей (дефолт 0.5).
+    spread_cost_maker_bps: 0.0   # Доп. издержки maker (bps) сверх комиссии при активном разделе потока.
+    spread_cost_taker_bps: 0.0   # Доп. издержки taker (bps) сверх комиссии при активном разделе потока.
+    taker_fee_override_bps: null # Опциональный override тейкерской комиссии (bps) в активном режиме.
+    model:
+      distance_to_mid: null      # Фича distance-to-mid в bps или блок {value,min,max,fallback}; null → не используется.
+      latency: null              # Фича latency в мс или блок {value,min,max,fallback}; null → не используется.
+      coefficients: {}           # Линейные коэффициенты модели (intercept, distance_to_mid, latency, …); пусто = дефолт.
+
+slippage:
+  k: 0.8
+  min_half_spread_bps: 0.0
+  default_spread_bps: 2.0
+  eps: 1e-12
+  dynamic:
+    enabled: false           # Отключено → модель использует статический спред (легаси-поведение).
+    alpha_bps: 0.0           # Аддитивная надбавка к базовому спреду (в bps) при активном динамическом режиме.
+    beta_coef: 0.0           # Коэффициент при волатильности/ликвидности; 0.0 отключает масштабирование.
+    min_spread_bps: 0.0      # Нижняя граница рассчитанного динамического спреда.
+    max_spread_bps: 20.0     # Верхняя граница рассчитанного динамического спреда.
+    smoothing_alpha: null    # Опциональная EMA-сглаживание [0,1]; null оставляет спред без сглаживания.
+    vol_metric: null         # Имя метрики волатильности (например, "sigma") для beta_coef; null = по умолчанию.
+    vol_window: null         # Окно (в барах) для vol_metric; null = используем источник данных.
+    fallback_spread_bps: null  # Фолбек-спред (bps), когда нет данных; null → используем default_spread_bps.
+    refresh_warn_days: null  # Предупреждать, если профиль сезонности устарел; null → без проверки.
+    refresh_fail_days: null  # Прерывать выполнение при сильно устаревшем профиле; null → без проверки.
+    refresh_on_start: false  # Принудительно обновлять профиль при старте (если поддерживается).
+    profile_kind: hourly
+    multipliers: []          # 168 нормированных коэффициентов (например, со средним 1.0)
+    path: null               # Опционально: путь к JSON-профилю (см. data/slippage/hourly_profile.sample.json)
+    override_path: null      # Опциональный путь к локальным поправкам поверх базового профиля.
+    hash: null               # Опциональный SHA256 от базового профиля для контроля целостности.
+    use_volatility: false    # Легаси-переключатель; оставьте false, если используете beta_coef.
+    gamma: 0.0
+    zscore_clip: null        # Z-score клип при нормализации волатильности; null → без клипа.
+    last_refresh_ts: null    # Последняя отметка обновления профиля (мс); заполняется автообновлением.
+  dynamic_impact:
+    enabled: false           # Включить масштабирование коэффициента impact (k) по рыночным условиям.
+    beta_vol: 0.0            # Линейный коэффициент на нормализованную волатильность; 0.0 = отключено.
+    beta_participation: 0.0  # Линейный коэффициент на нормализованную долю участия/размер ордера.
+    min_k: null              # Нижняя граница для результирующего k (null = без ограничений).
+    max_k: null              # Верхняя граница для результирующего k (null = без ограничений).
+    fallback_k: null         # Опциональный k, используемый, если входные метрики недоступны.
+    vol_metric: null         # Имя метрики волатильности для beta_vol.
+    vol_window: null         # Окно (в барах) для метрики волатильности.
+    participation_metric: null   # Источник participation (например, "participation").
+    participation_window: null   # Окно (в барах) для participation_metric.
+    smoothing_alpha: null    # EMA-сглаживание результирующего k [0,1]; null = без сглаживания.
+    zscore_clip: null        # Клип z-score при нормализации метрик; null = без клипа.
+  tail_shock:
+    enabled: false           # Включить редкие «хвостовые» шоки спреда/слиппеджа.
+    probability: 0.0         # Вероятность шока на шаг (0..1).
+    shock_bps: 0.0           # Дополнительный фиксированный шок в bps при срабатывании.
+    shock_multiplier: 1.0    # Мультипликатор к рассчитанному слиппеджу при шоке.
+    decay_halflife_bars: null  # Полупериод затухания эффекта шока (в барах); null = без затухания.
+    min_multiplier: null     # Нижняя граница итогового мультипликатора.
+    max_multiplier: null     # Верхняя граница итогового мультипликатора.
+    seed: null               # Опциональный seed для генератора шоков.
+  adv:
+    enabled: false           # Включить динамику ликвидности на основе ADV/оборотной статистики.
+    window_days: 30          # Горизонт окна (в днях) для расчёта ADV.
+    smoothing_alpha: null    # EMA-сглаживание ADV [0,1]; null = без сглаживания.
+    fallback_adv: null       # Опциональный ADV по умолчанию при отсутствии данных.
+    min_adv: null            # Нижняя граница ADV (в базовой валюте).
+    max_adv: null            # Верхняя граница ADV (в базовой валюте).
+    seasonality_path: null   # Путь к сезонному профилю ликвидности (JSON/YAML) или null.
+    override_path: null      # Путь к локальному override-сезонности или null.
+    hash: null               # Контрольная сумма сезонного профиля (опционально).
+    profile_kind: null       # Имя профиля в файле сезонности (например, "hourly").
+    multipliers: []          # Inline-мультипликаторы сезонности (по умолчанию пусто).
+    zscore_clip: null        # Клип при нормализации ADV (z-score); null = без клипа.
+    liquidity_buffer: 1.0    # Доп. буфер ликвидности (>1 увеличивает оценку доступного ADV).
+
+latency:
+  use_seasonality: true          # Enable hourly latency multipliers
+  latency_seasonality_path: null # Optional override; defaults to global latency_seasonality_path
+  refresh_period_days: 30        # Refresh cadence for latency multipliers (days)
+  seasonality_default: 1.0       # Fallback multiplier when seasonality data is unavailable
+  base_ms: 250
+  jitter_ms: 50
+  spike_p: 0.01
+  spike_mult: 5.0
+  timeout_ms: 2500
+  retries: 1
+  seed: 0  # RNG seed; seasonality multipliers do not affect RNG state
+  vol_metric: sigma          # Rolling volatility input used to scale latency adjustments
+  vol_window: 120            # Window (bars) for the volatility metric
+  volatility_gamma: 0.0      # Power/exponent applied to the normalised volatility factor
+  zscore_clip: 3.0           # Clip z-score used when normalising volatility
+  min_ms: 0                  # Lower bound applied after adjustments
+  max_ms: 10000              # Upper bound applied after adjustments
+  debug_log: false           # Emit detailed latency sampling logs
+  vol_debug_log: false       # Emit volatility diagnostics at DEBUG level for latency
+
+risk:
+  enabled: true
+  max_abs_position_qty: 0.0
+  max_abs_position_notional: 0.0
+  max_order_notional: 0.0
+  max_orders_per_min: 60
+  max_orders_window_s: 60
+  daily_loss_limit: 0.0
+  pause_seconds_on_violation: 300
+  daily_reset_utc_hour: 0  # Час начала нового дня в UTC для PnL и дневных лимитов
+  max_entries_per_day: null  # Максимум новых входов за день; null/-1 = без лимита (счёт по daily_reset_utc_hour, UTC)
+  # Aggregate exposure controls (optional; null/0 disables)
+  max_total_notional: null        # Hard cap on total net notional across instruments
+  max_total_exposure_pct: null    # Hard cap on exposure as a fraction of equity
+  exposure_buffer_frac: 0.0       # Fractional buffer applied before tripping the caps
+
+# See ../docs/no_trade.md for details
+no_trade:
+  funding_buffer_min: 0
+  daily_utc: []
+  custom_ms: []
+  dynamic_guard:
+    enable: false
+    sigma_window: 120
+    atr_window: 14
+    vol_abs: null
+    vol_pctile: 0.99
+    spread_abs_bps: null
+    spread_pctile: 0.99
+    hysteresis: 0.1
+    cooldown_bars: 10
+    log_reason: true
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/sample.csv"]
+      timeframe: "1m"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params:
+      enter_threshold: 0.0  # enter >= exit; defaults to legacy ``threshold`` if omitted
+      exit_threshold: 0.0   # fallback when only ``threshold`` is provided
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}
