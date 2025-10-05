@@ -11,8 +11,30 @@ import torch as th
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv
-from stable_baselines3.common.vec_env.util import is_vecenv_wrapped
 from stable_baselines3.common.vec_env.vec_monitor import VecMonitor
+
+try:
+    from stable_baselines3.common.vec_env.util import is_vecenv_wrapped
+except ImportError:  # pragma: no cover - compatibility shim for SB3>=2.0
+    from stable_baselines3.common.vec_env.base_vec_env import VecEnvWrapper
+
+    def is_vecenv_wrapped(vec_env: VecEnv, wrapper_class: type[VecEnvWrapper]) -> bool:
+        """Check if a vectorized environment is wrapped with a given wrapper.
+
+        Stable-Baselines3 2.0 removed :func:`is_vecenv_wrapped` from
+        ``stable_baselines3.common.vec_env.util``. The training code in this
+        repository still relies on the helper, so we provide a local
+        re-implementation matching the previous behaviour. The implementation
+        walks the chain of :class:`VecEnvWrapper` instances and returns
+        ``True`` if any wrapper matches ``wrapper_class``.
+        """
+
+        env: VecEnv | VecEnvWrapper = vec_env
+        while isinstance(env, VecEnvWrapper):
+            if isinstance(env, wrapper_class):
+                return True
+            env = env.venv
+        return isinstance(env, wrapper_class)
 
 _cy_evaluate_episode: Callable[..., tuple[list[float], list[list[float]]]] | None = None
 _cy_spec = importlib.util.find_spec("cy_eval_core")
