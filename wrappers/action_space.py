@@ -1,12 +1,14 @@
 from __future__ import annotations
 from typing import Any
 from collections.abc import Mapping
+from dataclasses import replace, is_dataclass
+import copy
 
 import numpy as np
 from gymnasium import spaces
 from gymnasium import ActionWrapper  # <-- ключевое: наследуемся от ActionWrapper
 
-from action_proto import ActionType
+from action_proto import ActionType, ActionProto
 
 
 class DictToMultiDiscreteActionWrapper(ActionWrapper):
@@ -126,4 +128,57 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
         return dict_action
 
 
-__all__ = ["DictToMultiDiscreteActionWrapper"]
+class LongOnlyActionWrapper(ActionWrapper):
+    """Clamp outgoing ``volume_frac`` values to keep the policy long-only."""
+
+    def __init__(self, env: Any):
+        super().__init__(env)
+        # Preserve the underlying spaces so downstream wrappers observe original specs.
+        self.action_space = getattr(env, "action_space", None)
+        self.observation_space = getattr(env, "observation_space", None)
+
+    @staticmethod
+    def _clamp_volume(value: Any) -> Any:
+        if value is None:
+            return value
+        if isinstance(value, np.ndarray):
+            if value.size == 0:
+                return value
+            clipped = value.copy()
+            np.maximum(clipped, 0.0, out=clipped)
+            return clipped
+        if isinstance(value, (list, tuple)):
+            arr = np.asarray(value, dtype=float)
+            arr = np.maximum(arr, 0.0)
+            if isinstance(value, tuple):
+                return tuple(arr.tolist())
+            return arr.tolist()
+        try:
+            scalar = float(value)
+        except (TypeError, ValueError):
+            return value
+        clipped = max(0.0, scalar)
+        try:
+            return type(value)(clipped)
+        except Exception:
+            return clipped
+
+    def action(self, action):
+        if isinstance(action, ActionProto):
+            vol = float(action.volume_frac)
+            if vol < 0.0:
+                if is_dataclass(action):
+                    return replace(action, volume_frac=0.0)
+                cloned = copy.copy(action)
+                cloned.volume_frac = 0.0
+                return cloned
+            return action
+        if isinstance(action, Mapping):
+            payload = action.copy() if hasattr(action, "copy") else dict(action)
+            vol = payload.get("volume_frac")
+            payload["volume_frac"] = self._clamp_volume(vol)
+            return payload
+        return action
+
+
+__all__ = ["DictToMultiDiscreteActionWrapper", "LongOnlyActionWrapper"]

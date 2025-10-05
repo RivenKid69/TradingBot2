@@ -151,7 +151,10 @@ torch.backends.cudnn.benchmark = True
 
 from trading_patchnew import TradingEnv, DecisionTiming
 from gymnasium import spaces
-from wrappers.action_space import DictToMultiDiscreteActionWrapper
+from wrappers.action_space import (
+    DictToMultiDiscreteActionWrapper,
+    LongOnlyActionWrapper,
+)
 from custom_policy_patch1 import CustomActorCriticPolicy
 from fetch_all_data_patch import load_all_data
 # --- ИЗМЕНЕНИЕ: Импортируем быструю Cython-функцию оценки ---
@@ -178,26 +181,30 @@ def _wrap_action_space_if_needed(
     bins_vol: int = 101,
     *,
     action_overrides: dict[str, object] | None = None,
+    long_only: bool = False,
 ):
     """
     If env.action_space is Dict with expected keys, wrap it into MultiDiscrete.
     Otherwise return as is.
     """
 
+    wrapped_env = env
     try:
-        if isinstance(env.action_space, spaces.Dict):
-            keys = set(getattr(env.action_space, "spaces", {}).keys())
+        if long_only:
+            wrapped_env = LongOnlyActionWrapper(wrapped_env)
+        if isinstance(wrapped_env.action_space, spaces.Dict):
+            keys = set(getattr(wrapped_env.action_space, "spaces", {}).keys())
             expected = {"price_offset_ticks", "ttl_steps", "type", "volume_frac"}
             if expected.issubset(keys):
                 return DictToMultiDiscreteActionWrapper(
-                    env,
+                    wrapped_env,
                     bins_vol=bins_vol,
                     action_overrides=action_overrides,
                 )
     except Exception:
         # If anything goes wrong, fail open (no wrapping)
-        return env
-    return env
+        return wrapped_env
+    return wrapped_env
 
 
 def _coerce_timestamp(value) -> int | None:
@@ -761,11 +768,11 @@ def objective(trial: optuna.Trial,
             return value.strip().lower() in {"1", "true", "yes", "y", "on"}
         return bool(value)
 
-    def _extract_action_overrides_from_cfg(cfg_obj) -> dict[str, object]:
+    def _extract_action_overrides_from_cfg(cfg_obj) -> tuple[dict[str, object], bool]:
         algo_cfg = _resolve_nested(cfg_obj, "algo")
         actions_cfg = _resolve_nested(algo_cfg, "actions")
         if actions_cfg is None:
-            return {}
+            return {}, False
         if hasattr(actions_cfg, "dict"):
             try:
                 actions_payload = actions_cfg.dict()
@@ -787,8 +794,9 @@ def objective(trial: optuna.Trial,
                         payload.update(extra)
                 actions_payload = payload
         if not isinstance(actions_payload, Mapping):
-            return {}
+            return {}, False
         overrides: dict[str, object] = {}
+        long_only_flag = False
         if "lock_price_offset" in actions_payload:
             overrides["lock_price_offset"] = _coerce_bool(
                 actions_payload.get("lock_price_offset")
@@ -797,9 +805,11 @@ def objective(trial: optuna.Trial,
             overrides["lock_ttl"] = _coerce_bool(actions_payload.get("lock_ttl"))
         if "fixed_type" in actions_payload:
             overrides["fixed_type"] = actions_payload.get("fixed_type")
-        return overrides
+        if "long_only" in actions_payload:
+            long_only_flag = _coerce_bool(actions_payload.get("long_only"))
+        return overrides, long_only_flag
 
-    action_overrides = _extract_action_overrides_from_cfg(cfg)
+    action_overrides, long_only_flag = _extract_action_overrides_from_cfg(cfg)
 
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
@@ -994,6 +1004,7 @@ def objective(trial: optuna.Trial,
                 env,
                 bins_vol=bins_vol,
                 action_overrides=action_overrides,
+                long_only=long_only_flag,
             )
             return env
         return _init
@@ -1056,6 +1067,7 @@ def objective(trial: optuna.Trial,
             env,
             bins_vol=bins_vol,
             action_overrides=action_overrides,
+            long_only=long_only_flag,
         )
         return env
 
@@ -1210,6 +1222,7 @@ def objective(trial: optuna.Trial,
                     env,
                     bins_vol=bins_vol,
                     action_overrides=action_overrides,
+                    long_only=long_only_flag,
                 )
                 return env
 
@@ -1743,6 +1756,7 @@ def main():
                     env,
                     bins_vol=bins_vol,
                     action_overrides=action_overrides,
+                    long_only=long_only_flag,
                 )
                 return env
 
