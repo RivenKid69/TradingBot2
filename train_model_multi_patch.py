@@ -1182,14 +1182,39 @@ def objective(trial: optuna.Trial,
     
     # Итоговое количество шагов оптимизатора за все обучение
     total_optimizer_steps = num_rollouts * params["n_epochs"] * num_minibatches_per_rollout
-    
-    # Создаем lambda-функцию для планировщика
-    # SB3 вызовет ее со своим внутренним, правильным оптимизатором
-    def scheduler_fn(optimizer):
-        return OneCycleLR(optimizer=optimizer, max_lr=params["learning_rate"] * 3, total_steps=total_optimizer_steps)
-    
-    # Оборачиваем ее в словарь для передачи в policy_kwargs
-    policy_kwargs["optimizer_scheduler_fn"] = scheduler_fn
+
+    optimization_cfg = getattr(cfg, "optimization", None)
+    scheduler_cfg = None
+    if isinstance(optimization_cfg, Mapping):
+        scheduler_cfg = optimization_cfg.get("scheduler")
+    elif optimization_cfg is not None:
+        scheduler_cfg = getattr(optimization_cfg, "scheduler", None)
+
+    scheduler_enabled_value = True
+    if isinstance(scheduler_cfg, Mapping):
+        scheduler_enabled_value = scheduler_cfg.get("enabled", True)
+    elif scheduler_cfg is not None:
+        scheduler_enabled_value = getattr(scheduler_cfg, "enabled", True)
+
+    if isinstance(scheduler_enabled_value, str):
+        scheduler_enabled = scheduler_enabled_value.strip().lower() not in {"0", "false", "no", "off"}
+    elif scheduler_enabled_value is None:
+        scheduler_enabled = True
+    else:
+        scheduler_enabled = bool(scheduler_enabled_value)
+
+    if scheduler_enabled:
+        # Создаем lambda-функцию для планировщика
+        # SB3 вызовет ее со своим внутренним, правильным оптимизатором
+        def scheduler_fn(optimizer):
+            return OneCycleLR(
+                optimizer=optimizer,
+                max_lr=params["learning_rate"] * 3,
+                total_steps=total_optimizer_steps,
+            )
+
+        # Оборачиваем ее в словарь для передачи в policy_kwargs
+        policy_kwargs["optimizer_scheduler_fn"] = scheduler_fn
     DistributionalPPO = _get_distributional_ppo()
 
     use_torch_compile_cfg = _get_model_param_value(cfg, "use_torch_compile")
