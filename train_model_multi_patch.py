@@ -875,22 +875,44 @@ def objective(trial: optuna.Trial,
                 f"Invalid value '{value}' for '{key}' (expected float-compatible) in cfg.model.params"
             )
 
+    learning_rate_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "learning_rate"), "learning_rate"
+    )
+    gamma_cfg = _coerce_optional_float(_get_model_param_value(cfg, "gamma"), "gamma")
+    gae_lambda_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "gae_lambda"), "gae_lambda"
+    )
+    clip_range_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "clip_range"), "clip_range"
+    )
+    ent_coef_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "ent_coef"), "ent_coef"
+    )
+    vf_coef_cfg = _coerce_optional_float(_get_model_param_value(cfg, "vf_coef"), "vf_coef")
+    max_grad_norm_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "max_grad_norm"), "max_grad_norm"
+    )
+    n_steps_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_steps"), "n_steps")
+    batch_size_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "batch_size"), "batch_size"
+    )
+
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "trade_frequency_penalty": trial.suggest_float("trade_frequency_penalty", 1e-5, 5e-4, log=True),
         "turnover_penalty_coef": trial.suggest_float("turnover_penalty_coef", 0.0, 5e-4),
-        "n_steps": trial.suggest_categorical("n_steps", [512, 1024, 2048]),
+        "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
         "n_epochs": trial.suggest_int("n_epochs", 1, 5),
-        "batch_size": trial.suggest_categorical("batch_size", [64, 128, 256]),
-        "ent_coef": trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
-        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
+        "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
+        "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
+        "learning_rate": learning_rate_cfg if learning_rate_cfg is not None else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
         "risk_aversion_drawdown": trial.suggest_float("risk_aversion_drawdown", 0.05, 0.3),
         "risk_aversion_variance": trial.suggest_float("risk_aversion_variance", 0.005, 0.01),
         "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True),
-        "gamma": trial.suggest_float("gamma", 0.97, 0.995),
-        "gae_lambda": trial.suggest_float("gae_lambda", 0.8, 1.0),
-        "clip_range": trial.suggest_float("clip_range", 0.12, 0.18),
-        "max_grad_norm": trial.suggest_float("max_grad_norm", 0.3, 1.0),
+        "gamma": gamma_cfg if gamma_cfg is not None else trial.suggest_float("gamma", 0.97, 0.995),
+        "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
+        "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.12, 0.18),
+        "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
         "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
         "atr_multiplier": trial.suggest_float("atr_multiplier", 1.5, 3.0),
         "trailing_atr_mult": trial.suggest_float("trailing_atr_mult", 1.0, 2.0),
@@ -898,7 +920,7 @@ def objective(trial: optuna.Trial,
         "momentum_factor": trial.suggest_float("momentum_factor", 0.1, 0.7),
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
-        "vf_coef": trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
+        "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
         "v_range_ema_alpha": trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
     }
 
