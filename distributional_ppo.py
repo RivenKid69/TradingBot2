@@ -7,6 +7,7 @@
 # 3. Логика вычислений и результат функции остались прежними, изменился
 #    только способ их получения (без циклов).
 
+import math
 import torch
 import numpy as np
 from sb3_contrib import RecurrentPPO
@@ -89,6 +90,7 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     return cvar
 
 
+
 class DistributionalPPO(RecurrentPPO):
     """
     Дистрибутивный вариант RecurrentPPO без использования смешанной точности.
@@ -130,6 +132,41 @@ class DistributionalPPO(RecurrentPPO):
         self._current_bc_coef = float(self.bc_initial_coef)
 
         self.lr_scheduler = None
+
+class DistributionalPPO(RecurrentPPO):
+    """
+    Дистрибутивный вариант RecurrentPPO без использования смешанной точности.
+    """
+    def __init__(
+        self,
+        policy: Union[str, Type[RecurrentActorCriticPolicy]],
+        env: Union[VecEnv, str],
+        cql_alpha: float = 1.0,
+        cql_beta: float = 5.0,
+        cvar_alpha: float = 0.05,
+        cvar_weight: float = 0.5,
+        cvar_cap: Optional[float] = None,
+        v_range_ema_alpha: float = 0.01,
+        use_torch_compile: bool = False,
+        **kwargs: Any,
+    ):
+        self._last_lstm_states = None
+        super().__init__(policy=policy, env=env, **kwargs)
+
+        self.cql_alpha = cql_alpha
+        self.cql_beta = cql_beta
+        self.cvar_alpha = cvar_alpha
+        self.cvar_weight = cvar_weight
+        if cvar_cap is not None and cvar_cap <= 0:
+            raise ValueError("'cvar_cap' must be positive when provided")
+        self.cvar_cap = cvar_cap
+        self.v_range_ema_alpha = v_range_ema_alpha
+        self.running_v_min = 0.0
+        self.running_v_max = 0.0
+        self.v_range_initialized = False
+
+        self.lr_scheduler = None
+
         
         if use_torch_compile and self.device.type == "cuda":
             print("--> Compiling the policy with torch.compile...")
@@ -137,7 +174,10 @@ class DistributionalPPO(RecurrentPPO):
             # torch.compile будет работать с ними.
             self.policy = torch.compile(self.policy, mode="reduce-overhead")
             print("--> Policy compilation complete.")
-        print(f"--> CVaR-in-loss settings: (alpha={self.cvar_alpha:.2f}, weight={self.cvar_weight:.2f}).")
+        cap_repr = f"{self.cvar_cap:.3f}" if self.cvar_cap is not None else "∞"
+        print(
+            f"--> CVaR-in-loss settings: (alpha={self.cvar_alpha:.2f}, weight={self.cvar_weight:.2f}, cap={cap_repr})."
+        )
 
         if hasattr(self.policy, "optimizer_scheduler") and self.policy.optimizer_scheduler is not None:
             self.lr_scheduler = self.policy.optimizer_scheduler
@@ -281,6 +321,113 @@ class DistributionalPPO(RecurrentPPO):
         return True
 
 
+
+    def train(self) -> None:
+        """
+        Обновляет параметры политики стандартными градиентными шагами.
+        """
+        self.policy.set_training_mode(True)
+        self._update_learning_rate(self.policy.optimizer)
+        clip_range = self.clip_range(self._current_progress_remaining)
+
+        policy_clip_limit = getattr(self.policy, "value_clip_limit", None)
+        if policy_clip_limit is None:
+            with torch.no_grad():
+                clip_limit = float(torch.max(torch.abs(self.policy.atoms)).item())
+        else:
+            clip_limit = float(policy_clip_limit)
+        if not math.isfinite(clip_limit) or clip_limit <= 0.0:
+            raise RuntimeError(f"Invalid value clip limit computed for critic loss: {clip_limit}")
+ 
+        with torch.no_grad():
+            # Вычисляем мин/макс по ВСЕМУ буферу роллаута
+            v_min = self.rollout_buffer.returns.min().item()
+            v_max = self.rollout_buffer.returns.max().item()
+            v_min = max(v_min, -clip_limit)
+            v_max = min(v_max, clip_limit)
+            if v_max <= v_min:
+                v_min, v_max = -clip_limit, clip_limit
+            # Сразу обновляем атомы в политике
+            self.policy.update_atoms(v_min, v_max)
+
+        # Логируем эти границы
+        self.logger.record("train/v_min", v_min)
+        self.logger.record("train/v_max", v_max)
+        self.logger.record("train/value_clip_limit", clip_limit)
+
+        last_clamped_returns: Optional[torch.Tensor] = None
+        for epoch in range(self.n_epochs):
+            approx_kl_divs = []
+            for rollout_data in self.rollout_buffer.get(self.batch_size):
+                
+                
+
+                
+                values, log_prob, entropy = self.policy.evaluate_actions(
+                    rollout_data.observations,
+                    rollout_data.actions,
+                    rollout_data.lstm_states,
+                    rollout_data.episode_starts,
+                )
+
+                # --- РАСЧЕТ ПОЛИТИЧЕСКОЙ ПОТЕРИ (POLICY LOSS) ---
+                advantages = rollout_data.advantages
+                if self.normalize_advantage:
+                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+                ratio = torch.exp(log_prob - rollout_data.old_log_prob)
+                policy_loss_1 = advantages * ratio
+                policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
+
+                with torch.no_grad():
+                    weights = torch.exp(advantages / self.cql_beta)
+                    weights = torch.clamp(weights, max=100.0).detach()
+                policy_loss_bc = (-log_prob * weights).mean()
+
+                policy_loss = policy_loss_ppo + self.cql_alpha * policy_loss_bc
+
+                # --- РАСЧЕТ ПОТЕРИ ЭНТРОПИИ ---
+                if entropy is None:
+                    entropy_loss = -torch.mean(-log_prob)
+                else:
+                    entropy_loss = -torch.mean(entropy)
+
+                # --- РАСЧЕТ КРИТИЧЕСКОЙ ПОТЕРИ (CRITIC LOSS) В ПОЛНОЙ ТОЧНОСТИ ---
+                value_logits = self.policy.last_value_logits
+                if value_logits is None:
+                    raise RuntimeError("Policy did not cache value logits during training forward pass")
+
+                value_logits_fp32 = value_logits.float()
+                with torch.no_grad():
+                    target_returns = rollout_data.returns
+                    clamped_targets = target_returns.clamp(-clip_limit, clip_limit)
+
+                pred_probs_fp32 = torch.clamp(F.softmax(value_logits_fp32, dim=1), min=1e-8, max=1.0)
+                predicted_values = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                critic_loss = F.smooth_l1_loss(predicted_values, clamped_targets)
+                last_clamped_returns = clamped_targets
+
+                # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
+                predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
+                cvar_loss = -predicted_cvar.mean()
+
+                # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
+                loss = (
+                    policy_loss.float()
+                    + self.ent_coef * entropy_loss.float()
+                    + self.vf_coef * critic_loss
+                    + self.cvar_weight * cvar_loss
+                )
+
+                self.policy.optimizer.zero_grad(set_to_none=True)
+
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                self.policy.optimizer.step()
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step()
+
     def train(self) -> None:
         """
         Обновляет параметры политики стандартными градиентными шагами.
@@ -289,6 +436,10 @@ class DistributionalPPO(RecurrentPPO):
         self._update_learning_rate(self.policy.optimizer)
         clip_range = self.clip_range(self._current_progress_remaining)
  
+        normalized_atoms: Optional[torch.Tensor] = None
+        returns_mean_value: float = 0.0
+        returns_std_value: float = 1.0
+
         with torch.no_grad():
             # Вычисляем мин/макс по ВСЕМУ буферу роллаута
             v_min = self.rollout_buffer.returns.min().item()
@@ -296,7 +447,37 @@ class DistributionalPPO(RecurrentPPO):
             # Сразу обновляем атомы в политике
             self.policy.update_atoms(v_min, v_max)
 
+            # Находим эпизодные returns (по состояниям начала эпизода) и нормализуем их
+            returns_tensor = torch.as_tensor(
+                self.rollout_buffer.returns, device=self.device, dtype=torch.float32
+            ).flatten()
+            episode_start_mask = torch.as_tensor(
+                self.rollout_buffer.episode_starts, device=self.device, dtype=torch.bool
+            ).flatten()
+
+            episode_returns = returns_tensor[episode_start_mask]
+            if episode_returns.numel() == 0:
+                # В редких случаях батч может не содержать начала эпизодов — используем все returns
+                episode_returns = returns_tensor
+
+            returns_mean = episode_returns.mean()
+            returns_std = episode_returns.std(unbiased=False)
+
+            if not torch.isfinite(returns_std) or returns_std < 1e-6:
+                returns_std = torch.tensor(1.0, device=self.device)
+
+            returns_mean = returns_mean.to(torch.float32)
+            returns_std = returns_std.to(torch.float32)
+
+            normalized_atoms = ((self.policy.atoms.to(self.device) - returns_mean) / returns_std).to(
+                torch.float32
+            )
+
+            returns_mean_value = returns_mean.item()
+            returns_std_value = returns_std.item()
+
         # Логируем эти границы
+
         self.logger.record("train/v_min", v_min)
         self.logger.record("train/v_max", v_max)
 
@@ -392,6 +573,119 @@ class DistributionalPPO(RecurrentPPO):
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step()
 
+        self.logger.record("train/v_min", v_min)
+        self.logger.record("train/v_max", v_max)
+        self.logger.record("train/episode_return_mean", returns_mean_value)
+        self.logger.record("train/episode_return_std", returns_std_value)
+
+        cvar_term = torch.tensor(0.0, device=self.device)
+
+        for epoch in range(self.n_epochs):
+            approx_kl_divs = []
+            for rollout_data in self.rollout_buffer.get(self.batch_size):
+                
+                
+
+                
+                values, log_prob, entropy = self.policy.evaluate_actions(
+                    rollout_data.observations,
+                    rollout_data.actions,
+                    rollout_data.lstm_states,
+                    rollout_data.episode_starts,
+                )
+
+                # --- РАСЧЕТ ПОЛИТИЧЕСКОЙ ПОТЕРИ (POLICY LOSS) ---
+                advantages = rollout_data.advantages
+                if self.normalize_advantage:
+                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+                ratio = torch.exp(log_prob - rollout_data.old_log_prob)
+                policy_loss_1 = advantages * ratio
+                policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
+
+                with torch.no_grad():
+                    weights = torch.exp(advantages / self.cql_beta)
+                    weights = torch.clamp(weights, max=100.0).detach()
+                policy_loss_bc = (-log_prob * weights).mean()
+
+                policy_loss = policy_loss_ppo + self.cql_alpha * policy_loss_bc
+
+                # --- РАСЧЕТ ПОТЕРИ ЭНТРОПИИ ---
+                if entropy is None:
+                    entropy_loss = -torch.mean(-log_prob)
+                else:
+                    entropy_loss = -torch.mean(entropy)
+
+                # --- РАСЧЕТ КРИТИЧЕСКОЙ ПОТЕРИ (CRITIC LOSS) В ПОЛНОЙ ТОЧНОСТИ ---
+                value_logits = self.policy.last_value_logits
+                if value_logits is None:
+                    raise RuntimeError("Policy did not cache value logits during training forward pass")
+
+                value_logits_fp32 = value_logits.float()
+                with torch.no_grad():
+                    target_returns = rollout_data.returns
+                    delta_z = (self.policy.v_max - self.policy.v_min) / (self.policy.num_atoms - 1)
+                    clamped_targets = target_returns.clamp(self.policy.v_min, self.policy.v_max)
+                    b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
+                    lower_bound = b.floor().long()
+                    upper_bound = b.ceil().long()
+
+                    lower_bound[(upper_bound > 0) & (lower_bound == upper_bound)] -= 1
+                    upper_bound[(lower_bound < (self.policy.num_atoms - 1)) & (lower_bound == upper_bound)] += 1
+
+                    lower_bound = lower_bound.clamp(min=0, max=self.policy.num_atoms - 1)
+                    upper_bound = upper_bound.clamp(min=0, max=self.policy.num_atoms - 1)
+                    target_distribution = torch.zeros_like(value_logits_fp32)
+                    upper_prob = (b - lower_bound.float())
+                    lower_prob = (upper_bound.float() - b)
+                    upper_prob = upper_prob.to(target_distribution.dtype)
+                    lower_prob = lower_prob.to(target_distribution.dtype)
+                    target_distribution.scatter_add_(1, lower_bound.unsqueeze(1), lower_prob.unsqueeze(1))
+                    target_distribution.scatter_add_(1, upper_bound.unsqueeze(1), upper_prob.unsqueeze(1))
+
+                pred_probs_fp32 = torch.clamp(F.softmax(value_logits_fp32, dim=1), min=1e-8, max=1.0)
+                log_predictions = torch.log(pred_probs_fp32)
+                critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
+
+                # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
+
+                predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
+                cvar_raw = predicted_cvar.mean()
+                cvar_loss = -cvar_raw
+                cvar_term = self.cvar_weight * cvar_loss
+
+                episode_start_mask = rollout_data.episode_starts.view(-1) > 0.5
+                probs_for_cvar = pred_probs_fp32[episode_start_mask]
+                if probs_for_cvar.numel() == 0:
+                    probs_for_cvar = pred_probs_fp32
+
+                atoms_for_cvar = normalized_atoms if normalized_atoms is not None else self.policy.atoms
+                predicted_cvar = calculate_cvar(probs_for_cvar, atoms_for_cvar, self.cvar_alpha)
+                cvar_loss = -predicted_cvar.mean()
+                cvar_term = self.cvar_weight * cvar_loss
+                if self.cvar_cap is not None:
+                    cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
+
+
+                # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
+                loss = (
+                    policy_loss.float()
+                    + self.ent_coef * entropy_loss.float()
+                    + self.vf_coef * critic_loss
+                    + cvar_term
+                )
+
+                self.policy.optimizer.zero_grad(set_to_none=True)
+
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                self.policy.optimizer.step()
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step()
+
+
+
 
                 with torch.no_grad():
                     log_ratio = log_prob - rollout_data.old_log_prob
@@ -401,13 +695,17 @@ class DistributionalPPO(RecurrentPPO):
 
         with torch.no_grad():
             pred_probs = F.softmax(value_logits, dim=1)
-            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1)
+            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
 
-        y_true_np = rollout_data.returns.flatten().cpu().numpy()
+        if last_clamped_returns is None:
+            last_clamped_returns = rollout_data.returns.clamp(-clip_limit, clip_limit)
+
+        y_true_np = last_clamped_returns.flatten().cpu().numpy()
         y_pred_np = mean_pred_values.flatten().cpu().numpy()
         explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 
         self.logger.record("train/entropy_loss", entropy_loss.item())
+
         weighted_bc_value = policy_loss_bc_weighted.item()
         ppo_loss_value = policy_loss_ppo.item()
         bc_ratio = abs(weighted_bc_value) / (abs(ppo_loss_value) + 1e-8)
@@ -419,6 +717,21 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
         self.logger.record("train/policy_loss_bc_weighted", weighted_bc_value)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
+
+        self.logger.record("train/policy_loss", policy_loss.item())
+        self.logger.record("train/critic_loss", critic_loss.item())
+
+        self.logger.record("train/cvar_raw", cvar_raw.item())
+        self.logger.record("train/cvar_loss", cvar_loss.item())
+
+        self.logger.record("train/cvar_loss", cvar_loss.item())
+        if self.cvar_cap is not None:
+            self.logger.record("train/cvar_cap", self.cvar_cap)
+
+        self.logger.record("train/cvar_term", cvar_term.item())
+        self.logger.record("train/policy_loss_ppo", policy_loss_ppo.item())
+        self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
+
         if len(approx_kl_divs) > 0:
             self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/loss", loss.item())

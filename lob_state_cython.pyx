@@ -1155,8 +1155,12 @@ cdef inline tuple _compute_reward_cython(
     int trades_this_step, float trade_frequency_penalty,
     double executed_notional, double turnover_penalty_coef
 ):
-    # Вознаграждение с базовым сигналом ΔPnL и опциональным наследуемым логарифмическим компонентом.
-    cdef double reward = net_worth - prev_net_worth
+    # Вознаграждение с базовым сигналом безразмерного ΔPnL и опциональным наследуемым логарифмическим компонентом.
+    cdef double net_worth_delta = net_worth - prev_net_worth
+    cdef double reward_scale = fabs(prev_net_worth)
+    if reward_scale < 1e-9:
+        reward_scale = 1.0
+    cdef double reward = net_worth_delta / reward_scale
     cdef double current_potential = 0.0
     cdef double clipped_ratio, risk_penalty, dd_penalty
 
@@ -1177,11 +1181,13 @@ cdef inline tuple _compute_reward_cython(
             current_potential = potential_shaping_coef * tanh(risk_penalty + dd_penalty)
             reward += gamma * current_potential - last_potential
 
-    reward -= trades_this_step * trade_frequency_penalty
+    reward -= (trades_this_step * trade_frequency_penalty) / reward_scale
 
     if turnover_penalty_coef > 0.0 and executed_notional > 0.0:
-        reward -= turnover_penalty_coef * executed_notional
+        reward -= (turnover_penalty_coef * executed_notional) / reward_scale
 
-    reward += event_reward
+    reward += event_reward / reward_scale
+
+    reward = fmax(-10.0, fmin(10.0, reward))
 
     return reward, current_potential

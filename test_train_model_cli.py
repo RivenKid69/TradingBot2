@@ -236,6 +236,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
                 "cql_beta": 5.0,
                 "cvar_alpha": 0.05,
                 "cvar_weight": 0.0,
+                "cvar_cap": 0.5,
                 "num_atoms": 5,
                 "v_min": -1.0,
                 "v_max": 1.0,

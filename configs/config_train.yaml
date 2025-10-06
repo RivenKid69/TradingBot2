@@ -67,6 +67,7 @@ model:
     cql_beta: 5.0
     cvar_alpha: 0.05
     cvar_weight: 0.0
+    cvar_cap: 0.5
     use_torch_compile: false
     bc_warmup_steps: 200000
     bc_decay_steps: 800000

@@ -104,7 +104,11 @@ cdef double compute_reward_view(
     ClosedReason closed_reason,
     double* out_potential,
 ) noexcept nogil:
-    cdef double reward = net_worth - prev_net_worth
+    cdef double net_worth_delta = net_worth - prev_net_worth
+    cdef double reward_scale = fabs(prev_net_worth)
+    if reward_scale < 1e-9:
+        reward_scale = 1.0
+    cdef double reward = net_worth_delta / reward_scale
     cdef double phi_t = 0.0
     cdef double base_cost_bps = 0.0
     cdef double total_cost_bps = 0.0
@@ -135,7 +139,7 @@ cdef double compute_reward_view(
             potential_shaping_coef,
         )
 
-    reward -= trade_frequency_penalty_fn(trade_frequency_penalty, trades_count)
+    reward -= trade_frequency_penalty_fn(trade_frequency_penalty, trades_count) / reward_scale
 
     cdef double trade_notional = fabs(last_executed_notional)
     if trade_notional > 0.0:
@@ -147,17 +151,19 @@ cdef double compute_reward_view(
                 impact_exp = spot_cost_impact_exponent if spot_cost_impact_exponent > 0.0 else 1.0
                 total_cost_bps += spot_cost_impact_coeff * participation ** impact_exp
         if total_cost_bps > 0.0:
-            reward -= trade_notional * total_cost_bps * 1e-4
+            reward -= (trade_notional * total_cost_bps * 1e-4) / reward_scale
 
     if turnover_penalty_coef > 0.0 and last_executed_notional > 0.0:
-        reward -= turnover_penalty_coef * last_executed_notional
+        reward -= (turnover_penalty_coef * last_executed_notional) / reward_scale
 
     reward += event_reward(
         profit_close_bonus,
         loss_close_penalty,
         bankruptcy_penalty,
         closed_reason,
-    )
+    ) / reward_scale
+
+    reward = _clamp(reward, -10.0, 10.0)
 
     if out_potential != <double*>0:
         out_potential[0] = phi_t
