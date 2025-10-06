@@ -65,7 +65,7 @@ model:
     turnover_penalty_coef: 0.0
     cql_alpha: 0.0
     cql_beta: 5.0
-    cvar_alpha: 0.0
+    cvar_alpha: 0.05
     cvar_weight: 0.0
     use_torch_compile: false
 
