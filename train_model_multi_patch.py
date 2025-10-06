@@ -985,6 +985,12 @@ def objective(trial: optuna.Trial,
         params["cvar_weight"] = cvar_weight_cfg
     else:
         params["cvar_weight"] = trial.suggest_float("cvar_weight", 0.1, 2.0, log=True)
+
+    cvar_cap_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cvar_cap"), "cvar_cap")
+    if cvar_cap_cfg is not None:
+        params["cvar_cap"] = cvar_cap_cfg
+    else:
+        params["cvar_cap"] = trial.suggest_float("cvar_cap", 0.01, 1.0, log=True)
     # 1. Определяем окно самого "медленного" индикатора на основе статических параметров.
     #    Эти параметры передаются в C++ симулятор.
     #    (В данном проекте они жестко заданы в TradingEnv, но для надежности берем их из HPO)
@@ -1266,6 +1272,7 @@ def objective(trial: optuna.Trial,
         cvar_alpha=params["cvar_alpha"],
         vf_coef=params["vf_coef"],
         cvar_weight=params["cvar_weight"],
+        cvar_cap=params["cvar_cap"],
         
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
