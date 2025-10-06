@@ -401,6 +401,42 @@ class Mediator:
             max_position=float(getattr(st, "max_position", 0.0) or 0.0),
         )
 
+    def _normalize_trades(self, trades: list[Any]) -> list[tuple[float, float, bool, bool]]:
+        """Convert heterogeneous trade payloads into (price, volume, is_buy, maker)."""
+        normalized: list[tuple[float, float, bool, bool]] = []
+        for trade in trades:
+            price_val = getattr(trade, "price", None)
+            qty_val = getattr(trade, "qty", getattr(trade, "quantity", None))
+            side_flag = getattr(trade, "side", None)
+            liquidity_flag = getattr(trade, "liquidity", None)
+            if price_val is None or qty_val is None:
+                if isinstance(trade, Mapping):
+                    price_val = trade.get("price")
+                    qty_val = trade.get("qty", trade.get("quantity"))
+                    if side_flag is None:
+                        side_flag = trade.get("side")
+                    if liquidity_flag is None:
+                        liquidity_flag = trade.get("liquidity")
+                elif isinstance(trade, (list, tuple)) and len(trade) >= 2:
+                    price_val, qty_val = trade[0], trade[1]
+                    if len(trade) > 2:
+                        side_flag = trade[2]
+                    if len(trade) > 3:
+                        liquidity_flag = trade[3]
+            try:
+                price_f = float(price_val)
+                qty_f = float(qty_val)
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(price_f) or not math.isfinite(qty_f):
+                continue
+            side_txt = str(side_flag or "").upper()
+            liquidity_txt = str(liquidity_flag or "").lower()
+            is_buy = side_txt == "BUY"
+            maker_flag = liquidity_txt == "maker"
+            normalized.append((price_f, qty_f, is_buy, maker_flag))
+        return normalized
+
     def _apply_trades_to_state(self, trades: List[Tuple[float, float, bool, bool]]) -> None:
         """
         Обновить env.state по списку сделок: (price, volume, is_buy, maker_is_agent).
@@ -720,7 +756,9 @@ class Mediator:
                 except Exception:
                     pass
                 # применить и пост-проверки
-                self._apply_trades_to_state(report.trades)
+                raw_trades = list(getattr(report, "trades", []))
+                simple_trades = self._normalize_trades(raw_trades)
+                self._apply_trades_to_state(simple_trades)
                 mid_for_risk = float(
                     getattr(
                         report,
@@ -766,6 +804,7 @@ class Mediator:
                 # возвращаем также события
                 d["events"] = events
                 d["info"] = info
+                d["trades"] = simple_trades
                 return d
             except Exception:
                 # запасной путь — выполнить напрямую по типу действия
