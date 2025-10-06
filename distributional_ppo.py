@@ -7,6 +7,7 @@
 # 3. Логика вычислений и результат функции остались прежними, изменился
 #    только способ их получения (без циклов).
 
+import math
 import torch
 import numpy as np
 from sb3_contrib import RecurrentPPO
@@ -259,18 +260,33 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
         clip_range = self.clip_range(self._current_progress_remaining)
+
+        policy_clip_limit = getattr(self.policy, "value_clip_limit", None)
+        if policy_clip_limit is None:
+            with torch.no_grad():
+                clip_limit = float(torch.max(torch.abs(self.policy.atoms)).item())
+        else:
+            clip_limit = float(policy_clip_limit)
+        if not math.isfinite(clip_limit) or clip_limit <= 0.0:
+            raise RuntimeError(f"Invalid value clip limit computed for critic loss: {clip_limit}")
  
         with torch.no_grad():
             # Вычисляем мин/макс по ВСЕМУ буферу роллаута
             v_min = self.rollout_buffer.returns.min().item()
             v_max = self.rollout_buffer.returns.max().item()
+            v_min = max(v_min, -clip_limit)
+            v_max = min(v_max, clip_limit)
+            if v_max <= v_min:
+                v_min, v_max = -clip_limit, clip_limit
             # Сразу обновляем атомы в политике
             self.policy.update_atoms(v_min, v_max)
 
         # Логируем эти границы
         self.logger.record("train/v_min", v_min)
         self.logger.record("train/v_max", v_max)
+        self.logger.record("train/value_clip_limit", clip_limit)
 
+        last_clamped_returns: Optional[torch.Tensor] = None
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             for rollout_data in self.rollout_buffer.get(self.batch_size):
@@ -316,28 +332,12 @@ class DistributionalPPO(RecurrentPPO):
                 value_logits_fp32 = value_logits.float()
                 with torch.no_grad():
                     target_returns = rollout_data.returns
-                    delta_z = (self.policy.v_max - self.policy.v_min) / (self.policy.num_atoms - 1)
-                    clamped_targets = target_returns.clamp(self.policy.v_min, self.policy.v_max)
-                    b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
-                    lower_bound = b.floor().long()
-                    upper_bound = b.ceil().long()
-
-                    lower_bound[(upper_bound > 0) & (lower_bound == upper_bound)] -= 1
-                    upper_bound[(lower_bound < (self.policy.num_atoms - 1)) & (lower_bound == upper_bound)] += 1
-
-                    lower_bound = lower_bound.clamp(min=0, max=self.policy.num_atoms - 1)
-                    upper_bound = upper_bound.clamp(min=0, max=self.policy.num_atoms - 1)
-                    target_distribution = torch.zeros_like(value_logits_fp32)
-                    upper_prob = (b - lower_bound.float())
-                    lower_prob = (upper_bound.float() - b)
-                    upper_prob = upper_prob.to(target_distribution.dtype)
-                    lower_prob = lower_prob.to(target_distribution.dtype)
-                    target_distribution.scatter_add_(1, lower_bound.unsqueeze(1), lower_prob.unsqueeze(1))
-                    target_distribution.scatter_add_(1, upper_bound.unsqueeze(1), upper_prob.unsqueeze(1))
+                    clamped_targets = target_returns.clamp(-clip_limit, clip_limit)
 
                 pred_probs_fp32 = torch.clamp(F.softmax(value_logits_fp32, dim=1), min=1e-8, max=1.0)
-                log_predictions = torch.log(pred_probs_fp32)
-                critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
+                predicted_values = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                critic_loss = F.smooth_l1_loss(predicted_values, clamped_targets)
+                last_clamped_returns = clamped_targets
 
                 # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
                 predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
@@ -368,9 +368,12 @@ class DistributionalPPO(RecurrentPPO):
 
         with torch.no_grad():
             pred_probs = F.softmax(value_logits, dim=1)
-            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1)
+            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
 
-        y_true_np = rollout_data.returns.flatten().cpu().numpy()
+        if last_clamped_returns is None:
+            last_clamped_returns = rollout_data.returns.clamp(-clip_limit, clip_limit)
+
+        y_true_np = last_clamped_returns.flatten().cpu().numpy()
         y_pred_np = mean_pred_values.flatten().cpu().numpy()
         explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 
