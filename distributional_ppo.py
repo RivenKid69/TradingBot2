@@ -622,10 +622,31 @@ class DistributionalPPO(RecurrentPPO):
 
                 self.policy.optimizer.zero_grad(set_to_none=True)
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                max_grad_norm = (
+                    0.5 if self.max_grad_norm is None else float(self.max_grad_norm)
+                )
+                if max_grad_norm <= 0.0:
+                    self.logger.record("warn/max_grad_norm_nonpos", float(max_grad_norm))
+                    max_grad_norm = 0.5
+                total_grad_norm = torch.nn.utils.clip_grad_norm_(
+                    self.policy.parameters(), max_grad_norm
+                )
+                grad_norm_value = (
+                    total_grad_norm.item()
+                    if isinstance(total_grad_norm, torch.Tensor)
+                    else float(total_grad_norm)
+                )
+                self.logger.record("train/grad_norm_pre_clip", float(grad_norm_value))
+                self.logger.record("train/max_grad_norm_used", float(max_grad_norm))
                 self.policy.optimizer.step()
+
                 if len(self.policy.optimizer.param_groups) > 0:
-                    last_optimizer_lr = float(self.policy.optimizer.param_groups[0]["lr"])
+                    lrs = [float(g["lr"]) for g in self.policy.optimizer.param_groups]
+                    last_optimizer_lr = lrs[0]
+                    self.logger.record("train/optimizer_lr", last_optimizer_lr)
+                    self.logger.record("train/optimizer_lr_min", min(lrs))
+                    self.logger.record("train/optimizer_lr_max", max(lrs))
+
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step()
                     get_last_lr = getattr(self.lr_scheduler, "get_last_lr", None)
@@ -636,11 +657,12 @@ class DistributionalPPO(RecurrentPPO):
                             scheduler_lrs = None
                         if scheduler_lrs:
                             last_scheduler_lr = float(scheduler_lrs[0])
+                            self.logger.record("train/scheduler_lr", last_scheduler_lr)
 
                 with torch.no_grad():
                     log_ratio = log_prob - rollout_data.old_log_prob
-                    approx_kl = float(
-                        torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().numpy()
+                    approx_kl = (
+                        ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
                     )
                     approx_kl_divs.append(approx_kl)
 
