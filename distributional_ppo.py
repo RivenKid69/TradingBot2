@@ -7,6 +7,7 @@
 # 3. Логика вычислений и результат функции остались прежними, изменился
 #    только способ их получения (без циклов).
 
+import math
 import torch
 import numpy as np
 from sb3_contrib import RecurrentPPO
@@ -259,6 +260,113 @@ class DistributionalPPO(RecurrentPPO):
         return True
 
 
+
+    def train(self) -> None:
+        """
+        Обновляет параметры политики стандартными градиентными шагами.
+        """
+        self.policy.set_training_mode(True)
+        self._update_learning_rate(self.policy.optimizer)
+        clip_range = self.clip_range(self._current_progress_remaining)
+
+        policy_clip_limit = getattr(self.policy, "value_clip_limit", None)
+        if policy_clip_limit is None:
+            with torch.no_grad():
+                clip_limit = float(torch.max(torch.abs(self.policy.atoms)).item())
+        else:
+            clip_limit = float(policy_clip_limit)
+        if not math.isfinite(clip_limit) or clip_limit <= 0.0:
+            raise RuntimeError(f"Invalid value clip limit computed for critic loss: {clip_limit}")
+ 
+        with torch.no_grad():
+            # Вычисляем мин/макс по ВСЕМУ буферу роллаута
+            v_min = self.rollout_buffer.returns.min().item()
+            v_max = self.rollout_buffer.returns.max().item()
+            v_min = max(v_min, -clip_limit)
+            v_max = min(v_max, clip_limit)
+            if v_max <= v_min:
+                v_min, v_max = -clip_limit, clip_limit
+            # Сразу обновляем атомы в политике
+            self.policy.update_atoms(v_min, v_max)
+
+        # Логируем эти границы
+        self.logger.record("train/v_min", v_min)
+        self.logger.record("train/v_max", v_max)
+        self.logger.record("train/value_clip_limit", clip_limit)
+
+        last_clamped_returns: Optional[torch.Tensor] = None
+        for epoch in range(self.n_epochs):
+            approx_kl_divs = []
+            for rollout_data in self.rollout_buffer.get(self.batch_size):
+                
+                
+
+                
+                values, log_prob, entropy = self.policy.evaluate_actions(
+                    rollout_data.observations,
+                    rollout_data.actions,
+                    rollout_data.lstm_states,
+                    rollout_data.episode_starts,
+                )
+
+                # --- РАСЧЕТ ПОЛИТИЧЕСКОЙ ПОТЕРИ (POLICY LOSS) ---
+                advantages = rollout_data.advantages
+                if self.normalize_advantage:
+                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+                ratio = torch.exp(log_prob - rollout_data.old_log_prob)
+                policy_loss_1 = advantages * ratio
+                policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
+
+                with torch.no_grad():
+                    weights = torch.exp(advantages / self.cql_beta)
+                    weights = torch.clamp(weights, max=100.0).detach()
+                policy_loss_bc = (-log_prob * weights).mean()
+
+                policy_loss = policy_loss_ppo + self.cql_alpha * policy_loss_bc
+
+                # --- РАСЧЕТ ПОТЕРИ ЭНТРОПИИ ---
+                if entropy is None:
+                    entropy_loss = -torch.mean(-log_prob)
+                else:
+                    entropy_loss = -torch.mean(entropy)
+
+                # --- РАСЧЕТ КРИТИЧЕСКОЙ ПОТЕРИ (CRITIC LOSS) В ПОЛНОЙ ТОЧНОСТИ ---
+                value_logits = self.policy.last_value_logits
+                if value_logits is None:
+                    raise RuntimeError("Policy did not cache value logits during training forward pass")
+
+                value_logits_fp32 = value_logits.float()
+                with torch.no_grad():
+                    target_returns = rollout_data.returns
+                    clamped_targets = target_returns.clamp(-clip_limit, clip_limit)
+
+                pred_probs_fp32 = torch.clamp(F.softmax(value_logits_fp32, dim=1), min=1e-8, max=1.0)
+                predicted_values = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                critic_loss = F.smooth_l1_loss(predicted_values, clamped_targets)
+                last_clamped_returns = clamped_targets
+
+                # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
+                predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
+                cvar_loss = -predicted_cvar.mean()
+
+                # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
+                loss = (
+                    policy_loss.float()
+                    + self.ent_coef * entropy_loss.float()
+                    + self.vf_coef * critic_loss
+                    + self.cvar_weight * cvar_loss
+                )
+
+                self.policy.optimizer.zero_grad(set_to_none=True)
+
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                self.policy.optimizer.step()
+                if self.lr_scheduler is not None:
+                    self.lr_scheduler.step()
+
     def train(self) -> None:
         """
         Обновляет параметры политики стандартными градиентными шагами.
@@ -420,6 +528,7 @@ class DistributionalPPO(RecurrentPPO):
                     self.lr_scheduler.step()
 
 
+
                 with torch.no_grad():
                     log_ratio = log_prob - rollout_data.old_log_prob
                     approx_kl_divs.append(torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().numpy())
@@ -428,9 +537,12 @@ class DistributionalPPO(RecurrentPPO):
 
         with torch.no_grad():
             pred_probs = F.softmax(value_logits, dim=1)
-            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1)
+            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
 
-        y_true_np = rollout_data.returns.flatten().cpu().numpy()
+        if last_clamped_returns is None:
+            last_clamped_returns = rollout_data.returns.clamp(-clip_limit, clip_limit)
+
+        y_true_np = last_clamped_returns.flatten().cpu().numpy()
         y_pred_np = mean_pred_values.flatten().cpu().numpy()
         explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 

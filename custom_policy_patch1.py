@@ -157,6 +157,17 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 f"Invalid value range for distributional value head: v_min={self.v_min}, v_max={self.v_max}"
             )
 
+        clip_limit_cfg = arch_params.get("value_clip_limit")
+        if clip_limit_cfg is not None:
+            clip_limit = _coerce_arch_float(clip_limit_cfg, 1.0, "value_clip_limit")
+        else:
+            clip_limit = max(abs(self.v_min), abs(self.v_max))
+        if clip_limit <= 0.0:
+            raise ValueError(
+                f"Invalid 'value_clip_limit' for distributional value head: {clip_limit} (must be > 0)"
+            )
+        self.value_clip_limit = float(clip_limit)
+
         self.optimizer_scheduler_fn = optimizer_scheduler_fn
 
         # dist_head создаётся позже в _build, но атрибут инициализируем заранее,
