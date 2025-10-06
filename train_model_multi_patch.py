@@ -1022,6 +1022,19 @@ def objective(trial: optuna.Trial,
 
     n_envs = 8
     print(f"Запускаем {n_envs} параллельных сред...")
+
+    total_batch_size = params["n_steps"] * n_envs
+    batch_size = params["batch_size"]
+    if batch_size <= 0:
+        raise ValueError("Invalid configuration: 'batch_size' must be a positive integer in cfg.model.params")
+    if batch_size > total_batch_size:
+        raise ValueError(
+            "Invalid configuration: 'batch_size' cannot exceed n_steps * num_envs in cfg.model.params"
+        )
+    if total_batch_size % batch_size != 0:
+        raise ValueError(
+            "Invalid configuration: 'batch_size' must evenly divide n_steps * num_envs in cfg.model.params"
+        )
     leak_guard_train = LeakGuard(LeakConfig(**leak_guard_kwargs))
     leak_guard_val = LeakGuard(LeakConfig(**leak_guard_kwargs))
 
@@ -1178,7 +1191,7 @@ def objective(trial: optuna.Trial,
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
     # Рассчитываем, на сколько мини-батчей делится каждый роллаут
-    num_minibatches_per_rollout = (params["n_steps"] * n_envs) // params["batch_size"]
+    num_minibatches_per_rollout = total_batch_size // batch_size
     
     # Итоговое количество шагов оптимизатора за все обучение
     total_optimizer_steps = num_rollouts * params["n_epochs"] * num_minibatches_per_rollout

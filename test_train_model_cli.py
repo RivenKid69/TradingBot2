@@ -166,6 +166,57 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert overridden_keys.isdisjoint(trial.suggested)
 
 
+def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    cfg = types.SimpleNamespace(
+        model=types.SimpleNamespace(
+            params={
+                "learning_rate": 3.0e-4,
+                "gamma": 0.99,
+                "gae_lambda": 0.95,
+                "clip_range": 0.15,
+                "ent_coef": 0.001,
+                "vf_coef": 0.5,
+                "max_grad_norm": 0.5,
+                "n_steps": 1024,
+                "batch_size": 257,
+            }
+        ),
+        algo=types.SimpleNamespace(
+            actions={},
+            action_wrapper=types.SimpleNamespace(bins_vol=2),
+        ),
+    )
+
+    trial = _DummyTrial()
+
+    class _FailWatchdogVecEnv:
+        def __init__(self, *_args, **_kwargs):  # pragma: no cover - should never be called
+            raise AssertionError("WatchdogVecEnv should not be constructed for invalid batch_size")
+
+    monkeypatch.setattr(train_script, "WatchdogVecEnv", _FailWatchdogVecEnv)
+
+    df = pd.DataFrame({"price": [1.0], "ts_ms": [0]})
+
+    with pytest.raises(ValueError, match="batch_size.*divide"):
+        train_script.objective(
+            trial,
+            cfg,
+            total_timesteps=1024,
+            train_data_by_token={"BTCUSDT": df},
+            train_obs_by_token={},
+            val_data_by_token={"BTCUSDT": df},
+            val_obs_by_token={},
+            test_data_by_token={},
+            test_obs_by_token={},
+            norm_stats={},
+            sim_config={},
+            timing_env_kwargs={},
+            leak_guard_kwargs={},
+            trials_dir=tmp_path,
+            tensorboard_log_dir=None,
+        )
+
+
 def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tmp_path):
     cfg = types.SimpleNamespace(
         model=types.SimpleNamespace(
