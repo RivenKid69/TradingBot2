@@ -4,13 +4,14 @@ import sys
 import types
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-TESTS = ROOT / "tests"
+# Project root contains this file; tests may live alongside sources or under tests/
+PROJECT_ROOT = Path(__file__).resolve().parent
+TESTS = PROJECT_ROOT / "tests"
 
 # Load stdlib logging before project paths are added
-sys.path = [p for p in sys.path if p not in {str(ROOT), str(TESTS)}]
+sys.path = [p for p in sys.path if p not in {str(PROJECT_ROOT), str(TESTS)}]
 import logging  # noqa: F401
-sys.path.extend([str(ROOT), str(TESTS)])
+sys.path.extend([str(PROJECT_ROOT), str(TESTS)])
 
 _requests_stub = types.ModuleType("requests")
 
