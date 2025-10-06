@@ -75,6 +75,10 @@ model:
     v_max: 0.2      # верхняя граница (v_max > v_min)
     v_range_ema_alpha: 0.01
 
+optimization:
+  scheduler:
+    enabled: false
+
 algo:
   actions:
     lock_price_offset: true
