@@ -906,6 +906,10 @@ def objective(trial: optuna.Trial,
         "turnover_penalty_coef",
     )
 
+    v_range_ema_alpha_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
+    )
+
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
@@ -928,7 +932,7 @@ def objective(trial: optuna.Trial,
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
         "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
-        "v_range_ema_alpha": trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
+        "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
     }
 
     if trade_frequency_penalty_cfg is not None:
