@@ -63,12 +63,15 @@ model:
     batch_size: 256
     trade_frequency_penalty: 0.0
     turnover_penalty_coef: 0.0
-    cql_alpha: 0.0
+    cql_alpha: 1.0
     cql_beta: 5.0
     cvar_alpha: 0.05
     cvar_weight: 0.0
     cvar_cap: 0.5
     use_torch_compile: false
+    bc_warmup_steps: 200000
+    bc_decay_steps: 800000
+    bc_final_coef: 0.05
 
     # Параметры головы ценности:
     num_atoms: 21   # можно 1 (обычная ценность), 11 — компромисс; >51 обычно не нужно
