@@ -341,14 +341,16 @@ class DistributionalPPO(RecurrentPPO):
 
                 # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
                 predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
-                cvar_loss = -predicted_cvar.mean()
+                cvar_raw = predicted_cvar.mean()
+                cvar_loss = -cvar_raw
+                cvar_term = self.cvar_weight * cvar_loss
 
                 # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
                 loss = (
                     policy_loss.float()
                     + self.ent_coef * entropy_loss.float()
                     + self.vf_coef * critic_loss
-                    + self.cvar_weight * cvar_loss
+                    + cvar_term
                 )
 
                 self.policy.optimizer.zero_grad(set_to_none=True)
@@ -377,7 +379,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/entropy_loss", entropy_loss.item())
         self.logger.record("train/policy_loss", policy_loss.item())
         self.logger.record("train/critic_loss", critic_loss.item())
+        self.logger.record("train/cvar_raw", cvar_raw.item())
         self.logger.record("train/cvar_loss", cvar_loss.item())
+        self.logger.record("train/cvar_term", cvar_term.item())
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo.item())
         self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
         if len(approx_kl_divs) > 0:
