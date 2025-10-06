@@ -901,6 +901,21 @@ def objective(trial: optuna.Trial,
     ent_coef_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "ent_coef"), "ent_coef"
     )
+    ent_coef_final_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "ent_coef_final"), "ent_coef_final"
+    )
+    ent_coef_decay_steps_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "ent_coef_decay_steps"), "ent_coef_decay_steps"
+    )
+    ent_coef_plateau_window_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "ent_coef_plateau_window"), "ent_coef_plateau_window"
+    )
+    ent_coef_plateau_tolerance_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "ent_coef_plateau_tolerance"), "ent_coef_plateau_tolerance"
+    )
+    ent_coef_plateau_min_updates_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "ent_coef_plateau_min_updates"), "ent_coef_plateau_min_updates"
+    )
     vf_coef_cfg = _coerce_optional_float(_get_model_param_value(cfg, "vf_coef"), "vf_coef")
     max_grad_norm_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "max_grad_norm"), "max_grad_norm"
@@ -938,6 +953,11 @@ def objective(trial: optuna.Trial,
         "n_epochs": trial.suggest_int("n_epochs", 1, 5),
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
         "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
+        "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
+        "ent_coef_decay_steps": ent_coef_decay_steps_cfg if ent_coef_decay_steps_cfg is not None else 0,
+        "ent_coef_plateau_window": ent_coef_plateau_window_cfg if ent_coef_plateau_window_cfg is not None else 0,
+        "ent_coef_plateau_tolerance": ent_coef_plateau_tolerance_cfg if ent_coef_plateau_tolerance_cfg is not None else 0.0,
+        "ent_coef_plateau_min_updates": ent_coef_plateau_min_updates_cfg if ent_coef_plateau_min_updates_cfg is not None else 0,
         "learning_rate": learning_rate_cfg if learning_rate_cfg is not None else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
         "risk_aversion_drawdown": trial.suggest_float("risk_aversion_drawdown", 0.05, 0.3),
         "risk_aversion_variance": trial.suggest_float("risk_aversion_variance", 0.005, 0.01),
@@ -959,6 +979,9 @@ def objective(trial: optuna.Trial,
         "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
+
+    if params["ent_coef_final"] is None:
+        params["ent_coef_final"] = params["ent_coef"]
 
     if trade_frequency_penalty_cfg is not None:
         params["trade_frequency_penalty"] = trade_frequency_penalty_cfg
@@ -1288,10 +1311,15 @@ def objective(trial: optuna.Trial,
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
         bc_final_coef=params["bc_final_coef"],
+        ent_coef_final=params["ent_coef_final"],
+        ent_coef_decay_steps=params["ent_coef_decay_steps"],
+        ent_coef_plateau_window=params["ent_coef_plateau_window"],
+        ent_coef_plateau_tolerance=params["ent_coef_plateau_tolerance"],
+        ent_coef_plateau_min_updates=params["ent_coef_plateau_min_updates"],
 
         cvar_cap=params["cvar_cap"],
 
-        
+
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
         n_epochs=params["n_epochs"],
