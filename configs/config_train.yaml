@@ -70,7 +70,7 @@ algo:
     fixed_type: MARKET
     long_only: true            # <-- ВКЛЮЧАЕМ лонг-онли из конфига
   action_wrapper:
-    bins_vol: 21
+    bins_vol: 2            # Используем двоичный сигнал объёма
 
 quantizer:
   filters_path: "data/binance_filters.json"
