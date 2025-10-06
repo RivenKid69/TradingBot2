@@ -101,6 +101,7 @@ class DistributionalPPO(RecurrentPPO):
         cql_beta: float = 5.0,
         cvar_alpha: float = 0.05,
         cvar_weight: float = 0.5,
+        cvar_cap: Optional[float] = None,
         v_range_ema_alpha: float = 0.01,
         use_torch_compile: bool = False,
         **kwargs: Any,
@@ -112,6 +113,9 @@ class DistributionalPPO(RecurrentPPO):
         self.cql_beta = cql_beta
         self.cvar_alpha = cvar_alpha
         self.cvar_weight = cvar_weight
+        if cvar_cap is not None and cvar_cap <= 0:
+            raise ValueError("'cvar_cap' must be positive when provided")
+        self.cvar_cap = cvar_cap
         self.v_range_ema_alpha = v_range_ema_alpha
         self.running_v_min = 0.0
         self.running_v_max = 0.0
@@ -125,7 +129,10 @@ class DistributionalPPO(RecurrentPPO):
             # torch.compile будет работать с ними.
             self.policy = torch.compile(self.policy, mode="reduce-overhead")
             print("--> Policy compilation complete.")
-        print(f"--> CVaR-in-loss settings: (alpha={self.cvar_alpha:.2f}, weight={self.cvar_weight:.2f}).")
+        cap_repr = f"{self.cvar_cap:.3f}" if self.cvar_cap is not None else "∞"
+        print(
+            f"--> CVaR-in-loss settings: (alpha={self.cvar_alpha:.2f}, weight={self.cvar_weight:.2f}, cap={cap_repr})."
+        )
 
         if hasattr(self.policy, "optimizer_scheduler") and self.policy.optimizer_scheduler is not None:
             self.lr_scheduler = self.policy.optimizer_scheduler
@@ -271,6 +278,8 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/v_min", v_min)
         self.logger.record("train/v_max", v_max)
 
+        cvar_term = torch.tensor(0.0, device=self.device)
+
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             for rollout_data in self.rollout_buffer.get(self.batch_size):
@@ -342,13 +351,16 @@ class DistributionalPPO(RecurrentPPO):
                 # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
                 predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
                 cvar_loss = -predicted_cvar.mean()
+                cvar_term = self.cvar_weight * cvar_loss
+                if self.cvar_cap is not None:
+                    cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
 
                 # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
                 loss = (
                     policy_loss.float()
                     + self.ent_coef * entropy_loss.float()
                     + self.vf_coef * critic_loss
-                    + self.cvar_weight * cvar_loss
+                    + cvar_term
                 )
 
                 self.policy.optimizer.zero_grad(set_to_none=True)
@@ -378,6 +390,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/policy_loss", policy_loss.item())
         self.logger.record("train/critic_loss", critic_loss.item())
         self.logger.record("train/cvar_loss", cvar_loss.item())
+        if self.cvar_cap is not None:
+            self.logger.record("train/cvar_cap", self.cvar_cap)
+        self.logger.record("train/cvar_term", cvar_term.item())
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo.item())
         self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
         if len(approx_kl_divs) > 0:
