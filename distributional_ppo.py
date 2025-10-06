@@ -1,3 +1,4 @@
+import itertools
 import math
 from collections import deque
 from typing import Any, Optional, Sequence, Type, Union
@@ -527,9 +528,48 @@ class DistributionalPPO(RecurrentPPO):
         kl_early_stop_triggered = False
         epochs_completed = 0
 
+        rollout_n_envs = int(getattr(self.rollout_buffer, "n_envs", 1)) or 1
+
+        def _prepare_minibatch_iterator(desired_batch_size: Optional[int]):
+            batch_size_local = desired_batch_size
+            if batch_size_local is None or batch_size_local <= 0:
+                batch_size_local = rollout_n_envs
+            batch_size_local = int(batch_size_local)
+            iterator = self.rollout_buffer.get(batch_size_local)
+            try:
+                first_minibatch = next(iterator)
+            except StopIteration:
+                return None, batch_size_local
+            return itertools.chain([first_minibatch], iterator), batch_size_local
+
+        def _fallback_batch_size() -> int:
+            buffer_size_local = int(getattr(self.rollout_buffer, "buffer_size", 0))
+            if buffer_size_local <= 0:
+                return rollout_n_envs
+            fallback_local = buffer_size_local
+            divisor = max(1, rollout_n_envs)
+            if fallback_local % divisor != 0:
+                fallback_local = (fallback_local // divisor) * divisor
+                if fallback_local <= 0:
+                    fallback_local = divisor
+            return fallback_local
+
         for _ in range(effective_n_epochs):
+            minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator(self.batch_size)
+            if minibatch_iterator is None:
+                fallback_batch_size = _fallback_batch_size()
+                minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator(fallback_batch_size)
+                if minibatch_iterator is not None and fallback_batch_size != self.batch_size:
+                    self.logger.record("warn/train_batch_size_adjusted", float(fallback_batch_size))
+
+            if minibatch_iterator is None:
+                self.logger.record("warn/empty_rollout_buffer", 1.0)
+                break
+
             epochs_completed += 1
-            for rollout_data in self.rollout_buffer.get(self.batch_size):
+            self.logger.record("train/actual_batch_size", float(actual_batch_size))
+
+            for rollout_data in minibatch_iterator:
                 _values, log_prob, entropy = self.policy.evaluate_actions(
                     rollout_data.observations,
                     rollout_data.actions,
@@ -702,6 +742,11 @@ class DistributionalPPO(RecurrentPPO):
             entropy_loss_total / float(entropy_loss_count) if entropy_loss_count > 0 else self._last_rollout_entropy
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
+
+        if value_logits_final is None:
+            cached_logits = getattr(self.policy, "last_value_logits", None)
+            if cached_logits is not None:
+                value_logits_final = cached_logits.detach().to(dtype=torch.float32)
 
         if value_logits_final is None:
             raise RuntimeError("No value logits captured during training loop")
