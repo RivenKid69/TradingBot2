@@ -496,7 +496,8 @@ class DistributionalPPO(RecurrentPPO):
         entropy_loss_total = 0.0
         entropy_loss_count = 0
         approx_kl_divs: list[float] = []
-        last_clamped_returns: Optional[torch.Tensor] = None
+        clamped_return_batches: list[torch.Tensor] = []
+        mean_value_batches: list[torch.Tensor] = []
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
 
@@ -604,7 +605,11 @@ class DistributionalPPO(RecurrentPPO):
                 pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
                 log_predictions = torch.log(pred_probs_fp32)
                 critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
-                last_clamped_returns = clamped_targets
+
+                with torch.no_grad():
+                    mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                    clamped_return_batches.append(clamped_targets.detach())
+                    mean_value_batches.append(mean_values_batch.detach())
 
                 predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
                 cvar_raw = predicted_cvar.mean()
@@ -700,18 +705,29 @@ class DistributionalPPO(RecurrentPPO):
 
         if value_logits_final is None:
             raise RuntimeError("No value logits captured during training loop")
-        if last_clamped_returns is None:
-            last_clamped_returns = torch.as_tensor(
+        if len(clamped_return_batches) == 0 or len(mean_value_batches) == 0:
+            rollout_returns = torch.as_tensor(
                 self.rollout_buffer.returns, device=self.device, dtype=torch.float32
             ).clamp(self.policy.v_min, self.policy.v_max)
+            y_true_tensor = rollout_returns.reshape(-1, 1)
+            with torch.no_grad():
+                pred_probs = torch.softmax(value_logits_final, dim=1)
+                y_pred_tensor = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+        else:
+            y_true_tensor = torch.cat([t.reshape(-1, 1) for t in clamped_return_batches], dim=0)
+            y_pred_tensor = torch.cat([t.reshape(-1, 1) for t in mean_value_batches], dim=0)
 
-        with torch.no_grad():
-            pred_probs = torch.softmax(value_logits_final, dim=1)
-            mean_pred_values = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+        if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
+            explained_var = 0.0
+        else:
+            if y_true_tensor.shape != y_pred_tensor.shape:
+                min_elems = min(y_true_tensor.shape[0], y_pred_tensor.shape[0])
+                y_true_tensor = y_true_tensor[:min_elems]
+                y_pred_tensor = y_pred_tensor[:min_elems]
 
-        y_true_np = last_clamped_returns.flatten().detach().cpu().numpy()
-        y_pred_np = mean_pred_values.flatten().detach().cpu().numpy()
-        explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
+            y_true_np = y_true_tensor.flatten().detach().cpu().numpy()
+            y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy()
+            explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
 
