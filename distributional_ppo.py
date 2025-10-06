@@ -116,6 +116,9 @@ class DistributionalPPO(RecurrentPPO):
         ent_coef_plateau_window: int = 0,
         ent_coef_plateau_tolerance: float = 0.0,
         ent_coef_plateau_min_updates: int = 0,
+        kl_lr_decay: float = 0.5,
+        kl_epoch_decay: float = 0.5,
+        kl_lr_scale_min: float = 0.1,
         use_torch_compile: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -163,6 +166,86 @@ class DistributionalPPO(RecurrentPPO):
 
         if use_torch_compile and self.device.type == "cuda":
             self.policy = torch.compile(self.policy, mode="reduce-overhead")
+
+        # --- KL-adaptive training controls ----------------------------------------------------
+        self.kl_lr_decay = float(kl_lr_decay)
+        if not (0.0 < self.kl_lr_decay < 1.0):
+            raise ValueError("'kl_lr_decay' must be in (0, 1)")
+        self.kl_epoch_decay = float(kl_epoch_decay)
+        if not (0.0 < self.kl_epoch_decay <= 1.0):
+            raise ValueError("'kl_epoch_decay' must be in (0, 1]")
+        self._kl_min_lr = 1e-6
+        self._kl_lr_scale = 1.0
+        self._kl_lr_scale_min = float(kl_lr_scale_min)
+        if not (0.0 < self._kl_lr_scale_min <= 1.0):
+            raise ValueError("'kl_lr_scale_min' must be in (0, 1]")
+        self._base_lr_schedule = self.lr_schedule
+
+        def _scaled_lr_schedule(progress_remaining: float) -> float:
+            base_lr = self._base_lr_schedule(progress_remaining)
+            scaled_lr = base_lr * self._kl_lr_scale
+            return float(max(scaled_lr, self._kl_min_lr))
+
+        self.lr_schedule = _scaled_lr_schedule
+        self._base_n_epochs = max(1, int(self.n_epochs))
+        self._kl_epoch_factor = 1.0
+        self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
+
+    def _apply_lr_decay(self, requested_decay: float) -> float:
+        """Reduce optimizer LR by ``requested_decay`` (capped by ``_kl_lr_scale_min``)."""
+
+        if requested_decay <= 0.0:
+            return 1.0
+
+        previous_scale = self._kl_lr_scale
+        proposed_scale = previous_scale * requested_decay
+        if proposed_scale < self._kl_lr_scale_min:
+            self._kl_lr_scale = self._kl_lr_scale_min
+        else:
+            self._kl_lr_scale = proposed_scale
+
+        if previous_scale <= 0.0:
+            actual_decay = 1.0
+        else:
+            actual_decay = self._kl_lr_scale / previous_scale
+
+        for param_group in self.policy.optimizer.param_groups:
+            new_lr = max(param_group["lr"] * actual_decay, self._kl_min_lr)
+            param_group["lr"] = new_lr
+            if "initial_lr" in param_group:
+                param_group["initial_lr"] = max(param_group["initial_lr"] * actual_decay, self._kl_min_lr)
+
+        if self.lr_scheduler is not None and hasattr(self.lr_scheduler, "base_lrs"):
+            self.lr_scheduler.base_lrs = [
+                max(lr * actual_decay, self._kl_min_lr) for lr in self.lr_scheduler.base_lrs
+            ]
+
+        return actual_decay
+
+    def _apply_epoch_decay(self) -> float:
+        """Shrink effective epoch multiplier respecting minimum of one epoch."""
+
+        previous_factor = self._kl_epoch_factor
+        proposed_factor = previous_factor * self.kl_epoch_decay
+        proposed_factor = min(proposed_factor, 1.0)
+        if proposed_factor < self._kl_epoch_factor_min:
+            self._kl_epoch_factor = self._kl_epoch_factor_min
+        else:
+            self._kl_epoch_factor = proposed_factor
+
+        if previous_factor <= 0.0:
+            return 1.0
+        return self._kl_epoch_factor / previous_factor
+
+    def _handle_kl_divergence(self, approx_kl: float) -> tuple[float, float]:
+        """React to KL overshoot by reducing LR and future epoch budget."""
+
+        lr_decay = self._apply_lr_decay(self.kl_lr_decay)
+        epoch_decay = self._apply_epoch_decay()
+        self.logger.record("train/kl_last_exceeded", approx_kl)
+        self.logger.record("train/kl_lr_decay_applied", lr_decay)
+        self.logger.record("train/kl_epoch_decay_applied", epoch_decay)
+        return lr_decay, epoch_decay
 
     def parameters(self, recurse: bool = True):  # type: ignore[override]
         return self.policy.parameters(recurse)
@@ -235,6 +318,10 @@ class DistributionalPPO(RecurrentPPO):
         rollout_buffer: RecurrentRolloutBuffer,
         n_rollout_steps: int,
     ) -> bool:
+        if not isinstance(rollout_buffer, RecurrentRolloutBuffer):
+            raise TypeError(
+                "DistributionalPPO requires a RecurrentRolloutBuffer for recurrent policies"
+            )
         assert self._last_obs is not None, "No previous observation was provided"
 
         if self._last_lstm_states is None:
@@ -410,6 +497,8 @@ class DistributionalPPO(RecurrentPPO):
         entropy_loss_count = 0
         approx_kl_divs: list[float] = []
         last_clamped_returns: Optional[torch.Tensor] = None
+        last_optimizer_lr: Optional[float] = None
+        last_scheduler_lr: Optional[float] = None
 
         policy_loss_value = 0.0
         policy_loss_ppo_value = 0.0
@@ -427,7 +516,18 @@ class DistributionalPPO(RecurrentPPO):
 
         value_logits_final: Optional[torch.Tensor] = None
 
-        for _ in range(self.n_epochs):
+        base_n_epochs = max(1, int(self.n_epochs))
+        if base_n_epochs != self._base_n_epochs:
+            self._base_n_epochs = base_n_epochs
+            self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
+            self._kl_epoch_factor = min(max(self._kl_epoch_factor, self._kl_epoch_factor_min), 1.0)
+
+        effective_n_epochs = max(1, int(round(self._base_n_epochs * self._kl_epoch_factor)))
+        kl_early_stop_triggered = False
+        epochs_completed = 0
+
+        for _ in range(effective_n_epochs):
+            epochs_completed += 1
             for rollout_data in self.rollout_buffer.get(self.batch_size):
                 _values, log_prob, entropy = self.policy.evaluate_actions(
                     rollout_data.observations,
@@ -524,12 +624,34 @@ class DistributionalPPO(RecurrentPPO):
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
                 self.policy.optimizer.step()
+                if len(self.policy.optimizer.param_groups) > 0:
+                    last_optimizer_lr = float(self.policy.optimizer.param_groups[0]["lr"])
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step()
+                    get_last_lr = getattr(self.lr_scheduler, "get_last_lr", None)
+                    if callable(get_last_lr):
+                        try:
+                            scheduler_lrs = get_last_lr()
+                        except TypeError:
+                            scheduler_lrs = None
+                        if scheduler_lrs:
+                            last_scheduler_lr = float(scheduler_lrs[0])
 
                 with torch.no_grad():
                     log_ratio = log_prob - rollout_data.old_log_prob
-                    approx_kl_divs.append(float(torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().numpy()))
+                    approx_kl = float(
+                        torch.mean((torch.exp(log_ratio) - 1) - log_ratio).cpu().numpy()
+                    )
+                    approx_kl_divs.append(approx_kl)
+
+                if (
+                    self.target_kl is not None
+                    and self.target_kl > 0.0
+                    and approx_kl > float(self.target_kl)
+                ):
+                    kl_early_stop_triggered = True
+                    self._handle_kl_divergence(approx_kl)
+                    break
 
                 policy_loss_value = float(policy_loss.item())
                 policy_loss_ppo_value = float(policy_loss_ppo.item())
@@ -543,7 +665,10 @@ class DistributionalPPO(RecurrentPPO):
 
                 value_logits_final = value_logits_fp32.detach()
 
-        self._n_updates += self.n_epochs
+            if kl_early_stop_triggered:
+                break
+
+        self._n_updates += epochs_completed
         self._update_calls += 1
 
         avg_policy_entropy = (
@@ -593,12 +718,23 @@ class DistributionalPPO(RecurrentPPO):
 
         if len(approx_kl_divs) > 0:
             self.logger.record("train/approx_kl", float(np.mean(approx_kl_divs)))
+        if last_optimizer_lr is not None:
+            self.logger.record("train/optimizer_lr", last_optimizer_lr)
+        if last_scheduler_lr is not None:
+            self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
         self.logger.record("train/clip_range", float(clip_range))
         if adv_batch_count > 0:
             self.logger.record("train/adv_mean", adv_mean_accum / adv_batch_count)
             self.logger.record("train/adv_std", adv_std_accum / adv_batch_count)
+        self.logger.record("train/n_epochs_effective", float(effective_n_epochs))
+        self.logger.record("train/n_epochs_completed", float(epochs_completed))
+        self.logger.record("train/kl_early_stop", float(1.0 if kl_early_stop_triggered else 0.0))
+        if self.target_kl is not None and self.target_kl > 0.0:
+            self.logger.record("train/target_kl", float(self.target_kl))
+            self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
+            self.logger.record("train/kl_epoch_factor", float(self._kl_epoch_factor))
 
     def learn(
         self,
