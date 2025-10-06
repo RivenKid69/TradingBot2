@@ -267,6 +267,10 @@ class DistributionalPPO(RecurrentPPO):
         self._update_learning_rate(self.policy.optimizer)
         clip_range = self.clip_range(self._current_progress_remaining)
  
+        normalized_atoms: Optional[torch.Tensor] = None
+        returns_mean_value: float = 0.0
+        returns_std_value: float = 1.0
+
         with torch.no_grad():
             # Вычисляем мин/макс по ВСЕМУ буферу роллаута
             v_min = self.rollout_buffer.returns.min().item()
@@ -274,9 +278,40 @@ class DistributionalPPO(RecurrentPPO):
             # Сразу обновляем атомы в политике
             self.policy.update_atoms(v_min, v_max)
 
+            # Находим эпизодные returns (по состояниям начала эпизода) и нормализуем их
+            returns_tensor = torch.as_tensor(
+                self.rollout_buffer.returns, device=self.device, dtype=torch.float32
+            ).flatten()
+            episode_start_mask = torch.as_tensor(
+                self.rollout_buffer.episode_starts, device=self.device, dtype=torch.bool
+            ).flatten()
+
+            episode_returns = returns_tensor[episode_start_mask]
+            if episode_returns.numel() == 0:
+                # В редких случаях батч может не содержать начала эпизодов — используем все returns
+                episode_returns = returns_tensor
+
+            returns_mean = episode_returns.mean()
+            returns_std = episode_returns.std(unbiased=False)
+
+            if not torch.isfinite(returns_std) or returns_std < 1e-6:
+                returns_std = torch.tensor(1.0, device=self.device)
+
+            returns_mean = returns_mean.to(torch.float32)
+            returns_std = returns_std.to(torch.float32)
+
+            normalized_atoms = ((self.policy.atoms.to(self.device) - returns_mean) / returns_std).to(
+                torch.float32
+            )
+
+            returns_mean_value = returns_mean.item()
+            returns_std_value = returns_std.item()
+
         # Логируем эти границы
         self.logger.record("train/v_min", v_min)
         self.logger.record("train/v_max", v_max)
+        self.logger.record("train/episode_return_mean", returns_mean_value)
+        self.logger.record("train/episode_return_std", returns_std_value)
 
         cvar_term = torch.tensor(0.0, device=self.device)
 
@@ -349,7 +384,13 @@ class DistributionalPPO(RecurrentPPO):
                 critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
 
                 # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
-                predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
+                episode_start_mask = rollout_data.episode_starts.view(-1) > 0.5
+                probs_for_cvar = pred_probs_fp32[episode_start_mask]
+                if probs_for_cvar.numel() == 0:
+                    probs_for_cvar = pred_probs_fp32
+
+                atoms_for_cvar = normalized_atoms if normalized_atoms is not None else self.policy.atoms
+                predicted_cvar = calculate_cvar(probs_for_cvar, atoms_for_cvar, self.cvar_alpha)
                 cvar_loss = -predicted_cvar.mean()
                 cvar_term = self.cvar_weight * cvar_loss
                 if self.cvar_cap is not None:
