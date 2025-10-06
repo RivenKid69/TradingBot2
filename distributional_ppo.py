@@ -1,6 +1,6 @@
 import math
 from collections import deque
-from typing import Any, Optional, Type, Union
+from typing import Any, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from sb3_contrib import RecurrentPPO
 from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.buffers import RecurrentRolloutBuffer
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, EvalCallback
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
@@ -761,7 +761,7 @@ class DistributionalPPO(RecurrentPPO):
     def learn(
         self,
         total_timesteps: int,
-        callback: Optional[BaseCallback] = None,
+        callback: Optional[Union[BaseCallback, Sequence[BaseCallback]]] = None,
         log_interval: int = 1,
         eval_env: Optional[GymEnv] = None,
         eval_freq: int = -1,
@@ -770,13 +770,40 @@ class DistributionalPPO(RecurrentPPO):
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
     ) -> "DistributionalPPO":
+        callbacks: list[BaseCallback] = []
+
+        if callback is not None:
+            if isinstance(callback, BaseCallback):
+                callbacks.append(callback)
+            else:
+                callbacks.extend(callback)
+
+        callback_for_super: Optional[BaseCallback]
+        if eval_env is not None:
+            eval_callback = EvalCallback(
+                eval_env,
+                eval_freq=eval_freq,
+                n_eval_episodes=n_eval_episodes,
+                warn=True,
+            )
+            callbacks.append(eval_callback)
+            callback_for_super = (
+                callbacks[0]
+                if len(callbacks) == 1
+                else CallbackList(callbacks)
+            )
+        else:
+            if not callbacks:
+                callback_for_super = None
+            elif len(callbacks) == 1:
+                callback_for_super = callbacks[0]
+            else:
+                callback_for_super = CallbackList(callbacks)
+
         return super().learn(
             total_timesteps=total_timesteps,
-            callback=callback,
+            callback=callback_for_super,
             log_interval=log_interval,
-            eval_env=eval_env,
-            eval_freq=eval_freq,
-            n_eval_episodes=n_eval_episodes,
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
