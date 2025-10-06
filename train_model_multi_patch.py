@@ -897,10 +897,17 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "batch_size"), "batch_size"
     )
 
+    trade_frequency_penalty_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "trade_frequency_penalty"),
+        "trade_frequency_penalty",
+    )
+    turnover_penalty_coef_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "turnover_penalty_coef"),
+        "turnover_penalty_coef",
+    )
+
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
-        "trade_frequency_penalty": trial.suggest_float("trade_frequency_penalty", 1e-5, 5e-4, log=True),
-        "turnover_penalty_coef": trial.suggest_float("turnover_penalty_coef", 0.0, 5e-4),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
         "n_epochs": trial.suggest_int("n_epochs", 1, 5),
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
@@ -923,6 +930,20 @@ def objective(trial: optuna.Trial,
         "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
         "v_range_ema_alpha": trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
     }
+
+    if trade_frequency_penalty_cfg is not None:
+        params["trade_frequency_penalty"] = trade_frequency_penalty_cfg
+    else:
+        params["trade_frequency_penalty"] = trial.suggest_float(
+            "trade_frequency_penalty", 1e-5, 5e-4, log=True
+        )
+
+    if turnover_penalty_coef_cfg is not None:
+        params["turnover_penalty_coef"] = turnover_penalty_coef_cfg
+    else:
+        params["turnover_penalty_coef"] = trial.suggest_float(
+            "turnover_penalty_coef", 0.0, 5e-4
+        )
 
     cql_alpha_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cql_alpha"), "cql_alpha")
     if cql_alpha_cfg is not None:
