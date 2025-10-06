@@ -321,8 +321,12 @@ class DistributionalPPO(RecurrentPPO):
                     b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
                     lower_bound = b.floor().long()
                     upper_bound = b.ceil().long()
+
                     lower_bound[(upper_bound > 0) & (lower_bound == upper_bound)] -= 1
                     upper_bound[(lower_bound < (self.policy.num_atoms - 1)) & (lower_bound == upper_bound)] += 1
+
+                    lower_bound = lower_bound.clamp(min=0, max=self.policy.num_atoms - 1)
+                    upper_bound = upper_bound.clamp(min=0, max=self.policy.num_atoms - 1)
                     target_distribution = torch.zeros_like(value_logits_fp32)
                     upper_prob = (b - lower_bound.float())
                     lower_prob = (upper_bound.float() - b)
