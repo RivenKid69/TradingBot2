@@ -57,6 +57,19 @@ from optuna.exceptions import TrialPruned
 from torch.optim.lr_scheduler import OneCycleLR
 import multiprocessing as mp
 from leakguard import LeakGuard, LeakConfig
+
+
+def _freeze_vecnormalize(vec_env: VecNormalize) -> VecNormalize:
+    """Ensure VecNormalize stops updating statistics during evaluation."""
+
+    vec_env.training = False
+    for attr in ("_update", "update"):
+        if hasattr(vec_env, attr):
+            try:
+                setattr(vec_env, attr, False)
+            except Exception:
+                pass
+    return vec_env
 class AdversarialCallback(BaseCallback):
     """
     Проводит стресс-тесты в специальных рыночных режимах и СОХРАНЯЕТ
@@ -1113,6 +1126,7 @@ def objective(trial: optuna.Trial,
     monitored_env_tr = VecMonitor(base_env_tr)
     env_tr = VecNormalize(
         monitored_env_tr,
+        training=True,
         norm_obs=False,
         norm_reward=False,
         clip_reward=None,
@@ -1173,8 +1187,7 @@ def objective(trial: optuna.Trial,
     ]
     monitored_env_va = VecMonitor(DummyVecEnv(val_env_fns))
     check_model_compat(str(train_stats_path))
-    env_va = VecNormalize.load(str(train_stats_path), monitored_env_va)
-    env_va.training = False
+    env_va = _freeze_vecnormalize(VecNormalize.load(str(train_stats_path), monitored_env_va))
     env_va.norm_reward = False
     env_va.clip_reward = None
 
@@ -1348,11 +1361,12 @@ def objective(trial: optuna.Trial,
                 return env
 
             check_model_compat(str(train_stats_path))
-            final_eval_norm = VecNormalize.load(
-                str(train_stats_path),
-                DummyVecEnv([make_final_eval_env]),
+            final_eval_norm = _freeze_vecnormalize(
+                VecNormalize.load(
+                    str(train_stats_path),
+                    DummyVecEnv([make_final_eval_env]),
+                )
             )
-            final_eval_norm.training = False
             final_eval_norm.norm_reward = False
             final_eval_norm.clip_reward = None
             final_eval_env = VecMonitor(final_eval_norm)
@@ -1890,8 +1904,9 @@ def main():
 
             monitored_eval_env = VecMonitor(DummyVecEnv(eval_env_fns))
             check_model_compat(str(best_stats_path))
-            eval_env = VecNormalize.load(str(best_stats_path), monitored_eval_env)
-            eval_env.training = False
+            eval_env = _freeze_vecnormalize(
+                VecNormalize.load(str(best_stats_path), monitored_eval_env)
+            )
             eval_env.norm_reward = False
             eval_env.clip_reward = None
 
