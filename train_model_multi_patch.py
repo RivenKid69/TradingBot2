@@ -909,6 +909,15 @@ def objective(trial: optuna.Trial,
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
     )
+    bc_warmup_steps_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "bc_warmup_steps"), "bc_warmup_steps"
+    )
+    bc_decay_steps_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "bc_decay_steps"), "bc_decay_steps"
+    )
+    bc_final_coef_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "bc_final_coef"), "bc_final_coef"
+    )
 
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
@@ -933,6 +942,9 @@ def objective(trial: optuna.Trial,
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
         "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
         "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
+        "bc_warmup_steps": bc_warmup_steps_cfg if bc_warmup_steps_cfg is not None else 0,
+        "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
+        "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
 
     if trade_frequency_penalty_cfg is not None:
@@ -1253,6 +1265,9 @@ def objective(trial: optuna.Trial,
         cvar_alpha=params["cvar_alpha"],
         vf_coef=params["vf_coef"],
         cvar_weight=params["cvar_weight"],
+        bc_warmup_steps=params["bc_warmup_steps"],
+        bc_decay_steps=params["bc_decay_steps"],
+        bc_final_coef=params["bc_final_coef"],
         
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],

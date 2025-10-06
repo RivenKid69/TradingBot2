@@ -102,6 +102,9 @@ class DistributionalPPO(RecurrentPPO):
         cvar_alpha: float = 0.05,
         cvar_weight: float = 0.5,
         v_range_ema_alpha: float = 0.01,
+        bc_warmup_steps: int = 0,
+        bc_decay_steps: int = 0,
+        bc_final_coef: Optional[float] = None,
         use_torch_compile: bool = False,
         **kwargs: Any,
     ):
@@ -116,6 +119,15 @@ class DistributionalPPO(RecurrentPPO):
         self.running_v_min = 0.0
         self.running_v_max = 0.0
         self.v_range_initialized = False
+
+        self.bc_warmup_steps = max(0, int(bc_warmup_steps))
+        self.bc_decay_steps = max(0, int(bc_decay_steps))
+        self.bc_initial_coef = float(cql_alpha)
+        if bc_final_coef is None:
+            self.bc_final_coef = 0.0
+        else:
+            self.bc_final_coef = float(bc_final_coef)
+        self._current_bc_coef = float(self.bc_initial_coef)
 
         self.lr_scheduler = None
         
@@ -133,6 +145,23 @@ class DistributionalPPO(RecurrentPPO):
     def parameters(self, recurse: bool = True):
         """Позволяет обращаться к параметрам агента как к nn.Module."""
         return self.policy.parameters(recurse)
+
+    def _update_bc_coef(self) -> float:
+        """Возвращает текущий коэффициент при BC-части policy loss."""
+        if self.bc_decay_steps <= 0:
+            self._current_bc_coef = self.bc_initial_coef
+            return self._current_bc_coef
+
+        timesteps_after_warmup = max(0, self.num_timesteps - self.bc_warmup_steps)
+        if timesteps_after_warmup <= 0:
+            self._current_bc_coef = self.bc_initial_coef
+            return self._current_bc_coef
+
+        decay_progress = min(1.0, timesteps_after_warmup / max(1, self.bc_decay_steps))
+        self._current_bc_coef = self.bc_initial_coef + (
+            self.bc_final_coef - self.bc_initial_coef
+        ) * decay_progress
+        return self._current_bc_coef
 
     def collect_rollouts(
         self,
@@ -271,6 +300,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/v_min", v_min)
         self.logger.record("train/v_max", v_max)
 
+        bc_coef = self._update_bc_coef()
+        self.logger.record("train/policy_bc_coef", bc_coef)
+
         for epoch in range(self.n_epochs):
             approx_kl_divs = []
             for rollout_data in self.rollout_buffer.get(self.batch_size):
@@ -299,8 +331,9 @@ class DistributionalPPO(RecurrentPPO):
                     weights = torch.exp(advantages / self.cql_beta)
                     weights = torch.clamp(weights, max=100.0).detach()
                 policy_loss_bc = (-log_prob * weights).mean()
+                policy_loss_bc_weighted = policy_loss_bc * bc_coef
 
-                policy_loss = policy_loss_ppo + self.cql_alpha * policy_loss_bc
+                policy_loss = policy_loss_ppo + policy_loss_bc_weighted
 
                 # --- РАСЧЕТ ПОТЕРИ ЭНТРОПИИ ---
                 if entropy is None:
@@ -375,11 +408,17 @@ class DistributionalPPO(RecurrentPPO):
         explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 
         self.logger.record("train/entropy_loss", entropy_loss.item())
+        weighted_bc_value = policy_loss_bc_weighted.item()
+        ppo_loss_value = policy_loss_ppo.item()
+        bc_ratio = abs(weighted_bc_value) / (abs(ppo_loss_value) + 1e-8)
+
         self.logger.record("train/policy_loss", policy_loss.item())
         self.logger.record("train/critic_loss", critic_loss.item())
         self.logger.record("train/cvar_loss", cvar_loss.item())
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo.item())
         self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
+        self.logger.record("train/policy_loss_bc_weighted", weighted_bc_value)
+        self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
         if len(approx_kl_divs) > 0:
             self.logger.record("train/approx_kl", np.mean(approx_kl_divs))
         self.logger.record("train/loss", loss.item())
