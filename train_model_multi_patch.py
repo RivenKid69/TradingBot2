@@ -924,6 +924,21 @@ def objective(trial: optuna.Trial,
     batch_size_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "batch_size"), "batch_size"
     )
+    n_epochs_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "n_epochs"), "n_epochs"
+    )
+    target_kl_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "target_kl"), "target_kl"
+    )
+    kl_lr_decay_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_lr_decay"), "kl_lr_decay"
+    )
+    kl_epoch_decay_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_epoch_decay"), "kl_epoch_decay"
+    )
+    kl_lr_scale_min_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_lr_scale_min"), "kl_lr_scale_min"
+    )
 
     trade_frequency_penalty_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "trade_frequency_penalty"),
@@ -950,7 +965,7 @@ def objective(trial: optuna.Trial,
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
-        "n_epochs": trial.suggest_int("n_epochs", 1, 5),
+        "n_epochs": n_epochs_cfg if n_epochs_cfg is not None else trial.suggest_int("n_epochs", 1, 5),
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
         "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
         "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
@@ -966,6 +981,10 @@ def objective(trial: optuna.Trial,
         "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
         "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.12, 0.18),
         "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
+        "target_kl": target_kl_cfg if target_kl_cfg is not None else trial.suggest_float("target_kl", 0.01, 0.05),
+        "kl_lr_decay": kl_lr_decay_cfg if kl_lr_decay_cfg is not None else 0.5,
+        "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
+        "kl_lr_scale_min": kl_lr_scale_min_cfg if kl_lr_scale_min_cfg is not None else 0.1,
         "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
         "atr_multiplier": trial.suggest_float("atr_multiplier", 1.5, 3.0),
         "trailing_atr_mult": trial.suggest_float("trailing_atr_mult", 1.0, 2.0),
@@ -1318,7 +1337,9 @@ def objective(trial: optuna.Trial,
         ent_coef_plateau_min_updates=params["ent_coef_plateau_min_updates"],
 
         cvar_cap=params["cvar_cap"],
-
+        kl_lr_decay=params["kl_lr_decay"],
+        kl_epoch_decay=params["kl_epoch_decay"],
+        kl_lr_scale_min=params["kl_lr_scale_min"],
 
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
@@ -1329,6 +1350,7 @@ def objective(trial: optuna.Trial,
         gae_lambda=params["gae_lambda"],
         clip_range=params["clip_range"],
         max_grad_norm=params["max_grad_norm"],
+        target_kl=params["target_kl"],
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
         verbose=1
