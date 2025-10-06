@@ -61,6 +61,8 @@ model:
     max_grad_norm: 0.5
     n_steps: 1024
     batch_size: 256
+    trade_frequency_penalty: 0.0
+    turnover_penalty_coef: 0.0
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.0

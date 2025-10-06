@@ -407,6 +407,7 @@ class TradingEnv(gym.Env):
 
         # reward / cost toggles (keep backward-compatible defaults)
         self.turnover_penalty_coef = float(kwargs.get("turnover_penalty_coef", 0.0) or 0.0)
+        self.trade_frequency_penalty = float(kwargs.get("trade_frequency_penalty", 0.0) or 0.0)
         self._turnover_total = 0.0
 
         # optional strict data validation
@@ -1060,6 +1061,23 @@ class TradingEnv(gym.Env):
         obs, reward, terminated, truncated, info = result
         info = dict(info or {})
 
+        trades_payload = info.get("trades") or []
+        agent_trade_events = 0
+        if isinstance(trades_payload, Sequence):
+            for trade in trades_payload:
+                try:
+                    _price, volume, *_rest = trade
+                except (TypeError, ValueError):
+                    volume = None
+                if volume is None:
+                    continue
+                try:
+                    vol_float = float(volume)
+                except (TypeError, ValueError):
+                    continue
+                if math.isfinite(vol_float) and abs(vol_float) > 0.0:
+                    agent_trade_events += 1
+
         # --- recompute ΔPnL / turnover adjusted reward -----------------
         mark_price = self._safe_float(self.last_mtm_price)
         if mark_price is None:
@@ -1116,7 +1134,11 @@ class TradingEnv(gym.Env):
         if not math.isfinite(turnover_penalty):
             turnover_penalty = 0.0
 
-        reward = float(delta_pnl - turnover_penalty)
+        trade_frequency_penalty = self.trade_frequency_penalty * agent_trade_events
+        if not math.isfinite(trade_frequency_penalty):
+            trade_frequency_penalty = 0.0
+
+        reward = float(delta_pnl - turnover_penalty - trade_frequency_penalty)
         if not math.isfinite(reward):
             reward = 0.0
 
@@ -1125,6 +1147,8 @@ class TradingEnv(gym.Env):
         info["turnover"] = float(step_turnover)
         info["cum_turnover"] = float(self._turnover_total)
         info["turnover_penalty"] = float(turnover_penalty)
+        info["trade_frequency_penalty"] = float(trade_frequency_penalty)
+        info["trades_count"] = int(agent_trade_events)
 
         if terminated or truncated:
             info["no_trade_stats"] = self.get_no_trade_stats()
