@@ -384,6 +384,12 @@ class DistributionalPPO(RecurrentPPO):
                 critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
 
                 # --- РАСЧЕТ ПОТЕРИ CVaR (ПОЛНАЯ ТОЧНОСТЬ ДЛЯ РАСПРЕДЕЛЕНИЙ) ---
+
+                predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
+                cvar_raw = predicted_cvar.mean()
+                cvar_loss = -cvar_raw
+                cvar_term = self.cvar_weight * cvar_loss
+
                 episode_start_mask = rollout_data.episode_starts.view(-1) > 0.5
                 probs_for_cvar = pred_probs_fp32[episode_start_mask]
                 if probs_for_cvar.numel() == 0:
@@ -395,6 +401,7 @@ class DistributionalPPO(RecurrentPPO):
                 cvar_term = self.cvar_weight * cvar_loss
                 if self.cvar_cap is not None:
                     cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
+
 
                 # --- ИТОГОВАЯ ФУНКЦИЯ ПОТЕРЬ ---
                 loss = (
@@ -430,9 +437,14 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/entropy_loss", entropy_loss.item())
         self.logger.record("train/policy_loss", policy_loss.item())
         self.logger.record("train/critic_loss", critic_loss.item())
+
+        self.logger.record("train/cvar_raw", cvar_raw.item())
+        self.logger.record("train/cvar_loss", cvar_loss.item())
+
         self.logger.record("train/cvar_loss", cvar_loss.item())
         if self.cvar_cap is not None:
             self.logger.record("train/cvar_cap", self.cvar_cap)
+
         self.logger.record("train/cvar_term", cvar_term.item())
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo.item())
         self.logger.record("train/policy_loss_bc", policy_loss_bc.item())
