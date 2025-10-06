@@ -52,6 +52,15 @@ data:
 model:
   algo: "ppo"
   params:
+    learning_rate: 3.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.15
+    ent_coef: 0.001
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    n_steps: 1024
+    batch_size: 256
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.0
