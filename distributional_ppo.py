@@ -395,6 +395,14 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/v_min", self.running_v_min)
         self.logger.record("train/v_max", self.running_v_max)
 
+        if not (0.0 < float(self.gamma) <= 1.0):
+            raise RuntimeError(f"Invalid discount factor 'gamma': {self.gamma}")
+        if not (0.0 <= float(self.gae_lambda) <= 1.0):
+            raise RuntimeError(f"Invalid GAE lambda 'gae_lambda': {self.gae_lambda}")
+
+        self.logger.record("train/gamma", float(self.gamma))
+        self.logger.record("train/gae_lambda", float(self.gae_lambda))
+
         bc_coef = self._update_bc_coef()
         self.logger.record("train/policy_bc_coef", bc_coef)
 
@@ -413,6 +421,10 @@ class DistributionalPPO(RecurrentPPO):
         cvar_term_value = 0.0
         total_loss_value = 0.0
 
+        adv_mean_accum = 0.0
+        adv_std_accum = 0.0
+        adv_batch_count = 0
+
         value_logits_final: Optional[torch.Tensor] = None
 
         for _ in range(self.n_epochs):
@@ -425,8 +437,17 @@ class DistributionalPPO(RecurrentPPO):
                 )
 
                 advantages = rollout_data.advantages
-                if self.normalize_advantage:
-                    advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+                with torch.no_grad():
+                    adv_mean_tensor = advantages.mean()
+                    adv_std_tensor = advantages.std(unbiased=False)
+                    adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
+                adv_mean = float(adv_mean_tensor.item())
+                adv_std = float(adv_std_tensor.item())
+                adv_mean_accum += adv_mean
+                adv_std_accum += adv_std
+                adv_batch_count += 1
+
+                advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
 
                 ratio = torch.exp(log_prob - rollout_data.old_log_prob)
                 policy_loss_1 = advantages * ratio
@@ -575,6 +596,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
         self.logger.record("train/clip_range", float(clip_range))
+        if adv_batch_count > 0:
+            self.logger.record("train/adv_mean", adv_mean_accum / adv_batch_count)
+            self.logger.record("train/adv_std", adv_std_accum / adv_batch_count)
 
     def learn(
         self,
