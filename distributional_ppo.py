@@ -136,8 +136,9 @@ class DistributionalPPO(RecurrentPPO):
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
+        kl_lr_scale_min_override_value: Optional[float] = None
         if abs(float(kl_lr_scale_min) - 0.01) > 1e-12:
-            raise ValueError("DistributionalPPO fixes 'kl_lr_scale_min' at 0.01")
+            kl_lr_scale_min_override_value = float(kl_lr_scale_min)
 
         kwargs_local = dict(kwargs)
         clip_range_value = float(ppo_clip_range)
@@ -151,6 +152,11 @@ class DistributionalPPO(RecurrentPPO):
         self._fixed_clip_range = clip_range_value
         self.clip_range = lambda _: self._fixed_clip_range
         self.target_kl = 0.5
+
+        if kl_lr_scale_min_override_value is not None:
+            self.logger.record(
+                "warn/kl_lr_scale_min_overridden", float(kl_lr_scale_min_override_value)
+            )
 
         self.cql_alpha = float(cql_alpha)
         self.cql_beta = float(cql_beta)
@@ -612,6 +618,7 @@ class DistributionalPPO(RecurrentPPO):
         mean_value_batches: list[torch.Tensor] = []
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
+        kl_exceed_fraction_latest = 0.0
 
         policy_loss_value = 0.0
         policy_loss_ppo_value = 0.0
@@ -896,6 +903,7 @@ class DistributionalPPO(RecurrentPPO):
                     and minibatches_processed > 0
                 ):
                     exceed_fraction = float(approx_kl_exceed_count) / float(minibatches_processed)
+                    kl_exceed_fraction_latest = exceed_fraction
                     if exceed_fraction >= self.kl_exceed_stop_fraction:
                         kl_early_stop_triggered = True
                         self._handle_kl_divergence(approx_kl_latest)
@@ -1002,13 +1010,16 @@ class DistributionalPPO(RecurrentPPO):
         if self.target_kl is not None and self.target_kl > 0.0:
             self.logger.record("train/kl_exceed_frac", approx_kl_exceed_frac)
             self.logger.record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
+            if kl_early_stop_triggered:
+                self.logger.record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
         if last_optimizer_lr is not None:
             self.logger.record("train/optimizer_lr", last_optimizer_lr)
         if last_scheduler_lr is not None:
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
-        self.logger.record("train/clip_range", float(clip_range))
+        clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
+        self.logger.record("train/clip_range", clip_range_for_log)
         if clip_fraction_denom > 0:
             clip_fraction = float(clip_fraction_numer) / float(clip_fraction_denom)
             self.logger.record("train/clip_fraction", clip_fraction)
