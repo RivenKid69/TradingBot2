@@ -176,6 +176,21 @@ class DistributionalPPO(RecurrentPPO):
         kwargs_local["clip_range"] = clip_range_value
         kwargs_local["target_kl"] = 0.5
 
+        self.cql_alpha = float(cql_alpha)
+        self.cql_beta = float(cql_beta)
+        self.cvar_alpha = float(cvar_alpha)
+        self.cvar_weight = float(cvar_weight)
+        if cvar_cap is not None and cvar_cap <= 0.0:
+            raise ValueError("'cvar_cap' must be positive when provided")
+        self.cvar_cap = float(cvar_cap) if cvar_cap is not None else None
+
+        self.v_range_ema_alpha = float(v_range_ema_alpha)
+        if not (0.0 < self.v_range_ema_alpha <= 1.0):
+            raise ValueError("'v_range_ema_alpha' must be in (0, 1]")
+
+        self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
+        self._value_clip_limit_scaled: Optional[float] = None
+
         super().__init__(policy=policy, env=env, **kwargs_local)
 
         self._configure_gradient_accumulation(
@@ -190,22 +205,6 @@ class DistributionalPPO(RecurrentPPO):
         if kl_lr_scale_min_requested is not None:
             self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
             self.logger.record("warn/kl_lr_scale_min_effective", 0.01)
-
-        self.cql_alpha = float(cql_alpha)
-        self.cql_beta = float(cql_beta)
-        self.cvar_alpha = float(cvar_alpha)
-        self.cvar_weight = float(cvar_weight)
-        if cvar_cap is not None and cvar_cap <= 0.0:
-            raise ValueError("'cvar_cap' must be positive when provided")
-        self.cvar_cap = float(cvar_cap) if cvar_cap is not None else None
-
-        self.v_range_ema_alpha = float(v_range_ema_alpha)
-        if not (0.0 < self.v_range_ema_alpha <= 1.0):
-            raise ValueError("'v_range_ema_alpha' must be in (0, 1]")
-
-        self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
-
-        self._value_clip_limit_scaled: Optional[float]
 
     def _configure_gradient_accumulation(
         self,
