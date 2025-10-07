@@ -197,7 +197,10 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'v_range_ema_alpha' must be in (0, 1]")
 
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
+
         self._value_clip_limit_scaled: Optional[float]
+
+
         self.running_v_min = 0.0
         self.running_v_max = 0.0
         self.v_range_initialized = False
@@ -206,7 +209,10 @@ class DistributionalPPO(RecurrentPPO):
         self._value_clip_limit_unscaled: Optional[float]
         if clip_limit_unscaled is None:
             self._value_clip_limit_unscaled = None
+
             self._value_clip_limit_scaled = None
+
+
         else:
             clip_limit_unscaled_f = float(clip_limit_unscaled)
             if clip_limit_unscaled_f <= 0.0 or not math.isfinite(clip_limit_unscaled_f):
@@ -214,7 +220,10 @@ class DistributionalPPO(RecurrentPPO):
                     f"Invalid 'value_clip_limit' for distributional value head: {clip_limit_unscaled}"
                 )
             self._value_clip_limit_unscaled = clip_limit_unscaled_f
+
             self._value_clip_limit_scaled = clip_limit_unscaled_f / self.value_target_scale
+
+
 
 
         self.bc_warmup_steps = max(0, int(bc_warmup_steps))
@@ -510,11 +519,20 @@ class DistributionalPPO(RecurrentPPO):
 
             probs = torch.softmax(value_logits, dim=1)
             scalar_values = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
+
             if self._value_clip_limit_scaled is not None:
                 scalar_values = torch.clamp(
                     scalar_values,
                     min=-self._value_clip_limit_scaled,
                     max=self._value_clip_limit_scaled,
+
+            scalar_values = scalar_values / self.value_target_scale
+            if self._value_clip_limit_unscaled is not None:
+                scalar_values = torch.clamp(
+                    scalar_values,
+                    min=-self._value_clip_limit_unscaled,
+                    max=self._value_clip_limit_unscaled,
+
                 )
 
             actions_np = actions.cpu().numpy()
@@ -573,11 +591,20 @@ class DistributionalPPO(RecurrentPPO):
 
         last_probs = torch.softmax(last_value_logits, dim=1)
         last_scalar_values = (last_probs * self.policy.atoms).sum(dim=1)
+
         if self._value_clip_limit_scaled is not None:
             last_scalar_values = torch.clamp(
                 last_scalar_values,
                 min=-self._value_clip_limit_scaled,
                 max=self._value_clip_limit_scaled,
+
+        last_scalar_values = last_scalar_values / self.value_target_scale
+        if self._value_clip_limit_unscaled is not None:
+            last_scalar_values = torch.clamp(
+                last_scalar_values,
+                min=-self._value_clip_limit_unscaled,
+                max=self._value_clip_limit_unscaled,
+
             )
 
         rollout_buffer.compute_returns_and_advantage(last_values=last_scalar_values, dones=dones)
@@ -603,9 +630,14 @@ class DistributionalPPO(RecurrentPPO):
         scaled_returns_tensor = torch.as_tensor(
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
         ).flatten()
+        scaled_returns_tensor = returns_tensor * self.value_target_scale
 
         if self._value_clip_limit_unscaled is not None:
+
             min_half_range = self._value_clip_limit_unscaled / self.value_target_scale
+
+            min_half_range = self._value_clip_limit_unscaled * self.value_target_scale
+
         else:
             with torch.no_grad():
                 min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
@@ -636,7 +668,11 @@ class DistributionalPPO(RecurrentPPO):
             half_range = 0.5 * (v_max - v_min)
 
         half_range = max(half_range, min_half_range)
+
         padding = max(1e-6 / self.value_target_scale, half_range * 0.05)
+
+        padding = max(1e-6 * self.value_target_scale, half_range * 0.05)
+
         half_range += padding
         v_min = center - half_range
         v_max = center + half_range
@@ -661,8 +697,13 @@ class DistributionalPPO(RecurrentPPO):
 
         self.policy.update_atoms(self.running_v_min, self.running_v_max)
 
+
         running_v_min_unscaled = self.running_v_min * self.value_target_scale
         running_v_max_unscaled = self.running_v_max * self.value_target_scale
+
+        running_v_min_unscaled = self.running_v_min / self.value_target_scale
+        running_v_max_unscaled = self.running_v_max / self.value_target_scale
+
         self.logger.record("train/v_min", running_v_min_unscaled)
         self.logger.record("train/v_max", running_v_max_unscaled)
         self.logger.record("train/v_min_scaled", self.running_v_min)
@@ -848,9 +889,16 @@ class DistributionalPPO(RecurrentPPO):
 
                 value_logits_fp32 = value_logits.to(dtype=torch.float32)
                 with torch.no_grad():
+
                     target_returns_scaled = rollout_data.returns.to(dtype=torch.float32)
                     delta_z = (self.policy.v_max - self.policy.v_min) / float(self.policy.num_atoms - 1)
                     clamped_targets = target_returns_scaled.clamp(
+
+                    target_returns = rollout_data.returns.to(dtype=torch.float32)
+                    scaled_target_returns = target_returns * self.value_target_scale
+                    delta_z = (self.policy.v_max - self.policy.v_min) / float(self.policy.num_atoms - 1)
+                    clamped_targets = scaled_target_returns.clamp(
+
                         self.policy.v_min, self.policy.v_max
                     )
                     b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
@@ -883,8 +931,13 @@ class DistributionalPPO(RecurrentPPO):
                 critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
 
                 with torch.no_grad():
+
                     mean_values_scaled = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
                     mean_values_unscaled = mean_values_scaled * self.value_target_scale
+
+                    mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                    mean_values_unscaled = mean_values_batch / self.value_target_scale
+
                     if self._value_clip_limit_unscaled is not None:
                         mean_values_unscaled = torch.clamp(
                             mean_values_unscaled,
@@ -896,7 +949,11 @@ class DistributionalPPO(RecurrentPPO):
                 predicted_cvar = calculate_cvar(
                     pred_probs_fp32, self.policy.atoms, self.cvar_alpha
                 )
+
                 cvar_raw = (predicted_cvar * self.value_target_scale).mean()
+
+                cvar_raw = (predicted_cvar / self.value_target_scale).mean()
+
                 cvar_loss = -cvar_raw
                 cvar_term = self.cvar_weight * cvar_loss
                 if self.cvar_cap is not None:
@@ -1033,7 +1090,11 @@ class DistributionalPPO(RecurrentPPO):
                 pred_probs = torch.softmax(value_logits_final, dim=1)
                 y_pred_tensor = (
                     (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+
                     * self.value_target_scale
+
+                    / self.value_target_scale
+
                 )
                 if self._value_clip_limit_unscaled is not None:
                     y_pred_tensor = torch.clamp(
@@ -1041,7 +1102,11 @@ class DistributionalPPO(RecurrentPPO):
                         min=-self._value_clip_limit_unscaled,
                         max=self._value_clip_limit_unscaled,
                     )
+
             y_true_tensor = (rollout_returns * self.value_target_scale).reshape(-1, 1)
+
+            y_true_tensor = rollout_returns.reshape(-1, 1)
+
         else:
             y_true_tensor = torch.cat([t.reshape(-1, 1) for t in target_return_batches], dim=0)
             y_pred_tensor = torch.cat([t.reshape(-1, 1) for t in mean_value_batches], dim=0)
