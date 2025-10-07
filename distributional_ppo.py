@@ -471,24 +471,47 @@ class DistributionalPPO(RecurrentPPO):
         current_update = self._update_calls
         self._update_ent_coef(current_update)
 
-        policy_clip_limit = getattr(self.policy, "value_clip_limit", None)
-        if policy_clip_limit is None:
-            with torch.no_grad():
-                clip_limit = float(torch.max(torch.abs(self.policy.atoms)).item())
-        else:
-            clip_limit = float(policy_clip_limit)
-        if not math.isfinite(clip_limit) or clip_limit <= 0.0:
-            raise RuntimeError(f"Invalid value clip limit computed for critic loss: {clip_limit}")
-
         returns_tensor = torch.as_tensor(
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
         ).flatten()
+
+        policy_clip_limit = getattr(self.policy, "value_clip_limit", None)
+        if policy_clip_limit is not None:
+            min_half_range = float(policy_clip_limit)
+            if not math.isfinite(min_half_range) or min_half_range < 0.0:
+                raise RuntimeError(
+                    f"Invalid 'value_clip_limit' for distributional value head: {policy_clip_limit}"
+                )
+        else:
+            with torch.no_grad():
+                min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
+        if not math.isfinite(min_half_range):
+            min_half_range = 0.0
+
         v_min = float(torch.min(returns_tensor).item())
         v_max = float(torch.max(returns_tensor).item())
-        v_min = max(v_min, -clip_limit)
-        v_max = min(v_max, clip_limit)
+        if not math.isfinite(v_min) or not math.isfinite(v_max):
+            raise RuntimeError(
+                f"Encountered non-finite return bounds when updating value support: {v_min}, {v_max}"
+            )
+
         if v_max <= v_min:
-            v_min, v_max = -clip_limit, clip_limit
+            center = v_min
+            half_range = 0.0
+        else:
+            center = 0.5 * (v_max + v_min)
+            half_range = 0.5 * (v_max - v_min)
+
+        half_range = max(half_range, min_half_range)
+        padding = max(1e-6, half_range * 0.05)
+        half_range += padding
+        v_min = center - half_range
+        v_max = center + half_range
+
+        if v_max <= v_min:
+            raise RuntimeError(
+                f"Failed to compute a valid value support range: v_min={v_min}, v_max={v_max}"
+            )
 
         if not self.v_range_initialized:
             self.running_v_min = v_min
@@ -841,6 +864,7 @@ class DistributionalPPO(RecurrentPPO):
 
         if len(approx_kl_divs) > 0:
             self.logger.record("train/approx_kl", float(np.mean(approx_kl_divs)))
+            self.logger.record("train/approx_kl_median", float(np.median(approx_kl_divs)))
         if last_optimizer_lr is not None:
             self.logger.record("train/optimizer_lr", last_optimizer_lr)
         if last_scheduler_lr is not None:
