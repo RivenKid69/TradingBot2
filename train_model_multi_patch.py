@@ -32,6 +32,7 @@ import argparse
 import yaml
 import sys
 import hashlib
+import random
 from functools import lru_cache
 from collections.abc import Mapping, Sequence
 from typing import Any, Callable
@@ -924,11 +925,17 @@ def objective(trial: optuna.Trial,
     batch_size_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "batch_size"), "batch_size"
     )
+    microbatch_size_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "microbatch_size"), "microbatch_size"
+    )
     n_epochs_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "n_epochs"), "n_epochs"
     )
     target_kl_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "target_kl"), "target_kl"
+    )
+    seed_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "seed"), "seed"
     )
     kl_lr_decay_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "kl_lr_decay"), "kl_lr_decay"
@@ -998,6 +1005,11 @@ def objective(trial: optuna.Trial,
         "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
+
+    params["microbatch_size"] = (
+        microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
+    )
+    params["seed"] = seed_cfg if seed_cfg is not None else 20240518
 
     if params["ent_coef_final"] is None:
         params["ent_coef_final"] = params["ent_coef"]
@@ -1108,6 +1120,27 @@ def objective(trial: optuna.Trial,
         raise ValueError(
             "Invalid configuration: 'batch_size' must evenly divide n_steps * num_envs in cfg.model.params"
         )
+    microbatch_size = params["microbatch_size"]
+    if microbatch_size <= 0:
+        raise ValueError(
+            "Invalid configuration: 'microbatch_size' must be a positive integer in cfg.model.params"
+        )
+    if batch_size % microbatch_size != 0:
+        raise ValueError(
+            "Invalid configuration: 'microbatch_size' must evenly divide batch_size in cfg.model.params"
+        )
+    base_seed = int(params["seed"])
+    os.environ["PYTHONHASHSEED"] = str(base_seed)
+    random.seed(base_seed)
+    np.random.seed(base_seed)
+    torch.manual_seed(base_seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(base_seed)
+    try:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    except AttributeError:
+        pass
     leak_guard_train = LeakGuard(LeakConfig(**leak_guard_kwargs))
     leak_guard_val = LeakGuard(LeakConfig(**leak_guard_kwargs))
 
@@ -1120,9 +1153,8 @@ def objective(trial: optuna.Trial,
         symbol, df = train_symbol_items[symbol_idx]
 
         def _init():
-            # Создаем уникальный seed для каждого trial-а и каждого воркера
-            # Это гарантирует воспроизводимость и декорреляцию
-            unique_seed = trial.number * 100 + rank
+            # Создаем детерминированный seed для каждого воркера на основе базового seed
+            unique_seed = base_seed + rank
             env_params = {
                 # 1. Параметры, которые подбирает Optuna
                 "risk_aversion_drawdown": params["risk_aversion_drawdown"],
@@ -1231,6 +1263,7 @@ def objective(trial: optuna.Trial,
             df,
             **env_val_params,
             leak_guard=leak_guard_val,
+            seed=base_seed,
         )
         setattr(env, "selected_symbol", symbol)
         env = _wrap_action_space_if_needed(
@@ -1371,12 +1404,14 @@ def objective(trial: optuna.Trial,
         n_steps=params["n_steps"],
         n_epochs=params["n_epochs"],
         batch_size=params["batch_size"],
+        microbatch_size=params["microbatch_size"],
         ent_coef=params["ent_coef"],
         gamma=params["gamma"],
         gae_lambda=params["gae_lambda"],
         clip_range=params["clip_range"],
         max_grad_norm=params["max_grad_norm"],
         target_kl=params["target_kl"],
+        seed=params["seed"],
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
         verbose=1

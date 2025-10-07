@@ -1,7 +1,7 @@
 import itertools
 import math
 from collections import deque
-from typing import Any, Optional, Sequence, Type, Union
+from typing import Any, Iterable, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -155,6 +155,8 @@ class DistributionalPPO(RecurrentPPO):
         kl_penalty_decrease: float = 0.75,
         ppo_clip_range: float = 0.05,
         use_torch_compile: bool = False,
+        microbatch_size: Optional[int] = None,
+        gradient_accumulation_steps: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[tuple[torch.Tensor, torch.Tensor]] = None
@@ -175,6 +177,11 @@ class DistributionalPPO(RecurrentPPO):
         kwargs_local["target_kl"] = 0.5
 
         super().__init__(policy=policy, env=env, **kwargs_local)
+
+        self._configure_gradient_accumulation(
+            microbatch_size=microbatch_size,
+            grad_steps=gradient_accumulation_steps,
+        )
 
         self._fixed_clip_range = clip_range_value
         self.clip_range = lambda _: self._fixed_clip_range
@@ -200,6 +207,44 @@ class DistributionalPPO(RecurrentPPO):
 
         self._value_clip_limit_scaled: Optional[float]
 
+    def _configure_gradient_accumulation(
+        self,
+        microbatch_size: Optional[int],
+        grad_steps: Optional[int],
+    ) -> None:
+        batch_size = int(self.batch_size)
+        if batch_size <= 0:
+            raise ValueError("'batch_size' must be positive to configure gradient accumulation")
+
+        grad_steps_local = None if grad_steps is None else int(grad_steps)
+        micro_size_local = None if microbatch_size is None else int(microbatch_size)
+
+        if grad_steps_local is not None and grad_steps_local <= 0:
+            raise ValueError("'gradient_accumulation_steps' must be a positive integer")
+        if micro_size_local is not None and micro_size_local <= 0:
+            raise ValueError("'microbatch_size' must be a positive integer")
+
+        if grad_steps_local is None and micro_size_local is None:
+            micro_size_local = batch_size
+            grad_steps_local = 1
+        elif grad_steps_local is None:
+            if batch_size % micro_size_local != 0:
+                raise ValueError("'microbatch_size' must evenly divide batch_size")
+            grad_steps_local = batch_size // micro_size_local
+        elif micro_size_local is None:
+            if batch_size % grad_steps_local != 0:
+                raise ValueError("'gradient_accumulation_steps' must evenly divide batch_size")
+            micro_size_local = batch_size // grad_steps_local
+        else:
+            if micro_size_local * grad_steps_local != batch_size:
+                if batch_size % micro_size_local != 0 or batch_size // micro_size_local != grad_steps_local:
+                    raise ValueError(
+                        "microbatch_size * gradient_accumulation_steps must equal batch_size"
+                    )
+
+        self._microbatch_size = int(micro_size_local)
+        self._grad_accumulation_steps = int(grad_steps_local)
+
 
         self.running_v_min = 0.0
         self.running_v_max = 0.0
@@ -221,7 +266,7 @@ class DistributionalPPO(RecurrentPPO):
                 )
             self._value_clip_limit_unscaled = clip_limit_unscaled_f
 
-            self._value_clip_limit_scaled = clip_limit_unscaled_f / self.value_target_scale
+            self._value_clip_limit_scaled = clip_limit_unscaled_f * self.value_target_scale
 
 
 
@@ -773,220 +818,257 @@ class DistributionalPPO(RecurrentPPO):
         epochs_completed = 0
         approx_kl_latest = 0.0
 
-        rollout_n_envs = int(getattr(self.rollout_buffer, "n_envs", 1)) or 1
 
-        def _prepare_minibatch_iterator(desired_batch_size: Optional[int]):
-            batch_size_local = desired_batch_size
-            if batch_size_local is None or batch_size_local <= 0:
-                batch_size_local = rollout_n_envs
-            batch_size_local = int(batch_size_local)
-            iterator = self.rollout_buffer.get(batch_size_local)
-            try:
-                first_minibatch = next(iterator)
-            except StopIteration:
-                return None, batch_size_local
-            return itertools.chain([first_minibatch], iterator), batch_size_local
 
-        def _fallback_batch_size() -> int:
-            buffer_size_local = int(getattr(self.rollout_buffer, "buffer_size", 0))
-            if buffer_size_local <= 0:
-                return rollout_n_envs
-            fallback_local = buffer_size_local
-            divisor = max(1, rollout_n_envs)
-            if fallback_local % divisor != 0:
-                fallback_local = (fallback_local // divisor) * divisor
-                if fallback_local <= 0:
-                    fallback_local = divisor
-            return fallback_local
+
+        effective_batch_size = int(self.batch_size)
+        if effective_batch_size <= 0:
+            raise RuntimeError("PPO batch_size must be positive for training")
+        microbatch_size_effective = max(
+            1, int(getattr(self, "_microbatch_size", effective_batch_size))
+        )
+        grad_accum_steps = max(
+            1, int(getattr(self, "_grad_accumulation_steps", 1))
+        )
+        if effective_batch_size % microbatch_size_effective != 0:
+            raise RuntimeError(
+                "Configured batch_size must be divisible by microbatch_size; adjust n_steps, n_envs, or microbatch_size"
+            )
+
+        def _prepare_minibatch_iterator() -> tuple[Optional[Iterable[tuple[Any, ...]]], int]:
+            microbatches = list(self.rollout_buffer.get(microbatch_size_effective))
+            if not microbatches:
+                return None, effective_batch_size
+            total_micro = len(microbatches)
+            if total_micro % grad_accum_steps != 0:
+                raise RuntimeError(
+                    "Rollout buffer produced incomplete micro-batch bucket; ensure n_steps * n_envs is divisible by batch_size and microbatch_size"
+                )
+
+            def _grouped_microbatches() -> Iterable[tuple[Any, ...]]:
+                for start_idx in range(0, total_micro, grad_accum_steps):
+                    yield tuple(microbatches[start_idx:start_idx + grad_accum_steps])
+
+            return _grouped_microbatches(), effective_batch_size
 
         for _ in range(effective_n_epochs):
-            minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator(self.batch_size)
-            if minibatch_iterator is None:
-                fallback_batch_size = _fallback_batch_size()
-                minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator(fallback_batch_size)
-                if minibatch_iterator is not None and fallback_batch_size != self.batch_size:
-                    self.logger.record("warn/train_batch_size_adjusted", float(fallback_batch_size))
-
+            minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator()
             if minibatch_iterator is None:
                 self.logger.record("warn/empty_rollout_buffer", 1.0)
                 break
 
             epochs_completed += 1
             self.logger.record("train/actual_batch_size", float(actual_batch_size))
+            self.logger.record("train/microbatch_size", float(microbatch_size_effective))
+            self.logger.record("train/grad_accum_steps", float(grad_accum_steps))
 
-            for rollout_data in minibatch_iterator:
+            for microbatch_group in minibatch_iterator:
                 minibatches_processed += 1
-                _values, log_prob, entropy = self.policy.evaluate_actions(
-                    rollout_data.observations,
-                    rollout_data.actions,
-                    rollout_data.lstm_states,
-                    rollout_data.episode_starts,
-                )
-
-                advantages = rollout_data.advantages
-                with torch.no_grad():
-                    adv_mean_tensor = advantages.mean()
-                    adv_std_tensor = advantages.std(unbiased=False)
-                    adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
-                adv_mean = float(adv_mean_tensor.item())
-                adv_std = float(adv_std_tensor.item())
-                adv_mean_accum += adv_mean
-                adv_std_accum += adv_std
-                adv_batch_count += 1
-
-                advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
-                with torch.no_grad():
-                    adv_z_values.append(advantages.detach().cpu())
-
-                ratio = torch.exp(log_prob - rollout_data.old_log_prob)
-                policy_loss_1 = advantages * ratio
-                policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
-                policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
-
-                with torch.no_grad():
-                    ratio_detached = ratio.detach()
-                    ratio_sum += float(ratio_detached.sum().item())
-                    ratio_sq_sum += float((ratio_detached.square()).sum().item())
-                    ratio_count += int(ratio_detached.numel())
-                    clip_mask = ratio_detached.sub(1.0).abs() > clip_range
-                    clip_fraction_numer += float(clip_mask.sum().item())
-                    clip_fraction_denom += int(clip_mask.numel())
-
-                    log_prob_detached = log_prob.detach()
-                    log_prob_sum += float(log_prob_detached.sum().item())
-                    log_prob_count += int(log_prob_detached.numel())
-
-                if bc_coef <= 0.0:
-                    policy_loss_bc = advantages.new_zeros(())
-                    policy_loss_bc_weighted = policy_loss_bc
-                else:
-                    with torch.no_grad():
-                        weights = torch.exp(advantages / self.cql_beta)
-                        weights = torch.clamp(weights, max=100.0)
-                    policy_loss_bc = (-log_prob * weights).mean()
-                    policy_loss_bc_weighted = policy_loss_bc * bc_coef
-
-                policy_loss = policy_loss_ppo + policy_loss_bc_weighted
-                if self._kl_penalty_beta > 0.0:
-                    kl_penalty_sample = (rollout_data.old_log_prob - log_prob).mean()
-                    kl_penalty_component = self._kl_penalty_beta * kl_penalty_sample
-                    policy_loss = policy_loss + kl_penalty_component
-                    kl_penalty_component_total += float(kl_penalty_component.item())
-                    kl_penalty_component_count += 1
-
-                if entropy is None:
-                    entropy_loss = -torch.mean(-log_prob)
-                else:
-                    entropy_loss = -torch.mean(entropy)
-                mean_entropy = -entropy_loss.item()
-                entropy_loss_total += mean_entropy
-                entropy_loss_count += 1
-
-                value_logits = self.policy.last_value_logits
-                if value_logits is None:
-                    raise RuntimeError(
-                        "Policy did not cache value logits during training forward pass"
-                    )
-
-                value_logits_fp32 = value_logits.to(dtype=torch.float32)
-                with torch.no_grad():
-                    target_returns = rollout_data.returns.to(dtype=torch.float32)
-
-                    if self._value_clip_limit_unscaled is not None:
-                        target_returns = torch.clamp(
-                            target_returns,
-                            min=-self._value_clip_limit_unscaled,
-                            max=self._value_clip_limit_unscaled,
-                        )
-
-                    target_returns_scaled = target_returns * self.value_target_scale
-
-                    if self._value_clip_limit_scaled is not None:
-                        target_returns_scaled = torch.clamp(
-                            target_returns_scaled,
-                            min=-self._value_clip_limit_scaled,
-                            max=self._value_clip_limit_scaled,
-                        )
-
-                    delta_z = (self.policy.v_max - self.policy.v_min) / float(
-                        self.policy.num_atoms - 1
-                    )
-                    clamped_targets = target_returns_scaled.clamp(
-                        self.policy.v_min, self.policy.v_max
-                    )
-                    b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
-                    lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
-                    upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
-
-                    same_bounds = lower_bound == upper_bound
-                    lower_bound = torch.where(
-                        same_bounds & (lower_bound > 0), lower_bound - 1, lower_bound
-                    )
-                    upper_bound = torch.where(
-                        same_bounds & (upper_bound < self.policy.num_atoms - 1),
-                        upper_bound + 1,
-                        upper_bound,
-                    )
-
-                    target_distribution = torch.zeros_like(value_logits_fp32)
-                    lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
-                    upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
-                    target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
-                    target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
-                    target_return_batches.append(
-                        (target_returns_scaled * self.value_target_scale)
-                        .reshape(-1, 1)
-                        .detach()
-                    )
-
-                pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
-                log_predictions = torch.log(pred_probs_fp32)
-                critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
-
-                with torch.no_grad():
-
-                    mean_values_scaled = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
-                    mean_values_unscaled = mean_values_scaled * self.value_target_scale
-
-                    mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
-                    mean_values_unscaled = mean_values_batch / self.value_target_scale
-
-                    if self._value_clip_limit_unscaled is not None:
-                        mean_values_unscaled = torch.clamp(
-                            mean_values_unscaled,
-                            min=-self._value_clip_limit_unscaled,
-                            max=self._value_clip_limit_unscaled,
-                        )
-                    mean_value_batches.append(mean_values_unscaled.detach())
-
-                predicted_cvar = calculate_cvar(
-                    pred_probs_fp32, self.policy.atoms, self.cvar_alpha
-                )
-
-                cvar_raw = (predicted_cvar * self.value_target_scale).mean()
-
-                cvar_raw = (predicted_cvar / self.value_target_scale).mean()
-
-                cvar_loss = -cvar_raw
-                cvar_term = self.cvar_weight * cvar_loss
-                if self.cvar_cap is not None:
-                    cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
-
-                loss = (
-                    policy_loss.to(dtype=torch.float32)
-                    + self.ent_coef * entropy_loss.to(dtype=torch.float32)
-                    + self.vf_coef * critic_loss
-                    + cvar_term
-                )
-
+                clip_range = float(self.clip_range(self._current_progress_remaining))
                 self.policy.optimizer.zero_grad(set_to_none=True)
-                loss.backward()
+
+                bucket_policy_loss_value = 0.0
+                bucket_policy_loss_ppo_value = 0.0
+                bucket_policy_loss_bc_value = 0.0
+                bucket_policy_loss_bc_weighted_value = 0.0
+                bucket_critic_loss_value = 0.0
+                bucket_cvar_raw_value = 0.0
+                bucket_cvar_loss_value = 0.0
+                bucket_cvar_term_value = 0.0
+                bucket_total_loss_value = 0.0
+                bucket_value_logits_fp32: Optional[torch.Tensor] = None
+                approx_kl_weighted_sum = 0.0
+                bucket_sample_count = 0
+
+                for rollout_data in microbatch_group:
+                    _values, log_prob, entropy = self.policy.evaluate_actions(
+                        rollout_data.observations,
+                        rollout_data.actions,
+                        rollout_data.lstm_states,
+                        rollout_data.episode_starts,
+                    )
+
+                    advantages = rollout_data.advantages
+                    sample_count = int(advantages.shape[0])
+                    if sample_count <= 0:
+                        continue
+                    bucket_sample_count += sample_count
+                    weight = float(sample_count) / float(actual_batch_size)
+
+                    with torch.no_grad():
+                        adv_mean_tensor = advantages.mean()
+                        adv_std_tensor = advantages.std(unbiased=False)
+                        adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
+                    adv_mean = float(adv_mean_tensor.item())
+                    adv_std = float(adv_std_tensor.item())
+                    adv_mean_accum += adv_mean
+                    adv_std_accum += adv_std
+                    adv_batch_count += 1
+
+                    advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
+                    with torch.no_grad():
+                        adv_z_values.append(advantages.detach().cpu())
+
+                    log_ratio = log_prob - rollout_data.old_log_prob
+                    ratio = torch.exp(log_ratio)
+                    policy_loss_1 = advantages * ratio
+                    policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                    policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
+
+                    with torch.no_grad():
+                        ratio_detached = ratio.detach()
+                        ratio_sum += float(ratio_detached.sum().item())
+                        ratio_sq_sum += float((ratio_detached.square()).sum().item())
+                        ratio_count += int(ratio_detached.numel())
+                        clip_mask = ratio_detached.sub(1.0).abs() > clip_range
+                        clip_fraction_numer += float(clip_mask.sum().item())
+                        clip_fraction_denom += int(clip_mask.numel())
+
+                        log_prob_detached = log_prob.detach()
+                        log_prob_sum += float(log_prob_detached.sum().item())
+                        log_prob_count += int(log_prob_detached.numel())
+
+                    if bc_coef <= 0.0:
+                        policy_loss_bc = advantages.new_zeros(())
+                        policy_loss_bc_weighted = policy_loss_bc
+                    else:
+                        with torch.no_grad():
+                            weights = torch.exp(advantages / self.cql_beta)
+                            weights = torch.clamp(weights, max=100.0)
+                        policy_loss_bc = (-log_prob * weights).mean()
+                        policy_loss_bc_weighted = policy_loss_bc * bc_coef
+
+                    policy_loss = policy_loss_ppo + policy_loss_bc_weighted
+                    if self._kl_penalty_beta > 0.0:
+                        kl_penalty_sample = (rollout_data.old_log_prob - log_prob).mean()
+                        kl_penalty_component = self._kl_penalty_beta * kl_penalty_sample
+                        policy_loss = policy_loss + kl_penalty_component
+                        kl_penalty_component_total += float(kl_penalty_component.item())
+                        kl_penalty_component_count += 1
+
+                    if entropy is None:
+                        entropy_loss = -torch.mean(-log_prob)
+                    else:
+                        entropy_loss = -torch.mean(entropy)
+                    mean_entropy = -entropy_loss.item()
+                    entropy_loss_total += mean_entropy
+                    entropy_loss_count += 1
+
+                    value_logits = self.policy.last_value_logits
+                    if value_logits is None:
+                        raise RuntimeError(
+                            "Policy did not cache value logits during training forward pass"
+                        )
+
+                    value_logits_fp32 = value_logits.to(dtype=torch.float32)
+                    with torch.no_grad():
+                        target_returns = rollout_data.returns.to(dtype=torch.float32)
+
+                        if self._value_clip_limit_unscaled is not None:
+                            target_returns = torch.clamp(
+                                target_returns,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
+                            )
+
+                        target_returns_scaled = target_returns * self.value_target_scale
+
+                        if self._value_clip_limit_scaled is not None:
+                            target_returns_scaled = torch.clamp(
+                                target_returns_scaled,
+                                min=-self._value_clip_limit_scaled,
+                                max=self._value_clip_limit_scaled,
+                            )
+
+                        delta_z = (self.policy.v_max - self.policy.v_min) / float(
+                            self.policy.num_atoms - 1
+                        )
+                        clamped_targets = target_returns_scaled.clamp(
+                            self.policy.v_min, self.policy.v_max
+                        )
+                        b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
+                        lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
+                        upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
+
+                        same_bounds = lower_bound == upper_bound
+                        lower_bound = torch.where(
+                            same_bounds & (lower_bound > 0), lower_bound - 1, lower_bound
+                        )
+                        upper_bound = torch.where(
+                            same_bounds & (upper_bound < self.policy.num_atoms - 1),
+                            upper_bound + 1,
+                            upper_bound,
+                        )
+
+                        target_distribution = torch.zeros_like(value_logits_fp32)
+                        lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
+                        upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
+                        target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
+                        target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
+                        target_return_batches.append(target_returns.reshape(-1, 1).detach())
+
+                    pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
+                    log_predictions = torch.log(pred_probs_fp32)
+                    critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
+
+                    with torch.no_grad():
+
+                        mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                        mean_values_unscaled = mean_values_batch / self.value_target_scale
+
+                        if self._value_clip_limit_unscaled is not None:
+                            mean_values_unscaled = torch.clamp(
+                                mean_values_unscaled,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
+                            )
+                        mean_value_batches.append(mean_values_unscaled.detach())
+
+                    predicted_cvar = calculate_cvar(
+                        pred_probs_fp32, self.policy.atoms, self.cvar_alpha
+                    )
+                    cvar_raw = (predicted_cvar / self.value_target_scale).mean()
+
+                    cvar_loss = -cvar_raw
+                    cvar_term = self.cvar_weight * cvar_loss
+                    if self.cvar_cap is not None:
+                        cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
+
+                    loss = (
+                        policy_loss.to(dtype=torch.float32)
+                        + self.ent_coef * entropy_loss.to(dtype=torch.float32)
+                        + self.vf_coef * critic_loss
+                        + cvar_term
+                    )
+
+                    loss_weighted = loss * loss.new_tensor(weight)
+                    loss_weighted.backward()
+
+                    bucket_policy_loss_value += float(policy_loss.item()) * weight
+                    bucket_policy_loss_ppo_value += float(policy_loss_ppo.item()) * weight
+                    bucket_policy_loss_bc_value += float(policy_loss_bc.item()) * weight
+                    bucket_policy_loss_bc_weighted_value += float(policy_loss_bc_weighted.item()) * weight
+                    bucket_critic_loss_value += float(critic_loss.item()) * weight
+                    bucket_cvar_raw_value += float(cvar_raw.item()) * weight
+                    bucket_cvar_loss_value += float(cvar_loss.item()) * weight
+                    bucket_cvar_term_value += float(cvar_term.item()) * weight
+                    bucket_total_loss_value += float(loss.item()) * weight
+                    bucket_value_logits_fp32 = value_logits_fp32.detach()
+
+                    approx_kl_component = ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
+                    approx_kl_weighted_sum += approx_kl_component * float(sample_count)
+
+                if bucket_sample_count != actual_batch_size:
+                    raise RuntimeError(
+                        "Accumulated micro-batch size does not match expected batch_size; check microbatch_size configuration"
+                    )
+
                 max_grad_norm = (
-                    0.3 if self.max_grad_norm is None else float(self.max_grad_norm)
+                    0.5 if self.max_grad_norm is None else float(self.max_grad_norm)
                 )
                 if max_grad_norm <= 0.0:
                     self.logger.record("warn/max_grad_norm_nonpos", float(max_grad_norm))
-                    max_grad_norm = 0.3
+                    max_grad_norm = 0.5
                 total_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.policy.parameters(), max_grad_norm
                 )
@@ -1038,19 +1120,28 @@ class DistributionalPPO(RecurrentPPO):
                             self.logger.record("train/scheduler_lr", last_scheduler_lr)
                     self._refresh_kl_base_lrs()
 
-                with torch.no_grad():
-                    log_ratio = log_prob - rollout_data.old_log_prob
-                    approx_kl = (
-                        ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
-                    )
-                    approx_kl_latest = approx_kl
-                    approx_kl_divs.append(approx_kl)
-                    if (
-                        self.target_kl is not None
-                        and self.target_kl > 0.0
-                        and approx_kl > float(self.target_kl)
-                    ):
-                        approx_kl_exceed_count += 1
+                approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
+                approx_kl_latest = approx_kl
+                approx_kl_divs.append(approx_kl)
+                if (
+                    self.target_kl is not None
+                    and self.target_kl > 0.0
+                    and approx_kl > float(self.target_kl)
+                ):
+                    approx_kl_exceed_count += 1
+
+                policy_loss_value = bucket_policy_loss_value
+                policy_loss_ppo_value = bucket_policy_loss_ppo_value
+                policy_loss_bc_value = bucket_policy_loss_bc_value
+                policy_loss_bc_weighted_value = bucket_policy_loss_bc_weighted_value
+                critic_loss_value = bucket_critic_loss_value
+                cvar_raw_value = bucket_cvar_raw_value
+                cvar_loss_value = bucket_cvar_loss_value
+                cvar_term_value = bucket_cvar_term_value
+                total_loss_value = bucket_total_loss_value
+
+                if bucket_value_logits_fp32 is not None:
+                    value_logits_final = bucket_value_logits_fp32
 
                 if (
                     self.target_kl is not None
@@ -1065,21 +1156,8 @@ class DistributionalPPO(RecurrentPPO):
                         self._handle_kl_divergence(approx_kl_latest)
                         break
 
-                policy_loss_value = float(policy_loss.item())
-                policy_loss_ppo_value = float(policy_loss_ppo.item())
-                policy_loss_bc_value = float(policy_loss_bc.item())
-                policy_loss_bc_weighted_value = float(policy_loss_bc_weighted.item())
-                critic_loss_value = float(critic_loss.item())
-                cvar_raw_value = float(cvar_raw.item())
-                cvar_loss_value = float(cvar_loss.item())
-                cvar_term_value = float(cvar_term.item())
-                total_loss_value = float(loss.item())
-
-                value_logits_final = value_logits_fp32.detach()
-
             if kl_early_stop_triggered:
                 break
-
         self._n_updates += epochs_completed
         self._update_calls += 1
 
@@ -1103,11 +1181,7 @@ class DistributionalPPO(RecurrentPPO):
                 pred_probs = torch.softmax(value_logits_final, dim=1)
                 y_pred_tensor = (
                     (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
-
-                    * self.value_target_scale
-
                     / self.value_target_scale
-
                 )
                 if self._value_clip_limit_unscaled is not None:
                     y_pred_tensor = torch.clamp(
@@ -1115,8 +1189,6 @@ class DistributionalPPO(RecurrentPPO):
                         min=-self._value_clip_limit_unscaled,
                         max=self._value_clip_limit_unscaled,
                     )
-
-            y_true_tensor = (rollout_returns * self.value_target_scale).reshape(-1, 1)
 
             y_true_tensor = rollout_returns.reshape(-1, 1)
 
