@@ -63,10 +63,12 @@ model:
     ent_coef_plateau_tolerance: 0.0
     ent_coef_plateau_min_updates: 0
     vf_coef: 0.5
-    max_grad_norm: 0.3
+    max_grad_norm: 0.5
     n_steps: 1024
     n_epochs: 1
     batch_size: 512
+    microbatch_size: 512
+    seed: 20240518
     target_kl: 0.5
     kl_lr_decay: 0.5
     kl_epoch_decay: 0.5
