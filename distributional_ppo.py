@@ -525,6 +525,7 @@ class DistributionalPPO(RecurrentPPO):
                     scalar_values,
                     min=-self._value_clip_limit_scaled,
                     max=self._value_clip_limit_scaled,
+                )
 
             scalar_values = scalar_values / self.value_target_scale
             if self._value_clip_limit_unscaled is not None:
@@ -597,6 +598,7 @@ class DistributionalPPO(RecurrentPPO):
                 last_scalar_values,
                 min=-self._value_clip_limit_scaled,
                 max=self._value_clip_limit_scaled,
+            )
 
         last_scalar_values = last_scalar_values / self.value_target_scale
         if self._value_clip_limit_unscaled is not None:
@@ -604,7 +606,6 @@ class DistributionalPPO(RecurrentPPO):
                 last_scalar_values,
                 min=-self._value_clip_limit_unscaled,
                 max=self._value_clip_limit_unscaled,
-
             )
 
         rollout_buffer.compute_returns_and_advantage(last_values=last_scalar_values, dones=dones)
@@ -889,16 +890,28 @@ class DistributionalPPO(RecurrentPPO):
 
                 value_logits_fp32 = value_logits.to(dtype=torch.float32)
                 with torch.no_grad():
-
-                    target_returns_scaled = rollout_data.returns.to(dtype=torch.float32)
-                    delta_z = (self.policy.v_max - self.policy.v_min) / float(self.policy.num_atoms - 1)
-                    clamped_targets = target_returns_scaled.clamp(
-
                     target_returns = rollout_data.returns.to(dtype=torch.float32)
-                    scaled_target_returns = target_returns * self.value_target_scale
-                    delta_z = (self.policy.v_max - self.policy.v_min) / float(self.policy.num_atoms - 1)
-                    clamped_targets = scaled_target_returns.clamp(
 
+                    if self._value_clip_limit_unscaled is not None:
+                        target_returns = torch.clamp(
+                            target_returns,
+                            min=-self._value_clip_limit_unscaled,
+                            max=self._value_clip_limit_unscaled,
+                        )
+
+                    target_returns_scaled = target_returns * self.value_target_scale
+
+                    if self._value_clip_limit_scaled is not None:
+                        target_returns_scaled = torch.clamp(
+                            target_returns_scaled,
+                            min=-self._value_clip_limit_scaled,
+                            max=self._value_clip_limit_scaled,
+                        )
+
+                    delta_z = (self.policy.v_max - self.policy.v_min) / float(
+                        self.policy.num_atoms - 1
+                    )
+                    clamped_targets = target_returns_scaled.clamp(
                         self.policy.v_min, self.policy.v_max
                     )
                     b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
