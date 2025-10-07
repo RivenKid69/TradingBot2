@@ -1265,7 +1265,7 @@ def objective(trial: optuna.Trial,
     params["target_kl"] = 0.5
     if float(params["learning_rate"]) >= 1e-4:
         params["learning_rate"] = float(params["learning_rate"]) * 0.1
-    params["clip_range"] = 0.05
+    params["clip_range"] = 0.03
     params["n_epochs"] = 1
 
     kl_lr_decay_value = params.get("kl_lr_decay", 0.5)

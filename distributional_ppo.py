@@ -747,11 +747,11 @@ class DistributionalPPO(RecurrentPPO):
                 self.policy.optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 max_grad_norm = (
-                    0.5 if self.max_grad_norm is None else float(self.max_grad_norm)
+                    0.3 if self.max_grad_norm is None else float(self.max_grad_norm)
                 )
                 if max_grad_norm <= 0.0:
                     self.logger.record("warn/max_grad_norm_nonpos", float(max_grad_norm))
-                    max_grad_norm = 0.5
+                    max_grad_norm = 0.3
                 total_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.policy.parameters(), max_grad_norm
                 )

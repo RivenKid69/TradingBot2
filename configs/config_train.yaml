@@ -55,7 +55,7 @@ model:
     learning_rate: 1.0e-5
     gamma: 0.99
     gae_lambda: 0.95
-    clip_range: 0.05
+    clip_range: 0.03
     ent_coef: 0.001
     ent_coef_final: 0.001
     ent_coef_decay_steps: 0
@@ -63,7 +63,7 @@ model:
     ent_coef_plateau_tolerance: 0.0
     ent_coef_plateau_min_updates: 0
     vf_coef: 0.5
-    max_grad_norm: 0.5
+    max_grad_norm: 0.3
     n_steps: 1024
     n_epochs: 1
     batch_size: 512
