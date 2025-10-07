@@ -144,6 +144,7 @@ class DistributionalPPO(RecurrentPPO):
         ent_coef_plateau_window: int = 0,
         ent_coef_plateau_tolerance: float = 0.0,
         ent_coef_plateau_min_updates: int = 0,
+        target_kl: Optional[float] = None,
         kl_lr_decay: float = 0.5,
         kl_epoch_decay: float = 0.5,
         kl_lr_scale_min: float = 0.01,
@@ -153,7 +154,7 @@ class DistributionalPPO(RecurrentPPO):
         kl_penalty_beta_max: float = 0.1,
         kl_penalty_increase: float = 1.5,
         kl_penalty_decrease: float = 0.75,
-        ppo_clip_range: float = 0.05,
+        ppo_clip_range: Optional[float] = None,
         use_torch_compile: bool = False,
         microbatch_size: Optional[int] = None,
         gradient_accumulation_steps: Optional[int] = None,
@@ -170,11 +171,31 @@ class DistributionalPPO(RecurrentPPO):
             kl_lr_scale_min_requested = float(kl_lr_scale_min)
 
         kwargs_local = dict(kwargs)
-        clip_range_value = float(ppo_clip_range)
+
+        if ppo_clip_range is not None:
+            clip_range_candidate = ppo_clip_range
+        else:
+            clip_range_candidate = kwargs_local.pop("clip_range", 0.05)
+        clip_range_value = float(clip_range_candidate)
         if not math.isfinite(clip_range_value) or clip_range_value <= 0.0:
             raise ValueError("'ppo_clip_range' must be a positive finite value")
         kwargs_local["clip_range"] = clip_range_value
-        kwargs_local["target_kl"] = 0.5
+
+        if target_kl is not None:
+            target_kl_candidate = target_kl
+        else:
+            target_kl_candidate = kwargs_local.pop("target_kl", 0.5)
+        target_kl_value: Optional[float]
+        if target_kl_candidate is None:
+            target_kl_value = None
+        else:
+            target_kl_value = float(target_kl_candidate)
+            if not math.isfinite(target_kl_value) or target_kl_value < 0.0:
+                raise ValueError("'target_kl' must be non-negative and finite when provided")
+        if target_kl_value is None:
+            kwargs_local["target_kl"] = None
+        else:
+            kwargs_local["target_kl"] = target_kl_value
 
         self.cql_alpha = float(cql_alpha)
         self.cql_beta = float(cql_beta)
@@ -237,6 +258,9 @@ class DistributionalPPO(RecurrentPPO):
         self._entropy_decay_start_update: Optional[int] = None
         self._last_entropy_slope = 0.0
 
+        if self._entropy_window is None and self.ent_coef_decay_steps > 0:
+            self._entropy_decay_start_update = 0
+
         self.lr_scheduler = getattr(self.policy, "optimizer_scheduler", None)
 
         if use_torch_compile and self.device.type == "cuda":
@@ -286,7 +310,9 @@ class DistributionalPPO(RecurrentPPO):
 
         self._fixed_clip_range = clip_range_value
         self.clip_range = lambda _: self._fixed_clip_range
-        self.target_kl = 0.5
+        self.target_kl = target_kl_value
+
+        self.normalize_advantage = True
 
         if kl_lr_scale_min_requested is not None:
             self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
@@ -453,12 +479,12 @@ class DistributionalPPO(RecurrentPPO):
         return self._current_bc_coef
 
     def _update_ent_coef(self, update_index: int) -> float:
-        if self._entropy_decay_start_update is None:
-            self.ent_coef = float(self.ent_coef_initial)
-            return self.ent_coef
-
         if self.ent_coef_decay_steps <= 0:
             self.ent_coef = float(self.ent_coef_final)
+            return self.ent_coef
+
+        if self._entropy_decay_start_update is None:
+            self.ent_coef = float(self.ent_coef_initial)
             return self.ent_coef
 
         steps_since_start = max(0, update_index - self._entropy_decay_start_update)
@@ -471,6 +497,8 @@ class DistributionalPPO(RecurrentPPO):
     def _maybe_update_entropy_schedule(self, update_index: int, avg_entropy: float) -> None:
         if self._entropy_window is None:
             self._last_entropy_slope = 0.0
+            if self._entropy_decay_start_update is None and self.ent_coef_decay_steps > 0:
+                self._entropy_decay_start_update = 0
             return
 
         self._entropy_window.append((update_index, avg_entropy))
@@ -488,12 +516,17 @@ class DistributionalPPO(RecurrentPPO):
         else:
             self._last_entropy_slope = float(torch.sum(xs_centered * ys_centered).item() / (denom + 1e-8))
 
-        if (
-            not self._entropy_plateau
-            and len(self._entropy_window) == self.entropy_plateau_window
+        window_filled = len(self._entropy_window) == self.entropy_plateau_window
+        ready_for_decay = (
+            self.ent_coef_decay_steps > 0
+            and self._entropy_decay_start_update is None
+            and window_filled
             and update_index >= self.entropy_plateau_min_updates
-            and abs(self._last_entropy_slope) <= self.entropy_plateau_tolerance
-        ):
+        )
+        if not ready_for_decay:
+            return
+
+        if abs(self._last_entropy_slope) <= self.entropy_plateau_tolerance and not self._entropy_plateau:
             self._entropy_plateau = True
             self._entropy_decay_start_update = update_index
 

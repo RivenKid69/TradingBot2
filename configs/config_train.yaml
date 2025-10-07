@@ -56,12 +56,12 @@ model:
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.03
-    ent_coef: 0.001
-    ent_coef_final: 0.001
-    ent_coef_decay_steps: 0
-    ent_coef_plateau_window: 0
-    ent_coef_plateau_tolerance: 0.0
-    ent_coef_plateau_min_updates: 0
+    ent_coef: 0.0001
+    ent_coef_final: 0.00005
+    ent_coef_decay_steps: 80
+    ent_coef_plateau_window: 24
+    ent_coef_plateau_tolerance: 0.002
+    ent_coef_plateau_min_updates: 40
     vf_coef: 0.5
     max_grad_norm: 0.5
     n_steps: 1024
