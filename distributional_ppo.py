@@ -198,53 +198,6 @@ class DistributionalPPO(RecurrentPPO):
             grad_steps=gradient_accumulation_steps,
         )
 
-        self._fixed_clip_range = clip_range_value
-        self.clip_range = lambda _: self._fixed_clip_range
-        self.target_kl = 0.5
-
-        if kl_lr_scale_min_requested is not None:
-            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
-            self.logger.record("warn/kl_lr_scale_min_effective", 0.01)
-
-    def _configure_gradient_accumulation(
-        self,
-        microbatch_size: Optional[int],
-        grad_steps: Optional[int],
-    ) -> None:
-        batch_size = int(self.batch_size)
-        if batch_size <= 0:
-            raise ValueError("'batch_size' must be positive to configure gradient accumulation")
-
-        grad_steps_local = None if grad_steps is None else int(grad_steps)
-        micro_size_local = None if microbatch_size is None else int(microbatch_size)
-
-        if grad_steps_local is not None and grad_steps_local <= 0:
-            raise ValueError("'gradient_accumulation_steps' must be a positive integer")
-        if micro_size_local is not None and micro_size_local <= 0:
-            raise ValueError("'microbatch_size' must be a positive integer")
-
-        if grad_steps_local is None and micro_size_local is None:
-            micro_size_local = batch_size
-            grad_steps_local = 1
-        elif grad_steps_local is None:
-            if batch_size % micro_size_local != 0:
-                raise ValueError("'microbatch_size' must evenly divide batch_size")
-            grad_steps_local = batch_size // micro_size_local
-        elif micro_size_local is None:
-            if batch_size % grad_steps_local != 0:
-                raise ValueError("'gradient_accumulation_steps' must evenly divide batch_size")
-            micro_size_local = batch_size // grad_steps_local
-        else:
-            if micro_size_local * grad_steps_local != batch_size:
-                if batch_size % micro_size_local != 0 or batch_size // micro_size_local != grad_steps_local:
-                    raise ValueError(
-                        "microbatch_size * gradient_accumulation_steps must equal batch_size"
-                    )
-
-        self._microbatch_size = int(micro_size_local)
-        self._grad_accumulation_steps = int(grad_steps_local)
-
-
         self.running_v_min = 0.0
         self.running_v_max = 0.0
         self.v_range_initialized = False
@@ -253,10 +206,7 @@ class DistributionalPPO(RecurrentPPO):
         self._value_clip_limit_unscaled: Optional[float]
         if clip_limit_unscaled is None:
             self._value_clip_limit_unscaled = None
-
             self._value_clip_limit_scaled = None
-
-
         else:
             clip_limit_unscaled_f = float(clip_limit_unscaled)
             if clip_limit_unscaled_f <= 0.0 or not math.isfinite(clip_limit_unscaled_f):
@@ -264,11 +214,7 @@ class DistributionalPPO(RecurrentPPO):
                     f"Invalid 'value_clip_limit' for distributional value head: {clip_limit_unscaled}"
                 )
             self._value_clip_limit_unscaled = clip_limit_unscaled_f
-
             self._value_clip_limit_scaled = clip_limit_unscaled_f * self.value_target_scale
-
-
-
 
         self.bc_warmup_steps = max(0, int(bc_warmup_steps))
         self.bc_decay_steps = max(0, int(bc_decay_steps))
@@ -337,6 +283,53 @@ class DistributionalPPO(RecurrentPPO):
         self.kl_penalty_decrease = float(kl_penalty_decrease)
         if not (0.0 < self.kl_penalty_decrease <= 1.0):
             raise ValueError("'kl_penalty_decrease' must be in (0, 1]")
+
+        self._fixed_clip_range = clip_range_value
+        self.clip_range = lambda _: self._fixed_clip_range
+        self.target_kl = 0.5
+
+        if kl_lr_scale_min_requested is not None:
+            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
+            self.logger.record("warn/kl_lr_scale_min_effective", 0.01)
+
+    def _configure_gradient_accumulation(
+        self,
+        microbatch_size: Optional[int],
+        grad_steps: Optional[int],
+    ) -> None:
+        batch_size = int(self.batch_size)
+        if batch_size <= 0:
+            raise ValueError("'batch_size' must be positive to configure gradient accumulation")
+
+        grad_steps_local = None if grad_steps is None else int(grad_steps)
+        micro_size_local = None if microbatch_size is None else int(microbatch_size)
+
+        if grad_steps_local is not None and grad_steps_local <= 0:
+            raise ValueError("'gradient_accumulation_steps' must be a positive integer")
+        if micro_size_local is not None and micro_size_local <= 0:
+            raise ValueError("'microbatch_size' must be a positive integer")
+
+        if grad_steps_local is None and micro_size_local is None:
+            micro_size_local = batch_size
+            grad_steps_local = 1
+        elif grad_steps_local is None:
+            if batch_size % micro_size_local != 0:
+                raise ValueError("'microbatch_size' must evenly divide batch_size")
+            grad_steps_local = batch_size // micro_size_local
+        elif micro_size_local is None:
+            if batch_size % grad_steps_local != 0:
+                raise ValueError("'gradient_accumulation_steps' must evenly divide batch_size")
+            micro_size_local = batch_size // grad_steps_local
+        else:
+            if micro_size_local * grad_steps_local != batch_size:
+                if batch_size % micro_size_local != 0 or batch_size // micro_size_local != grad_steps_local:
+                    raise ValueError(
+                        "microbatch_size * gradient_accumulation_steps must equal batch_size"
+                    )
+
+        self._microbatch_size = int(micro_size_local)
+        self._grad_accumulation_steps = int(grad_steps_local)
+
 
     def _refresh_kl_base_lrs(self) -> None:
         """Cache optimiser base LRs before KL scaling is applied."""
