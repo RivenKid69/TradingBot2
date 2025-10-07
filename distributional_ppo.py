@@ -595,11 +595,15 @@ class DistributionalPPO(RecurrentPPO):
                 policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
 
-                with torch.no_grad():
-                    weights = torch.exp(advantages / self.cql_beta)
-                    weights = torch.clamp(weights, max=100.0)
-                policy_loss_bc = (-log_prob * weights).mean()
-                policy_loss_bc_weighted = policy_loss_bc * bc_coef
+                if bc_coef <= 0.0:
+                    policy_loss_bc = advantages.new_zeros(())
+                    policy_loss_bc_weighted = policy_loss_bc
+                else:
+                    with torch.no_grad():
+                        weights = torch.exp(advantages / self.cql_beta)
+                        weights = torch.clamp(weights, max=100.0)
+                    policy_loss_bc = (-log_prob * weights).mean()
+                    policy_loss_bc_weighted = policy_loss_bc * bc_coef
 
                 policy_loss = policy_loss_ppo + policy_loss_bc_weighted
 
