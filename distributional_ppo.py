@@ -628,7 +628,7 @@ class DistributionalPPO(RecurrentPPO):
         current_update = self._update_calls
         self._update_ent_coef(current_update)
 
-        scaled_returns_tensor = torch.as_tensor(
+        returns_tensor = torch.as_tensor(
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
         ).flatten()
         scaled_returns_tensor = returns_tensor * self.value_target_scale
