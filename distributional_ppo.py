@@ -841,21 +841,29 @@ class DistributionalPPO(RecurrentPPO):
                 for start_idx in range(0, total_micro, grad_accum_steps):
                     yield tuple(microbatches[start_idx:start_idx + grad_accum_steps])
 
-            return _grouped_microbatches(), effective_batch_size
+            expected_batch = microbatch_size_effective * grad_accum_steps
+            return _grouped_microbatches(), expected_batch
 
         for _ in range(effective_n_epochs):
-            minibatch_iterator, actual_batch_size = _prepare_minibatch_iterator()
+            minibatch_iterator, expected_batch_size = _prepare_minibatch_iterator()
             if minibatch_iterator is None:
                 self.logger.record("warn/empty_rollout_buffer", 1.0)
                 break
 
             epochs_completed += 1
-            self.logger.record("train/actual_batch_size", float(actual_batch_size))
+            self.logger.record("train/expected_batch_size", float(expected_batch_size))
             self.logger.record("train/microbatch_size", float(microbatch_size_effective))
             self.logger.record("train/grad_accum_steps", float(grad_accum_steps))
 
             for microbatch_group in minibatch_iterator:
                 minibatches_processed += 1
+                microbatch_items = tuple(microbatch_group)
+                sample_counts = [int(data.advantages.shape[0]) for data in microbatch_items]
+                bucket_target_size = int(sum(sample_counts))
+                if bucket_target_size <= 0:
+                    self.logger.record("warn/empty_microbatch_group", 1.0)
+                    continue
+                self.logger.record("train/actual_batch_size", float(bucket_target_size))
                 clip_range = float(self.clip_range(self._current_progress_remaining))
                 self.policy.optimizer.zero_grad(set_to_none=True)
 
@@ -872,7 +880,7 @@ class DistributionalPPO(RecurrentPPO):
                 approx_kl_weighted_sum = 0.0
                 bucket_sample_count = 0
 
-                for rollout_data in microbatch_group:
+                for rollout_data, sample_count in zip(microbatch_items, sample_counts):
                     _values, log_prob, entropy = self.policy.evaluate_actions(
                         rollout_data.observations,
                         rollout_data.actions,
@@ -881,11 +889,10 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     advantages = rollout_data.advantages
-                    sample_count = int(advantages.shape[0])
                     if sample_count <= 0:
                         continue
                     bucket_sample_count += sample_count
-                    weight = float(sample_count) / float(actual_batch_size)
+                    weight = float(sample_count) / float(bucket_target_size)
 
                     with torch.no_grad():
                         adv_mean_tensor = advantages.mean()
@@ -1050,9 +1057,10 @@ class DistributionalPPO(RecurrentPPO):
                     approx_kl_component = ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
                     approx_kl_weighted_sum += approx_kl_component * float(sample_count)
 
-                if bucket_sample_count != actual_batch_size:
-                    raise RuntimeError(
-                        "Accumulated micro-batch size does not match expected batch_size; check microbatch_size configuration"
+                if bucket_sample_count != bucket_target_size:
+                    self.logger.record(
+                        "warn/microbatch_size_mismatch",
+                        float(bucket_sample_count - bucket_target_size),
                     )
 
                 max_grad_norm = (
