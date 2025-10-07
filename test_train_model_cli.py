@@ -111,7 +111,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
                 "clip_range": 0.15,
                 "ent_coef": 0.001,
                 "vf_coef": 0.5,
-                "max_grad_norm": 0.5,
+                "max_grad_norm": 0.3,
                 "n_steps": 1024,
                 "batch_size": 256,
             }
@@ -176,7 +176,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
                 "clip_range": 0.15,
                 "ent_coef": 0.001,
                 "vf_coef": 0.5,
-                "max_grad_norm": 0.5,
+                "max_grad_norm": 0.3,
                 "n_steps": 1024,
                 "batch_size": 257,
             }
@@ -227,7 +227,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
                 "clip_range": 0.15,
                 "ent_coef": 0.001,
                 "vf_coef": 0.5,
-                "max_grad_norm": 0.5,
+                "max_grad_norm": 0.3,
                 "n_steps": 32,
                 "batch_size": 16,
                 "n_epochs": 1,
