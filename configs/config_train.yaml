@@ -55,7 +55,7 @@ model:
     learning_rate: 1.0e-5
     gamma: 0.99
     gae_lambda: 0.95
-    clip_range: 0.075
+    clip_range: 0.05
     ent_coef: 0.001
     ent_coef_final: 0.001
     ent_coef_decay_steps: 0
@@ -66,11 +66,11 @@ model:
     max_grad_norm: 0.5
     n_steps: 1024
     n_epochs: 1
-    batch_size: 256
+    batch_size: 512
     target_kl: 0.5
     kl_lr_decay: 0.5
     kl_epoch_decay: 0.5
-    kl_lr_scale_min: 0.05
+    kl_lr_scale_min: 0.01
     trade_frequency_penalty: 0.0
     turnover_penalty_coef: 0.0
     cql_alpha: 0.0
@@ -87,7 +87,7 @@ model:
     num_atoms: 21   # можно 1 (обычная ценность), 11 — компромисс; >51 обычно не нужно
     v_min: -0.2     # нижняя граница поддержки ценности
     v_max: 0.2      # верхняя граница (v_max > v_min)
-    v_range_ema_alpha: 0.01
+    v_range_ema_alpha: 0.005
 
 optimization:
   scheduler:
