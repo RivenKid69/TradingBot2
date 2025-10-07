@@ -1261,6 +1261,31 @@ def objective(trial: optuna.Trial,
         "optimizer_kwargs": {"weight_decay": params["weight_decay"]},
     }
     # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
+    # --- Stabilise KL behaviour and optimiser updates -----------------------
+    params["target_kl"] = 0.20
+    params["learning_rate"] = float(params["learning_rate"]) * 0.1
+    params["clip_range"] = 0.05
+    params["n_epochs"] = 1
+
+    kl_lr_decay_value = params.get("kl_lr_decay", 0.5)
+    if isinstance(kl_lr_decay_value, bool):
+        kl_lr_decay_value = 0.5
+    kl_lr_decay_value = float(kl_lr_decay_value)
+    if not (0.0 < kl_lr_decay_value < 1.0):
+        kl_lr_decay_value = 0.5
+    params["kl_lr_decay"] = kl_lr_decay_value
+
+    kl_epoch_decay_value = params.get("kl_epoch_decay", 0.5)
+    if isinstance(kl_epoch_decay_value, bool):
+        kl_epoch_decay_value = 0.5
+    kl_epoch_decay_value = float(kl_epoch_decay_value)
+    if not (0.0 < kl_epoch_decay_value <= 1.0):
+        kl_epoch_decay_value = 0.5
+    params["kl_epoch_decay"] = kl_epoch_decay_value
+
+    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.1))
+    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 0.1), 1e-6)
+
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
     # Рассчитываем, на сколько мини-батчей делится каждый роллаут

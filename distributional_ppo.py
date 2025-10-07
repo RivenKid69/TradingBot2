@@ -191,6 +191,29 @@ class DistributionalPPO(RecurrentPPO):
         self._base_n_epochs = max(1, int(self.n_epochs))
         self._kl_epoch_factor = 1.0
         self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
+        self._kl_base_param_lrs: list[float] = []
+        self._refresh_kl_base_lrs()
+
+    def _refresh_kl_base_lrs(self) -> None:
+        """Cache optimiser base LRs before KL scaling is applied."""
+
+        optimizer = getattr(self.policy, "optimizer", None)
+        if optimizer is None:
+            self._kl_base_param_lrs = []
+            return
+
+        scale = float(getattr(self, "_kl_lr_scale", 1.0))
+        if scale <= 0.0:
+            scale = 1.0
+
+        base_lrs: list[float] = []
+        for group in getattr(optimizer, "param_groups", []):
+            current_lr = float(group.get("lr", 0.0))
+            base_lr = current_lr / scale if scale != 0.0 else current_lr
+            group["_kl_base_lr"] = base_lr
+            base_lrs.append(base_lr)
+
+        self._kl_base_param_lrs = base_lrs
 
     def _apply_lr_decay(self, requested_decay: float) -> float:
         """Reduce optimizer LR by ``requested_decay`` (capped by ``_kl_lr_scale_min``)."""
@@ -221,6 +244,7 @@ class DistributionalPPO(RecurrentPPO):
                 max(lr * actual_decay, self._kl_min_lr) for lr in self.lr_scheduler.base_lrs
             ]
 
+        self._refresh_kl_base_lrs()
         return actual_decay
 
     def _apply_epoch_decay(self) -> float:
@@ -441,6 +465,7 @@ class DistributionalPPO(RecurrentPPO):
     def train(self) -> None:
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
+        self._refresh_kl_base_lrs()
         clip_range = self.clip_range(self._current_progress_remaining)
 
         current_update = self._update_calls
@@ -687,6 +712,16 @@ class DistributionalPPO(RecurrentPPO):
                 )
                 self.logger.record("train/grad_norm_pre_clip", float(grad_norm_value))
                 self.logger.record("train/max_grad_norm_used", float(max_grad_norm))
+
+                if hasattr(self, "_kl_lr_scale"):
+                    scale = float(self._kl_lr_scale)
+                    for group in self.policy.optimizer.param_groups:
+                        base_lr = float(group.get("_kl_base_lr", group.get("lr", 0.0)))
+                        scaled_lr = max(base_lr * scale, self._kl_min_lr)
+                        group["lr"] = scaled_lr
+                        if "initial_lr" in group:
+                            group["initial_lr"] = scaled_lr
+
                 self.policy.optimizer.step()
 
                 if len(self.policy.optimizer.param_groups) > 0:
@@ -707,6 +742,7 @@ class DistributionalPPO(RecurrentPPO):
                         if scheduler_lrs:
                             last_scheduler_lr = float(scheduler_lrs[0])
                             self.logger.record("train/scheduler_lr", last_scheduler_lr)
+                    self._refresh_kl_base_lrs()
 
                 with torch.no_grad():
                     log_ratio = log_prob - rollout_data.old_log_prob
