@@ -1263,7 +1263,8 @@ def objective(trial: optuna.Trial,
     # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
     # --- Stabilise KL behaviour and optimiser updates -----------------------
     params["target_kl"] = 0.5
-    params["learning_rate"] = float(params["learning_rate"]) * 0.1
+    if float(params["learning_rate"]) >= 1e-4:
+        params["learning_rate"] = float(params["learning_rate"]) * 0.1
     params["clip_range"] = 0.075
     params["n_epochs"] = 1
 
