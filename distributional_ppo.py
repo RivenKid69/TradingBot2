@@ -545,7 +545,7 @@ class DistributionalPPO(RecurrentPPO):
         entropy_loss_total = 0.0
         entropy_loss_count = 0
         approx_kl_divs: list[float] = []
-        clamped_return_batches: list[torch.Tensor] = []
+        target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
@@ -565,6 +565,17 @@ class DistributionalPPO(RecurrentPPO):
         adv_batch_count = 0
 
         value_logits_final: Optional[torch.Tensor] = None
+
+        clip_fraction_numer = 0.0
+        clip_fraction_denom = 0
+        ratio_sum = 0.0
+        ratio_sq_sum = 0.0
+        ratio_count = 0
+        log_prob_sum = 0.0
+        log_prob_count = 0
+        adv_z_values: list[torch.Tensor] = []
+        approx_kl_exceed_count = 0
+        minibatches_processed = 0
 
         base_n_epochs = max(1, int(self.n_epochs))
         if base_n_epochs != self._base_n_epochs:
@@ -618,6 +629,7 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/actual_batch_size", float(actual_batch_size))
 
             for rollout_data in minibatch_iterator:
+                minibatches_processed += 1
                 _values, log_prob, entropy = self.policy.evaluate_actions(
                     rollout_data.observations,
                     rollout_data.actions,
@@ -637,11 +649,26 @@ class DistributionalPPO(RecurrentPPO):
                 adv_batch_count += 1
 
                 advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
+                with torch.no_grad():
+                    adv_z_values.append(advantages.detach().cpu())
 
                 ratio = torch.exp(log_prob - rollout_data.old_log_prob)
                 policy_loss_1 = advantages * ratio
                 policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
+
+                with torch.no_grad():
+                    ratio_detached = ratio.detach()
+                    ratio_sum += float(ratio_detached.sum().item())
+                    ratio_sq_sum += float((ratio_detached.square()).sum().item())
+                    ratio_count += int(ratio_detached.numel())
+                    clip_mask = ratio_detached.sub(1.0).abs() > clip_range
+                    clip_fraction_numer += float(clip_mask.sum().item())
+                    clip_fraction_denom += int(clip_mask.numel())
+
+                    log_prob_detached = log_prob.detach()
+                    log_prob_sum += float(log_prob_detached.sum().item())
+                    log_prob_count += int(log_prob_detached.numel())
 
                 if bc_coef <= 0.0:
                     policy_loss_bc = advantages.new_zeros(())
@@ -693,6 +720,7 @@ class DistributionalPPO(RecurrentPPO):
                     upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
                     target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
                     target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
+                    target_return_batches.append(target_returns.reshape(-1, 1).detach())
 
                 pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
                 log_predictions = torch.log(pred_probs_fp32)
@@ -700,7 +728,6 @@ class DistributionalPPO(RecurrentPPO):
 
                 with torch.no_grad():
                     mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
-                    clamped_return_batches.append(clamped_targets.detach())
                     mean_value_batches.append(mean_values_batch.detach())
 
                 predicted_cvar = calculate_cvar(pred_probs_fp32, self.policy.atoms, self.cvar_alpha)
@@ -735,6 +762,15 @@ class DistributionalPPO(RecurrentPPO):
                 )
                 self.logger.record("train/grad_norm_pre_clip", float(grad_norm_value))
                 self.logger.record("train/max_grad_norm_used", float(max_grad_norm))
+
+                post_clip_norm_sq = 0.0
+                for param in self.policy.parameters():
+                    grad = param.grad
+                    if grad is None:
+                        continue
+                    post_clip_norm_sq += float(grad.detach().to(dtype=torch.float32).pow(2).sum().item())
+                post_clip_norm = math.sqrt(post_clip_norm_sq) if post_clip_norm_sq > 0.0 else 0.0
+                self.logger.record("train/grad_norm_post_clip", float(post_clip_norm))
 
                 if hasattr(self, "_kl_lr_scale"):
                     scale = float(self._kl_lr_scale)
@@ -773,6 +809,12 @@ class DistributionalPPO(RecurrentPPO):
                         ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
                     )
                     approx_kl_divs.append(approx_kl)
+                    if (
+                        self.target_kl is not None
+                        and self.target_kl > 0.0
+                        and approx_kl > float(self.target_kl)
+                    ):
+                        approx_kl_exceed_count += 1
 
                 if (
                     self.target_kl is not None
@@ -813,16 +855,16 @@ class DistributionalPPO(RecurrentPPO):
 
         if value_logits_final is None:
             raise RuntimeError("No value logits captured during training loop")
-        if len(clamped_return_batches) == 0 or len(mean_value_batches) == 0:
+        if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
             rollout_returns = torch.as_tensor(
                 self.rollout_buffer.returns, device=self.device, dtype=torch.float32
-            ).clamp(self.policy.v_min, self.policy.v_max)
-            y_true_tensor = rollout_returns.reshape(-1, 1)
+            )
             with torch.no_grad():
                 pred_probs = torch.softmax(value_logits_final, dim=1)
                 y_pred_tensor = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+            y_true_tensor = rollout_returns.reshape(-1, 1)
         else:
-            y_true_tensor = torch.cat([t.reshape(-1, 1) for t in clamped_return_batches], dim=0)
+            y_true_tensor = torch.cat([t.reshape(-1, 1) for t in target_return_batches], dim=0)
             y_pred_tensor = torch.cat([t.reshape(-1, 1) for t in mean_value_batches], dim=0)
 
         if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
@@ -863,8 +905,18 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
         if len(approx_kl_divs) > 0:
-            self.logger.record("train/approx_kl", float(np.mean(approx_kl_divs)))
-            self.logger.record("train/approx_kl_median", float(np.median(approx_kl_divs)))
+            approx_kl_array = np.asarray(approx_kl_divs, dtype=np.float64)
+            self.logger.record("train/approx_kl", float(np.mean(approx_kl_array)))
+            self.logger.record("train/approx_kl_median", float(np.median(approx_kl_array)))
+            self.logger.record("train/approx_kl_p90", float(np.quantile(approx_kl_array, 0.9)))
+            self.logger.record("train/approx_kl_max", float(np.max(approx_kl_array)))
+            if self.target_kl is not None and self.target_kl > 0.0:
+                exceed_frac = (
+                    float(approx_kl_exceed_count) / float(len(approx_kl_array))
+                    if len(approx_kl_array) > 0
+                    else 0.0
+                )
+                self.logger.record("train/kl_exceed_frac", exceed_frac)
         if last_optimizer_lr is not None:
             self.logger.record("train/optimizer_lr", last_optimizer_lr)
         if last_scheduler_lr is not None:
@@ -872,16 +924,52 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
         self.logger.record("train/clip_range", float(clip_range))
+        if clip_fraction_denom > 0:
+            clip_fraction = float(clip_fraction_numer) / float(clip_fraction_denom)
+            self.logger.record("train/clip_fraction", clip_fraction)
+        if ratio_count > 0:
+            ratio_mean = ratio_sum / float(ratio_count)
+            ratio_var = max(ratio_sq_sum / float(ratio_count) - ratio_mean**2, 0.0)
+            ratio_std = math.sqrt(ratio_var)
+            self.logger.record("train/ratio_mean", float(ratio_mean))
+            self.logger.record("train/ratio_std", float(ratio_std))
+        if log_prob_count > 0:
+            self.logger.record("train/log_prob_mean", float(log_prob_sum / float(log_prob_count)))
         if adv_batch_count > 0:
             self.logger.record("train/adv_mean", adv_mean_accum / adv_batch_count)
             self.logger.record("train/adv_std", adv_std_accum / adv_batch_count)
+        if adv_z_values:
+            adv_z_tensor = torch.cat(adv_z_values)
+            if adv_z_tensor.numel() > 0:
+                adv_z_tensor = adv_z_tensor.to(dtype=torch.float32)
+                quantiles = torch.quantile(
+                    adv_z_tensor,
+                    torch.tensor([0.1, 0.5, 0.9], dtype=adv_z_tensor.dtype, device=adv_z_tensor.device),
+                )
+                self.logger.record("train/adv_z_p10", float(quantiles[0].item()))
+                self.logger.record("train/adv_z_p50", float(quantiles[1].item()))
+                self.logger.record("train/adv_z_p90", float(quantiles[2].item()))
         self.logger.record("train/n_epochs_effective", float(effective_n_epochs))
         self.logger.record("train/n_epochs_completed", float(epochs_completed))
+        self.logger.record("train/n_minibatches_done", float(minibatches_processed))
         self.logger.record("train/kl_early_stop", float(1.0 if kl_early_stop_triggered else 0.0))
         if self.target_kl is not None and self.target_kl > 0.0:
             self.logger.record("train/target_kl", float(self.target_kl))
             self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
             self.logger.record("train/kl_epoch_factor", float(self._kl_epoch_factor))
+
+        if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
+            y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
+            y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy().astype(np.float64)
+            self.logger.record("train/value_pred_mean", float(np.mean(y_pred_np)))
+            self.logger.record("train/value_pred_std", float(np.std(y_pred_np)))
+            self.logger.record("train/target_return_mean", float(np.mean(y_true_np)))
+            self.logger.record("train/target_return_std", float(np.std(y_true_np)))
+            diff_np = y_pred_np - y_true_np
+            self.logger.record("train/value_mae", float(np.mean(np.abs(diff_np))))
+            self.logger.record(
+                "train/value_rmse", float(math.sqrt(np.mean(np.square(diff_np))))
+            )
 
     def learn(
         self,
