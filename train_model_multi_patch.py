@@ -1262,9 +1262,9 @@ def objective(trial: optuna.Trial,
     }
     # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
     # --- Stabilise KL behaviour and optimiser updates -----------------------
-    params["target_kl"] = 0.20
+    params["target_kl"] = 0.5
     params["learning_rate"] = float(params["learning_rate"]) * 0.1
-    params["clip_range"] = 0.05
+    params["clip_range"] = 0.075
     params["n_epochs"] = 1
 
     kl_lr_decay_value = params.get("kl_lr_decay", 0.5)
@@ -1283,8 +1283,8 @@ def objective(trial: optuna.Trial,
         kl_epoch_decay_value = 0.5
     params["kl_epoch_decay"] = kl_epoch_decay_value
 
-    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.1))
-    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 0.1), 1e-6)
+    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.05))
+    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 0.05), 1e-6)
 
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
