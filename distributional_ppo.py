@@ -119,7 +119,14 @@ class DistributionalPPO(RecurrentPPO):
         ent_coef_plateau_min_updates: int = 0,
         kl_lr_decay: float = 0.5,
         kl_epoch_decay: float = 0.5,
-        kl_lr_scale_min: float = 0.1,
+        kl_lr_scale_min: float = 0.01,
+        kl_exceed_stop_fraction: float = 0.4,
+        kl_penalty_beta: float = 0.0,
+        kl_penalty_beta_min: float = 0.0,
+        kl_penalty_beta_max: float = 0.1,
+        kl_penalty_increase: float = 1.5,
+        kl_penalty_decrease: float = 0.75,
+        ppo_clip_range: float = 0.05,
         use_torch_compile: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -127,7 +134,29 @@ class DistributionalPPO(RecurrentPPO):
         self._last_rollout_entropy: float = 0.0
         self._update_calls: int = 0
 
-        super().__init__(policy=policy, env=env, **kwargs)
+        if not math.isfinite(kl_lr_scale_min):
+            raise ValueError("'kl_lr_scale_min' must be finite")
+        kl_lr_scale_min_override_value: Optional[float] = None
+        if abs(float(kl_lr_scale_min) - 0.01) > 1e-12:
+            kl_lr_scale_min_override_value = float(kl_lr_scale_min)
+
+        kwargs_local = dict(kwargs)
+        clip_range_value = float(ppo_clip_range)
+        if not math.isfinite(clip_range_value) or clip_range_value <= 0.0:
+            raise ValueError("'ppo_clip_range' must be a positive finite value")
+        kwargs_local["clip_range"] = clip_range_value
+        kwargs_local["target_kl"] = 0.5
+
+        super().__init__(policy=policy, env=env, **kwargs_local)
+
+        self._fixed_clip_range = clip_range_value
+        self.clip_range = lambda _: self._fixed_clip_range
+        self.target_kl = 0.5
+
+        if kl_lr_scale_min_override_value is not None:
+            self.logger.record(
+                "warn/kl_lr_scale_min_overridden", float(kl_lr_scale_min_override_value)
+            )
 
         self.cql_alpha = float(cql_alpha)
         self.cql_beta = float(cql_beta)
@@ -177,9 +206,7 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'kl_epoch_decay' must be in (0, 1]")
         self._kl_min_lr = 1e-6
         self._kl_lr_scale = 1.0
-        self._kl_lr_scale_min = float(kl_lr_scale_min)
-        if not (0.0 < self._kl_lr_scale_min <= 1.0):
-            raise ValueError("'kl_lr_scale_min' must be in (0, 1]")
+        self._kl_lr_scale_min = 0.01
         self._base_lr_schedule = self.lr_schedule
 
         def _scaled_lr_schedule(progress_remaining: float) -> float:
@@ -193,6 +220,24 @@ class DistributionalPPO(RecurrentPPO):
         self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
         self._kl_base_param_lrs: list[float] = []
         self._refresh_kl_base_lrs()
+
+        self.kl_exceed_stop_fraction = float(kl_exceed_stop_fraction)
+        if not (0.0 <= self.kl_exceed_stop_fraction <= 1.0):
+            raise ValueError("'kl_exceed_stop_fraction' must be within [0, 1]")
+
+        beta_min = max(0.0, float(kl_penalty_beta_min))
+        beta_max = max(beta_min, float(kl_penalty_beta_max))
+        beta_initial = float(kl_penalty_beta)
+        if not math.isfinite(beta_initial):
+            raise ValueError("'kl_penalty_beta' must be finite")
+        beta_initial = min(max(beta_initial, beta_min), beta_max)
+        self._kl_penalty_beta = beta_initial
+        self.kl_penalty_beta_min = beta_min
+        self.kl_penalty_beta_max = beta_max
+        self.kl_penalty_increase = max(1.0, float(kl_penalty_increase))
+        self.kl_penalty_decrease = float(kl_penalty_decrease)
+        if not (0.0 < self.kl_penalty_decrease <= 1.0):
+            raise ValueError("'kl_penalty_decrease' must be in (0, 1]")
 
     def _refresh_kl_base_lrs(self) -> None:
         """Cache optimiser base LRs before KL scaling is applied."""
@@ -261,6 +306,30 @@ class DistributionalPPO(RecurrentPPO):
         if previous_factor <= 0.0:
             return 1.0
         return self._kl_epoch_factor / previous_factor
+
+    def _adjust_kl_penalty(self, observed_kl: float) -> None:
+        """Adapt the KL penalty strength based on observed divergence."""
+
+        if self._kl_penalty_beta <= 0.0:
+            return
+        if self.target_kl is None or self.target_kl <= 0.0:
+            return
+
+        if not math.isfinite(observed_kl):
+            return
+
+        if observed_kl > float(self.target_kl):
+            updated_beta = self._kl_penalty_beta * self.kl_penalty_increase
+            updated_beta = min(updated_beta, self.kl_penalty_beta_max)
+        else:
+            updated_beta = self._kl_penalty_beta * self.kl_penalty_decrease
+            updated_beta = max(updated_beta, self.kl_penalty_beta_min)
+
+        if not math.isfinite(updated_beta):
+            updated_beta = self.kl_penalty_beta_max
+
+        self._kl_penalty_beta = updated_beta
+        self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
 
     def _handle_kl_divergence(self, approx_kl: float) -> tuple[float, float]:
         """React to KL overshoot by reducing LR and future epoch budget."""
@@ -549,6 +618,7 @@ class DistributionalPPO(RecurrentPPO):
         mean_value_batches: list[torch.Tensor] = []
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
+        kl_exceed_fraction_latest = 0.0
 
         policy_loss_value = 0.0
         policy_loss_ppo_value = 0.0
@@ -576,6 +646,8 @@ class DistributionalPPO(RecurrentPPO):
         adv_z_values: list[torch.Tensor] = []
         approx_kl_exceed_count = 0
         minibatches_processed = 0
+        kl_penalty_component_total = 0.0
+        kl_penalty_component_count = 0
 
         base_n_epochs = max(1, int(self.n_epochs))
         if base_n_epochs != self._base_n_epochs:
@@ -586,6 +658,7 @@ class DistributionalPPO(RecurrentPPO):
         effective_n_epochs = max(1, int(round(self._base_n_epochs * self._kl_epoch_factor)))
         kl_early_stop_triggered = False
         epochs_completed = 0
+        approx_kl_latest = 0.0
 
         rollout_n_envs = int(getattr(self.rollout_buffer, "n_envs", 1)) or 1
 
@@ -681,6 +754,12 @@ class DistributionalPPO(RecurrentPPO):
                     policy_loss_bc_weighted = policy_loss_bc * bc_coef
 
                 policy_loss = policy_loss_ppo + policy_loss_bc_weighted
+                if self._kl_penalty_beta > 0.0:
+                    kl_penalty_sample = (rollout_data.old_log_prob - log_prob).mean()
+                    kl_penalty_component = self._kl_penalty_beta * kl_penalty_sample
+                    policy_loss = policy_loss + kl_penalty_component
+                    kl_penalty_component_total += float(kl_penalty_component.item())
+                    kl_penalty_component_count += 1
 
                 if entropy is None:
                     entropy_loss = -torch.mean(-log_prob)
@@ -808,6 +887,7 @@ class DistributionalPPO(RecurrentPPO):
                     approx_kl = (
                         ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
                     )
+                    approx_kl_latest = approx_kl
                     approx_kl_divs.append(approx_kl)
                     if (
                         self.target_kl is not None
@@ -819,11 +899,15 @@ class DistributionalPPO(RecurrentPPO):
                 if (
                     self.target_kl is not None
                     and self.target_kl > 0.0
-                    and approx_kl > float(self.target_kl)
+                    and self.kl_exceed_stop_fraction > 0.0
+                    and minibatches_processed > 0
                 ):
-                    kl_early_stop_triggered = True
-                    self._handle_kl_divergence(approx_kl)
-                    break
+                    exceed_fraction = float(approx_kl_exceed_count) / float(minibatches_processed)
+                    kl_exceed_fraction_latest = exceed_fraction
+                    if exceed_fraction >= self.kl_exceed_stop_fraction:
+                        kl_early_stop_triggered = True
+                        self._handle_kl_divergence(approx_kl_latest)
+                        break
 
                 policy_loss_value = float(policy_loss.item())
                 policy_loss_ppo_value = float(policy_loss_ppo.item())
@@ -885,6 +969,11 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
         self.logger.record("train/policy_loss_bc", policy_loss_bc_value)
         self.logger.record("train/policy_loss_bc_weighted", policy_loss_bc_weighted_value)
+        if kl_penalty_component_count > 0:
+            avg_kl_penalty_component = kl_penalty_component_total / float(kl_penalty_component_count)
+        else:
+            avg_kl_penalty_component = 0.0
+        self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
         self.logger.record("train/critic_loss", critic_loss_value)
         self.logger.record("train/cvar_raw", cvar_raw_value)
@@ -904,26 +993,33 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef_initial", float(self.ent_coef_initial))
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
+        approx_kl_exceed_frac = (
+            float(approx_kl_exceed_count) / float(minibatches_processed)
+            if minibatches_processed > 0
+            else 0.0
+        )
         if len(approx_kl_divs) > 0:
             approx_kl_array = np.asarray(approx_kl_divs, dtype=np.float64)
-            self.logger.record("train/approx_kl", float(np.mean(approx_kl_array)))
+            approx_kl_mean = float(np.mean(approx_kl_array))
+            self.logger.record("train/approx_kl", approx_kl_mean)
             self.logger.record("train/approx_kl_median", float(np.median(approx_kl_array)))
             self.logger.record("train/approx_kl_p90", float(np.quantile(approx_kl_array, 0.9)))
             self.logger.record("train/approx_kl_max", float(np.max(approx_kl_array)))
             if self.target_kl is not None and self.target_kl > 0.0:
-                exceed_frac = (
-                    float(approx_kl_exceed_count) / float(len(approx_kl_array))
-                    if len(approx_kl_array) > 0
-                    else 0.0
-                )
-                self.logger.record("train/kl_exceed_frac", exceed_frac)
+                self._adjust_kl_penalty(approx_kl_mean)
+        if self.target_kl is not None and self.target_kl > 0.0:
+            self.logger.record("train/kl_exceed_frac", approx_kl_exceed_frac)
+            self.logger.record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
+            if kl_early_stop_triggered:
+                self.logger.record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
         if last_optimizer_lr is not None:
             self.logger.record("train/optimizer_lr", last_optimizer_lr)
         if last_scheduler_lr is not None:
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
-        self.logger.record("train/clip_range", float(clip_range))
+        clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
+        self.logger.record("train/clip_range", clip_range_for_log)
         if clip_fraction_denom > 0:
             clip_fraction = float(clip_fraction_numer) / float(clip_fraction_denom)
             self.logger.record("train/clip_fraction", clip_fraction)
@@ -957,6 +1053,7 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/target_kl", float(self.target_kl))
             self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
             self.logger.record("train/kl_epoch_factor", float(self._kl_epoch_factor))
+            self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
 
         if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
             y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
