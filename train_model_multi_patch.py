@@ -583,21 +583,36 @@ class SortinoPruningCallback(BaseCallback):
     Кастомный callback для Optuna, который оценивает модель и принимает
     решение о прунинге на основе КОЭФФИЦИЕНТА СОРТИНО, а не среднего вознаграждения.
     """
-    def __init__(self, trial: optuna.Trial, eval_env: VecEnv, n_eval_episodes: int = 5, eval_freq: int = 10000, verbose: int = 0):
+
+    def __init__(
+        self,
+        trial: optuna.Trial,
+        eval_env: VecEnv,
+        n_eval_episodes: int = 5,
+        eval_freq: int = 10000,
+        verbose: int = 0,
+    ):
         super().__init__(verbose)
         self.trial = trial
         self.eval_env = eval_env
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
+        self._last_eval_step = 0
 
     def _on_step(self) -> bool:
-        # Запускаем оценку в заданные интервалы
-        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
-            
+        # Запускаем оценку в заданные интервалы (по числу таймстепов)
+        current_step = self.num_timesteps
+        if (
+            self.eval_freq > 0
+            and current_step >= self.eval_freq
+            and current_step - self._last_eval_step >= self.eval_freq
+        ):
+            self._last_eval_step = current_step
+
             # Используем быструю Cython-функцию для оценки
             rewards, equity_curves = evaluate_policy_custom_cython(
-                self.model, 
-                self.eval_env, 
+                self.model,
+                self.eval_env,
                 num_episodes=self.n_eval_episodes
             )
             
@@ -614,17 +629,21 @@ class SortinoPruningCallback(BaseCallback):
                 current_sortino = sortino_ratio(flat_returns)
 
             if self.verbose > 0:
-                print(f"Step {self.n_calls}: Pruning check with Sortino Ratio = {current_sortino:.4f}")
+                print(
+                    f"Step {current_step}: Pruning check with Sortino Ratio = {current_sortino:.4f}"
+                )
 
             if self.logger is not None:
                 self.logger.record("pruning/sortino_ratio", current_sortino)
 
             # 1. Сообщаем Optuna о промежуточном результате (теперь это Sortino)
-            self.trial.report(current_sortino, self.n_calls)
+            self.trial.report(current_sortino, current_step)
 
             # 2. Проверяем, не нужно ли остановить этот trial
             if self.trial.should_prune():
-                raise TrialPruned(f"Trial pruned at step {self.n_calls} with Sortino Ratio: {current_sortino:.4f}")
+                raise TrialPruned(
+                    f"Trial pruned at step {current_step} with Sortino Ratio: {current_sortino:.4f}"
+                )
 
         return True
 
@@ -633,22 +652,38 @@ class ObjectiveScorePruningCallback(BaseCallback):
     Callback для прунинга, использующий полную взвешенную метрику objective_score.
     Работает реже, чем SortinoPruningCallback, так как оценка занимает больше времени.
     """
-    def __init__(self, trial: optuna.Trial, eval_env: VecEnv, eval_freq: int = 40000, verbose: int = 0):
+
+    def __init__(
+        self,
+        trial: optuna.Trial,
+        eval_env: VecEnv,
+        eval_freq: int = 40000,
+        verbose: int = 0,
+    ):
         super().__init__(verbose)
         self.trial = trial
         self.eval_env = eval_env
         self.eval_freq = eval_freq
-        
+
         # Веса, идентичные финальной оценке
         self.main_weight = 0.5
         self.choppy_weight = 0.3
         self.trend_weight = 0.2
         self.regime_duration = 2_500
+        self._last_eval_step = 0
 
     def _on_step(self) -> bool:
-        if self.eval_freq > 0 and self.n_calls > 0 and self.n_calls % self.eval_freq == 0:
-            
-            print(f"\n--- Step {self.n_calls}: Starting comprehensive pruning check with Objective Score ---")
+        current_step = self.num_timesteps
+        if (
+            self.eval_freq > 0
+            and current_step >= self.eval_freq
+            and current_step - self._last_eval_step >= self.eval_freq
+        ):
+            self._last_eval_step = current_step
+
+            print(
+                f"\n--- Step {current_step}: Starting comprehensive pruning check with Objective Score ---"
+            )
             
             regimes_to_evaluate = ['normal', 'choppy_flat', 'strong_trend']
             evaluated_metrics = {}
@@ -689,8 +724,12 @@ class ObjectiveScorePruningCallback(BaseCallback):
                                self.trend_weight * trend_score)
 
             if self.verbose > 0:
-                print(f"Comprehensive pruning check complete. Objective Score: {objective_score:.4f}")
-                print(f"Components -> Main: {main_sortino:.4f}, Choppy: {choppy_score:.4f}, Trend: {trend_score:.4f}\n")
+                print(
+                    f"Comprehensive pruning check complete. Objective Score: {objective_score:.4f}"
+                )
+                print(
+                    f"Components -> Main: {main_sortino:.4f}, Choppy: {choppy_score:.4f}, Trend: {trend_score:.4f}\n"
+                )
 
             if self.logger is not None:
                 self.logger.record("pruning/objective_score", objective_score)
@@ -699,9 +738,11 @@ class ObjectiveScorePruningCallback(BaseCallback):
                 self.logger.record("pruning/objective_trend", trend_score)
 
             # Сообщаем Optuna о результате и проверяем необходимость прунинга
-            self.trial.report(objective_score, self.n_calls)
+            self.trial.report(objective_score, current_step)
             if self.trial.should_prune():
-                raise TrialPruned(f"Trial pruned at step {self.n_calls} with Objective Score: {objective_score:.4f}")
+                raise TrialPruned(
+                    f"Trial pruned at step {current_step} with Objective Score: {objective_score:.4f}"
+                )
 
         return True
 
