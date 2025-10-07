@@ -231,7 +231,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
                 "n_steps": 32,
                 "batch_size": 16,
                 "n_epochs": 1,
-                "v_range_ema_alpha": 0.01,
+                "v_range_ema_alpha": 0.005,
                 "cql_alpha": 0.0,
                 "cql_beta": 5.0,
                 "cvar_alpha": 0.05,

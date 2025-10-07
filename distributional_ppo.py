@@ -108,7 +108,7 @@ class DistributionalPPO(RecurrentPPO):
         cvar_alpha: float = 0.05,
         cvar_weight: float = 0.5,
         cvar_cap: Optional[float] = None,
-        v_range_ema_alpha: float = 0.01,
+        v_range_ema_alpha: float = 0.005,
         bc_warmup_steps: int = 0,
         bc_decay_steps: int = 0,
         bc_final_coef: Optional[float] = None,
