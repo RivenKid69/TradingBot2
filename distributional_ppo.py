@@ -353,7 +353,13 @@ class DistributionalPPO(RecurrentPPO):
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
         self._value_clip_limit_scaled: Optional[float] = None
 
+        kl_lr_scale_min_log_request = kl_lr_scale_min_requested
+
         super().__init__(policy=policy, env=env, **kwargs_local)
+
+        if kl_lr_scale_min_log_request is not None:
+            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_log_request))
+            self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
         self._configure_loss_head_weights(loss_head_weights)
 
@@ -463,10 +469,6 @@ class DistributionalPPO(RecurrentPPO):
         self.target_kl = target_kl_value
 
         self.normalize_advantage = True
-
-        if kl_lr_scale_min_requested is not None:
-            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
-            self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
         atoms = max(1, int(getattr(self.policy, "num_atoms", 1)))
         ce_norm = math.log(float(atoms))
