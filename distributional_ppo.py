@@ -769,9 +769,6 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.update_atoms(self.running_v_min, self.running_v_max)
 
 
-        running_v_min_unscaled = self.running_v_min * self.value_target_scale
-        running_v_max_unscaled = self.running_v_max * self.value_target_scale
-
         running_v_min_unscaled = self.running_v_min / self.value_target_scale
         running_v_max_unscaled = self.running_v_max / self.value_target_scale
 
@@ -1210,6 +1207,7 @@ class DistributionalPPO(RecurrentPPO):
             else self._last_rollout_entropy
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
+        self.logger.record("train/policy_entropy", float(avg_policy_entropy))
 
         if value_logits_final is None:
             cached_logits = getattr(self.policy, "last_value_logits", None)
@@ -1273,7 +1271,6 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/cvar_cap", self.cvar_cap)
 
         self.logger.record("train/entropy_loss", -avg_policy_entropy)
-        self.logger.record("train/policy_entropy", avg_policy_entropy)
         self.logger.record("train/policy_entropy_slope", self._last_entropy_slope)
         self.logger.record("train/entropy_plateau", float(self._entropy_plateau))
         decay_start = self._entropy_decay_start_update if self._entropy_decay_start_update is not None else -1
