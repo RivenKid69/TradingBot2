@@ -408,6 +408,7 @@ class DistributionalPPO(RecurrentPPO):
             ]
 
         self._refresh_kl_base_lrs()
+        self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
         return actual_decay
 
     def _apply_epoch_decay(self) -> float:
@@ -815,6 +816,7 @@ class DistributionalPPO(RecurrentPPO):
         adv_batch_count = 0
 
         value_logits_final: Optional[torch.Tensor] = None
+        value_mse_value = 0.0
 
         clip_fraction_numer = 0.0
         clip_fraction_denom = 0
@@ -906,6 +908,7 @@ class DistributionalPPO(RecurrentPPO):
                 bucket_cvar_loss_value = 0.0
                 bucket_cvar_term_value = 0.0
                 bucket_total_loss_value = 0.0
+                bucket_value_mse_value = 0.0
                 bucket_value_logits_fp32: Optional[torch.Tensor] = None
                 approx_kl_weighted_sum = 0.0
                 bucket_sample_count = 0
@@ -946,10 +949,12 @@ class DistributionalPPO(RecurrentPPO):
 
                     with torch.no_grad():
                         ratio_detached = ratio.detach()
+                        clip_mask = ratio_detached.sub(1.0).abs() > clip_range
+                        clipped = clip_mask.float().mean()
+                        self.logger.record("train/clip_fraction_batch", float(clipped.item()))
                         ratio_sum += float(ratio_detached.sum().item())
                         ratio_sq_sum += float((ratio_detached.square()).sum().item())
                         ratio_count += int(ratio_detached.numel())
-                        clip_mask = ratio_detached.sub(1.0).abs() > clip_range
                         clip_fraction_numer += float(clip_mask.sum().item())
                         clip_fraction_denom += int(clip_mask.numel())
 
@@ -1053,6 +1058,14 @@ class DistributionalPPO(RecurrentPPO):
                     with torch.no_grad():
 
                         mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                        mean_values_flat = mean_values_batch.view(-1)
+                        target_returns_flat = target_returns.view(-1)
+                        mse_tensor = F.mse_loss(
+                            mean_values_flat / self.value_target_scale,
+                            target_returns_flat,
+                            reduction="mean",
+                        )
+                        bucket_value_mse_value += float(mse_tensor.item()) * weight
                         mean_values_unscaled = mean_values_batch / self.value_target_scale
 
                         if self._value_clip_limit_unscaled is not None:
@@ -1160,6 +1173,14 @@ class DistributionalPPO(RecurrentPPO):
                             self.logger.record("train/scheduler_lr", last_scheduler_lr)
                     self._refresh_kl_base_lrs()
 
+                optimizer = getattr(self.policy, "optimizer", None)
+                if optimizer is not None:
+                    for group in getattr(optimizer, "param_groups", []):
+                        if "lr" in group:
+                            cur_lr = float(group["lr"])
+                            self.logger.record("train/learning_rate", cur_lr)
+                            break
+
                 approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
                 approx_kl_latest = approx_kl
                 approx_kl_divs.append(approx_kl)
@@ -1175,6 +1196,7 @@ class DistributionalPPO(RecurrentPPO):
                 policy_loss_bc_value = bucket_policy_loss_bc_value
                 policy_loss_bc_weighted_value = bucket_policy_loss_bc_weighted_value
                 critic_loss_value = bucket_critic_loss_value
+                value_mse_value = bucket_value_mse_value
                 cvar_raw_value = bucket_cvar_raw_value
                 cvar_loss_value = bucket_cvar_loss_value
                 cvar_term_value = bucket_cvar_term_value
@@ -1251,6 +1273,15 @@ class DistributionalPPO(RecurrentPPO):
             y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy()
             explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
 
+            with torch.no_grad():
+                value_mse_value = float(
+                    F.mse_loss(
+                        y_pred_tensor.flatten().to(dtype=torch.float32),
+                        y_true_tensor.flatten().to(dtype=torch.float32),
+                        reduction="mean",
+                    ).item()
+                )
+
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
 
         self.logger.record("train/policy_loss", policy_loss_value)
@@ -1263,12 +1294,13 @@ class DistributionalPPO(RecurrentPPO):
             avg_kl_penalty_component = 0.0
         self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
-        self.logger.record("train/critic_loss", critic_loss_value)
+        self.logger.record("train/value_ce_loss", critic_loss_value)
         self.logger.record("train/cvar_raw", cvar_raw_value)
         self.logger.record("train/cvar_loss", cvar_loss_value)
         self.logger.record("train/cvar_term", cvar_term_value)
         if self.cvar_cap is not None:
             self.logger.record("train/cvar_cap", self.cvar_cap)
+        self.logger.record("train/value_mse", value_mse_value)
 
         self.logger.record("train/entropy_loss", -avg_policy_entropy)
         self.logger.record("train/policy_entropy_slope", self._last_entropy_slope)
@@ -1307,9 +1339,6 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/explained_variance", explained_var)
         clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
         self.logger.record("train/clip_range", clip_range_for_log)
-        if clip_fraction_denom > 0:
-            clip_fraction = float(clip_fraction_numer) / float(clip_fraction_denom)
-            self.logger.record("train/clip_fraction", clip_fraction)
         if ratio_count > 0:
             ratio_mean = ratio_sum / float(ratio_count)
             ratio_var = max(ratio_sq_sum / float(ratio_count) - ratio_mean**2, 0.0)
@@ -1335,7 +1364,12 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/n_epochs_effective", float(effective_n_epochs))
         self.logger.record("train/n_epochs_completed", float(epochs_completed))
         self.logger.record("train/n_minibatches_done", float(minibatches_processed))
-        self.logger.record("train/kl_early_stop", float(1.0 if kl_early_stop_triggered else 0.0))
+        self.logger.record("train/kl_early_stop", int(kl_early_stop_triggered))
+        if clip_fraction_denom > 0:
+            self.logger.record(
+                "train/clip_fraction",
+                float(clip_fraction_numer) / float(clip_fraction_denom),
+            )
         if self.target_kl is not None and self.target_kl > 0.0:
             self.logger.record("train/target_kl", float(self.target_kl))
             self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))

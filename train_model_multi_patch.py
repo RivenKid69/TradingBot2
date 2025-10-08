@@ -1562,6 +1562,8 @@ def objective(trial: optuna.Trial,
                 print(
                     f"[{symbol}] No-trade blocks: {blocked_steps}/{total_steps} steps ({ratio:.2%})"
                 )
+                if model.logger is not None:
+                    model.logger.record("eval/no_trade_ratio", float(ratio))
 
             final_eval_env.close()
 
