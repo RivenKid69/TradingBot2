@@ -1016,11 +1016,24 @@ class DistributionalPPO(RecurrentPPO):
 
                     with torch.no_grad():
                         actor_states = self._extract_actor_states(rollout_data.lstm_states)
-                        dist = self.policy.get_distribution(
+                        dist_output = self.policy.get_distribution(
                             rollout_data.observations,
                             actor_states,
                             rollout_data.episode_starts,
                         )
+                        # Some recurrent policies (including custom ones used in
+                        # this project) return auxiliary data such as the updated
+                        # RNN states alongside the action distribution.  The
+                        # original implementation assumed that
+                        # ``get_distribution`` always returned the distribution
+                        # instance directly which is not true anymore after the
+                        # recent policy refactor.  When the method returns a
+                        # tuple, the actual distribution object is the first
+                        # element, so we unwrap it here before proceeding.
+                        if isinstance(dist_output, tuple):
+                            dist = dist_output[0]
+                        else:
+                            dist = dist_output
                         entropy_tensor = dist.entropy()
                         if entropy_tensor.ndim > 1:
                             entropy_tensor = entropy_tensor.sum(dim=-1)
