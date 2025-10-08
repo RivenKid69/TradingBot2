@@ -1177,7 +1177,7 @@ def objective(trial: optuna.Trial,
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
-        "n_epochs": n_epochs_cfg if n_epochs_cfg is not None else trial.suggest_int("n_epochs", 1, 5),
+        "n_epochs": n_epochs_cfg if n_epochs_cfg is not None else trial.suggest_int("n_epochs", 2, 4),
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
         "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
         "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
@@ -1191,9 +1191,9 @@ def objective(trial: optuna.Trial,
         "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True),
         "gamma": gamma_cfg if gamma_cfg is not None else trial.suggest_float("gamma", 0.97, 0.995),
         "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
-        "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.12, 0.18),
+        "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.08, 0.12),
         "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
-        "target_kl": target_kl_cfg if target_kl_cfg is not None else trial.suggest_float("target_kl", 0.01, 0.05),
+        "target_kl": target_kl_cfg if target_kl_cfg is not None else trial.suggest_float("target_kl", 0.4, 1.6),
         "kl_lr_decay": kl_lr_decay_cfg if kl_lr_decay_cfg is not None else 0.5,
         "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
         "kl_lr_scale_min": kl_lr_scale_min_cfg if kl_lr_scale_min_cfg is not None else 0.1,
@@ -1484,7 +1484,7 @@ def objective(trial: optuna.Trial,
         monitored_env_tr,
         training=True,
         norm_obs=False,
-        norm_reward=False,
+        norm_reward=True,
         clip_reward=None,
         gamma=params["gamma"],
     )
@@ -1558,13 +1558,21 @@ def objective(trial: optuna.Trial,
         "optimizer_class": torch.optim.AdamW,
         "optimizer_kwargs": {"weight_decay": params["weight_decay"]},
     }
-    # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
     # --- Stabilise KL behaviour and optimiser updates -----------------------
-    params["target_kl"] = 0.5
-    if float(params["learning_rate"]) >= 1e-4:
-        params["learning_rate"] = float(params["learning_rate"]) * 0.1
-    params["clip_range"] = 0.03
-    params["n_epochs"] = 1
+    clip_range_value = params.get("clip_range", 0.1)
+    clip_range_value = float(clip_range_value)
+    clip_range_value = float(np.clip(clip_range_value, 0.08, 0.12))
+    params["clip_range"] = clip_range_value
+
+    target_kl_value = params.get("target_kl")
+    if target_kl_value is not None:
+        target_kl_value = float(target_kl_value)
+        params["target_kl"] = float(np.clip(target_kl_value, 0.4, 1.6))
+
+    n_epochs_value = int(params.get("n_epochs", 2))
+    params["n_epochs"] = max(min(n_epochs_value, 4), 2)
+
+    # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
 
     kl_lr_decay_value = params.get("kl_lr_decay", 0.5)
     if isinstance(kl_lr_decay_value, bool):
@@ -1582,8 +1590,8 @@ def objective(trial: optuna.Trial,
         kl_epoch_decay_value = 0.5
     params["kl_epoch_decay"] = kl_epoch_decay_value
 
-    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.01))
-    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 0.01), 1e-6)
+    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.5))
+    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 1.0), 0.5)
 
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
@@ -1720,6 +1728,11 @@ def objective(trial: optuna.Trial,
             tb_log_name=f"trial_{trial.number:03d}" if tb_log_path is not None else "run"
         )
     finally:
+        try:
+            env_tr.training = False
+            env_tr.save(str(train_stats_path))
+        except Exception as exc:
+            print(f"Failed to resave training VecNormalize stats: {exc}")
         env_tr.close()
         env_va.close()
 
