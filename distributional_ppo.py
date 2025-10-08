@@ -769,9 +769,6 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.update_atoms(self.running_v_min, self.running_v_max)
 
 
-        running_v_min_unscaled = self.running_v_min * self.value_target_scale
-        running_v_max_unscaled = self.running_v_max * self.value_target_scale
-
         running_v_min_unscaled = self.running_v_min / self.value_target_scale
         running_v_max_unscaled = self.running_v_max / self.value_target_scale
 
@@ -794,8 +791,8 @@ class DistributionalPPO(RecurrentPPO):
         bc_coef = self._update_bc_coef()
         self.logger.record("train/policy_bc_coef", bc_coef)
 
-        entropy_loss_total = 0.0
-        entropy_loss_count = 0
+        policy_entropy_sum = 0.0
+        policy_entropy_count = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -982,9 +979,19 @@ class DistributionalPPO(RecurrentPPO):
                         entropy_loss = -torch.mean(-log_prob)
                     else:
                         entropy_loss = -torch.mean(entropy)
-                    mean_entropy = -entropy_loss.item()
-                    entropy_loss_total += mean_entropy
-                    entropy_loss_count += 1
+
+                    with torch.no_grad():
+                        dist = self.policy.get_distribution(
+                            rollout_data.observations,
+                            rollout_data.lstm_states,
+                            rollout_data.episode_starts,
+                        )
+                        entropy_tensor = dist.entropy()
+                        if entropy_tensor.ndim > 1:
+                            entropy_tensor = entropy_tensor.sum(dim=-1)
+                        entropy_tensor = entropy_tensor.detach().to(dtype=torch.float32)
+                        policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
+                        policy_entropy_count += int(entropy_tensor.numel())
 
                     value_logits = self.policy.last_value_logits
                     if value_logits is None:
@@ -1195,9 +1202,12 @@ class DistributionalPPO(RecurrentPPO):
         self._update_calls += 1
 
         avg_policy_entropy = (
-            entropy_loss_total / float(entropy_loss_count) if entropy_loss_count > 0 else self._last_rollout_entropy
+            policy_entropy_sum / float(policy_entropy_count)
+            if policy_entropy_count > 0
+            else self._last_rollout_entropy
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
+        self.logger.record("train/policy_entropy", float(avg_policy_entropy))
 
         if value_logits_final is None:
             cached_logits = getattr(self.policy, "last_value_logits", None)
@@ -1261,7 +1271,6 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/cvar_cap", self.cvar_cap)
 
         self.logger.record("train/entropy_loss", -avg_policy_entropy)
-        self.logger.record("train/policy_entropy", avg_policy_entropy)
         self.logger.record("train/policy_entropy_slope", self._last_entropy_slope)
         self.logger.record("train/entropy_plateau", float(self._entropy_plateau))
         decay_start = self._entropy_decay_start_update if self._entropy_decay_start_update is not None else -1
