@@ -60,6 +60,10 @@ def safe_explained_variance(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> torch.Tensor:
     """Vectorized Conditional Value at Risk for batched categorical distributions."""
 
+    alpha_float = float(alpha)
+    if not math.isfinite(alpha_float) or not (0.0 < alpha_float <= 1.0):
+        raise ValueError("'alpha' must be a finite probability in the interval (0, 1]")
+
     if probs.dim() != 2:
         raise ValueError("'probs' must be a 2D tensor")
 
@@ -75,7 +79,7 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     sorted_probs = torch.gather(probs.to(dtype=dtype), 1, expanded_indices)
     cumulative_probs = torch.cumsum(sorted_probs, dim=1)
 
-    alpha_tensor = torch.full((batch_size, 1), alpha, dtype=dtype, device=device)
+    alpha_tensor = torch.full((batch_size, 1), alpha_float, dtype=dtype, device=device)
     var_indices = torch.searchsorted(cumulative_probs.detach(), alpha_tensor).clamp(max=num_atoms - 1)
 
     atom_positions = torch.arange(num_atoms, device=device).view(1, -1)
@@ -93,7 +97,7 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     weight_on_var = (alpha_tensor.squeeze(1) - prev_cum).clamp(min=0.0)
     var_values = sorted_atoms[var_indices.squeeze(1)]
 
-    cvar = (tail_expectation + weight_on_var * var_values) / (alpha + 1e-8)
+    cvar = (tail_expectation + weight_on_var * var_values) / (alpha_float + 1e-8)
     return cvar
 
 
@@ -227,6 +231,8 @@ class DistributionalPPO(RecurrentPPO):
         self.cql_alpha = float(cql_alpha)
         self.cql_beta = float(cql_beta)
         self.cvar_alpha = float(cvar_alpha)
+        if not math.isfinite(self.cvar_alpha) or not (0.0 < self.cvar_alpha <= 1.0):
+            raise ValueError("'cvar_alpha' must be a finite probability in the interval (0, 1]")
         self.cvar_weight = float(cvar_weight)
         if cvar_cap is not None and cvar_cap <= 0.0:
             raise ValueError("'cvar_cap' must be positive when provided")
