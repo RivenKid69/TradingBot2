@@ -2280,11 +2280,41 @@ def main():
             "⚠️ Could not find best model or normalization stats for validation evaluation."
         )
 
-if __name__ == "__main__":
+def _configure_start_method() -> None:
+    """Pick a multiprocessing start method suited for the current platform."""
+
     try:
-        mp.set_start_method("spawn", force=True)
-    except RuntimeError:
+        current = mp.get_start_method(allow_none=True)
+    except Exception:
+        current = None
+
+    if current is not None:
+        return
+
+    preferred_order: list[str]
+    if sys.platform.startswith("win"):
+        preferred_order = ["spawn"]
+    else:
+        preferred_order = ["fork", "forkserver", "spawn"]
+
+    available = set()
+    try:
+        available = set(mp.get_all_start_methods())
+    except Exception:
         pass
+
+    for method in preferred_order:
+        if available and method not in available:
+            continue
+        try:
+            mp.set_start_method(method, force=False)
+            return
+        except RuntimeError:
+            continue
+
+
+if __name__ == "__main__":
+    _configure_start_method()
 
     def _extract_grad_sanity(argv: list[str]) -> str | None:
         for idx, arg in enumerate(argv):
