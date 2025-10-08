@@ -1484,10 +1484,19 @@ def objective(trial: optuna.Trial,
         monitored_env_tr,
         training=True,
         norm_obs=False,
-        norm_reward=True,
+        norm_reward=False,
         clip_reward=None,
         gamma=params["gamma"],
     )
+
+    # Distributional PPO expects access to the raw ΔPnL rewards in order to
+    # compute its custom targets.  If VecNormalize were to normalise rewards the
+    # algorithm would raise during rollout collection (see
+    # ``DistributionalPPO.collect_rollouts``) because the rescaled rewards break
+    # the interpretation of the categorical distribution.  Explicitly disabling
+    # reward normalisation keeps the environment aligned with that expectation
+    # and prevents the training crash observed when Optuna launches trials.
+    env_tr.norm_reward = False
 
     env_tr.save(str(train_stats_path))
     save_sidecar_metadata(str(train_stats_path), extra={"kind": "vecnorm_stats", "phase": "train"})
