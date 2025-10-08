@@ -208,6 +208,7 @@ class DistributionalPPO(RecurrentPPO):
         self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
         self._last_rollout_entropy: float = 0.0
         self._update_calls: int = 0
+        self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
 
         if not math.isfinite(kl_lr_scale_min):
@@ -530,6 +531,8 @@ class DistributionalPPO(RecurrentPPO):
 
     def _update_critic_gradient_block(self, update_index: int) -> None:
         should_block = update_index < self._critic_grad_warmup_updates
+        if should_block == self._critic_grad_blocked:
+            return
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
             policy_block_fn(should_block)
@@ -947,7 +950,7 @@ class DistributionalPPO(RecurrentPPO):
         self._update_learning_rate(self.policy.optimizer)
         self._refresh_kl_base_lrs()
 
-        current_update = self._update_calls
+        current_update = self._global_update_step
         self._update_critic_gradient_block(current_update)
         self._clip_range_current = self._compute_clip_range_value(current_update)
         clip_range = float(self._clip_range_current)
@@ -1560,6 +1563,7 @@ class DistributionalPPO(RecurrentPPO):
                 break
         self._n_updates += epochs_completed
         self._update_calls += 1
+        self._global_update_step += 1
 
         avg_policy_entropy = (
             policy_entropy_sum / float(policy_entropy_count)

@@ -97,7 +97,7 @@ model:
     v_range_ema_alpha: 0.005
     clip_range_warmup: 0.18
     clip_range_warmup_updates: 16
-    critic_grad_warmup_updates: 12
+    critic_grad_warmup_updates: 3
     entropy_boost_factor: 1.5
 
 env:

@@ -569,6 +569,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         return self._forward_recurrent(features, lstm_states, episode_starts)
 
     def _get_action_dist_from_latent(self, latent_pi: torch.Tensor):
+        if self._is_bar_execution_mode():
+            return self._bar_action_distribution(latent_pi)
         if isinstance(self.action_space, spaces.Box):
             mean_actions = self.action_net(latent_pi)
             # Smoothly map the unconstrained parameter into the range [-5, 0]
