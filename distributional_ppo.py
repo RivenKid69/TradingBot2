@@ -193,9 +193,12 @@ class DistributionalPPO(RecurrentPPO):
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
+        kl_lr_scale_min_value = float(kl_lr_scale_min)
+        if kl_lr_scale_min_value <= 0.0:
+            raise ValueError("'kl_lr_scale_min' must be strictly positive")
         kl_lr_scale_min_requested: Optional[float] = None
-        if abs(float(kl_lr_scale_min) - 0.01) > 1e-12:
-            kl_lr_scale_min_requested = float(kl_lr_scale_min)
+        if abs(kl_lr_scale_min_value - 0.01) > 1e-12:
+            kl_lr_scale_min_requested = kl_lr_scale_min_value
 
         kwargs_local = dict(kwargs)
 
@@ -302,7 +305,7 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'kl_epoch_decay' must be in (0, 1]")
         self._kl_min_lr = 1e-6
         self._kl_lr_scale = 1.0
-        self._kl_lr_scale_min = 0.01
+        self._kl_lr_scale_min = kl_lr_scale_min_value
         self._base_lr_schedule = self.lr_schedule
 
         def _scaled_lr_schedule(progress_remaining: float) -> float:
@@ -343,7 +346,7 @@ class DistributionalPPO(RecurrentPPO):
 
         if kl_lr_scale_min_requested is not None:
             self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
-            self.logger.record("warn/kl_lr_scale_min_effective", 0.01)
+            self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
     def _configure_gradient_accumulation(
         self,
@@ -1096,20 +1099,24 @@ class DistributionalPPO(RecurrentPPO):
                         upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
 
                         same_bounds = lower_bound == upper_bound
-                        lower_bound = torch.where(
-                            same_bounds & (lower_bound > 0), lower_bound - 1, lower_bound
-                        )
-                        upper_bound = torch.where(
-                            same_bounds & (upper_bound < self.policy.num_atoms - 1),
-                            upper_bound + 1,
-                            upper_bound,
-                        )
 
                         target_distribution = torch.zeros_like(value_logits_fp32)
                         lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
                         upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
+                        lower_prob = torch.where(
+                            same_bounds,
+                            torch.ones_like(lower_prob),
+                            lower_prob,
+                        )
+                        upper_prob = torch.where(
+                            same_bounds,
+                            torch.zeros_like(upper_prob),
+                            upper_prob,
+                        )
                         target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
                         target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
+                        normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-8)
+                        target_distribution = target_distribution / normaliser
                         target_return_batches.append(target_returns.reshape(-1, 1).detach())
 
                     pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
