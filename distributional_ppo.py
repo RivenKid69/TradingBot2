@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from sb3_contrib import RecurrentPPO
 from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.buffers import RecurrentRolloutBuffer
+from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList, EvalCallback
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
@@ -100,6 +101,32 @@ class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
 
     @staticmethod
+    def _clone_states_to_device(
+        states: Optional[RNNStates | tuple[torch.Tensor, ...]], device: torch.device
+    ) -> Optional[RNNStates | tuple[torch.Tensor, ...]]:
+        if states is None:
+            return None
+
+        if hasattr(states, "pi") and hasattr(states, "vf"):
+            pi_states = tuple(state.to(device) for state in states.pi)
+            vf_states = tuple(state.to(device) for state in states.vf)
+            return RNNStates(pi=pi_states, vf=vf_states)
+
+        return tuple(state.to(device) for state in states)
+
+    @staticmethod
+    def _extract_actor_states(
+        states: Optional[RNNStates | tuple[torch.Tensor, ...]]
+    ) -> Optional[tuple[torch.Tensor, ...]]:
+        if states is None:
+            return None
+
+        if hasattr(states, "pi"):
+            return tuple(states.pi)
+
+        return tuple(states)
+
+    @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float]) -> float:
         if isinstance(value_target_scale, str):
             normalized = value_target_scale.strip().lower()
@@ -160,7 +187,7 @@ class DistributionalPPO(RecurrentPPO):
         gradient_accumulation_steps: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        self._last_lstm_states: Optional[tuple[torch.Tensor, torch.Tensor]] = None
+        self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
         self._last_rollout_entropy: float = 0.0
         self._update_calls: int = 0
 
@@ -546,7 +573,7 @@ class DistributionalPPO(RecurrentPPO):
 
         if self._last_lstm_states is None:
             init_states = self.policy.recurrent_initial_state
-            self._last_lstm_states = (init_states[0].to(self.device), init_states[1].to(self.device))
+            self._last_lstm_states = self._clone_states_to_device(init_states, self.device)
 
         self.policy.set_training_mode(False)
 
@@ -988,9 +1015,10 @@ class DistributionalPPO(RecurrentPPO):
                         entropy_loss = -torch.mean(entropy)
 
                     with torch.no_grad():
+                        actor_states = self._extract_actor_states(rollout_data.lstm_states)
                         dist = self.policy.get_distribution(
                             rollout_data.observations,
-                            rollout_data.lstm_states,
+                            actor_states,
                             rollout_data.episode_starts,
                         )
                         entropy_tensor = dist.entropy()
