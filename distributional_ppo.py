@@ -357,9 +357,10 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
-        if kl_lr_scale_min_log_request is not None:
-            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_log_request))
-            self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
+        base_logger = getattr(self, "_logger", None)
+        if kl_lr_scale_min_log_request is not None and base_logger is not None:
+            base_logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_log_request))
+            base_logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
         self._configure_loss_head_weights(loss_head_weights)
 
