@@ -93,7 +93,7 @@ adv:
   seasonality_profile: null
 
 fees:
-  path: null                     # Путь к JSON/YAML с ставками по символам; null → использовать data/fees/fees_by_symbol.json.
+  path: "data/fees/fees_by_symbol.json"  # Локальный снэпшот комиссий для оффлайн-исполнения.
   refresh_days: null             # Каденс проверки устаревания таблицы (в днях); null отключает проверку (по умолчанию).
   maker_bps: null                # null → брать базовую ставку из авто-обновлённой таблицы; число → жёсткий override.
   taker_bps: 10.0                # Тейкерская комиссия (bps); null → брать из авто-обновления.

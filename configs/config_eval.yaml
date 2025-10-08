@@ -27,6 +27,10 @@ execution_config:
     min_child_notional: 20.0
 
 fees:
+
+  path: "data/fees/fees_by_symbol.json"
+
+
   taker_bps: 10.0
   half_spread_bps: 5.0
   impact_coeff: 0.0

@@ -134,6 +134,7 @@ quantizer:
   refresh_on_start: false
 
 fees:
+  path: "data/fees/fees_by_symbol.json"
   use_bnb_discount: false
   maker_bps: 1.0
   taker_bps: 10.0
