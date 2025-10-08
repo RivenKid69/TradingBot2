@@ -1555,12 +1555,6 @@ class DistributionalPPO(RecurrentPPO):
 
             if kl_early_stop_triggered:
                 break
-        if explained_var < 0.0:
-            self._bad_explained_counter += 1
-        else:
-            self._bad_explained_counter = 0
-        self._last_explained_variance = float(explained_var)
-
         self._n_updates += epochs_completed
         self._update_calls += 1
 
@@ -1634,6 +1628,12 @@ class DistributionalPPO(RecurrentPPO):
                 )
 
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
+
+        if explained_var < 0.0:
+            self._bad_explained_counter += 1
+        else:
+            self._bad_explained_counter = 0
+        self._last_explained_variance = float(explained_var)
 
         self.logger.record("train/policy_loss", policy_loss_value)
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
