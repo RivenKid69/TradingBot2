@@ -23,6 +23,7 @@ execution_params:
   tif: GTC               # e.g. IOC or FOK
 execution:
   mode: bar
+  enabled: false
 timing:
   enforce_closed_bars: true
   timeframe_ms: 60000

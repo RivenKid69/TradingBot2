@@ -17,6 +17,14 @@ data:
 
 execution:
   mode: bar
+  enabled: true
+  spot_only: true
+  fill_policy: next_open_market   # close_t → open_{t+1}
+
+fees:
+  taker_bps: 10.0
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
 
 model:
   algo: "ppo"
