@@ -187,6 +187,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # чтобы на него можно было безопасно ссылаться до сборки модели.
         self.dist_head: Optional[nn.Linear] = None
         self._last_value_logits: Optional[torch.Tensor] = None
+        self._critic_gradient_blocked: bool = False
 
         # lr_schedule уже используется базовым классом во время вызова super().__init__.
         # Сохраняем ссылку заранее, чтобы можно было переинициализировать оптимизатор
@@ -337,6 +338,12 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             assert isinstance(features, tuple) and len(features) == 2
             pi_features, vf_features = features
 
+        if self._critic_gradient_blocked:
+            if isinstance(vf_features, torch.Tensor):
+                vf_features = vf_features.detach()
+            else:
+                vf_features = tuple(feat.detach() for feat in vf_features)
+
         latent_pi, new_pi_states = self._process_sequence(
             pi_features, lstm_states.pi, episode_starts, self.lstm_actor
         )
@@ -353,6 +360,16 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             new_vf_states = lstm_states.vf
 
         return latent_pi, latent_vf, RNNStates(new_pi_states, new_vf_states)
+
+    # Backward compatibility with SB3 `RecurrentActorCriticPolicy` expectations.
+    # Some call sites still invoke `forward_rnn`, so keep the public alias alive.
+    def forward_rnn(
+        self,
+        features: torch.Tensor | Tuple[torch.Tensor, torch.Tensor],
+        lstm_states: RNNStates,
+        episode_starts: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor, RNNStates]:
+        return self._forward_recurrent(features, lstm_states, episode_starts)
 
     def _get_action_dist_from_latent(self, latent_pi: torch.Tensor):
         if isinstance(self.action_space, spaces.Box):
@@ -400,6 +417,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if self._loss_head_weights_tensor.device != device:
             self._loss_head_weights_tensor = self._loss_head_weights_tensor.to(device=device)
         return self._loss_head_weights_tensor
+
+    def set_critic_gradient_blocked(self, blocked: bool) -> None:
+        self._critic_gradient_blocked = bool(blocked)
 
     def set_loss_head_weights(
         self, weights: Optional[Mapping[str, float] | Sequence[float]]

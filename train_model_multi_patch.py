@@ -1134,6 +1134,45 @@ def objective(trial: optuna.Trial,
     bc_final_coef_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "bc_final_coef"), "bc_final_coef"
     )
+    vf_coef_warmup_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "vf_coef_warmup"), "vf_coef_warmup"
+    )
+    vf_coef_warmup_updates_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "vf_coef_warmup_updates"), "vf_coef_warmup_updates"
+    )
+    vf_bad_explained_scale_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "vf_bad_explained_scale"), "vf_bad_explained_scale"
+    )
+    vf_bad_explained_floor_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "vf_bad_explained_floor"), "vf_bad_explained_floor"
+    )
+    bad_explained_patience_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "bad_explained_patience"), "bad_explained_patience"
+    )
+    entropy_boost_factor_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "entropy_boost_factor"), "entropy_boost_factor"
+    )
+    entropy_boost_cap_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "entropy_boost_cap"), "entropy_boost_cap"
+    )
+    clip_range_warmup_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "clip_range_warmup"), "clip_range_warmup"
+    )
+    clip_range_warmup_updates_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "clip_range_warmup_updates"), "clip_range_warmup_updates"
+    )
+    critic_grad_warmup_updates_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "critic_grad_warmup_updates"), "critic_grad_warmup_updates"
+    )
+    cvar_activation_threshold_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "cvar_activation_threshold"), "cvar_activation_threshold"
+    )
+    cvar_activation_hysteresis_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "cvar_activation_hysteresis"), "cvar_activation_hysteresis"
+    )
+    cvar_ramp_updates_cfg = _coerce_optional_int(
+        _get_model_param_value(cfg, "cvar_ramp_updates"), "cvar_ramp_updates"
+    )
 
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
@@ -1165,12 +1204,50 @@ def objective(trial: optuna.Trial,
         "momentum_factor": trial.suggest_float("momentum_factor", 0.1, 0.7),
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
-        "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.5, log=True), # <-- ДОБАВЛЕНО
+        "vf_coef": vf_coef_cfg if vf_coef_cfg is not None else trial.suggest_float("vf_coef", 0.05, 0.2),
         "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
         "bc_warmup_steps": bc_warmup_steps_cfg if bc_warmup_steps_cfg is not None else 0,
         "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
+
+    params["vf_coef_warmup"] = (
+        vf_coef_warmup_cfg if vf_coef_warmup_cfg is not None else min(params["vf_coef"], 0.075)
+    )
+    params["vf_coef_warmup_updates"] = (
+        vf_coef_warmup_updates_cfg if vf_coef_warmup_updates_cfg is not None else 8
+    )
+    params["vf_bad_explained_scale"] = (
+        vf_bad_explained_scale_cfg if vf_bad_explained_scale_cfg is not None else 0.5
+    )
+    params["vf_bad_explained_floor"] = (
+        vf_bad_explained_floor_cfg if vf_bad_explained_floor_cfg is not None else 0.02
+    )
+    params["bad_explained_patience"] = (
+        bad_explained_patience_cfg if bad_explained_patience_cfg is not None else 2
+    )
+    params["entropy_boost_factor"] = (
+        entropy_boost_factor_cfg if entropy_boost_factor_cfg is not None else 1.5
+    )
+    params["entropy_boost_cap"] = entropy_boost_cap_cfg
+    params["clip_range_warmup"] = (
+        clip_range_warmup_cfg if clip_range_warmup_cfg is not None else max(params["clip_range"], 0.18)
+    )
+    params["clip_range_warmup_updates"] = (
+        clip_range_warmup_updates_cfg if clip_range_warmup_updates_cfg is not None else 12
+    )
+    params["critic_grad_warmup_updates"] = (
+        critic_grad_warmup_updates_cfg if critic_grad_warmup_updates_cfg is not None else 12
+    )
+    params["cvar_activation_threshold"] = (
+        cvar_activation_threshold_cfg if cvar_activation_threshold_cfg is not None else 0.25
+    )
+    params["cvar_activation_hysteresis"] = (
+        cvar_activation_hysteresis_cfg if cvar_activation_hysteresis_cfg is not None else 0.05
+    )
+    params["cvar_ramp_updates"] = (
+        cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
+    )
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
@@ -1574,6 +1651,13 @@ def objective(trial: optuna.Trial,
         cql_beta=params["cql_beta"],
         cvar_alpha=params["cvar_alpha"],
         vf_coef=params["vf_coef"],
+        vf_coef_warmup=params["vf_coef_warmup"],
+        vf_coef_warmup_updates=int(params["vf_coef_warmup_updates"]),
+        vf_bad_explained_scale=params["vf_bad_explained_scale"],
+        vf_bad_explained_floor=params["vf_bad_explained_floor"],
+        bad_explained_patience=int(params["bad_explained_patience"]),
+        entropy_boost_factor=params["entropy_boost_factor"],
+        entropy_boost_cap=params["entropy_boost_cap"],
         cvar_weight=params["cvar_weight"],
 
         bc_warmup_steps=params["bc_warmup_steps"],
@@ -1586,6 +1670,9 @@ def objective(trial: optuna.Trial,
         ent_coef_plateau_min_updates=params["ent_coef_plateau_min_updates"],
 
         cvar_cap=params["cvar_cap"],
+        cvar_activation_threshold=params["cvar_activation_threshold"],
+        cvar_activation_hysteresis=params["cvar_activation_hysteresis"],
+        cvar_ramp_updates=int(params["cvar_ramp_updates"]),
         kl_lr_decay=params["kl_lr_decay"],
         kl_epoch_decay=params["kl_epoch_decay"],
         kl_lr_scale_min=params["kl_lr_scale_min"],
@@ -1599,6 +1686,9 @@ def objective(trial: optuna.Trial,
         gamma=params["gamma"],
         gae_lambda=params["gae_lambda"],
         ppo_clip_range=params["clip_range"],
+        clip_range_warmup=params["clip_range_warmup"],
+        clip_range_warmup_updates=int(params["clip_range_warmup_updates"]),
+        critic_grad_warmup_updates=int(params["critic_grad_warmup_updates"]),
         max_grad_norm=params["max_grad_norm"],
         target_kl=params["target_kl"],
         seed=params["seed"],
