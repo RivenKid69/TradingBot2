@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "version": 1,
+    "built_at": "2099-01-01T00:00:00Z",
+    "refresh_days": 365,
+    "source": "static offline fixture"
+  },
+  "symbols": {
+    "BTCUSDT": {
+      "maker_bps": 1.0,
+      "taker_bps": 10.0
+    },
+    "ETHUSDT": {
+      "maker_bps": 1.0,
+      "taker_bps": 10.0
+    }
+  }
+}

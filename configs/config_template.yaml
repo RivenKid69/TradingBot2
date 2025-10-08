@@ -17,6 +17,9 @@ execution_params:
   tif: GTC               # e.g. IOC or FOK
 execution:
   mode: bar
+  enabled: true
+  spot_only: true
+  fill_policy: next_open_market   # close_t → open_{t+1}
   intrabar_price_model: "bridge"  # Intrabar price sampling model (e.g. linear, bridge, reference).
   timeframe_ms: 3600000           # Base bar length in milliseconds (H1 = 60 minutes = 3_600_000 ms).
   reference_prices_path: null     # Optional path to an M1 reference dataset used by the "reference" intrabar mode.
@@ -72,10 +75,12 @@ quantizer:
   refresh_on_start: false
 
 fees:
-  path: null                     # Путь к JSON/YAML с ставками по символам; null → использовать data/fees/fees_by_symbol.json.
+  path: "data/fees/fees_by_symbol.json"  # Локальный снэпшот комиссий для оффлайн-исполнения.
   refresh_days: null             # Каденс проверки устаревания таблицы (в днях); null отключает проверку (по умолчанию).
   maker_bps: 1.0                 # Базовая ставка мейкера в bps, когда нет записей в таблице (дефолт 1.0).
-  taker_bps: 5.0                 # Базовая ставка тейкера в bps, когда нет записей в таблице (дефолт 5.0).
+  taker_bps: 10.0                # Базовая ставка тейкера в bps, когда нет записей в таблице.
+  half_spread_bps: 5.0           # Половина спрэда в bps, учитываемая при моделировании исполнения.
+  impact_coeff: 0.0              # Коэффициент рыночного импакта; 0.0 → без доп. импакта.
   use_bnb_discount: false        # Применять ли VIP-скидки Binance/BNB; false → множители остаются 1.0 (дефолт).
   maker_discount_mult: 1.0       # Принудительный множитель скидки мейкера; null → авто (1.0 или 0.75 при скидке).
   taker_discount_mult: 1.0       # Принудительный множитель скидки тейкера; null → авто (1.0 или 0.75 при скидке).

@@ -11,6 +11,9 @@ execution_params:
   tif: GTC               # e.g. IOC or FOK
 execution:
   mode: bar
+  enabled: true
+  spot_only: true
+  fill_policy: next_open_market   # close_t → open_{t+1}
   entry_mode: default         # Entry mode for fills; ``default`` preserves legacy behaviour.
   clip_to_bar:                # Controls clipping of simulated prices to the bar range.
     enabled: true             # true keeps prices within [low, high] of the current bar.
@@ -22,6 +25,12 @@ execution_config:
     participation: 0.10
     child_interval_s: 60
     min_child_notional: 20.0
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  taker_bps: 10.0
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
 
 # Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
 # values clamped to [0.1, 10.0])

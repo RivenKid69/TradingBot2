@@ -11,6 +11,9 @@ execution_params:
   tif: GTC               # e.g. IOC or FOK
 execution:
   mode: bar
+  enabled: true
+  spot_only: true
+  fill_policy: next_open_market   # close_t → open_{t+1}
   intrabar_price_model: "bridge"  # Модель заполнения внутри бара (например: linear, bridge, reference).
   timeframe_ms: 3600000           # Размер базового бара в миллисекундах (H1 = 60 минут = 3_600_000 мс).
   reference_prices_path: null     # Путь к M1-референсу для режима intrabar "reference"; оставьте null для bridge/linear.
@@ -90,10 +93,12 @@ adv:
   seasonality_profile: null
 
 fees:
-  path: null                     # Путь к JSON/YAML с ставками по символам; null → использовать data/fees/fees_by_symbol.json.
+  path: "data/fees/fees_by_symbol.json"  # Локальный снэпшот комиссий для оффлайн-исполнения.
   refresh_days: null             # Каденс проверки устаревания таблицы (в днях); null отключает проверку (по умолчанию).
   maker_bps: null                # null → брать базовую ставку из авто-обновлённой таблицы; число → жёсткий override.
-  taker_bps: null                # null → брать тейкерскую ставку из авто-обновления; число → жёсткий override.
+  taker_bps: 10.0                # Тейкерская комиссия (bps); null → брать из авто-обновления.
+  half_spread_bps: 5.0           # Половина спрэда в bps, учитываемая при моделировании исполнения.
+  impact_coeff: 0.0              # Коэффициент рыночного импакта; 0.0 → без доп. импакта.
   use_bnb_discount: null         # null → авто (используем скидку, если snapshot содержит множители); true/false → override.
   maker_discount_mult: null      # null → множитель мейкера из snapshot (или 1.0/0.75 по умолчанию); число → override.
   taker_discount_mult: null      # null → множитель тейкера из snapshot (или 1.0/0.75); число → override.
