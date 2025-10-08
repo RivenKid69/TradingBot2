@@ -145,16 +145,16 @@ class TTLConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _clamp_values(cls, values: "TTLConfig") -> "TTLConfig":
-        guard = int(getattr(values, "guard_ms", 0) or 0)
-        failsafe = int(getattr(values, "absolute_failsafe_ms", 0) or 0)
+    def _clamp_values(self) -> "TTLConfig":
+        guard = int(getattr(self, "guard_ms", 0) or 0)
+        failsafe = int(getattr(self, "absolute_failsafe_ms", 0) or 0)
         guard = max(0, min(guard, 15 * 60 * 1000))
         failsafe = max(0, min(failsafe, 60 * 60 * 1000))
         if failsafe and guard and guard > failsafe:
             guard = failsafe
-        object.__setattr__(values, "guard_ms", guard)
-        object.__setattr__(values, "absolute_failsafe_ms", failsafe)
-        return values
+        object.__setattr__(self, "guard_ms", guard)
+        object.__setattr__(self, "absolute_failsafe_ms", failsafe)
+        return self
 
 
 class RiskConfigSection(BaseModel):
@@ -571,6 +571,18 @@ class ExecutionRuntimeConfig(BaseModel):
         default=None,
         description="Path to M1 reference bars used by the 'reference' intrabar price model.",
     )
+    enabled: bool = Field(
+        default=False,
+        description="Enable bar-mode execution in simulation; ``False`` keeps signal-only behaviour.",
+    )
+    spot_only: bool = Field(
+        default=True,
+        description="Restrict execution simulator to spot instruments only (legacy default).",
+    )
+    fill_policy: Optional[str] = Field(
+        default=None,
+        description="Name of the bar-mode fill policy (e.g. 'next_open_market').",
+    )
     entry_mode: ExecutionEntryMode = Field(
         default=ExecutionEntryMode.DEFAULT,
         description="Режим выбора точки входа; ``default`` соответствует текущему поведению.",
@@ -789,19 +801,19 @@ class CommonRunConfig(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _sync_runtime_sections(cls, values: "CommonRunConfig") -> "CommonRunConfig":
-        exec_cfg = getattr(values, "execution", None)
+    def _sync_runtime_sections(self) -> "CommonRunConfig":
+        exec_cfg = getattr(self, "execution", None)
         if not isinstance(exec_cfg, ExecutionRuntimeConfig):
             try:
                 exec_cfg = ExecutionRuntimeConfig.parse_obj(exec_cfg or {})
             except Exception:
                 exec_cfg = ExecutionRuntimeConfig()
-            object.__setattr__(values, "execution", exec_cfg)
+            object.__setattr__(self, "execution", exec_cfg)
 
-        fields_set = getattr(values, "__fields_set__", set())
+        fields_set = getattr(self, "__fields_set__", set())
         exec_fields_set = getattr(exec_cfg, "__fields_set__", set())
 
-        portfolio_cfg = getattr(values, "portfolio", None)
+        portfolio_cfg = getattr(self, "portfolio", None)
         if isinstance(portfolio_cfg, Mapping):
             try:
                 portfolio_cfg = PortfolioConfig.parse_obj(portfolio_cfg)
@@ -830,9 +842,9 @@ class CommonRunConfig(BaseModel):
         if portfolio_cfg is None:
             portfolio_cfg = PortfolioConfig()
         object.__setattr__(exec_cfg, "portfolio", portfolio_cfg)
-        object.__setattr__(values, "portfolio", portfolio_cfg)
+        object.__setattr__(self, "portfolio", portfolio_cfg)
 
-        costs_cfg = getattr(values, "costs", None)
+        costs_cfg = getattr(self, "costs", None)
         if isinstance(costs_cfg, Mapping):
             try:
                 costs_cfg = SpotCostConfig.parse_obj(costs_cfg)
@@ -861,8 +873,8 @@ class CommonRunConfig(BaseModel):
         if costs_cfg is None:
             costs_cfg = SpotCostConfig()
         object.__setattr__(exec_cfg, "costs", costs_cfg)
-        object.__setattr__(values, "costs", costs_cfg)
-        return values
+        object.__setattr__(self, "costs", costs_cfg)
+        return self
 
 
 class ExecutionProfile(str, Enum):
