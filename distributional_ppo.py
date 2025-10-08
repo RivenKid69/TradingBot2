@@ -1095,21 +1095,18 @@ class DistributionalPPO(RecurrentPPO):
                         lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
                         upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
 
-                        same_bounds = lower_bound == upper_bound
-                        lower_bound = torch.where(
-                            same_bounds & (lower_bound > 0), lower_bound - 1, lower_bound
-                        )
-                        upper_bound = torch.where(
-                            same_bounds & (upper_bound < self.policy.num_atoms - 1),
-                            upper_bound + 1,
-                            upper_bound,
-                        )
-
                         target_distribution = torch.zeros_like(value_logits_fp32)
                         lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
                         upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
                         target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
                         target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
+
+                        same_bounds = lower_bound == upper_bound
+                        if torch.any(same_bounds):
+                            same_indices = same_bounds.nonzero(as_tuple=False).squeeze(1)
+                            if same_indices.numel() > 0:
+                                target_distribution[same_indices] = 0.0
+                                target_distribution[same_indices, lower_bound[same_indices]] = 1.0
                         target_return_batches.append(target_returns.reshape(-1, 1).detach())
 
                     pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
