@@ -104,6 +104,14 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
 class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
 
+    def _record(self, key: str, value: Any, **kwargs: Any) -> None:
+        """Safely forward logging calls when a logger is configured."""
+
+        logger = getattr(self, "_logger", None)
+        if logger is None:
+            return
+        logger.record(key, value, **kwargs)
+
     @staticmethod
     def _clone_states_to_device(
         states: Optional[RNNStates | tuple[torch.Tensor, ...]], device: torch.device
@@ -465,8 +473,8 @@ class DistributionalPPO(RecurrentPPO):
         self.normalize_advantage = True
 
         if kl_lr_scale_min_requested is not None:
-            self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
-            self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
+            self._record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
+            self._record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
         atoms = max(1, int(getattr(self.policy, "num_atoms", 1)))
         ce_norm = math.log(float(atoms))
@@ -603,7 +611,7 @@ class DistributionalPPO(RecurrentPPO):
         if callable(setter):
             setter(normalized)
         for head_name, weight in normalized.items():
-            self.logger.record(f"config/loss_head_weight_{head_name}", float(weight))
+            self._record(f"config/loss_head_weight_{head_name}", float(weight))
 
 
     def _refresh_kl_base_lrs(self) -> None:
@@ -657,7 +665,7 @@ class DistributionalPPO(RecurrentPPO):
             ]
 
         self._refresh_kl_base_lrs()
-        self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
+        self._record("train/kl_lr_scale", float(self._kl_lr_scale))
         return actual_decay
 
     def _apply_epoch_decay(self) -> float:
@@ -697,16 +705,16 @@ class DistributionalPPO(RecurrentPPO):
             updated_beta = self.kl_penalty_beta_max
 
         self._kl_penalty_beta = updated_beta
-        self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
+        self._record("train/kl_penalty_beta", float(self._kl_penalty_beta))
 
     def _handle_kl_divergence(self, approx_kl: float) -> tuple[float, float]:
         """React to KL overshoot by reducing LR and future epoch budget."""
 
         lr_decay = self._apply_lr_decay(self.kl_lr_decay)
         epoch_decay = self._apply_epoch_decay()
-        self.logger.record("train/kl_last_exceeded", approx_kl)
-        self.logger.record("train/kl_lr_decay_applied", lr_decay)
-        self.logger.record("train/kl_epoch_decay_applied", epoch_decay)
+        self._record("train/kl_last_exceeded", approx_kl)
+        self._record("train/kl_lr_decay_applied", lr_decay)
+        self._record("train/kl_epoch_decay_applied", epoch_decay)
         return lr_decay, epoch_decay
 
     def parameters(self, recurse: bool = True):  # type: ignore[override]
@@ -869,7 +877,7 @@ class DistributionalPPO(RecurrentPPO):
                 raw_rewards = vec_normalize_env.get_original_reward()
             raw_rewards = np.asarray(raw_rewards, dtype=np.float32)
             if raw_rewards.size > 0:
-                self.logger.record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
+                self._record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
 
             scaled_rewards = raw_rewards / self.value_target_scale
 
@@ -933,7 +941,7 @@ class DistributionalPPO(RecurrentPPO):
 
         if entropy_loss_count > 0:
             self._last_rollout_entropy = entropy_loss_total / float(entropy_loss_count)
-            self.logger.record("rollout/policy_entropy", self._last_rollout_entropy)
+            self._record("rollout/policy_entropy", self._last_rollout_entropy)
         else:
             self._last_rollout_entropy = 0.0
 
@@ -1038,24 +1046,24 @@ class DistributionalPPO(RecurrentPPO):
         running_v_min_unscaled = self.running_v_min / self.value_target_scale
         running_v_max_unscaled = self.running_v_max / self.value_target_scale
 
-        self.logger.record("train/v_min", running_v_min_unscaled)
-        self.logger.record("train/v_max", running_v_max_unscaled)
-        self.logger.record("train/v_min_scaled", self.running_v_min)
-        self.logger.record("train/v_max_scaled", self.running_v_max)
-        self.logger.record("train/value_target_scale", float(self.value_target_scale))
+        self._record("train/v_min", running_v_min_unscaled)
+        self._record("train/v_max", running_v_max_unscaled)
+        self._record("train/v_min_scaled", self.running_v_min)
+        self._record("train/v_max_scaled", self.running_v_max)
+        self._record("train/value_target_scale", float(self.value_target_scale))
         if self._value_clip_limit_unscaled is not None:
-            self.logger.record("train/value_clip_limit", float(self._value_clip_limit_unscaled))
+            self._record("train/value_clip_limit", float(self._value_clip_limit_unscaled))
 
         if not (0.0 < float(self.gamma) <= 1.0):
             raise RuntimeError(f"Invalid discount factor 'gamma': {self.gamma}")
         if not (0.0 <= float(self.gae_lambda) <= 1.0):
             raise RuntimeError(f"Invalid GAE lambda 'gae_lambda': {self.gae_lambda}")
 
-        self.logger.record("train/gamma", float(self.gamma))
-        self.logger.record("train/gae_lambda", float(self.gae_lambda))
+        self._record("train/gamma", float(self.gamma))
+        self._record("train/gae_lambda", float(self.gae_lambda))
 
         bc_coef = self._update_bc_coef()
-        self.logger.record("train/policy_bc_coef", bc_coef)
+        self._record("train/policy_bc_coef", bc_coef)
 
         policy_entropy_sum = 0.0
         policy_entropy_count = 0
@@ -1149,13 +1157,13 @@ class DistributionalPPO(RecurrentPPO):
         for _ in range(effective_n_epochs):
             minibatch_iterator, expected_batch_size = _prepare_minibatch_iterator()
             if minibatch_iterator is None:
-                self.logger.record("warn/empty_rollout_buffer", 1.0)
+                self._record("warn/empty_rollout_buffer", 1.0)
                 break
 
             epochs_completed += 1
-            self.logger.record("train/expected_batch_size", float(expected_batch_size))
-            self.logger.record("train/microbatch_size", float(microbatch_size_effective))
-            self.logger.record("train/grad_accum_steps", float(grad_accum_steps))
+            self._record("train/expected_batch_size", float(expected_batch_size))
+            self._record("train/microbatch_size", float(microbatch_size_effective))
+            self._record("train/grad_accum_steps", float(grad_accum_steps))
 
             for microbatch_group in minibatch_iterator:
                 minibatches_processed += 1
@@ -1163,9 +1171,9 @@ class DistributionalPPO(RecurrentPPO):
                 sample_counts = [int(data.advantages.shape[0]) for data in microbatch_items]
                 bucket_target_size = int(sum(sample_counts))
                 if bucket_target_size <= 0:
-                    self.logger.record("warn/empty_microbatch_group", 1.0)
+                    self._record("warn/empty_microbatch_group", 1.0)
                     continue
-                self.logger.record("train/actual_batch_size", float(bucket_target_size))
+                self._record("train/actual_batch_size", float(bucket_target_size))
                 clip_range = float(self._clip_range_current)
                 self.policy.optimizer.zero_grad(set_to_none=True)
 
@@ -1221,7 +1229,7 @@ class DistributionalPPO(RecurrentPPO):
                         ratio_detached = ratio.detach()
                         clip_mask = ratio_detached.sub(1.0).abs() > clip_range
                         clipped = clip_mask.float().mean()
-                        self.logger.record("train/clip_fraction_batch", float(clipped.item()))
+                        self._record("train/clip_fraction_batch", float(clipped.item()))
                         ratio_sum += float(ratio_detached.sum().item())
                         ratio_sq_sum += float((ratio_detached.square()).sum().item())
                         ratio_count += int(ratio_detached.numel())
@@ -1446,7 +1454,7 @@ class DistributionalPPO(RecurrentPPO):
                     approx_kl_weighted_sum += approx_kl_component * float(sample_count)
 
                 if bucket_sample_count != bucket_target_size:
-                    self.logger.record(
+                    self._record(
                         "warn/microbatch_size_mismatch",
                         float(bucket_sample_count - bucket_target_size),
                     )
@@ -1455,7 +1463,7 @@ class DistributionalPPO(RecurrentPPO):
                     0.5 if self.max_grad_norm is None else float(self.max_grad_norm)
                 )
                 if max_grad_norm <= 0.0:
-                    self.logger.record("warn/max_grad_norm_nonpos", float(max_grad_norm))
+                    self._record("warn/max_grad_norm_nonpos", float(max_grad_norm))
                     max_grad_norm = 0.5
                 total_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.policy.parameters(), max_grad_norm
@@ -1465,8 +1473,8 @@ class DistributionalPPO(RecurrentPPO):
                     if isinstance(total_grad_norm, torch.Tensor)
                     else float(total_grad_norm)
                 )
-                self.logger.record("train/grad_norm_pre_clip", float(grad_norm_value))
-                self.logger.record("train/max_grad_norm_used", float(max_grad_norm))
+                self._record("train/grad_norm_pre_clip", float(grad_norm_value))
+                self._record("train/max_grad_norm_used", float(max_grad_norm))
 
                 post_clip_norm_sq = 0.0
                 for param in self.policy.parameters():
@@ -1475,7 +1483,7 @@ class DistributionalPPO(RecurrentPPO):
                         continue
                     post_clip_norm_sq += float(grad.detach().to(dtype=torch.float32).pow(2).sum().item())
                 post_clip_norm = math.sqrt(post_clip_norm_sq) if post_clip_norm_sq > 0.0 else 0.0
-                self.logger.record("train/grad_norm_post_clip", float(post_clip_norm))
+                self._record("train/grad_norm_post_clip", float(post_clip_norm))
 
                 if hasattr(self, "_kl_lr_scale"):
                     scale = float(self._kl_lr_scale)
@@ -1491,9 +1499,9 @@ class DistributionalPPO(RecurrentPPO):
                 if len(self.policy.optimizer.param_groups) > 0:
                     lrs = [float(g["lr"]) for g in self.policy.optimizer.param_groups]
                     last_optimizer_lr = lrs[0]
-                    self.logger.record("train/optimizer_lr", last_optimizer_lr)
-                    self.logger.record("train/optimizer_lr_min", min(lrs))
-                    self.logger.record("train/optimizer_lr_max", max(lrs))
+                    self._record("train/optimizer_lr", last_optimizer_lr)
+                    self._record("train/optimizer_lr_min", min(lrs))
+                    self._record("train/optimizer_lr_max", max(lrs))
 
                 if self.lr_scheduler is not None:
                     self.lr_scheduler.step()
@@ -1505,7 +1513,7 @@ class DistributionalPPO(RecurrentPPO):
                             scheduler_lrs = None
                         if scheduler_lrs:
                             last_scheduler_lr = float(scheduler_lrs[0])
-                            self.logger.record("train/scheduler_lr", last_scheduler_lr)
+                            self._record("train/scheduler_lr", last_scheduler_lr)
                     self._refresh_kl_base_lrs()
 
                 optimizer = getattr(self.policy, "optimizer", None)
@@ -1513,7 +1521,7 @@ class DistributionalPPO(RecurrentPPO):
                     for group in getattr(optimizer, "param_groups", []):
                         if "lr" in group:
                             cur_lr = float(group["lr"])
-                            self.logger.record("train/learning_rate", cur_lr)
+                            self._record("train/learning_rate", cur_lr)
                             break
 
                 approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
@@ -1564,13 +1572,13 @@ class DistributionalPPO(RecurrentPPO):
             else self._last_rollout_entropy
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
-        self.logger.record("train/policy_entropy", float(avg_policy_entropy))
+        self._record("train/policy_entropy", float(avg_policy_entropy))
 
         if policy_entropy_volume_count > 0:
             avg_policy_entropy_volume = (
                 policy_entropy_volume_sum / float(policy_entropy_volume_count)
             )
-            self.logger.record(
+            self._record(
                 "train/policy_entropy_volume", float(avg_policy_entropy_volume)
             )
 
@@ -1635,40 +1643,40 @@ class DistributionalPPO(RecurrentPPO):
             self._bad_explained_counter = 0
         self._last_explained_variance = float(explained_var)
 
-        self.logger.record("train/policy_loss", policy_loss_value)
-        self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
-        self.logger.record("train/policy_loss_bc", policy_loss_bc_value)
-        self.logger.record("train/policy_loss_bc_weighted", policy_loss_bc_weighted_value)
+        self._record("train/policy_loss", policy_loss_value)
+        self._record("train/policy_loss_ppo", policy_loss_ppo_value)
+        self._record("train/policy_loss_bc", policy_loss_bc_value)
+        self._record("train/policy_loss_bc_weighted", policy_loss_bc_weighted_value)
         if kl_penalty_component_count > 0:
             avg_kl_penalty_component = kl_penalty_component_total / float(kl_penalty_component_count)
         else:
             avg_kl_penalty_component = 0.0
-        self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
-        self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
-        self.logger.record("train/value_ce_loss", critic_loss_value)
-        self.logger.record("train/cvar_raw", cvar_raw_value)
-        self.logger.record("train/cvar_loss", cvar_loss_value)
-        self.logger.record("train/cvar_term", cvar_term_value)
+        self._record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
+        self._record("train/policy_bc_vs_ppo_ratio", bc_ratio)
+        self._record("train/value_ce_loss", critic_loss_value)
+        self._record("train/cvar_raw", cvar_raw_value)
+        self._record("train/cvar_loss", cvar_loss_value)
+        self._record("train/cvar_term", cvar_term_value)
         if self.cvar_cap is not None:
-            self.logger.record("train/cvar_cap", self.cvar_cap)
-        self.logger.record("train/value_mse", value_mse_value)
+            self._record("train/cvar_cap", self.cvar_cap)
+        self._record("train/value_mse", value_mse_value)
 
-        self.logger.record("train/entropy_loss", -avg_policy_entropy)
-        self.logger.record("train/policy_entropy_slope", self._last_entropy_slope)
-        self.logger.record("train/entropy_plateau", float(self._entropy_plateau))
+        self._record("train/entropy_loss", -avg_policy_entropy)
+        self._record("train/policy_entropy_slope", self._last_entropy_slope)
+        self._record("train/entropy_plateau", float(self._entropy_plateau))
         decay_start = self._entropy_decay_start_update if self._entropy_decay_start_update is not None else -1
-        self.logger.record("train/entropy_decay_start_update", float(decay_start))
+        self._record("train/entropy_decay_start_update", float(decay_start))
 
-        self.logger.record("train/ent_coef", float(self.ent_coef))
-        self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
-        self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
-        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight))
-        self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
+        self._record("train/ent_coef", float(self.ent_coef))
+        self._record("train/ent_coef_nominal", float(nominal_ent_coef))
+        self._record("train/vf_coef_effective", float(vf_coef_effective))
+        self._record("train/cvar_weight_effective", float(current_cvar_weight))
+        self._record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
         if clamp_weight > 0.0:
-            self.logger.record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
-            self.logger.record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
-        self.logger.record("train/ent_coef_initial", float(self.ent_coef_initial))
-        self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
+            self._record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
+            self._record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
+        self._record("train/ent_coef_initial", float(self.ent_coef_initial))
+        self._record("train/ent_coef_final", float(self.ent_coef_final))
 
         approx_kl_exceed_frac = (
             float(approx_kl_exceed_count) / float(minibatches_processed)
@@ -1678,37 +1686,37 @@ class DistributionalPPO(RecurrentPPO):
         if len(approx_kl_divs) > 0:
             approx_kl_array = np.asarray(approx_kl_divs, dtype=np.float64)
             approx_kl_mean = float(np.mean(approx_kl_array))
-            self.logger.record("train/approx_kl", approx_kl_mean)
-            self.logger.record("train/approx_kl_median", float(np.median(approx_kl_array)))
-            self.logger.record("train/approx_kl_p90", float(np.quantile(approx_kl_array, 0.9)))
-            self.logger.record("train/approx_kl_max", float(np.max(approx_kl_array)))
+            self._record("train/approx_kl", approx_kl_mean)
+            self._record("train/approx_kl_median", float(np.median(approx_kl_array)))
+            self._record("train/approx_kl_p90", float(np.quantile(approx_kl_array, 0.9)))
+            self._record("train/approx_kl_max", float(np.max(approx_kl_array)))
             if self.target_kl is not None and self.target_kl > 0.0:
                 self._adjust_kl_penalty(approx_kl_mean)
         if self.target_kl is not None and self.target_kl > 0.0:
-            self.logger.record("train/kl_exceed_frac", approx_kl_exceed_frac)
-            self.logger.record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
+            self._record("train/kl_exceed_frac", approx_kl_exceed_frac)
+            self._record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
             if kl_early_stop_triggered:
-                self.logger.record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
+                self._record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
         if last_optimizer_lr is not None:
-            self.logger.record("train/optimizer_lr", last_optimizer_lr)
+            self._record("train/optimizer_lr", last_optimizer_lr)
         if last_scheduler_lr is not None:
-            self.logger.record("train/scheduler_lr", last_scheduler_lr)
-        self.logger.record("train/loss", total_loss_value)
-        self.logger.record("train/explained_variance", explained_var)
-        self.logger.record("train/clip_range", float(self._clip_range_current))
+            self._record("train/scheduler_lr", last_scheduler_lr)
+        self._record("train/loss", total_loss_value)
+        self._record("train/explained_variance", explained_var)
+        self._record("train/clip_range", float(self._clip_range_current))
         clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
-        self.logger.record("train/clip_range_schedule", clip_range_for_log)
+        self._record("train/clip_range_schedule", clip_range_for_log)
         if ratio_count > 0:
             ratio_mean = ratio_sum / float(ratio_count)
             ratio_var = max(ratio_sq_sum / float(ratio_count) - ratio_mean**2, 0.0)
             ratio_std = math.sqrt(ratio_var)
-            self.logger.record("train/ratio_mean", float(ratio_mean))
-            self.logger.record("train/ratio_std", float(ratio_std))
+            self._record("train/ratio_mean", float(ratio_mean))
+            self._record("train/ratio_std", float(ratio_std))
         if log_prob_count > 0:
-            self.logger.record("train/log_prob_mean", float(log_prob_sum / float(log_prob_count)))
+            self._record("train/log_prob_mean", float(log_prob_sum / float(log_prob_count)))
         if adv_batch_count > 0:
-            self.logger.record("train/adv_mean", adv_mean_accum / adv_batch_count)
-            self.logger.record("train/adv_std", adv_std_accum / adv_batch_count)
+            self._record("train/adv_mean", adv_mean_accum / adv_batch_count)
+            self._record("train/adv_std", adv_std_accum / adv_batch_count)
         if adv_z_values:
             adv_z_tensor = torch.cat(adv_z_values)
             if adv_z_tensor.numel() > 0:
@@ -1717,34 +1725,34 @@ class DistributionalPPO(RecurrentPPO):
                     adv_z_tensor,
                     torch.tensor([0.1, 0.5, 0.9], dtype=adv_z_tensor.dtype, device=adv_z_tensor.device),
                 )
-                self.logger.record("train/adv_z_p10", float(quantiles[0].item()))
-                self.logger.record("train/adv_z_p50", float(quantiles[1].item()))
-                self.logger.record("train/adv_z_p90", float(quantiles[2].item()))
-        self.logger.record("train/n_epochs_effective", float(effective_n_epochs))
-        self.logger.record("train/n_epochs_completed", float(epochs_completed))
-        self.logger.record("train/n_minibatches_done", float(minibatches_processed))
-        self.logger.record("train/kl_early_stop", int(kl_early_stop_triggered))
+                self._record("train/adv_z_p10", float(quantiles[0].item()))
+                self._record("train/adv_z_p50", float(quantiles[1].item()))
+                self._record("train/adv_z_p90", float(quantiles[2].item()))
+        self._record("train/n_epochs_effective", float(effective_n_epochs))
+        self._record("train/n_epochs_completed", float(epochs_completed))
+        self._record("train/n_minibatches_done", float(minibatches_processed))
+        self._record("train/kl_early_stop", int(kl_early_stop_triggered))
         if clip_fraction_denom > 0:
-            self.logger.record(
+            self._record(
                 "train/clip_fraction",
                 float(clip_fraction_numer) / float(clip_fraction_denom),
             )
         if self.target_kl is not None and self.target_kl > 0.0:
-            self.logger.record("train/target_kl", float(self.target_kl))
-            self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
-            self.logger.record("train/kl_epoch_factor", float(self._kl_epoch_factor))
-            self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
+            self._record("train/target_kl", float(self.target_kl))
+            self._record("train/kl_lr_scale", float(self._kl_lr_scale))
+            self._record("train/kl_epoch_factor", float(self._kl_epoch_factor))
+            self._record("train/kl_penalty_beta", float(self._kl_penalty_beta))
 
         if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
             y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
             y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy().astype(np.float64)
-            self.logger.record("train/value_pred_mean", float(np.mean(y_pred_np)))
-            self.logger.record("train/value_pred_std", float(np.std(y_pred_np)))
-            self.logger.record("train/target_return_mean", float(np.mean(y_true_np)))
-            self.logger.record("train/target_return_std", float(np.std(y_true_np)))
+            self._record("train/value_pred_mean", float(np.mean(y_pred_np)))
+            self._record("train/value_pred_std", float(np.std(y_pred_np)))
+            self._record("train/target_return_mean", float(np.mean(y_true_np)))
+            self._record("train/target_return_std", float(np.std(y_true_np)))
             diff_np = y_pred_np - y_true_np
-            self.logger.record("train/value_mae", float(np.mean(np.abs(diff_np))))
-            self.logger.record(
+            self._record("train/value_mae", float(np.mean(np.abs(diff_np))))
+            self._record(
                 "train/value_rmse", float(math.sqrt(np.mean(np.square(diff_np))))
             )
 
