@@ -261,6 +261,12 @@ class TradingEnv(gym.Env):
         self._bus = event_bus
         self._publish = getattr(self._bus, "publish", lambda *a, **k: None)
         self.time = time_provider or RealTimeProvider()
+
+        raw_policy = str(kwargs.get("no_trade_policy", "block") or "block").strip().lower()
+        if raw_policy not in {"block", "ignore"}:
+            raw_policy = "block"
+        self._no_trade_policy = raw_policy
+        self._no_trade_enabled = bool(kwargs.get("no_trade_enabled", True))
         self.decision_mode = decision_mode
         # action scheduled for next bar when using delayed decisions
         self._pending_action: ActionProto | None = None
@@ -383,7 +389,7 @@ class TradingEnv(gym.Env):
                 )
                 cfg_nt = NoTradeConfig()
         self._no_trade_cfg = cfg_nt
-        if "ts_ms" in self.df.columns:
+        if "ts_ms" in self.df.columns and self._no_trade_enabled:
             ts = (
                 pd.to_numeric(self.df["ts_ms"], errors="coerce")
                 .astype("Int64")
@@ -397,6 +403,7 @@ class TradingEnv(gym.Env):
         else:
             self._no_trade_mask = np.zeros(len(self.df), dtype=bool)
         self.no_trade_blocks = 0
+        self.no_trade_hits = 0
         self.total_steps = 0
         self.no_trade_block_ratio = float(self._no_trade_mask.mean()) if len(self._no_trade_mask) else 0.0
 
@@ -1012,7 +1019,12 @@ class TradingEnv(gym.Env):
         self.last_ask = ask
         self.last_mid = mid
         self.last_mtm_price = mid
-        blocked = bool(self._no_trade_mask[row_idx]) if row_idx < len(self._no_trade_mask) else False
+        mask_hit = False
+        if self._no_trade_enabled and row_idx < len(self._no_trade_mask):
+            mask_hit = bool(self._no_trade_mask[row_idx])
+        if mask_hit:
+            self.no_trade_hits += 1
+        blocked = mask_hit and self._no_trade_policy != "ignore"
         if blocked:
             self.no_trade_blocks += 1
             proto = ActionProto(ActionType.HOLD, 0.0)
@@ -1149,6 +1161,9 @@ class TradingEnv(gym.Env):
         info["turnover_penalty"] = float(turnover_penalty)
         info["trade_frequency_penalty"] = float(trade_frequency_penalty)
         info["trades_count"] = int(agent_trade_events)
+        info["no_trade_triggered"] = bool(mask_hit)
+        info["no_trade_policy"] = self._no_trade_policy
+        info["no_trade_enabled"] = bool(self._no_trade_enabled)
 
         if terminated or truncated:
             info["no_trade_stats"] = self.get_no_trade_stats()
@@ -1159,6 +1174,9 @@ class TradingEnv(gym.Env):
         return {
             "total_steps": int(self.total_steps),
             "blocked_steps": int(self.no_trade_blocks),
+            "mask_hits": int(self.no_trade_hits),
+            "policy": self._no_trade_policy,
+            "enabled": bool(self._no_trade_enabled),
         }
 
     def close(self) -> None:
