@@ -794,6 +794,8 @@ class DistributionalPPO(RecurrentPPO):
 
         policy_entropy_sum = 0.0
         policy_entropy_count = 0
+        policy_entropy_volume_sum = 0.0
+        policy_entropy_volume_count = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -997,6 +999,21 @@ class DistributionalPPO(RecurrentPPO):
                         entropy_tensor = entropy_tensor.detach().to(dtype=torch.float32)
                         policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
                         policy_entropy_count += int(entropy_tensor.numel())
+
+                        try:
+                            vol_logits = dist.distribution.distributions[-1].logits
+                            vol_entropy_tensor = torch.distributions.Categorical(
+                                logits=vol_logits
+                            ).entropy()
+                            vol_entropy_tensor = vol_entropy_tensor.detach().to(
+                                dtype=torch.float32
+                            )
+                            policy_entropy_volume_sum += float(
+                                vol_entropy_tensor.sum().cpu().item()
+                            )
+                            policy_entropy_volume_count += int(vol_entropy_tensor.numel())
+                        except Exception:
+                            pass
 
                     value_logits = self.policy.last_value_logits
                     if value_logits is None:
@@ -1230,6 +1247,14 @@ class DistributionalPPO(RecurrentPPO):
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
         self.logger.record("train/policy_entropy", float(avg_policy_entropy))
+
+        if policy_entropy_volume_count > 0:
+            avg_policy_entropy_volume = (
+                policy_entropy_volume_sum / float(policy_entropy_volume_count)
+            )
+            self.logger.record(
+                "train/policy_entropy_volume", float(avg_policy_entropy_volume)
+            )
 
         if value_logits_final is None:
             cached_logits = getattr(self.policy, "last_value_logits", None)
