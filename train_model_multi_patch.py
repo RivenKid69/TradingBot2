@@ -830,7 +830,8 @@ def objective(trial: optuna.Trial,
               env_runtime_overrides: Mapping[str, Any],
               leak_guard_kwargs: dict,
               trials_dir: Path,
-              tensorboard_log_dir: Path | None):
+              tensorboard_log_dir: Path | None,
+              n_envs_override: int | None):
 
     print(f">>> Trial {trial.number+1} with budget={total_timesteps}")
 
@@ -1227,7 +1228,27 @@ def objective(trial: optuna.Trial,
 
     if not train_data_by_token: raise ValueError("Нет данных для обучения в этом trial.")
 
+    n_envs_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_envs"), "n_envs")
     n_envs = 8
+    if n_envs_cfg is not None:
+        n_envs = n_envs_cfg
+        print(f"[cfg override] using n_envs={n_envs_cfg} from cfg.model.params")
+    if n_envs_override is not None:
+        if n_envs_override < 1:
+            raise ValueError("Override for n_envs must be >= 1")
+        n_envs = n_envs_override
+        print(f"[arg override] using n_envs={n_envs_override}")
+
+    try:
+        cpu_count = os.cpu_count() or 1
+    except Exception:
+        cpu_count = 1
+    if n_envs > cpu_count:
+        print(f"Requested {n_envs} envs exceeds available CPU cores ({cpu_count}); capping to {cpu_count}.")
+        n_envs = cpu_count
+    if n_envs < 1:
+        raise ValueError("Computed n_envs must be at least 1")
+
     print(f"Запускаем {n_envs} параллельных сред...")
 
     total_batch_size = params["n_steps"] * n_envs
@@ -1718,6 +1739,12 @@ def main():
         default="tensorboard_logs",
         help="Directory where TensorBoard events will be written (use 'none' to disable)",
     )
+    parser.add_argument(
+        "--n-envs",
+        type=int,
+        default=None,
+        help="Override the number of parallel training environments (falls back to config or default 8)",
+    )
     args, unknown = parser.parse_known_args()
 
     raw_tensorboard_dir = (args.tensorboard_log_dir or "").strip()
@@ -2076,6 +2103,17 @@ def main():
     study = optuna.create_study(direction="maximize", sampler=sampler, pruner=pruner)
 
     # Запускаем оптимизацию на ПОЛНОМ, диверсифицированном наборе данных
+    n_envs_override: int | None = args.n_envs
+    if n_envs_override is None:
+        env_override_var = os.environ.get("TRAIN_NUM_ENVS")
+        if env_override_var:
+            try:
+                n_envs_override = int(env_override_var)
+            except ValueError:
+                print(
+                    f"Environment variable TRAIN_NUM_ENVS={env_override_var!r} is not a valid integer; ignoring override."
+                )
+
     study.optimize(
         lambda t: objective(
             t,
@@ -2094,6 +2132,7 @@ def main():
             leak_guard_kwargs,
             trials_dir,
             tensorboard_log_dir,
+            n_envs_override,
         ),
         n_trials=HPO_TRIALS,
         n_jobs=1,

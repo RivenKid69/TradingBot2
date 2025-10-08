@@ -150,6 +150,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             leak_guard_kwargs={},
             trials_dir=tmp_path,
             tensorboard_log_dir=None,
+            n_envs_override=1,
         )
 
     overridden_keys = {
@@ -216,6 +217,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
             leak_guard_kwargs={},
             trials_dir=tmp_path,
             tensorboard_log_dir=None,
+            n_envs_override=1,
         )
 
 
@@ -333,6 +335,67 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             leak_guard_kwargs={},
             trials_dir=tmp_path,
             tensorboard_log_dir=None,
+            n_envs_override=1,
         )
 
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
+
+
+def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
+    cfg = types.SimpleNamespace(
+        model=types.SimpleNamespace(
+            params={
+                "learning_rate": 3.0e-4,
+                "gamma": 0.99,
+                "gae_lambda": 0.95,
+                "clip_range": 0.15,
+                "ent_coef": 0.0001,
+                "vf_coef": 0.5,
+                "max_grad_norm": 0.3,
+                "n_steps": 32,
+                "batch_size": 16,
+                "n_epochs": 1,
+                "n_envs": 5,
+            }
+        ),
+        algo=types.SimpleNamespace(
+            actions={},
+            action_wrapper=types.SimpleNamespace(bins_vol=2),
+        ),
+    )
+
+    trial = _DummyTrial()
+
+    observed_env_count: dict[str, int] = {}
+
+    class _RecordingWatchdogVecEnv:
+        def __init__(self, env_fns):
+            observed_env_count["count"] = len(env_fns)
+            raise RuntimeError("stop for n_envs")
+
+    monkeypatch.setattr(train_script, "WatchdogVecEnv", _RecordingWatchdogVecEnv)
+
+    df = pd.DataFrame({"price": [1.0], "ts_ms": [0]})
+
+    with pytest.raises(RuntimeError, match="stop for n_envs"):
+        train_script.objective(
+            trial,
+            cfg,
+            total_timesteps=32,
+            train_data_by_token={"BTCUSDT": df},
+            train_obs_by_token={},
+            val_data_by_token={"BTCUSDT": df},
+            val_obs_by_token={},
+            test_data_by_token={},
+            test_obs_by_token={},
+            norm_stats={},
+            sim_config={},
+            timing_env_kwargs={},
+            env_runtime_overrides={},
+            leak_guard_kwargs={},
+            trials_dir=tmp_path,
+            tensorboard_log_dir=None,
+            n_envs_override=2,
+        )
+
+    assert observed_env_count["count"] == 2
