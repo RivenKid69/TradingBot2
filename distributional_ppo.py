@@ -166,6 +166,19 @@ class DistributionalPPO(RecurrentPPO):
         cvar_weight: float = 0.5,
         cvar_cap: Optional[float] = None,
         v_range_ema_alpha: float = 0.01,
+        vf_coef_warmup: Optional[float] = None,
+        vf_coef_warmup_updates: int = 8,
+        vf_bad_explained_scale: float = 0.5,
+        vf_bad_explained_floor: float = 0.02,
+        bad_explained_patience: int = 2,
+        entropy_boost_factor: float = 1.5,
+        entropy_boost_cap: Optional[float] = None,
+        clip_range_warmup: Optional[float] = None,
+        clip_range_warmup_updates: int = 8,
+        critic_grad_warmup_updates: int = 8,
+        cvar_activation_threshold: float = 0.25,
+        cvar_activation_hysteresis: float = 0.05,
+        cvar_ramp_updates: int = 4,
         value_target_scale: Union[str, float] = "percent",
         bc_warmup_steps: int = 0,
         bc_decay_steps: int = 0,
@@ -215,6 +228,69 @@ class DistributionalPPO(RecurrentPPO):
         clip_range_value = float(clip_range_candidate)
         if not math.isfinite(clip_range_value) or clip_range_value <= 0.0:
             raise ValueError("'ppo_clip_range' must be a positive finite value")
+
+        clip_range_warmup_candidate = kwargs_local.pop("clip_range_warmup", clip_range_warmup)
+        if clip_range_warmup_candidate is None:
+            clip_range_warmup_value = max(clip_range_value, 0.2)
+        else:
+            clip_range_warmup_value = float(clip_range_warmup_candidate)
+            if not math.isfinite(clip_range_warmup_value) or clip_range_warmup_value <= 0.0:
+                raise ValueError("'clip_range_warmup' must be a positive finite value")
+        clip_range_warmup_updates_value = max(
+            0, int(kwargs_local.pop("clip_range_warmup_updates", clip_range_warmup_updates))
+        )
+
+        vf_coef_target_value = float(kwargs_local.get("vf_coef", kwargs.get("vf_coef", 0.5)))
+        vf_coef_warmup_candidate = kwargs_local.pop("vf_coef_warmup", vf_coef_warmup)
+        if vf_coef_warmup_candidate is None:
+            vf_coef_warmup_value = min(vf_coef_target_value, 0.075)
+        else:
+            vf_coef_warmup_value = float(vf_coef_warmup_candidate)
+            if not math.isfinite(vf_coef_warmup_value) or vf_coef_warmup_value <= 0.0:
+                raise ValueError("'vf_coef_warmup' must be a positive finite value")
+        kwargs_local["vf_coef"] = vf_coef_warmup_value
+        vf_coef_warmup_updates_value = max(
+            0, int(kwargs_local.pop("vf_coef_warmup_updates", vf_coef_warmup_updates))
+        )
+        vf_bad_explained_scale_value = float(
+            kwargs_local.pop("vf_bad_explained_scale", vf_bad_explained_scale)
+        )
+        if vf_bad_explained_scale_value < 0.0:
+            raise ValueError("'vf_bad_explained_scale' must be non-negative")
+        vf_bad_explained_floor_value = float(
+            kwargs_local.pop("vf_bad_explained_floor", vf_bad_explained_floor)
+        )
+        if vf_bad_explained_floor_value < 0.0:
+            raise ValueError("'vf_bad_explained_floor' must be non-negative")
+        bad_explained_patience_value = max(
+            0, int(kwargs_local.pop("bad_explained_patience", bad_explained_patience))
+        )
+
+        entropy_boost_factor_value = float(
+            kwargs_local.pop("entropy_boost_factor", entropy_boost_factor)
+        )
+        if entropy_boost_factor_value < 1.0:
+            entropy_boost_factor_value = 1.0
+        entropy_boost_cap_candidate = kwargs_local.pop("entropy_boost_cap", entropy_boost_cap)
+
+        critic_grad_warmup_updates_value = max(
+            0, int(kwargs_local.pop("critic_grad_warmup_updates", critic_grad_warmup_updates))
+        )
+
+        cvar_activation_threshold_value = float(
+            kwargs_local.pop("cvar_activation_threshold", cvar_activation_threshold)
+        )
+        if cvar_activation_threshold_value < 0.0:
+            raise ValueError("'cvar_activation_threshold' must be non-negative")
+        cvar_activation_hysteresis_value = float(
+            kwargs_local.pop("cvar_activation_hysteresis", cvar_activation_hysteresis)
+        )
+        if cvar_activation_hysteresis_value < 0.0:
+            raise ValueError("'cvar_activation_hysteresis' must be non-negative")
+        cvar_ramp_updates_value = max(
+            1, int(kwargs_local.pop("cvar_ramp_updates", cvar_ramp_updates))
+        )
+
         kwargs_local["clip_range"] = clip_range_value
 
         if target_kl is not None:
@@ -246,6 +322,33 @@ class DistributionalPPO(RecurrentPPO):
         self.v_range_ema_alpha = float(v_range_ema_alpha)
         if not (0.0 < self.v_range_ema_alpha <= 1.0):
             raise ValueError("'v_range_ema_alpha' must be in (0, 1]")
+
+        self._vf_coef_target = vf_coef_target_value
+        self._vf_coef_warmup = vf_coef_warmup_value
+        self._vf_coef_warmup_updates = vf_coef_warmup_updates_value
+        self._vf_bad_explained_scale = vf_bad_explained_scale_value
+        self._vf_bad_explained_floor = vf_bad_explained_floor_value
+        self._bad_explained_patience = bad_explained_patience_value
+        self._bad_explained_counter = 0
+        self._last_explained_variance: Optional[float] = None
+
+        self._entropy_boost_factor = entropy_boost_factor_value
+        self._entropy_boost_cap_candidate = entropy_boost_cap_candidate
+
+        self._clip_range_base = clip_range_value
+        self._clip_range_warmup = max(clip_range_warmup_value, clip_range_value)
+        self._clip_range_warmup_updates = clip_range_warmup_updates_value
+        self._clip_range_current = self._clip_range_warmup
+
+        self._critic_grad_warmup_updates = critic_grad_warmup_updates_value
+        self._critic_grad_blocked = critic_grad_warmup_updates_value > 0
+
+        self._cvar_weight_target = float(self.cvar_weight)
+        self._cvar_activation_threshold = cvar_activation_threshold_value
+        self._cvar_activation_hysteresis = cvar_activation_hysteresis_value
+        self._cvar_ramp_updates = cvar_ramp_updates_value
+        self._cvar_ramp_progress = 0
+        self._current_cvar_weight = 0.0
 
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
         self._value_clip_limit_scaled: Optional[float] = None
@@ -287,6 +390,13 @@ class DistributionalPPO(RecurrentPPO):
         self.ent_coef_final = (
             float(ent_coef_final) if ent_coef_final is not None else float(self.ent_coef_initial)
         )
+        if self._entropy_boost_cap_candidate is None:
+            self._entropy_boost_cap = float(self.ent_coef_initial * 5.0)
+        else:
+            cap_value = float(self._entropy_boost_cap_candidate)
+            if cap_value <= 0.0 or not math.isfinite(cap_value):
+                raise ValueError("'entropy_boost_cap' must be positive when provided")
+            self._entropy_boost_cap = cap_value
         self.ent_coef_decay_steps = max(0, int(ent_coef_decay_steps))
         self.entropy_plateau_window = max(0, int(ent_coef_plateau_window))
         self.entropy_plateau_tolerance = float(ent_coef_plateau_tolerance)
@@ -349,7 +459,7 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'kl_penalty_decrease' must be in (0, 1]")
 
         self._fixed_clip_range = clip_range_value
-        self.clip_range = lambda _: self._fixed_clip_range
+        self.clip_range = lambda _: self._compute_clip_range_value()
         self.target_kl = target_kl_value
 
         self.normalize_advantage = True
@@ -357,6 +467,70 @@ class DistributionalPPO(RecurrentPPO):
         if kl_lr_scale_min_requested is not None:
             self.logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_requested))
             self.logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
+
+        atoms = max(1, int(getattr(self.policy, "num_atoms", 1)))
+        ce_norm = math.log(float(atoms))
+        self._critic_ce_normalizer = ce_norm if ce_norm > 1e-6 else 1.0
+
+        policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
+        if callable(policy_block_fn):
+            policy_block_fn(self._critic_grad_blocked)
+
+    def _compute_clip_range_value(self, update_index: Optional[int] = None) -> float:
+        idx = self._update_calls if update_index is None else max(0, int(update_index))
+        if self._clip_range_warmup_updates <= 0:
+            return float(self._clip_range_base)
+        progress = min(1.0, idx / float(max(1, self._clip_range_warmup_updates)))
+        warmup = float(self._clip_range_warmup)
+        base = float(self._clip_range_base)
+        value = warmup + (base - warmup) * progress
+        return float(max(value, 1e-6))
+
+    def _compute_vf_coef_value(self, update_index: int) -> float:
+        if self._vf_coef_warmup_updates <= 0:
+            base = float(self._vf_coef_target)
+        else:
+            progress = min(1.0, update_index / float(max(1, self._vf_coef_warmup_updates)))
+            base = float(
+                self._vf_coef_warmup
+                + (self._vf_coef_target - self._vf_coef_warmup) * progress
+            )
+
+        if self._bad_explained_counter > max(0, self._bad_explained_patience):
+            counter = self._bad_explained_counter - self._bad_explained_patience
+            scale = self._vf_bad_explained_scale ** float(counter)
+            base = max(base * scale, self._vf_bad_explained_floor)
+        return float(base)
+
+    def _compute_entropy_boost(self, nominal_ent_coef: float) -> float:
+        if self._bad_explained_counter <= max(0, self._bad_explained_patience):
+            return float(nominal_ent_coef)
+        counter = self._bad_explained_counter - self._bad_explained_patience
+        boosted = nominal_ent_coef * (self._entropy_boost_factor ** float(counter))
+        return float(min(boosted, self._entropy_boost_cap))
+
+    def _compute_cvar_weight(self) -> float:
+        last_ev = self._last_explained_variance
+        if last_ev is None:
+            self._cvar_ramp_progress = 0
+            return 0.0
+        threshold = self._cvar_activation_threshold
+        hysteresis = self._cvar_activation_hysteresis
+        if last_ev + hysteresis < threshold:
+            self._cvar_ramp_progress = 0
+            return 0.0
+        self._cvar_ramp_progress = min(
+            self._cvar_ramp_progress + 1, self._cvar_ramp_updates
+        )
+        ramp = self._cvar_ramp_progress / float(max(1, self._cvar_ramp_updates))
+        return float(self._cvar_weight_target * ramp)
+
+    def _update_critic_gradient_block(self, update_index: int) -> None:
+        should_block = update_index < self._critic_grad_warmup_updates
+        policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
+        if callable(policy_block_fn):
+            policy_block_fn(should_block)
+        self._critic_grad_blocked = should_block
 
     def _configure_gradient_accumulation(
         self,
@@ -769,10 +943,19 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
         self._refresh_kl_base_lrs()
-        clip_range = self.clip_range(self._current_progress_remaining)
 
         current_update = self._update_calls
+        self._update_critic_gradient_block(current_update)
+        self._clip_range_current = self._compute_clip_range_value(current_update)
+        clip_range = float(self._clip_range_current)
         self._update_ent_coef(current_update)
+        nominal_ent_coef = float(self.ent_coef)
+        ent_coef_effective = self._compute_entropy_boost(nominal_ent_coef)
+        self.ent_coef = ent_coef_effective
+        vf_coef_effective = self._compute_vf_coef_value(current_update)
+        self.vf_coef = vf_coef_effective
+        current_cvar_weight = self._compute_cvar_weight()
+        self._current_cvar_weight = current_cvar_weight
 
         returns_tensor = torch.as_tensor(
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
@@ -798,11 +981,13 @@ class DistributionalPPO(RecurrentPPO):
             v_max = min_half_range
         else:
             quantile_bounds = torch.tensor(
-                [0.05, 0.95], device=scaled_returns_tensor.device, dtype=scaled_returns_tensor.dtype
+                [0.02, 0.98], device=scaled_returns_tensor.device, dtype=scaled_returns_tensor.dtype
             )
             v_low, v_high = torch.quantile(scaled_returns_tensor, quantile_bounds)
-            v_min = float(v_low.item())
-            v_max = float(v_high.item())
+            raw_min = float(torch.min(scaled_returns_tensor).item())
+            raw_max = float(torch.max(scaled_returns_tensor).item())
+            v_min = float(min(v_low.item(), raw_min))
+            v_max = float(max(v_high.item(), raw_max))
 
         if not math.isfinite(v_min) or not math.isfinite(v_max):
             raise RuntimeError(
@@ -838,8 +1023,10 @@ class DistributionalPPO(RecurrentPPO):
             self.v_range_initialized = True
         else:
             alpha = self.v_range_ema_alpha
-            self.running_v_min = float((1.0 - alpha) * self.running_v_min + alpha * v_min)
-            self.running_v_max = float((1.0 - alpha) * self.running_v_max + alpha * v_max)
+            ema_min = float((1.0 - alpha) * self.running_v_min + alpha * v_min)
+            ema_max = float((1.0 - alpha) * self.running_v_max + alpha * v_max)
+            self.running_v_min = min(ema_min, v_min)
+            self.running_v_max = max(ema_max, v_max)
 
         if self.running_v_max <= self.running_v_min:
             self.running_v_min = v_min
@@ -890,6 +1077,9 @@ class DistributionalPPO(RecurrentPPO):
         cvar_loss_value = 0.0
         cvar_term_value = 0.0
         total_loss_value = 0.0
+        clamp_below_sum = 0.0
+        clamp_above_sum = 0.0
+        clamp_weight = 0.0
 
         adv_mean_accum = 0.0
         adv_std_accum = 0.0
@@ -976,7 +1166,7 @@ class DistributionalPPO(RecurrentPPO):
                     self.logger.record("warn/empty_microbatch_group", 1.0)
                     continue
                 self.logger.record("train/actual_batch_size", float(bucket_target_size))
-                clip_range = float(self.clip_range(self._current_progress_remaining))
+                clip_range = float(self._clip_range_current)
                 self.policy.optimizer.zero_grad(set_to_none=True)
 
                 bucket_policy_loss_value = 0.0
@@ -1185,9 +1375,20 @@ class DistributionalPPO(RecurrentPPO):
 
                         target_return_batches.append(target_returns.reshape(-1, 1).detach())
 
+                        below_frac = float(
+                            (target_returns_scaled < self.policy.v_min).float().mean().item()
+                        )
+                        above_frac = float(
+                            (target_returns_scaled > self.policy.v_max).float().mean().item()
+                        )
+                        clamp_below_sum += below_frac * weight
+                        clamp_above_sum += above_frac * weight
+                        clamp_weight += weight
+
                     pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
                     log_predictions = torch.log(pred_probs_fp32)
                     critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
+                    critic_loss = critic_loss / self._critic_ce_normalizer
 
                     with torch.no_grad():
 
@@ -1216,14 +1417,14 @@ class DistributionalPPO(RecurrentPPO):
                     cvar_raw = (predicted_cvar / self.value_target_scale).mean()
 
                     cvar_loss = -cvar_raw
-                    cvar_term = self.cvar_weight * cvar_loss
+                    cvar_term = current_cvar_weight * cvar_loss
                     if self.cvar_cap is not None:
                         cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
 
                     loss = (
                         policy_loss.to(dtype=torch.float32)
                         + self.ent_coef * entropy_loss.to(dtype=torch.float32)
-                        + self.vf_coef * critic_loss
+                        + vf_coef_effective * critic_loss
                         + cvar_term
                     )
 
@@ -1354,6 +1555,12 @@ class DistributionalPPO(RecurrentPPO):
 
             if kl_early_stop_triggered:
                 break
+        if explained_var < 0.0:
+            self._bad_explained_counter += 1
+        else:
+            self._bad_explained_counter = 0
+        self._last_explained_variance = float(explained_var)
+
         self._n_updates += epochs_completed
         self._update_calls += 1
 
@@ -1375,6 +1582,8 @@ class DistributionalPPO(RecurrentPPO):
 
         if value_logits_final is None:
             cached_logits = getattr(self.policy, "last_value_logits", None)
+            if cached_logits is None:
+                cached_logits = getattr(self.policy, "_last_value_logits", None)
             if cached_logits is not None:
                 value_logits_final = cached_logits.detach().to(dtype=torch.float32)
 
@@ -1451,6 +1660,13 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/entropy_decay_start_update", float(decay_start))
 
         self.logger.record("train/ent_coef", float(self.ent_coef))
+        self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
+        self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
+        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight))
+        self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
+        if clamp_weight > 0.0:
+            self.logger.record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
+            self.logger.record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
         self.logger.record("train/ent_coef_initial", float(self.ent_coef_initial))
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
@@ -1479,8 +1695,9 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
         self.logger.record("train/explained_variance", explained_var)
+        self.logger.record("train/clip_range", float(self._clip_range_current))
         clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
-        self.logger.record("train/clip_range", clip_range_for_log)
+        self.logger.record("train/clip_range_schedule", clip_range_for_log)
         if ratio_count > 0:
             ratio_mean = ratio_sum / float(ratio_count)
             ratio_var = max(ratio_sq_sum / float(ratio_count) - ratio_mean**2, 0.0)

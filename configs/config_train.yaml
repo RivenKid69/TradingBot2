@@ -59,7 +59,12 @@ model:
     ent_coef_plateau_window: 24
     ent_coef_plateau_tolerance: 0.002
     ent_coef_plateau_min_updates: 40
-    vf_coef: 0.5
+    vf_coef: 0.08
+    vf_coef_warmup: 0.05
+    vf_coef_warmup_updates: 12
+    vf_bad_explained_scale: 0.5
+    vf_bad_explained_floor: 0.02
+    bad_explained_patience: 2
     max_grad_norm: 0.5
     n_steps: 2048                      # больше контекста/стабильнее Â
     n_epochs: 4                        # разумный компромисс вместо 1
@@ -76,6 +81,9 @@ model:
     cql_beta: 5.0
     cvar_alpha: 0.05
     cvar_weight: 0.0
+    cvar_activation_threshold: 0.25
+    cvar_activation_hysteresis: 0.05
+    cvar_ramp_updates: 6
     cvar_cap: 0.5
     use_torch_compile: false
     bc_warmup_steps: 200000
@@ -87,6 +95,10 @@ model:
     v_min: -0.2     # нижняя граница поддержки ценности
     v_max: 0.2      # верхняя граница (v_max > v_min)
     v_range_ema_alpha: 0.005
+    clip_range_warmup: 0.18
+    clip_range_warmup_updates: 16
+    critic_grad_warmup_updates: 12
+    entropy_boost_factor: 1.5
 
 env:
   decision_timing: CLOSE_TO_OPEN
