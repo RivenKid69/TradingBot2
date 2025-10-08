@@ -38,6 +38,8 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
         self._lock_price_offset = normalized["lock_price_offset"]
         self._lock_ttl = normalized["lock_ttl"]
         self._fixed_type = normalized["fixed_type"]
+        self._fixed_price_offset_ticks = normalized["fixed_price_offset_ticks"]
+        self._fixed_ttl_steps = normalized["fixed_ttl_steps"]
 
         # обновляем action_space на MultiDiscrete; observation_space оставляем как у базовой среды
         self.action_space = spaces.MultiDiscrete([201, 33, 4, self.bins_vol])
@@ -48,7 +50,13 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
         overrides: Mapping[str, Any] | None,
     ) -> dict[str, Any]:
         if overrides is None:
-            return {"lock_price_offset": False, "lock_ttl": False, "fixed_type": None}
+            return {
+                "lock_price_offset": False,
+                "lock_ttl": False,
+                "fixed_type": None,
+                "fixed_price_offset_ticks": None,
+                "fixed_ttl_steps": None,
+            }
 
         if hasattr(overrides, "dict"):
             try:
@@ -72,10 +80,40 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
                 fixed_type_raw
             )
 
+        fixed_price_offset_raw = data.get("fixed_price_offset_ticks", None)
+        fixed_price_offset_ticks = None
+        if fixed_price_offset_raw is not None:
+            if isinstance(fixed_price_offset_raw, bool):
+                raise ValueError(
+                    "fixed_price_offset_ticks expects an integer, got boolean"
+                )
+            try:
+                fixed_price_offset_ticks = int(fixed_price_offset_raw)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Unsupported fixed_price_offset_ticks value: {fixed_price_offset_raw!r}"
+                ) from exc
+            fixed_price_offset_ticks = int(np.clip(fixed_price_offset_ticks, 0, 200))
+
+        fixed_ttl_raw = data.get("fixed_ttl_steps", None)
+        fixed_ttl_steps = None
+        if fixed_ttl_raw is not None:
+            if isinstance(fixed_ttl_raw, bool):
+                raise ValueError("fixed_ttl_steps expects an integer, got boolean")
+            try:
+                fixed_ttl_steps = int(fixed_ttl_raw)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Unsupported fixed_ttl_steps value: {fixed_ttl_raw!r}"
+                ) from exc
+            fixed_ttl_steps = int(np.clip(fixed_ttl_steps, 0, 32))
+
         return {
             "lock_price_offset": lock_price_offset,
             "lock_ttl": lock_ttl,
             "fixed_type": fixed_type,
+            "fixed_price_offset_ticks": fixed_price_offset_ticks,
+            "fixed_ttl_steps": fixed_ttl_steps,
         }
 
     @staticmethod
@@ -121,8 +159,12 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
         }
         if self._lock_price_offset:
             dict_action["price_offset_ticks"] = 0
+        if self._fixed_price_offset_ticks is not None:
+            dict_action["price_offset_ticks"] = self._fixed_price_offset_ticks
         if self._lock_ttl:
             dict_action["ttl_steps"] = 0
+        if self._fixed_ttl_steps is not None:
+            dict_action["ttl_steps"] = self._fixed_ttl_steps
         if self._fixed_type is not None:
             dict_action["type"] = self._fixed_type
         return dict_action

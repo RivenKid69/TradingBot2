@@ -9,14 +9,8 @@ execution_params:
   ttl_steps: 0
   tif: GTC
 execution:
+  enabled: true              # оффлайн-тренировка симулирует сделки ради реварда
   mode: bar
-  enabled: true
-  spot_only: true
-  fill_policy: next_open_market   # close_t → open_{t+1}
-  entry_mode: default
-  clip_to_bar:
-    enabled: true
-    strict_open_fill: true
 execution_config:
   notional_threshold: 10000.0
   large_order_algo: TWAP
@@ -117,11 +111,13 @@ optimization:
 
 algo:
   actions:
-    lock_price_offset: true
-    lock_ttl: true
-    fixed_type: MARKET
     long_only: true            # <-- ВКЛЮЧАЕМ лонг-онли из конфига
   action_wrapper:
+    fixed_type: MARKET         # фиксируем тип действия
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
     bins_vol: 6            # более «тонкие» объёмы → не вечный HOLD и не «all-in»
 
 quantizer:
@@ -224,22 +220,22 @@ latency:
 risk:
   enabled: false
 
-# See ../docs/no_trade.md for details
 no_trade:
-  funding_buffer_min: 0
-  daily_utc: []
-  custom_ms: []
-  dynamic_guard:
-    enable: false
-    sigma_window: 120
-    atr_window: 14
-    vol_abs: null
-    vol_pctile: 0.99
-    spread_abs_bps: null
-    spread_pctile: 0.99
-    hysteresis: 0.1
-    cooldown_bars: 10
-    log_reason: true
+  enabled: false
+  cooldown_bars: 0
+  block_when_low_liquidity: false
+
+liquidity:
+  adv_min_share: 0.0
+
+costs:
+  taker_bps: 10
+  half_spread_bps: 5
+  impact_coeff: 0.0
+
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0015
 
 components:
   market_data:
