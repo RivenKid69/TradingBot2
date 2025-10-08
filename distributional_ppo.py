@@ -732,11 +732,13 @@ class DistributionalPPO(RecurrentPPO):
         scaled_returns_tensor = returns_tensor * self.value_target_scale
 
         if self._value_clip_limit_unscaled is not None:
-
-            min_half_range = self._value_clip_limit_unscaled / self.value_target_scale
-
-            min_half_range = self._value_clip_limit_unscaled * self.value_target_scale
-
+            # ``min_half_range`` is used in the scaled value domain so we must rely on the
+            # scaled clip limit.  The previous implementation divided by
+            # ``value_target_scale`` before overwriting the result which effectively
+            # nullified the clip limit and collapsed the support when the scale was
+            # large.  Using the pre-computed scaled limit keeps the support width
+            # consistent with the applied clipping.
+            min_half_range = float(self._value_clip_limit_scaled)
         else:
             with torch.no_grad():
                 min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
@@ -768,8 +770,9 @@ class DistributionalPPO(RecurrentPPO):
 
         half_range = max(half_range, min_half_range)
 
-        padding = max(1e-6 / self.value_target_scale, half_range * 0.05)
-
+        # ``half_range`` already lives in the scaled space; dividing by the scale made
+        # the padding negligibly small (e.g. 1e-8 for percentage targets).  Scaling the
+        # minimum padding keeps it meaningful regardless of the chosen value scale.
         padding = max(1e-6 * self.value_target_scale, half_range * 0.05)
 
         half_range += padding
