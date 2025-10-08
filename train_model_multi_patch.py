@@ -35,7 +35,7 @@ import hashlib
 import random
 from copy import deepcopy
 from functools import lru_cache
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Dict, Mapping, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -990,7 +990,9 @@ def objective(trial: optuna.Trial,
                 return extra
         return {}
 
-    def _extract_loss_head_weights(cfg: TrainConfig) -> Optional[Dict[str, float]]:
+    def _extract_loss_head_config(
+        cfg: TrainConfig,
+    ) -> tuple[Optional[Dict[str, float]], Optional[Dict[str, bool]]]:
         loss_masks_cfg = getattr(cfg, "loss_masks", None)
         if loss_masks_cfg is None:
             extra = _get_extra_mapping(cfg)
@@ -1002,7 +1004,7 @@ def objective(trial: optuna.Trial,
             except TypeError:
                 pass
         if not isinstance(loss_masks_cfg, Mapping):
-            return None
+            return None, None
 
         include_payload = loss_masks_cfg.get("include_heads")
         if hasattr(include_payload, "dict"):
@@ -1011,20 +1013,26 @@ def objective(trial: optuna.Trial,
             except TypeError:
                 pass
         if not isinstance(include_payload, Mapping):
-            return None
+            return None, None
 
         weights: Dict[str, float] = {}
+        include_map: Dict[str, bool] = {}
         for head_name, raw_value in include_payload.items():
             if raw_value is None:
                 continue
             if isinstance(raw_value, bool):
                 weights[head_name] = 1.0 if raw_value else 0.0
+                include_map[head_name] = bool(raw_value)
             else:
                 try:
                     weights[head_name] = float(raw_value)
                 except (TypeError, ValueError):
                     pass
-        return weights or None
+                else:
+                    include_map[head_name] = weights[head_name] != 0.0
+        if not include_map:
+            include_map = {}
+        return (weights or None, include_map or None)
 
     def _coerce_optional_int(value, key: str):
         if value is None:
@@ -1346,6 +1354,19 @@ def objective(trial: optuna.Trial,
         "v_max": v_max,
     }
 
+    execution_mode: str | None = None
+    execution_cfg = getattr(cfg, "execution", None)
+    if execution_cfg is not None:
+        execution_mode = getattr(execution_cfg, "mode", None)
+        if execution_mode is None and isinstance(execution_cfg, Mapping):
+            execution_mode = execution_cfg.get("mode")  # type: ignore[index]
+    if execution_mode is None:
+        execution_blob = getattr(cfg, "__dict__", {}).get("execution")
+        if isinstance(execution_blob, Mapping):
+            execution_mode = execution_blob.get("mode")
+    if isinstance(execution_mode, str) and execution_mode.strip():
+        policy_arch_params["execution_mode"] = execution_mode.strip().lower()
+
     if not train_data_by_token: raise ValueError("Нет данных для обучения в этом trial.")
 
     n_envs_cfg = _coerce_optional_int(_get_model_param_value(cfg, "n_envs"), "n_envs")
@@ -1657,7 +1678,9 @@ def objective(trial: optuna.Trial,
         tb_log_path = tensorboard_log_dir / f"trial_{trial.number:03d}"
         tb_log_path.mkdir(parents=True, exist_ok=True)
 
-    loss_head_weights = _extract_loss_head_weights(cfg)
+    loss_head_weights, policy_include_heads = _extract_loss_head_config(cfg)
+    if policy_include_heads is not None:
+        policy_arch_params.setdefault("include_heads", policy_include_heads)
 
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,

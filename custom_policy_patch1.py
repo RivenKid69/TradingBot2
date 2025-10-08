@@ -11,6 +11,7 @@
 # Применены точечные исправления к CustomActorCriticPolicy, чтобы она
 # корректно работала с новой GRU-архитектурой, не затрагивая остальной код.
 
+import math
 import torch
 import torch.nn as nn
 from torch.optim import Optimizer
@@ -22,6 +23,8 @@ from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import Schedule  # тип коллбэка lr_schedule
+
+from action_proto import ActionType
 
 
 
@@ -82,6 +85,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # класса создаст LSTM размером по умолчанию (256), а дальнейшие головы,
         # построенные на «hidden_dim», начнут конфликтовать по размерностям.
         kwargs = dict(kwargs)
+        exec_mode_override = kwargs.pop("execution_mode", None)
+        include_heads_override = kwargs.pop("include_heads", None)
         kwargs.setdefault("lstm_hidden_size", hidden_dim)
         enable_critic_lstm = arch_params.get("enable_critic_lstm")
         if enable_critic_lstm is not None:
@@ -114,10 +119,49 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 self._multi_discrete_head_names = tuple(
                     f"head_{i}" for i in range(int(self._multi_discrete_nvec.size))
                 )
+            self._multi_head_sizes: Tuple[int, ...] = tuple(
+                int(x) for x in self._multi_discrete_nvec.tolist()
+            )
+            name_to_idx = {name: idx for idx, name in enumerate(self._multi_discrete_head_names)}
+            self._price_head_index: Optional[int] = name_to_idx.get("price_offset_ticks")
+            self._ttl_head_index: Optional[int] = name_to_idx.get("ttl_steps")
+            self._type_head_index: Optional[int] = name_to_idx.get("type")
+            self._volume_head_index: Optional[int] = name_to_idx.get("volume_frac")
         else:
             raise NotImplementedError(
                 f"Action space {type(action_space)} is not supported by CustomActorCriticPolicy"
             )
+
+        if not hasattr(self, "_multi_head_sizes"):
+            self._multi_head_sizes = tuple()
+        if not hasattr(self, "_price_head_index"):
+            self._price_head_index = None
+        if not hasattr(self, "_ttl_head_index"):
+            self._ttl_head_index = None
+        if not hasattr(self, "_type_head_index"):
+            self._type_head_index = None
+        if not hasattr(self, "_volume_head_index"):
+            self._volume_head_index = None
+
+        try:
+            self._bar_market_type_index = int(ActionType.MARKET)
+        except Exception:
+            self._bar_market_type_index = 0
+        self._bar_fixed_price_offset: int = 0
+        self._bar_fixed_ttl: int = 0
+        self._active_heads_logged: bool = False
+        self._include_heads_bool: Optional[Dict[str, bool]] = None
+        self._execution_mode = self._coerce_execution_mode(
+            arch_params.get("execution_mode") if arch_params else None
+        )
+        if exec_mode_override is not None and not self._execution_mode:
+            self._execution_mode = self._coerce_execution_mode(exec_mode_override)
+        include_heads_cfg = arch_params.get("include_heads") if arch_params else None
+        if isinstance(include_heads_cfg, Mapping) and not include_heads_cfg:
+            include_heads_cfg = None
+        self._register_active_heads(include_heads_cfg)
+        if include_heads_override is not None:
+            self._register_active_heads(include_heads_override)
 
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
 
@@ -238,6 +282,159 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # После того как LSTM-слои фактически созданы, переинициализируем оптимизатор
         # с нужным набором параметров и (опционально) кастомным планировщиком.
         self._setup_custom_optimizer()
+
+    def _coerce_execution_mode(self, value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value.strip().lower()
+        try:
+            return str(value).strip().lower()
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _coerce_head_flag(value: Any) -> Optional[bool]:
+        if value is None:
+            return None
+        if isinstance(value, (bool, np.bool_)):
+            return bool(value)
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                return None
+            if not math.isfinite(numeric):
+                return None
+            return numeric != 0.0
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if not lowered:
+                return None
+            if lowered in {"1", "true", "yes", "on"}:
+                return True
+            if lowered in {"0", "false", "no", "off"}:
+                return False
+            return None
+        if isinstance(value, torch.Tensor):
+            if value.numel() != 1:
+                return None
+            return bool(value.item())
+        return None
+
+    def _resolve_include_heads(
+        self, payload: Optional[Mapping[str, Any] | Sequence[Any]]
+    ) -> Optional[Dict[str, bool]]:
+        if self._multi_discrete_nvec is None or int(self._multi_discrete_nvec.size) == 0:
+            return None
+        if payload is None:
+            return None
+
+        mapping_payload: Optional[Mapping[str, Any]]
+        sequence_payload: Optional[Sequence[Any]]
+        if isinstance(payload, Mapping):
+            mapping_payload = payload
+            sequence_payload = None
+        elif isinstance(payload, (list, tuple)):
+            mapping_payload = None
+            sequence_payload = payload
+        else:
+            return None
+
+        num_heads = int(self._multi_discrete_nvec.size)
+        head_names = getattr(self, "_multi_discrete_head_names", tuple())
+        resolved: Dict[str, bool] = {}
+
+        for idx in range(num_heads):
+            head_name = head_names[idx] if idx < len(head_names) else f"head_{idx}"
+            raw_value: Any = None
+            if mapping_payload is not None:
+                if idx < len(head_names):
+                    raw_value = mapping_payload.get(head_names[idx])
+                if raw_value is None:
+                    raw_value = mapping_payload.get(str(idx))
+                if raw_value is None:
+                    raw_value = mapping_payload.get(idx)
+            if raw_value is None and sequence_payload is not None and idx < len(sequence_payload):
+                raw_value = sequence_payload[idx]
+
+            flag = self._coerce_head_flag(raw_value)
+            if flag is not None:
+                resolved[head_name] = flag
+
+        if not resolved:
+            if head_names:
+                return {name: True for name in head_names}
+            return None
+
+        for idx in range(num_heads):
+            head_name = head_names[idx] if idx < len(head_names) else f"head_{idx}"
+            if head_name not in resolved:
+                resolved[head_name] = True
+
+        return resolved
+
+    def _register_active_heads(
+        self, payload: Optional[Mapping[str, Any] | Sequence[Any]]
+    ) -> None:
+        resolved = self._resolve_include_heads(payload)
+        if resolved is None:
+            return
+
+        self._include_heads_bool = resolved
+        if not self._active_heads_logged:
+            active_names = [name for name, enabled in resolved.items() if enabled]
+            active_repr = ", ".join(active_names) if active_names else "none"
+            print(f"[CustomActorCriticPolicy] Active action heads: {active_repr}")
+            self._active_heads_logged = True
+
+        if self._execution_mode == "bar":
+            expected = {
+                "type": False,
+                "price_offset_ticks": False,
+                "ttl_steps": False,
+                "volume_frac": True,
+            }
+            canonical = {name: resolved.get(name, True) for name in expected}
+            if canonical != expected:
+                raise ValueError(
+                    "BAR execution mode requires include_heads to exactly disable type, "
+                    "price_offset_ticks and ttl_steps while keeping volume_frac enabled"
+                )
+
+    def _is_bar_execution_mode(self) -> bool:
+        return self._execution_mode == "bar" and self._volume_head_index is not None
+
+    def _extract_volume_logits(self, action_logits: torch.Tensor) -> torch.Tensor:
+        if self._volume_head_index is None or not self._multi_head_sizes:
+            raise RuntimeError("Volume head is not configured for BAR execution mode")
+        start = int(sum(self._multi_head_sizes[: self._volume_head_index]))
+        end = start + int(self._multi_head_sizes[self._volume_head_index])
+        return action_logits[..., start:end]
+
+    def _bar_action_distribution(self, latent_pi: torch.Tensor) -> torch.distributions.Categorical:
+        action_logits = self.action_net(latent_pi)
+        volume_logits = self._extract_volume_logits(action_logits)
+        return torch.distributions.Categorical(logits=volume_logits)
+
+    def _assemble_bar_actions(self, volume_actions: torch.Tensor) -> torch.Tensor:
+        if not self._multi_head_sizes:
+            return volume_actions.unsqueeze(-1)
+
+        batch_size = volume_actions.shape[0]
+        num_heads = len(self._multi_head_sizes)
+        actions = torch.zeros(
+            (batch_size, num_heads), device=volume_actions.device, dtype=torch.long
+        )
+        if self._price_head_index is not None:
+            actions[:, self._price_head_index] = self._bar_fixed_price_offset
+        if self._ttl_head_index is not None:
+            actions[:, self._ttl_head_index] = self._bar_fixed_ttl
+        if self._type_head_index is not None:
+            actions[:, self._type_head_index] = self._bar_market_type_index
+        if self._volume_head_index is not None:
+            actions[:, self._volume_head_index] = volume_actions.to(dtype=torch.long)
+        return actions
 
     @torch.no_grad()
     def update_atoms(self, v_min: float, v_max: float) -> None:
@@ -426,9 +623,11 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     ) -> None:
         if self._multi_discrete_nvec is None:
             self._loss_head_weights_tensor = None
+            self._register_active_heads(weights)
             return
         if weights is None:
             self._loss_head_weights_tensor = None
+            self._register_active_heads(weights)
             return
 
         values: list[float] = []
@@ -472,6 +671,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._loss_head_weights_tensor = torch.as_tensor(
             values, dtype=torch.float32, device=device
         )
+        self._register_active_heads(weights)
 
     def _iter_multi_heads(
         self, distribution: torch.distributions.Distribution
@@ -505,11 +705,22 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         log_prob_sum = None
         for idx, (categorical, weight) in enumerate(zip(comps, weights)):
+            if torch.is_tensor(weight):
+                weight_value = float(weight.detach().cpu().item())
+            else:
+                weight_value = float(weight)
+            if not math.isfinite(weight_value) or abs(weight_value) < 1e-12:
+                continue
             head_log_prob = categorical.log_prob(actions_tensor[:, idx])
             if head_log_prob.ndim > 1:
                 head_log_prob = head_log_prob.sum(dim=-1)
-            head_log_prob = head_log_prob * weight
+            head_log_prob = head_log_prob * weight_value
             log_prob_sum = head_log_prob if log_prob_sum is None else (log_prob_sum + head_log_prob)
+
+        if log_prob_sum is None:
+            base = comps[0].logits
+            return base.new_zeros(actions_tensor.shape[0])
+
         return log_prob_sum
 
     def weighted_entropy(
@@ -528,8 +739,19 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         ent_sum = None
         for categorical, weight in zip(comps, weights):
-            head_entropy = categorical.entropy() * weight
+            if torch.is_tensor(weight):
+                weight_value = float(weight.detach().cpu().item())
+            else:
+                weight_value = float(weight)
+            if not math.isfinite(weight_value) or abs(weight_value) < 1e-12:
+                continue
+            head_entropy = categorical.entropy() * weight_value
             ent_sum = head_entropy if ent_sum is None else (ent_sum + head_entropy)
+
+        if ent_sum is None:
+            base = comps[0].logits
+            return base.new_zeros(base.shape[0])
+
         return ent_sum
 
     @property
@@ -553,9 +775,20 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         latent_vf = self.mlp_extractor.forward_critic(latent_vf)
 
         values = self._get_value_from_latent(latent_vf)
-        distribution = self._get_action_dist_from_latent(latent_pi)
-        actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = self._weighted_log_prob(distribution, actions)
+
+        if self._is_bar_execution_mode():
+            distribution = self._bar_action_distribution(latent_pi)
+            if deterministic:
+                volume_actions = torch.argmax(distribution.logits, dim=-1)
+            else:
+                volume_actions = distribution.sample()
+            volume_actions = volume_actions.to(dtype=torch.long)
+            log_prob = distribution.log_prob(volume_actions)
+            actions = self._assemble_bar_actions(volume_actions)
+        else:
+            distribution = self._get_action_dist_from_latent(latent_pi)
+            actions = distribution.get_actions(deterministic=deterministic)
+            log_prob = self._weighted_log_prob(distribution, actions)
 
         return actions, values, log_prob, new_states
 
@@ -575,10 +808,26 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         latent_pi = self.mlp_extractor.forward_actor(latent_pi)
         latent_vf = self.mlp_extractor.forward_critic(latent_vf)
 
-        distribution = self._get_action_dist_from_latent(latent_pi)
-        log_prob = self._weighted_log_prob(distribution, actions)
         values = self._get_value_from_latent(latent_vf)
-        entropy = self.weighted_entropy(distribution)
+
+        if self._is_bar_execution_mode():
+            distribution = self._bar_action_distribution(latent_pi)
+            actions_tensor = torch.as_tensor(
+                actions, device=distribution.logits.device
+            )
+            num_heads = len(self._multi_head_sizes) if self._multi_head_sizes else 1
+            if actions_tensor.ndim == 1:
+                actions_tensor = actions_tensor.view(-1, num_heads)
+            elif actions_tensor.ndim > 2:
+                actions_tensor = actions_tensor.reshape(actions_tensor.shape[0], num_heads)
+            volume_actions = actions_tensor[:, self._volume_head_index]  # type: ignore[index]
+            volume_actions = volume_actions.to(dtype=torch.long)
+            log_prob = distribution.log_prob(volume_actions)
+            entropy = distribution.entropy()
+        else:
+            distribution = self._get_action_dist_from_latent(latent_pi)
+            log_prob = self._weighted_log_prob(distribution, actions)
+            entropy = self.weighted_entropy(distribution)
 
         return values, log_prob, entropy
 
