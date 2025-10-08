@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.optim import Optimizer
 import numpy as np
 from gymnasium import spaces
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
 
 from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
@@ -103,10 +103,23 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             # whose logits are concatenated for every sub-action.
             self._multi_discrete_nvec = action_space.nvec.astype(np.int64)
             self.action_dim = int(self._multi_discrete_nvec.sum())
+            if self._multi_discrete_nvec.size == 4:
+                self._multi_discrete_head_names: Tuple[str, ...] = (
+                    "price_offset_ticks",
+                    "ttl_steps",
+                    "type",
+                    "volume_frac",
+                )
+            else:
+                self._multi_discrete_head_names = tuple(
+                    f"head_{i}" for i in range(int(self._multi_discrete_nvec.size))
+                )
         else:
             raise NotImplementedError(
                 f"Action space {type(action_space)} is not supported by CustomActorCriticPolicy"
             )
+
+        self._loss_head_weights_tensor: Optional[torch.Tensor] = None
 
         act_str = arch_params.get('activation', 'relu').lower()
         if act_str == 'relu':
@@ -379,6 +392,126 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         value_logits = self._get_value_logits(latent_vf)
         return self._value_from_logits(value_logits)
 
+    def _loss_head_weights_for_device(
+        self, device: torch.device
+    ) -> Optional[torch.Tensor]:
+        if self._loss_head_weights_tensor is None:
+            return None
+        if self._loss_head_weights_tensor.device != device:
+            self._loss_head_weights_tensor = self._loss_head_weights_tensor.to(device=device)
+        return self._loss_head_weights_tensor
+
+    def set_loss_head_weights(
+        self, weights: Optional[Mapping[str, float] | Sequence[float]]
+    ) -> None:
+        if self._multi_discrete_nvec is None:
+            self._loss_head_weights_tensor = None
+            return
+        if weights is None:
+            self._loss_head_weights_tensor = None
+            return
+
+        values: list[float] = []
+        num_heads = int(self._multi_discrete_nvec.size)
+        if isinstance(weights, Mapping):
+            head_names = getattr(self, "_multi_discrete_head_names", tuple())
+            for idx in range(num_heads):
+                raw_value = None
+                if idx < len(head_names):
+                    raw_value = weights.get(head_names[idx])
+                if raw_value is None:
+                    raw_value = weights.get(str(idx)) if isinstance(weights, Mapping) else None
+                if raw_value is None:
+                    raw_value = weights.get(idx) if isinstance(weights, Mapping) else None
+                if raw_value is None:
+                    values.append(1.0)
+                    continue
+                if isinstance(raw_value, bool):
+                    values.append(1.0 if raw_value else 0.0)
+                    continue
+                try:
+                    values.append(float(raw_value))
+                except (TypeError, ValueError):
+                    values.append(1.0)
+        else:
+            seq = list(weights)
+            for idx in range(num_heads):
+                if idx < len(seq):
+                    try:
+                        values.append(float(seq[idx]))
+                    except (TypeError, ValueError):
+                        values.append(1.0)
+                else:
+                    values.append(1.0)
+
+        if not values or all(abs(v - 1.0) < 1e-8 for v in values):
+            self._loss_head_weights_tensor = None
+            return
+
+        device = getattr(self, "device", torch.device("cpu"))
+        self._loss_head_weights_tensor = torch.as_tensor(
+            values, dtype=torch.float32, device=device
+        )
+
+    def _iter_multi_heads(
+        self, distribution: torch.distributions.Distribution
+    ) -> Optional[Sequence[torch.distributions.Distribution]]:
+        comps = getattr(distribution, "distributions", None)
+        if comps is None:
+            inner = getattr(distribution, "distribution", None)
+            comps = getattr(inner, "distributions", None)
+        return comps if isinstance(comps, (list, tuple)) and len(comps) > 0 else None
+
+    def _weighted_log_prob(
+        self, distribution: torch.distributions.Distribution, actions: torch.Tensor
+    ) -> torch.Tensor:
+        if self._multi_discrete_nvec is None:
+            return distribution.log_prob(actions)
+
+        comps = self._iter_multi_heads(distribution)
+        if comps is None:
+            return distribution.log_prob(actions)
+
+        weights = self._loss_head_weights_for_device(comps[0].logits.device)
+        if weights is None or len(comps) != int(weights.shape[0]):
+            return distribution.log_prob(actions)
+
+        actions_tensor = torch.as_tensor(actions, device=comps[0].logits.device)
+        if actions_tensor.ndim == 1:
+            actions_tensor = actions_tensor.view(-1, len(comps))
+        elif actions_tensor.ndim > 2:
+            actions_tensor = actions_tensor.reshape(actions_tensor.shape[0], len(comps))
+        actions_tensor = actions_tensor.to(dtype=torch.long)
+
+        log_prob_sum = None
+        for idx, (categorical, weight) in enumerate(zip(comps, weights)):
+            head_log_prob = categorical.log_prob(actions_tensor[:, idx])
+            if head_log_prob.ndim > 1:
+                head_log_prob = head_log_prob.sum(dim=-1)
+            head_log_prob = head_log_prob * weight
+            log_prob_sum = head_log_prob if log_prob_sum is None else (log_prob_sum + head_log_prob)
+        return log_prob_sum
+
+    def weighted_entropy(
+        self, distribution: torch.distributions.Distribution
+    ) -> torch.Tensor:
+        if self._multi_discrete_nvec is None:
+            return distribution.entropy()
+
+        comps = self._iter_multi_heads(distribution)
+        if comps is None:
+            return distribution.entropy()
+
+        weights = self._loss_head_weights_for_device(comps[0].logits.device)
+        if weights is None or len(comps) != int(weights.shape[0]):
+            return distribution.entropy()
+
+        ent_sum = None
+        for categorical, weight in zip(comps, weights):
+            head_entropy = categorical.entropy() * weight
+            ent_sum = head_entropy if ent_sum is None else (ent_sum + head_entropy)
+        return ent_sum
+
     @property
     def last_value_logits(self) -> Optional[torch.Tensor]:
         return self._last_value_logits
@@ -402,7 +535,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         values = self._get_value_from_latent(latent_vf)
         distribution = self._get_action_dist_from_latent(latent_pi)
         actions = distribution.get_actions(deterministic=deterministic)
-        log_prob = distribution.log_prob(actions)
+        log_prob = self._weighted_log_prob(distribution, actions)
 
         return actions, values, log_prob, new_states
 
@@ -423,9 +556,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         latent_vf = self.mlp_extractor.forward_critic(latent_vf)
 
         distribution = self._get_action_dist_from_latent(latent_pi)
-        log_prob = distribution.log_prob(actions)
+        log_prob = self._weighted_log_prob(distribution, actions)
         values = self._get_value_from_latent(latent_vf)
-        entropy = distribution.entropy()
+        entropy = self.weighted_entropy(distribution)
 
         return values, log_prob, entropy
 

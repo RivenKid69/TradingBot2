@@ -983,6 +983,49 @@ def objective(trial: optuna.Trial,
             return None
         return None
 
+    def _get_extra_mapping(obj):
+        for name in ("__pydantic_extra__", "model_extra", "__dict__"):
+            extra = getattr(obj, name, None)
+            if isinstance(extra, Mapping):
+                return extra
+        return {}
+
+    def _extract_loss_head_weights(cfg: TrainConfig) -> Optional[Dict[str, float]]:
+        loss_masks_cfg = getattr(cfg, "loss_masks", None)
+        if loss_masks_cfg is None:
+            extra = _get_extra_mapping(cfg)
+            loss_masks_cfg = extra.get("loss_masks")
+
+        if hasattr(loss_masks_cfg, "dict"):
+            try:
+                loss_masks_cfg = loss_masks_cfg.dict()
+            except TypeError:
+                pass
+        if not isinstance(loss_masks_cfg, Mapping):
+            return None
+
+        include_payload = loss_masks_cfg.get("include_heads")
+        if hasattr(include_payload, "dict"):
+            try:
+                include_payload = include_payload.dict()
+            except TypeError:
+                pass
+        if not isinstance(include_payload, Mapping):
+            return None
+
+        weights: Dict[str, float] = {}
+        for head_name, raw_value in include_payload.items():
+            if raw_value is None:
+                continue
+            if isinstance(raw_value, bool):
+                weights[head_name] = 1.0 if raw_value else 0.0
+            else:
+                try:
+                    weights[head_name] = float(raw_value)
+                except (TypeError, ValueError):
+                    pass
+        return weights or None
+
     def _coerce_optional_int(value, key: str):
         if value is None:
             return None
@@ -1520,6 +1563,8 @@ def objective(trial: optuna.Trial,
         tb_log_path = tensorboard_log_dir / f"trial_{trial.number:03d}"
         tb_log_path.mkdir(parents=True, exist_ok=True)
 
+    loss_head_weights = _extract_loss_head_weights(cfg)
+
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,
         v_range_ema_alpha=params["v_range_ema_alpha"],
@@ -1557,6 +1602,7 @@ def objective(trial: optuna.Trial,
         max_grad_norm=params["max_grad_norm"],
         target_kl=params["target_kl"],
         seed=params["seed"],
+        loss_head_weights=loss_head_weights,
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
         verbose=1

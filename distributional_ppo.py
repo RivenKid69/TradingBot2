@@ -1,7 +1,7 @@
 import itertools
 import math
 from collections import deque
-from typing import Any, Iterable, Optional, Sequence, Type, Union
+from typing import Any, Iterable, Mapping, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -189,11 +189,13 @@ class DistributionalPPO(RecurrentPPO):
         use_torch_compile: bool = False,
         microbatch_size: Optional[int] = None,
         gradient_accumulation_steps: Optional[int] = None,
+        loss_head_weights: Optional[Mapping[str, Union[float, bool]]] = None,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
         self._last_rollout_entropy: float = 0.0
         self._update_calls: int = 0
+        self._loss_head_weights: Optional[dict[str, float]] = None
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
@@ -249,6 +251,8 @@ class DistributionalPPO(RecurrentPPO):
         self._value_clip_limit_scaled: Optional[float] = None
 
         super().__init__(policy=policy, env=env, **kwargs_local)
+
+        self._configure_loss_head_weights(loss_head_weights)
 
         self._configure_gradient_accumulation(
             microbatch_size=microbatch_size,
@@ -391,6 +395,41 @@ class DistributionalPPO(RecurrentPPO):
 
         self._microbatch_size = int(micro_size_local)
         self._grad_accumulation_steps = int(grad_steps_local)
+
+
+    def _configure_loss_head_weights(
+        self, weights_cfg: Optional[Mapping[str, Union[float, bool]]]
+    ) -> None:
+        setter = getattr(self.policy, "set_loss_head_weights", None)
+        if weights_cfg is None:
+            self._loss_head_weights = None
+            if callable(setter):
+                setter(None)
+            return
+
+        normalized: dict[str, float] = {}
+        for head_name, raw_value in weights_cfg.items():
+            if raw_value is None:
+                continue
+            if isinstance(raw_value, bool):
+                normalized[head_name] = 1.0 if raw_value else 0.0
+                continue
+            try:
+                normalized[head_name] = float(raw_value)
+            except (TypeError, ValueError):
+                continue
+
+        if not normalized:
+            self._loss_head_weights = None
+            if callable(setter):
+                setter(None)
+            return
+
+        self._loss_head_weights = normalized
+        if callable(setter):
+            setter(normalized)
+        for head_name, weight in normalized.items():
+            self.logger.record(f"config/loss_head_weight_{head_name}", float(weight))
 
 
     def _refresh_kl_base_lrs(self) -> None:
@@ -1046,7 +1085,11 @@ class DistributionalPPO(RecurrentPPO):
                             dist = dist_output[0]
                         else:
                             dist = dist_output
-                        entropy_tensor = dist.entropy()
+                        entropy_fn = getattr(self.policy, "weighted_entropy", None)
+                        if callable(entropy_fn):
+                            entropy_tensor = entropy_fn(dist)
+                        else:
+                            entropy_tensor = dist.entropy()
                         if entropy_tensor.ndim > 1:
                             entropy_tensor = entropy_tensor.sum(dim=-1)
                         entropy_tensor = entropy_tensor.detach().to(dtype=torch.float32)
@@ -1054,17 +1097,22 @@ class DistributionalPPO(RecurrentPPO):
                         policy_entropy_count += int(entropy_tensor.numel())
 
                         try:
-                            vol_logits = dist.distribution.distributions[-1].logits
-                            vol_entropy_tensor = torch.distributions.Categorical(
-                                logits=vol_logits
-                            ).entropy()
-                            vol_entropy_tensor = vol_entropy_tensor.detach().to(
-                                dtype=torch.float32
-                            )
-                            policy_entropy_volume_sum += float(
-                                vol_entropy_tensor.sum().cpu().item()
-                            )
-                            policy_entropy_volume_count += int(vol_entropy_tensor.numel())
+                            comps = getattr(dist, "distributions", None)
+                            if comps is None:
+                                inner = getattr(dist, "distribution", None)
+                                comps = getattr(inner, "distributions", None)
+                            if isinstance(comps, (list, tuple)) and len(comps) > 0:
+                                vol_logits = comps[-1].logits
+                                vol_entropy_tensor = torch.distributions.Categorical(
+                                    logits=vol_logits
+                                ).entropy()
+                                vol_entropy_tensor = vol_entropy_tensor.detach().to(
+                                    dtype=torch.float32
+                                )
+                                policy_entropy_volume_sum += float(
+                                    vol_entropy_tensor.sum().cpu().item()
+                                )
+                                policy_entropy_volume_count += int(vol_entropy_tensor.numel())
                         except Exception:
                             pass
 

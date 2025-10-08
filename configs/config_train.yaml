@@ -53,7 +53,7 @@ model:
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.10                   # не душим обновления (0.1–0.2 норма)
-    ent_coef: 0.002                    # дайте политике «подышать»
+    ent_coef: 0.001                    # дайте политике «подышать»
     ent_coef_final: 0.0002
     ent_coef_decay_steps: 400          # плавнее убывание (≈ первые 30% апдейтов)
     ent_coef_plateau_window: 24
@@ -66,7 +66,7 @@ model:
     batch_size: 64                     # типичный минибатч для PPO
     microbatch_size: 64
     seed: 20240518
-    target_kl: 1.5                     # не даём KL уплывать слишком далеко, но без null
+    target_kl: null                    # временно отключаем ранний стоп по KL
     kl_lr_decay: 1.0                   # не душить LR «за KL»
     kl_epoch_decay: 1.0
     kl_lr_scale_min: 0.10              # даже если включится — не в ноль
@@ -119,6 +119,13 @@ algo:
     lock_ttl: true
     fixed_ttl_steps: 0
     bins_vol: 6            # более «тонкие» объёмы → не вечный HOLD и не «all-in»
+
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true
 
 quantizer:
   filters_path: "data/binance_filters.json"
