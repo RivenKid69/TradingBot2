@@ -33,9 +33,9 @@ import yaml
 import sys
 import hashlib
 import random
+from copy import deepcopy
 from functools import lru_cache
-from collections.abc import Mapping, Sequence
-from typing import Any, Callable
+from typing import Any, Callable, Mapping, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -219,6 +219,53 @@ def _wrap_action_space_if_needed(
         # If anything goes wrong, fail open (no wrapping)
         return wrapped_env
     return wrapped_env
+
+
+def _assign_nested(target: dict[str, Any], dotted_key: str, value: Any) -> None:
+    """Assign ``value`` inside ``target`` using ``.``-delimited keys."""
+
+    if not dotted_key:
+        return
+    parts = dotted_key.split(".")
+    cursor: dict[str, Any] = target
+    for part in parts[:-1]:
+        next_obj = cursor.get(part)
+        if not isinstance(next_obj, dict):
+            next_obj = {}
+            cursor[part] = next_obj
+        cursor = next_obj
+    cursor[parts[-1]] = value
+
+
+def _extract_env_runtime_overrides(
+    env_block: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], DecisionTiming | None]:
+    """Normalise optional environment overrides for runtime construction."""
+
+    runtime_kwargs: dict[str, Any] = {}
+    decision_override: DecisionTiming | None = None
+    if not isinstance(env_block, Mapping):
+        return runtime_kwargs, decision_override
+
+    raw_decision = env_block.get("decision_timing") or env_block.get("decision_mode")
+    if isinstance(raw_decision, str):
+        key = raw_decision.strip().upper()
+        if key in DecisionTiming.__members__:
+            decision_override = DecisionTiming[key]
+
+    no_trade_cfg = env_block.get("no_trade") if isinstance(env_block, Mapping) else None
+    if isinstance(no_trade_cfg, Mapping):
+        if "enabled" in no_trade_cfg:
+            runtime_kwargs["no_trade_enabled"] = bool(no_trade_cfg["enabled"])
+        if "policy" in no_trade_cfg and no_trade_cfg["policy"] is not None:
+            runtime_kwargs["no_trade_policy"] = str(no_trade_cfg["policy"])
+
+    for section in ("session", "liquidity", "spreads", "warmup"):
+        payload = env_block.get(section)
+        if isinstance(payload, Mapping):
+            runtime_kwargs[section] = dict(payload)
+
+    return runtime_kwargs, decision_override
 
 
 def _coerce_timestamp(value) -> int | None:
@@ -780,6 +827,7 @@ def objective(trial: optuna.Trial,
               norm_stats: dict,
               sim_config: dict,
               timing_env_kwargs: dict,
+              env_runtime_overrides: Mapping[str, Any],
               leak_guard_kwargs: dict,
               trials_dir: Path,
               tensorboard_log_dir: Path | None):
@@ -1233,6 +1281,7 @@ def objective(trial: optuna.Trial,
             }
             env_params.update(sim_config)
             env_params.update(timing_env_kwargs)
+            env_params.update(env_runtime_overrides)
 
             # Создаем и возвращаем экземпляр среды
             env = TradingEnv(
@@ -1300,6 +1349,7 @@ def objective(trial: optuna.Trial,
         }
         env_val_params.update(sim_config)
         env_val_params.update(timing_env_kwargs)
+        env_val_params.update(env_runtime_overrides)
         env = TradingEnv(
             df,
             **env_val_params,
@@ -1523,6 +1573,7 @@ def objective(trial: optuna.Trial,
                 }
                 final_env_params.update(sim_config)
                 final_env_params.update(timing_env_kwargs)
+                final_env_params.update(env_runtime_overrides)
                 env = TradingEnv(
                     df,
                     **final_env_params,
@@ -1698,6 +1749,15 @@ def main():
             f"Liquidity seasonality file not found: {seasonality_path}. Run offline builders first."
         )
 
+    config_path = Path(args.config)
+    raw_cfg_loaded = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
+    if not isinstance(raw_cfg_loaded, Mapping):
+        raw_cfg_loaded = {}
+    env_payload: dict[str, Any] | None = None
+    maybe_env = raw_cfg_loaded.get("env") if isinstance(raw_cfg_loaded, Mapping) else None
+    if isinstance(maybe_env, Mapping):
+        env_payload = deepcopy(dict(maybe_env))
+
     cfg = load_config(args.config)
 
     overrides = {}
@@ -1715,6 +1775,8 @@ def main():
             i += 1
 
     cfg_dict = cfg.dict()
+    if not isinstance(cfg_dict, dict):
+        cfg_dict = dict(cfg_dict)
     if offline_bundle is not None:
         data_block = cfg_dict.setdefault("data", {})
         if offline_bundle.version:
@@ -1730,7 +1792,17 @@ def main():
             if not fees_block.get("path"):
                 fees_block["path"] = fees_path
     for block, params in overrides.items():
-        cfg_dict.setdefault(block, {}).update(params)
+        block_dict = cfg_dict.setdefault(block, {})
+        if not isinstance(block_dict, dict):
+            block_dict = dict(block_dict)
+            cfg_dict[block] = block_dict
+        for key, value in params.items():
+            _assign_nested(block_dict, key, value)
+        if block == "env":
+            if env_payload is None or not isinstance(env_payload, dict):
+                env_payload = {}
+            for key, value in params.items():
+                _assign_nested(env_payload, key, value)
     cfg_dict["liquidity_seasonality_path"] = args.liquidity_seasonality
     cfg_dict["latency_seasonality_path"] = args.liquidity_seasonality
     latency_block = cfg_dict.setdefault("latency", {})
@@ -1739,6 +1811,18 @@ def main():
     if seasonality_hash:
         cfg_dict["liquidity_seasonality_hash"] = seasonality_hash
     cfg = cfg.__class__.parse_obj(cfg_dict)
+
+    env_payload_candidate: Mapping[str, Any] | None
+    if isinstance(env_payload, Mapping):
+        env_payload_candidate = env_payload
+    elif isinstance(cfg_dict, Mapping):
+        maybe_cfg_env = cfg_dict.get("env")
+        env_payload_candidate = maybe_cfg_env if isinstance(maybe_cfg_env, Mapping) else None
+    else:
+        env_payload_candidate = None
+    env_runtime_overrides, decision_override = _extract_env_runtime_overrides(
+        env_payload_candidate
+    )
 
     bins_vol = 101
     try:
@@ -1768,6 +1852,8 @@ def main():
         "decision_delay_ms": resolved_timing.decision_delay_ms,
         "latency_steps": resolved_timing.latency_steps,
     }
+    if decision_override is not None:
+        timing_env_kwargs["decision_mode"] = decision_override
     leak_guard_kwargs = {
         "decision_delay_ms": resolved_timing.decision_delay_ms,
         "min_lookback_ms": resolved_timing.min_lookback_ms,
@@ -1971,6 +2057,7 @@ def main():
             norm_stats,
             sim_config,
             timing_env_kwargs,
+            env_runtime_overrides,
             leak_guard_kwargs,
             trials_dir,
             tensorboard_log_dir,
@@ -2060,6 +2147,7 @@ def main():
                 }
                 env_val_params.update(sim_config)
                 env_val_params.update(timing_env_kwargs)
+                env_val_params.update(env_runtime_overrides)
                 env = TradingEnv(
                     df,
                     **env_val_params,

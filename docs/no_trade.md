@@ -124,7 +124,10 @@ Effect on a sample dataset:
 ## Runtime enforcement
 
 `TradingEnv` precomputes a mask from the configuration and skips agent actions when the current step falls inside a blocked window.
-The environment also tracks the ratio of blocked steps via `info["no_trade_stats"]`.
+Runtime metrics expose both the total number of blocked steps and how often the mask fired via `info["no_trade_stats"]` which now
+returns `{"total_steps", "blocked_steps", "mask_hits", "policy", "enabled"}`.  When the policy is set to `ignore` the
+environment records mask hits without forcing HOLD actions, allowing a "soft" training mode while still surfacing diagnostics
+through `info["no_trade_triggered"]`.
 
 ```python
 from no_trade import compute_no_trade_mask
