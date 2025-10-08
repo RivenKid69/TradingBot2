@@ -872,44 +872,77 @@ def objective(trial: optuna.Trial,
         return bool(value)
 
     def _extract_action_overrides_from_cfg(cfg_obj) -> tuple[dict[str, object], bool]:
-        algo_cfg = _resolve_nested(cfg_obj, "algo")
-        actions_cfg = _resolve_nested(algo_cfg, "actions")
-        if actions_cfg is None:
-            return {}, False
-        if hasattr(actions_cfg, "dict"):
-            try:
-                actions_payload = actions_cfg.dict()
-            except TypeError:
-                actions_payload = None
-        else:
-            actions_payload = None
-        if actions_payload is None:
-            if isinstance(actions_cfg, Mapping):
-                actions_payload = dict(actions_cfg)
+        def _normalise_section(section_obj: Any) -> Mapping[str, Any]:
+            if section_obj is None:
+                return {}
+            if hasattr(section_obj, "dict"):
+                try:
+                    payload = section_obj.dict()
+                except TypeError:
+                    payload = None
             else:
-                payload = {}
-                for extra_name in ("__dict__", "__pydantic_extra__", "model_extra"):
-                    try:
-                        extra = getattr(actions_cfg, extra_name)
-                    except AttributeError:
-                        extra = None
-                    if isinstance(extra, Mapping):
-                        payload.update(extra)
-                actions_payload = payload
-        if not isinstance(actions_payload, Mapping):
-            return {}, False
+                payload = None
+            if payload is None:
+                if isinstance(section_obj, Mapping):
+                    payload = dict(section_obj)
+                else:
+                    payload = {}
+                    for extra_name in ("__dict__", "__pydantic_extra__", "model_extra"):
+                        try:
+                            extra = getattr(section_obj, extra_name)
+                        except AttributeError:
+                            extra = None
+                        if isinstance(extra, Mapping):
+                            payload.update(extra)
+            return payload if isinstance(payload, Mapping) else {}
+
+        algo_cfg = _resolve_nested(cfg_obj, "algo")
+        actions_payload = _normalise_section(_resolve_nested(algo_cfg, "actions"))
+        wrapper_payload = _normalise_section(_resolve_nested(algo_cfg, "action_wrapper"))
+
         overrides: dict[str, object] = {}
         long_only_flag = False
-        if "lock_price_offset" in actions_payload:
-            overrides["lock_price_offset"] = _coerce_bool(
-                actions_payload.get("lock_price_offset")
-            )
-        if "lock_ttl" in actions_payload:
-            overrides["lock_ttl"] = _coerce_bool(actions_payload.get("lock_ttl"))
-        if "fixed_type" in actions_payload:
-            overrides["fixed_type"] = actions_payload.get("fixed_type")
-        if "long_only" in actions_payload:
-            long_only_flag = _coerce_bool(actions_payload.get("long_only"))
+
+        def _update_overrides(payload: Mapping[str, Any]) -> None:
+            nonlocal long_only_flag
+            if not payload:
+                return
+            if "lock_price_offset" in payload:
+                overrides["lock_price_offset"] = _coerce_bool(
+                    payload.get("lock_price_offset")
+                )
+            if "lock_ttl" in payload:
+                overrides["lock_ttl"] = _coerce_bool(payload.get("lock_ttl"))
+            if "fixed_type" in payload:
+                overrides["fixed_type"] = payload.get("fixed_type")
+            if "fixed_price_offset_ticks" in payload and payload.get("fixed_price_offset_ticks") is not None:
+                value = payload.get("fixed_price_offset_ticks")
+                if isinstance(value, bool):
+                    raise ValueError(
+                        "fixed_price_offset_ticks expects an integer, got boolean"
+                    )
+                try:
+                    overrides["fixed_price_offset_ticks"] = int(value)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"Invalid fixed_price_offset_ticks value: {value!r}"
+                    ) from exc
+            if "fixed_ttl_steps" in payload and payload.get("fixed_ttl_steps") is not None:
+                value = payload.get("fixed_ttl_steps")
+                if isinstance(value, bool):
+                    raise ValueError(
+                        "fixed_ttl_steps expects an integer, got boolean"
+                    )
+                try:
+                    overrides["fixed_ttl_steps"] = int(value)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"Invalid fixed_ttl_steps value: {value!r}") from exc
+            if "long_only" in payload:
+                long_only_flag = _coerce_bool(payload.get("long_only"))
+
+        _update_overrides(actions_payload)
+        _update_overrides(wrapper_payload)
+
         return overrides, long_only_flag
 
     action_overrides, long_only_flag = _extract_action_overrides_from_cfg(cfg)
