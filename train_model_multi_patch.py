@@ -1320,9 +1320,7 @@ def objective(trial: optuna.Trial,
         "mean_reversion_factor": trial.suggest_float("mean_reversion_factor", 0.2, 0.8),
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
         "vf_coef": (
-            vf_coef_cfg
-            if vf_coef_cfg is not None
-            else trial.suggest_float("vf_coef", 0.05, 0.2, log=True)
+            vf_coef_cfg if vf_coef_cfg is not None else 0.5
         ),
         "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
         "bc_warmup_steps": bc_warmup_steps_cfg if bc_warmup_steps_cfg is not None else 0,
