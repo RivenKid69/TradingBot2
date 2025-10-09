@@ -1304,10 +1304,10 @@ def objective(trial: optuna.Trial,
     }
 
     params["vf_coef_warmup"] = (
-        vf_coef_warmup_cfg if vf_coef_warmup_cfg is not None else min(params["vf_coef"], 0.075)
+        vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else min(params["vf_coef"], 0.075)
     )
     params["vf_coef_warmup_updates"] = (
-        vf_coef_warmup_updates_cfg if vf_coef_warmup_updates_cfg is not None else 8
+        vf_coef_warmup_updates_cfg if _has_model_param(cfg, "vf_coef_warmup_updates") else 8
     )
     params["vf_bad_explained_scale"] = (
         vf_bad_explained_scale_cfg if vf_bad_explained_scale_cfg is not None else 0.5
