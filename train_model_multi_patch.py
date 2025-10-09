@@ -237,6 +237,33 @@ def _assign_nested(target: dict[str, Any], dotted_key: str, value: Any) -> None:
     cursor[parts[-1]] = value
 
 
+def _snapshot_model_param_keys(cfg: TrainConfig) -> set[str]:
+    keys: set[str] = set()
+    try:
+        model_cfg = getattr(cfg, "model", None)
+        if model_cfg is None:
+            return keys
+        params_obj = getattr(model_cfg, "params", None)
+        if params_obj is None:
+            return keys
+        if isinstance(params_obj, Mapping):
+            keys.update(str(k) for k in params_obj.keys())
+            return keys
+        if hasattr(params_obj, "__dict__") and isinstance(params_obj.__dict__, Mapping):
+            keys.update(str(k) for k in params_obj.__dict__.keys())
+        dict_method = getattr(params_obj, "dict", None)
+        if callable(dict_method):
+            try:
+                params_dict = dict_method()
+            except TypeError:
+                params_dict = None
+            if isinstance(params_dict, Mapping):
+                keys.update(str(k) for k in params_dict.keys())
+    except Exception:
+        return keys
+    return keys
+
+
 def _propagate_train_window_alias(
     block: MutableMapping[str, Any], updated_key: str, value: Any
 ) -> None:
@@ -1294,7 +1321,7 @@ def objective(trial: optuna.Trial,
         "adversarial_factor": trial.suggest_float("adversarial_factor", 0.3, 0.9),
         "vf_coef": (
             vf_coef_cfg
-            if vf_coef_cfg is not None and _has_model_param(cfg, "vf_coef")
+            if vf_coef_cfg is not None
             else trial.suggest_float("vf_coef", 0.05, 0.2, log=True)
         ),
         "v_range_ema_alpha": v_range_ema_alpha_cfg if v_range_ema_alpha_cfg is not None else trial.suggest_float("v_range_ema_alpha", 0.005, 0.05, log=True),
@@ -1304,10 +1331,10 @@ def objective(trial: optuna.Trial,
     }
 
     params["vf_coef_warmup"] = (
-        vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else min(params["vf_coef"], 0.075)
+        vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else None
     )
     params["vf_coef_warmup_updates"] = (
-        vf_coef_warmup_updates_cfg if _has_model_param(cfg, "vf_coef_warmup_updates") else 8
+        vf_coef_warmup_updates_cfg if _has_model_param(cfg, "vf_coef_warmup_updates") else 0
     )
     params["vf_bad_explained_scale"] = (
         vf_bad_explained_scale_cfg if vf_bad_explained_scale_cfg is not None else 0.5
@@ -2084,6 +2111,7 @@ def main():
         env_payload = deepcopy(dict(maybe_env))
 
     cfg = load_config(args.config)
+    original_model_param_keys = _snapshot_model_param_keys(cfg)
 
     overrides = {}
     i = 0
@@ -2122,6 +2150,13 @@ def main():
             block_dict = dict(block_dict)
             cfg_dict[block] = block_dict
         for key, value in params.items():
+            if (
+                block == "model"
+                and key.startswith("params.")
+                and key.split(".", 1)[1] == "vf_coef"
+                and "vf_coef" in original_model_param_keys
+            ):
+                continue
             _assign_nested(block_dict, key, value)
             if block == "data" and isinstance(block_dict, MutableMapping):
                 _propagate_train_window_alias(block_dict, key, value)
