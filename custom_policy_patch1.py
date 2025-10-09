@@ -546,10 +546,65 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # После настройки оптимизатора ссылка на lr_schedule больше не нужна.
         self._pending_lr_schedule = None
     # --- ИСПРАВЛЕНИЕ: Метод переименован с forward_rnn на _forward_recurrent ---
+
+    @staticmethod
+    def _as_tensor_tuple(states: Any) -> Tuple[torch.Tensor, ...]:
+        """Нормализует произвольный контейнер состояний в кортеж тензоров."""
+
+        if isinstance(states, torch.Tensor):
+            return (states,)
+
+        if isinstance(states, (list, tuple)):
+            tensor_seq: list[torch.Tensor] = []
+            for item in states:
+                if not isinstance(item, torch.Tensor):
+                    raise TypeError(
+                        "Компоненты RNN-состояний должны быть torch.Tensor, "
+                        f"получено {type(item)!r}"
+                    )
+                tensor_seq.append(item)
+            return tuple(tensor_seq)
+
+        raise TypeError(f"Неподдерживаемый тип контейнера RNN-состояния: {type(states)!r}")
+
+    def _coerce_lstm_states(self, lstm_states: RNNStates | Tuple[Any, ...]) -> RNNStates:
+        """Приводит состояния LSTM к современному контейнеру RNNStates."""
+
+        if hasattr(lstm_states, "pi") and hasattr(lstm_states, "vf"):
+            return RNNStates(pi=tuple(lstm_states.pi), vf=tuple(lstm_states.vf))
+
+        if not isinstance(lstm_states, (list, tuple)):
+            raise TypeError(
+                "Ожидается RNNStates или tuple со скрытыми состояниями, "
+                f"получено {type(lstm_states)!r}"
+            )
+
+        if (
+            len(lstm_states) == 2
+            and (self.lstm_critic is not None or not getattr(self, "shared_lstm", False))
+        ):
+            pi_raw, vf_raw = lstm_states
+            pi_states = self._as_tensor_tuple(pi_raw)
+            vf_states = self._as_tensor_tuple(vf_raw)
+            return RNNStates(pi=pi_states, vf=vf_states)
+
+        actor_states = self._as_tensor_tuple(lstm_states)
+
+        if self.lstm_critic is None or getattr(self, "shared_lstm", False):
+            return RNNStates(pi=actor_states, vf=actor_states)
+
+        half = len(actor_states) // 2
+        if half > 0 and len(actor_states) % 2 == 0:
+            return RNNStates(pi=actor_states[:half], vf=actor_states[half:])
+
+        raise ValueError(
+            "Неподдерживаемый формат tuple для отдельных состояний актёра/критика"
+        )
+
     def _forward_recurrent(
         self,
         features: torch.Tensor | Tuple[torch.Tensor, torch.Tensor],
-        lstm_states: RNNStates,
+        lstm_states: RNNStates | Tuple[Any, ...],
         episode_starts: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor, RNNStates]:
         """
@@ -557,6 +612,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         актёра и критика из базовой политики.
         Возвращает скрытые состояния и обновлённые RNNStates.
         """
+        lstm_states = self._coerce_lstm_states(lstm_states)
+
         if self.share_features_extractor:
             pi_features = vf_features = features  # type: ignore[assignment]
         else:
