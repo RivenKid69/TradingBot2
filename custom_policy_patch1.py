@@ -568,11 +568,51 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         raise TypeError(f"Неподдерживаемый тип контейнера RNN-состояния: {type(states)!r}")
 
+    def _align_state_tuple(
+        self,
+        states: Tuple[torch.Tensor, ...],
+        reference: Tuple[torch.Tensor, ...],
+        module: Optional[nn.Module],
+    ) -> Tuple[torch.Tensor, ...]:
+        """
+        Приводит список состояний к формату, ожидаемому рекуррентным модулем.
+
+        Старый код иногда передаёт только скрытое состояние LSTM (без ячейки)
+        или вовсе пустой кортеж. Чтобы не падать с ValueError во время оценки,
+        добавляем недостающие компоненты, используя доступную форму.
+        """
+
+        if isinstance(module, nn.GRU):
+            if not states:
+                if not reference:
+                    raise ValueError("Невозможно восстановить скрытое состояние GRU")
+                return (reference[0].clone(),)
+            # если пришло больше одного состояния, берём только скрытое
+            return (states[0],)
+
+        if isinstance(module, nn.LSTM):
+            if not states:
+                return tuple(t.clone() for t in reference)
+            if len(states) == 1:
+                hidden_state = states[0]
+                cell_state = torch.zeros_like(hidden_state)
+                return (hidden_state, cell_state)
+            # обрезаем возможные лишние состояния от устаревших реализаций
+            return states[:2]
+
+        return states
+
     def _coerce_lstm_states(self, lstm_states: RNNStates | Tuple[Any, ...]) -> RNNStates:
         """Приводит состояния LSTM к современному контейнеру RNNStates."""
 
         if hasattr(lstm_states, "pi") and hasattr(lstm_states, "vf"):
-            return RNNStates(pi=tuple(lstm_states.pi), vf=tuple(lstm_states.vf))
+            pi_states = self._align_state_tuple(
+                tuple(lstm_states.pi), self.recurrent_initial_state.pi, self.lstm_actor
+            )
+            vf_states = self._align_state_tuple(
+                tuple(lstm_states.vf), self.recurrent_initial_state.vf, self.lstm_critic
+            )
+            return RNNStates(pi=pi_states, vf=vf_states)
 
         if not isinstance(lstm_states, (list, tuple)):
             raise TypeError(
@@ -580,23 +620,50 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 f"получено {type(lstm_states)!r}"
             )
 
+        if len(lstm_states) == 2 and all(torch.is_tensor(x) for x in lstm_states):
+            # Это плоское (h, c) актёра LSTM, а не (pi_states, vf_states)
+            actor_states = self._align_state_tuple(
+                tuple(lstm_states), self.recurrent_initial_state.pi, self.lstm_actor
+            )
+            if self.lstm_critic is None or getattr(self, "shared_lstm", False):
+                vf_states = actor_states
+            else:
+                # отдельный критик: берём его нулевую инициализацию
+                vf_states = tuple(t.clone() for t in self.recurrent_initial_state.vf)
+            return RNNStates(pi=actor_states, vf=vf_states)
+
         if (
             len(lstm_states) == 2
             and (self.lstm_critic is not None or not getattr(self, "shared_lstm", False))
         ):
             pi_raw, vf_raw = lstm_states
-            pi_states = self._as_tensor_tuple(pi_raw)
-            vf_states = self._as_tensor_tuple(vf_raw)
+            pi_states = self._align_state_tuple(
+                self._as_tensor_tuple(pi_raw), self.recurrent_initial_state.pi, self.lstm_actor
+            )
+            vf_states = self._align_state_tuple(
+                self._as_tensor_tuple(vf_raw), self.recurrent_initial_state.vf, self.lstm_critic
+            )
             return RNNStates(pi=pi_states, vf=vf_states)
 
-        actor_states = self._as_tensor_tuple(lstm_states)
+        actor_states = self._align_state_tuple(
+            self._as_tensor_tuple(lstm_states), self.recurrent_initial_state.pi, self.lstm_actor
+        )
 
         if self.lstm_critic is None or getattr(self, "shared_lstm", False):
-            return RNNStates(pi=actor_states, vf=actor_states)
+            vf_states = self._align_state_tuple(
+                actor_states, self.recurrent_initial_state.vf, self.lstm_critic
+            )
+            return RNNStates(pi=actor_states, vf=vf_states)
 
         half = len(actor_states) // 2
         if half > 0 and len(actor_states) % 2 == 0:
-            return RNNStates(pi=actor_states[:half], vf=actor_states[half:])
+            pi_states = self._align_state_tuple(
+                actor_states[:half], self.recurrent_initial_state.pi, self.lstm_actor
+            )
+            vf_states = self._align_state_tuple(
+                actor_states[half:], self.recurrent_initial_state.vf, self.lstm_critic
+            )
+            return RNNStates(pi=pi_states, vf=vf_states)
 
         raise ValueError(
             "Неподдерживаемый формат tuple для отдельных состояний актёра/критика"
