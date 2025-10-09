@@ -678,18 +678,30 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, ...]]:
         """Адаптация sb3_contrib для поддержки как LSTM, так и GRU."""
 
+        if isinstance(features, torch.Tensor):
+            target_device = features.device
+        else:
+            target_device = next(
+                (
+                    tensor.device
+                    for tensor in features
+                    if isinstance(tensor, torch.Tensor)
+                ),
+                episode_starts.device,
+            )
+
+        episode_starts = episode_starts.to(target_device)
+
         if isinstance(recurrent_module, nn.GRU):
             if not lstm_states:
                 raise ValueError("GRU ожидает хотя бы одно скрытое состояние")
 
-            hidden_state = lstm_states[0]
+            hidden_state = lstm_states[0].to(target_device)
             # если вдруг пришли (h, c) от LSTM, просто игнорируем c
             n_seq = hidden_state.shape[1]
 
             features_sequence = features.reshape((n_seq, -1, recurrent_module.input_size)).swapaxes(0, 1)
-            episode_starts = (
-                episode_starts.reshape((n_seq, -1)).swapaxes(0, 1).to(hidden_state.device)
-            )
+            episode_starts = episode_starts.reshape((n_seq, -1)).swapaxes(0, 1)
 
             if torch.all(episode_starts == 0.0):
                 output, hidden_state = recurrent_module(features_sequence, hidden_state)
@@ -713,9 +725,11 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if len(lstm_states) != 2:
             raise ValueError("LSTM ожидает кортеж из (hidden_state, cell_state)")
 
+        lstm_hidden = tuple(state.to(target_device) for state in lstm_states[:2])
+
         return RecurrentActorCriticPolicy._process_sequence(
             features,
-            (lstm_states[0], lstm_states[1]),
+            lstm_hidden,
             episode_starts,
             recurrent_module,
         )
