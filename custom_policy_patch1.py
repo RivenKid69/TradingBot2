@@ -231,7 +231,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 raise ValueError(f"Invalid '{key}' value in policy arch params: {value}") from exc
             return coerced
 
-        self.num_atoms = _coerce_arch_int(arch_params.get("num_atoms"), 51, "num_atoms")
+        self.num_atoms = _coerce_arch_int(arch_params.get("num_atoms"), 101, "num_atoms")
         self.v_min = _coerce_arch_float(arch_params.get("v_min"), -1.0, "v_min")
         self.v_max = _coerce_arch_float(arch_params.get("v_max"), 1.0, "v_max")
         if self.num_atoms < 1:

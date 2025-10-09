@@ -1333,7 +1333,7 @@ def objective(trial: optuna.Trial,
     v_min_cfg = _coerce_optional_float(_get_model_param_value(cfg, "v_min"), "v_min")
     v_max_cfg = _coerce_optional_float(_get_model_param_value(cfg, "v_max"), "v_max")
 
-    num_atoms = num_atoms_cfg if num_atoms_cfg is not None else 51
+    num_atoms = num_atoms_cfg if num_atoms_cfg is not None else 101
     v_min = v_min_cfg if v_min_cfg is not None else -1.0
     v_max = v_max_cfg if v_max_cfg is not None else 1.0
 
