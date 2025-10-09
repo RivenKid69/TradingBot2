@@ -389,10 +389,6 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
-        # Early debug diagnostics ensure configuration mismatches are visible in logs.
-        self.logger.record("debug/vf_coef_target", float(self._vf_coef_target))
-        self.logger.record("debug/vf_coef_warmup", float(self._vf_coef_warmup))
-
         # Stable-Baselines3 lazily initialises the internal logger, but older
         # versions may skip creating ``self._logger`` when ``logger=None`` is
         # passed through the constructor.  Accessing :pyattr:`self.logger`
@@ -402,6 +398,10 @@ class DistributionalPPO(RecurrentPPO):
             from stable_baselines3.common.logger import configure
 
             self._logger = configure()
+
+        # Early debug diagnostics ensure configuration mismatches are visible in logs.
+        self.logger.record("debug/vf_coef_target", float(self._vf_coef_target))
+        self.logger.record("debug/vf_coef_warmup", float(self._vf_coef_warmup))
 
         self.logger.record("debug/patch_tag", 1.0)
         self.logger.record("debug/loaded_from", 1.0)
