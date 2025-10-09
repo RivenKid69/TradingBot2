@@ -178,7 +178,7 @@ class DistributionalPPO(RecurrentPPO):
         entropy_boost_cap: Optional[float] = None,
         clip_range_warmup: Optional[float] = None,
         clip_range_warmup_updates: int = 8,
-        critic_grad_warmup_updates: int = 8,
+        critic_grad_warmup_updates: int = 1,
         cvar_activation_threshold: float = 0.25,
         cvar_activation_hysteresis: float = 0.05,
         cvar_ramp_updates: int = 4,
