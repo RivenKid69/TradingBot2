@@ -389,6 +389,10 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
+        # Early debug diagnostics ensure configuration mismatches are visible in logs.
+        self.logger.record("debug/vf_coef_target", float(self._vf_coef_target))
+        self.logger.record("debug/vf_coef_warmup", float(self._vf_coef_warmup))
+
         # Stable-Baselines3 lazily initialises the internal logger, but older
         # versions may skip creating ``self._logger`` when ``logger=None`` is
         # passed through the constructor.  Accessing :pyattr:`self.logger`
@@ -582,6 +586,7 @@ class DistributionalPPO(RecurrentPPO):
         atoms = max(1, int(getattr(self.policy, "num_atoms", 1)))
         ce_norm = math.log(float(atoms))
         self._critic_ce_normalizer = ce_norm if ce_norm > 1e-6 else 1.0
+        self.logger.record("debug/critic_ce_normalizer", float(self._critic_ce_normalizer))
 
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
@@ -1120,6 +1125,15 @@ class DistributionalPPO(RecurrentPPO):
         self.vf_coef = vf_coef_effective
         current_cvar_weight = self._compute_cvar_weight()
         self._current_cvar_weight = current_cvar_weight
+
+        if current_update < 3:
+            self.logger.record(
+                f"debug/update_{current_update}_vf_coef_effective", float(vf_coef_effective)
+            )
+            self.logger.record(
+                f"debug/update_{current_update}_critic_ce_normalizer",
+                float(self._critic_ce_normalizer),
+            )
 
         returns_tensor = torch.as_tensor(
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
