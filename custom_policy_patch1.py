@@ -1036,6 +1036,89 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 actions = actions.view(-1, num_heads)
         return actions, new_states
 
+    def predict(
+        self,
+        observation: np.ndarray | Mapping[str, np.ndarray],
+        state: RNNStates | tuple[np.ndarray, ...] | None = None,
+        episode_start: np.ndarray | None = None,
+        deterministic: bool = False,
+    ) -> tuple[np.ndarray, RNNStates | tuple[np.ndarray, ...]]:
+        """SB3 helper to obtain actions in numpy format with RNN state support."""
+
+        def _to_tensor_tuple(seq: Sequence[Any]) -> tuple[torch.Tensor, ...]:
+            tensors: list[torch.Tensor] = []
+            for item in seq:
+                if isinstance(item, torch.Tensor):
+                    tensor = item.to(device=self.device, dtype=torch.float32)
+                else:
+                    tensor = torch.as_tensor(item, dtype=torch.float32, device=self.device)
+                tensors.append(tensor)
+            return tuple(tensors)
+
+        training_mode = self.training
+        self.set_training_mode(False)
+        try:
+            obs_tensor, vectorized_env = self.obs_to_tensor(observation)
+
+            if isinstance(obs_tensor, dict):
+                first_key = next(iter(obs_tensor.keys()))
+                n_envs = obs_tensor[first_key].shape[0]
+            else:
+                n_envs = obs_tensor.shape[0]
+
+            if state is None:
+                lstm_states: RNNStates | tuple[torch.Tensor, ...] = self.recurrent_initial_state
+            elif hasattr(state, "pi") and hasattr(state, "vf"):
+                lstm_states = RNNStates(pi=_to_tensor_tuple(state.pi), vf=_to_tensor_tuple(state.vf))
+            else:
+                lstm_states = _to_tensor_tuple(state)
+
+            lstm_states = self._coerce_lstm_states(lstm_states)
+            lstm_states = RNNStates(
+                pi=tuple(t.to(self.device) for t in lstm_states.pi),
+                vf=tuple(t.to(self.device) for t in lstm_states.vf),
+            )
+
+            if episode_start is None:
+                episode_start_arr = np.zeros(n_envs, dtype=bool)
+            else:
+                episode_start_arr = np.asarray(episode_start, dtype=bool).reshape(n_envs)
+
+            episode_starts_tensor = torch.as_tensor(
+                episode_start_arr.astype(np.float32), device=self.device
+            )
+
+            with torch.no_grad():
+                actions_tensor, new_states = self._predict(
+                    obs_tensor,
+                    lstm_states=lstm_states,
+                    episode_starts=episode_starts_tensor,
+                    deterministic=deterministic,
+                )
+
+            if hasattr(new_states, "pi") and hasattr(new_states, "vf"):
+                states_out: RNNStates | tuple[np.ndarray, ...] = RNNStates(
+                    pi=tuple(state.detach().cpu().numpy() for state in new_states.pi),
+                    vf=tuple(state.detach().cpu().numpy() for state in new_states.vf),
+                )
+            else:
+                states_out = tuple(state.detach().cpu().numpy() for state in new_states)
+
+            actions = actions_tensor.detach().cpu().numpy()
+
+            if isinstance(self.action_space, spaces.Box):
+                if self.squash_output:
+                    actions = self.unscale_action(actions)
+                else:
+                    actions = np.clip(actions, self.action_space.low, self.action_space.high)
+
+            if not vectorized_env:
+                actions = actions.squeeze(axis=0)
+
+            return actions, states_out
+        finally:
+            self.set_training_mode(training_mode)
+
     def evaluate_actions(
         self,
         obs: torch.Tensor,
