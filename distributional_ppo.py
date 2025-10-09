@@ -389,6 +389,16 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
+        # Stable-Baselines3 lazily initialises the internal logger, but older
+        # versions may skip creating ``self._logger`` when ``logger=None`` is
+        # passed through the constructor.  Accessing :pyattr:`self.logger`
+        # would then raise ``AttributeError``.  Guard against this scenario by
+        # ensuring the attribute exists before we start recording metrics.
+        if not hasattr(self, "_logger") or self._logger is None:  # pragma: no cover - safety guard
+            from stable_baselines3.common.logger import configure
+
+            self._logger = configure()
+
         base_lr = float(self.lr_schedule(1.0))
         value_params: list[torch.nn.Parameter] = []
         other_params: list[torch.nn.Parameter] = []
