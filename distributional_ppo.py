@@ -465,12 +465,14 @@ class DistributionalPPO(RecurrentPPO):
         self.running_v_max = 0.0
         self.v_range_initialized = False
 
+        # --- Value clip limit wiring -----------------------------------------
+        # По умолчанию политика выставляет value_clip_limit = max(|v_min|,|v_max|).
+        # При normalize_returns=True нам нужен ТОЛЬКО нормализованный клип ±ret_clip.
+        # Поэтому полностью отключаем «raw-clip» в этом режиме.
         clip_limit_unscaled = getattr(self.policy, "value_clip_limit", None)
-        self._value_clip_limit_unscaled: Optional[float]
-        if clip_limit_unscaled is None:
-            self._value_clip_limit_unscaled = None
-            self._value_clip_limit_scaled = None
-        else:
+        self._value_clip_limit_unscaled: Optional[float] = None
+        self._value_clip_limit_scaled: Optional[float] = None
+        if not self.normalize_returns and clip_limit_unscaled is not None:
             clip_limit_unscaled_f = float(clip_limit_unscaled)
             if clip_limit_unscaled_f <= 0.0 or not math.isfinite(clip_limit_unscaled_f):
                 raise ValueError(
@@ -480,6 +482,14 @@ class DistributionalPPO(RecurrentPPO):
             self._value_clip_limit_scaled = (
                 clip_limit_unscaled_f * self._value_target_scale_effective
             )
+        # Явно обнуляем лимит в политике (если атрибут есть), чтобы ничего не «воскресало».
+        try:
+            if self.normalize_returns:
+                setattr(self.policy, "value_clip_limit", None)
+        except Exception:
+            pass
+        # Диагностика
+        self.logger.record("debug/raw_value_clip_enabled", 0.0 if self.normalize_returns else 1.0)
 
         self.bc_warmup_steps = max(0, int(bc_warmup_steps))
         self.bc_decay_steps = max(0, int(bc_decay_steps))
@@ -972,16 +982,10 @@ class DistributionalPPO(RecurrentPPO):
             mean_values_norm = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
 
             if self.normalize_returns:
+                # НЕТ raw-clip: просто де-нормализация и переход в буферную шкалу
                 ret_std_tensor = mean_values_norm.new_tensor(self._ret_std_value)
                 ret_mu_tensor = mean_values_norm.new_tensor(self._ret_mean_value)
-                scalar_values = mean_values_norm * ret_std_tensor + ret_mu_tensor
-                if self._value_clip_limit_unscaled is not None:
-                    scalar_values = torch.clamp(
-                        scalar_values,
-                        min=-self._value_clip_limit_unscaled,
-                        max=self._value_clip_limit_unscaled,
-                    )
-                scalar_values = scalar_values / self.value_target_scale
+                scalar_values = (mean_values_norm * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
             else:
                 scalar_values = mean_values_norm
                 if self._value_clip_limit_scaled is not None:
@@ -996,7 +1000,6 @@ class DistributionalPPO(RecurrentPPO):
                         scalar_values,
                         min=-self._value_clip_limit_unscaled,
                         max=self._value_clip_limit_unscaled,
-
                     )
 
             actions_np = actions.cpu().numpy()
@@ -1059,16 +1062,10 @@ class DistributionalPPO(RecurrentPPO):
         last_mean_norm = (last_probs * self.policy.atoms).sum(dim=1)
 
         if self.normalize_returns:
+            # НЕТ raw-clip при терминальном значении
             ret_std_tensor = last_mean_norm.new_tensor(self._ret_std_value)
             ret_mu_tensor = last_mean_norm.new_tensor(self._ret_mean_value)
-            last_scalar_values = last_mean_norm * ret_std_tensor + ret_mu_tensor
-            if self._value_clip_limit_unscaled is not None:
-                last_scalar_values = torch.clamp(
-                    last_scalar_values,
-                    min=-self._value_clip_limit_unscaled,
-                    max=self._value_clip_limit_unscaled,
-                )
-            last_scalar_values = last_scalar_values / self.value_target_scale
+            last_scalar_values = (last_mean_norm * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
         else:
             last_scalar_values = last_mean_norm
             if self._value_clip_limit_scaled is not None:
@@ -1542,7 +1539,10 @@ class DistributionalPPO(RecurrentPPO):
                         buffer_returns = rollout_data.returns.to(dtype=torch.float32)
                         target_returns_raw = buffer_returns * base_scale_safe
 
-                        if self._value_clip_limit_unscaled is not None:
+                        # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
+                        if (not self.normalize_returns) and (
+                            self._value_clip_limit_unscaled is not None
+                        ):
                             target_returns_raw = torch.clamp(
                                 target_returns_raw,
                                 min=-self._value_clip_limit_unscaled,
@@ -1627,9 +1627,7 @@ class DistributionalPPO(RecurrentPPO):
 
                     with torch.no_grad():
 
-                        mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(
-                            dim=1, keepdim=True
-                        )
+                        mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
                         if self.normalize_returns:
                             mean_values_unscaled = (
                                 mean_values_norm * ret_std_tensor + ret_mu_tensor
@@ -1648,7 +1646,9 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         bucket_value_mse_value += float(mse_tensor.item()) * weight
 
-                        if self._value_clip_limit_unscaled is not None:
+                        if (not self.normalize_returns) and (
+                            self._value_clip_limit_unscaled is not None
+                        ):
                             mean_values_unscaled = torch.clamp(
                                 mean_values_unscaled,
                                 min=-self._value_clip_limit_unscaled,
@@ -1837,19 +1837,23 @@ class DistributionalPPO(RecurrentPPO):
         if value_logits_final is None:
             raise RuntimeError("No value logits captured during training loop")
         if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
-            rollout_returns = torch.as_tensor(
-                self.rollout_buffer.returns, device=self.device, dtype=torch.float32
-            ) * base_scale_safe
+            rollout_returns = (
+                torch.as_tensor(
+                    self.rollout_buffer.returns, device=self.device, dtype=torch.float32
+                )
+                * base_scale_safe
+            )
             with torch.no_grad():
                 pred_probs = torch.softmax(value_logits_final, dim=1)
                 value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
                 if self.normalize_returns:
-                    y_pred_tensor = value_pred_norm * ret_std_tensor + ret_mu_tensor
+                    y_pred_tensor = (value_pred_norm * ret_std_tensor + ret_mu_tensor)
                 else:
                     y_pred_tensor = (
                         value_pred_norm / self._value_target_scale_effective
                     ) * base_scale_safe
-                if self._value_clip_limit_unscaled is not None:
+                # НЕТ raw-clip при normalize_returns: считаем EV по неусечённым предсказаниям
+                if (not self.normalize_returns) and (self._value_clip_limit_unscaled is not None):
                     y_pred_tensor = torch.clamp(
                         y_pred_tensor,
                         min=-self._value_clip_limit_unscaled,
