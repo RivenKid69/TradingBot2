@@ -23,6 +23,7 @@ from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import Schedule  # тип коллбэка lr_schedule
+from stable_baselines3.common.utils import zip_strict
 
 from action_proto import ActionType
 
@@ -599,6 +600,57 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         raise ValueError(
             "Неподдерживаемый формат tuple для отдельных состояний актёра/критика"
+        )
+
+    @staticmethod
+    def _process_sequence(
+        features: torch.Tensor,
+        lstm_states: Tuple[torch.Tensor, ...],
+        episode_starts: torch.Tensor,
+        recurrent_module: nn.Module,
+    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, ...]]:
+        """Адаптация sb3_contrib для поддержки как LSTM, так и GRU."""
+
+        if isinstance(recurrent_module, nn.GRU):
+            if not lstm_states:
+                raise ValueError("GRU ожидает хотя бы одно скрытое состояние")
+
+            hidden_state = lstm_states[0]
+            # если вдруг пришли (h, c) от LSTM, просто игнорируем c
+            n_seq = hidden_state.shape[1]
+
+            features_sequence = features.reshape((n_seq, -1, recurrent_module.input_size)).swapaxes(0, 1)
+            episode_starts = (
+                episode_starts.reshape((n_seq, -1)).swapaxes(0, 1).to(hidden_state.device)
+            )
+
+            if torch.all(episode_starts == 0.0):
+                output, hidden_state = recurrent_module(features_sequence, hidden_state)
+                output = torch.flatten(output.transpose(0, 1), start_dim=0, end_dim=1)
+                return output, (hidden_state,)
+
+            outputs: list[torch.Tensor] = []
+            for step_features, episode_start in zip_strict(features_sequence, episode_starts):
+                hidden_state = (1.0 - episode_start).view(1, n_seq, 1) * hidden_state
+                step_output, hidden_state = recurrent_module(step_features.unsqueeze(dim=0), hidden_state)
+                outputs.append(step_output)
+
+            output = torch.flatten(torch.cat(outputs).transpose(0, 1), start_dim=0, end_dim=1)
+            return output, (hidden_state,)
+
+        if not isinstance(recurrent_module, nn.LSTM):
+            raise TypeError(
+                f"Неподдерживаемый тип рекуррентного модуля: {type(recurrent_module)!r}"
+            )
+
+        if len(lstm_states) != 2:
+            raise ValueError("LSTM ожидает кортеж из (hidden_state, cell_state)")
+
+        return RecurrentActorCriticPolicy._process_sequence(
+            features,
+            (lstm_states[0], lstm_states[1]),
+            episode_starts,
+            recurrent_module,
         )
 
     def _forward_recurrent(
