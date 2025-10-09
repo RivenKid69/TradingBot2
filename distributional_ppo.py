@@ -399,6 +399,9 @@ class DistributionalPPO(RecurrentPPO):
 
             self._logger = configure()
 
+        self.logger.record("debug/patch_tag", 1.0)
+        self.logger.record("debug/loaded_from", 1.0)
+
         base_lr = float(self.lr_schedule(1.0))
         value_params: list[torch.nn.Parameter] = []
         other_params: list[torch.nn.Parameter] = []
@@ -1099,6 +1102,8 @@ class DistributionalPPO(RecurrentPPO):
         self._refresh_kl_base_lrs()
 
         current_update = self._global_update_step
+        # hard-kill any warmup coming from configs/CLI
+        self._critic_grad_warmup_updates = 0
         self._critic_grad_blocked = False
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
@@ -1106,7 +1111,8 @@ class DistributionalPPO(RecurrentPPO):
         if self._critic_grad_block_logged_state is not False:
             self._critic_grad_block_logged_state = False
             self.logger.record("debug/critic_grad_block_switch", 0.0)
-        self._update_critic_gradient_block(current_update)
+        # do not re-enable in this step:
+        # self._update_critic_gradient_block(current_update)
         self._clip_range_current = self._compute_clip_range_value(current_update)
         clip_range = float(self._clip_range_current)
         self._update_ent_coef(current_update)
