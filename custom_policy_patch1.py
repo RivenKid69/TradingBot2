@@ -822,6 +822,30 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         return actions, values, log_prob, new_states
 
+    def _predict(
+        self,
+        observation: torch.Tensor,
+        lstm_states: RNNStates,
+        episode_starts: torch.Tensor,
+        deterministic: bool = False,
+    ) -> Tuple[torch.Tensor, RNNStates]:
+        """
+        В BAR-режиме базовый SB3 _predict вернёт скаляр (volume),
+        что ломает MultiDiscrete враппер. Делаем предсказание
+        через наш forward(), где экшен уже собран в (B, 4).
+        """
+        actions, _, _, new_states = self.forward(
+            observation, lstm_states, episode_starts, deterministic=deterministic
+        )
+        # страхуем dtype/форму для MultiDiscrete
+        if isinstance(self.action_space, spaces.MultiDiscrete):
+            actions = actions.to(dtype=torch.long)
+            if actions.ndim == 1:
+                # на всякий случай, если где-то вернулся (B,)
+                num_heads = len(self._multi_head_sizes) if self._multi_head_sizes else 4
+                actions = actions.view(-1, num_heads)
+        return actions, new_states
+
     def evaluate_actions(
         self,
         obs: torch.Tensor,
