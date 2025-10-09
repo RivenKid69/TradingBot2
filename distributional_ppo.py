@@ -171,15 +171,15 @@ class DistributionalPPO(RecurrentPPO):
         cvar_cap: Optional[float] = None,
         v_range_ema_alpha: float = 0.01,
         vf_coef_warmup: Optional[float] = None,
-        vf_coef_warmup_updates: int = 8,
-        vf_bad_explained_scale: float = 0.5,
-        vf_bad_explained_floor: float = 0.02,
+        vf_coef_warmup_updates: int = 0,
+        vf_bad_explained_scale: float = 1.0,
+        vf_bad_explained_floor: float = 0.0,
         bad_explained_patience: int = 2,
         entropy_boost_factor: float = 1.5,
         entropy_boost_cap: Optional[float] = None,
         clip_range_warmup: Optional[float] = None,
         clip_range_warmup_updates: int = 8,
-        critic_grad_warmup_updates: int = 1,
+        critic_grad_warmup_updates: int = 0,
         cvar_activation_threshold: float = 0.25,
         cvar_activation_hysteresis: float = 0.05,
         cvar_ramp_updates: int = 4,
@@ -250,12 +250,12 @@ class DistributionalPPO(RecurrentPPO):
         vf_coef_target_value = float(kwargs_local.get("vf_coef", kwargs.get("vf_coef", 0.5)))
         vf_coef_warmup_candidate = kwargs_local.pop("vf_coef_warmup", vf_coef_warmup)
         if vf_coef_warmup_candidate is None:
-            vf_coef_warmup_value = min(vf_coef_target_value, 0.075)
+            vf_coef_warmup_value = float(vf_coef_target_value)
         else:
             vf_coef_warmup_value = float(vf_coef_warmup_candidate)
             if not math.isfinite(vf_coef_warmup_value) or vf_coef_warmup_value <= 0.0:
                 raise ValueError("'vf_coef_warmup' must be a positive finite value")
-        kwargs_local["vf_coef"] = vf_coef_warmup_value
+        kwargs_local["vf_coef"] = vf_coef_target_value
         vf_coef_warmup_updates_value = max(
             0, int(kwargs_local.pop("vf_coef_warmup_updates", vf_coef_warmup_updates))
         )
@@ -333,8 +333,6 @@ class DistributionalPPO(RecurrentPPO):
         self._vf_coef_target = vf_coef_target_value
         self._vf_coef_warmup = vf_coef_warmup_value
         self._vf_coef_warmup_updates = vf_coef_warmup_updates_value
-        self._vf_bad_explained_scale = vf_bad_explained_scale_value
-        self._vf_bad_explained_floor = vf_bad_explained_floor_value
         self._bad_explained_patience = bad_explained_patience_value
         self._bad_explained_counter = 0
         self._last_explained_variance: Optional[float] = None
@@ -349,6 +347,7 @@ class DistributionalPPO(RecurrentPPO):
 
         self._critic_grad_warmup_updates = critic_grad_warmup_updates_value
         self._critic_grad_blocked = critic_grad_warmup_updates_value > 0
+        self._critic_grad_block_logged_state: Optional[bool] = None
 
         self._cvar_weight_target = float(self.cvar_weight)
         self._cvar_activation_threshold = cvar_activation_threshold_value
@@ -389,6 +388,56 @@ class DistributionalPPO(RecurrentPPO):
         kl_lr_scale_min_log_request = kl_lr_scale_min_requested
 
         super().__init__(policy=policy, env=env, **kwargs_local)
+
+        base_lr = float(self.lr_schedule(1.0))
+        value_params: list[torch.nn.Parameter] = []
+        other_params: list[torch.nn.Parameter] = []
+        for name, param in self.policy.named_parameters():
+            if not param.requires_grad:
+                continue
+            target = (
+                value_params
+                if (
+                    "value" in name
+                    or "value_net" in name
+                    or "critic" in name
+                    or "v_head" in name
+                )
+                else other_params
+            )
+            target.append(param)
+
+        param_groups: list[dict[str, Any]] = []
+        if other_params:
+            param_groups.append(
+                {
+                    "params": other_params,
+                    "lr": base_lr,
+                    "initial_lr": base_lr,
+                    "_lr_scale": 1.0,
+                }
+            )
+        if value_params:
+            value_lr_scale = 2.0
+            param_groups.append(
+                {
+                    "params": value_params,
+                    "lr": base_lr * value_lr_scale,
+                    "initial_lr": base_lr * value_lr_scale,
+                    "_lr_scale": value_lr_scale,
+                }
+            )
+        if param_groups:
+            self.policy.optimizer = torch.optim.AdamW(
+                param_groups,
+                weight_decay=0.0,
+                betas=(0.9, 0.999),
+                eps=1e-8,
+            )
+            self.logger.record(
+                "train/optimizer_lr_groups",
+                [float(group.get("lr", 0.0)) for group in param_groups],
+            )
 
         base_logger = getattr(self, "_logger", None)
         if kl_lr_scale_min_log_request is not None and base_logger is not None:
@@ -514,6 +563,38 @@ class DistributionalPPO(RecurrentPPO):
         if callable(policy_block_fn):
             policy_block_fn(self._critic_grad_blocked)
 
+    def _update_learning_rate(self, optimizer: Optional[torch.optim.Optimizer]) -> None:
+        if optimizer is None:
+            return
+
+        base_lr = float(self.lr_schedule(self._current_progress_remaining))
+        self.logger.record("train/learning_rate", base_lr)
+
+        min_lr = float(getattr(self, "_kl_min_lr", 0.0))
+        group_lrs: list[float] = []
+        for group in optimizer.param_groups:
+            scale = float(group.get("_lr_scale", 1.0))
+            scaled_lr = base_lr * scale
+            if min_lr > 0.0:
+                scaled_lr = max(scaled_lr, min_lr)
+            group["lr"] = scaled_lr
+            group.setdefault("initial_lr", scaled_lr)
+            group_lrs.append(scaled_lr)
+
+        if self.lr_scheduler is not None and hasattr(self.lr_scheduler, "base_lrs"):
+            self.lr_scheduler.base_lrs = list(group_lrs)
+
+        if group_lrs:
+            min_group_lr = min(group_lrs)
+            max_group_lr = max(group_lrs)
+            self.logger.record("train/optimizer_lr", min_group_lr)
+            self.logger.record("train/optimizer_lr_min", min_group_lr)
+            self.logger.record("train/optimizer_lr_max", max_group_lr)
+        else:
+            self.logger.record("train/optimizer_lr", base_lr)
+            self.logger.record("train/optimizer_lr_min", base_lr)
+            self.logger.record("train/optimizer_lr_max", base_lr)
+
     def _compute_clip_range_value(self, update_index: Optional[int] = None) -> float:
         idx = self._update_calls if update_index is None else max(0, int(update_index))
         if self._clip_range_warmup_updates <= 0:
@@ -525,20 +606,11 @@ class DistributionalPPO(RecurrentPPO):
         return float(max(value, 1e-6))
 
     def _compute_vf_coef_value(self, update_index: int) -> float:
-        if self._vf_coef_warmup_updates <= 0:
-            base = float(self._vf_coef_target)
-        else:
-            progress = min(1.0, update_index / float(max(1, self._vf_coef_warmup_updates)))
-            base = float(
-                self._vf_coef_warmup
-                + (self._vf_coef_target - self._vf_coef_warmup) * progress
-            )
-
-        if self._bad_explained_counter > max(0, self._bad_explained_patience):
-            counter = self._bad_explained_counter - self._bad_explained_patience
-            scale = self._vf_bad_explained_scale ** float(counter)
-            base = max(base * scale, self._vf_bad_explained_floor)
-        return float(base)
+        base = float(self._vf_coef_target)
+        last_ev = self._last_explained_variance
+        if last_ev is None:
+            return base
+        return base
 
     def _compute_entropy_boost(self, nominal_ent_coef: float) -> float:
         if self._bad_explained_counter <= max(0, self._bad_explained_patience):
@@ -567,10 +639,15 @@ class DistributionalPPO(RecurrentPPO):
         should_block = update_index < self._critic_grad_warmup_updates
         if should_block == self._critic_grad_blocked:
             return
+
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
             policy_block_fn(should_block)
+
         self._critic_grad_blocked = should_block
+        if self._critic_grad_block_logged_state != should_block:
+            self._critic_grad_block_logged_state = should_block
+            self.logger.record("debug/critic_grad_block_switch", float(should_block))
 
     def _configure_gradient_accumulation(
         self,
@@ -1011,6 +1088,13 @@ class DistributionalPPO(RecurrentPPO):
         self._refresh_kl_base_lrs()
 
         current_update = self._global_update_step
+        self._critic_grad_blocked = False
+        policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
+        if callable(policy_block_fn):
+            policy_block_fn(False)
+        if self._critic_grad_block_logged_state is not False:
+            self._critic_grad_block_logged_state = False
+            self.logger.record("debug/critic_grad_block_switch", 0.0)
         self._update_critic_gradient_block(current_update)
         self._clip_range_current = self._compute_clip_range_value(current_update)
         clip_range = float(self._clip_range_current)
