@@ -35,7 +35,7 @@ import hashlib
 import random
 from copy import deepcopy
 from functools import lru_cache
-from typing import Any, Callable, Dict, Mapping, Sequence
+from typing import Any, Callable, Dict, Mapping, MutableMapping, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -235,6 +235,40 @@ def _assign_nested(target: dict[str, Any], dotted_key: str, value: Any) -> None:
             cursor[part] = next_obj
         cursor = next_obj
     cursor[parts[-1]] = value
+
+
+def _propagate_train_window_alias(
+    block: MutableMapping[str, Any], updated_key: str, value: Any
+) -> None:
+    """Keep ``start_ts``/``train_start_ts`` and ``end_ts``/``train_end_ts`` in sync."""
+
+    if "." in updated_key:
+        return
+
+    if updated_key in {"train_start_ts", "start_ts"}:
+        block["train_start_ts"] = value
+        block["start_ts"] = value
+    elif updated_key in {"train_end_ts", "end_ts"}:
+        block["train_end_ts"] = value
+        block["end_ts"] = value
+
+
+def _ensure_train_window_aliases(block: MutableMapping[str, Any]) -> None:
+    """Normalise legacy aliases for training window bounds."""
+
+    start = block.get("start_ts")
+    train_start = block.get("train_start_ts")
+    if train_start is None and start is not None:
+        block["train_start_ts"] = start
+    elif train_start is not None and (start is None or start != train_start):
+        block["start_ts"] = train_start
+
+    end = block.get("end_ts")
+    train_end = block.get("train_end_ts")
+    if train_end is None and end is not None:
+        block["train_end_ts"] = end
+    elif train_end is not None and (end is None or end != train_end):
+        block["end_ts"] = train_end
 
 
 def _extract_env_runtime_overrides(
@@ -2039,6 +2073,10 @@ def main():
             cfg_dict[block] = block_dict
         for key, value in params.items():
             _assign_nested(block_dict, key, value)
+            if block == "data" and isinstance(block_dict, MutableMapping):
+                _propagate_train_window_alias(block_dict, key, value)
+        if block == "data" and isinstance(block_dict, MutableMapping):
+            _ensure_train_window_aliases(block_dict)
         if block == "env":
             if env_payload is None or not isinstance(env_payload, dict):
                 env_payload = {}
@@ -2049,6 +2087,9 @@ def main():
     latency_block = cfg_dict.setdefault("latency", {})
     if not latency_block.get("latency_seasonality_path"):
         latency_block["latency_seasonality_path"] = args.liquidity_seasonality
+    data_block_existing = cfg_dict.get("data")
+    if isinstance(data_block_existing, MutableMapping):
+        _ensure_train_window_aliases(data_block_existing)
     if seasonality_hash:
         cfg_dict["liquidity_seasonality_hash"] = seasonality_hash
     cfg = cfg.__class__.parse_obj(cfg_dict)
