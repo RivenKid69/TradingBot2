@@ -58,6 +58,34 @@ class CustomMlpExtractor(nn.Module):
         return features
 
 
+class _CategoricalAdapter:
+    """Minimal adapter exposing SB3's distribution interface for torch Categorical."""
+
+    def __init__(self, logits: torch.Tensor) -> None:
+        self._dist = torch.distributions.Categorical(logits=logits)
+
+    def sample(self) -> torch.Tensor:
+        return self._dist.sample()
+
+    def log_prob(self, actions: torch.Tensor) -> torch.Tensor:
+        return self._dist.log_prob(actions)
+
+    def entropy(self) -> torch.Tensor:
+        return self._dist.entropy()
+
+    def get_actions(self, deterministic: bool = False) -> torch.Tensor:
+        if deterministic:
+            return torch.argmax(self._dist.logits, dim=-1)
+        return self.sample()
+
+    @property
+    def logits(self) -> torch.Tensor:
+        return self._dist.logits
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._dist, name)
+
+
 class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def __init__(
         self,
@@ -412,10 +440,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         end = start + int(self._multi_head_sizes[self._volume_head_index])
         return action_logits[..., start:end]
 
-    def _bar_action_distribution(self, latent_pi: torch.Tensor) -> torch.distributions.Categorical:
+    def _bar_action_distribution(self, latent_pi: torch.Tensor) -> _CategoricalAdapter:
         action_logits = self.action_net(latent_pi)
         volume_logits = self._extract_volume_logits(action_logits)
-        return torch.distributions.Categorical(logits=volume_logits)
+        return _CategoricalAdapter(volume_logits)
 
     def _assemble_bar_actions(self, volume_actions: torch.Tensor) -> torch.Tensor:
         if not self._multi_head_sizes:
