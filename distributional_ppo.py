@@ -15,6 +15,7 @@ from stable_baselines3.common.callbacks import BaseCallback, CallbackList, EvalC
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
+from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 try:
     from stable_baselines3.common.vec_env.vec_normalize import unwrap_vec_normalize as _sb3_unwrap
@@ -183,6 +184,8 @@ class DistributionalPPO(RecurrentPPO):
         cvar_activation_hysteresis: float = 0.05,
         cvar_ramp_updates: int = 4,
         value_target_scale: Union[str, float, None] = 1.0,
+        normalize_returns: bool = True,
+        ret_clip: float = 10.0,
         bc_warmup_steps: int = 0,
         bc_decay_steps: int = 0,
         bc_final_coef: Optional[float] = None,
@@ -355,6 +358,30 @@ class DistributionalPPO(RecurrentPPO):
         self._current_cvar_weight = 0.0
 
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
+        normalize_returns_sentinel: object = object()
+        normalize_returns_kwarg = kwargs_local.pop(
+            "normalize_returns", normalize_returns_sentinel
+        )
+        if normalize_returns_kwarg is not normalize_returns_sentinel:
+            normalize_returns_kwarg_bool = bool(normalize_returns_kwarg)
+            normalize_returns_param_bool = bool(normalize_returns)
+            if normalize_returns_kwarg_bool != normalize_returns_param_bool:
+                raise TypeError(
+                    "'normalize_returns' was provided both explicitly and via kwargs; "
+                    "pass it only once"
+                )
+            normalize_returns_value = normalize_returns_kwarg_bool
+        else:
+            normalize_returns_value = bool(normalize_returns)
+        ret_clip_candidate = kwargs_local.pop("ret_clip", ret_clip)
+        ret_clip_value = float(ret_clip_candidate)
+        if not math.isfinite(ret_clip_value) or ret_clip_value <= 0.0:
+            raise ValueError("'ret_clip' must be a positive finite value")
+        self.normalize_returns = normalize_returns_value
+        self.ret_clip = ret_clip_value
+        self.ret_rms = RunningMeanStd(shape=())
+        self._ret_mean_value = 0.0
+        self._ret_std_value = 1.0
         self._value_target_scale_effective = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
         self._value_clip_limit_scaled: Optional[float] = None
@@ -851,23 +878,35 @@ class DistributionalPPO(RecurrentPPO):
                 raise RuntimeError("Policy did not cache value logits during forward pass")
 
             probs = torch.softmax(value_logits, dim=1)
-            scalar_values = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
+            mean_values_norm = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
 
-            if self._value_clip_limit_scaled is not None:
-                scalar_values = torch.clamp(
-                    scalar_values,
-                    min=-self._value_clip_limit_scaled,
-                    max=self._value_clip_limit_scaled,
-                )
+            if self.normalize_returns:
+                ret_std_tensor = mean_values_norm.new_tensor(self._ret_std_value)
+                ret_mu_tensor = mean_values_norm.new_tensor(self._ret_mean_value)
+                scalar_values = mean_values_norm * ret_std_tensor + ret_mu_tensor
+                if self._value_clip_limit_unscaled is not None:
+                    scalar_values = torch.clamp(
+                        scalar_values,
+                        min=-self._value_clip_limit_unscaled,
+                        max=self._value_clip_limit_unscaled,
+                    )
+                scalar_values = scalar_values / self.value_target_scale
+            else:
+                scalar_values = mean_values_norm
+                if self._value_clip_limit_scaled is not None:
+                    scalar_values = torch.clamp(
+                        scalar_values,
+                        min=-self._value_clip_limit_scaled,
+                        max=self._value_clip_limit_scaled,
+                    )
+                scalar_values = scalar_values / self.value_target_scale  # стабильная шкала буфера (обычно =1)
+                if self._value_clip_limit_unscaled is not None:
+                    scalar_values = torch.clamp(
+                        scalar_values,
+                        min=-self._value_clip_limit_unscaled,
+                        max=self._value_clip_limit_unscaled,
 
-            scalar_values = scalar_values / self.value_target_scale  # стабильная шкала буфера (обычно =1)
-            if self._value_clip_limit_unscaled is not None:
-                scalar_values = torch.clamp(
-                    scalar_values,
-                    min=-self._value_clip_limit_unscaled,
-                    max=self._value_clip_limit_unscaled,
-
-                )
+                    )
 
             actions_np = actions.cpu().numpy()
             if isinstance(self.action_space, gym.spaces.Box):
@@ -884,7 +923,9 @@ class DistributionalPPO(RecurrentPPO):
             if raw_rewards.size > 0:
                 self.logger.record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
 
-            scaled_rewards = raw_rewards / self.value_target_scale   # не трогаем rollout'ы динамическим скейлом
+            scaled_rewards = (
+                raw_rewards / self.value_target_scale
+            )  # не трогаем rollout'ы динамическим скейлом — нормализация применяется только в лоссе критика
 
             self.num_timesteps += env.num_envs
 
@@ -924,22 +965,34 @@ class DistributionalPPO(RecurrentPPO):
             raise RuntimeError("Policy did not cache value logits during terminal forward pass")
 
         last_probs = torch.softmax(last_value_logits, dim=1)
-        last_scalar_values = (last_probs * self.policy.atoms).sum(dim=1)
+        last_mean_norm = (last_probs * self.policy.atoms).sum(dim=1)
 
-        if self._value_clip_limit_scaled is not None:
-            last_scalar_values = torch.clamp(
-                last_scalar_values,
-                min=-self._value_clip_limit_scaled,
-                max=self._value_clip_limit_scaled,
-            )
-
-        last_scalar_values = last_scalar_values / self.value_target_scale
-        if self._value_clip_limit_unscaled is not None:
-            last_scalar_values = torch.clamp(
-                last_scalar_values,
-                min=-self._value_clip_limit_unscaled,
-                max=self._value_clip_limit_unscaled,
-            )
+        if self.normalize_returns:
+            ret_std_tensor = last_mean_norm.new_tensor(self._ret_std_value)
+            ret_mu_tensor = last_mean_norm.new_tensor(self._ret_mean_value)
+            last_scalar_values = last_mean_norm * ret_std_tensor + ret_mu_tensor
+            if self._value_clip_limit_unscaled is not None:
+                last_scalar_values = torch.clamp(
+                    last_scalar_values,
+                    min=-self._value_clip_limit_unscaled,
+                    max=self._value_clip_limit_unscaled,
+                )
+            last_scalar_values = last_scalar_values / self.value_target_scale
+        else:
+            last_scalar_values = last_mean_norm
+            if self._value_clip_limit_scaled is not None:
+                last_scalar_values = torch.clamp(
+                    last_scalar_values,
+                    min=-self._value_clip_limit_scaled,
+                    max=self._value_clip_limit_scaled,
+                )
+            last_scalar_values = last_scalar_values / self.value_target_scale
+            if self._value_clip_limit_unscaled is not None:
+                last_scalar_values = torch.clamp(
+                    last_scalar_values,
+                    min=-self._value_clip_limit_unscaled,
+                    max=self._value_clip_limit_unscaled,
+                )
 
         rollout_buffer.compute_returns_and_advantage(last_values=last_scalar_values, dones=dones)
         callback.on_rollout_end()
@@ -975,103 +1028,134 @@ class DistributionalPPO(RecurrentPPO):
         ).flatten()
 
         base_scale = float(self.value_target_scale)
-        if returns_tensor.numel() == 0:
-            robust_scale_value = 1.0
+        base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
+        returns_raw_tensor = returns_tensor * base_scale_safe
+
+        if returns_raw_tensor.numel() == 0:
+            ret_abs_p95_value = 0.0
         else:
-            robust_tensor = torch.quantile(returns_tensor.abs(), 0.95).clamp_min(1e-6)
-            robust_scale_value = float(robust_tensor.item())
-            if not math.isfinite(robust_scale_value) or robust_scale_value <= 0.0:
-                robust_scale_value = 1.0
+            ret_abs_p95_value = float(torch.quantile(returns_raw_tensor.abs(), 0.95).item())
 
-        self._value_target_scale_robust = robust_scale_value
-        effective_scale = base_scale / robust_scale_value
-        effective_scale = float(min(max(effective_scale, 1e-3), 1e3))  # мягкий клип
-        if not math.isfinite(effective_scale) or effective_scale <= 0.0:
-            effective_scale = base_scale
+        ret_mu_value = self._ret_mean_value
+        ret_std_value = self._ret_std_value
 
-        self._value_target_scale_effective = effective_scale
-        if self._value_clip_limit_unscaled is not None:
-            self._value_clip_limit_scaled = (
-                self._value_clip_limit_unscaled * self._value_target_scale_effective
-            )
+        if self.normalize_returns:
+            if returns_raw_tensor.numel() > 0:
+                with torch.no_grad():
+                    self.ret_rms.update(returns_raw_tensor.detach().cpu().numpy())
 
-        scaled_returns_tensor = returns_tensor * self._value_target_scale_effective
+            ret_mu_value = float(np.asarray(self.ret_rms.mean).reshape(-1)[0])
+            ret_var_value = float(np.asarray(self.ret_rms.var).reshape(-1)[0])
+            if not math.isfinite(ret_var_value) or ret_var_value < 0.0:
+                ret_var_value = 0.0
+            ret_std_value = math.sqrt(ret_var_value) + 1e-8
+            self._ret_mean_value = ret_mu_value
+            self._ret_std_value = ret_std_value
 
-        if self._value_clip_limit_unscaled is not None:
-            # ``min_half_range`` is used in the scaled value domain so we must rely on the
-            # scaled clip limit.  The previous implementation divided by
-            # ``value_target_scale`` before overwriting the result which effectively
-            # nullified the clip limit and collapsed the support when the scale was
-            # large.  Using the pre-computed scaled limit keeps the support width
-            # consistent with the applied clipping.
-            min_half_range = float(self._value_clip_limit_scaled)
-        else:
-            with torch.no_grad():
-                min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
-        if not math.isfinite(min_half_range):
-            min_half_range = 0.0
+            self._value_target_scale_robust = 1.0
+            denom = max(self.ret_clip * ret_std_value, 1e-8)
+            self._value_target_scale_effective = float(1.0 / denom)
+            if self._value_clip_limit_unscaled is not None:
+                self._value_clip_limit_scaled = None
 
-        if scaled_returns_tensor.numel() == 0:
-            v_min = -min_half_range
-            v_max = min_half_range
-        else:
-            quantile_bounds = torch.tensor(
-                [0.02, 0.98], device=scaled_returns_tensor.device, dtype=scaled_returns_tensor.dtype
-            )
-            v_low, v_high = torch.quantile(scaled_returns_tensor, quantile_bounds)
-            raw_min = float(torch.min(scaled_returns_tensor).item())
-            raw_max = float(torch.max(scaled_returns_tensor).item())
-            v_min = float(min(v_low.item(), raw_min))
-            v_max = float(max(v_high.item(), raw_max))
-
-        if not math.isfinite(v_min) or not math.isfinite(v_max):
-            raise RuntimeError(
-                f"Encountered non-finite return bounds when updating value support: {v_min}, {v_max}"
-            )
-
-        if v_max <= v_min:
-            center = v_min
-            half_range = 0.0
-        else:
-            center = 0.5 * (v_max + v_min)
-            half_range = 0.5 * (v_max - v_min)
-
-        half_range = max(half_range, min_half_range)
-
-        # ``half_range`` already lives in the scaled space; dividing by the scale made
-        # the padding negligibly small (e.g. 1e-8 for percentage targets).  Scaling the
-        # minimum padding keeps it meaningful regardless of the chosen value scale.
-        padding = max(1e-6 * self._value_target_scale_effective, half_range * 0.05)
-
-        half_range += padding
-        v_min = center - half_range
-        v_max = center + half_range
-
-        if v_max <= v_min:
-            raise RuntimeError(
-                f"Failed to compute a valid value support range: v_min={v_min}, v_max={v_max}"
-            )
-
-        if not self.v_range_initialized:
-            self.running_v_min = v_min
-            self.running_v_max = v_max
+            self.running_v_min = -float(self.ret_clip)
+            self.running_v_max = float(self.ret_clip)
             self.v_range_initialized = True
+            self.policy.update_atoms(self.running_v_min, self.running_v_max)
+
+            running_v_min_unscaled = self.running_v_min * ret_std_value + ret_mu_value
+            running_v_max_unscaled = self.running_v_max * ret_std_value + ret_mu_value
         else:
-            alpha = self.v_range_ema_alpha
-            ema_min = float((1.0 - alpha) * self.running_v_min + alpha * v_min)
-            ema_max = float((1.0 - alpha) * self.running_v_max + alpha * v_max)
-            self.running_v_min = min(ema_min, v_min)
-            self.running_v_max = max(ema_max, v_max)
+            if returns_tensor.numel() == 0:
+                robust_scale_value = 1.0
+            else:
+                robust_tensor = torch.quantile(returns_tensor.abs(), 0.95).clamp_min(1e-6)
+                robust_scale_value = float(robust_tensor.item())
+                if not math.isfinite(robust_scale_value) or robust_scale_value <= 0.0:
+                    robust_scale_value = 1.0
 
-        if self.running_v_max <= self.running_v_min:
-            self.running_v_min = v_min
-            self.running_v_max = v_max
+            self._value_target_scale_robust = robust_scale_value
+            effective_scale = base_scale / robust_scale_value
+            effective_scale = float(min(max(effective_scale, 1e-3), 1e3))  # мягкий клип
+            if not math.isfinite(effective_scale) or effective_scale <= 0.0:
+                effective_scale = base_scale
 
-        self.policy.update_atoms(self.running_v_min, self.running_v_max)
+            self._value_target_scale_effective = effective_scale
+            if self._value_clip_limit_unscaled is not None:
+                self._value_clip_limit_scaled = (
+                    self._value_clip_limit_unscaled * self._value_target_scale_effective
+                )
 
+            scaled_returns_tensor = returns_tensor * self._value_target_scale_effective
 
-        running_v_min_unscaled = self.running_v_min / self._value_target_scale_effective
-        running_v_max_unscaled = self.running_v_max / self._value_target_scale_effective
+            if self._value_clip_limit_unscaled is not None:
+                min_half_range = float(self._value_clip_limit_scaled)
+            else:
+                with torch.no_grad():
+                    min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
+            if not math.isfinite(min_half_range):
+                min_half_range = 0.0
+
+            if scaled_returns_tensor.numel() == 0:
+                v_min = -min_half_range
+                v_max = min_half_range
+            else:
+                quantile_bounds = torch.tensor(
+                    [0.02, 0.98], device=scaled_returns_tensor.device, dtype=scaled_returns_tensor.dtype
+                )
+                v_low, v_high = torch.quantile(scaled_returns_tensor, quantile_bounds)
+                raw_min = float(torch.min(scaled_returns_tensor).item())
+                raw_max = float(torch.max(scaled_returns_tensor).item())
+                v_min = float(min(v_low.item(), raw_min))
+                v_max = float(max(v_high.item(), raw_max))
+
+            if not math.isfinite(v_min) or not math.isfinite(v_max):
+                raise RuntimeError(
+                    f"Encountered non-finite return bounds when updating value support: {v_min}, {v_max}"
+                )
+
+            if v_max <= v_min:
+                center = v_min
+                half_range = 0.0
+            else:
+                center = 0.5 * (v_max + v_min)
+                half_range = 0.5 * (v_max - v_min)
+
+            half_range = max(half_range, min_half_range)
+
+            padding = max(1e-6 * self._value_target_scale_effective, half_range * 0.05)
+
+            half_range += padding
+            v_min = center - half_range
+            v_max = center + half_range
+
+            if v_max <= v_min:
+                raise RuntimeError(
+                    f"Failed to compute a valid value support range: v_min={v_min}, v_max={v_max}"
+                )
+
+            if not self.v_range_initialized:
+                self.running_v_min = v_min
+                self.running_v_max = v_max
+                self.v_range_initialized = True
+            else:
+                alpha = self.v_range_ema_alpha
+                ema_min = float((1.0 - alpha) * self.running_v_min + alpha * v_min)
+                ema_max = float((1.0 - alpha) * self.running_v_max + alpha * v_max)
+                self.running_v_min = min(ema_min, v_min)
+                self.running_v_max = max(ema_max, v_max)
+
+            if self.running_v_max <= self.running_v_min:
+                self.running_v_min = v_min
+                self.running_v_max = v_max
+
+            self.policy.update_atoms(self.running_v_min, self.running_v_max)
+
+            running_v_min_unscaled = self.running_v_min / self._value_target_scale_effective
+            running_v_max_unscaled = self.running_v_max / self._value_target_scale_effective
+
+        ret_mu_tensor = torch.as_tensor(ret_mu_value, device=self.device, dtype=torch.float32)
+        ret_std_tensor = torch.as_tensor(ret_std_value, device=self.device, dtype=torch.float32)
 
         self.logger.record("train/v_min", running_v_min_unscaled)
         self.logger.record("train/v_max", running_v_max_unscaled)
@@ -1082,6 +1166,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/value_target_scale_robust", float(self._value_target_scale_robust))
         if self._value_clip_limit_unscaled is not None:
             self.logger.record("train/value_clip_limit", float(self._value_clip_limit_unscaled))
+        self.logger.record("train/ret_mean", float(ret_mu_value))
+        self.logger.record("train/ret_std", float(ret_std_value))
+        self.logger.record("train/returns_abs_p95", float(ret_abs_p95_value))
 
         if not (0.0 < float(self.gamma) <= 1.0):
             raise RuntimeError(f"Invalid discount factor 'gamma': {self.gamma}")
@@ -1351,30 +1438,38 @@ class DistributionalPPO(RecurrentPPO):
 
                     value_logits_fp32 = value_logits.to(dtype=torch.float32)
                     with torch.no_grad():
-                        target_returns = rollout_data.returns.to(dtype=torch.float32)
+                        buffer_returns = rollout_data.returns.to(dtype=torch.float32)
+                        target_returns_raw = buffer_returns * base_scale_safe
 
                         if self._value_clip_limit_unscaled is not None:
-                            target_returns = torch.clamp(
-                                target_returns,
+                            target_returns_raw = torch.clamp(
+                                target_returns_raw,
                                 min=-self._value_clip_limit_unscaled,
                                 max=self._value_clip_limit_unscaled,
                             )
 
-                        target_returns_scaled = (
-                            target_returns * self._value_target_scale_effective
-                        )
-
-                        if self._value_clip_limit_scaled is not None:
-                            target_returns_scaled = torch.clamp(
-                                target_returns_scaled,
-                                min=-self._value_clip_limit_scaled,
-                                max=self._value_clip_limit_scaled,
+                        if self.normalize_returns:
+                            target_returns_norm = (
+                                (target_returns_raw - ret_mu_tensor) / ret_std_tensor
+                            ).clamp(
+                                -self.ret_clip, self.ret_clip
                             )
+                        else:
+                            target_returns_norm = (
+                                (target_returns_raw / base_scale_safe)
+                                * self._value_target_scale_effective
+                            )
+                            if self._value_clip_limit_scaled is not None:
+                                target_returns_norm = torch.clamp(
+                                    target_returns_norm,
+                                    min=-self._value_clip_limit_scaled,
+                                    max=self._value_clip_limit_scaled,
+                                )
 
                         delta_z = (self.policy.v_max - self.policy.v_min) / float(
                             self.policy.num_atoms - 1
                         )
-                        clamped_targets = target_returns_scaled.clamp(
+                        clamped_targets = target_returns_norm.clamp(
                             self.policy.v_min, self.policy.v_max
                         )
                         b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
@@ -1412,13 +1507,13 @@ class DistributionalPPO(RecurrentPPO):
                                 target_distribution[same_indices] = 0.0
                                 target_distribution[same_indices, lower_bound[same_indices]] = 1.0
 
-                        target_return_batches.append(target_returns.reshape(-1, 1).detach())
+                        target_return_batches.append(target_returns_raw.reshape(-1, 1).detach())
 
                         below_frac = float(
-                            (target_returns_scaled < self.policy.v_min).float().mean().item()
+                            (target_returns_norm < self.policy.v_min).float().mean().item()
                         )
                         above_frac = float(
-                            (target_returns_scaled > self.policy.v_max).float().mean().item()
+                            (target_returns_norm > self.policy.v_max).float().mean().item()
                         )
                         clamp_below_sum += below_frac * weight
                         clamp_above_sum += above_frac * weight
@@ -1431,18 +1526,26 @@ class DistributionalPPO(RecurrentPPO):
 
                     with torch.no_grad():
 
-                        mean_values_batch = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
-                        mean_values_flat = mean_values_batch.view(-1)
-                        target_returns_flat = target_returns.view(-1)
+                        mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(
+                            dim=1, keepdim=True
+                        )
+                        if self.normalize_returns:
+                            mean_values_unscaled = (
+                                mean_values_norm * ret_std_tensor + ret_mu_tensor
+                            )
+                        else:
+                            mean_values_unscaled = (
+                                mean_values_norm / self._value_target_scale_effective
+                            ) * base_scale_safe
+
+                        mean_values_flat = mean_values_unscaled.view(-1)
+                        target_returns_flat = target_returns_raw.view(-1)
                         mse_tensor = F.mse_loss(
-                            mean_values_flat / self._value_target_scale_effective,
+                            mean_values_flat,
                             target_returns_flat,
                             reduction="mean",
                         )
                         bucket_value_mse_value += float(mse_tensor.item()) * weight
-                        mean_values_unscaled = (
-                            mean_values_batch / self._value_target_scale_effective
-                        )
 
                         if self._value_clip_limit_unscaled is not None:
                             mean_values_unscaled = torch.clamp(
@@ -1455,9 +1558,14 @@ class DistributionalPPO(RecurrentPPO):
                     predicted_cvar = calculate_cvar(
                         pred_probs_fp32, self.policy.atoms, self.cvar_alpha
                     )
-                    cvar_raw = (
-                        predicted_cvar / self._value_target_scale_effective
-                    ).mean()
+                    if self.normalize_returns:
+                        cvar_raw = (
+                            predicted_cvar * ret_std_tensor + ret_mu_tensor
+                        ).mean()
+                    else:
+                        cvar_raw = (
+                            predicted_cvar / self._value_target_scale_effective
+                        ).mean() * base_scale_safe
 
                     cvar_loss = -cvar_raw
                     cvar_term = current_cvar_weight * cvar_loss
@@ -1630,13 +1738,16 @@ class DistributionalPPO(RecurrentPPO):
         if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
             rollout_returns = torch.as_tensor(
                 self.rollout_buffer.returns, device=self.device, dtype=torch.float32
-            )
+            ) * base_scale_safe
             with torch.no_grad():
                 pred_probs = torch.softmax(value_logits_final, dim=1)
-                y_pred_tensor = (
-                    (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
-                    / self._value_target_scale_effective
-                )
+                value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                if self.normalize_returns:
+                    y_pred_tensor = value_pred_norm * ret_std_tensor + ret_mu_tensor
+                else:
+                    y_pred_tensor = (
+                        value_pred_norm / self._value_target_scale_effective
+                    ) * base_scale_safe
                 if self._value_clip_limit_unscaled is not None:
                     y_pred_tensor = torch.clamp(
                         y_pred_tensor,
