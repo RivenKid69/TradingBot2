@@ -860,7 +860,7 @@ class DistributionalPPO(RecurrentPPO):
                     max=self._value_clip_limit_scaled,
                 )
 
-            scalar_values = scalar_values / self._value_target_scale_effective
+            scalar_values = scalar_values / self.value_target_scale  # стабильная шкала буфера (обычно =1)
             if self._value_clip_limit_unscaled is not None:
                 scalar_values = torch.clamp(
                     scalar_values,
@@ -884,7 +884,7 @@ class DistributionalPPO(RecurrentPPO):
             if raw_rewards.size > 0:
                 self.logger.record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
 
-            scaled_rewards = raw_rewards / self._value_target_scale_effective
+            scaled_rewards = raw_rewards / self.value_target_scale   # не трогаем rollout'ы динамическим скейлом
 
             self.num_timesteps += env.num_envs
 
@@ -933,7 +933,7 @@ class DistributionalPPO(RecurrentPPO):
                 max=self._value_clip_limit_scaled,
             )
 
-        last_scalar_values = last_scalar_values / self._value_target_scale_effective
+        last_scalar_values = last_scalar_values / self.value_target_scale
         if self._value_clip_limit_unscaled is not None:
             last_scalar_values = torch.clamp(
                 last_scalar_values,
@@ -985,6 +985,7 @@ class DistributionalPPO(RecurrentPPO):
 
         self._value_target_scale_robust = robust_scale_value
         effective_scale = base_scale / robust_scale_value
+        effective_scale = float(min(max(effective_scale, 1e-3), 1e3))  # мягкий клип
         if not math.isfinite(effective_scale) or effective_scale <= 0.0:
             effective_scale = base_scale
 
