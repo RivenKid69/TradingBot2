@@ -1157,6 +1157,13 @@ class TradingEnv(gym.Env):
         r_port = delta_pnl / denom
         if not math.isfinite(r_port):
             r_port = 0.0
+        else:
+            # Numerical guard: ensure log1p argument stays within domain [-1, +inf)
+            # Extreme losses combined with a very small denom can push r_port
+            # slightly below -1.0 due to rounding, which would raise a
+            # ValueError in math.log1p(). Clamp to a value infinitesimally
+            # greater than -1 to keep the reward computation stable.
+            r_port = max(r_port, -1.0 + 1e-12)
         reward = float(math.log1p(r_port) - turnover_penalty - trade_frequency_penalty)
         if not math.isfinite(reward):
             reward = 0.0
