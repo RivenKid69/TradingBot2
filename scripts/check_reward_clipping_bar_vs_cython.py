@@ -87,6 +87,7 @@ def _make_dummy_frame(length: int) -> pd.DataFrame:
             "low": ones,
             "close": ones,
             "price": ones,
+            "quote_asset_volume": ones,
             "ts_ms": ts,
         }
     )

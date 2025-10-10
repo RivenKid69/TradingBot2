@@ -1157,7 +1157,7 @@ class TradingEnv(gym.Env):
         ratio_raw = new_net_worth / denom if denom > 0.0 else 1.0
         if not math.isfinite(ratio_raw):
             ratio_raw = 1.0
-        ratio_clipped = float(np.clip(ratio_raw, 1e-4, 10.0).item())
+        ratio_clipped = float(np.clip(ratio_raw, 1e-4, 10.0))
         penalties = turnover_penalty + trade_frequency_penalty
         reward = float(math.log(ratio_clipped) - penalties)
         if not math.isfinite(reward):

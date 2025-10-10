@@ -98,6 +98,7 @@ def _make_frame(n: int) -> pd.DataFrame:
             "low": ones,
             "close": ones,
             "price": ones,
+            "quote_asset_volume": ones,
             "ts_ms": idx,
         }
     )

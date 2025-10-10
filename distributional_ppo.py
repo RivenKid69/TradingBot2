@@ -1394,7 +1394,7 @@ class DistributionalPPO(RecurrentPPO):
             if raw_rewards.size > 0:
                 self.logger.record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
                 frac_gt_log10 = float(np.mean(raw_rewards > math.log(10.0)))
-                self.logger.record("debug/reward_gt_log10_frac", frac_gt_log10)
+                self.logger.record("rollout/reward_gt_log10_frac", frac_gt_log10)
 
             scaled_rewards = (
                 raw_rewards / self.value_target_scale
