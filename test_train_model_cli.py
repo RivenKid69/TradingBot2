@@ -1,41 +1,228 @@
 import sys
 import types
 
+import numpy as np
 import pandas as pd
 import pytest
 
 
 def _install_sb3_stub():
-    if "sb3_contrib" in sys.modules:
-        return
+    sb3_contrib = sys.modules.get("sb3_contrib")
+    if sb3_contrib is None:
+        sb3_contrib = types.ModuleType("sb3_contrib")
+        sb3_contrib.__path__ = []  # mark as package
+        sys.modules["sb3_contrib"] = sb3_contrib
+    if not hasattr(sb3_contrib, "RecurrentPPO"):
+        class _RecurrentPPO:  # pragma: no cover - placeholder
+            pass
 
-    sb3_contrib = types.ModuleType("sb3_contrib")
-    sb3_contrib.__path__ = []  # mark as package
-    sys.modules["sb3_contrib"] = sb3_contrib
+        sb3_contrib.RecurrentPPO = _RecurrentPPO
 
-    common = types.ModuleType("sb3_contrib.common")
+    common = sys.modules.setdefault(
+        "sb3_contrib.common", types.ModuleType("sb3_contrib.common")
+    )
     common.__path__ = []
-    sys.modules["sb3_contrib.common"] = common
     sb3_contrib.common = common  # type: ignore[attr-defined]
 
-    recurrent = types.ModuleType("sb3_contrib.common.recurrent")
+    recurrent = sys.modules.setdefault(
+        "sb3_contrib.common.recurrent", types.ModuleType("sb3_contrib.common.recurrent")
+    )
     recurrent.__path__ = []
-    sys.modules["sb3_contrib.common.recurrent"] = recurrent
     common.recurrent = recurrent  # type: ignore[attr-defined]
 
-    policies = types.ModuleType("sb3_contrib.common.recurrent.policies")
+    policies = sys.modules.setdefault(
+        "sb3_contrib.common.recurrent.policies",
+        types.ModuleType("sb3_contrib.common.recurrent.policies"),
+    )
+
     class _DummyPolicy:  # pragma: no cover - simple placeholder
         pass
 
-    policies.RecurrentActorCriticPolicy = _DummyPolicy
-    sys.modules["sb3_contrib.common.recurrent.policies"] = policies
+    policies.RecurrentActorCriticPolicy = getattr(
+        policies, "RecurrentActorCriticPolicy", _DummyPolicy
+    )
     recurrent.policies = policies  # type: ignore[attr-defined]
 
-    type_aliases = types.ModuleType("sb3_contrib.common.recurrent.type_aliases")
-    type_aliases.RNNStates = object  # pragma: no cover - placeholder type
-    sys.modules["sb3_contrib.common.recurrent.type_aliases"] = type_aliases
+    buffers = sys.modules.setdefault(
+        "sb3_contrib.common.recurrent.buffers",
+        types.ModuleType("sb3_contrib.common.recurrent.buffers"),
+    )
+
+    class _DummyBuffer:  # pragma: no cover - simple placeholder
+        pass
+
+    buffers.RecurrentRolloutBuffer = getattr(
+        buffers, "RecurrentRolloutBuffer", _DummyBuffer
+    )
+    recurrent.buffers = buffers  # type: ignore[attr-defined]
+
+    type_aliases = sys.modules.setdefault(
+        "sb3_contrib.common.recurrent.type_aliases",
+        types.ModuleType("sb3_contrib.common.recurrent.type_aliases"),
+    )
+    type_aliases.RNNStates = getattr(type_aliases, "RNNStates", object)
     recurrent.type_aliases = type_aliases  # type: ignore[attr-defined]
 
+
+    sb3 = sys.modules.setdefault("stable_baselines3", types.ModuleType("stable_baselines3"))
+    sb3.__path__ = []
+
+    common_sb3 = sys.modules.setdefault(
+        "stable_baselines3.common", types.ModuleType("stable_baselines3.common")
+    )
+    common_sb3.__path__ = []
+    sb3.common = common_sb3  # type: ignore[attr-defined]
+
+    policies_mod = types.ModuleType("stable_baselines3.common.policies")
+
+    class _ActorCriticPolicy:  # pragma: no cover - placeholder
+        pass
+
+    policies_mod.ActorCriticPolicy = _ActorCriticPolicy
+    sys.modules["stable_baselines3.common.policies"] = policies_mod
+    common_sb3.policies = policies_mod  # type: ignore[attr-defined]
+
+    vec_env_mod = types.ModuleType("stable_baselines3.common.vec_env")
+    vec_env_mod.__path__ = []
+    vec_env_mod.__spec__ = types.SimpleNamespace(submodule_search_locations=[])
+    sys.modules["stable_baselines3.common.vec_env"] = vec_env_mod
+
+    class _VecEnv:  # pragma: no cover - placeholder
+        pass
+
+    class _DummyVecEnv(_VecEnv):  # pragma: no cover - placeholder
+        pass
+
+    class _SubprocVecEnv(_VecEnv):  # pragma: no cover - placeholder
+        pass
+
+    class _VecMonitor:  # pragma: no cover - placeholder
+        pass
+
+    vec_env_mod.VecEnv = _VecEnv
+    vec_env_mod.DummyVecEnv = _DummyVecEnv
+    vec_env_mod.SubprocVecEnv = _SubprocVecEnv
+    vec_env_mod.VecMonitor = _VecMonitor
+    common_sb3.vec_env = vec_env_mod  # type: ignore[attr-defined]
+
+    base_vec_env_mod = types.ModuleType("stable_baselines3.common.vec_env.base_vec_env")
+
+    class _VecEnvWrapper(_VecEnv):  # pragma: no cover - placeholder
+        def __init__(self, env):
+            self.env = env
+
+    base_vec_env_mod.VecEnv = _VecEnv
+    base_vec_env_mod.VecEnvWrapper = _VecEnvWrapper
+    base_vec_env_mod.CloudpickleWrapper = object
+    sys.modules["stable_baselines3.common.vec_env.base_vec_env"] = base_vec_env_mod
+
+    vec_monitor_mod = types.ModuleType("stable_baselines3.common.vec_env.vec_monitor")
+
+    class _VecMonitorWrapper(_VecEnv):  # pragma: no cover - placeholder
+        pass
+
+    vec_monitor_mod.VecMonitor = _VecMonitorWrapper
+    sys.modules["stable_baselines3.common.vec_env.vec_monitor"] = vec_monitor_mod
+
+    vec_util_mod = types.ModuleType("stable_baselines3.common.vec_env.util")
+
+    def _is_vecenv_wrapped(env, wrapper_class):  # pragma: no cover - placeholder
+        return isinstance(env, wrapper_class)
+
+    vec_util_mod.is_vecenv_wrapped = _is_vecenv_wrapped
+    sys.modules["stable_baselines3.common.vec_env.util"] = vec_util_mod
+
+    vec_norm_mod = types.ModuleType("stable_baselines3.common.vec_env.vec_normalize")
+    sys.modules["stable_baselines3.common.vec_env.vec_normalize"] = vec_norm_mod
+
+    class _VecNormalize(_VecEnv):  # pragma: no cover - placeholder
+        training = True
+
+    vec_norm_mod.VecNormalize = _VecNormalize
+    vec_norm_mod.unwrap_vec_normalize = lambda env: None
+
+    callbacks_mod = types.ModuleType("stable_baselines3.common.callbacks")
+    sys.modules["stable_baselines3.common.callbacks"] = callbacks_mod
+
+    class _BaseCallback:  # pragma: no cover - placeholder
+        pass
+
+    class _EvalCallback(_BaseCallback):  # pragma: no cover - placeholder
+        pass
+
+    class _CallbackList(_BaseCallback):  # pragma: no cover - placeholder
+        pass
+
+    callbacks_mod.BaseCallback = _BaseCallback
+    callbacks_mod.EvalCallback = _EvalCallback
+    callbacks_mod.CallbackList = _CallbackList
+
+    running_mean_std = types.ModuleType("stable_baselines3.common.running_mean_std")
+    sys.modules["stable_baselines3.common.running_mean_std"] = running_mean_std
+
+    class _RunningMeanStd:  # pragma: no cover - placeholder
+        def __init__(self, shape=()):
+            if isinstance(shape, tuple):
+                array_shape = shape
+            elif isinstance(shape, list):
+                array_shape = tuple(shape)
+            else:
+                array_shape = (shape,)
+            if array_shape == (None,) or array_shape == ((),):
+                array_shape = ()
+            self.mean = np.zeros(array_shape, dtype=np.float64)
+            self.var = np.ones(array_shape, dtype=np.float64)
+            self.count = 1.0
+
+        def update(self, batch: np.ndarray) -> None:
+            values = np.asarray(batch, dtype=np.float64)
+            batch_count = values.shape[0]
+            if batch_count == 0:
+                return
+            batch_mean = values.mean(axis=0)
+            batch_var = values.var(axis=0)
+            delta = batch_mean - self.mean
+            total_count = self.count + batch_count
+            new_mean = self.mean + delta * (batch_count / total_count)
+            m_a = self.var * self.count
+            m_b = batch_var * batch_count
+            adjustment = (delta**2) * (self.count * batch_count) / total_count
+            new_var = (m_a + m_b + adjustment) / total_count
+            self.mean = new_mean
+            self.var = new_var
+            self.count = total_count
+
+    running_mean_std.RunningMeanStd = _RunningMeanStd
+
+    type_aliases_sb3 = types.ModuleType("stable_baselines3.common.type_aliases")
+    sys.modules["stable_baselines3.common.type_aliases"] = type_aliases_sb3
+    type_aliases_sb3.GymEnv = object
+    type_aliases_sb3.Schedule = object
+
+    utils_mod = types.ModuleType("stable_baselines3.common.utils")
+
+    def _zip_strict(*iterables):  # pragma: no cover - placeholder
+        return zip(*iterables)
+
+    utils_mod.zip_strict = _zip_strict
+    sys.modules["stable_baselines3.common.utils"] = utils_mod
+
+    base_class_mod = types.ModuleType("stable_baselines3.common.base_class")
+
+    class _BaseAlgorithm:  # pragma: no cover - placeholder
+        pass
+
+    base_class_mod.BaseAlgorithm = _BaseAlgorithm
+    sys.modules["stable_baselines3.common.base_class"] = base_class_mod
+
+    monitor_mod = types.ModuleType("stable_baselines3.common.monitor")
+
+    class _Monitor:  # pragma: no cover - placeholder
+        def __init__(self, env, *_args, **_kwargs):
+            self.env = env
+
+    monitor_mod.Monitor = _Monitor
+    sys.modules["stable_baselines3.common.monitor"] = monitor_mod
 
 _install_sb3_stub()
 
@@ -118,7 +305,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
         ),
         algo=types.SimpleNamespace(
             actions={},
-            action_wrapper=types.SimpleNamespace(bins_vol=2),
+            action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
     )
 
@@ -185,7 +372,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
         ),
         algo=types.SimpleNamespace(
             actions={},
-            action_wrapper=types.SimpleNamespace(bins_vol=2),
+            action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
     )
 
@@ -251,7 +438,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
         ),
         algo=types.SimpleNamespace(
             actions={},
-            action_wrapper=types.SimpleNamespace(bins_vol=2),
+            action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
         optimization={"scheduler": {"enabled": False}},
     )
@@ -360,7 +547,7 @@ def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
         ),
         algo=types.SimpleNamespace(
             actions={},
-            action_wrapper=types.SimpleNamespace(bins_vol=2),
+            action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
     )
 

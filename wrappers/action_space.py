@@ -11,6 +11,9 @@ from gymnasium import ActionWrapper  # <-- ключевое: наследуем�
 from action_proto import ActionType, ActionProto
 
 
+VOLUME_LEVELS: np.ndarray = np.asarray([0.0, 0.2, 0.6, 1.0], dtype=np.float32)
+
+
 class DictToMultiDiscreteActionWrapper(ActionWrapper):
     """
     Convert Dict action space:
@@ -27,13 +30,19 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
     def __init__(
         self,
         env: Any,
-        bins_vol: int = 101,
+        bins_vol: int = 4,
         action_overrides: Mapping[str, Any] | None = None,
     ):
         # делаем класс полноценным Gymnasium-энвом
         super().__init__(env)
-        assert int(bins_vol) >= 2, "bins_vol must be >= 2"
-        self.bins_vol = int(bins_vol)
+        expected_bins = int(len(VOLUME_LEVELS))
+        bins_raw = int(bins_vol)
+        if bins_raw != expected_bins:
+            raise ValueError(
+                "BAR volume head requires exactly "
+                f"{expected_bins} bins (received {bins_raw})."
+            )
+        self.bins_vol = expected_bins
         normalized = self._normalize_overrides(action_overrides)
         self._lock_price_offset = normalized["lock_price_offset"]
         self._lock_ttl = normalized["lock_ttl"]
@@ -140,8 +149,7 @@ class DictToMultiDiscreteActionWrapper(ActionWrapper):
 
     def _vol_center(self, idx: int) -> float:
         idx = int(np.clip(idx, 0, self.bins_vol - 1))
-        step = 2.0 / (self.bins_vol - 1)
-        return float(-1.0 + step * idx)
+        return float(VOLUME_LEVELS[idx])
 
     # Метод ActionWrapper.action(a) преобразует действие ПЕРЕД вызовом env.step(...)
     def action(self, action):
@@ -223,4 +231,8 @@ class LongOnlyActionWrapper(ActionWrapper):
         return action
 
 
-__all__ = ["DictToMultiDiscreteActionWrapper", "LongOnlyActionWrapper"]
+__all__ = [
+    "DictToMultiDiscreteActionWrapper",
+    "LongOnlyActionWrapper",
+    "VOLUME_LEVELS",
+]

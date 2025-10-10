@@ -17,6 +17,7 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+from wrappers.action_space import VOLUME_LEVELS
 
 try:
     from stable_baselines3.common.vec_env.vec_normalize import unwrap_vec_normalize as _sb3_unwrap
@@ -143,6 +144,32 @@ class DistributionalPPO(RecurrentPPO):
         below_frac = (values_fp32 < support_min).float().mean().item()
         above_frac = (values_fp32 > support_max).float().mean().item()
         return float(below_frac), float(above_frac)
+
+    def _ensure_volume_head_config(self) -> None:
+        """Validate that policy and environment agree on BAR volume discretisation."""
+
+        policy = getattr(self, "policy", None)
+        if policy is not None:
+            head_sizes = getattr(policy, "_multi_head_sizes", None)
+            volume_idx = getattr(policy, "_volume_head_index", None)
+            if isinstance(head_sizes, (list, tuple)) and volume_idx is not None:
+                try:
+                    volume_bins = int(head_sizes[volume_idx])
+                except (TypeError, ValueError):
+                    volume_bins = -1
+                if volume_bins != VOLUME_HEAD_BINS:
+                    raise RuntimeError(
+                        "Loaded policy volume head is incompatible with BAR mode: "
+                        f"expected {VOLUME_HEAD_BINS} bins, got {volume_bins}."
+                    )
+
+        action_space = getattr(self, "action_space", None)
+        if isinstance(action_space, gym.spaces.MultiDiscrete):
+            if int(action_space.nvec[-1]) != VOLUME_HEAD_BINS:
+                raise RuntimeError(
+                    "Environment MultiDiscrete action space reports "
+                    f"{int(action_space.nvec[-1])} volume bins; expected {VOLUME_HEAD_BINS}."
+                )
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
@@ -484,6 +511,7 @@ class DistributionalPPO(RecurrentPPO):
         self._update_calls: int = 0
         self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
+        self._action_nvec_snapshot: Optional[tuple[int, ...]] = None
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
@@ -702,6 +730,14 @@ class DistributionalPPO(RecurrentPPO):
         kl_lr_scale_min_log_request = kl_lr_scale_min_requested
 
         super().__init__(policy=policy, env=env, **kwargs_local)
+
+        if isinstance(self.action_space, gym.spaces.MultiDiscrete):
+            nvec_list = self.action_space.nvec.tolist()
+            self._action_nvec_snapshot = tuple(int(x) for x in nvec_list)
+        else:
+            self._action_nvec_snapshot = None
+
+        self._ensure_volume_head_config()
 
         # Stable-Baselines3 lazily initialises the internal logger, but older
         # versions may skip creating ``self._logger`` when ``logger=None`` is
@@ -1278,6 +1314,7 @@ class DistributionalPPO(RecurrentPPO):
             self._last_lstm_states = self._clone_states_to_device(init_states, self.device)
 
         self.policy.set_training_mode(False)
+        self._ensure_volume_head_config()
 
         vec_normalize_env: Optional[VecNormalize] = None
         for candidate_env in (env, getattr(self, "env", None)):
@@ -1437,6 +1474,7 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
         self._refresh_kl_base_lrs()
+        self._ensure_volume_head_config()
 
         current_update = self._global_update_step
         # hard-kill any warmup coming from configs/CLI
@@ -1679,8 +1717,6 @@ class DistributionalPPO(RecurrentPPO):
 
         policy_entropy_sum = 0.0
         policy_entropy_count = 0
-        policy_entropy_volume_sum = 0.0
-        policy_entropy_volume_count = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -1816,6 +1852,11 @@ class DistributionalPPO(RecurrentPPO):
                         rollout_data.episode_starts,
                     )
 
+                    if log_prob.shape != rollout_data.old_log_prob.shape:
+                        raise RuntimeError(
+                            "Log-prob shape mismatch between rollout buffer and training step"
+                        )
+
                     advantages = rollout_data.advantages
                     if sample_count <= 0:
                         continue
@@ -1908,28 +1949,12 @@ class DistributionalPPO(RecurrentPPO):
                         if entropy_tensor.ndim > 1:
                             entropy_tensor = entropy_tensor.sum(dim=-1)
                         entropy_tensor = entropy_tensor.detach().to(dtype=torch.float32)
-                        policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
-                        policy_entropy_count += int(entropy_tensor.numel())
-
-                        try:
-                            comps = getattr(dist, "distributions", None)
-                            if comps is None:
-                                inner = getattr(dist, "distribution", None)
-                                comps = getattr(inner, "distributions", None)
-                            if isinstance(comps, (list, tuple)) and len(comps) > 0:
-                                vol_logits = comps[-1].logits
-                                vol_entropy_tensor = torch.distributions.Categorical(
-                                    logits=vol_logits
-                                ).entropy()
-                                vol_entropy_tensor = vol_entropy_tensor.detach().to(
-                                    dtype=torch.float32
-                                )
-                                policy_entropy_volume_sum += float(
-                                    vol_entropy_tensor.sum().cpu().item()
-                                )
-                                policy_entropy_volume_count += int(vol_entropy_tensor.numel())
-                        except Exception:
-                            pass
+                        if torch.any(
+                            entropy_tensor > MAX_VOLUME_ENTROPY + VOLUME_ENTROPY_TOLERANCE
+                        ):
+                            self.logger.record("warn/entropy_exceeds_theory", 1.0)
+                    policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
+                    policy_entropy_count += int(entropy_tensor.numel())
 
                     value_logits = self.policy.last_value_logits
                     if value_logits is None:
@@ -2246,13 +2271,13 @@ class DistributionalPPO(RecurrentPPO):
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
         self.logger.record("train/policy_entropy", float(avg_policy_entropy))
-
-        if policy_entropy_volume_count > 0:
-            avg_policy_entropy_volume = (
-                policy_entropy_volume_sum / float(policy_entropy_volume_count)
-            )
+        if self._action_nvec_snapshot is not None:
+            action_nvec_str = ",".join(str(x) for x in self._action_nvec_snapshot)
+            self.logger.record("train/action_bins_volume", VOLUME_HEAD_BINS)
             self.logger.record(
-                "train/policy_entropy_volume", float(avg_policy_entropy_volume)
+                "train/action_nvec",
+                action_nvec_str,
+                exclude=["tensorboard", "csv"],
             )
 
         if value_logits_final is None:
@@ -2506,3 +2531,31 @@ class DistributionalPPO(RecurrentPPO):
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
         )
+
+    @classmethod
+    def load(
+        cls,
+        path: str,
+        env: Optional[GymEnv] = None,
+        device: Union[str, torch.device] = "auto",
+        custom_objects: Optional[dict[str, Any]] = None,
+        print_system_info: bool = False,
+        force_reset: bool = True,
+        **kwargs: Any,
+    ) -> "DistributionalPPO":
+        model = super().load(
+            path,
+            env=env,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
+            force_reset=force_reset,
+            **kwargs,
+        )
+        if isinstance(model, DistributionalPPO):
+            model._ensure_volume_head_config()
+        return model
+VOLUME_HEAD_BINS = len(VOLUME_LEVELS)
+MAX_VOLUME_ENTROPY = math.log(VOLUME_HEAD_BINS)
+VOLUME_ENTROPY_TOLERANCE = 1e-3
+

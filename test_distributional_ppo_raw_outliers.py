@@ -179,8 +179,13 @@ def _install_rl_stubs() -> None:
         class _Discrete(_Space):  # pragma: no cover - stub for import
             pass
 
+        class _MultiDiscrete(_Space):  # pragma: no cover - stub for import
+            def __init__(self, nvec):
+                self.nvec = np.asarray(nvec, dtype=np.int64)
+
         spaces.Box = _Box
         spaces.Discrete = _Discrete
+        spaces.MultiDiscrete = _MultiDiscrete
         gymnasium.spaces = spaces
         sys.modules["gymnasium"] = gymnasium
         sys.modules["gymnasium.spaces"] = spaces
@@ -190,6 +195,31 @@ _install_rl_stubs()
 
 from distributional_ppo import DistributionalPPO
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+
+
+def test_volume_head_config_mismatch_detection():
+    spaces = sys.modules.get("gymnasium.spaces")
+    if spaces is None:
+        pytest.skip("gymnasium is required for volume head config checks")
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.policy = types.SimpleNamespace(
+        _multi_head_sizes=(201, 33, 4, 4),
+        _volume_head_index=3,
+    )
+    algo.action_space = spaces.MultiDiscrete([201, 33, 4, 4])
+
+    # Should not raise when configuration matches.
+    algo._ensure_volume_head_config()
+
+    algo.policy._multi_head_sizes = (201, 33, 4, 5)
+    with pytest.raises(RuntimeError, match="expected 4 bins"):
+        algo._ensure_volume_head_config()
+
+    algo.policy._multi_head_sizes = (201, 33, 4, 4)
+    algo.action_space = spaces.MultiDiscrete([201, 33, 4, 5])
+    with pytest.raises(RuntimeError, match="volume bins; expected 4"):
+        algo._ensure_volume_head_config()
 
 
 @pytest.mark.skipif(

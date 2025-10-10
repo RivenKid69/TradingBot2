@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 import numpy as np
 from gymnasium import spaces
 
-from wrappers.action_space import DictToMultiDiscreteActionWrapper
+from wrappers.action_space import DictToMultiDiscreteActionWrapper, VOLUME_LEVELS
 
 
 class _DummyEnv:
@@ -41,7 +41,7 @@ class _DummyEnv:
 
 def _wrap_action_space_if_needed(
     env,
-    bins_vol: int = 101,
+    bins_vol: int = len(VOLUME_LEVELS),
     *,
     action_overrides: dict[str, object] | None = None,
 ):
