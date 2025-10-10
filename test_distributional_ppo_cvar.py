@@ -3,10 +3,13 @@ import types
 
 import numpy as np
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="distributional_ppo tests require torch")
 
 
 pytest.importorskip("sb3_contrib", reason="distributional_ppo depends on sb3_contrib")
+
+from collections import deque
 
 from distributional_ppo import DistributionalPPO, calculate_cvar
 from stable_baselines3.common.running_mean_std import RunningMeanStd
@@ -87,6 +90,12 @@ def test_value_scale_snapshot_prevents_mismatch() -> None:
     model._ret_std_snapshot = snapshot_std
     model._value_scale_ema_beta = 0.5
     model._value_scale_max_rel_step = 0.25
+    model._value_scale_std_floor = 1e-2
+    model._value_scale_window_updates = 0
+    model._value_scale_recent_stats = deque()
+    model._value_scale_stats_initialized = True
+    model._value_scale_stats_mean = snapshot_mean
+    model._value_scale_stats_second = snapshot_std**2 + snapshot_mean**2
     model._pending_rms = RunningMeanStd(shape=())
     model._pending_rms.update(returns_raw)
     model._pending_ret_mean = snapshot_mean
