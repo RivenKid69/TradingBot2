@@ -1389,6 +1389,7 @@ def objective(trial: optuna.Trial,
         cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
     )
 
+    params["kl_exceed_stop_fraction"] = 0.0
     if kl_early_stop_cfg is not None:
         params["kl_exceed_stop_fraction"] = 0.25 if kl_early_stop_cfg else 0.0
 
@@ -1817,6 +1818,8 @@ def objective(trial: optuna.Trial,
     if policy_include_heads is not None:
         policy_arch_params.setdefault("include_heads", policy_include_heads)
 
+    assert "kl_exceed_stop_fraction" in params, "Missing KL exceed stop fraction parameter"
+
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,
         v_range_ema_alpha=params["v_range_ema_alpha"],
@@ -1851,6 +1854,7 @@ def objective(trial: optuna.Trial,
         kl_lr_decay=params["kl_lr_decay"],
         kl_epoch_decay=params["kl_epoch_decay"],
         kl_lr_scale_min=params["kl_lr_scale_min"],
+        kl_exceed_stop_fraction=params["kl_exceed_stop_fraction"],
 
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
