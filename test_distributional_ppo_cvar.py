@@ -1,4 +1,5 @@
 import math
+import types
 
 import numpy as np
 import pytest
@@ -7,7 +8,8 @@ import torch
 
 pytest.importorskip("sb3_contrib", reason="distributional_ppo depends on sb3_contrib")
 
-from distributional_ppo import calculate_cvar
+from distributional_ppo import DistributionalPPO, calculate_cvar
+from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 
 def _discrete_cvar_reference(probs: np.ndarray, atoms: np.ndarray, alpha: float) -> float:
@@ -53,3 +55,71 @@ def test_calculate_cvar_invalid_alpha(alpha: float) -> None:
 
     with pytest.raises(ValueError):
         calculate_cvar(probs, atoms, alpha)
+
+
+def test_value_scale_snapshot_prevents_mismatch() -> None:
+    returns_raw = np.array([100.0, 110.0, 90.0, 105.0], dtype=np.float32)
+    snapshot_mean = 0.0
+    snapshot_std = 1.0
+    returns_tensor = torch.tensor(returns_raw, dtype=torch.float32)
+
+    value_pred_norm = (returns_tensor - snapshot_mean) / snapshot_std
+    y_true_tensor = returns_tensor
+    mse_snapshot = torch.mean((value_pred_norm * snapshot_std + snapshot_mean - y_true_tensor) ** 2)
+
+    fresh_mean = float(np.mean(returns_raw))
+    fresh_std = float(np.std(returns_raw)) + 1e-8
+    mse_fresh = torch.mean((value_pred_norm * fresh_std + fresh_mean - y_true_tensor) ** 2)
+
+    assert mse_snapshot.item() == pytest.approx(0.0, abs=1e-6)
+    assert mse_fresh.item() > 1e3
+
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    model.normalize_returns = True
+    model.ret_clip = 5.0
+    model.ret_rms = RunningMeanStd(shape=())
+    model.ret_rms.mean[...] = snapshot_mean
+    model.ret_rms.var[...] = snapshot_std**2
+    model.ret_rms.count = 1.0
+    model._ret_mean_value = snapshot_mean
+    model._ret_std_value = snapshot_std
+    model._ret_mean_snapshot = snapshot_mean
+    model._ret_std_snapshot = snapshot_std
+    model._value_scale_ema_beta = 0.5
+    model._value_scale_max_rel_step = 0.25
+    model._pending_rms = RunningMeanStd(shape=())
+    model._pending_rms.update(returns_raw)
+    model._pending_ret_mean = snapshot_mean
+    model._pending_ret_std = snapshot_std
+    model._value_target_scale_effective = float(1.0 / (model.ret_clip * snapshot_std))
+    model._value_target_scale_robust = 1.0
+    model.running_v_min = -model.ret_clip
+    model.running_v_max = model.ret_clip
+    model.v_range_initialized = True
+    model.policy = types.SimpleNamespace(
+        atoms=torch.linspace(-model.ret_clip, model.ret_clip, steps=3),
+        update_atoms=lambda *_args, **_kwargs: None,
+    )
+
+    class _Recorder:
+        def __init__(self) -> None:
+            self.records: dict[str, float] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records[key] = float(value)
+
+    model.logger = _Recorder()
+
+    model._finalize_return_stats()
+
+    assert model._ret_mean_value == pytest.approx(model._ret_mean_snapshot)
+    assert model._ret_std_value == pytest.approx(model._ret_std_snapshot)
+    assert model._ret_std_value <= snapshot_std * (1.0 + model._value_scale_max_rel_step) + 1e-9
+    assert model._ret_std_value >= snapshot_std / (1.0 + model._value_scale_max_rel_step) - 1e-9
+
+    max_mean_delta = max(abs(snapshot_mean), model._ret_std_value, fresh_std) * model._value_scale_max_rel_step
+    assert abs(model._ret_mean_value - snapshot_mean) <= max_mean_delta + 1e-8
+
+    records = model.logger.records
+    assert records["train/value_scale_mean_next"] == pytest.approx(model._ret_mean_value)
+    assert records["train/value_scale_std_next"] == pytest.approx(model._ret_std_value)

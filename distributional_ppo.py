@@ -1,7 +1,8 @@
 import itertools
 import math
 from collections import deque
-from typing import Any, Iterable, Mapping, Optional, Sequence, Type, Union
+from collections.abc import Mapping
+from typing import Any, Iterable, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -159,6 +160,129 @@ class DistributionalPPO(RecurrentPPO):
                 f"'value_target_scale' must be a positive finite value, got {value_target_scale!r}"
             )
         return scale
+
+    def _activate_return_scale_snapshot(self) -> None:
+        """Freeze return statistics for the upcoming optimisation step."""
+
+        if not self.normalize_returns:
+            self._ret_mean_snapshot = float(self._ret_mean_value)
+            self._ret_std_snapshot = float(self._ret_std_value)
+            self._pending_rms = None
+            self._pending_ret_mean = None
+            self._pending_ret_std = None
+            return
+
+        self._ret_mean_snapshot = float(self._ret_mean_value)
+        self._ret_std_snapshot = max(float(self._ret_std_value), 1e-8)
+        self._pending_rms = RunningMeanStd(shape=())
+        self._pending_ret_mean = float(self._ret_mean_snapshot)
+        self._pending_ret_std = float(self._ret_std_snapshot)
+
+    def _limit_mean_step(self, old_value: float, proposed: float, reference_std: float) -> float:
+        max_rel_step = float(self._value_scale_max_rel_step)
+        if max_rel_step <= 0.0 or not math.isfinite(max_rel_step):
+            return float(proposed)
+
+        scale = max(abs(old_value), abs(reference_std), float(self._ret_std_snapshot), 1e-8)
+        max_delta = scale * max_rel_step
+        lower = old_value - max_delta
+        upper = old_value + max_delta
+        if lower > upper:
+            lower, upper = upper, lower
+        return float(min(max(proposed, lower), upper))
+
+    def _limit_std_step(self, old_value: float, proposed: float) -> float:
+        proposed = max(float(proposed), 1e-8)
+        max_rel_step = float(self._value_scale_max_rel_step)
+        if max_rel_step <= 0.0 or not math.isfinite(max_rel_step):
+            return proposed
+
+        base = max(float(old_value), 1e-8)
+        upper = base * (1.0 + max_rel_step)
+        lower = base / (1.0 + max_rel_step)
+        if lower > upper:
+            lower, upper = upper, lower
+        ratio = proposed / base
+        clamped_ratio = min(max(ratio, lower / base), upper / base)
+        return float(max(base * clamped_ratio, 1e-8))
+
+    def _finalize_return_stats(self) -> None:
+        """Commit accumulated return statistics after an optimisation step."""
+
+        if not self.normalize_returns:
+            self._ret_mean_snapshot = float(self._ret_mean_value)
+            self._ret_std_snapshot = float(self._ret_std_value)
+            self._pending_rms = None
+            self._pending_ret_mean = None
+            self._pending_ret_std = None
+            return
+
+        pending_rms = self._pending_rms
+        if pending_rms is None or pending_rms.count <= 1e-3:
+            # No fresh samples collected during this update.
+            self._ret_mean_snapshot = float(self._ret_mean_value)
+            self._ret_std_snapshot = max(float(self._ret_std_value), 1e-8)
+            self._pending_rms = None
+            self._pending_ret_mean = None
+            self._pending_ret_std = None
+            return
+
+        self.ret_rms.update_from_moments(
+            np.asarray(pending_rms.mean),
+            np.asarray(pending_rms.var),
+            float(pending_rms.count),
+        )
+
+        target_mean = float(np.asarray(self.ret_rms.mean).reshape(-1)[0])
+        target_var = float(np.asarray(self.ret_rms.var).reshape(-1)[0])
+        if not math.isfinite(target_var) or target_var < 0.0:
+            target_var = 0.0
+        target_std = math.sqrt(target_var) + 1e-8
+
+        self._pending_ret_mean = target_mean
+        self._pending_ret_std = target_std
+
+        ema_beta = float(self._value_scale_ema_beta)
+        old_mean = float(self._ret_mean_value)
+        old_std = float(self._ret_std_value)
+
+        proposed_mean = old_mean + ema_beta * (target_mean - old_mean)
+        proposed_std = old_std + ema_beta * (target_std - old_std)
+
+        new_mean = self._limit_mean_step(old_mean, proposed_mean, target_std)
+        new_std = self._limit_std_step(old_std, proposed_std)
+
+        self._ret_mean_value = float(new_mean)
+        self._ret_std_value = float(new_std)
+        self._ret_mean_snapshot = float(new_mean)
+        self._ret_std_snapshot = float(new_std)
+
+        denom = max(self.ret_clip * new_std, 1e-8)
+        self._value_target_scale_effective = float(1.0 / denom)
+        self._value_target_scale_robust = 1.0
+        target_v_min = -float(self.ret_clip)
+        target_v_max = float(self.ret_clip)
+        if not self.v_range_initialized:
+            self.running_v_min = target_v_min
+            self.running_v_max = target_v_max
+            self.v_range_initialized = True
+        else:
+            alpha = float(self.v_range_ema_alpha)
+            alpha = min(max(alpha, 0.0), 1.0)
+            ema_min = float((1.0 - alpha) * self.running_v_min + alpha * target_v_min)
+            ema_max = float((1.0 - alpha) * self.running_v_max + alpha * target_v_max)
+            self.running_v_min = min(ema_min, target_v_min)
+            self.running_v_max = max(ema_max, target_v_max)
+        self.policy.update_atoms(self.running_v_min, self.running_v_max)
+
+        running_v_min_unscaled = self.running_v_min * new_std + new_mean
+        running_v_max_unscaled = self.running_v_max * new_std + new_mean
+        self.logger.record("train/value_scale_mean_next", float(new_mean))
+        self.logger.record("train/value_scale_std_next", float(new_std))
+        self.logger.record("train/value_scale_vmin_next", float(running_v_min_unscaled))
+        self.logger.record("train/value_scale_vmax_next", float(running_v_max_unscaled))
+
+        self._pending_rms = None
 
     def __init__(
         self,
@@ -381,6 +505,32 @@ class DistributionalPPO(RecurrentPPO):
         self.ret_rms = RunningMeanStd(shape=())
         self._ret_mean_value = 0.0
         self._ret_std_value = 1.0
+        self._ret_mean_snapshot = 0.0
+        self._ret_std_snapshot = 1.0
+        self._pending_rms: Optional[RunningMeanStd] = None
+        self._pending_ret_mean: Optional[float] = None
+        self._pending_ret_std: Optional[float] = None
+        value_scale_cfg = kwargs_local.pop("value_scale", None)
+        value_scale_ema_beta = None
+        value_scale_max_rel_step = None
+        if isinstance(value_scale_cfg, Mapping):
+            value_scale_ema_beta = value_scale_cfg.get("ema_beta")
+            value_scale_max_rel_step = value_scale_cfg.get("max_rel_step")
+        elif value_scale_cfg is not None:
+            value_scale_ema_beta = getattr(value_scale_cfg, "ema_beta", None)
+            value_scale_max_rel_step = getattr(value_scale_cfg, "max_rel_step", None)
+
+        if value_scale_ema_beta is None:
+            value_scale_ema_beta = kwargs_local.pop("value_scale_ema_beta", 0.2)
+        if value_scale_max_rel_step is None:
+            value_scale_max_rel_step = kwargs_local.pop("value_scale_max_rel_step", 1.0)
+
+        self._value_scale_ema_beta = float(value_scale_ema_beta)
+        if not (0.0 < self._value_scale_ema_beta <= 1.0):
+            raise ValueError("'value_scale.ema_beta' must be in (0, 1]")
+        self._value_scale_max_rel_step = float(value_scale_max_rel_step)
+        if self._value_scale_max_rel_step < 0.0:
+            raise ValueError("'value_scale.max_rel_step' must be non-negative")
         self._value_target_scale_effective = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
         self._value_clip_limit_scaled: Optional[float] = None
@@ -975,6 +1125,7 @@ class DistributionalPPO(RecurrentPPO):
         entropy_loss_count = 0
 
         n_steps = 0
+        self._activate_return_scale_snapshot()
         rollout_buffer.reset()
         callback.on_rollout_start()
 
@@ -997,8 +1148,8 @@ class DistributionalPPO(RecurrentPPO):
 
             if self.normalize_returns:
                 # НЕТ raw-clip: просто де-нормализация и переход в буферную шкалу
-                ret_std_tensor = mean_values_norm.new_tensor(self._ret_std_value)
-                ret_mu_tensor = mean_values_norm.new_tensor(self._ret_mean_value)
+                ret_std_tensor = mean_values_norm.new_tensor(self._ret_std_snapshot)
+                ret_mu_tensor = mean_values_norm.new_tensor(self._ret_mean_snapshot)
                 scalar_values = (mean_values_norm * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
             else:
                 scalar_values = mean_values_norm
@@ -1077,8 +1228,8 @@ class DistributionalPPO(RecurrentPPO):
 
         if self.normalize_returns:
             # НЕТ raw-clip при терминальном значении
-            ret_std_tensor = last_mean_norm.new_tensor(self._ret_std_value)
-            ret_mu_tensor = last_mean_norm.new_tensor(self._ret_mean_value)
+            ret_std_tensor = last_mean_norm.new_tensor(self._ret_std_snapshot)
+            ret_mu_tensor = last_mean_norm.new_tensor(self._ret_mean_snapshot)
             last_scalar_values = (last_mean_norm * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
         else:
             last_scalar_values = last_mean_norm
@@ -1135,6 +1286,8 @@ class DistributionalPPO(RecurrentPPO):
         current_cvar_weight = self._compute_cvar_weight()
         self._current_cvar_weight = current_cvar_weight
 
+        self._activate_return_scale_snapshot()
+
         if current_update < 3:
             self.logger.record(
                 f"debug/update_{current_update}_vf_coef_effective", float(vf_coef_effective)
@@ -1157,21 +1310,39 @@ class DistributionalPPO(RecurrentPPO):
         else:
             ret_abs_p95_value = float(torch.quantile(returns_raw_tensor.abs(), 0.95).item())
 
-        ret_mu_value = self._ret_mean_value
-        ret_std_value = self._ret_std_value
+        ret_mu_value = float(self._ret_mean_snapshot)
+        ret_std_value = float(self._ret_std_snapshot)
+        pending_mean_value = ret_mu_value
+        pending_std_value = ret_std_value
 
         if self.normalize_returns:
-            if returns_raw_tensor.numel() > 0:
+            pending_rms = self._pending_rms
+            if pending_rms is not None and returns_raw_tensor.numel() > 0:
                 with torch.no_grad():
-                    self.ret_rms.update(returns_raw_tensor.detach().cpu().numpy())
+                    pending_rms.update(returns_raw_tensor.detach().cpu().numpy())
 
-            ret_mu_value = float(np.asarray(self.ret_rms.mean).reshape(-1)[0])
-            ret_var_value = float(np.asarray(self.ret_rms.var).reshape(-1)[0])
-            if not math.isfinite(ret_var_value) or ret_var_value < 0.0:
-                ret_var_value = 0.0
-            ret_std_value = math.sqrt(ret_var_value) + 1e-8
-            self._ret_mean_value = ret_mu_value
-            self._ret_std_value = ret_std_value
+            if pending_rms is not None and pending_rms.count > 1e-3:
+                merged_rms = RunningMeanStd(shape=())
+                base_count = float(self.ret_rms.count)
+                if base_count > 1e-3:
+                    merged_rms.update_from_moments(
+                        np.asarray(self.ret_rms.mean),
+                        np.asarray(self.ret_rms.var),
+                        base_count,
+                    )
+                merged_rms.update_from_moments(
+                    np.asarray(pending_rms.mean),
+                    np.asarray(pending_rms.var),
+                    float(pending_rms.count),
+                )
+                pending_mean_value = float(np.asarray(merged_rms.mean).reshape(-1)[0])
+                pending_var_value = float(np.asarray(merged_rms.var).reshape(-1)[0])
+                if not math.isfinite(pending_var_value) or pending_var_value < 0.0:
+                    pending_var_value = 0.0
+                pending_std_value = math.sqrt(pending_var_value) + 1e-8
+
+            self._pending_ret_mean = float(pending_mean_value)
+            self._pending_ret_std = float(pending_std_value)
 
             self._value_target_scale_robust = 1.0
             denom = max(self.ret_clip * ret_std_value, 1e-8)
@@ -1179,9 +1350,19 @@ class DistributionalPPO(RecurrentPPO):
             if self._value_clip_limit_unscaled is not None:
                 self._value_clip_limit_scaled = None
 
-            self.running_v_min = -float(self.ret_clip)
-            self.running_v_max = float(self.ret_clip)
-            self.v_range_initialized = True
+            target_v_min = -float(self.ret_clip)
+            target_v_max = float(self.ret_clip)
+            if not self.v_range_initialized:
+                self.running_v_min = target_v_min
+                self.running_v_max = target_v_max
+                self.v_range_initialized = True
+            else:
+                alpha = float(self.v_range_ema_alpha)
+                alpha = min(max(alpha, 0.0), 1.0)
+                ema_min = float((1.0 - alpha) * self.running_v_min + alpha * target_v_min)
+                ema_max = float((1.0 - alpha) * self.running_v_max + alpha * target_v_max)
+                self.running_v_min = min(ema_min, target_v_min)
+                self.running_v_max = max(ema_max, target_v_max)
             self.policy.update_atoms(self.running_v_min, self.running_v_max)
 
             running_v_min_unscaled = self.running_v_min * ret_std_value + ret_mu_value
@@ -1289,6 +1470,9 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/value_clip_limit", float(self._value_clip_limit_unscaled))
         self.logger.record("train/ret_mean", float(ret_mu_value))
         self.logger.record("train/ret_std", float(ret_std_value))
+        if self._pending_ret_mean is not None and self._pending_ret_std is not None:
+            self.logger.record("train/ret_mean_candidate", float(self._pending_ret_mean))
+            self.logger.record("train/ret_std_candidate", float(self._pending_ret_std))
         self.logger.record("train/returns_abs_p95", float(ret_abs_p95_value))
 
         if not (0.0 < float(self.gamma) <= 1.0):
@@ -1325,6 +1509,9 @@ class DistributionalPPO(RecurrentPPO):
         clamp_below_sum = 0.0
         clamp_above_sum = 0.0
         clamp_weight = 0.0
+        clamp_below_raw_sum = 0.0
+        clamp_above_raw_sum = 0.0
+        clamp_raw_weight = 0.0
 
         adv_mean_accum = 0.0
         adv_std_accum = 0.0
@@ -1572,10 +1759,23 @@ class DistributionalPPO(RecurrentPPO):
                                 max=self._value_clip_limit_unscaled,
                             )
 
+                        weight_before_raw = weight
+                        weight = float(target_returns_raw.numel())
+
                         if self.normalize_returns:
-                            target_returns_norm = (
-                                (target_returns_raw - ret_mu_tensor) / ret_std_tensor
-                            ).clamp(
+                            raw_norm = (target_returns_raw - ret_mu_tensor) / ret_std_tensor
+                            above_raw = (raw_norm > self.ret_clip).float().mean()
+                            below_raw = (raw_norm < -self.ret_clip).float().mean()
+                            self.logger.record(
+                                "train/value_target_above_frac_raw", float(above_raw.item())
+                            )
+                            self.logger.record(
+                                "train/value_target_below_frac_raw", float(below_raw.item())
+                            )
+                            clamp_above_raw_sum += float(above_raw.item()) * weight
+                            clamp_below_raw_sum += float(below_raw.item()) * weight
+                            clamp_raw_weight += weight
+                            target_returns_norm = raw_norm.clamp(
                                 -self.ret_clip, self.ret_clip
                             )
                         else:
@@ -1589,6 +1789,8 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_scaled,
                                     max=self._value_clip_limit_scaled,
                                 )
+
+                        weight = weight_before_raw
 
                         delta_z = (self.policy.v_max - self.policy.v_min) / float(
                             self.policy.num_atoms - 1
@@ -1947,6 +2149,15 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
         self.logger.record("train/cvar_weight_effective", float(current_cvar_weight))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
+        if clamp_raw_weight > 0.0:
+            self.logger.record(
+                "train/value_target_below_frac_raw",
+                clamp_below_raw_sum / clamp_raw_weight,
+            )
+            self.logger.record(
+                "train/value_target_above_frac_raw",
+                clamp_above_raw_sum / clamp_raw_weight,
+            )
         if clamp_weight > 0.0:
             self.logger.record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
             self.logger.record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
@@ -2030,6 +2241,8 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record(
                 "train/value_rmse", float(math.sqrt(np.mean(np.square(diff_np))))
             )
+
+        self._finalize_return_stats()
 
     def learn(
         self,
