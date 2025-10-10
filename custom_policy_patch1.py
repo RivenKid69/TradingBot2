@@ -26,6 +26,7 @@ from stable_baselines3.common.type_aliases import Schedule  # тип коллб�
 from stable_baselines3.common.utils import zip_strict
 
 from action_proto import ActionType
+from wrappers.action_space import VOLUME_LEVELS
 
 
 
@@ -64,6 +65,9 @@ class _CategoricalAdapter:
 
     def __init__(self, logits: torch.Tensor) -> None:
         self._dist = torch.distributions.Categorical(logits=logits)
+        # Expose the wrapped distribution via a public attribute so that
+        # downstream code does not need to rely on the private ``_dist`` name.
+        self.distribution = self._dist
 
     def sample(self) -> torch.Tensor:
         return self._dist.sample()
@@ -171,6 +175,18 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             self._type_head_index = None
         if not hasattr(self, "_volume_head_index"):
             self._volume_head_index = None
+
+        self._expected_volume_bins = len(VOLUME_LEVELS)
+        if (
+            self._volume_head_index is not None
+            and self._multi_head_sizes
+            and int(self._multi_head_sizes[self._volume_head_index]) != self._expected_volume_bins
+        ):
+            raise ValueError(
+                "Volume head configuration mismatch:"
+                f" expected {self._expected_volume_bins} bins, got"
+                f" {self._multi_head_sizes[self._volume_head_index]}"
+            )
 
         try:
             self._bar_market_type_index = int(ActionType.MARKET)
@@ -440,6 +456,46 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         start = int(sum(self._multi_head_sizes[: self._volume_head_index]))
         end = start + int(self._multi_head_sizes[self._volume_head_index])
         return action_logits[..., start:end]
+
+    def _volume_actions_from_tensor(self, actions: torch.Tensor) -> torch.Tensor:
+        if actions.ndim == 1:
+            return actions.to(dtype=torch.long)
+        if actions.ndim > 2:
+            actions = actions.reshape(actions.shape[0], -1)
+        idx = self._volume_head_index
+        if idx is None:
+            idx = actions.shape[-1] - 1
+        return actions[:, idx].to(dtype=torch.long)
+
+    def _volume_categorical(
+        self, distribution: torch.distributions.Distribution
+    ) -> torch.distributions.Categorical:
+        if isinstance(distribution, _CategoricalAdapter):
+            inner = getattr(distribution, "distribution", None) or getattr(
+                distribution, "_dist", None
+            )
+            if inner is None:
+                raise RuntimeError(
+                    "Categorical adapter does not expose an underlying distribution"
+                )
+            logits = getattr(inner, "logits", None)
+            if logits is None:
+                raise RuntimeError("Categorical adapter lacks logits attribute")
+            return torch.distributions.Categorical(logits=logits)
+
+        comps = self._iter_multi_heads(distribution)
+        if comps is None:
+            raise RuntimeError("Distribution does not expose multi-head components")
+        if not comps:
+            raise RuntimeError("Empty multi-head distribution components")
+        idx = self._volume_head_index
+        if idx is None or idx >= len(comps):
+            idx = len(comps) - 1
+        categorical = comps[idx]
+        logits = getattr(categorical, "logits", None)
+        if logits is None:
+            raise RuntimeError("Volume categorical component lacks logits")
+        return torch.distributions.Categorical(logits=logits)
 
     def _bar_action_distribution(self, latent_pi: torch.Tensor) -> _CategoricalAdapter:
         action_logits = self.action_net(latent_pi)
@@ -908,40 +964,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if self._multi_discrete_nvec is None:
             return distribution.log_prob(actions)
 
-        comps = self._iter_multi_heads(distribution)
-        if comps is None:
+        try:
+            categorical = self._volume_categorical(distribution)
+        except RuntimeError:
             return distribution.log_prob(actions)
 
-        weights = self._loss_head_weights_for_device(comps[0].logits.device)
-        if weights is None or len(comps) != int(weights.shape[0]):
-            return distribution.log_prob(actions)
-
-        actions_tensor = torch.as_tensor(actions, device=comps[0].logits.device)
-        if actions_tensor.ndim == 1:
-            actions_tensor = actions_tensor.view(-1, len(comps))
-        elif actions_tensor.ndim > 2:
-            actions_tensor = actions_tensor.reshape(actions_tensor.shape[0], len(comps))
-        actions_tensor = actions_tensor.to(dtype=torch.long)
-
-        log_prob_sum = None
-        for idx, (categorical, weight) in enumerate(zip(comps, weights)):
-            if torch.is_tensor(weight):
-                weight_value = float(weight.detach().cpu().item())
-            else:
-                weight_value = float(weight)
-            if not math.isfinite(weight_value) or abs(weight_value) < 1e-12:
-                continue
-            head_log_prob = categorical.log_prob(actions_tensor[:, idx])
-            if head_log_prob.ndim > 1:
-                head_log_prob = head_log_prob.sum(dim=-1)
-            head_log_prob = head_log_prob * weight_value
-            log_prob_sum = head_log_prob if log_prob_sum is None else (log_prob_sum + head_log_prob)
-
-        if log_prob_sum is None:
-            base = comps[0].logits
-            return base.new_zeros(actions_tensor.shape[0])
-
-        return log_prob_sum
+        actions_tensor = torch.as_tensor(actions, device=categorical.logits.device)
+        volume_actions = self._volume_actions_from_tensor(actions_tensor)
+        return categorical.log_prob(volume_actions)
 
     def weighted_entropy(
         self, distribution: torch.distributions.Distribution
@@ -949,30 +979,12 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if self._multi_discrete_nvec is None:
             return distribution.entropy()
 
-        comps = self._iter_multi_heads(distribution)
-        if comps is None:
+        try:
+            categorical = self._volume_categorical(distribution)
+        except RuntimeError:
             return distribution.entropy()
 
-        weights = self._loss_head_weights_for_device(comps[0].logits.device)
-        if weights is None or len(comps) != int(weights.shape[0]):
-            return distribution.entropy()
-
-        ent_sum = None
-        for categorical, weight in zip(comps, weights):
-            if torch.is_tensor(weight):
-                weight_value = float(weight.detach().cpu().item())
-            else:
-                weight_value = float(weight)
-            if not math.isfinite(weight_value) or abs(weight_value) < 1e-12:
-                continue
-            head_entropy = categorical.entropy() * weight_value
-            ent_sum = head_entropy if ent_sum is None else (ent_sum + head_entropy)
-
-        if ent_sum is None:
-            base = comps[0].logits
-            return base.new_zeros(base.shape[0])
-
-        return ent_sum
+        return categorical.entropy()
 
     @property
     def last_value_logits(self) -> Optional[torch.Tensor]:

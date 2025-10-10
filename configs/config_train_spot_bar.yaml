@@ -46,7 +46,7 @@ algo:
     fixed_price_offset_ticks: 0
     lock_ttl: true
     fixed_ttl_steps: 0
-    bins_vol: 6
+    bins_vol: 4
 
 components:
   market_data:

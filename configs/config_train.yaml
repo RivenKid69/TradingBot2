@@ -53,8 +53,8 @@ model:
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.10                   # не душим обновления (0.1–0.2 норма)
-    ent_coef: 0.001                    # дайте политике «подышать»
-    ent_coef_final: 0.0002
+    ent_coef: 0.00129248               # scaled by ln(6)/ln(4) to preserve entropy weight
+    ent_coef_final: 0.0002585
     ent_coef_decay_steps: 400          # плавнее убывание (≈ первые 30% апдейтов)
     ent_coef_plateau_window: 24
     ent_coef_plateau_tolerance: 0.002
@@ -134,7 +134,7 @@ algo:
     fixed_price_offset_ticks: 0
     lock_ttl: true
     fixed_ttl_steps: 0
-    bins_vol: 6            # более «тонкие» объёмы → не вечный HOLD и не «all-in»
+    bins_vol: 4            # BAR volume head fixed to four discrete fractions [0.0, 0.2, 0.6, 1.0]
 
 loss_masks:
   include_heads:
