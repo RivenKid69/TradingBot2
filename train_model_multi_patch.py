@@ -2195,6 +2195,21 @@ def main():
                 and "vf_coef" in original_model_param_keys
             ):
                 continue
+
+            if (
+                block == "model"
+                and key == "params"
+                and isinstance(value, Mapping)
+            ):
+                existing_params = block_dict.get("params")
+                if isinstance(existing_params, Mapping):
+                    merged_params = dict(existing_params)
+                    merged_params.update(dict(value))
+                else:
+                    merged_params = dict(value)
+                block_dict["params"] = merged_params
+                continue
+
             _assign_nested(block_dict, key, value)
             if block == "data" and isinstance(block_dict, MutableMapping):
                 _propagate_train_window_alias(block_dict, key, value)
