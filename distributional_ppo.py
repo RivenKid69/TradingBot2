@@ -133,6 +133,18 @@ class DistributionalPPO(RecurrentPPO):
         return tuple(states)
 
     @staticmethod
+    def _value_target_outlier_fractions(
+        values: torch.Tensor, support_min: float, support_max: float
+    ) -> tuple[float, float]:
+        if values.numel() == 0:
+            return 0.0, 0.0
+
+        values_fp32 = values.to(dtype=torch.float32)
+        below_frac = (values_fp32 < support_min).float().mean().item()
+        above_frac = (values_fp32 > support_max).float().mean().item()
+        return float(below_frac), float(above_frac)
+
+    @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
         if value_target_scale is None:
             return 1.0
@@ -644,6 +656,7 @@ class DistributionalPPO(RecurrentPPO):
             pass
         # Диагностика
         self.logger.record("debug/raw_value_clip_enabled", 0.0 if self.normalize_returns else 1.0)
+        self._value_target_raw_outlier_warn_threshold = 0.01
 
         self.bc_warmup_steps = max(0, int(bc_warmup_steps))
         self.bc_decay_steps = max(0, int(bc_decay_steps))
@@ -1512,6 +1525,8 @@ class DistributionalPPO(RecurrentPPO):
         clamp_below_raw_sum = 0.0
         clamp_above_raw_sum = 0.0
         clamp_raw_weight = 0.0
+        raw_outlier_warn_count = 0
+        raw_outlier_frac_max = 0.0
 
         adv_mean_accum = 0.0
         adv_std_accum = 0.0
@@ -1760,35 +1775,45 @@ class DistributionalPPO(RecurrentPPO):
                             )
 
                         weight_before_raw = weight
-                        weight = float(target_returns_raw.numel())
+                        raw_weight = float(target_returns_raw.numel())
 
                         if self.normalize_returns:
-                            raw_norm = (target_returns_raw - ret_mu_tensor) / ret_std_tensor
-                            above_raw = (raw_norm > self.ret_clip).float().mean()
-                            below_raw = (raw_norm < -self.ret_clip).float().mean()
-                            self.logger.record(
-                                "train/value_target_above_frac_raw", float(above_raw.item())
-                            )
-                            self.logger.record(
-                                "train/value_target_below_frac_raw", float(below_raw.item())
-                            )
-                            clamp_above_raw_sum += float(above_raw.item()) * weight
-                            clamp_below_raw_sum += float(below_raw.item()) * weight
-                            clamp_raw_weight += weight
-                            target_returns_norm = raw_norm.clamp(
+                            target_returns_norm_raw = (
+                                target_returns_raw - ret_mu_tensor
+                            ) / ret_std_tensor
+                            target_returns_norm = target_returns_norm_raw.clamp(
                                 -self.ret_clip, self.ret_clip
                             )
                         else:
-                            target_returns_norm = (
+                            target_returns_norm_raw = (
                                 (target_returns_raw / base_scale_safe)
                                 * self._value_target_scale_effective
                             )
+                            target_returns_norm = target_returns_norm_raw
                             if self._value_clip_limit_scaled is not None:
                                 target_returns_norm = torch.clamp(
                                     target_returns_norm,
                                     min=-self._value_clip_limit_scaled,
                                     max=self._value_clip_limit_scaled,
                                 )
+
+                        raw_below_frac, raw_above_frac = self._value_target_outlier_fractions(
+                            target_returns_norm_raw,
+                            float(self.policy.v_min),
+                            float(self.policy.v_max),
+                        )
+                        self.logger.record("train/value_target_below_frac_raw", raw_below_frac)
+                        self.logger.record("train/value_target_above_frac_raw", raw_above_frac)
+                        clamp_below_raw_sum += raw_below_frac * raw_weight
+                        clamp_above_raw_sum += raw_above_frac * raw_weight
+                        clamp_raw_weight += raw_weight
+                        raw_outlier_frac = raw_below_frac + raw_above_frac
+                        raw_outlier_frac_max = max(raw_outlier_frac_max, raw_outlier_frac)
+                        if raw_outlier_frac > self._value_target_raw_outlier_warn_threshold:
+                            raw_outlier_warn_count += 1
+                            self.logger.record(
+                                "warn/value_target_raw_outlier_frac", float(raw_outlier_frac)
+                            )
 
                         weight = weight_before_raw
 
@@ -2161,6 +2186,15 @@ class DistributionalPPO(RecurrentPPO):
         if clamp_weight > 0.0:
             self.logger.record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
             self.logger.record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
+        self.logger.record(
+            "train/value_target_raw_outlier_threshold",
+            float(self._value_target_raw_outlier_warn_threshold),
+        )
+        self.logger.record("train/value_target_raw_outlier_max_frac", raw_outlier_frac_max)
+        if raw_outlier_warn_count > 0:
+            self.logger.record(
+                "warn/value_target_raw_outlier_batches", float(raw_outlier_warn_count)
+            )
         self.logger.record("train/ent_coef_initial", float(self.ent_coef_initial))
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
