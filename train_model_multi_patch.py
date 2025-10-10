@@ -1243,6 +1243,10 @@ def objective(trial: optuna.Trial,
     kl_early_stop_cfg = _coerce_optional_bool(
         _get_model_param_value(cfg, "kl_early_stop"), "kl_early_stop"
     )
+    kl_exceed_stop_fraction_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_exceed_stop_fraction"),
+        "kl_exceed_stop_fraction",
+    )
     seed_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "seed"), "seed"
     )
@@ -1413,7 +1417,14 @@ def objective(trial: optuna.Trial,
         cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
     )
 
-    params["kl_exceed_stop_fraction"] = 0.25 if kl_early_stop_cfg else 0.0
+    if kl_exceed_stop_fraction_cfg is not None:
+        kl_exceed_stop_fraction_value = float(np.clip(kl_exceed_stop_fraction_cfg, 0.0, 1.0))
+    elif kl_early_stop_cfg:
+        kl_exceed_stop_fraction_value = 0.25
+    else:
+        kl_exceed_stop_fraction_value = 0.0
+
+    params["kl_exceed_stop_fraction"] = kl_exceed_stop_fraction_value
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]

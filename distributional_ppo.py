@@ -198,7 +198,7 @@ class DistributionalPPO(RecurrentPPO):
         kl_lr_decay: float = 0.5,
         kl_epoch_decay: float = 0.5,
         kl_lr_scale_min: float = 0.01,
-        kl_exceed_stop_fraction: float = 0.4,
+        kl_exceed_stop_fraction: float = 0.25,
         kl_penalty_beta: float = 0.0,
         kl_penalty_beta_min: float = 0.0,
         kl_penalty_beta_max: float = 0.1,
