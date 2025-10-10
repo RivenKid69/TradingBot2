@@ -35,7 +35,8 @@ import hashlib
 import random
 from copy import deepcopy
 from functools import lru_cache
-from typing import Any, Callable, Dict, Mapping, MutableMapping, Sequence
+from collections.abc import Mapping
+from typing import Any, Callable, Dict, MutableMapping, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -1291,6 +1292,30 @@ def objective(trial: optuna.Trial,
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
     )
+    value_scale_cfg = _get_model_param_value(cfg, "value_scale")
+    value_scale_ema_beta_cfg = None
+    value_scale_max_rel_step_cfg = None
+    if isinstance(value_scale_cfg, Mapping):
+        value_scale_ema_beta_cfg = _coerce_optional_float(
+            value_scale_cfg.get("ema_beta"), "value_scale.ema_beta"
+        )
+        value_scale_max_rel_step_cfg = _coerce_optional_float(
+            value_scale_cfg.get("max_rel_step"), "value_scale.max_rel_step"
+        )
+    elif value_scale_cfg is not None:
+        value_scale_ema_beta_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "ema_beta", None), "value_scale.ema_beta"
+        )
+        value_scale_max_rel_step_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "max_rel_step", None), "value_scale.max_rel_step"
+        )
+    else:
+        value_scale_ema_beta_cfg = _coerce_optional_float(
+            _get_model_param_value(cfg, "value_scale_ema_beta"), "value_scale_ema_beta"
+        )
+        value_scale_max_rel_step_cfg = _coerce_optional_float(
+            _get_model_param_value(cfg, "value_scale_max_rel_step"), "value_scale_max_rel_step"
+        )
     bc_warmup_steps_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "bc_warmup_steps"), "bc_warmup_steps"
     )
@@ -1379,6 +1404,12 @@ def objective(trial: optuna.Trial,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
 
+    params["value_scale_ema_beta"] = (
+        value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
+    )
+    params["value_scale_max_rel_step"] = (
+        value_scale_max_rel_step_cfg if value_scale_max_rel_step_cfg is not None else 1.0
+    )
     params["vf_coef_warmup"] = (
         vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else None
     )
@@ -1865,6 +1896,10 @@ def objective(trial: optuna.Trial,
         entropy_boost_factor=params["entropy_boost_factor"],
         entropy_boost_cap=params["entropy_boost_cap"],
         cvar_weight=params["cvar_weight"],
+        value_scale={
+            "ema_beta": params["value_scale_ema_beta"],
+            "max_rel_step": params["value_scale_max_rel_step"],
+        },
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
