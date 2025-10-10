@@ -185,7 +185,9 @@ class DistributionalPPO(RecurrentPPO):
             return
 
         self._ret_mean_snapshot = float(self._ret_mean_value)
-        self._ret_std_snapshot = max(float(self._ret_std_value), 1e-8)
+        self._ret_std_snapshot = max(
+            float(self._ret_std_value), self._value_scale_std_floor
+        )
         self._pending_rms = RunningMeanStd(shape=())
         self._pending_ret_mean = float(self._ret_mean_snapshot)
         self._pending_ret_std = float(self._ret_std_snapshot)
@@ -218,6 +220,102 @@ class DistributionalPPO(RecurrentPPO):
         clamped_ratio = min(max(ratio, lower / base), upper / base)
         return float(max(base * clamped_ratio, 1e-8))
 
+    def _extract_rms_stats(
+        self, rms: Optional[RunningMeanStd]
+    ) -> Optional[tuple[float, float, float]]:
+        if rms is None:
+            return None
+        count = float(rms.count)
+        if not math.isfinite(count) or count <= 1e-3:
+            return None
+        mean = float(np.asarray(rms.mean).reshape(-1)[0])
+        var = float(np.asarray(rms.var).reshape(-1)[0])
+        if not math.isfinite(mean):
+            mean = 0.0
+        if not math.isfinite(var) or var < 0.0:
+            var = 0.0
+        return mean, var, count
+
+    def _summarize_recent_return_stats(
+        self,
+        sample_mean: float,
+        sample_var: float,
+        sample_weight: float,
+        *,
+        buffer: Optional[deque[tuple[float, float, float]]] = None,
+        inplace: bool = True,
+    ) -> tuple[float, float, float, deque[tuple[float, float, float]]]:
+        sample_var = max(float(sample_var), 0.0)
+        sample_weight = max(float(sample_weight), 0.0)
+        if buffer is None:
+            buffer = self._value_scale_recent_stats
+        if self._value_scale_window_updates <= 0:
+            return sample_mean, sample_var, sample_weight, buffer
+
+        if inplace:
+            target_buffer = buffer
+        else:
+            target_buffer = deque(
+                buffer, maxlen=self._value_scale_window_updates or None
+            )
+
+        if sample_weight > 0.0:
+            target_buffer.append((sample_mean, sample_var, sample_weight))
+
+        if not target_buffer:
+            return sample_mean, sample_var, sample_weight, target_buffer
+
+        total_weight = float(sum(entry[2] for entry in target_buffer))
+        if not math.isfinite(total_weight) or total_weight <= 0.0:
+            return sample_mean, sample_var, 0.0, target_buffer
+
+        mean_weighted = float(
+            sum(entry[0] * entry[2] for entry in target_buffer) / total_weight
+        )
+        second_weighted = float(
+            sum((entry[1] + entry[0] * entry[0]) * entry[2] for entry in target_buffer)
+            / total_weight
+        )
+        var_weighted = max(second_weighted - mean_weighted * mean_weighted, 0.0)
+        return mean_weighted, var_weighted, total_weight, target_buffer
+
+    def _apply_return_stats_ema(
+        self,
+        sample_mean: float,
+        sample_var: float,
+        sample_weight: float,
+        *,
+        base_mean: Optional[float] = None,
+        base_second: Optional[float] = None,
+        base_initialized: Optional[bool] = None,
+    ) -> tuple[float, float, float, bool]:
+        sample_var = max(float(sample_var), 0.0)
+        sample_weight = max(float(sample_weight), 0.0)
+        sample_second = sample_var + sample_mean * sample_mean
+        if base_mean is None:
+            base_mean = float(self._value_scale_stats_mean)
+        if base_second is None:
+            base_second = float(self._value_scale_stats_second)
+        if base_initialized is None:
+            base_initialized = bool(self._value_scale_stats_initialized)
+
+        if sample_weight <= 0.0:
+            var_existing = max(base_second - base_mean * base_mean, 0.0)
+            return base_mean, var_existing, base_second, base_initialized
+
+        if not base_initialized:
+            new_mean = float(sample_mean)
+            new_second = float(sample_second)
+            new_var = max(new_second - new_mean * new_mean, 0.0)
+            return new_mean, new_var, new_second, True
+
+        beta = float(self._value_scale_ema_beta)
+        one_minus = 1.0 - beta
+        new_mean = float(one_minus * base_mean + beta * sample_mean)
+        new_second = float(one_minus * base_second + beta * sample_second)
+        new_var = max(new_second - new_mean * new_mean, 0.0)
+        return new_mean, new_var, new_second, True
+
     def _finalize_return_stats(self) -> None:
         """Commit accumulated return statistics after an optimisation step."""
 
@@ -233,43 +331,77 @@ class DistributionalPPO(RecurrentPPO):
         if pending_rms is None or pending_rms.count <= 1e-3:
             # No fresh samples collected during this update.
             self._ret_mean_snapshot = float(self._ret_mean_value)
-            self._ret_std_snapshot = max(float(self._ret_std_value), 1e-8)
+            self._ret_std_snapshot = max(
+                float(self._ret_std_value), self._value_scale_std_floor
+            )
             self._pending_rms = None
             self._pending_ret_mean = None
             self._pending_ret_std = None
             return
 
-        self.ret_rms.update_from_moments(
-            np.asarray(pending_rms.mean),
-            np.asarray(pending_rms.var),
-            float(pending_rms.count),
-        )
+        sample_stats = self._extract_rms_stats(pending_rms)
+        if sample_stats is None:
+            self._ret_mean_snapshot = float(self._ret_mean_value)
+            self._ret_std_snapshot = max(float(self._ret_std_value), self._value_scale_std_floor)
+            self._pending_rms = None
+            self._pending_ret_mean = None
+            self._pending_ret_std = None
+            return
 
-        target_mean = float(np.asarray(self.ret_rms.mean).reshape(-1)[0])
-        target_var = float(np.asarray(self.ret_rms.var).reshape(-1)[0])
-        if not math.isfinite(target_var) or target_var < 0.0:
-            target_var = 0.0
-        target_std = math.sqrt(target_var) + 1e-8
+        sample_mean, sample_var, sample_weight = sample_stats
+        (
+            blended_mean,
+            blended_var,
+            blended_weight,
+            updated_buffer,
+        ) = self._summarize_recent_return_stats(
+            sample_mean,
+            sample_var,
+            sample_weight,
+            inplace=True,
+        )
+        self._value_scale_recent_stats = updated_buffer
+
+        (
+            target_mean,
+            target_var,
+            target_second,
+            target_initialized,
+        ) = self._apply_return_stats_ema(blended_mean, blended_var, blended_weight)
+        self._value_scale_stats_mean = target_mean
+        self._value_scale_stats_second = target_second
+        self._value_scale_stats_initialized = target_initialized
+
+        target_std = max(math.sqrt(max(target_var, 0.0)), self._value_scale_std_floor)
+        self.ret_rms.mean[...] = target_mean
+        self.ret_rms.var[...] = target_std * target_std
+        # NOTE: The EMA smoothing decouples ``ret_rms.count`` from the true number of
+        # samples.  Keep it at ``>= 1`` to satisfy SB3 invariants while flagging the
+        # behaviour via debug/value_scale_ret_count_virtualized.
+        self.ret_rms.count = max(float(self.ret_rms.count), 1.0)
 
         self._pending_ret_mean = target_mean
         self._pending_ret_std = target_std
 
-        ema_beta = float(self._value_scale_ema_beta)
         old_mean = float(self._ret_mean_value)
-        old_std = float(self._ret_std_value)
+        old_std = max(float(self._ret_std_value), self._value_scale_std_floor)
 
-        proposed_mean = old_mean + ema_beta * (target_mean - old_mean)
-        proposed_std = old_std + ema_beta * (target_std - old_std)
+        proposed_mean = float(target_mean)
+        proposed_std = float(target_std)
 
         new_mean = self._limit_mean_step(old_mean, proposed_mean, target_std)
         new_std = self._limit_std_step(old_std, proposed_std)
+        new_std = max(new_std, self._value_scale_std_floor)
 
         self._ret_mean_value = float(new_mean)
         self._ret_std_value = float(new_std)
         self._ret_mean_snapshot = float(new_mean)
         self._ret_std_snapshot = float(new_std)
 
-        denom = max(self.ret_clip * new_std, 1e-8)
+        denom = max(
+            self.ret_clip * new_std,
+            self.ret_clip * self._value_scale_std_floor,
+        )
         self._value_target_scale_effective = float(1.0 / denom)
         self._value_target_scale_robust = 1.0
         target_v_min = -float(self.ret_clip)
@@ -525,17 +657,27 @@ class DistributionalPPO(RecurrentPPO):
         value_scale_cfg = kwargs_local.pop("value_scale", None)
         value_scale_ema_beta = None
         value_scale_max_rel_step = None
+        value_scale_std_floor = None
+        value_scale_window_updates = None
         if isinstance(value_scale_cfg, Mapping):
             value_scale_ema_beta = value_scale_cfg.get("ema_beta")
             value_scale_max_rel_step = value_scale_cfg.get("max_rel_step")
+            value_scale_std_floor = value_scale_cfg.get("std_floor")
+            value_scale_window_updates = value_scale_cfg.get("window_updates")
         elif value_scale_cfg is not None:
             value_scale_ema_beta = getattr(value_scale_cfg, "ema_beta", None)
             value_scale_max_rel_step = getattr(value_scale_cfg, "max_rel_step", None)
+            value_scale_std_floor = getattr(value_scale_cfg, "std_floor", None)
+            value_scale_window_updates = getattr(value_scale_cfg, "window_updates", None)
 
         if value_scale_ema_beta is None:
             value_scale_ema_beta = kwargs_local.pop("value_scale_ema_beta", 0.2)
         if value_scale_max_rel_step is None:
             value_scale_max_rel_step = kwargs_local.pop("value_scale_max_rel_step", 1.0)
+        if value_scale_std_floor is None:
+            value_scale_std_floor = kwargs_local.pop("value_scale_std_floor", 1e-2)
+        if value_scale_window_updates is None:
+            value_scale_window_updates = kwargs_local.pop("value_scale_window_updates", 0)
 
         self._value_scale_ema_beta = float(value_scale_ema_beta)
         if not (0.0 < self._value_scale_ema_beta <= 1.0):
@@ -543,6 +685,16 @@ class DistributionalPPO(RecurrentPPO):
         self._value_scale_max_rel_step = float(value_scale_max_rel_step)
         if self._value_scale_max_rel_step < 0.0:
             raise ValueError("'value_scale.max_rel_step' must be non-negative")
+        self._value_scale_std_floor = max(float(value_scale_std_floor), 1e-8)
+        self._value_scale_window_updates = int(value_scale_window_updates)
+        if self._value_scale_window_updates < 0:
+            raise ValueError("'value_scale.window_updates' must be non-negative")
+        self._value_scale_recent_stats: deque[tuple[float, float, float]] = deque(
+            maxlen=self._value_scale_window_updates or None
+        )
+        self._value_scale_stats_initialized = False
+        self._value_scale_stats_mean = 0.0
+        self._value_scale_stats_second = 1.0
         self._value_target_scale_effective = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
         self._value_clip_limit_scaled: Optional[float] = None
@@ -564,6 +716,16 @@ class DistributionalPPO(RecurrentPPO):
         # Early debug diagnostics ensure configuration mismatches are visible in logs.
         self.logger.record("debug/vf_coef_target", float(self._vf_coef_target))
         self.logger.record("debug/vf_coef_warmup", float(self._vf_coef_warmup))
+
+        self.logger.record("debug/value_scale_ema_beta", float(self._value_scale_ema_beta))
+        self.logger.record(
+            "debug/value_scale_max_rel_step", float(self._value_scale_max_rel_step)
+        )
+        self.logger.record("debug/value_scale_std_floor", float(self._value_scale_std_floor))
+        self.logger.record(
+            "debug/value_scale_window_updates", float(self._value_scale_window_updates)
+        )
+        self.logger.record("debug/value_scale_ret_count_virtualized", 1.0)
 
         self.logger.record("debug/patch_tag", 1.0)
         self.logger.record("debug/loaded_from", 1.0)
@@ -1335,30 +1497,46 @@ class DistributionalPPO(RecurrentPPO):
                     pending_rms.update(returns_raw_tensor.detach().cpu().numpy())
 
             if pending_rms is not None and pending_rms.count > 1e-3:
-                merged_rms = RunningMeanStd(shape=())
-                base_count = float(self.ret_rms.count)
-                if base_count > 1e-3:
-                    merged_rms.update_from_moments(
-                        np.asarray(self.ret_rms.mean),
-                        np.asarray(self.ret_rms.var),
-                        base_count,
+                sample_stats = self._extract_rms_stats(pending_rms)
+                if sample_stats is not None:
+                    (
+                        blended_mean,
+                        blended_var,
+                        blended_weight,
+                        _,
+                    ) = self._summarize_recent_return_stats(
+                        sample_stats[0],
+                        sample_stats[1],
+                        sample_stats[2],
+                        inplace=False,
                     )
-                merged_rms.update_from_moments(
-                    np.asarray(pending_rms.mean),
-                    np.asarray(pending_rms.var),
-                    float(pending_rms.count),
-                )
-                pending_mean_value = float(np.asarray(merged_rms.mean).reshape(-1)[0])
-                pending_var_value = float(np.asarray(merged_rms.var).reshape(-1)[0])
-                if not math.isfinite(pending_var_value) or pending_var_value < 0.0:
-                    pending_var_value = 0.0
-                pending_std_value = math.sqrt(pending_var_value) + 1e-8
+                    (
+                        preview_mean,
+                        preview_var,
+                        _,
+                        _,
+                    ) = self._apply_return_stats_ema(
+                        blended_mean,
+                        blended_var,
+                        blended_weight,
+                        base_mean=float(self._value_scale_stats_mean),
+                        base_second=float(self._value_scale_stats_second),
+                        base_initialized=bool(self._value_scale_stats_initialized),
+                    )
+                    pending_mean_value = float(preview_mean)
+                    pending_std_value = max(
+                        math.sqrt(max(preview_var, 0.0)),
+                        self._value_scale_std_floor,
+                    )
 
             self._pending_ret_mean = float(pending_mean_value)
             self._pending_ret_std = float(pending_std_value)
 
             self._value_target_scale_robust = 1.0
-            denom = max(self.ret_clip * ret_std_value, 1e-8)
+            denom = max(
+                self.ret_clip * ret_std_value,
+                self.ret_clip * self._value_scale_std_floor,
+            )
             self._value_target_scale_effective = float(1.0 / denom)
             if self._value_clip_limit_unscaled is not None:
                 self._value_clip_limit_scaled = None
