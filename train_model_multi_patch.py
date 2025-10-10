@@ -1260,6 +1260,23 @@ def objective(trial: optuna.Trial,
         "turnover_penalty_coef",
     )
 
+    if n_epochs_cfg is None:
+        raise ValueError(
+            "Invalid configuration: 'n_epochs' must be provided in cfg.model.params"
+        )
+    if target_kl_cfg is None:
+        raise ValueError(
+            "Invalid configuration: 'target_kl' must be provided in cfg.model.params"
+        )
+    if kl_early_stop_cfg is None:
+        raise ValueError(
+            "Invalid configuration: 'kl_early_stop' must be provided in cfg.model.params"
+        )
+    if turnover_penalty_coef_cfg is None:
+        raise ValueError(
+            "Invalid configuration: 'turnover_penalty_coef' must be provided in cfg.model.params"
+        )
+
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
     )
@@ -1315,7 +1332,7 @@ def objective(trial: optuna.Trial,
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
-        "n_epochs": n_epochs_cfg if n_epochs_cfg is not None else trial.suggest_int("n_epochs", 2, 4),
+        "n_epochs": int(n_epochs_cfg),
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
         "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
         "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
@@ -1331,7 +1348,7 @@ def objective(trial: optuna.Trial,
         "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
         "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.08, 0.12),
         "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
-        "target_kl": target_kl_cfg if target_kl_cfg is not None else trial.suggest_float("target_kl", 0.4, 1.6),
+        "target_kl": float(np.clip(target_kl_cfg, 0.02, 1.6)),
         "kl_lr_decay": kl_lr_decay_cfg if kl_lr_decay_cfg is not None else 0.5,
         "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
         "kl_lr_scale_min": kl_lr_scale_min_cfg if kl_lr_scale_min_cfg is not None else 0.1,
@@ -1389,9 +1406,7 @@ def objective(trial: optuna.Trial,
         cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
     )
 
-    params["kl_exceed_stop_fraction"] = 0.0
-    if kl_early_stop_cfg is not None:
-        params["kl_exceed_stop_fraction"] = 0.25 if kl_early_stop_cfg else 0.0
+    params["kl_exceed_stop_fraction"] = 0.25 if kl_early_stop_cfg else 0.0
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
@@ -1408,12 +1423,7 @@ def objective(trial: optuna.Trial,
             "trade_frequency_penalty", 1e-5, 5e-4, log=True
         )
 
-    if turnover_penalty_coef_cfg is not None:
-        params["turnover_penalty_coef"] = turnover_penalty_coef_cfg
-    else:
-        params["turnover_penalty_coef"] = trial.suggest_float(
-            "turnover_penalty_coef", 0.0, 5e-4
-        )
+    params["turnover_penalty_coef"] = turnover_penalty_coef_cfg
 
     cql_alpha_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cql_alpha"), "cql_alpha")
     if cql_alpha_cfg is not None:
@@ -1854,7 +1864,7 @@ def objective(trial: optuna.Trial,
         kl_lr_decay=params["kl_lr_decay"],
         kl_epoch_decay=params["kl_epoch_decay"],
         kl_lr_scale_min=params["kl_lr_scale_min"],
-        kl_exceed_stop_fraction=params["kl_exceed_stop_fraction"],
+        kl_exceed_stop_fraction=params.get("kl_exceed_stop_fraction"),
 
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
