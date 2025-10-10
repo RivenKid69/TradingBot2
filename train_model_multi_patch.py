@@ -1266,17 +1266,23 @@ def objective(trial: optuna.Trial,
     )
 
     if target_kl_cfg is None:
-        raise ValueError(
-            "Invalid configuration: 'target_kl' must be provided in cfg.model.params"
+        clip_reference = clip_range_cfg if clip_range_cfg is not None else 0.1
+        fallback_target_kl = float(np.clip(float(clip_reference), 0.02, 1.6))
+        print(
+            "Warning: cfg.model.params.target_kl is missing; "
+            f"defaulting to {fallback_target_kl:.4f} derived from clip_range."
         )
+        target_kl_cfg = fallback_target_kl
     if kl_early_stop_cfg is None:
-        raise ValueError(
-            "Invalid configuration: 'kl_early_stop' must be provided in cfg.model.params"
+        print(
+            "Warning: cfg.model.params.kl_early_stop is missing; defaulting to False"
         )
+        kl_early_stop_cfg = False
     if turnover_penalty_coef_cfg is None:
-        raise ValueError(
-            "Invalid configuration: 'turnover_penalty_coef' must be provided in cfg.model.params"
+        print(
+            "Warning: cfg.model.params.turnover_penalty_coef is missing; defaulting to 0.0"
         )
+        turnover_penalty_coef_cfg = 0.0
 
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
