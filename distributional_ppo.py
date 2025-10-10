@@ -559,8 +559,8 @@ class DistributionalPPO(RecurrentPPO):
         self._kl_base_param_lrs: list[float] = []
         self._refresh_kl_base_lrs()
 
-        self.kl_exceed_stop_fraction = float(kl_exceed_stop_fraction)
-        if not (0.0 <= self.kl_exceed_stop_fraction <= 1.0):
+        self._kl_exceed_stop_fraction = float(kl_exceed_stop_fraction)
+        if not (0.0 <= self._kl_exceed_stop_fraction <= 1.0):
             raise ValueError("'kl_exceed_stop_fraction' must be within [0, 1]")
 
         beta_min = max(0.0, float(kl_penalty_beta_min))
@@ -591,6 +591,12 @@ class DistributionalPPO(RecurrentPPO):
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
             policy_block_fn(self._critic_grad_blocked)
+
+    @property
+    def kl_exceed_stop_fraction(self) -> float:
+        """Return the configured KL exceed stop fraction."""
+
+        return self._kl_exceed_stop_fraction
 
     def _update_learning_rate(self, optimizer: Optional[torch.optim.Optimizer]) -> None:
         if optimizer is None:
