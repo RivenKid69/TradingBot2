@@ -295,7 +295,7 @@ class DistributionalPPO(RecurrentPPO):
         if cvar_activation_hysteresis_value < 0.0:
             raise ValueError("'cvar_activation_hysteresis' must be non-negative")
         cvar_ramp_updates_value = max(
-            1, int(kwargs_local.pop("cvar_ramp_updates", cvar_ramp_updates))
+            0, int(kwargs_local.pop("cvar_ramp_updates", cvar_ramp_updates))
         )
 
         kwargs_local["clip_range"] = clip_range_value
@@ -658,6 +658,9 @@ class DistributionalPPO(RecurrentPPO):
         if last_ev + hysteresis < threshold:
             self._cvar_ramp_progress = 0
             return 0.0
+        if self._cvar_ramp_updates <= 0:
+            self._cvar_ramp_progress = 0
+            return float(self._cvar_weight_target)
         self._cvar_ramp_progress = min(
             self._cvar_ramp_progress + 1, self._cvar_ramp_updates
         )

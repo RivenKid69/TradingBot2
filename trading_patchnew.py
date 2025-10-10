@@ -1150,7 +1150,14 @@ class TradingEnv(gym.Env):
         if not math.isfinite(trade_frequency_penalty):
             trade_frequency_penalty = 0.0
 
-        reward = float(delta_pnl - turnover_penalty - trade_frequency_penalty)
+        denom = prev_net_worth
+        if not math.isfinite(denom):
+            denom = 1e-12
+        denom = max(denom, 1e-12)
+        r_port = delta_pnl / denom
+        if not math.isfinite(r_port):
+            r_port = 0.0
+        reward = float(math.log1p(r_port) - turnover_penalty - trade_frequency_penalty)
         if not math.isfinite(reward):
             reward = 0.0
 

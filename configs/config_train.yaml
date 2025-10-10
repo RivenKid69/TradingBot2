@@ -73,19 +73,20 @@ model:
     batch_size: 64                     # типичный минибатч для PPO
     microbatch_size: 64
     seed: 20240518
-    target_kl: null                    # временно отключаем ранний стоп по KL
+    target_kl: 0.02                    # агрессивно контролируем дивергенцию
+    kl_early_stop: true
     kl_lr_decay: 1.0                   # не душить LR «за KL»
     kl_epoch_decay: 1.0
     kl_lr_scale_min: 0.10              # даже если включится — не в ноль
     trade_frequency_penalty: 0.0
-    turnover_penalty_coef: 0.0015      # SPOT/BAR: мягко душим лишний оборот
+    turnover_penalty_coef: 0.0005      # ≈ комиссия 5 bps в долях
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.05
     cvar_weight: 0.0
-    cvar_activation_threshold: 0.25
+    cvar_activation_threshold: 0.0
     cvar_activation_hysteresis: 0.05
-    cvar_ramp_updates: 6
+    cvar_ramp_updates: 0
     cvar_cap: 0.5
     use_torch_compile: false
     bc_warmup_steps: 200000
@@ -256,7 +257,7 @@ costs:
 
 reward:
   use_portfolio_pnl: true
-  turnover_penalty_coef: 0.0015
+  turnover_penalty_coef: 0.0005
 
 components:
   market_data:

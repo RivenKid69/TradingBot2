@@ -1170,6 +1170,26 @@ def objective(trial: optuna.Trial,
                 f"Invalid value '{value}' for '{key}' (expected float-compatible) in cfg.model.params"
             )
 
+    def _coerce_optional_bool(value, key: str):
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return bool(value)
+        if isinstance(value, (int, float)):
+            if value == 0 or value == 0.0:
+                return False
+            if value == 1 or value == 1.0:
+                return True
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in {"1", "true", "yes", "on"}:
+                return True
+            if lowered in {"0", "false", "no", "off"}:
+                return False
+        raise ValueError(
+            f"Invalid value '{value}' for '{key}' (expected boolean) in cfg.model.params"
+        )
+
     learning_rate_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "learning_rate"), "learning_rate"
     )
@@ -1214,6 +1234,9 @@ def objective(trial: optuna.Trial,
     )
     target_kl_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "target_kl"), "target_kl"
+    )
+    kl_early_stop_cfg = _coerce_optional_bool(
+        _get_model_param_value(cfg, "kl_early_stop"), "kl_early_stop"
     )
     seed_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "seed"), "seed"
@@ -1365,6 +1388,9 @@ def objective(trial: optuna.Trial,
     params["cvar_ramp_updates"] = (
         cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
     )
+
+    if kl_early_stop_cfg is not None:
+        params["kl_exceed_stop_fraction"] = 0.25 if kl_early_stop_cfg else 0.0
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
@@ -1706,7 +1732,7 @@ def objective(trial: optuna.Trial,
     target_kl_value = params.get("target_kl")
     if target_kl_value is not None:
         target_kl_value = float(target_kl_value)
-        params["target_kl"] = float(np.clip(target_kl_value, 0.4, 1.6))
+        params["target_kl"] = float(np.clip(target_kl_value, 0.02, 1.6))
 
     n_epochs_value = int(params.get("n_epochs", 2))
     params["n_epochs"] = max(min(n_epochs_value, 4), 2)
