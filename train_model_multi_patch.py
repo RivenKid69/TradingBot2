@@ -1232,6 +1232,11 @@ def objective(trial: optuna.Trial,
     n_epochs_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "n_epochs"), "n_epochs"
     )
+    if n_epochs_cfg is None:
+        # Некоторые конфиги (особенно легаси или кастомные CLI-переопределения)
+        # могут не содержать ``model.params.n_epochs``. Вместо жёсткого падения
+        # позволяем Optuna подобрать разумное значение в допустимом диапазоне.
+        n_epochs_cfg = trial.suggest_int("n_epochs", 2, 4)
     target_kl_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "target_kl"), "target_kl"
     )
@@ -1260,10 +1265,6 @@ def objective(trial: optuna.Trial,
         "turnover_penalty_coef",
     )
 
-    if n_epochs_cfg is None:
-        raise ValueError(
-            "Invalid configuration: 'n_epochs' must be provided in cfg.model.params"
-        )
     if target_kl_cfg is None:
         raise ValueError(
             "Invalid configuration: 'target_kl' must be provided in cfg.model.params"
