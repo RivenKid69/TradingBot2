@@ -48,17 +48,28 @@ class _TestMediator:
     def __init__(self, env: TradingEnv) -> None:
         self.env = env
         self.calls: list[ActionProto] = []
-        self._queue: deque[tuple[float, float]] = deque()
-        self._penalties: deque[float] = deque()
+        self._queue: deque[tuple[float, float, float, float]] = deque()
 
-    def queue(self, *, net_worth: float, penalty: float) -> None:
-        self._queue.append((float(net_worth), float(net_worth)))
-        self._penalties.append(float(penalty))
+    def queue(
+        self,
+        *,
+        net_worth: float,
+        turnover_notional: float,
+        fee_total: float,
+    ) -> None:
+        value = float(net_worth)
+        self._queue.append(
+            (
+                value,
+                value,
+                float(turnover_notional),
+                float(fee_total),
+            )
+        )
 
     def reset(self):
         self.calls.clear()
         self._queue.clear()
-        self._penalties.clear()
         return np.zeros(self.env.observation_space.shape, dtype=np.float32), {}
 
     def set_market_context(self, **_: object) -> None:
@@ -69,14 +80,14 @@ class _TestMediator:
         obs = np.zeros(self.env.observation_space.shape, dtype=np.float32)
         if not self._queue:
             return obs, 0.0, False, False, {}
-        net_worth, cash = self._queue.popleft()
-        penalty = self._penalties.popleft()
+        net_worth, cash, turnover_notional, fee_total = self._queue.popleft()
         self.env.state.net_worth = net_worth
         self.env.state.cash = cash
         self.env.state.units = 0.0
         return obs, 0.0, False, False, {
-            "turnover_penalty": penalty,
-            "turnover": 0.0,
+            "executed_notional": turnover_notional,
+            "turnover": turnover_notional,
+            "fee_total": fee_total,
         }
 
 
@@ -117,6 +128,7 @@ def test_reward_clip_bar_matches_reference() -> None:
     mediator.reset()
 
     prev_net_worth = float(env.state.net_worth)
+    env.turnover_penalty_coef = 0.05
 
     rewards = []
 
@@ -132,20 +144,64 @@ def test_reward_clip_bar_matches_reference() -> None:
         denom = max(prev_net_worth, 1e-9)
         ratio_raw = _sample_ratio(rng)
         next_net_worth = ratio_raw * denom
-        penalty = float(rng.uniform(0.0, 0.2))
+        turnover_notional = float(abs(rng.normal()) * denom)
+        fee_total = float(rng.uniform(0.0, 0.2))
 
-        mediator.queue(net_worth=next_net_worth, penalty=penalty)
+        mediator.queue(
+            net_worth=next_net_worth,
+            turnover_notional=turnover_notional,
+            fee_total=fee_total,
+        )
 
         _, reward_env, terminated, truncated, info = env.step(ActionProto(ActionType.HOLD, 0.0))
         assert not terminated and not truncated
 
-        ratio_clipped = float(np.clip(ratio_raw, 1e-4, 10.0))
-        reward_ref = math.log(ratio_clipped) - penalty
+        prev_equity = max(prev_net_worth, env._reward_equity_floor)
+        if not math.isfinite(prev_equity):
+            prev_equity = env._reward_equity_floor
+        equity = next_net_worth
+        if not math.isfinite(equity) or equity <= 0.0:
+            equity = max(prev_equity, env._reward_equity_floor)
+        ratio_for_log = equity / prev_equity if prev_equity > 0.0 else 1.0
+        if not math.isfinite(ratio_for_log) or ratio_for_log <= 0.0:
+            ratio_for_log = 1.0
+        log_ret = float(
+            np.clip(
+                math.log(ratio_for_log),
+                -env.reward_return_clip,
+                env.reward_return_clip,
+            )
+        )
+        ratio_clipped = float(
+            np.clip(
+                ratio_for_log,
+                math.exp(-env.reward_return_clip),
+                math.exp(env.reward_return_clip),
+            )
+        )
+        turnover_norm = float(
+            np.clip(
+                (abs(turnover_notional) / prev_equity) if prev_equity > 0.0 else 0.0,
+                0.0,
+                env.turnover_norm_cap,
+            )
+        )
+        turnover_penalty = env.turnover_penalty_coef * turnover_norm
+        reward_unclipped = log_ret - fee_total - turnover_penalty
+        reward_ref = float(
+            np.clip(reward_unclipped, -env.reward_cap, env.reward_cap)
+        )
 
         assert reward_env == pytest.approx(reward_ref, rel=1e-9, abs=1e-9)
-        assert reward_env <= math.log(10.0) + 1e-6
-        assert info["ratio_raw"] == pytest.approx(ratio_raw, rel=1e-9, abs=1e-9)
+        assert info["ratio_raw"] == pytest.approx(ratio_for_log, rel=1e-9, abs=1e-9)
         assert info["ratio_clipped"] == pytest.approx(ratio_clipped, rel=1e-9, abs=1e-9)
+        assert info["log_return"] == pytest.approx(log_ret, rel=1e-9, abs=1e-9)
+        assert info["turnover_notional"] == pytest.approx(abs(turnover_notional), rel=1e-9, abs=1e-9)
+        assert info["turnover_norm"] == pytest.approx(turnover_norm, rel=1e-9, abs=1e-9)
+        assert info["turnover_penalty"] == pytest.approx(turnover_penalty, rel=1e-9, abs=1e-9)
+        assert info["fee_total"] == pytest.approx(fee_total, rel=1e-9, abs=1e-9)
+        assert info["reward_unclipped"] == pytest.approx(reward_unclipped, rel=1e-9, abs=1e-9)
+        assert info["reward"] == pytest.approx(reward_ref, rel=1e-9, abs=1e-9)
 
         rewards.append(reward_env)
 
@@ -154,20 +210,53 @@ def test_reward_clip_bar_matches_reference() -> None:
 
     rewards_arr = np.asarray(rewards, dtype=np.float64)
 
-    assert np.max(rewards_arr) <= math.log(10.0) + 1e-6
-    assert np.percentile(rewards_arr, 95) <= math.log(10.0) + 1e-9
-    assert np.percentile(rewards_arr, 99) <= math.log(10.0) + 1e-9
-    assert np.percentile(rewards_arr, 99.9) <= math.log(10.0) + 1e-9
-    assert float(np.mean(rewards_arr > math.log(10.0))) <= 1e-9
+    assert np.max(rewards_arr) <= env.reward_cap + 1e-6
+    assert np.percentile(rewards_arr, 95) <= env.reward_cap + 1e-9
+    assert np.percentile(rewards_arr, 99) <= env.reward_cap + 1e-9
+    assert np.percentile(rewards_arr, 99.9) <= env.reward_cap + 1e-9
+    assert float(np.mean(rewards_arr > env.reward_cap)) <= 1e-9
 
     env.close()
 
     results = simulate_bar_reward_path(num_steps=256, seed=321)
     ratio_samples = np.asarray(results["ratio_samples"], dtype=np.float64)
-    penalties = np.asarray(results["penalties"], dtype=np.float64)
-    ref = np.log(np.clip(ratio_samples, 1e-4, 10.0)) - penalties
+    fees = np.asarray(results["fees"], dtype=np.float64)
+    turnover = np.asarray(results["turnover"], dtype=np.float64)
+    prev_equity = np.asarray(results["prev_equity"], dtype=np.float64)
 
-    assert np.allclose(results["rewards_env"], ref, rtol=1e-9, atol=1e-9)
-    assert np.allclose(results["ratio_raw"], ratio_samples, rtol=1e-9, atol=1e-9)
-    assert np.allclose(results["ratio_clipped"], np.clip(ratio_samples, 1e-4, 10.0), rtol=1e-9, atol=1e-9)
+    ratio_for_log = ratio_samples.copy()
+    ratio_for_log[~np.isfinite(ratio_for_log) | (ratio_for_log <= 0.0)] = 1.0
+    log_ret = np.clip(
+        np.log(ratio_for_log),
+        -env.reward_return_clip,
+        env.reward_return_clip,
+    )
+    turnover_norm = np.clip(
+        np.divide(
+            turnover,
+            prev_equity,
+            out=np.zeros_like(turnover),
+            where=prev_equity > 0.0,
+        ),
+        0.0,
+        env.turnover_norm_cap,
+    )
+    reward_ref = np.clip(
+        log_ret - fees - env.turnover_penalty_coef * turnover_norm,
+        -env.reward_cap,
+        env.reward_cap,
+    )
+
+    assert np.allclose(results["rewards_env"], reward_ref, rtol=1e-9, atol=1e-9)
+    assert np.allclose(results["ratio_raw"], ratio_for_log, rtol=1e-9, atol=1e-9)
+    assert np.allclose(
+        results["ratio_clipped"],
+        np.clip(
+            ratio_for_log,
+            math.exp(-env.reward_return_clip),
+            math.exp(env.reward_return_clip),
+        ),
+        rtol=1e-9,
+        atol=1e-9,
+    )
 

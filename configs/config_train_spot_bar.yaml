@@ -35,7 +35,11 @@ fees:
 
 model:
   algo: "ppo"
-  params: {}
+  params:
+    turnover_penalty_coef: 0.0005
+    reward_return_clip: 10.0
+    turnover_norm_cap: 1.0
+    reward_cap: 10.0
 
 algo:
   actions:
@@ -47,6 +51,7 @@ algo:
     lock_ttl: true
     fixed_ttl_steps: 0
     bins_vol: 4
+    max_asset_weight: 1.0
 
 components:
   market_data:

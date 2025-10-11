@@ -81,6 +81,9 @@ model:
     kl_lr_scale_min: 0.10              # даже если включится — не в ноль
     trade_frequency_penalty: 0.0
     turnover_penalty_coef: 0.0005      # ≈ комиссия 5 bps в долях
+    reward_return_clip: 10.0           # Лимит лог-доходности
+    turnover_norm_cap: 1.0             # Макс. нормализованный оборот (в долях equity)
+    reward_cap: 10.0                   # Лимит вознаграждения
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.05
@@ -135,6 +138,7 @@ algo:
     lock_ttl: true
     fixed_ttl_steps: 0
     bins_vol: 4            # BAR volume head fixed to four discrete fractions [0.0, 0.2, 0.6, 1.0]
+    max_asset_weight: 1.0
 
 loss_masks:
   include_heads:

@@ -415,6 +415,17 @@ class TradingEnv(gym.Env):
         # reward / cost toggles (keep backward-compatible defaults)
         self.turnover_penalty_coef = float(kwargs.get("turnover_penalty_coef", 0.0) or 0.0)
         self.trade_frequency_penalty = float(kwargs.get("trade_frequency_penalty", 0.0) or 0.0)
+        self.reward_return_clip = float(kwargs.get("reward_return_clip", 10.0) or 10.0)
+        if self.reward_return_clip <= 0.0 or not math.isfinite(self.reward_return_clip):
+            self.reward_return_clip = 10.0
+        self.turnover_norm_cap = float(kwargs.get("turnover_norm_cap", 1.0) or 1.0)
+        if self.turnover_norm_cap <= 0.0 or not math.isfinite(self.turnover_norm_cap):
+            self.turnover_norm_cap = 1.0
+        self.reward_cap = float(kwargs.get("reward_cap", 10.0) or 10.0)
+        if self.reward_cap <= 0.0 or not math.isfinite(self.reward_cap):
+            self.reward_cap = 10.0
+        self.debug_asserts = bool(kwargs.get("debug_asserts", False))
+        self._reward_equity_floor = 1e-8
         self._turnover_total = 0.0
 
         # optional strict data validation
@@ -581,6 +592,15 @@ class TradingEnv(gym.Env):
             # старые массивы не поддерживаем (используй legacy_bridge.from_legacy_box вручную)
             raise TypeError("NumPy array actions are no longer supported")
         raise TypeError("Unsupported action type")
+
+    def _assert_finite(self, name: str, value: float) -> float:
+        if math.isfinite(value):
+            return float(value)
+        msg = f"{name} produced non-finite value: {value}"
+        if getattr(self, "debug_asserts", False):
+            raise AssertionError(msg)
+        logger.error(msg)
+        return 0.0
 
     def _assert_feature_timestamps(self, row: pd.Series) -> None:
         decision_ts = row.get("decision_ts")
@@ -1121,56 +1141,90 @@ class TradingEnv(gym.Env):
         if not math.isfinite(delta_pnl):
             delta_pnl = 0.0
 
-        step_turnover = info.get("turnover")
-        if step_turnover is None:
-            step_turnover = info.get("executed_notional", 0.0)
+        step_turnover_notional = info.get("turnover")
+        if step_turnover_notional is None:
+            step_turnover_notional = info.get("executed_notional", 0.0)
         try:
-            step_turnover = float(step_turnover)
+            step_turnover_notional = float(step_turnover_notional)
         except (TypeError, ValueError):
-            step_turnover = 0.0
-        if not math.isfinite(step_turnover):
-            step_turnover = 0.0
-        step_turnover = abs(step_turnover)
-        self._turnover_total = prev_turnover_total + step_turnover
-
+            step_turnover_notional = 0.0
+        if not math.isfinite(step_turnover_notional):
+            step_turnover_notional = 0.0
+        step_turnover_notional = abs(step_turnover_notional)
+        self._turnover_total = prev_turnover_total + step_turnover_notional
         if not math.isfinite(self._turnover_total):
             self._turnover_total = prev_turnover_total
 
-        turnover_penalty = info.get("turnover_penalty")
-        if turnover_penalty is None:
-            turnover_penalty = self.turnover_penalty_coef * step_turnover
+        prev_equity = prev_net_worth
+        if not math.isfinite(prev_equity):
+            prev_equity = 0.0
+        prev_equity = max(prev_equity, self._reward_equity_floor)
+
+        equity = new_net_worth
+        if not math.isfinite(equity):
+            equity = prev_equity
+        if equity <= 0.0:
+            equity = max(prev_equity, self._reward_equity_floor)
+
+        ratio_raw = equity / prev_equity if prev_equity > 0.0 else 1.0
+        if not math.isfinite(ratio_raw) or ratio_raw <= 0.0:
+            ratio_raw = 1.0
+
+        log_ret_raw = math.log(ratio_raw)
+        log_ret = float(np.clip(log_ret_raw, -self.reward_return_clip, self.reward_return_clip))
+        log_ret = self._assert_finite("log_ret", log_ret)
+
+        ratio_clip_floor = math.exp(-self.reward_return_clip)
+        ratio_clip_ceiling = math.exp(self.reward_return_clip)
+        ratio_clipped = float(np.clip(ratio_raw, ratio_clip_floor, ratio_clip_ceiling))
+
+        turnover_norm = 0.0
+        if prev_equity > 0.0:
+            turnover_norm = step_turnover_notional / prev_equity
+        if not math.isfinite(turnover_norm) or turnover_norm < 0.0:
+            turnover_norm = 0.0
+        turnover_norm = float(np.clip(turnover_norm, 0.0, self.turnover_norm_cap))
+        turnover_penalty = self.turnover_penalty_coef * turnover_norm
+        turnover_penalty = self._assert_finite("turnover_penalty", turnover_penalty)
+
+        fees = info.get("fee_total")
+        if fees is None:
+            fees = info.get("fees")
+        if fees is None:
+            fees = 0.0
         try:
-            turnover_penalty = float(turnover_penalty)
+            fees = float(fees)
         except (TypeError, ValueError):
-            turnover_penalty = 0.0
-        if not math.isfinite(turnover_penalty):
-            turnover_penalty = 0.0
+            fees = 0.0
+        if not math.isfinite(fees):
+            fees = 0.0
 
         trade_frequency_penalty = self.trade_frequency_penalty * agent_trade_events
-        if not math.isfinite(trade_frequency_penalty):
+        if not math.isfinite(trade_frequency_penalty) or trade_frequency_penalty < 0.0:
             trade_frequency_penalty = 0.0
 
-        denom = prev_net_worth
-        if not math.isfinite(denom):
-            denom = 0.0
-        denom = max(denom, 1e-9)
-        ratio_raw = new_net_worth / denom if denom > 0.0 else 1.0
-        if not math.isfinite(ratio_raw):
-            ratio_raw = 1.0
-        ratio_clipped = float(np.clip(ratio_raw, 1e-4, 10.0))
-        penalties = turnover_penalty + trade_frequency_penalty
-        reward = float(math.log(ratio_clipped) - penalties)
-        if not math.isfinite(reward):
-            reward = 0.0
+        other_penalties = trade_frequency_penalty
+        reward_unclipped = log_ret - fees - turnover_penalty - other_penalties
+        reward_unclipped = self._assert_finite("reward_unclipped", reward_unclipped)
+        reward = float(np.clip(reward_unclipped, -self.reward_cap, self.reward_cap))
+        reward = self._assert_finite("reward", reward)
 
         info["delta_pnl"] = float(delta_pnl)
-        info["equity"] = float(new_net_worth if math.isfinite(new_net_worth) else prev_net_worth)
-        info["turnover"] = float(step_turnover)
+        info["equity"] = float(equity if math.isfinite(equity) else prev_equity)
+        info["turnover_notional"] = float(step_turnover_notional)
+        info["turnover"] = float(step_turnover_notional)
+        info["executed_notional"] = float(step_turnover_notional)
         info["cum_turnover"] = float(self._turnover_total)
+        info["turnover_norm"] = float(turnover_norm)
         info["turnover_penalty"] = float(turnover_penalty)
         info["trade_frequency_penalty"] = float(trade_frequency_penalty)
+        info["fee_total"] = float(fees)
+        info["fees"] = float(fees)
         info["ratio_raw"] = float(ratio_raw)
         info["ratio_clipped"] = float(ratio_clipped)
+        info["log_return"] = float(log_ret)
+        info["reward_unclipped"] = float(reward_unclipped)
+        info["reward"] = float(reward)
         info["trades_count"] = int(agent_trade_events)
         info["no_trade_triggered"] = bool(mask_hit)
         info["no_trade_policy"] = self._no_trade_policy
