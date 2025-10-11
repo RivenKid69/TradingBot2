@@ -808,6 +808,11 @@ class DistributionalPPO(RecurrentPPO):
         cvar_alpha: float = 0.05,
         cvar_weight: float = 0.5,
         cvar_cap: Optional[float] = None,
+        cvar_use_constraint: bool = False,
+        cvar_limit: float = -0.02,
+        cvar_lambda_lr: float = 1e-2,
+        cvar_use_penalty: bool = True,
+        cvar_penalty_cap: float = 0.7,
         v_range_ema_alpha: float = 0.01,
         vf_coef_warmup: Optional[float] = None,
         vf_coef_warmup_updates: int = 0,
@@ -966,6 +971,22 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'cvar_cap' must be positive when provided")
         self.cvar_cap = float(cvar_cap) if cvar_cap is not None else None
 
+        self.cvar_use_constraint = bool(
+            kwargs_local.pop("cvar_use_constraint", cvar_use_constraint)
+        )
+        self.cvar_limit = float(kwargs_local.pop("cvar_limit", cvar_limit))
+        self.cvar_lambda_lr = float(kwargs_local.pop("cvar_lambda_lr", cvar_lambda_lr))
+        if self.cvar_lambda_lr < 0.0:
+            raise ValueError("'cvar_lambda_lr' must be non-negative")
+        self.cvar_use_penalty = bool(
+            kwargs_local.pop("cvar_use_penalty", cvar_use_penalty)
+        )
+        self.cvar_penalty_cap = float(
+            kwargs_local.pop("cvar_penalty_cap", cvar_penalty_cap)
+        )
+        if self.cvar_penalty_cap < 0.0:
+            raise ValueError("'cvar_penalty_cap' must be non-negative")
+
         self.v_range_ema_alpha = float(v_range_ema_alpha)
         if not (0.0 < self.v_range_ema_alpha <= 1.0):
             raise ValueError("'v_range_ema_alpha' must be in (0, 1]")
@@ -995,6 +1016,7 @@ class DistributionalPPO(RecurrentPPO):
         self._cvar_ramp_updates = cvar_ramp_updates_value
         self._cvar_ramp_progress = 0
         self._current_cvar_weight = 0.0
+        self._cvar_lambda = 0.0
 
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
         normalize_returns_sentinel: object = object()
@@ -2033,6 +2055,10 @@ class DistributionalPPO(RecurrentPPO):
         vf_coef_effective = self._compute_vf_coef_value(current_update)
         self.vf_coef = vf_coef_effective
         current_cvar_weight = self._compute_cvar_weight()
+        if not self.cvar_use_penalty:
+            current_cvar_weight = 0.0
+        elif math.isfinite(self.cvar_penalty_cap):
+            current_cvar_weight = float(min(max(current_cvar_weight, 0.0), self.cvar_penalty_cap))
         self._current_cvar_weight = current_cvar_weight
 
         self._activate_return_scale_snapshot()
@@ -2053,6 +2079,28 @@ class DistributionalPPO(RecurrentPPO):
         base_scale = float(self.value_target_scale)
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
         returns_raw_tensor = returns_tensor * base_scale_safe
+
+        rewards_tensor = torch.as_tensor(
+            self.rollout_buffer.rewards, device=self.device, dtype=torch.float32
+        ).flatten()
+        rewards_raw_tensor = rewards_tensor  # CVaR uses natural bar returns
+        if rewards_raw_tensor.numel() == 0:
+            cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
+        else:
+            rewards_sorted, _ = torch.sort(rewards_raw_tensor)
+            alpha = float(self.cvar_alpha)
+            if not math.isfinite(alpha) or alpha <= 0.0:
+                tail_count = rewards_sorted.numel()
+            else:
+                tail_count = max(int(math.ceil(alpha * rewards_sorted.numel())), 1)
+            tail = rewards_sorted[:tail_count]
+            cvar_empirical_tensor = tail.mean() if tail.numel() > 0 else rewards_sorted.new_tensor(0.0)
+        cvar_empirical_value = float(cvar_empirical_tensor.item())
+        gap_tensor = float(self.cvar_limit) - cvar_empirical_tensor  # >0 if CVaR below limit (violation)
+        gap_value = float(gap_tensor.item())
+        self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * gap_value))
+        gap_pos = torch.clamp(gap_tensor.detach(), min=0.0)
+        constraint_term_value = float(self._cvar_lambda * gap_pos.item())
 
         if returns_raw_tensor.numel() == 0:
             ret_abs_p95_value = 0.0
@@ -2736,6 +2784,9 @@ class DistributionalPPO(RecurrentPPO):
                         + cvar_term
                     )
 
+                    if self.cvar_use_constraint:
+                        loss = loss + loss.new_tensor(self._cvar_lambda) * gap_pos
+
                     loss_weighted = loss * loss.new_tensor(weight)
                     loss_weighted.backward()
 
@@ -3027,8 +3078,15 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_raw", cvar_raw_value)
         self.logger.record("train/cvar_loss", cvar_loss_value)
         self.logger.record("train/cvar_term", cvar_term_value)
+        self.logger.record("train/cvar_empirical", cvar_empirical_value)
+        self.logger.record("train/cvar_violation", gap_value)  # now (limit - CVaR)
+        self.logger.record("train/cvar_lambda", float(self._cvar_lambda))
+        if self.cvar_use_constraint:
+            self.logger.record("train/cvar_constraint", constraint_term_value)
         if self.cvar_cap is not None:
             self.logger.record("train/cvar_cap", self.cvar_cap)
+        if self.cvar_penalty_cap is not None:
+            self.logger.record("train/cvar_penalty_cap", float(self.cvar_penalty_cap))
         self.logger.record("train/value_mse", value_mse_value)
 
         self.logger.record("train/entropy_loss", -avg_policy_entropy)

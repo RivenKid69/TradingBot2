@@ -157,6 +157,39 @@ class TTLConfig(BaseModel):
         return self
 
 
+class CVaRRiskConfig(BaseModel):
+    """CVaR constraint and penalty knobs for optimisation."""
+
+    use_constraint: bool = Field(
+        default=False,
+        description="Enable CVaR inequality constraint term during training.",
+    )
+    alpha: float = Field(
+        default=0.05,
+        gt=0.0,
+        le=1.0,
+        description="Tail probability used when computing empirical CVaR.",
+    )
+    limit: float = Field(
+        default=-0.02,
+        description="Lower bound on acceptable empirical CVaR of realised bar returns.",
+    )
+    lambda_lr: float = Field(
+        default=1e-2,
+        ge=0.0,
+        description="Dual ascent learning rate applied to the CVaR multiplier.",
+    )
+    use_penalty: bool = Field(
+        default=True,
+        description="Retain CVaR penalty term in the optimisation objective.",
+    )
+    penalty_cap: float = Field(
+        default=0.7,
+        ge=0.0,
+        description="Maximum effective weight applied to the CVaR penalty term.",
+    )
+
+
 class RiskConfigSection(BaseModel):
     """Top-level risk configuration shared across run modes."""
 
@@ -179,6 +212,10 @@ class RiskConfigSection(BaseModel):
         ge=0.0,
         description="Fractional buffer applied when evaluating aggregate exposure limits.",
     )
+    cvar: CVaRRiskConfig = Field(
+        default_factory=CVaRRiskConfig,
+        description="Configuration for CVaR-based policy constraints and penalties.",
+    )
 
     class Config:
         extra = "allow"
@@ -190,6 +227,7 @@ class RiskConfigSection(BaseModel):
         data.pop("max_total_notional", None)
         data.pop("max_total_exposure_pct", None)
         data.pop("exposure_buffer_frac", None)
+        data.pop("cvar", None)
         return data
 
     @property

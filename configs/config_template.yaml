@@ -212,6 +212,13 @@ risk:
   max_total_notional: null        # Hard cap on total net notional across instruments
   max_total_exposure_pct: null    # Hard cap on exposure as a fraction of equity
   exposure_buffer_frac: 0.0       # Fractional buffer applied before tripping the caps
+  cvar:
+    use_constraint: false         # Enable CVaR inequality constraint during training updates
+    alpha: 0.05                   # Tail mass used for empirical CVaR estimation
+    limit: -0.02                  # Minimum acceptable CVaR of realised per-bar returns
+    lambda_lr: 0.01               # Learning rate for dual ascent on the CVaR multiplier
+    use_penalty: true             # Retain CVaR penalty term in the policy loss
+    penalty_cap: 0.7              # Maximum effective penalty weight applied during training
 
 # See ../docs/no_trade.md for details
 no_trade:
