@@ -560,8 +560,21 @@ class DistributionalPPO(RecurrentPPO):
                     and self._value_scale_update_count >= self._value_scale_freeze_after
                 )
                 warmup_active = (
-                    self._value_scale_update_count < self._value_scale_warmup_updates
+                    (self._value_scale_warmup_updates or 0) > 0
+                    and (
+                        self._value_scale_update_count
+                        < self._value_scale_warmup_updates
+                    )
                 )
+                self.logger.record(
+                    "train/value_scale_update_block_warmup", int(warmup_active)
+                )
+                if warmup_active:
+                    self.logger.record("train/value_scale_update_applied", 0)
+                    self._pending_ret_mean = float(target_mean)
+                    self._pending_ret_std = float(target_std)
+                    self._pending_rms = None
+                    return
                 stability_ready = True
                 if self._value_scale_requires_stability and not warmup_active:
                     patience = self._value_scale_stability_patience
@@ -632,7 +645,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record(
             "train/value_target_scale_after", float(self._value_target_scale_effective)
         )
-        self.logger.record("train/value_scale_update_applied", float(update_applied))
+        self.logger.record(
+            "train/value_scale_update_applied", 1 if update_applied else 0
+        )
         self.logger.record("train/value_scale_update_count", float(self._value_scale_update_count))
         self.logger.record("train/value_scale_update_block_samples", float(block_samples))
         self.logger.record("train/value_scale_update_block_freeze", float(block_freeze))

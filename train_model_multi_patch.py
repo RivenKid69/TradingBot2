@@ -1438,13 +1438,16 @@ def objective(trial: optuna.Trial,
                     stability_raw.get("consecutive"),
                     "value_scale.stability.consecutive",
                 )
+            value_scale_stability_patience_cfg = stability_patience
             if stability_patience is not None:
-                value_scale_stability_patience_cfg = stability_patience
+                stability_dict["patience"] = stability_patience
             if stability_dict:
                 value_scale_stability_cfg = stability_dict
-        value_scale_stability_patience_cfg = _coerce_optional_int(
+        stability_patience_alias = _coerce_optional_int(
             value_scale_cfg.get("stability_patience"), "value_scale.stability_patience"
         )
+        if stability_patience_alias is not None:
+            value_scale_stability_patience_cfg = stability_patience_alias
     elif value_scale_cfg is not None:
         value_scale_ema_beta_cfg = _coerce_optional_float(
             getattr(value_scale_cfg, "ema_beta", None), "value_scale.ema_beta"
@@ -1501,14 +1504,17 @@ def objective(trial: optuna.Trial,
                     stability_raw.get("consecutive"),
                     "value_scale.stability.consecutive",
                 )
+            value_scale_stability_patience_cfg = stability_patience
             if stability_patience is not None:
-                value_scale_stability_patience_cfg = stability_patience
+                stability_dict["patience"] = stability_patience
             if stability_dict:
                 value_scale_stability_cfg = stability_dict
-        value_scale_stability_patience_cfg = _coerce_optional_int(
+        stability_patience_alias = _coerce_optional_int(
             getattr(value_scale_cfg, "stability_patience", None),
             "value_scale.stability_patience",
         )
+        if stability_patience_alias is not None:
+            value_scale_stability_patience_cfg = stability_patience_alias
     else:
         value_scale_ema_beta_cfg = _coerce_optional_float(
             _get_model_param_value(cfg, "value_scale_ema_beta"), "value_scale_ema_beta"
@@ -1559,12 +1565,25 @@ def objective(trial: optuna.Trial,
                 )
             if stability_p95 is not None:
                 stability_dict["max_abs_p95"] = stability_p95
+            stability_patience = _coerce_optional_int(
+                stability_raw.get("patience"), "value_scale_stability.patience"
+            )
+            if stability_patience is None:
+                stability_patience = _coerce_optional_int(
+                    stability_raw.get("consecutive"),
+                    "value_scale_stability.consecutive",
+                )
+            value_scale_stability_patience_cfg = stability_patience
+            if stability_patience is not None:
+                stability_dict["patience"] = stability_patience
             if stability_dict:
                 value_scale_stability_cfg = stability_dict
-        value_scale_stability_patience_cfg = _coerce_optional_int(
+        stability_patience_alias = _coerce_optional_int(
             _get_model_param_value(cfg, "value_scale_stability_patience"),
             "value_scale_stability_patience",
         )
+        if stability_patience_alias is not None:
+            value_scale_stability_patience_cfg = stability_patience_alias
     bc_warmup_steps_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "bc_warmup_steps"), "bc_warmup_steps"
     )
@@ -1657,10 +1676,8 @@ def objective(trial: optuna.Trial,
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
     if value_scale_max_rel_step_cfg is None:
-        value_scale_max_rel_step_cfg = 0.35
-        print(
-            "Warning: cfg.model.params.value_scale.max_rel_step is missing; "
-            "defaulting to 0.35"
+        raise ValueError(
+            "cfg.model.params.value_scale.max_rel_step must be specified"
         )
     params["value_scale_max_rel_step"] = float(value_scale_max_rel_step_cfg)
     params["value_scale_std_floor"] = (
@@ -1678,12 +1695,8 @@ def objective(trial: optuna.Trial,
     )
     params["value_scale_freeze_after"] = value_scale_freeze_after_cfg
     params["value_scale_range_max_rel_step"] = value_scale_range_max_rel_step_cfg
-    params["value_scale_stability_patience"] = (
-        value_scale_stability_patience_cfg
-        if value_scale_stability_patience_cfg is not None
-        else 0
-    )
-    params["value_scale_stability"] = value_scale_stability_cfg or {}
+    params["value_scale_stability_patience"] = value_scale_stability_patience_cfg
+    params["value_scale_stability"] = value_scale_stability_cfg
     params["vf_coef_warmup"] = (
         vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else None
     )
@@ -2171,9 +2184,10 @@ def objective(trial: optuna.Trial,
         "freeze_after": params["value_scale_freeze_after"],
         "range_max_rel_step": params["value_scale_range_max_rel_step"],
     }
-    if params["value_scale_stability"]:
-        value_scale_kwargs["stability"] = params["value_scale_stability"]
-    if params["value_scale_stability_patience"]:
+    stability_params = params["value_scale_stability"]
+    if stability_params:
+        value_scale_kwargs["stability"] = stability_params
+    if params["value_scale_stability_patience"] is not None:
         value_scale_kwargs["stability_patience"] = params[
             "value_scale_stability_patience"
         ]
