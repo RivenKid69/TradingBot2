@@ -1376,12 +1376,74 @@ def objective(trial: optuna.Trial,
     value_scale_cfg = _get_model_param_value(cfg, "value_scale")
     value_scale_ema_beta_cfg = None
     value_scale_max_rel_step_cfg = None
+    value_scale_std_floor_cfg = None
+    value_scale_window_updates_cfg = None
+    value_scale_warmup_updates_cfg = None
+    value_scale_freeze_after_cfg = None
+    value_scale_range_max_rel_step_cfg = None
+    value_scale_stability_cfg: dict[str, Any] | None = None
+    value_scale_stability_patience_cfg = None
     if isinstance(value_scale_cfg, Mapping):
         value_scale_ema_beta_cfg = _coerce_optional_float(
             value_scale_cfg.get("ema_beta"), "value_scale.ema_beta"
         )
         value_scale_max_rel_step_cfg = _coerce_optional_float(
             value_scale_cfg.get("max_rel_step"), "value_scale.max_rel_step"
+        )
+        value_scale_std_floor_cfg = _coerce_optional_float(
+            value_scale_cfg.get("std_floor"), "value_scale.std_floor"
+        )
+        value_scale_window_updates_cfg = _coerce_optional_int(
+            value_scale_cfg.get("window_updates"), "value_scale.window_updates"
+        )
+        value_scale_warmup_updates_cfg = _coerce_optional_int(
+            value_scale_cfg.get("warmup_updates"), "value_scale.warmup_updates"
+        )
+        value_scale_freeze_after_cfg = _coerce_optional_int(
+            value_scale_cfg.get("freeze_after"), "value_scale.freeze_after"
+        )
+        value_scale_range_max_rel_step_cfg = _coerce_optional_float(
+            value_scale_cfg.get("range_max_rel_step"), "value_scale.range_max_rel_step"
+        )
+        stability_raw = value_scale_cfg.get("stability")
+        if isinstance(stability_raw, Mapping):
+            stability_dict: dict[str, Any] = {}
+            stability_ev = _coerce_optional_float(
+                stability_raw.get("min_explained_variance"),
+                "value_scale.stability.min_explained_variance",
+            )
+            if stability_ev is None:
+                stability_ev = _coerce_optional_float(
+                    stability_raw.get("ev_min"),
+                    "value_scale.stability.ev_min",
+                )
+            if stability_ev is not None:
+                stability_dict["min_explained_variance"] = stability_ev
+            stability_p95 = _coerce_optional_float(
+                stability_raw.get("max_abs_p95"),
+                "value_scale.stability.max_abs_p95",
+            )
+            if stability_p95 is None:
+                stability_p95 = _coerce_optional_float(
+                    stability_raw.get("ret_abs_p95_max"),
+                    "value_scale.stability.ret_abs_p95_max",
+                )
+            if stability_p95 is not None:
+                stability_dict["max_abs_p95"] = stability_p95
+            stability_patience = _coerce_optional_int(
+                stability_raw.get("patience"), "value_scale.stability.patience"
+            )
+            if stability_patience is None:
+                stability_patience = _coerce_optional_int(
+                    stability_raw.get("consecutive"),
+                    "value_scale.stability.consecutive",
+                )
+            if stability_patience is not None:
+                value_scale_stability_patience_cfg = stability_patience
+            if stability_dict:
+                value_scale_stability_cfg = stability_dict
+        value_scale_stability_patience_cfg = _coerce_optional_int(
+            value_scale_cfg.get("stability_patience"), "value_scale.stability_patience"
         )
     elif value_scale_cfg is not None:
         value_scale_ema_beta_cfg = _coerce_optional_float(
@@ -1390,12 +1452,118 @@ def objective(trial: optuna.Trial,
         value_scale_max_rel_step_cfg = _coerce_optional_float(
             getattr(value_scale_cfg, "max_rel_step", None), "value_scale.max_rel_step"
         )
+        value_scale_std_floor_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "std_floor", None), "value_scale.std_floor"
+        )
+        value_scale_window_updates_cfg = _coerce_optional_int(
+            getattr(value_scale_cfg, "window_updates", None), "value_scale.window_updates"
+        )
+        value_scale_warmup_updates_cfg = _coerce_optional_int(
+            getattr(value_scale_cfg, "warmup_updates", None), "value_scale.warmup_updates"
+        )
+        value_scale_freeze_after_cfg = _coerce_optional_int(
+            getattr(value_scale_cfg, "freeze_after", None), "value_scale.freeze_after"
+        )
+        value_scale_range_max_rel_step_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "range_max_rel_step", None),
+            "value_scale.range_max_rel_step",
+        )
+        stability_raw = getattr(value_scale_cfg, "stability", None)
+        if isinstance(stability_raw, Mapping):
+            stability_dict = {}
+            stability_ev = _coerce_optional_float(
+                stability_raw.get("min_explained_variance"),
+                "value_scale.stability.min_explained_variance",
+            )
+            if stability_ev is None:
+                stability_ev = _coerce_optional_float(
+                    stability_raw.get("ev_min"),
+                    "value_scale.stability.ev_min",
+                )
+            if stability_ev is not None:
+                stability_dict["min_explained_variance"] = stability_ev
+            stability_p95 = _coerce_optional_float(
+                stability_raw.get("max_abs_p95"),
+                "value_scale.stability.max_abs_p95",
+            )
+            if stability_p95 is None:
+                stability_p95 = _coerce_optional_float(
+                    stability_raw.get("ret_abs_p95_max"),
+                    "value_scale.stability.ret_abs_p95_max",
+                )
+            if stability_p95 is not None:
+                stability_dict["max_abs_p95"] = stability_p95
+            stability_patience = _coerce_optional_int(
+                stability_raw.get("patience"), "value_scale.stability.patience"
+            )
+            if stability_patience is None:
+                stability_patience = _coerce_optional_int(
+                    stability_raw.get("consecutive"),
+                    "value_scale.stability.consecutive",
+                )
+            if stability_patience is not None:
+                value_scale_stability_patience_cfg = stability_patience
+            if stability_dict:
+                value_scale_stability_cfg = stability_dict
+        value_scale_stability_patience_cfg = _coerce_optional_int(
+            getattr(value_scale_cfg, "stability_patience", None),
+            "value_scale.stability_patience",
+        )
     else:
         value_scale_ema_beta_cfg = _coerce_optional_float(
             _get_model_param_value(cfg, "value_scale_ema_beta"), "value_scale_ema_beta"
         )
         value_scale_max_rel_step_cfg = _coerce_optional_float(
             _get_model_param_value(cfg, "value_scale_max_rel_step"), "value_scale_max_rel_step"
+        )
+        value_scale_std_floor_cfg = _coerce_optional_float(
+            _get_model_param_value(cfg, "value_scale_std_floor"), "value_scale_std_floor"
+        )
+        value_scale_window_updates_cfg = _coerce_optional_int(
+            _get_model_param_value(cfg, "value_scale_window_updates"),
+            "value_scale_window_updates",
+        )
+        value_scale_warmup_updates_cfg = _coerce_optional_int(
+            _get_model_param_value(cfg, "value_scale_warmup_updates"),
+            "value_scale_warmup_updates",
+        )
+        value_scale_freeze_after_cfg = _coerce_optional_int(
+            _get_model_param_value(cfg, "value_scale_freeze_after"),
+            "value_scale_freeze_after",
+        )
+        value_scale_range_max_rel_step_cfg = _coerce_optional_float(
+            _get_model_param_value(cfg, "value_scale_range_max_rel_step"),
+            "value_scale_range_max_rel_step",
+        )
+        stability_raw = _get_model_param_value(cfg, "value_scale_stability")
+        if isinstance(stability_raw, Mapping):
+            stability_dict = {}
+            stability_ev = _coerce_optional_float(
+                stability_raw.get("min_explained_variance"),
+                "value_scale_stability.min_explained_variance",
+            )
+            if stability_ev is None:
+                stability_ev = _coerce_optional_float(
+                    stability_raw.get("ev_min"), "value_scale_stability.ev_min"
+                )
+            if stability_ev is not None:
+                stability_dict["min_explained_variance"] = stability_ev
+            stability_p95 = _coerce_optional_float(
+                stability_raw.get("max_abs_p95"),
+                "value_scale_stability.max_abs_p95",
+            )
+            if stability_p95 is None:
+                stability_p95 = _coerce_optional_float(
+                    stability_raw.get("ret_abs_p95_max"),
+                    "value_scale_stability.ret_abs_p95_max",
+                )
+            if stability_p95 is not None:
+                stability_dict["max_abs_p95"] = stability_p95
+            if stability_dict:
+                value_scale_stability_cfg = stability_dict
+        value_scale_stability_patience_cfg = _coerce_optional_int(
+            _get_model_param_value(cfg, "value_scale_stability_patience"),
+            "value_scale_stability_patience",
         )
     bc_warmup_steps_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "bc_warmup_steps"), "bc_warmup_steps"
@@ -1491,6 +1659,27 @@ def objective(trial: optuna.Trial,
     params["value_scale_max_rel_step"] = (
         value_scale_max_rel_step_cfg if value_scale_max_rel_step_cfg is not None else 1.0
     )
+    params["value_scale_std_floor"] = (
+        value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 1e-2
+    )
+    params["value_scale_window_updates"] = (
+        value_scale_window_updates_cfg
+        if value_scale_window_updates_cfg is not None
+        else 0
+    )
+    params["value_scale_warmup_updates"] = (
+        value_scale_warmup_updates_cfg
+        if value_scale_warmup_updates_cfg is not None
+        else 0
+    )
+    params["value_scale_freeze_after"] = value_scale_freeze_after_cfg
+    params["value_scale_range_max_rel_step"] = value_scale_range_max_rel_step_cfg
+    params["value_scale_stability_patience"] = (
+        value_scale_stability_patience_cfg
+        if value_scale_stability_patience_cfg is not None
+        else 0
+    )
+    params["value_scale_stability"] = value_scale_stability_cfg or {}
     params["vf_coef_warmup"] = (
         vf_coef_warmup_cfg if _has_model_param(cfg, "vf_coef_warmup") else None
     )
@@ -1969,6 +2158,22 @@ def objective(trial: optuna.Trial,
 
     assert "kl_exceed_stop_fraction" in params, "Missing KL exceed stop fraction parameter"
 
+    value_scale_kwargs: dict[str, Any] = {
+        "ema_beta": params["value_scale_ema_beta"],
+        "max_rel_step": params["value_scale_max_rel_step"],
+        "std_floor": params["value_scale_std_floor"],
+        "window_updates": params["value_scale_window_updates"],
+        "warmup_updates": params["value_scale_warmup_updates"],
+        "freeze_after": params["value_scale_freeze_after"],
+        "range_max_rel_step": params["value_scale_range_max_rel_step"],
+    }
+    if params["value_scale_stability"]:
+        value_scale_kwargs["stability"] = params["value_scale_stability"]
+    if params["value_scale_stability_patience"]:
+        value_scale_kwargs["stability_patience"] = params[
+            "value_scale_stability_patience"
+        ]
+
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,
         v_range_ema_alpha=params["v_range_ema_alpha"],
@@ -1986,10 +2191,7 @@ def objective(trial: optuna.Trial,
         entropy_boost_factor=params["entropy_boost_factor"],
         entropy_boost_cap=params["entropy_boost_cap"],
         cvar_weight=params["cvar_weight"],
-        value_scale={
-            "ema_beta": params["value_scale_ema_beta"],
-            "max_rel_step": params["value_scale_max_rel_step"],
-        },
+        value_scale=value_scale_kwargs,
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],

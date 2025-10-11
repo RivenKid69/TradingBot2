@@ -175,6 +175,7 @@ make no-trade-mask-sample  # python tests/run_no_trade_mask_sample.py
 - `docs/moving_average.md` — утилита скользящего среднего.
 - `docs/universe.md` — детали обновления списка символов.
 - `docs/permissions.md` — владение файлами и роли.
+- `docs/codex/prompt_02_autoexposure_ru.md` — сценарий стабилизации автоэкспозиции value-head в обучении.
 
 Эта памятка предназначена для быстрого старта и контекстуализации задач.
 При внесении значительных изменений обновляйте соответствующие разделы.

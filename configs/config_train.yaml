@@ -87,10 +87,10 @@ model:
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.05
-    cvar_weight: 0.0
-    cvar_activation_threshold: 0.0
+    cvar_weight: 0.15
+    cvar_activation_threshold: 0.15
     cvar_activation_hysteresis: 0.05
-    cvar_ramp_updates: 0
+    cvar_ramp_updates: 12
     cvar_cap: 0.5
     use_torch_compile: false
     bc_warmup_steps: 200000
@@ -102,6 +102,18 @@ model:
     v_min: -0.2     # нижняя граница поддержки ценности
     v_max: 0.2      # верхняя граница (v_max > v_min)
     v_range_ema_alpha: 0.005
+    value_scale:
+      ema_beta: 0.25
+      max_rel_step: 0.35
+      std_floor: 0.01
+      window_updates: 8
+      warmup_updates: 6
+      freeze_after: 96
+      range_max_rel_step: 0.25
+      stability:
+        min_explained_variance: 0.15
+        max_abs_p95: 6.0
+        patience: 2
     clip_range_warmup: 0.18
     clip_range_warmup_updates: 16
     critic_grad_warmup_updates: 0
