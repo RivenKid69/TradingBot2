@@ -258,6 +258,13 @@ latency:
 
 risk:
   enabled: false
+  cvar:
+    use_constraint: false
+    alpha: 0.05
+    limit: -0.02
+    lambda_lr: 0.01
+    use_penalty: true
+    penalty_cap: 0.7
 
 no_trade:
   enabled: false

@@ -1822,6 +1822,38 @@ def objective(trial: optuna.Trial,
         params["cvar_cap"] = cvar_cap_cfg
     else:
         params["cvar_cap"] = trial.suggest_float("cvar_cap", 0.01, 1.0, log=True)
+
+    def _extract_risk_cvar_section(cfg: TrainConfig) -> Dict[str, Any]:
+        risk_section = getattr(cfg, "risk", None)
+        candidate: Any
+        if isinstance(risk_section, Mapping):
+            candidate = risk_section.get("cvar")
+        else:
+            candidate = getattr(risk_section, "cvar", None)
+        if candidate is None:
+            return {}
+        if isinstance(candidate, Mapping):
+            return dict(candidate)
+        payload: Dict[str, Any] = {}
+        for key in ("use_constraint", "alpha", "limit", "lambda_lr", "use_penalty", "penalty_cap"):
+            if hasattr(candidate, key):
+                payload[key] = getattr(candidate, key)
+        dict_method = getattr(candidate, "dict", None)
+        if callable(dict_method):
+            try:
+                payload.update(dict_method(exclude_none=True))
+            except Exception:
+                pass
+        return payload
+
+    risk_cvar_cfg = _extract_risk_cvar_section(cfg)
+    if "alpha" in risk_cvar_cfg and risk_cvar_cfg["alpha"] is not None:
+        params["cvar_alpha"] = float(risk_cvar_cfg["alpha"])
+    params["cvar_use_constraint"] = bool(risk_cvar_cfg.get("use_constraint", False))
+    params["cvar_limit"] = float(risk_cvar_cfg.get("limit", -0.02))
+    params["cvar_lambda_lr"] = max(float(risk_cvar_cfg.get("lambda_lr", 1e-2)), 0.0)
+    params["cvar_use_penalty"] = bool(risk_cvar_cfg.get("use_penalty", True))
+    params["cvar_penalty_cap"] = max(float(risk_cvar_cfg.get("penalty_cap", 0.7)), 0.0)
     # 1. Определяем окно самого "медленного" индикатора на основе статических параметров.
     #    Эти параметры передаются в C++ симулятор.
     #    (В данном проекте они жестко заданы в TradingEnv, но для надежности берем их из HPO)
@@ -2248,6 +2280,11 @@ def objective(trial: optuna.Trial,
         entropy_boost_factor=params["entropy_boost_factor"],
         entropy_boost_cap=params["entropy_boost_cap"],
         cvar_weight=params["cvar_weight"],
+        cvar_use_constraint=params["cvar_use_constraint"],
+        cvar_limit=params["cvar_limit"],
+        cvar_lambda_lr=params["cvar_lambda_lr"],
+        cvar_use_penalty=params["cvar_use_penalty"],
+        cvar_penalty_cap=params["cvar_penalty_cap"],
         value_scale=value_scale_kwargs,
 
         bc_warmup_steps=params["bc_warmup_steps"],
