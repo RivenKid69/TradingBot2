@@ -1656,9 +1656,9 @@ def objective(trial: optuna.Trial,
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
-    params["value_scale_max_rel_step"] = (
-        value_scale_max_rel_step_cfg if value_scale_max_rel_step_cfg is not None else 1.0
-    )
+    if value_scale_max_rel_step_cfg is None:
+        raise ValueError("Missing cfg.model.params.value_scale.max_rel_step")
+    params["value_scale_max_rel_step"] = float(value_scale_max_rel_step_cfg)
     params["value_scale_std_floor"] = (
         value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 1e-2
     )
