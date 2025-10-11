@@ -1675,10 +1675,23 @@ def objective(trial: optuna.Trial,
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
-    if value_scale_max_rel_step_cfg is None:
-        raise ValueError(
-            "cfg.model.params.value_scale.max_rel_step must be specified"
-        )
+    fallback_value_scale_max_rel_step = 0.35
+    if (
+        value_scale_max_rel_step_cfg is None
+        or not math.isfinite(value_scale_max_rel_step_cfg)
+        or value_scale_max_rel_step_cfg <= 0.0
+    ):
+        if value_scale_max_rel_step_cfg is not None:
+            print(
+                "Warning: cfg.model.params.value_scale.max_rel_step is invalid; "
+                f"defaulting to {fallback_value_scale_max_rel_step:.2f}"
+            )
+        else:
+            print(
+                "Warning: cfg.model.params.value_scale.max_rel_step is missing; "
+                f"defaulting to {fallback_value_scale_max_rel_step:.2f}"
+            )
+        value_scale_max_rel_step_cfg = fallback_value_scale_max_rel_step
     params["value_scale_max_rel_step"] = float(value_scale_max_rel_step_cfg)
     params["value_scale_std_floor"] = (
         value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 1e-2
