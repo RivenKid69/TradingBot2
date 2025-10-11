@@ -918,7 +918,11 @@ class DistributionalPPO(RecurrentPPO):
         if value_scale_ema_beta is None:
             value_scale_ema_beta = kwargs_local.pop("value_scale_ema_beta", 0.2)
         if value_scale_max_rel_step is None:
-            value_scale_max_rel_step = kwargs_local.pop("value_scale_max_rel_step", 1.0)
+            value_scale_max_rel_step = kwargs_local.pop("value_scale_max_rel_step", None)
+        else:
+            kwargs_local.pop("value_scale_max_rel_step", None)
+        if value_scale_max_rel_step is None:
+            raise ValueError("'value_scale.max_rel_step' must be provided")
         if value_scale_std_floor is None:
             value_scale_std_floor = kwargs_local.pop("value_scale_std_floor", 1e-2)
         if value_scale_window_updates is None:
