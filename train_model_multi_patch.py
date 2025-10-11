@@ -1657,7 +1657,11 @@ def objective(trial: optuna.Trial,
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
     if value_scale_max_rel_step_cfg is None:
-        raise ValueError("Missing cfg.model.params.value_scale.max_rel_step")
+        value_scale_max_rel_step_cfg = 0.35
+        print(
+            "Warning: cfg.model.params.value_scale.max_rel_step is missing; "
+            "defaulting to 0.35"
+        )
     params["value_scale_max_rel_step"] = float(value_scale_max_rel_step_cfg)
     params["value_scale_std_floor"] = (
         value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 1e-2
