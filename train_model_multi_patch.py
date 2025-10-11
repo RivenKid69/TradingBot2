@@ -1868,6 +1868,16 @@ def objective(trial: optuna.Trial,
         "v_max": v_max,
     }
 
+    critic_arch_params = dict(policy_arch_params.get("critic") or {})
+    critic_arch_params.update(
+        {
+            "distributional": True,
+            "num_quantiles": 32,
+            "huber_kappa": 1.0,
+        }
+    )
+    policy_arch_params["critic"] = critic_arch_params
+
     execution_mode: str | None = None
     execution_cfg = getattr(cfg, "execution", None)
     if execution_cfg is not None:
