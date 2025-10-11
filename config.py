@@ -112,6 +112,9 @@ class RewardParams:
     risk_aversion_drawdown: float = 1.0  # Штраф за просадку
     trade_frequency_penalty: float = 0.0  # Штраф за каждую сделку
     turnover_penalty_coef: float = 0.0  # Штраф за оборот (ноционал)
+    reward_return_clip: float = 10.0  # Ограничение лог-доходности
+    turnover_norm_cap: float = 1.0  # Максимум для нормализованного оборота
+    reward_cap: float = 10.0  # Ограничение итогового вознаграждения
     event_reward: bool = False  # Включить бонусы/штрафы за события закрытия позиций
     profit_close_bonus: float = 0.0  # Бонус за закрытие позиции с прибылью
     loss_close_penalty: float = 0.0  # Штраф за закрытие позиции с убытком
@@ -144,6 +147,9 @@ class RewardParams:
             "risk_aversion_drawdown": self.risk_aversion_drawdown,
             "trade_frequency_penalty": self.trade_frequency_penalty,
             "turnover_penalty_coef": self.turnover_penalty_coef,
+            "reward_return_clip": self.reward_return_clip,
+            "turnover_norm_cap": self.turnover_norm_cap,
+            "reward_cap": self.reward_cap,
             "event_reward": self.event_reward,
             "profit_close_bonus": self.profit_close_bonus,
             "loss_close_penalty": self.loss_close_penalty,

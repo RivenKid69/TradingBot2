@@ -36,6 +36,7 @@ import random
 from copy import deepcopy
 from functools import lru_cache
 from collections.abc import Mapping
+import logging
 from typing import Any, Callable, Dict, MutableMapping, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
@@ -84,6 +85,10 @@ from optuna.exceptions import TrialPruned
 from torch.optim.lr_scheduler import OneCycleLR
 import multiprocessing as mp
 from leakguard import LeakGuard, LeakConfig
+
+
+logger = logging.getLogger(__name__)
+_ACTION_WRAPPER_CONFIG_LOGGED = False
 
 
 def _freeze_vecnormalize(vec_env: VecNormalize) -> VecNormalize:
@@ -230,6 +235,19 @@ def _wrap_action_space_if_needed(
     If env.action_space is Dict with expected keys, wrap it into MultiDiscrete.
     Otherwise return as is.
     """
+
+    global _ACTION_WRAPPER_CONFIG_LOGGED
+    if not _ACTION_WRAPPER_CONFIG_LOGGED:
+        max_asset_weight = None
+        if isinstance(action_overrides, Mapping):
+            max_asset_weight = action_overrides.get("max_asset_weight")
+        logger.info(
+            "[action wrapper] volume_bins=%s, long_only=%s, max_asset_weight=%s",
+            bins_vol,
+            long_only,
+            max_asset_weight,
+        )
+        _ACTION_WRAPPER_CONFIG_LOGGED = True
 
     wrapped_env = env
     try:
@@ -1038,6 +1056,14 @@ def objective(trial: optuna.Trial,
                     raise ValueError(f"Invalid fixed_ttl_steps value: {value!r}") from exc
             if "long_only" in payload:
                 long_only_flag = _coerce_bool(payload.get("long_only"))
+            if "max_asset_weight" in payload and payload.get("max_asset_weight") is not None:
+                value = payload.get("max_asset_weight")
+                try:
+                    overrides["max_asset_weight"] = float(value)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f"Invalid max_asset_weight value: {value!r}"
+                    ) from exc
 
         _update_overrides(actions_payload)
         _update_overrides(wrapper_payload)
@@ -1305,6 +1331,18 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "turnover_penalty_coef"),
         "turnover_penalty_coef",
     )
+    reward_return_clip_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "reward_return_clip"),
+        "reward_return_clip",
+    )
+    turnover_norm_cap_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "turnover_norm_cap"),
+        "turnover_norm_cap",
+    )
+    reward_cap_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "reward_cap"),
+        "reward_cap",
+    )
 
     if target_kl_cfg is None:
         clip_reference = clip_range_cfg if clip_range_cfg is not None else 0.1
@@ -1324,6 +1362,13 @@ def objective(trial: optuna.Trial,
             "Warning: cfg.model.params.turnover_penalty_coef is missing; defaulting to 0.0"
         )
         turnover_penalty_coef_cfg = 0.0
+
+    if reward_return_clip_cfg is None or not math.isfinite(reward_return_clip_cfg) or reward_return_clip_cfg <= 0.0:
+        reward_return_clip_cfg = 10.0
+    if turnover_norm_cap_cfg is None or not math.isfinite(turnover_norm_cap_cfg) or turnover_norm_cap_cfg <= 0.0:
+        turnover_norm_cap_cfg = 1.0
+    if reward_cap_cfg is None or not math.isfinite(reward_cap_cfg) or reward_cap_cfg <= 0.0:
+        reward_cap_cfg = 10.0
 
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
@@ -1509,6 +1554,9 @@ def objective(trial: optuna.Trial,
         )
 
     params["turnover_penalty_coef"] = turnover_penalty_coef_cfg
+    params["reward_return_clip"] = float(max(reward_return_clip_cfg, 1e-6))
+    params["turnover_norm_cap"] = float(max(turnover_norm_cap_cfg, 1e-12))
+    params["reward_cap"] = float(max(reward_cap_cfg, 1e-6))
 
     cql_alpha_cfg = _coerce_optional_float(_get_model_param_value(cfg, "cql_alpha"), "cql_alpha")
     if cql_alpha_cfg is not None:
@@ -1681,6 +1729,9 @@ def objective(trial: optuna.Trial,
                 "gamma": params["gamma"],
                 "trade_frequency_penalty": params["trade_frequency_penalty"],
                 "turnover_penalty_coef": params["turnover_penalty_coef"],
+                "reward_return_clip": params["reward_return_clip"],
+                "turnover_norm_cap": params["turnover_norm_cap"],
+                "reward_cap": params["reward_cap"],
                 "momentum_factor": params["momentum_factor"],
                 "mean_reversion_factor": params["mean_reversion_factor"],
                 "adversarial_factor": params["adversarial_factor"],
@@ -1767,6 +1818,9 @@ def objective(trial: optuna.Trial,
             "tp_atr_mult": params["tp_atr_mult"],
             "trade_frequency_penalty": params["trade_frequency_penalty"],
             "turnover_penalty_coef": params["turnover_penalty_coef"],
+            "reward_return_clip": params["reward_return_clip"],
+            "turnover_norm_cap": params["turnover_norm_cap"],
+            "reward_cap": params["reward_cap"],
             "mode": "val",
             "reward_shaping": False,
             "warmup_period": warmup_period,
@@ -2038,6 +2092,9 @@ def objective(trial: optuna.Trial,
                     "trailing_atr_mult": params["trailing_atr_mult"], "tp_atr_mult": params["tp_atr_mult"],
                     "trade_frequency_penalty": params["trade_frequency_penalty"],
                     "turnover_penalty_coef": params["turnover_penalty_coef"], "mode": eval_phase_name,
+                    "reward_return_clip": params["reward_return_clip"],
+                    "turnover_norm_cap": params["turnover_norm_cap"],
+                    "reward_cap": params["reward_cap"],
                     "reward_shaping": False, "warmup_period": warmup_period,
                     "ma5_window": MA5_WINDOW, "ma20_window": MA20_WINDOW, "atr_window": ATR_WINDOW,
                     "rsi_window": RSI_WINDOW, "macd_fast": MACD_FAST, "macd_slow": MACD_SLOW,
@@ -2656,6 +2713,9 @@ def main():
                     "tp_atr_mult": params["tp_atr_mult"],
                     "trade_frequency_penalty": params["trade_frequency_penalty"],
                     "turnover_penalty_coef": params["turnover_penalty_coef"],
+                    "reward_return_clip": params["reward_return_clip"],
+                    "turnover_norm_cap": params["turnover_norm_cap"],
+                    "reward_cap": params["reward_cap"],
                     "mode": final_eval_mode,
                     "reward_shaping": False,
                     "warmup_period": warmup_period,
