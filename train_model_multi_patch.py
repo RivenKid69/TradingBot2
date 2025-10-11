@@ -2311,7 +2311,19 @@ def objective(trial: optuna.Trial,
 
     trial_model_path = trials_dir / f"trial_{trial.number}_model.zip"
     model.save(str(trial_model_path))
-    save_sidecar_metadata(str(trial_model_path), extra={"kind": "sb3_model", "trial": int(trial.number)})
+    value_head_meta = None
+    policy_obj = getattr(model, "policy", None)
+    metadata_getter = getattr(policy_obj, "value_head_metadata", None)
+    if callable(metadata_getter):
+        try:
+            value_head_meta = metadata_getter()
+        except Exception:
+            value_head_meta = None
+    save_sidecar_metadata(
+        str(trial_model_path),
+        extra={"kind": "sb3_model", "trial": int(trial.number)},
+        value_head=value_head_meta,
+    )
 
     
 

@@ -12,12 +12,13 @@
 # корректно работала с новой GRU-архитектурой, не затрагивая остальной код.
 
 import math
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.optim import Optimizer
-import numpy as np
 from gymnasium import spaces
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
+
+from torch.optim import Optimizer
 
 from sb3_contrib.common.recurrent.policies import RecurrentActorCriticPolicy
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
@@ -26,7 +27,28 @@ from stable_baselines3.common.type_aliases import Schedule  # тип коллб�
 from stable_baselines3.common.utils import zip_strict
 
 from action_proto import ActionType
+from utils.model_io import upgrade_quantile_value_state_dict
 from wrappers.action_space import VOLUME_LEVELS
+
+
+class QuantileValueHead(nn.Module):
+    """Linear value head that predicts fixed equally spaced quantiles."""
+
+    def __init__(self, input_dim: int, num_quantiles: int, huber_kappa: float) -> None:
+        super().__init__()
+        if num_quantiles <= 0:
+            raise ValueError("'num_quantiles' must be positive for QuantileValueHead")
+        self.num_quantiles = int(num_quantiles)
+        self.huber_kappa = float(huber_kappa)
+        if not math.isfinite(self.huber_kappa) or self.huber_kappa <= 0.0:
+            raise ValueError("'huber_kappa' must be a positive finite value")
+        self.linear = nn.Linear(input_dim, self.num_quantiles)
+        taus = torch.linspace(0.0, 1.0, steps=self.num_quantiles + 1, dtype=torch.float32)
+        midpoints = 0.5 * (taus[:-1] + taus[1:])
+        self.register_buffer("taus", midpoints, persistent=True)
+
+    def forward(self, latent: torch.Tensor) -> torch.Tensor:
+        return self.linear(latent)
 
 
 
@@ -247,6 +269,28 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 raise ValueError(f"Invalid '{key}' value in policy arch params: {value}") from exc
             return coerced
 
+        critic_cfg_raw = arch_params.get("critic") if arch_params else None
+        self._critic_cfg: Mapping[str, Any] | None = critic_cfg_raw if isinstance(
+            critic_cfg_raw, Mapping
+        ) else None
+        critic_cfg = self._critic_cfg or {}
+
+        distributional_flag = critic_cfg.get("distributional")
+        self._use_quantile_value_head = bool(distributional_flag)
+
+        if self._use_quantile_value_head:
+            self.num_quantiles = _coerce_arch_int(
+                critic_cfg.get("num_quantiles"), 32, "critic.num_quantiles"
+            )
+            if self.num_quantiles < 1:
+                raise ValueError("'critic.num_quantiles' must be >= 1 when distributional critic is enabled")
+            self.quantile_huber_kappa = _coerce_arch_float(
+                critic_cfg.get("huber_kappa"), 1.0, "critic.huber_kappa"
+            )
+        else:
+            self.num_quantiles = 0
+            self.quantile_huber_kappa = 1.0
+
         self.num_atoms = _coerce_arch_int(arch_params.get("num_atoms"), 51, "num_atoms")
         self.v_min = _coerce_arch_float(arch_params.get("v_min"), -1.0, "v_min")
         self.v_max = _coerce_arch_float(arch_params.get("v_max"), 1.0, "v_max")
@@ -275,7 +319,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # dist_head создаётся позже в _build, но атрибут инициализируем заранее,
         # чтобы на него можно было безопасно ссылаться до сборки модели.
         self.dist_head: Optional[nn.Linear] = None
+        self.quantile_head: Optional[QuantileValueHead] = None
+        self._value_head_module: Optional[nn.Module] = None
         self._last_value_logits: Optional[torch.Tensor] = None
+        self._last_value_quantiles: Optional[torch.Tensor] = None
         self._critic_gradient_blocked: bool = False
 
         # lr_schedule уже используется базовым классом во время вызова super().__init__.
@@ -299,11 +346,15 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self.hidden_dim = self.lstm_output_dim
 
         # буфер с опорой атомов остаётся
-        atoms = torch.linspace(self.v_min, self.v_max, self.num_atoms)
+        if self._use_quantile_value_head:
+            atoms = torch.empty(0, dtype=torch.float32)
+        else:
+            atoms = torch.linspace(self.v_min, self.v_max, self.num_atoms)
         self.register_buffer("atoms", atoms)
 
         # совместимость: где-то в старом коде могли обращаться к self.value_net
-        self.value_net = self.dist_head
+        if not self._use_quantile_value_head:
+            self.value_net = self.dist_head
 
         
 
@@ -526,6 +577,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         """
         Динамически обновляет диапазон и сами атомы для value-распределения.
         """
+        if self._use_quantile_value_head:
+            return
         # Проверяем, изменился ли диапазон, чтобы не делать лишнюю работу
         if self.v_min == v_min and self.v_max == v_max:
             return
@@ -554,9 +607,20 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         """
         super()._build(lr_schedule)
 
-        # Перестраиваем value-голову на распределение атомов.
-        self.dist_head = nn.Linear(self.lstm_output_dim, self.num_atoms)
-        self.value_net = self.dist_head
+        if self._use_quantile_value_head:
+            self.quantile_head = QuantileValueHead(
+                self.lstm_output_dim, self.num_quantiles, self.quantile_huber_kappa
+            )
+            self._value_head_module = self.quantile_head
+            # In distributional mode with quantiles we intentionally drop the
+            # categorical head; downstream code must use ``value_quantiles``
+            # instead of ``dist_head``.
+            self.dist_head = None
+            self.value_net = self.quantile_head.linear
+        else:
+            self.dist_head = nn.Linear(self.lstm_output_dim, self.num_atoms)
+            self._value_head_module = self.dist_head
+            self.value_net = self.dist_head
 
         # Во время вызова _build из базового класса рекуррентные слои ещё не созданы,
         # поэтому откладываем настройку оптимизатора до завершения __init__.
@@ -582,7 +646,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if lstm_critic is not None and lstm_critic is not lstm_actor:
             modules.append(lstm_critic)
 
-        modules.extend([self.action_net, self.dist_head])
+        modules.append(self.action_net)
+        if self._value_head_module is not None:
+            modules.append(self._value_head_module)
 
         params: list[nn.Parameter] = []
         for module in modules:
@@ -864,13 +930,27 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             raise NotImplementedError(f"Action space {type(self.action_space)} not supported")
 
     def _get_value_logits(self, latent_vf: torch.Tensor) -> torch.Tensor:
-        """Возвращает логиты распределения ценностей без их агрегации."""
+        """Возвращает логиты распределения/квантили ценностей без агрегации."""
 
+        if self._use_quantile_value_head:
+            if self.quantile_head is None:
+                raise RuntimeError("Quantile value head is not initialised")
+            quantiles = self.quantile_head(latent_vf)
+            self._last_value_logits = None
+            self._last_value_quantiles = quantiles
+            return quantiles
+
+        if self.dist_head is None:
+            raise RuntimeError("Categorical value head is not initialised")
         value_logits = self.dist_head(latent_vf)  # [B, n_atoms]
         self._last_value_logits = value_logits
+        self._last_value_quantiles = None
         return value_logits
 
     def _value_from_logits(self, value_logits: torch.Tensor) -> torch.Tensor:
+        if self._use_quantile_value_head:
+            return value_logits.mean(dim=-1, keepdim=True)
+
         probs = torch.softmax(value_logits, dim=-1)
         return (probs * self.atoms).sum(dim=-1, keepdim=True)
 
@@ -989,6 +1069,20 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     @property
     def last_value_logits(self) -> Optional[torch.Tensor]:
         return self._last_value_logits
+
+    @property
+    def last_value_quantiles(self) -> Optional[torch.Tensor]:
+        return self._last_value_quantiles
+
+    @property
+    def uses_quantile_value_head(self) -> bool:
+        return self._use_quantile_value_head
+
+    @property
+    def quantile_levels(self) -> Optional[torch.Tensor]:
+        if self.quantile_head is None:
+            return None
+        return self.quantile_head.taus
 
     def forward(
         self,
@@ -1188,3 +1282,40 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         latent_vf = self.mlp_extractor.forward_critic(latent_vf)
         return self._get_value_from_latent(latent_vf)
+
+    def value_quantiles(
+        self,
+        obs: torch.Tensor,
+        lstm_states: Tuple[torch.Tensor, ...],
+        episode_starts: torch.Tensor,
+    ) -> torch.Tensor:
+        if not self._use_quantile_value_head:
+            return self.predict_values(obs, lstm_states, episode_starts)
+
+        features = super(ActorCriticPolicy, self).extract_features(obs, self.vf_features_extractor)
+
+        if self.lstm_critic is not None:
+            latent_vf, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_critic)
+        elif self.shared_lstm:
+            latent_pi, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_actor)
+            latent_vf = latent_pi.detach()
+        else:
+            latent_vf = self.critic(features)
+
+        latent_vf = self.mlp_extractor.forward_critic(latent_vf)
+        return self._get_value_logits(latent_vf)
+
+    def value_head_metadata(self) -> dict[str, Any]:
+        if self._use_quantile_value_head:
+            return {"type": "quantile", "num_quantiles": int(self.num_quantiles)}
+        return {"type": "categorical", "num_quantiles": None}
+
+    def load_state_dict(self, state_dict: Mapping[str, torch.Tensor], strict: bool = True):
+        if self._use_quantile_value_head:
+            state_dict = upgrade_quantile_value_state_dict(
+                state_dict,
+                target_prefix="quantile_head.linear",
+                num_quantiles=int(self.num_quantiles),
+                fallback_prefixes=("value_net", "dist_head"),
+            )
+        return super().load_state_dict(state_dict, strict=strict)

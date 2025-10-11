@@ -8,14 +8,20 @@ import warnings
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 try:  # Optional dependency: PyYAML is not guaranteed to be available.
     import yaml  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
     yaml = None  # type: ignore
 
-__all__ = ["save_sidecar_metadata", "check_model_compat"]
+import torch
+
+__all__ = [
+    "save_sidecar_metadata",
+    "check_model_compat",
+    "upgrade_quantile_value_state_dict",
+]
 
 
 _SIDE_CAR_EXTENSIONS = (".sidecar.json", ".sidecar.yaml", ".sidecar.yml")
@@ -85,6 +91,7 @@ def save_sidecar_metadata(
     *,
     extra: Mapping[str, Any] | None = None,
     format: str | None = None,
+    value_head: Mapping[str, Any] | None = None,
 ) -> Path:
     """Persist metadata alongside a model artefact.
 
@@ -134,6 +141,12 @@ def save_sidecar_metadata(
     }
     if extra:
         metadata["extra"] = dict(extra)
+        if value_head is None and "value_head" in extra:
+            maybe_head = extra["value_head"]
+            if isinstance(maybe_head, Mapping):
+                value_head = maybe_head  # type: ignore[assignment]
+    if value_head is not None:
+        metadata["value_head"] = dict(value_head)
 
     extension = ".sidecar.yaml" if sidecar_format in {"yaml", "yml"} else ".sidecar.json"
     sidecar_path = _sidecar_path(base_path, preferred_ext=extension)
@@ -225,3 +238,63 @@ def check_model_compat(artifact_path: str | Path) -> None:
     # Additional metadata (such as `extra`) is intentionally ignored here –
     # the presence of the sidecar with consistent versions is sufficient.
     return None
+
+
+def upgrade_quantile_value_state_dict(
+    state_dict: Mapping[str, torch.Tensor],
+    *,
+    target_prefix: str,
+    num_quantiles: int,
+    fallback_prefixes: Sequence[str] = (),
+) -> Mapping[str, torch.Tensor]:
+    """Upgrade scalar value-head weights for a quantile critic.
+
+    The helper inspects a state dictionary produced by an older checkpoint and
+    ensures that the quantile value head receives parameters with the expected
+    dimensionality.  If the quantile head already matches ``num_quantiles`` the
+    input mapping is returned unchanged.
+    """
+
+    if num_quantiles <= 0:
+        return state_dict
+
+    weight_key = f"{target_prefix}.weight"
+    bias_key = f"{target_prefix}.bias"
+
+    def _duplicate_tensor(tensor: torch.Tensor, repeats: int) -> torch.Tensor:
+        if tensor.dim() == 2:
+            return tensor.expand(repeats, -1).clone()
+        if tensor.dim() == 1:
+            return tensor.expand(repeats).clone()
+        return tensor
+
+    if weight_key in state_dict:
+        weight = state_dict[weight_key]
+        if isinstance(weight, torch.Tensor) and weight.dim() == 2:
+            if weight.shape[0] == num_quantiles:
+                return state_dict
+            if weight.shape[0] == 1:
+                new_weight = _duplicate_tensor(weight, num_quantiles)
+                state_dict = state_dict.copy() if isinstance(state_dict, dict) else dict(state_dict)
+                state_dict[weight_key] = new_weight
+                if bias_key in state_dict:
+                    bias = state_dict[bias_key]
+                    if isinstance(bias, torch.Tensor) and bias.shape[0] == 1:
+                        state_dict[bias_key] = _duplicate_tensor(bias, num_quantiles)
+                return state_dict
+            return state_dict
+
+    for prefix in fallback_prefixes:
+        weight = state_dict.get(f"{prefix}.weight")
+        bias = state_dict.get(f"{prefix}.bias")
+        if not isinstance(weight, torch.Tensor) or weight.dim() != 2:
+            continue
+        if weight.shape[0] != 1:
+            continue
+        upgraded = dict(state_dict)
+        upgraded[weight_key] = _duplicate_tensor(weight, num_quantiles)
+        if isinstance(bias, torch.Tensor) and bias.shape[0] == 1:
+            upgraded[bias_key] = _duplicate_tensor(bias, num_quantiles)
+        return upgraded
+
+    return state_dict
