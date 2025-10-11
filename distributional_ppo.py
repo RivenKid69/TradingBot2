@@ -247,6 +247,114 @@ class DistributionalPPO(RecurrentPPO):
         clamped_ratio = min(max(ratio, lower / base), upper / base)
         return float(max(base * clamped_ratio, 1e-8))
 
+    def _limit_v_range_step(
+        self,
+        old_min: float,
+        old_max: float,
+        proposed_min: float,
+        proposed_max: float,
+    ) -> tuple[float, float]:
+        """Clamp the change of the distributional value support per update."""
+
+        max_rel = self._value_range_max_rel_step
+        if max_rel is None or max_rel <= 0.0 or not math.isfinite(max_rel):
+            return float(proposed_min), float(proposed_max)
+
+        old_min = float(old_min)
+        old_max = float(old_max)
+        proposed_min = float(proposed_min)
+        proposed_max = float(proposed_max)
+
+        if proposed_max <= proposed_min:
+            span = max(abs(proposed_max - proposed_min), 1e-6)
+            center = 0.5 * (proposed_max + proposed_min)
+            proposed_min = center - 0.5 * span
+            proposed_max = center + 0.5 * span
+
+        span_old = float(old_max - old_min)
+        if not math.isfinite(span_old) or span_old <= 1e-8:
+            return proposed_min, proposed_max
+
+        center_old = 0.5 * (old_max + old_min)
+        center_new = 0.5 * (proposed_max + proposed_min)
+        span_new = max(float(proposed_max - proposed_min), 1e-8)
+
+        max_center_shift = span_old * max_rel
+        max_span_delta = span_old * max_rel
+
+        center_delta = float(center_new - center_old)
+        span_delta = float(span_new - span_old)
+
+        center_delta = max(min(center_delta, max_center_shift), -max_center_shift)
+        span_delta = max(min(span_delta, max_span_delta), -max_span_delta)
+
+        span_limited = max(span_old + span_delta, 1e-8)
+        center_limited = center_old + center_delta
+
+        limited_min = center_limited - 0.5 * span_limited
+        limited_max = center_limited + 0.5 * span_limited
+
+        if limited_max <= limited_min:
+            limited_center = 0.5 * (limited_max + limited_min)
+            limited_span = max(span_limited, 1e-6)
+            limited_min = limited_center - 0.5 * limited_span
+            limited_max = limited_center + 0.5 * limited_span
+
+        return float(limited_min), float(limited_max)
+
+    def _apply_v_range_update(
+        self, target_min: float, target_max: float
+    ) -> tuple[float, float, float, float, bool]:
+        """Update running distributional support with smoothing and limits."""
+
+        target_min = float(target_min)
+        target_max = float(target_max)
+        old_min = float(self.running_v_min)
+        old_max = float(self.running_v_max)
+
+        if target_max <= target_min:
+            span = max(abs(target_max - target_min), 1e-6)
+            center = 0.5 * (target_max + target_min)
+            target_min = center - 0.5 * span
+            target_max = center + 0.5 * span
+
+        if not self.v_range_initialized:
+            self.running_v_min = target_min
+            self.running_v_max = target_max
+            self.v_range_initialized = True
+            self.policy.update_atoms(self.running_v_min, self.running_v_max)
+            return old_min, old_max, self.running_v_min, self.running_v_max, True
+
+        alpha = float(self.v_range_ema_alpha)
+        alpha = min(max(alpha, 0.0), 1.0)
+        ema_min = float((1.0 - alpha) * self.running_v_min + alpha * target_min)
+        ema_max = float((1.0 - alpha) * self.running_v_max + alpha * target_max)
+        candidate_min = min(ema_min, target_min)
+        candidate_max = max(ema_max, target_max)
+
+        candidate_min, candidate_max = self._limit_v_range_step(
+            self.running_v_min, self.running_v_max, candidate_min, candidate_max
+        )
+
+        if candidate_max <= candidate_min:
+            span = max(abs(candidate_max - candidate_min), 1e-6)
+            center = 0.5 * (candidate_max + candidate_min)
+            candidate_min = center - 0.5 * span
+            candidate_max = center + 0.5 * span
+
+        changed = (
+            not math.isclose(candidate_min, self.running_v_min, rel_tol=0.0, abs_tol=1e-12)
+            or not math.isclose(candidate_max, self.running_v_max, rel_tol=0.0, abs_tol=1e-12)
+        )
+
+        self.running_v_min = float(candidate_min)
+        self.running_v_max = float(candidate_max)
+
+        if changed:
+            self.policy.update_atoms(self.running_v_min, self.running_v_max)
+
+        return old_min, old_max, self.running_v_min, self.running_v_max, changed
+
     def _extract_rms_stats(
         self, rms: Optional[RunningMeanStd]
     ) -> Optional[tuple[float, float, float]]:
@@ -262,6 +370,26 @@ class DistributionalPPO(RecurrentPPO):
         if not math.isfinite(var) or var < 0.0:
             var = 0.0
         return mean, var, count
+
+    def _is_value_scale_frame_stable(
+        self, ret_abs_p95: float, explained_var: float
+    ) -> bool:
+        """Check if return statistics look stable enough to update scaling."""
+
+        if not math.isfinite(ret_abs_p95):
+            return False
+
+        if self._value_scale_stability_max_abs_p95 is not None:
+            if ret_abs_p95 > self._value_scale_stability_max_abs_p95:
+                return False
+
+        if self._value_scale_stability_min_ev is not None:
+            if not math.isfinite(explained_var):
+                return False
+            if explained_var < self._value_scale_stability_min_ev:
+                return False
+
+        return True
 
     def _summarize_recent_return_stats(
         self,
@@ -346,6 +474,12 @@ class DistributionalPPO(RecurrentPPO):
     def _finalize_return_stats(self) -> None:
         """Commit accumulated return statistics after an optimisation step."""
 
+        if not hasattr(self, "running_v_min") or not hasattr(self, "running_v_max"):
+            clip = float(getattr(self, "ret_clip", 1.0))
+            self.running_v_min = -clip
+            self.running_v_max = clip
+            self.v_range_initialized = False
+
         if not self.normalize_returns:
             self._ret_mean_snapshot = float(self._ret_mean_value)
             self._ret_std_snapshot = float(self._ret_std_value)
@@ -354,104 +488,164 @@ class DistributionalPPO(RecurrentPPO):
             self._pending_ret_std = None
             return
 
+        before_mean = float(self._ret_mean_value)
+        before_std = max(float(self._ret_std_value), self._value_scale_std_floor)
+        before_scale_effective = float(self._value_target_scale_effective)
+        prev_v_min = float(self.running_v_min)
+        prev_v_max = float(self.running_v_max)
+
+        prev_v_min_unscaled = prev_v_min * before_std + before_mean
+        prev_v_max_unscaled = prev_v_max * before_std + before_mean
+
+        self.logger.record("train/value_scale_mean_before", float(before_mean))
+        self.logger.record("train/value_scale_std_before", float(before_std))
+        self.logger.record("train/value_target_scale_before", float(before_scale_effective))
+        self.logger.record("train/value_scale_vmin_before", float(prev_v_min_unscaled))
+        self.logger.record("train/value_scale_vmax_before", float(prev_v_max_unscaled))
+
         pending_rms = self._pending_rms
+        update_applied = False
+        block_samples = False
+        block_freeze = False
+        block_stability = False
+
+        running_v_min_unscaled = prev_v_min_unscaled
+        running_v_max_unscaled = prev_v_max_unscaled
+        new_mean = before_mean
+        new_std = before_std
+
         if pending_rms is None or pending_rms.count <= 1e-3:
-            # No fresh samples collected during this update.
+            block_samples = True
+            target_mean = before_mean
+            target_std = before_std
+        else:
+            sample_stats = self._extract_rms_stats(pending_rms)
+            if sample_stats is None:
+                block_samples = True
+                target_mean = before_mean
+                target_std = before_std
+            else:
+                sample_mean, sample_var, sample_weight = sample_stats
+                (
+                    blended_mean,
+                    blended_var,
+                    blended_weight,
+                    updated_buffer,
+                ) = self._summarize_recent_return_stats(
+                    sample_mean,
+                    sample_var,
+                    sample_weight,
+                    inplace=True,
+                )
+                self._value_scale_recent_stats = updated_buffer
+
+                (
+                    target_mean,
+                    target_var,
+                    target_second,
+                    target_initialized,
+                ) = self._apply_return_stats_ema(
+                    blended_mean, blended_var, blended_weight
+                )
+                self._value_scale_stats_mean = target_mean
+                self._value_scale_stats_second = target_second
+                self._value_scale_stats_initialized = target_initialized
+
+                target_std = max(
+                    math.sqrt(max(target_var, 0.0)), self._value_scale_std_floor
+                )
+
+                freeze_active = (
+                    self._value_scale_freeze_after is not None
+                    and self._value_scale_update_count >= self._value_scale_freeze_after
+                )
+                warmup_active = (
+                    self._value_scale_update_count < self._value_scale_warmup_updates
+                )
+                stability_ready = True
+                if self._value_scale_requires_stability and not warmup_active:
+                    patience = self._value_scale_stability_patience
+                    stable_counter_ok = (
+                        patience <= 0 or self._value_scale_stable_counter >= patience
+                    )
+                    stability_ready = self._value_scale_frame_stable and stable_counter_ok
+
+                if freeze_active:
+                    block_freeze = True
+                elif self._value_scale_requires_stability and not warmup_active and not stability_ready:
+                    block_stability = True
+                else:
+                    old_mean = before_mean
+                    old_std = before_std
+                    proposed_mean = float(target_mean)
+                    proposed_std = float(target_std)
+                    new_mean = self._limit_mean_step(
+                        old_mean, proposed_mean, target_std
+                    )
+                    new_std = self._limit_std_step(old_std, proposed_std)
+                    new_std = max(new_std, self._value_scale_std_floor)
+
+                    self._ret_mean_value = float(new_mean)
+                    self._ret_std_value = float(new_std)
+                    self._ret_mean_snapshot = float(new_mean)
+                    self._ret_std_snapshot = float(new_std)
+
+                    denom = max(
+                        self.ret_clip * new_std,
+                        self.ret_clip * self._value_scale_std_floor,
+                    )
+                    self._value_target_scale_effective = float(1.0 / denom)
+                    self._value_target_scale_robust = 1.0
+
+                    target_v_min = -float(self.ret_clip)
+                    target_v_max = float(self.ret_clip)
+                    _, _, updated_v_min, updated_v_max, _ = self._apply_v_range_update(
+                        target_v_min, target_v_max
+                    )
+
+                    running_v_min_unscaled = updated_v_min * new_std + new_mean
+                    running_v_max_unscaled = updated_v_max * new_std + new_mean
+                    update_applied = True
+                    self._value_scale_update_count += 1
+
+        self._pending_ret_mean = float(target_mean)
+        self._pending_ret_std = float(target_std)
+
+        if update_applied:
+            self.ret_rms.mean[...] = target_mean
+            self.ret_rms.var[...] = target_std * target_std
+            self.ret_rms.count = max(float(self.ret_rms.count), 1.0)
+        else:
             self._ret_mean_snapshot = float(self._ret_mean_value)
             self._ret_std_snapshot = max(
                 float(self._ret_std_value), self._value_scale_std_floor
             )
-            self._pending_rms = None
-            self._pending_ret_mean = None
-            self._pending_ret_std = None
-            return
 
-        sample_stats = self._extract_rms_stats(pending_rms)
-        if sample_stats is None:
-            self._ret_mean_snapshot = float(self._ret_mean_value)
-            self._ret_std_snapshot = max(float(self._ret_std_value), self._value_scale_std_floor)
-            self._pending_rms = None
-            self._pending_ret_mean = None
-            self._pending_ret_std = None
-            return
-
-        sample_mean, sample_var, sample_weight = sample_stats
-        (
-            blended_mean,
-            blended_var,
-            blended_weight,
-            updated_buffer,
-        ) = self._summarize_recent_return_stats(
-            sample_mean,
-            sample_var,
-            sample_weight,
-            inplace=True,
-        )
-        self._value_scale_recent_stats = updated_buffer
-
-        (
-            target_mean,
-            target_var,
-            target_second,
-            target_initialized,
-        ) = self._apply_return_stats_ema(blended_mean, blended_var, blended_weight)
-        self._value_scale_stats_mean = target_mean
-        self._value_scale_stats_second = target_second
-        self._value_scale_stats_initialized = target_initialized
-
-        target_std = max(math.sqrt(max(target_var, 0.0)), self._value_scale_std_floor)
-        self.ret_rms.mean[...] = target_mean
-        self.ret_rms.var[...] = target_std * target_std
-        # NOTE: The EMA smoothing decouples ``ret_rms.count`` from the true number of
-        # samples.  Keep it at ``>= 1`` to satisfy SB3 invariants while flagging the
-        # behaviour via debug/value_scale_ret_count_virtualized.
-        self.ret_rms.count = max(float(self.ret_rms.count), 1.0)
-
-        self._pending_ret_mean = target_mean
-        self._pending_ret_std = target_std
-
-        old_mean = float(self._ret_mean_value)
-        old_std = max(float(self._ret_std_value), self._value_scale_std_floor)
-
-        proposed_mean = float(target_mean)
-        proposed_std = float(target_std)
-
-        new_mean = self._limit_mean_step(old_mean, proposed_mean, target_std)
-        new_std = self._limit_std_step(old_std, proposed_std)
-        new_std = max(new_std, self._value_scale_std_floor)
-
-        self._ret_mean_value = float(new_mean)
-        self._ret_std_value = float(new_std)
-        self._ret_mean_snapshot = float(new_mean)
-        self._ret_std_snapshot = float(new_std)
-
-        denom = max(
-            self.ret_clip * new_std,
-            self.ret_clip * self._value_scale_std_floor,
-        )
-        self._value_target_scale_effective = float(1.0 / denom)
-        self._value_target_scale_robust = 1.0
-        target_v_min = -float(self.ret_clip)
-        target_v_max = float(self.ret_clip)
-        if not self.v_range_initialized:
-            self.running_v_min = target_v_min
-            self.running_v_max = target_v_max
-            self.v_range_initialized = True
-        else:
-            alpha = float(self.v_range_ema_alpha)
-            alpha = min(max(alpha, 0.0), 1.0)
-            ema_min = float((1.0 - alpha) * self.running_v_min + alpha * target_v_min)
-            ema_max = float((1.0 - alpha) * self.running_v_max + alpha * target_v_max)
-            self.running_v_min = min(ema_min, target_v_min)
-            self.running_v_max = max(ema_max, target_v_max)
-        self.policy.update_atoms(self.running_v_min, self.running_v_max)
-
-        running_v_min_unscaled = self.running_v_min * new_std + new_mean
-        running_v_max_unscaled = self.running_v_max * new_std + new_mean
         self.logger.record("train/value_scale_mean_next", float(new_mean))
         self.logger.record("train/value_scale_std_next", float(new_std))
         self.logger.record("train/value_scale_vmin_next", float(running_v_min_unscaled))
         self.logger.record("train/value_scale_vmax_next", float(running_v_max_unscaled))
+        self.logger.record("train/value_scale_mean_after", float(new_mean))
+        self.logger.record("train/value_scale_std_after", float(new_std))
+        self.logger.record("train/value_scale_vmin_after", float(running_v_min_unscaled))
+        self.logger.record("train/value_scale_vmax_after", float(running_v_max_unscaled))
+        self.logger.record(
+            "train/value_target_scale_after", float(self._value_target_scale_effective)
+        )
+        self.logger.record("train/value_scale_update_applied", float(update_applied))
+        self.logger.record("train/value_scale_update_count", float(self._value_scale_update_count))
+        self.logger.record("train/value_scale_update_block_samples", float(block_samples))
+        self.logger.record("train/value_scale_update_block_freeze", float(block_freeze))
+        self.logger.record("train/value_scale_update_block_stability", float(block_stability))
+
+        if self._value_scale_freeze_after is not None:
+            freeze_reached = (
+                self._value_scale_update_count >= self._value_scale_freeze_after
+            ) or block_freeze
+            self._value_scale_frozen = bool(freeze_reached)
+        else:
+            self._value_scale_frozen = False
+        self.logger.record("train/value_scale_frozen", float(self._value_scale_frozen))
 
         self._pending_rms = None
 
@@ -687,16 +881,39 @@ class DistributionalPPO(RecurrentPPO):
         value_scale_max_rel_step = None
         value_scale_std_floor = None
         value_scale_window_updates = None
+        value_scale_warmup_updates = None
+        value_scale_freeze_after = None
+        value_scale_range_max_rel_step = None
+        value_scale_stability_cfg_raw: Optional[Mapping[str, Any]] = None
+        value_scale_stability_patience = None
         if isinstance(value_scale_cfg, Mapping):
             value_scale_ema_beta = value_scale_cfg.get("ema_beta")
             value_scale_max_rel_step = value_scale_cfg.get("max_rel_step")
             value_scale_std_floor = value_scale_cfg.get("std_floor")
             value_scale_window_updates = value_scale_cfg.get("window_updates")
+            value_scale_warmup_updates = value_scale_cfg.get("warmup_updates")
+            value_scale_freeze_after = value_scale_cfg.get("freeze_after")
+            value_scale_range_max_rel_step = value_scale_cfg.get("range_max_rel_step")
+            stability_candidate = value_scale_cfg.get("stability")
+            if isinstance(stability_candidate, Mapping):
+                value_scale_stability_cfg_raw = stability_candidate
+            value_scale_stability_patience = value_scale_cfg.get("stability_patience")
         elif value_scale_cfg is not None:
             value_scale_ema_beta = getattr(value_scale_cfg, "ema_beta", None)
             value_scale_max_rel_step = getattr(value_scale_cfg, "max_rel_step", None)
             value_scale_std_floor = getattr(value_scale_cfg, "std_floor", None)
             value_scale_window_updates = getattr(value_scale_cfg, "window_updates", None)
+            value_scale_warmup_updates = getattr(value_scale_cfg, "warmup_updates", None)
+            value_scale_freeze_after = getattr(value_scale_cfg, "freeze_after", None)
+            value_scale_range_max_rel_step = getattr(
+                value_scale_cfg, "range_max_rel_step", None
+            )
+            stability_candidate = getattr(value_scale_cfg, "stability", None)
+            if isinstance(stability_candidate, Mapping):
+                value_scale_stability_cfg_raw = stability_candidate
+            value_scale_stability_patience = getattr(
+                value_scale_cfg, "stability_patience", None
+            )
 
         if value_scale_ema_beta is None:
             value_scale_ema_beta = kwargs_local.pop("value_scale_ema_beta", 0.2)
@@ -706,6 +923,32 @@ class DistributionalPPO(RecurrentPPO):
             value_scale_std_floor = kwargs_local.pop("value_scale_std_floor", 1e-2)
         if value_scale_window_updates is None:
             value_scale_window_updates = kwargs_local.pop("value_scale_window_updates", 0)
+        if value_scale_warmup_updates is None:
+            value_scale_warmup_updates = kwargs_local.pop("value_scale_warmup_updates", 0)
+        else:
+            kwargs_local.pop("value_scale_warmup_updates", None)
+        if value_scale_freeze_after is None:
+            value_scale_freeze_after = kwargs_local.pop("value_scale_freeze_after", None)
+        else:
+            kwargs_local.pop("value_scale_freeze_after", None)
+        if value_scale_range_max_rel_step is None:
+            value_scale_range_max_rel_step = kwargs_local.pop(
+                "value_scale_range_max_rel_step", None
+            )
+        else:
+            kwargs_local.pop("value_scale_range_max_rel_step", None)
+        if value_scale_stability_cfg_raw is None:
+            stability_raw_alt = kwargs_local.pop("value_scale_stability", None)
+            if isinstance(stability_raw_alt, Mapping):
+                value_scale_stability_cfg_raw = stability_raw_alt
+        else:
+            kwargs_local.pop("value_scale_stability", None)
+        if value_scale_stability_patience is None:
+            value_scale_stability_patience = kwargs_local.pop(
+                "value_scale_stability_patience", None
+            )
+        else:
+            kwargs_local.pop("value_scale_stability_patience", None)
 
         self._value_scale_ema_beta = float(value_scale_ema_beta)
         if not (0.0 < self._value_scale_ema_beta <= 1.0):
@@ -726,6 +969,80 @@ class DistributionalPPO(RecurrentPPO):
         self._value_target_scale_effective = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
         self._value_clip_limit_scaled: Optional[float] = None
+        self._value_scale_warmup_updates = max(0, int(value_scale_warmup_updates or 0))
+        freeze_after_value: Optional[int]
+        if value_scale_freeze_after is None:
+            freeze_after_value = None
+        else:
+            freeze_after_candidate = int(value_scale_freeze_after)
+            freeze_after_value = (
+                freeze_after_candidate if freeze_after_candidate > 0 else None
+            )
+        self._value_scale_freeze_after: Optional[int] = freeze_after_value
+        if value_scale_range_max_rel_step is None:
+            self._value_range_max_rel_step: Optional[float] = None
+        else:
+            range_step_value = float(value_scale_range_max_rel_step)
+            if not math.isfinite(range_step_value):
+                raise ValueError("'value_scale.range_max_rel_step' must be finite")
+            if range_step_value < 0.0:
+                raise ValueError("'value_scale.range_max_rel_step' must be non-negative")
+            self._value_range_max_rel_step = range_step_value
+
+        stability_min_ev = None
+        stability_max_p95 = None
+        stability_patience_value = None
+        if value_scale_stability_cfg_raw is not None:
+            stability_min_ev_candidate = value_scale_stability_cfg_raw.get(
+                "min_explained_variance"
+            )
+            if stability_min_ev_candidate is None:
+                stability_min_ev_candidate = value_scale_stability_cfg_raw.get(
+                    "ev_min"
+                )
+            if stability_min_ev_candidate is not None:
+                stability_min_ev = float(stability_min_ev_candidate)
+            stability_max_p95_candidate = value_scale_stability_cfg_raw.get(
+                "max_abs_p95"
+            )
+            if stability_max_p95_candidate is None:
+                stability_max_p95_candidate = value_scale_stability_cfg_raw.get(
+                    "ret_abs_p95_max"
+                )
+            if stability_max_p95_candidate is not None:
+                stability_max_p95 = float(stability_max_p95_candidate)
+            stability_patience_candidate = value_scale_stability_cfg_raw.get(
+                "patience"
+            )
+            if stability_patience_candidate is None:
+                stability_patience_candidate = value_scale_stability_cfg_raw.get(
+                    "consecutive"
+                )
+            if stability_patience_candidate is not None:
+                stability_patience_value = int(stability_patience_candidate)
+
+        if value_scale_stability_patience is not None:
+            stability_patience_value = int(value_scale_stability_patience)
+
+        if stability_min_ev is not None and not math.isfinite(stability_min_ev):
+            stability_min_ev = None
+        if stability_max_p95 is not None and stability_max_p95 <= 0.0:
+            stability_max_p95 = None
+        self._value_scale_stability_min_ev = stability_min_ev
+        self._value_scale_stability_max_abs_p95 = stability_max_p95
+        if stability_patience_value is None:
+            stability_patience_value = 0
+        self._value_scale_stability_patience = max(0, int(stability_patience_value))
+        self._value_scale_requires_stability = (
+            self._value_scale_stability_min_ev is not None
+            or self._value_scale_stability_max_abs_p95 is not None
+            or self._value_scale_stability_patience > 0
+        )
+        self._value_scale_update_count = 0
+        self._value_scale_frame_stable = True
+        self._value_scale_stable_counter = 0
+        self._value_scale_latest_ret_abs_p95 = 0.0
+        self._value_scale_frozen = False
 
         kl_lr_scale_min_log_request = kl_lr_scale_min_requested
 
@@ -760,6 +1077,32 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("debug/value_scale_std_floor", float(self._value_scale_std_floor))
         self.logger.record(
             "debug/value_scale_window_updates", float(self._value_scale_window_updates)
+        )
+        self.logger.record(
+            "debug/value_scale_warmup_updates", float(self._value_scale_warmup_updates)
+        )
+        if self._value_scale_freeze_after is not None:
+            self.logger.record(
+                "debug/value_scale_freeze_after", float(self._value_scale_freeze_after)
+            )
+        if self._value_range_max_rel_step is not None:
+            self.logger.record(
+                "debug/value_range_max_rel_step",
+                float(self._value_range_max_rel_step),
+            )
+        if self._value_scale_stability_min_ev is not None:
+            self.logger.record(
+                "debug/value_scale_stability_min_ev",
+                float(self._value_scale_stability_min_ev),
+            )
+        if self._value_scale_stability_max_abs_p95 is not None:
+            self.logger.record(
+                "debug/value_scale_stability_max_abs_p95",
+                float(self._value_scale_stability_max_abs_p95),
+            )
+        self.logger.record(
+            "debug/value_scale_stability_patience",
+            float(self._value_scale_stability_patience),
         )
         self.logger.record("debug/value_scale_ret_count_virtualized", 1.0)
 
@@ -1020,6 +1363,17 @@ class DistributionalPPO(RecurrentPPO):
         if last_ev is None:
             self._cvar_ramp_progress = 0
             return 0.0
+        if self._value_scale_update_count < self._value_scale_warmup_updates:
+            self._cvar_ramp_progress = 0
+            return 0.0
+        if self._value_scale_requires_stability:
+            patience = max(1, self._value_scale_stability_patience)
+            if not self._value_scale_frame_stable:
+                self._cvar_ramp_progress = 0
+                return 0.0
+            if self._value_scale_stable_counter < patience:
+                self._cvar_ramp_progress = 0
+                return 0.0
         threshold = self._cvar_activation_threshold
         hysteresis = self._cvar_activation_hysteresis
         if last_ev + hysteresis < threshold:
@@ -1525,6 +1879,8 @@ class DistributionalPPO(RecurrentPPO):
         else:
             ret_abs_p95_value = float(torch.quantile(returns_raw_tensor.abs(), 0.95).item())
 
+        self._value_scale_latest_ret_abs_p95 = float(ret_abs_p95_value)
+
         ret_mu_value = float(self._ret_mean_snapshot)
         ret_std_value = float(self._ret_std_snapshot)
         pending_mean_value = ret_mu_value
@@ -1583,21 +1939,15 @@ class DistributionalPPO(RecurrentPPO):
 
             target_v_min = -float(self.ret_clip)
             target_v_max = float(self.ret_clip)
-            if not self.v_range_initialized:
-                self.running_v_min = target_v_min
-                self.running_v_max = target_v_max
-                self.v_range_initialized = True
-            else:
-                alpha = float(self.v_range_ema_alpha)
-                alpha = min(max(alpha, 0.0), 1.0)
-                ema_min = float((1.0 - alpha) * self.running_v_min + alpha * target_v_min)
-                ema_max = float((1.0 - alpha) * self.running_v_max + alpha * target_v_max)
-                self.running_v_min = min(ema_min, target_v_min)
-                self.running_v_max = max(ema_max, target_v_max)
-            self.policy.update_atoms(self.running_v_min, self.running_v_max)
+            updated_v_min = float(self.running_v_min)
+            updated_v_max = float(self.running_v_max)
+            if not getattr(self, "_value_scale_frozen", False):
+                _, _, updated_v_min, updated_v_max, _ = self._apply_v_range_update(
+                    target_v_min, target_v_max
+                )
 
-            running_v_min_unscaled = self.running_v_min * ret_std_value + ret_mu_value
-            running_v_max_unscaled = self.running_v_max * ret_std_value + ret_mu_value
+            running_v_min_unscaled = updated_v_min * ret_std_value + ret_mu_value
+            running_v_max_unscaled = updated_v_max * ret_std_value + ret_mu_value
         else:
             if returns_tensor.numel() == 0:
                 robust_scale_value = 1.0
@@ -1667,25 +2017,19 @@ class DistributionalPPO(RecurrentPPO):
                     f"Failed to compute a valid value support range: v_min={v_min}, v_max={v_max}"
                 )
 
-            if not self.v_range_initialized:
-                self.running_v_min = v_min
-                self.running_v_max = v_max
-                self.v_range_initialized = True
-            else:
-                alpha = self.v_range_ema_alpha
-                ema_min = float((1.0 - alpha) * self.running_v_min + alpha * v_min)
-                ema_max = float((1.0 - alpha) * self.running_v_max + alpha * v_max)
-                self.running_v_min = min(ema_min, v_min)
-                self.running_v_max = max(ema_max, v_max)
+            updated_v_min = float(self.running_v_min)
+            updated_v_max = float(self.running_v_max)
+            if not getattr(self, "_value_scale_frozen", False):
+                _, _, updated_v_min, updated_v_max, _ = self._apply_v_range_update(
+                    v_min, v_max
+                )
 
-            if self.running_v_max <= self.running_v_min:
-                self.running_v_min = v_min
-                self.running_v_max = v_max
-
-            self.policy.update_atoms(self.running_v_min, self.running_v_max)
-
-            running_v_min_unscaled = self.running_v_min / self._value_target_scale_effective
-            running_v_max_unscaled = self.running_v_max / self._value_target_scale_effective
+            running_v_min_unscaled = (
+                updated_v_min / self._value_target_scale_effective
+            )
+            running_v_max_unscaled = (
+                updated_v_max / self._value_target_scale_effective
+            )
 
         ret_mu_tensor = torch.as_tensor(ret_mu_value, device=self.device, dtype=torch.float32)
         ret_std_tensor = torch.as_tensor(ret_std_value, device=self.device, dtype=torch.float32)
@@ -2349,6 +2693,22 @@ class DistributionalPPO(RecurrentPPO):
         else:
             self._bad_explained_counter = 0
         self._last_explained_variance = float(explained_var)
+
+        frame_stable = self._is_value_scale_frame_stable(
+            self._value_scale_latest_ret_abs_p95, self._last_explained_variance
+        )
+        self._value_scale_frame_stable = frame_stable
+        if frame_stable:
+            self._value_scale_stable_counter += 1
+        else:
+            self._value_scale_stable_counter = 0
+        self.logger.record("train/value_scale_frame_stable", float(frame_stable))
+        self.logger.record(
+            "train/value_scale_stable_consec", float(self._value_scale_stable_counter)
+        )
+        self.logger.record(
+            "train/value_scale_ret_abs_p95", float(self._value_scale_latest_ret_abs_p95)
+        )
 
         self.logger.record("train/policy_loss", policy_loss_value)
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
