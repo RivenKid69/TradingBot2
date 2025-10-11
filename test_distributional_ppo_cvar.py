@@ -12,6 +12,7 @@ pytest.importorskip("sb3_contrib", reason="distributional_ppo depends on sb3_con
 from collections import deque
 
 from distributional_ppo import DistributionalPPO, calculate_cvar
+from utils.model_io import upgrade_quantile_value_state_dict
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 
@@ -58,6 +59,48 @@ def test_calculate_cvar_invalid_alpha(alpha: float) -> None:
 
     with pytest.raises(ValueError):
         calculate_cvar(probs, atoms, alpha)
+
+
+def test_upgrade_quantile_value_state_dict_fallback_duplication() -> None:
+    weight = torch.linspace(-1.0, 1.0, steps=4, dtype=torch.float32).view(1, -1)
+    bias = torch.tensor([0.25], dtype=torch.float32)
+    original = {
+        "value_net.weight": weight.clone(),
+        "value_net.bias": bias.clone(),
+    }
+
+    upgraded = upgrade_quantile_value_state_dict(
+        original,
+        target_prefix="quantile_head.linear",
+        num_quantiles=4,
+        fallback_prefixes=("value_net",),
+    )
+
+    assert upgraded is not original
+    assert upgraded["quantile_head.linear.weight"].shape == (4, weight.shape[1])
+    assert upgraded["quantile_head.linear.bias"].shape == (4,)
+    repeated_weight = weight.expand(4, -1)
+    repeated_bias = bias.expand(4)
+    assert torch.allclose(upgraded["quantile_head.linear.weight"], repeated_weight)
+    assert torch.allclose(upgraded["quantile_head.linear.bias"], repeated_bias)
+
+
+def test_upgrade_quantile_value_state_dict_noop_when_already_quantile() -> None:
+    weight = torch.randn(8, 3, dtype=torch.float32)
+    bias = torch.randn(8, dtype=torch.float32)
+    state = {
+        "quantile_head.linear.weight": weight,
+        "quantile_head.linear.bias": bias,
+    }
+
+    upgraded = upgrade_quantile_value_state_dict(
+        state,
+        target_prefix="quantile_head.linear",
+        num_quantiles=8,
+        fallback_prefixes=("value_net",),
+    )
+
+    assert upgraded is state
 
 
 def test_value_scale_snapshot_prevents_mismatch() -> None:

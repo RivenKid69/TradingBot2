@@ -145,6 +145,85 @@ class DistributionalPPO(RecurrentPPO):
         above_frac = (values_fp32 > support_max).float().mean().item()
         return float(below_frac), float(above_frac)
 
+    def _quantile_levels_tensor(self, device: torch.device) -> torch.Tensor:
+        levels = getattr(self.policy, "quantile_levels", None)
+        if levels is None:
+            raise RuntimeError("Quantile levels are not available on the policy")
+        return levels.to(device=device, dtype=torch.float32)
+
+    def _quantile_huber_loss(
+        self, predicted_quantiles: torch.Tensor, targets: torch.Tensor
+    ) -> torch.Tensor:
+        kappa = max(float(self._quantile_huber_kappa), 1e-6)
+        tau = self._quantile_levels_tensor(predicted_quantiles.device).view(1, -1)
+        delta = targets.unsqueeze(1) - predicted_quantiles
+        abs_delta = delta.abs()
+        huber = torch.where(
+            abs_delta <= kappa,
+            0.5 * delta.pow(2),
+            kappa * (abs_delta - 0.5 * kappa),
+        )
+        indicator = (delta.detach() < 0.0).float()
+        loss = torch.abs(tau - indicator) * (huber / kappa)
+        return loss.mean()
+
+    def _cvar_from_quantiles(self, predicted_quantiles: torch.Tensor) -> torch.Tensor:
+        alpha = float(self.cvar_alpha)
+        if alpha <= 0.0:
+            raise ValueError("CVaR alpha must be positive for quantile critic")
+        num_quantiles = predicted_quantiles.shape[1]
+        if num_quantiles == 0:
+            return predicted_quantiles.new_zeros(predicted_quantiles.shape[0])
+        mass = 1.0 / float(num_quantiles)
+        # TODO(quantile-critic): When migrating to non-uniform quantile levels
+        # (e.g. IQN), replace the uniform ``mass`` assumption with explicit
+        # integration over the τ intervals.
+        k_float = alpha * num_quantiles
+        full_mass = int(min(num_quantiles, math.floor(k_float)))
+        frac = float(k_float - full_mass)
+        device = predicted_quantiles.device
+        dtype = predicted_quantiles.dtype
+        tail_sum = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
+        if full_mass > 0:
+            tail_sum = predicted_quantiles[:, :full_mass].sum(dim=1)
+        partial = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
+        if frac > 1e-8 and full_mass < num_quantiles:
+            partial = predicted_quantiles[:, full_mass] * frac
+        expectation = mass * (tail_sum + partial)
+        tail_mass = max(alpha, mass * (full_mass + frac))
+        return expectation / tail_mass
+
+    def _record_quantile_summary(
+        self,
+        quantiles_unscaled: list[torch.Tensor],
+        quantiles_norm: list[torch.Tensor],
+    ) -> None:
+        if not quantiles_unscaled:
+            return
+        levels = self._quantile_levels_tensor(quantiles_unscaled[0].device)
+        concat_unscaled = torch.cat(quantiles_unscaled, dim=0)
+        concat_norm = torch.cat(quantiles_norm, dim=0) if quantiles_norm else None
+        def _index_for(target: float) -> int:
+            idx = torch.argmin(torch.abs(levels - target)).item()
+            return int(idx)
+
+        idx_q25 = _index_for(0.25)
+        idx_q50 = _index_for(0.5)
+        idx_q75 = _index_for(0.75)
+
+        q50 = concat_unscaled[:, idx_q50].mean().item()
+        q25 = concat_unscaled[:, idx_q25]
+        q75 = concat_unscaled[:, idx_q75]
+        iqr = (q75 - q25).mean().item()
+        self.logger.record("train/value_quantile_p50", float(q50))
+        self.logger.record("train/value_quantile_iqr", float(iqr))
+
+        if concat_norm is not None:
+            q25_norm = concat_norm[:, idx_q25]
+            q75_norm = concat_norm[:, idx_q75]
+            iqr_norm = (q75_norm - q25_norm).mean().item()
+            self.logger.record("train/value_quantile_iqr_norm", float(iqr_norm))
+
     def _ensure_volume_head_config(self) -> None:
         """Validate that policy and environment agree on BAR volume discretisation."""
 
@@ -506,8 +585,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/value_scale_mean_before", float(before_mean))
         self.logger.record("train/value_scale_std_before", float(before_std))
         self.logger.record("train/value_target_scale_before", float(before_scale_effective))
-        self.logger.record("train/value_scale_vmin_before", float(prev_v_min_unscaled))
-        self.logger.record("train/value_scale_vmax_before", float(prev_v_max_unscaled))
+        if not self._use_quantile_value:
+            self.logger.record("train/value_scale_vmin_before", float(prev_v_min_unscaled))
+            self.logger.record("train/value_scale_vmax_before", float(prev_v_max_unscaled))
 
         pending_rms = self._pending_rms
         update_applied = False
@@ -631,7 +711,8 @@ class DistributionalPPO(RecurrentPPO):
                     running_v_min_unscaled = self.running_v_min * new_std + new_mean
                     running_v_max_unscaled = self.running_v_max * new_std + new_mean
                     gate_allows_update = (
-                        (not warmup_active)
+                        (not self._use_quantile_value)
+                        and (not warmup_active)
                         and stability_ready
                         and (
                             self._last_raw_outlier_frac
@@ -688,12 +769,14 @@ class DistributionalPPO(RecurrentPPO):
 
         self.logger.record("train/value_scale_mean_next", float(new_mean))
         self.logger.record("train/value_scale_std_next", float(new_std))
-        self.logger.record("train/value_scale_vmin_next", float(running_v_min_unscaled))
-        self.logger.record("train/value_scale_vmax_next", float(running_v_max_unscaled))
+        if not self._use_quantile_value:
+            self.logger.record("train/value_scale_vmin_next", float(running_v_min_unscaled))
+            self.logger.record("train/value_scale_vmax_next", float(running_v_max_unscaled))
         self.logger.record("train/value_scale_mean_after", float(new_mean))
         self.logger.record("train/value_scale_std_after", float(new_std))
-        self.logger.record("train/value_scale_vmin_after", float(running_v_min_unscaled))
-        self.logger.record("train/value_scale_vmax_after", float(running_v_max_unscaled))
+        if not self._use_quantile_value:
+            self.logger.record("train/value_scale_vmin_after", float(running_v_min_unscaled))
+            self.logger.record("train/value_scale_vmax_after", float(running_v_max_unscaled))
         self.logger.record(
             "train/value_target_scale_after", float(self._value_target_scale_effective)
         )
@@ -1126,6 +1209,13 @@ class DistributionalPPO(RecurrentPPO):
             self._action_nvec_snapshot = tuple(int(x) for x in nvec_list)
         else:
             self._action_nvec_snapshot = None
+
+        self._use_quantile_value = bool(
+            getattr(self.policy, "uses_quantile_value_head", False)
+        )
+        self._quantile_huber_kappa = float(
+            getattr(self.policy, "quantile_huber_kappa", 1.0)
+        )
 
         self._ensure_volume_head_config()
 
@@ -1780,13 +1870,20 @@ class DistributionalPPO(RecurrentPPO):
                 actions, _, log_probs, self._last_lstm_states = self.policy.forward(
                     obs_tensor, self._last_lstm_states, episode_starts
                 )
-                value_logits = self.policy.last_value_logits
+                if self._use_quantile_value:
+                    value_quantiles = self.policy.last_value_quantiles
+                else:
+                    value_logits = self.policy.last_value_logits
 
-            if value_logits is None:
-                raise RuntimeError("Policy did not cache value logits during forward pass")
-
-            probs = torch.softmax(value_logits, dim=1)
-            mean_values_norm = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
+            if self._use_quantile_value:
+                if value_quantiles is None:
+                    raise RuntimeError("Policy did not cache value quantiles during forward pass")
+                mean_values_norm = value_quantiles.mean(dim=1, keepdim=True).detach()
+            else:
+                if value_logits is None:
+                    raise RuntimeError("Policy did not cache value logits during forward pass")
+                probs = torch.softmax(value_logits, dim=1)
+                mean_values_norm = (probs * self.policy.atoms).sum(dim=1, keepdim=True).detach()
 
             if self.normalize_returns:
                 # НЕТ raw-clip: просто де-нормализация и переход в буферную шкалу
@@ -1862,13 +1959,20 @@ class DistributionalPPO(RecurrentPPO):
             obs_tensor = self.policy.obs_to_tensor(new_obs)[0]
             episode_starts = torch.as_tensor(dones, dtype=torch.float32, device=self.device)
             _, _, _, _ = self.policy.forward(obs_tensor, self._last_lstm_states, episode_starts)
-            last_value_logits = self.policy.last_value_logits
+            if self._use_quantile_value:
+                last_value_quantiles = self.policy.last_value_quantiles
+            else:
+                last_value_logits = self.policy.last_value_logits
 
-        if last_value_logits is None:
-            raise RuntimeError("Policy did not cache value logits during terminal forward pass")
-
-        last_probs = torch.softmax(last_value_logits, dim=1)
-        last_mean_norm = (last_probs * self.policy.atoms).sum(dim=1)
+        if self._use_quantile_value:
+            if last_value_quantiles is None:
+                raise RuntimeError("Policy did not cache value quantiles during terminal forward pass")
+            last_mean_norm = last_value_quantiles.mean(dim=1)
+        else:
+            if last_value_logits is None:
+                raise RuntimeError("Policy did not cache value logits during terminal forward pass")
+            last_probs = torch.softmax(last_value_logits, dim=1)
+            last_mean_norm = (last_probs * self.policy.atoms).sum(dim=1)
 
         if self.normalize_returns:
             # НЕТ raw-clip при терминальном значении
@@ -2050,8 +2154,11 @@ class DistributionalPPO(RecurrentPPO):
             if self._value_clip_limit_unscaled is not None:
                 min_half_range = float(self._value_clip_limit_scaled)
             else:
-                with torch.no_grad():
-                    min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
+                if self._use_quantile_value or self.policy.atoms.numel() == 0:
+                    min_half_range = 0.0
+                else:
+                    with torch.no_grad():
+                        min_half_range = float(torch.max(torch.abs(self.policy.atoms)).item())
             if not math.isfinite(min_half_range):
                 min_half_range = 0.0
 
@@ -2110,10 +2217,11 @@ class DistributionalPPO(RecurrentPPO):
         ret_mu_tensor = torch.as_tensor(ret_mu_value, device=self.device, dtype=torch.float32)
         ret_std_tensor = torch.as_tensor(ret_std_value, device=self.device, dtype=torch.float32)
 
-        self.logger.record("train/v_min", running_v_min_unscaled)
-        self.logger.record("train/v_max", running_v_max_unscaled)
-        self.logger.record("train/v_min_scaled", self.running_v_min)
-        self.logger.record("train/v_max_scaled", self.running_v_max)
+        if not self._use_quantile_value:
+            self.logger.record("train/v_min", running_v_min_unscaled)
+            self.logger.record("train/v_max", running_v_max_unscaled)
+            self.logger.record("train/v_min_scaled", self.running_v_min)
+            self.logger.record("train/v_max_scaled", self.running_v_max)
         self.logger.record("train/value_target_scale", float(self._value_target_scale_effective))
         self.logger.record("train/value_target_scale_config", float(self.value_target_scale))
         self.logger.record("train/value_target_scale_robust", float(self._value_target_scale_robust))
@@ -2169,6 +2277,9 @@ class DistributionalPPO(RecurrentPPO):
         adv_batch_count = 0
 
         value_logits_final: Optional[torch.Tensor] = None
+        value_quantiles_final: Optional[torch.Tensor] = None
+        quantile_batches_unscaled: list[torch.Tensor] = []
+        quantile_batches_norm: list[torch.Tensor] = []
         value_mse_value = 0.0
 
         clip_fraction_numer = 0.0
@@ -2263,6 +2374,7 @@ class DistributionalPPO(RecurrentPPO):
                 bucket_total_loss_value = 0.0
                 bucket_value_mse_value = 0.0
                 bucket_value_logits_fp32: Optional[torch.Tensor] = None
+                bucket_value_quantiles_fp32: Optional[torch.Tensor] = None
                 approx_kl_weighted_sum = 0.0
                 bucket_sample_count = 0
 
@@ -2378,13 +2490,24 @@ class DistributionalPPO(RecurrentPPO):
                     policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
                     policy_entropy_count += int(entropy_tensor.numel())
 
-                    value_logits = self.policy.last_value_logits
-                    if value_logits is None:
-                        raise RuntimeError(
-                            "Policy did not cache value logits during training forward pass"
-                        )
+                    if self._use_quantile_value:
+                        value_quantiles = self.policy.last_value_quantiles
+                        if value_quantiles is None:
+                            raise RuntimeError(
+                                "Policy did not cache value quantiles during training forward pass"
+                            )
+                        value_head_fp32 = value_quantiles.to(dtype=torch.float32)
+                        target_distribution: Optional[torch.Tensor] = None
+                    else:
+                        value_logits = self.policy.last_value_logits
+                        if value_logits is None:
+                            raise RuntimeError(
+                                "Policy did not cache value logits during training forward pass"
+                            )
+                        value_logits_fp32 = value_logits.to(dtype=torch.float32)
+                        value_head_fp32 = value_logits_fp32
+                        target_distribution = torch.zeros_like(value_logits_fp32)
 
-                    value_logits_fp32 = value_logits.to(dtype=torch.float32)
                     with torch.no_grad():
                         buffer_returns = rollout_data.returns.to(dtype=torch.float32)
                         target_returns_raw = buffer_returns * base_scale_safe
@@ -2422,67 +2545,68 @@ class DistributionalPPO(RecurrentPPO):
                                     max=self._value_clip_limit_scaled,
                                 )
 
-                        raw_below_frac, raw_above_frac = self._value_target_outlier_fractions(
-                            target_returns_norm_raw,
-                            float(self.policy.v_min),
-                            float(self.policy.v_max),
-                        )
-                        self.logger.record("train/value_target_below_frac_raw", raw_below_frac)
-                        self.logger.record("train/value_target_above_frac_raw", raw_above_frac)
-                        clamp_below_raw_sum += raw_below_frac * raw_weight
-                        clamp_above_raw_sum += raw_above_frac * raw_weight
-                        clamp_raw_weight += raw_weight
-                        raw_outlier_frac = raw_below_frac + raw_above_frac
-                        self._last_raw_outlier_frac = float(raw_outlier_frac)
-                        raw_outlier_frac_max = max(raw_outlier_frac_max, raw_outlier_frac)
-                        if raw_outlier_frac > self._value_target_raw_outlier_warn_threshold:
-                            raw_outlier_warn_count += 1
-                            self.logger.record(
-                                "warn/value_target_raw_outlier_frac", float(raw_outlier_frac)
+                        if self._use_quantile_value:
+                            raw_outlier_frac = 0.0
+                            self._last_raw_outlier_frac = 0.0
+                        else:
+                            raw_below_frac, raw_above_frac = self._value_target_outlier_fractions(
+                                target_returns_norm_raw,
+                                float(self.policy.v_min),
+                                float(self.policy.v_max),
                             )
+                            self.logger.record("train/value_target_below_frac_raw", raw_below_frac)
+                            self.logger.record("train/value_target_above_frac_raw", raw_above_frac)
+                            clamp_below_raw_sum += raw_below_frac * raw_weight
+                            clamp_above_raw_sum += raw_above_frac * raw_weight
+                            clamp_raw_weight += raw_weight
+                            raw_outlier_frac = raw_below_frac + raw_above_frac
+                            self._last_raw_outlier_frac = float(raw_outlier_frac)
+                            raw_outlier_frac_max = max(raw_outlier_frac_max, raw_outlier_frac)
+                            if raw_outlier_frac > self._value_target_raw_outlier_warn_threshold:
+                                raw_outlier_warn_count += 1
+                                self.logger.record(
+                                    "warn/value_target_raw_outlier_frac", float(raw_outlier_frac)
+                                )
 
                         weight = weight_before_raw
 
-                        delta_z = (self.policy.v_max - self.policy.v_min) / float(
-                            self.policy.num_atoms - 1
-                        )
-                        clamped_targets = target_returns_norm.clamp(
-                            self.policy.v_min, self.policy.v_max
-                        )
-                        b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
-                        lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
-                        upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
+                        if not self._use_quantile_value:
+                            delta_z = (self.policy.v_max - self.policy.v_min) / float(
+                                self.policy.num_atoms - 1
+                            )
+                            clamped_targets = target_returns_norm.clamp(
+                                self.policy.v_min, self.policy.v_max
+                            )
+                            b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
+                            lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
+                            upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
 
+                            same_bounds = lower_bound == upper_bound
 
-                        same_bounds = lower_bound == upper_bound
+                            target_distribution.zero_()
+                            lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
+                            upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
+                            lower_prob = torch.where(
+                                same_bounds,
+                                torch.ones_like(lower_prob),
+                                lower_prob,
+                            )
+                            upper_prob = torch.where(
+                                same_bounds,
+                                torch.zeros_like(upper_prob),
+                                upper_prob,
+                            )
+                            target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
+                            target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
 
+                            normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-8)
+                            target_distribution = target_distribution / normaliser
 
-                        target_distribution = torch.zeros_like(value_logits_fp32)
-                        lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
-                        upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
-                        lower_prob = torch.where(
-                            same_bounds,
-                            torch.ones_like(lower_prob),
-                            lower_prob,
-                        )
-                        upper_prob = torch.where(
-                            same_bounds,
-                            torch.zeros_like(upper_prob),
-                            upper_prob,
-                        )
-                        target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
-                        target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
-
-                        normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-8)
-                        target_distribution = target_distribution / normaliser
-
-
-                        same_bounds = lower_bound == upper_bound
-                        if torch.any(same_bounds):
-                            same_indices = same_bounds.nonzero(as_tuple=False).squeeze(1)
-                            if same_indices.numel() > 0:
-                                target_distribution[same_indices] = 0.0
-                                target_distribution[same_indices, lower_bound[same_indices]] = 1.0
+                            if torch.any(same_bounds):
+                                same_indices = same_bounds.nonzero(as_tuple=False).squeeze(1)
+                                if same_indices.numel() > 0:
+                                    target_distribution[same_indices] = 0.0
+                                    target_distribution[same_indices, lower_bound[same_indices]] = 1.0
 
                         target_return_batches.append(target_returns_raw.reshape(-1, 1).detach())
 
@@ -2496,22 +2620,38 @@ class DistributionalPPO(RecurrentPPO):
                         clamp_above_sum += above_frac * weight
                         clamp_weight += weight
 
-                    pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
-                    log_predictions = torch.log(pred_probs_fp32)
-                    critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
-                    critic_loss = critic_loss / self._critic_ce_normalizer
-
-                    with torch.no_grad():
-
-                        mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                    if self._use_quantile_value:
+                        quantiles_fp32 = value_head_fp32
+                        mean_values_norm = quantiles_fp32.mean(dim=1, keepdim=True)
                         if self.normalize_returns:
                             mean_values_unscaled = (
                                 mean_values_norm * ret_std_tensor + ret_mu_tensor
+                            )
+                            quantiles_unscaled = (
+                                quantiles_fp32 * ret_std_tensor + ret_mu_tensor
                             )
                         else:
                             mean_values_unscaled = (
                                 mean_values_norm / self._value_target_scale_effective
                             ) * base_scale_safe
+                            quantiles_unscaled = (
+                                quantiles_fp32 / self._value_target_scale_effective
+                            ) * base_scale_safe
+                            if self._value_clip_limit_unscaled is not None:
+                                mean_values_unscaled = torch.clamp(
+                                    mean_values_unscaled,
+                                    min=-self._value_clip_limit_unscaled,
+                                    max=self._value_clip_limit_unscaled,
+                                )
+                                quantiles_unscaled = torch.clamp(
+                                    quantiles_unscaled,
+                                    min=-self._value_clip_limit_unscaled,
+                                    max=self._value_clip_limit_unscaled,
+                                )
+
+                        mean_value_batches.append(mean_values_unscaled.detach())
+                        quantile_batches_unscaled.append(quantiles_unscaled.detach())
+                        quantile_batches_norm.append(quantiles_fp32.detach())
 
                         mean_values_flat = mean_values_unscaled.view(-1)
                         target_returns_flat = target_returns_raw.view(-1)
@@ -2522,27 +2662,67 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         bucket_value_mse_value += float(mse_tensor.item()) * weight
 
-                        if (not self.normalize_returns) and (
-                            self._value_clip_limit_unscaled is not None
-                        ):
-                            mean_values_unscaled = torch.clamp(
-                                mean_values_unscaled,
-                                min=-self._value_clip_limit_unscaled,
-                                max=self._value_clip_limit_unscaled,
-                            )
-                        mean_value_batches.append(mean_values_unscaled.detach())
+                        predicted_cvar_norm = self._cvar_from_quantiles(quantiles_fp32)
+                        if self.normalize_returns:
+                            cvar_raw = (
+                                predicted_cvar_norm * ret_std_tensor + ret_mu_tensor
+                            ).mean()
+                        else:
+                            cvar_raw = (
+                                predicted_cvar_norm / self._value_target_scale_effective
+                            ).mean() * base_scale_safe
 
-                    predicted_cvar = calculate_cvar(
-                        pred_probs_fp32, self.policy.atoms, self.cvar_alpha
-                    )
-                    if self.normalize_returns:
-                        cvar_raw = (
-                            predicted_cvar * ret_std_tensor + ret_mu_tensor
-                        ).mean()
+                        critic_loss = self._quantile_huber_loss(
+                            quantiles_fp32, target_returns_norm
+                        )
                     else:
-                        cvar_raw = (
-                            predicted_cvar / self._value_target_scale_effective
-                        ).mean() * base_scale_safe
+                        pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
+                        log_predictions = torch.log(pred_probs_fp32)
+                        critic_loss = -(target_distribution * log_predictions).sum(dim=1).mean()
+                        critic_loss = critic_loss / self._critic_ce_normalizer
+
+                        with torch.no_grad():
+
+                            mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                            if self.normalize_returns:
+                                mean_values_unscaled = (
+                                    mean_values_norm * ret_std_tensor + ret_mu_tensor
+                                )
+                            else:
+                                mean_values_unscaled = (
+                                    mean_values_norm / self._value_target_scale_effective
+                                ) * base_scale_safe
+
+                            mean_values_flat = mean_values_unscaled.view(-1)
+                            target_returns_flat = target_returns_raw.view(-1)
+                            mse_tensor = F.mse_loss(
+                                mean_values_flat,
+                                target_returns_flat,
+                                reduction="mean",
+                            )
+                            bucket_value_mse_value += float(mse_tensor.item()) * weight
+
+                            if (not self.normalize_returns) and (
+                                self._value_clip_limit_unscaled is not None
+                            ):
+                                mean_values_unscaled = torch.clamp(
+                                    mean_values_unscaled,
+                                    min=-self._value_clip_limit_unscaled,
+                                    max=self._value_clip_limit_unscaled,
+                                )
+                            mean_value_batches.append(mean_values_unscaled.detach())
+
+                        predicted_cvar = calculate_cvar(
+                            pred_probs_fp32, self.policy.atoms, self.cvar_alpha
+                        )
+                        if self.normalize_returns:
+                            cvar_raw = (
+                                predicted_cvar * ret_std_tensor + ret_mu_tensor
+                            ).mean()
+                        else:
+                            cvar_raw = (
+                                predicted_cvar / self._value_target_scale_effective
+                            ).mean() * base_scale_safe
 
                     cvar_loss = -cvar_raw
                     cvar_term = current_cvar_weight * cvar_loss
@@ -2568,7 +2748,10 @@ class DistributionalPPO(RecurrentPPO):
                     bucket_cvar_loss_value += float(cvar_loss.item()) * weight
                     bucket_cvar_term_value += float(cvar_term.item()) * weight
                     bucket_total_loss_value += float(loss.item()) * weight
-                    bucket_value_logits_fp32 = value_logits_fp32.detach()
+                    if self._use_quantile_value:
+                        bucket_value_quantiles_fp32 = quantiles_fp32.detach()
+                    else:
+                        bucket_value_logits_fp32 = value_logits_fp32.detach()
 
                     approx_kl_component = ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
                     approx_kl_weighted_sum += approx_kl_component * float(sample_count)
@@ -2703,15 +2886,25 @@ class DistributionalPPO(RecurrentPPO):
                 exclude=["tensorboard", "csv"],
             )
 
-        if value_logits_final is None:
-            cached_logits = getattr(self.policy, "last_value_logits", None)
-            if cached_logits is None:
-                cached_logits = getattr(self.policy, "_last_value_logits", None)
-            if cached_logits is not None:
-                value_logits_final = cached_logits.detach().to(dtype=torch.float32)
+        if self._use_quantile_value:
+            if value_quantiles_final is None:
+                cached_quantiles = getattr(self.policy, "last_value_quantiles", None)
+                if cached_quantiles is None:
+                    cached_quantiles = getattr(self.policy, "_last_value_quantiles", None)
+                if cached_quantiles is not None:
+                    value_quantiles_final = cached_quantiles.detach().to(dtype=torch.float32)
+            if value_quantiles_final is None:
+                raise RuntimeError("No value quantiles captured during training loop")
+        else:
+            if value_logits_final is None:
+                cached_logits = getattr(self.policy, "last_value_logits", None)
+                if cached_logits is None:
+                    cached_logits = getattr(self.policy, "_last_value_logits", None)
+                if cached_logits is not None:
+                    value_logits_final = cached_logits.detach().to(dtype=torch.float32)
+            if value_logits_final is None:
+                raise RuntimeError("No value logits captured during training loop")
 
-        if value_logits_final is None:
-            raise RuntimeError("No value logits captured during training loop")
         if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
             rollout_returns = (
                 torch.as_tensor(
@@ -2720,21 +2913,51 @@ class DistributionalPPO(RecurrentPPO):
                 * base_scale_safe
             )
             with torch.no_grad():
-                pred_probs = torch.softmax(value_logits_final, dim=1)
-                value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
-                if self.normalize_returns:
-                    y_pred_tensor = (value_pred_norm * ret_std_tensor + ret_mu_tensor)
+                if self._use_quantile_value:
+                    quantiles_fp32 = value_quantiles_final
+                    value_pred_norm = quantiles_fp32.mean(dim=1, keepdim=True)
+                    if self.normalize_returns:
+                        y_pred_tensor = value_pred_norm * ret_std_tensor + ret_mu_tensor
+                        if not quantile_batches_unscaled:
+                            quantile_batches_unscaled.append(
+                                (quantiles_fp32 * ret_std_tensor + ret_mu_tensor).detach()
+                            )
+                            quantile_batches_norm.append(quantiles_fp32.detach())
+                    else:
+                        y_pred_tensor = (
+                            value_pred_norm / self._value_target_scale_effective
+                        ) * base_scale_safe
+                        if self._value_clip_limit_unscaled is not None:
+                            y_pred_tensor = torch.clamp(
+                                y_pred_tensor,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
+                            )
+                        if not quantile_batches_unscaled:
+                            quantile_batches_unscaled.append(
+                                (
+                                    quantiles_fp32
+                                    / self._value_target_scale_effective
+                                )
+                                .detach()
+                                * base_scale_safe
+                            )
+                            quantile_batches_norm.append(quantiles_fp32.detach())
                 else:
-                    y_pred_tensor = (
-                        value_pred_norm / self._value_target_scale_effective
-                    ) * base_scale_safe
-                # НЕТ raw-clip при normalize_returns: считаем EV по неусечённым предсказаниям
-                if (not self.normalize_returns) and (self._value_clip_limit_unscaled is not None):
-                    y_pred_tensor = torch.clamp(
-                        y_pred_tensor,
-                        min=-self._value_clip_limit_unscaled,
-                        max=self._value_clip_limit_unscaled,
-                    )
+                    pred_probs = torch.softmax(value_logits_final, dim=1)
+                    value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                    if self.normalize_returns:
+                        y_pred_tensor = (value_pred_norm * ret_std_tensor + ret_mu_tensor)
+                    else:
+                        y_pred_tensor = (
+                            value_pred_norm / self._value_target_scale_effective
+                        ) * base_scale_safe
+                        if self._value_clip_limit_unscaled is not None:
+                            y_pred_tensor = torch.clamp(
+                                y_pred_tensor,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
+                            )
 
             y_true_tensor = rollout_returns.reshape(-1, 1)
 
@@ -2762,6 +2985,9 @@ class DistributionalPPO(RecurrentPPO):
                         reduction="mean",
                     ).item()
                 )
+
+        if self._use_quantile_value:
+            self._record_quantile_summary(quantile_batches_unscaled, quantile_batches_norm)
 
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
 
@@ -2816,7 +3042,7 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
         self.logger.record("train/cvar_weight_effective", float(current_cvar_weight))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
-        if clamp_raw_weight > 0.0:
+        if (not self._use_quantile_value) and clamp_raw_weight > 0.0:
             self.logger.record(
                 "train/value_target_below_frac_raw",
                 clamp_below_raw_sum / clamp_raw_weight,
@@ -2825,18 +3051,19 @@ class DistributionalPPO(RecurrentPPO):
                 "train/value_target_above_frac_raw",
                 clamp_above_raw_sum / clamp_raw_weight,
             )
-        if clamp_weight > 0.0:
+        if (not self._use_quantile_value) and clamp_weight > 0.0:
             self.logger.record("train/value_target_below_frac", clamp_below_sum / clamp_weight)
             self.logger.record("train/value_target_above_frac", clamp_above_sum / clamp_weight)
-        self.logger.record(
-            "train/value_target_raw_outlier_threshold",
-            float(self._value_target_raw_outlier_warn_threshold),
-        )
-        self.logger.record("train/value_target_raw_outlier_max_frac", raw_outlier_frac_max)
-        if raw_outlier_warn_count > 0:
+        if not self._use_quantile_value:
             self.logger.record(
-                "warn/value_target_raw_outlier_batches", float(raw_outlier_warn_count)
+                "train/value_target_raw_outlier_threshold",
+                float(self._value_target_raw_outlier_warn_threshold),
             )
+            self.logger.record("train/value_target_raw_outlier_max_frac", raw_outlier_frac_max)
+            if raw_outlier_warn_count > 0:
+                self.logger.record(
+                    "warn/value_target_raw_outlier_batches", float(raw_outlier_warn_count)
+                )
         self.logger.record("train/ent_coef_initial", float(self.ent_coef_initial))
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
