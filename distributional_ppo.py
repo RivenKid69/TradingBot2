@@ -256,8 +256,8 @@ class DistributionalPPO(RecurrentPPO):
     ) -> tuple[float, float]:
         """Clamp the change of the distributional value support per update."""
 
-        max_rel = self._value_range_max_rel_step
-        if max_rel is None or max_rel <= 0.0 or not math.isfinite(max_rel):
+        max_rel = float(self._value_scale_range_max_rel_step)
+        if max_rel <= 0.0 or not math.isfinite(max_rel):
             return float(proposed_min), float(proposed_max)
 
         old_min = float(old_min)
@@ -275,32 +275,30 @@ class DistributionalPPO(RecurrentPPO):
         if not math.isfinite(span_old) or span_old <= 1e-8:
             return proposed_min, proposed_max
 
-        center_old = 0.5 * (old_max + old_min)
-        center_new = 0.5 * (proposed_max + proposed_min)
-        span_new = max(float(proposed_max - proposed_min), 1e-8)
-
-        max_center_shift = span_old * max_rel
-        max_span_delta = span_old * max_rel
-
-        center_delta = float(center_new - center_old)
-        span_delta = float(span_new - span_old)
-
-        center_delta = max(min(center_delta, max_center_shift), -max_center_shift)
-        span_delta = max(min(span_delta, max_span_delta), -max_span_delta)
-
-        span_limited = max(span_old + span_delta, 1e-8)
-        center_limited = center_old + center_delta
-
-        limited_min = center_limited - 0.5 * span_limited
-        limited_max = center_limited + 0.5 * span_limited
+        max_delta = span_old * max_rel
+        limited_min = max(min(proposed_min, old_min + max_delta), old_min - max_delta)
+        limited_max = max(min(proposed_max, old_max + max_delta), old_max - max_delta)
 
         if limited_max <= limited_min:
-            limited_center = 0.5 * (limited_max + limited_min)
-            limited_span = max(span_limited, 1e-6)
-            limited_min = limited_center - 0.5 * limited_span
-            limited_max = limited_center + 0.5 * limited_span
+            center = 0.5 * (limited_max + limited_min)
+            half_span = max(span_old * 0.5, 5e-7)
+            limited_min = center - half_span
+            limited_max = center + half_span
 
         return float(limited_min), float(limited_max)
+
+    def _robust_std_from_returns(self, returns_raw: torch.Tensor) -> float:
+        returns_abs = returns_raw.abs().to(dtype=torch.float32)
+        if returns_abs.numel() == 0:
+            return float(self._value_scale_std_floor)
+        q95 = torch.quantile(returns_abs, 0.95).clamp_min(0.0)
+        q95_value = float(q95.item())
+        if not math.isfinite(q95_value) or q95_value <= 0.0:
+            return float(self._value_scale_std_floor)
+        robust = q95_value / 1.645
+        if not math.isfinite(robust) or robust <= 0.0:
+            robust = self._value_scale_std_floor
+        return float(max(robust, self._value_scale_std_floor))
 
     def _apply_v_range_update(
         self, target_min: float, target_max: float
@@ -335,6 +333,14 @@ class DistributionalPPO(RecurrentPPO):
         candidate_min, candidate_max = self._limit_v_range_step(
             self.running_v_min, self.running_v_max, candidate_min, candidate_max
         )
+
+        allow_shrink = bool(getattr(self, "_allow_v_range_shrink", True))
+        old_span = float(old_max - old_min)
+        if not allow_shrink and math.isfinite(old_span) and old_span > 0.0:
+            candidate_span = float(candidate_max - candidate_min)
+            if candidate_span < old_span - 1e-9:
+                candidate_min = old_min
+                candidate_max = old_max
 
         if candidate_max <= candidate_min:
             span = max(abs(candidate_max - candidate_min), 1e-6)
@@ -551,9 +557,18 @@ class DistributionalPPO(RecurrentPPO):
                 self._value_scale_stats_second = target_second
                 self._value_scale_stats_initialized = target_initialized
 
-                target_std = max(
-                    math.sqrt(max(target_var, 0.0)), self._value_scale_std_floor
+                scale_base = float(self.value_target_scale)
+                scale_factor = scale_base if abs(scale_base) > 1e-8 else 1.0
+                returns_raw_tensor = (
+                    torch.as_tensor(
+                        self.rollout_buffer.returns,
+                        device=self.device,
+                        dtype=torch.float32,
+                    ).flatten()
+                    * float(scale_factor)
                 )
+
+                target_std = self._robust_std_from_returns(returns_raw_tensor)
 
                 freeze_active = (
                     self._value_scale_freeze_after is not None
@@ -612,12 +627,49 @@ class DistributionalPPO(RecurrentPPO):
 
                     target_v_min = -float(self.ret_clip)
                     target_v_max = float(self.ret_clip)
-                    _, _, updated_v_min, updated_v_max, _ = self._apply_v_range_update(
-                        target_v_min, target_v_max
+
+                    running_v_min_unscaled = self.running_v_min * new_std + new_mean
+                    running_v_max_unscaled = self.running_v_max * new_std + new_mean
+                    gate_allows_update = (
+                        (not warmup_active)
+                        and stability_ready
+                        and (
+                            self._last_raw_outlier_frac
+                            > self._value_target_raw_outlier_warn_threshold
+                        )
                     )
 
-                    running_v_min_unscaled = updated_v_min * new_std + new_mean
-                    running_v_max_unscaled = updated_v_max * new_std + new_mean
+                    if gate_allows_update:
+                        allow_shrink = (
+                            self._last_raw_outlier_frac
+                            < 0.5 * self._value_target_raw_outlier_warn_threshold
+                            and self._value_scale_stable_counter
+                            >= self._value_scale_stability_patience
+                        )
+                        prev_allow_shrink = getattr(
+                            self, "_allow_v_range_shrink", True
+                        )
+                        self._allow_v_range_shrink = bool(allow_shrink)
+                        try:
+                            (
+                                _,
+                                _,
+                                updated_v_min,
+                                updated_v_max,
+                                applied,
+                            ) = self._apply_v_range_update(
+                                target_v_min, target_v_max
+                            )
+                        finally:
+                            self._allow_v_range_shrink = prev_allow_shrink
+
+                        running_v_min_unscaled = (
+                            updated_v_min * new_std + new_mean
+                        )
+                        running_v_max_unscaled = (
+                            updated_v_max * new_std + new_mean
+                        )
+
                     update_applied = True
                     self._value_scale_update_count += 1
 
@@ -999,14 +1051,16 @@ class DistributionalPPO(RecurrentPPO):
             )
         self._value_scale_freeze_after: Optional[int] = freeze_after_value
         if value_scale_range_max_rel_step is None:
-            self._value_range_max_rel_step: Optional[float] = None
+            range_step_value = 0.15
         else:
             range_step_value = float(value_scale_range_max_rel_step)
             if not math.isfinite(range_step_value):
                 raise ValueError("'value_scale.range_max_rel_step' must be finite")
             if range_step_value < 0.0:
                 raise ValueError("'value_scale.range_max_rel_step' must be non-negative")
-            self._value_range_max_rel_step = range_step_value
+        range_step_value = float(max(range_step_value, 0.0))
+        range_step_value = min(range_step_value, float(self._value_scale_max_rel_step))
+        self._value_scale_range_max_rel_step = float(range_step_value)
 
         stability_min_ev = None
         stability_max_p95 = None
@@ -1104,11 +1158,10 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record(
                 "debug/value_scale_freeze_after", float(self._value_scale_freeze_after)
             )
-        if self._value_range_max_rel_step is not None:
-            self.logger.record(
-                "debug/value_range_max_rel_step",
-                float(self._value_range_max_rel_step),
-            )
+        self.logger.record(
+            "debug/value_range_max_rel_step",
+            float(self._value_scale_range_max_rel_step),
+        )
         if self._value_scale_stability_min_ev is not None:
             self.logger.record(
                 "debug/value_scale_stability_min_ev",
@@ -1217,6 +1270,8 @@ class DistributionalPPO(RecurrentPPO):
         # Диагностика
         self.logger.record("debug/raw_value_clip_enabled", 0.0 if self.normalize_returns else 1.0)
         self._value_target_raw_outlier_warn_threshold = 0.01
+        self._last_raw_outlier_frac = 0.0
+        self._allow_v_range_shrink = True
 
         self.bc_warmup_steps = max(0, int(bc_warmup_steps))
         self.bc_decay_steps = max(0, int(bc_decay_steps))
@@ -1400,12 +1455,14 @@ class DistributionalPPO(RecurrentPPO):
             return 0.0
         if self._cvar_ramp_updates <= 0:
             self._cvar_ramp_progress = 0
-            return float(self._cvar_weight_target)
+            weight = float(self._cvar_weight_target)
+            return float(min(weight, 1.0))
         self._cvar_ramp_progress = min(
             self._cvar_ramp_progress + 1, self._cvar_ramp_updates
         )
         ramp = self._cvar_ramp_progress / float(max(1, self._cvar_ramp_updates))
-        return float(self._cvar_weight_target * ramp)
+        weight = float(self._cvar_weight_target * ramp)
+        return float(min(weight, 1.0))
 
     def _update_critic_gradient_block(self, update_index: int) -> None:
         should_block = update_index < self._critic_grad_warmup_updates
@@ -2376,6 +2433,7 @@ class DistributionalPPO(RecurrentPPO):
                         clamp_above_raw_sum += raw_above_frac * raw_weight
                         clamp_raw_weight += raw_weight
                         raw_outlier_frac = raw_below_frac + raw_above_frac
+                        self._last_raw_outlier_frac = float(raw_outlier_frac)
                         raw_outlier_frac_max = max(raw_outlier_frac_max, raw_outlier_frac)
                         if raw_outlier_frac > self._value_target_raw_outlier_warn_threshold:
                             raw_outlier_warn_count += 1

@@ -1381,6 +1381,7 @@ def objective(trial: optuna.Trial,
     value_scale_warmup_updates_cfg = None
     value_scale_freeze_after_cfg = None
     value_scale_range_max_rel_step_cfg = None
+    value_scale_range_max_rel_step_provided = False
     value_scale_stability_cfg: dict[str, Any] | None = None
     value_scale_stability_patience_cfg = None
     if isinstance(value_scale_cfg, Mapping):
@@ -1402,6 +1403,8 @@ def objective(trial: optuna.Trial,
         value_scale_freeze_after_cfg = _coerce_optional_int(
             value_scale_cfg.get("freeze_after"), "value_scale.freeze_after"
         )
+        if "range_max_rel_step" in value_scale_cfg:
+            value_scale_range_max_rel_step_provided = True
         value_scale_range_max_rel_step_cfg = _coerce_optional_float(
             value_scale_cfg.get("range_max_rel_step"), "value_scale.range_max_rel_step"
         )
@@ -1467,6 +1470,11 @@ def objective(trial: optuna.Trial,
         value_scale_freeze_after_cfg = _coerce_optional_int(
             getattr(value_scale_cfg, "freeze_after", None), "value_scale.freeze_after"
         )
+        if hasattr(value_scale_cfg, "range_max_rel_step") or (
+            hasattr(value_scale_cfg, "__dict__")
+            and "range_max_rel_step" in getattr(value_scale_cfg, "__dict__", {})
+        ):
+            value_scale_range_max_rel_step_provided = True
         value_scale_range_max_rel_step_cfg = _coerce_optional_float(
             getattr(value_scale_cfg, "range_max_rel_step", None),
             "value_scale.range_max_rel_step",
@@ -1537,10 +1545,18 @@ def objective(trial: optuna.Trial,
             _get_model_param_value(cfg, "value_scale_freeze_after"),
             "value_scale_freeze_after",
         )
+        if _has_model_param(cfg, "value_scale_range_max_rel_step"):
+            value_scale_range_max_rel_step_provided = True
         value_scale_range_max_rel_step_cfg = _coerce_optional_float(
             _get_model_param_value(cfg, "value_scale_range_max_rel_step"),
             "value_scale_range_max_rel_step",
         )
+
+    if (
+        value_scale_range_max_rel_step_cfg is None
+        and not value_scale_range_max_rel_step_provided
+    ):
+        value_scale_range_max_rel_step_cfg = 0.15
         stability_raw = _get_model_param_value(cfg, "value_scale_stability")
         if isinstance(stability_raw, Mapping):
             stability_dict = {}
