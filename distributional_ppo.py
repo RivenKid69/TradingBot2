@@ -2091,15 +2091,23 @@ class DistributionalPPO(RecurrentPPO):
         base_scale = float(self.value_target_scale)
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
 
+
         # Raw returns via the helper to respect either μ/σ or fixed scaling
         returns_raw_tensor = self._to_raw_returns(returns_tensor)
+
+        returns_raw_tensor = returns_tensor * base_scale_safe
+
 
         rewards_tensor = torch.as_tensor(
             self.rollout_buffer.rewards, device=self.device, dtype=torch.float32
         ).flatten()
+
         # Rewards in the rollout buffer are stored in the base-scaled space;
         # convert them back to natural per-bar units for CVaR evaluation.
         rewards_raw_tensor = rewards_tensor * base_scale_safe
+
+        rewards_raw_tensor = rewards_tensor * base_scale_safe  # CVaR uses natural bar returns
+
         if rewards_raw_tensor.numel() == 0:
             cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
         else:
@@ -2574,11 +2582,16 @@ class DistributionalPPO(RecurrentPPO):
                         target_distribution = torch.zeros_like(value_logits_fp32)
 
                     with torch.no_grad():
+
                         buffer_returns = rollout_data.returns.to(
                             device=self.device, dtype=torch.float32
                         )
                         # Consistently decode buffer returns into natural units
                         target_returns_raw = self._to_raw_returns(buffer_returns)
+
+                        buffer_returns = rollout_data.returns.to(device=self.device, dtype=torch.float32)
+                        target_returns_raw = buffer_returns * base_scale_safe
+
 
                         # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
                         if (not self.normalize_returns) and (
@@ -2953,8 +2966,12 @@ class DistributionalPPO(RecurrentPPO):
             rollout_returns = torch.as_tensor(
                 self.rollout_buffer.returns, device=self.device, dtype=torch.float32
             )
+
             # Final EV/MSE metrics also need fully decoded raw returns
             rollout_returns = self._to_raw_returns(rollout_returns)
+
+            rollout_returns = rollout_returns * base_scale_safe
+
             with torch.no_grad():
                 if self._use_quantile_value:
                     quantiles_fp32 = value_quantiles_final
@@ -3062,8 +3079,11 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_term", cvar_term_value)
         self.logger.record("train/cvar_empirical", cvar_empirical_value)
         self.logger.record("train/cvar_gap", cvar_gap_value)
+
         # Temporary alias for backwards compatibility with existing dashboards
         self.logger.record("train/cvar_violation", cvar_gap_value)
+
+
         self.logger.record("train/cvar_gap_pos", cvar_gap_pos_value)
         self.logger.record("train/cvar_lambda", float(self._cvar_lambda))
         if self.cvar_use_constraint:
