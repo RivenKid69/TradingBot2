@@ -2104,9 +2104,7 @@ class DistributionalPPO(RecurrentPPO):
 
         # Rewards in the rollout buffer are stored in the base-scaled space;
         # convert them back to natural per-bar units for CVaR evaluation.
-        rewards_raw_tensor = rewards_tensor * base_scale_safe
-
-        rewards_raw_tensor = rewards_tensor * base_scale_safe  # CVaR uses natural bar returns
+        rewards_raw_tensor = self._to_raw_returns(rewards_tensor)
 
         if rewards_raw_tensor.numel() == 0:
             cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
