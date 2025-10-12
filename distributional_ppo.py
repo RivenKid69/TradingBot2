@@ -313,15 +313,7 @@ class DistributionalPPO(RecurrentPPO):
     def _get_cvar_limit_raw(self) -> float:
         """Return the CVaR limit expressed in the same units as raw rewards."""
 
-        limit_value = float(self.cvar_limit)
-        if self.normalize_returns:
-            return limit_value
-
-        eff = float(getattr(self, "_value_target_scale_effective", self.value_target_scale))
-        base = float(self.value_target_scale)
-        eff = eff if abs(eff) > 1e-8 else 1.0
-        base = base if abs(base) > 1e-8 else 1.0
-        return limit_value * (base / eff)
+        return float(self.cvar_limit)
 
     def _limit_mean_step(self, old_value: float, proposed: float, reference_std: float) -> float:
         max_rel_step = float(self._value_scale_max_rel_step)
@@ -2114,8 +2106,9 @@ class DistributionalPPO(RecurrentPPO):
         ).flatten()
 
         # Rewards in the rollout buffer are stored in training space (scaled/normalized);
-        # decode to natural per-bar units for CVaR evaluation.
-        rewards_raw_tensor = self._to_raw_returns(rewards_tensor)
+        # decode to natural per-bar units for CVaR evaluation. CVaR operates on
+        # the "base" reward scale without undoing critic normalisation.
+        rewards_raw_tensor = rewards_tensor * base_scale_safe
 
         if rewards_raw_tensor.numel() == 0:
             cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
