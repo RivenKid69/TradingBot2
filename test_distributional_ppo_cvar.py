@@ -103,6 +103,61 @@ def test_upgrade_quantile_value_state_dict_noop_when_already_quantile() -> None:
     assert upgraded is state
 
 
+def _make_cvar_model() -> DistributionalPPO:
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    model.cvar_alpha = 0.05
+    model.cvar_winsor_pct = 0.0
+    model.cvar_ema_beta = 0.9
+    return model
+
+
+def test_cvar_winsor_pct_percent_conversion() -> None:
+    model = _make_cvar_model()
+    model.cvar_winsor_pct = 0.1
+    assert model.cvar_winsor_pct == pytest.approx(0.1)
+    assert getattr(model, "_cvar_winsor_fraction", None) == pytest.approx(0.001)
+
+    model.cvar_winsor_pct = 0.001  # legacy fraction -> 0.1%
+    assert model.cvar_winsor_pct == pytest.approx(0.1)
+    assert getattr(model, "_cvar_winsor_fraction", None) == pytest.approx(0.001)
+
+
+@pytest.mark.parametrize("scale", [0.5, 2.0])
+def test_compute_empirical_cvar_scales_linearly(scale: float) -> None:
+    model = _make_cvar_model()
+    base_rewards = torch.tensor([-1.25, -0.8, 0.4, 0.9, -0.2], dtype=torch.float32)
+    _, cvar_base = model._compute_empirical_cvar(base_rewards)
+    _, cvar_scaled = model._compute_empirical_cvar(base_rewards * scale)
+
+    assert cvar_scaled.item() == pytest.approx(cvar_base.item() * scale, rel=1e-6)
+
+    _, _, _, _, abs_base = model._compute_cvar_statistics(base_rewards)
+    _, _, _, _, abs_scaled = model._compute_cvar_statistics(base_rewards * scale)
+    assert abs_scaled.item() == pytest.approx(abs_base.item() * abs(scale), rel=1e-6)
+
+
+def test_cvar_limit_units_consistent() -> None:
+    model = _make_cvar_model()
+    model.cvar_alpha = 0.5
+    rewards = torch.tensor([-2.0, -2.0, 1.0, 1.0], dtype=torch.float32)
+    _, cvar_empirical, _, _, _ = model._compute_cvar_statistics(rewards)
+    limit_pct = -2.0
+    assert cvar_empirical.item() == pytest.approx(limit_pct, abs=1e-6)
+    violation = max(0.0, limit_pct - cvar_empirical.item())
+    assert violation == pytest.approx(0.0, abs=1e-6)
+
+
+def test_cvar_violation_uses_percent_units() -> None:
+    model = _make_cvar_model()
+    model.cvar_limit = -1.0
+
+    violation = model._compute_cvar_violation(-2.0)
+    assert violation == pytest.approx(1.0)
+
+    no_violation = model._compute_cvar_violation(-0.5)
+    assert no_violation == pytest.approx(0.0)
+
+
 def test_value_scale_snapshot_prevents_mismatch() -> None:
     returns_raw = np.array([100.0, 110.0, 90.0, 105.0], dtype=np.float32)
     snapshot_mean = 0.0

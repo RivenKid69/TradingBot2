@@ -84,6 +84,11 @@ model:
     reward_return_clip: 10.0           # Лимит лог-доходности
     turnover_norm_cap: 1.0             # Макс. нормализованный оборот (в долях equity)
     reward_cap: 10.0                   # Лимит вознаграждения
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
     cql_alpha: 0.0
     cql_beta: 5.0
     cvar_alpha: 0.05
@@ -261,10 +266,14 @@ risk:
   cvar:
     use_constraint: false
     alpha: 0.05
-    limit: -0.02
+    limit_pct: -2.0
     lambda_lr: 0.01
     use_penalty: true
     penalty_cap: 0.7
+    weight: 0.15
+    cap: 0.5
+    winsor_pct: 0.1
+    ema_beta: 0.9
 
 no_trade:
   enabled: false
@@ -282,6 +291,11 @@ costs:
 reward:
   use_portfolio_pnl: true
   turnover_penalty_coef: 0.0005
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
 
 components:
   market_data:

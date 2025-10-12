@@ -63,7 +63,12 @@ data:
 
 model:
   algo: "ppo"
-  params: {}
+  params:
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
 
 quantizer:
   filters_path: "data/binance_filters.json"
@@ -215,10 +220,14 @@ risk:
   cvar:
     use_constraint: false         # Enable CVaR inequality constraint during training updates
     alpha: 0.05                   # Tail mass used for empirical CVaR estimation
-    limit: -0.02                  # Minimum acceptable CVaR of realised per-bar returns
+    limit_pct: -2.0               # Minimum acceptable CVaR of realised per-bar returns (percent per bar)
     lambda_lr: 0.01               # Learning rate for dual ascent on the CVaR multiplier
     use_penalty: true             # Retain CVaR penalty term in the policy loss
     penalty_cap: 0.7              # Maximum effective penalty weight applied during training
+    weight: 0.15                  # Nominal CVaR penalty multiplier before schedule/violation gating
+    cap: 0.5                      # Hard cap on the absolute CVaR penalty contribution per minibatch
+    winsor_pct: 0.1               # Winsorisation percentile applied to raw reward samples
+    ema_beta: 0.9                 # EMA smoothing factor for logged CVaR diagnostics
 
 # See ../docs/no_trade.md for details
 no_trade:

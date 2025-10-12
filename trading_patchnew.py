@@ -15,7 +15,7 @@ import time
 from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, Sequence, Tuple
+from typing import Any, Mapping, Sequence, Tuple
 import types
 from core_constants import PRICE_SCALE
 
@@ -319,6 +319,26 @@ class TradingEnv(gym.Env):
             )
             self._liq_seasonality = np.ones(HOURS_IN_WEEK, dtype=float)
 
+        clip_cfg_raw = kwargs.get("reward_clip")
+        if not isinstance(clip_cfg_raw, Mapping):
+            clip_cfg_raw = {}
+        self.reward_clip_adaptive = bool(clip_cfg_raw.get("adaptive", True))
+        self.reward_clip_atr_window = max(1, int(clip_cfg_raw.get("atr_window", 14) or 14))
+        hard_cap = float(clip_cfg_raw.get("hard_cap_pct", 2.0) or 2.0)
+        if not math.isfinite(hard_cap) or hard_cap <= 0.0:
+            hard_cap = 2.0
+        self.reward_clip_hard_cap_pct = float(hard_cap)
+        multiplier = float(clip_cfg_raw.get("multiplier", 4.0) or 4.0)
+        if not math.isfinite(multiplier) or multiplier < 0.0:
+            multiplier = 4.0
+        self.reward_clip_multiplier = float(multiplier)
+        self._reward_clip_bound_last = float(self.reward_clip_hard_cap_pct)
+        self._reward_clip_atr_pct_last = 0.0
+
+        # capture signal-mode defaults for reset without relying on transient kwargs
+        self._signal_long_only_default = bool(kwargs.get("signal_long_only", kwargs.get("long_only", False)))
+        self._reward_signal_only_default = bool(kwargs.get("reward_signal_only", True))
+
         # --- precompute ATR-based volatility and rolling liquidity ---
         close_col = "close" if "close" in self.df.columns else "price"
         high = self.df.get("high")
@@ -331,14 +351,21 @@ class TradingEnv(gym.Env):
                 (low - prev_close).abs(),
             ], axis=1).max(axis=1)
             self.df["tr"] = tr
-            atr_window = int(kwargs.get("atr_window", 14))
-            self.df["atr"] = tr.ewm(alpha=1 / atr_window, adjust=False).mean()
+            atr_window = max(1, int(kwargs.get("atr_window", self.reward_clip_atr_window)))
+            atr_alpha = 1 / max(1, atr_window)
+            self.df["atr"] = tr.ewm(alpha=atr_alpha, adjust=False).mean()
             denom = prev_close.replace(0, np.nan)
             self.df["atr_pct"] = (self.df["atr"] / denom).ffill().fillna(0.0)
+
+            clip_alpha = 1 / max(1, int(self.reward_clip_atr_window))
+            atr_clip = tr.ewm(alpha=clip_alpha, adjust=False).mean()
+            atr_clip_pct = ((atr_clip / denom) * 100.0).ffill().fillna(0.0)
+            self.df["_reward_clip_atr_pct"] = atr_clip_pct
         else:
             self.df["tr"] = 0.0
             self.df["atr"] = 0.0
             self.df["atr_pct"] = 0.0
+            self.df["_reward_clip_atr_pct"] = 0.0
 
         # dynamic spread config and rolling liquidity
         dyn_cfg_dict = dict(kwargs.get("dynamic_spread", {}) or {})
@@ -424,6 +451,7 @@ class TradingEnv(gym.Env):
         self.reward_cap = float(kwargs.get("reward_cap", 10.0) or 10.0)
         if self.reward_cap <= 0.0 or not math.isfinite(self.reward_cap):
             self.reward_cap = 10.0
+
         self.debug_asserts = bool(kwargs.get("debug_asserts", False))
         self._reward_equity_floor = 1e-8
         self._turnover_total = 0.0
@@ -578,8 +606,52 @@ class TradingEnv(gym.Env):
             max_position_risk_on=1.0,
         )
         self._turnover_total = 0.0
+        self._signal_long_only = bool(getattr(self, "_signal_long_only_default", False))
+        self._reward_signal_only = bool(getattr(self, "_reward_signal_only_default", True))
+        self._last_signal_position = 0.0
+        first_price = 0.0
+        if len(self.df) > 0:
+            first_price = float(self._resolve_reward_price(0))
+        self._last_reward_price = first_price if math.isfinite(first_price) and first_price > 0.0 else 0.0
         obs = np.zeros(self.observation_space.shape, dtype=np.float32)
         return obs, {}
+
+    def _resolve_reward_price(self, row_idx: int, row: pd.Series | None = None) -> float:
+        candidate: float | None = None
+        close_actual = getattr(self, "_close_actual", None)
+        if close_actual is not None:
+            try:
+                if len(close_actual) > row_idx:
+                    candidate = self._safe_float(close_actual.iloc[row_idx])
+            except Exception:
+                candidate = None
+        if candidate is None and row is not None:
+            for key in ("close", "price"):
+                if key in row.index:
+                    candidate = self._safe_float(row.get(key))
+                if candidate is not None:
+                    break
+        if candidate is None:
+            candidate = self._safe_float(getattr(self, "last_mtm_price", None))
+        if candidate is None or not math.isfinite(candidate) or candidate <= 0.0:
+            prev_price = getattr(self, "_last_reward_price", 0.0)
+            if math.isfinite(prev_price) and prev_price > 0.0:
+                return float(prev_price)
+            return 0.0
+        return float(candidate)
+
+    def _signal_position_from_proto(self, proto: ActionProto, previous: float) -> float:
+        action_type = getattr(proto, "action_type", ActionType.HOLD)
+        if action_type in (ActionType.MARKET, ActionType.LIMIT):
+            pos_val = self._safe_float(getattr(proto, "volume_frac", 0.0))
+            if pos_val is None:
+                return 0.0
+            if self._signal_long_only:
+                return float(np.clip(pos_val, 0.0, 1.0))
+            return float(np.clip(pos_val, -1.0, 1.0))
+        if action_type == ActionType.CANCEL_ALL:
+            return 0.0
+        return float(previous)
 
     def _to_proto(self, action) -> ActionProto:
         if isinstance(action, ActionProto):
@@ -1166,18 +1238,6 @@ class TradingEnv(gym.Env):
         if equity <= 0.0:
             equity = max(prev_equity, self._reward_equity_floor)
 
-        ratio_raw = equity / prev_equity if prev_equity > 0.0 else 1.0
-        if not math.isfinite(ratio_raw) or ratio_raw <= 0.0:
-            ratio_raw = 1.0
-
-        log_ret_raw = math.log(ratio_raw)
-        log_ret = float(np.clip(log_ret_raw, -self.reward_return_clip, self.reward_return_clip))
-        log_ret = self._assert_finite("log_ret", log_ret)
-
-        ratio_clip_floor = math.exp(-self.reward_return_clip)
-        ratio_clip_ceiling = math.exp(self.reward_return_clip)
-        ratio_clipped = float(np.clip(ratio_raw, ratio_clip_floor, ratio_clip_ceiling))
-
         turnover_norm = 0.0
         if prev_equity > 0.0:
             turnover_norm = step_turnover_notional / prev_equity
@@ -1203,11 +1263,50 @@ class TradingEnv(gym.Env):
         if not math.isfinite(trade_frequency_penalty) or trade_frequency_penalty < 0.0:
             trade_frequency_penalty = 0.0
 
-        other_penalties = trade_frequency_penalty
-        reward_unclipped = log_ret - fees - turnover_penalty - other_penalties
-        reward_unclipped = self._assert_finite("reward_unclipped", reward_unclipped)
-        reward = float(np.clip(reward_unclipped, -self.reward_cap, self.reward_cap))
+        prev_signal_pos = float(self._last_signal_position)
+        reward_price_prev = self._last_reward_price if self._last_reward_price > 0.0 else self._resolve_reward_price(max(row_idx - 1, 0))
+        reward_price_curr = self._resolve_reward_price(row_idx, row)
+        if reward_price_prev <= 0.0 or reward_price_curr <= 0.0 or not math.isfinite(prev_signal_pos):
+            reward_raw_pct = 0.0
+        else:
+            reward_raw_pct = 100.0 * math.log(reward_price_curr / reward_price_prev) * prev_signal_pos
+
+        atr_pct = self._safe_float(row.get("_reward_clip_atr_pct", 0.0))
+        if atr_pct is None or not math.isfinite(atr_pct) or atr_pct < 0.0:
+            atr_pct = 0.0
+
+        clip_bound_effective = float(self.reward_clip_hard_cap_pct)
+        apply_adaptive_clip = bool(self.reward_clip_adaptive and self._reward_signal_only)
+        if apply_adaptive_clip:
+            candidate = float(self.reward_clip_multiplier) * float(atr_pct)
+            clip_bound_effective = float(
+                min(self.reward_clip_hard_cap_pct, max(candidate, 0.0))
+            )
+        clip_logged = float(clip_bound_effective if self._reward_signal_only else 0.0)
+        clip_for_clamp = clip_bound_effective if apply_adaptive_clip else None
+        if clip_for_clamp is None:
+            reward_used_pct = float(reward_raw_pct)
+        else:
+            reward_used_pct = float(np.clip(reward_raw_pct, -clip_for_clamp, clip_for_clamp))
+
+        reward_unclipped = float(reward_raw_pct)
+        reward = float(reward_used_pct)
         reward = self._assert_finite("reward", reward)
+
+        ratio_price = reward_price_curr / reward_price_prev if reward_price_prev > 0.0 else 1.0
+        if not math.isfinite(ratio_price) or ratio_price <= 0.0:
+            ratio_price = 1.0
+        log_return_price = math.log(ratio_price)
+        log_return_clipped = float(np.clip(log_return_price, -self.reward_return_clip, self.reward_return_clip))
+        ratio_clip_floor = math.exp(-self.reward_return_clip)
+        ratio_clip_ceiling = math.exp(self.reward_return_clip)
+        ratio_clipped = float(np.clip(ratio_price, ratio_clip_floor, ratio_clip_ceiling))
+
+        self._reward_clip_bound_last = float(clip_logged)
+        self._reward_clip_atr_pct_last = float(atr_pct)
+        if reward_price_curr > 0.0:
+            self._last_reward_price = float(reward_price_curr)
+        self._last_signal_position = self._signal_position_from_proto(proto, prev_signal_pos)
 
         info["delta_pnl"] = float(delta_pnl)
         info["equity"] = float(equity if math.isfinite(equity) else prev_equity)
@@ -1220,11 +1319,16 @@ class TradingEnv(gym.Env):
         info["trade_frequency_penalty"] = float(trade_frequency_penalty)
         info["fee_total"] = float(fees)
         info["fees"] = float(fees)
-        info["ratio_raw"] = float(ratio_raw)
-        info["ratio_clipped"] = float(ratio_clipped)
-        info["log_return"] = float(log_ret)
         info["reward_unclipped"] = float(reward_unclipped)
         info["reward"] = float(reward)
+        info["reward_raw_pct"] = float(reward_raw_pct)
+        info["reward_used_pct"] = float(reward_used_pct)
+        info["reward_clip_bound_pct"] = float(clip_logged)
+        info["reward_clip_atr_pct"] = float(atr_pct)
+        info["signal_position_prev"] = float(prev_signal_pos)
+        info["ratio_raw"] = float(ratio_price)
+        info["ratio_clipped"] = float(ratio_clipped)
+        info["log_return"] = float(log_return_clipped)
         info["trades_count"] = int(agent_trade_events)
         info["no_trade_triggered"] = bool(mask_hit)
         info["no_trade_policy"] = self._no_trade_policy
