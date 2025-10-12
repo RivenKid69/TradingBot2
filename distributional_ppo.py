@@ -310,6 +310,19 @@ class DistributionalPPO(RecurrentPPO):
         base = base if abs(base) > 1e-8 else 1.0
         return (x / eff) * base
 
+    def _get_cvar_limit_raw(self) -> float:
+        """Return the CVaR limit expressed in the same units as raw rewards."""
+
+        limit_value = float(self.cvar_limit)
+        if self.normalize_returns:
+            return limit_value
+
+        eff = float(getattr(self, "_value_target_scale_effective", self.value_target_scale))
+        base = float(self.value_target_scale)
+        eff = eff if abs(eff) > 1e-8 else 1.0
+        base = base if abs(base) > 1e-8 else 1.0
+        return limit_value * (base / eff)
+
     def _limit_mean_step(self, old_value: float, proposed: float, reference_std: float) -> float:
         max_rel_step = float(self._value_scale_max_rel_step)
         if max_rel_step <= 0.0 or not math.isfinite(max_rel_step):
@@ -2115,12 +2128,25 @@ class DistributionalPPO(RecurrentPPO):
                 tail, _ = torch.topk(rewards_raw_tensor, tail_count, largest=False)
             cvar_empirical_tensor = tail.mean() if tail.numel() > 0 else rewards_raw_tensor.new_tensor(0.0)
         cvar_empirical_value = float(cvar_empirical_tensor.item())
-        cvar_gap_tensor = float(self.cvar_limit) - cvar_empirical_tensor  # >0 if CVaR below limit
+        cvar_limit_raw_value = self._get_cvar_limit_raw()
+        cvar_limit_raw_tensor = rewards_raw_tensor.new_tensor(cvar_limit_raw_value)
+        cvar_gap_tensor = cvar_limit_raw_tensor - cvar_empirical_tensor  # >0 if CVaR below limit
         cvar_gap_value = float(cvar_gap_tensor.item())
         self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * cvar_gap_value))
         cvar_gap_pos = torch.clamp(cvar_gap_tensor.detach(), min=0.0)
         cvar_gap_pos_value = float(cvar_gap_pos.item())
         constraint_term_value = float(self._cvar_lambda * cvar_gap_pos_value)
+
+        if rewards_raw_tensor.numel() == 0:
+            reward_raw_p50_value = 0.0
+            reward_raw_p95_value = 0.0
+        else:
+            quantiles = torch.quantile(
+                rewards_raw_tensor.detach(),
+                torch.tensor([0.5, 0.95], dtype=rewards_raw_tensor.dtype, device=rewards_raw_tensor.device),
+            )
+            reward_raw_p50_value = float(quantiles[0].item())
+            reward_raw_p95_value = float(quantiles[1].item())
 
         if returns_raw_tensor.numel() == 0:
             ret_abs_p95_value = 0.0
@@ -3075,6 +3101,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_term", cvar_term_value)
         self.logger.record("train/cvar_empirical", cvar_empirical_value)
         self.logger.record("train/cvar_gap", cvar_gap_value)
+        self.logger.record("debug/reward_raw_p50", reward_raw_p50_value)
+        self.logger.record("debug/reward_raw_p95", reward_raw_p95_value)
+        self.logger.record("debug/cvar_limit", cvar_limit_raw_value)
 
         # Temporary alias for backwards compatibility with existing dashboards
         self.logger.record("train/cvar_violation", cvar_gap_value)
