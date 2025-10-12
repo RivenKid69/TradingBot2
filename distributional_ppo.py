@@ -2095,15 +2095,13 @@ class DistributionalPPO(RecurrentPPO):
         # Raw returns via the helper to respect either μ/σ or fixed scaling
         returns_raw_tensor = self._to_raw_returns(returns_tensor)
 
-        returns_raw_tensor = returns_tensor * base_scale_safe
-
 
         rewards_tensor = torch.as_tensor(
             self.rollout_buffer.rewards, device=self.device, dtype=torch.float32
         ).flatten()
 
-        # Rewards in the rollout buffer are stored in the base-scaled space;
-        # convert them back to natural per-bar units for CVaR evaluation.
+        # Rewards in the rollout buffer are stored in training space (scaled/normalized);
+        # decode to natural per-bar units for CVaR evaluation.
         rewards_raw_tensor = self._to_raw_returns(rewards_tensor)
 
         if rewards_raw_tensor.numel() == 0:
