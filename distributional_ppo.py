@@ -107,6 +107,26 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
 class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
 
+    @property
+    def cvar_winsor_pct(self) -> float:
+        return float(getattr(self, "_cvar_winsor_pct", 0.0))
+
+    @cvar_winsor_pct.setter
+    def cvar_winsor_pct(self, value: float) -> None:
+        pct_value = float(value)
+        if not math.isfinite(pct_value) or pct_value < 0.0:
+            raise ValueError("'cvar_winsor_pct' must be a non-negative finite value")
+        if pct_value <= 0.005:
+            pct_value *= 100.0
+        if pct_value > 50.0:
+            pct_value = 50.0
+        if pct_value >= 50.0:
+            pct_value = 50.0 - 1e-6
+        fraction = pct_value / 100.0
+        fraction = float(min(max(fraction, 0.0), 0.5 - 1e-6))
+        self._cvar_winsor_pct = pct_value
+        self._cvar_winsor_fraction = fraction
+
     @staticmethod
     def _clone_states_to_device(
         states: Optional[RNNStates | tuple[torch.Tensor, ...]], device: torch.device
@@ -192,6 +212,72 @@ class DistributionalPPO(RecurrentPPO):
         expectation = mass * (tail_sum + partial)
         tail_mass = max(alpha, mass * (full_mass + frac))
         return expectation / tail_mass
+
+    def _compute_empirical_cvar(
+        self, raw_rewards: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """Winsorise raw rewards and estimate empirical CVaR in percent units."""
+
+        if raw_rewards.numel() == 0:
+            zero = raw_rewards.new_tensor(0.0)
+            return raw_rewards.to(dtype=torch.float32), zero
+
+        rewards_fp32 = raw_rewards.to(dtype=torch.float32)
+        winsor_pct = float(
+            min(max(getattr(self, "_cvar_winsor_fraction", 0.0), 0.0), 0.5 - 1e-6)
+        )
+        if winsor_pct > 0.0:
+            quantiles = torch.quantile(
+                rewards_fp32,
+                torch.tensor(
+                    [winsor_pct, 1.0 - winsor_pct],
+                    dtype=rewards_fp32.dtype,
+                    device=rewards_fp32.device,
+                ),
+            )
+            lower, upper = quantiles[0], quantiles[1]
+            rewards_winsor = rewards_fp32.clamp(min=float(lower.item()), max=float(upper.item()))
+        else:
+            rewards_winsor = rewards_fp32
+
+        alpha = float(self.cvar_alpha)
+        if not math.isfinite(alpha) or alpha <= 0.0:
+            cvar_empirical = rewards_winsor.new_tensor(0.0)
+        else:
+            tail_count = max(int(math.ceil(alpha * rewards_winsor.numel())), 1)
+            tail, _ = torch.topk(rewards_winsor, tail_count, largest=False)
+            cvar_empirical = tail.mean() if tail.numel() > 0 else rewards_winsor.new_tensor(0.0)
+
+        return rewards_winsor, cvar_empirical
+
+    def _compute_cvar_statistics(
+        self, raw_rewards: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        if raw_rewards.numel() == 0:
+            zero = raw_rewards.new_tensor(0.0)
+            return raw_rewards.to(dtype=torch.float32), zero, zero, zero, zero
+
+        rewards_winsor, cvar_empirical = self._compute_empirical_cvar(raw_rewards)
+        rewards_fp32 = raw_rewards.to(dtype=torch.float32)
+
+        quantiles_raw = torch.quantile(
+            rewards_fp32,
+            torch.tensor([0.5, 0.95], dtype=rewards_fp32.dtype, device=rewards_fp32.device),
+        )
+        reward_p50 = quantiles_raw[0]
+        reward_p95 = quantiles_raw[1]
+        returns_abs_p95 = torch.quantile(rewards_fp32.abs(), 0.95).clamp_min(0.0)
+
+        return rewards_winsor, cvar_empirical, reward_p50, reward_p95, returns_abs_p95
+
+    def _compute_cvar_violation(self, cvar_empirical: float) -> float:
+        """Return positive CVaR violation in percent-per-bar units."""
+
+        limit = float(self._get_cvar_limit_raw())
+        violation = limit - float(cvar_empirical)
+        if not math.isfinite(violation) or violation <= 0.0:
+            return 0.0
+        return float(violation)
 
     def _record_quantile_summary(
         self,
@@ -825,8 +911,10 @@ class DistributionalPPO(RecurrentPPO):
         cvar_alpha: float = 0.05,
         cvar_weight: float = 0.5,
         cvar_cap: Optional[float] = None,
+        cvar_winsor_pct: float = 0.1,
+        cvar_ema_beta: float = 0.9,
         cvar_use_constraint: bool = False,
-        cvar_limit: float = -0.02,
+        cvar_limit: float = -2.0,
         cvar_lambda_lr: float = 1e-2,
         cvar_use_penalty: bool = True,
         cvar_penalty_cap: float = 0.7,
@@ -1003,6 +1091,17 @@ class DistributionalPPO(RecurrentPPO):
         )
         if self.cvar_penalty_cap < 0.0:
             raise ValueError("'cvar_penalty_cap' must be non-negative")
+
+        winsor_candidate = float(kwargs_local.pop("cvar_winsor_pct", cvar_winsor_pct))
+        self.cvar_winsor_pct = winsor_candidate
+        self.cvar_ema_beta = float(kwargs_local.pop("cvar_ema_beta", cvar_ema_beta))
+        if not math.isfinite(self.cvar_ema_beta) or not (0.0 <= self.cvar_ema_beta < 1.0):
+            raise ValueError("'cvar_ema_beta' must be in [0, 1)")
+
+        self._cvar_empirical_ema: Optional[float] = None
+        self._cvar_violation_ema: Optional[float] = None
+        self._last_rollout_reward_raw: Optional[np.ndarray] = None
+        self._last_rollout_clip_bounds: Optional[np.ndarray] = None
 
         self.v_range_ema_alpha = float(v_range_ema_alpha)
         if not (0.0 < self.v_range_ema_alpha <= 1.0):
@@ -1900,6 +1999,14 @@ class DistributionalPPO(RecurrentPPO):
         rollout_buffer.reset()
         callback.on_rollout_start()
 
+        buffer_size = rollout_buffer.buffer_size
+        n_envs = env.num_envs
+        reward_raw_buffer = np.zeros((buffer_size, n_envs), dtype=np.float32)
+        clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
+        base_reward_scale = float(self.value_target_scale)
+        if not math.isfinite(base_reward_scale) or abs(base_reward_scale) <= 1e-8:
+            base_reward_scale = 1.0
+
         while n_steps < n_rollout_steps:
             with torch.no_grad():
                 obs_tensor = self.policy.obs_to_tensor(self._last_obs)[0]
@@ -1978,6 +2085,35 @@ class DistributionalPPO(RecurrentPPO):
             if isinstance(self.action_space, gym.spaces.Discrete):
                 actions_np = actions_np.reshape(-1, 1)
 
+            step_pos = rollout_buffer.pos
+            reward_raw_step = np.zeros(n_envs, dtype=np.float32)
+            clip_bound_step = np.full(n_envs, np.nan, dtype=np.float32)
+            for env_idx, info in enumerate(infos):
+                if env_idx < scaled_rewards.size:
+                    safe_fallback = float(scaled_rewards[env_idx]) * base_reward_scale
+                else:
+                    safe_fallback = 0.0
+                raw_value = safe_fallback
+                clip_value = 0.0
+                if isinstance(info, Mapping):
+                    candidate = info.get("reward_raw_pct")
+                    if candidate is not None:
+                        try:
+                            raw_value = float(candidate)
+                        except (TypeError, ValueError):
+                            raw_value = safe_fallback
+                    clip_candidate = info.get("reward_clip_bound_pct")
+                    if clip_candidate is not None:
+                        try:
+                            clip_value = float(clip_candidate)
+                        except (TypeError, ValueError):
+                            clip_value = 0.0
+                reward_raw_step[env_idx] = float(raw_value)
+                clip_bound_step[env_idx] = clip_value
+
+            reward_raw_buffer[step_pos] = reward_raw_step
+            clip_bound_buffer[step_pos] = clip_bound_step
+
             rollout_buffer.add(
                 self._last_obs,
                 actions_np,
@@ -2002,6 +2138,9 @@ class DistributionalPPO(RecurrentPPO):
                 last_value_quantiles = self.policy.last_value_quantiles
             else:
                 last_value_logits = self.policy.last_value_logits
+
+        self._last_rollout_reward_raw = reward_raw_buffer.copy()
+        self._last_rollout_clip_bounds = clip_bound_buffer.copy()
 
         if self._use_quantile_value:
             if last_value_quantiles is None:
@@ -2071,12 +2210,14 @@ class DistributionalPPO(RecurrentPPO):
         self.ent_coef = ent_coef_effective
         vf_coef_effective = self._compute_vf_coef_value(current_update)
         self.vf_coef = vf_coef_effective
-        current_cvar_weight = self._compute_cvar_weight()
+        current_cvar_weight_nominal = float(max(self._compute_cvar_weight(), 0.0))
         if not self.cvar_use_penalty:
-            current_cvar_weight = 0.0
+            current_cvar_weight_nominal = 0.0
         elif math.isfinite(self.cvar_penalty_cap):
-            current_cvar_weight = float(min(max(current_cvar_weight, 0.0), self.cvar_penalty_cap))
-        self._current_cvar_weight = current_cvar_weight
+            current_cvar_weight_nominal = float(
+                min(max(current_cvar_weight_nominal, 0.0), self.cvar_penalty_cap)
+            )
+        current_cvar_weight_raw = float(current_cvar_weight_nominal)
 
         self._activate_return_scale_snapshot()
 
@@ -2095,6 +2236,7 @@ class DistributionalPPO(RecurrentPPO):
 
         base_scale = float(self.value_target_scale)
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
+        cvar_penalty_scale = 1.0 / base_scale_safe
 
 
         # Raw returns via the helper to respect either μ/σ or fixed scaling
@@ -2105,21 +2247,27 @@ class DistributionalPPO(RecurrentPPO):
             self.rollout_buffer.rewards, device=self.device, dtype=torch.float32
         ).flatten()
 
-        # Rewards in the rollout buffer are stored in training space (scaled/normalized);
-        # decode to natural per-bar units for CVaR evaluation. CVaR operates on
-        # the "base" reward scale without undoing critic normalisation.
-        rewards_raw_tensor = rewards_tensor * base_scale_safe
-
-        if rewards_raw_tensor.numel() == 0:
-            cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
+        if self._last_rollout_reward_raw is not None:
+            rewards_raw_np = np.asarray(self._last_rollout_reward_raw, dtype=np.float32)
+            rewards_raw_tensor = torch.as_tensor(rewards_raw_np, device=self.device, dtype=torch.float32).flatten()
         else:
-            alpha = float(self.cvar_alpha)
-            if not math.isfinite(alpha) or alpha <= 0.0:
-                tail = rewards_raw_tensor
-            else:
-                tail_count = max(int(math.ceil(alpha * rewards_raw_tensor.numel())), 1)
-                tail, _ = torch.topk(rewards_raw_tensor, tail_count, largest=False)
-            cvar_empirical_tensor = tail.mean() if tail.numel() > 0 else rewards_raw_tensor.new_tensor(0.0)
+            rewards_raw_tensor = rewards_tensor * base_scale_safe
+
+        (
+            rewards_winsor_tensor,
+            cvar_empirical_tensor,
+            reward_raw_p50_tensor,
+            reward_raw_p95_tensor,
+            returns_abs_p95_pct_tensor,
+        ) = self._compute_cvar_statistics(rewards_raw_tensor)
+
+        if returns_tensor.numel() > 0:
+            returns_abs_p95_value_tensor = torch.quantile(
+                returns_tensor.abs(), 0.95
+            ).clamp_min(0.0)
+        else:
+            returns_abs_p95_value_tensor = returns_tensor.new_tensor(0.0)
+
         cvar_empirical_value = float(cvar_empirical_tensor.item())
         cvar_limit_raw_value = self._get_cvar_limit_raw()
         cvar_limit_raw_tensor = rewards_raw_tensor.new_tensor(cvar_limit_raw_value)
@@ -2127,26 +2275,39 @@ class DistributionalPPO(RecurrentPPO):
         cvar_gap_value = float(cvar_gap_tensor.item())
         self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * cvar_gap_value))
         cvar_gap_pos = torch.clamp(cvar_gap_tensor.detach(), min=0.0)
-        cvar_gap_pos_value = float(cvar_gap_pos.item())
-        constraint_term_value = float(self._cvar_lambda * cvar_gap_pos_value)
-
-        if rewards_raw_tensor.numel() == 0:
-            reward_raw_p50_value = 0.0
-            reward_raw_p95_value = 0.0
+        cvar_gap_pos_value = self._compute_cvar_violation(cvar_empirical_value)
+        penalty_active = cvar_gap_pos_value > 0.0
+        if not penalty_active:
+            current_cvar_weight_raw = 0.0
+        current_cvar_weight_scaled = float(current_cvar_weight_raw * cvar_penalty_scale)
+        self._current_cvar_weight = float(current_cvar_weight_scaled)
+        cvar_penalty_active_value = 1.0 if penalty_active else 0.0
+        beta = float(self.cvar_ema_beta)
+        if self._cvar_empirical_ema is None:
+            self._cvar_empirical_ema = float(cvar_empirical_value)
         else:
-            quantiles = torch.quantile(
-                rewards_raw_tensor.detach(),
-                torch.tensor([0.5, 0.95], dtype=rewards_raw_tensor.dtype, device=rewards_raw_tensor.device),
-            )
-            reward_raw_p50_value = float(quantiles[0].item())
-            reward_raw_p95_value = float(quantiles[1].item())
-
-        if returns_raw_tensor.numel() == 0:
-            ret_abs_p95_value = 0.0
+            self._cvar_empirical_ema = beta * self._cvar_empirical_ema + (1.0 - beta) * float(cvar_empirical_value)
+        if self._cvar_violation_ema is None:
+            self._cvar_violation_ema = float(cvar_gap_pos_value)
         else:
-            ret_abs_p95_value = float(torch.quantile(returns_raw_tensor.abs(), 0.95).item())
+            self._cvar_violation_ema = beta * self._cvar_violation_ema + (1.0 - beta) * float(cvar_gap_pos_value)
+        lambda_scaled = float(self._cvar_lambda * cvar_penalty_scale)
+        constraint_term_value = float(lambda_scaled * cvar_gap_pos_value)
 
-        self._value_scale_latest_ret_abs_p95 = float(ret_abs_p95_value)
+        reward_raw_p50_value = float(reward_raw_p50_tensor.item())
+        reward_raw_p95_value = float(reward_raw_p95_tensor.item())
+
+        clip_bound_value = 0.0
+        if self._last_rollout_clip_bounds is not None:
+            clip_bounds_np = np.asarray(self._last_rollout_clip_bounds, dtype=np.float32).flatten()
+            finite_mask = np.isfinite(clip_bounds_np)
+            if np.any(finite_mask):
+                clip_bound_value = float(np.nanmedian(clip_bounds_np[finite_mask]))
+
+        returns_abs_p95_pct_value = float(returns_abs_p95_pct_tensor.item())
+        returns_abs_p95_value = float(returns_abs_p95_value_tensor.item())
+
+        self._value_scale_latest_ret_abs_p95 = float(returns_abs_p95_value)
 
         ret_mu_value = float(self._ret_mean_snapshot)
         ret_std_value = float(self._ret_std_snapshot)
@@ -2320,7 +2481,7 @@ class DistributionalPPO(RecurrentPPO):
         if self._pending_ret_mean is not None and self._pending_ret_std is not None:
             self.logger.record("train/ret_mean_candidate", float(self._pending_ret_mean))
             self.logger.record("train/ret_std_candidate", float(self._pending_ret_std))
-        self.logger.record("train/returns_abs_p95", float(ret_abs_p95_value))
+        self.logger.record("train/returns_abs_p95", float(returns_abs_p95_value))
 
         if not (0.0 < float(self.gamma) <= 1.0):
             raise RuntimeError(f"Invalid discount factor 'gamma': {self.gamma}")
@@ -2794,7 +2955,7 @@ class DistributionalPPO(RecurrentPPO):
                         cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
                     cvar_loss = -cvar_raw
-                    cvar_term = current_cvar_weight * cvar_loss
+                    cvar_term = current_cvar_weight_scaled * cvar_loss
                     if self.cvar_cap is not None:
                         cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
 
@@ -2806,7 +2967,7 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     if self.cvar_use_constraint:
-                        loss = loss + loss.new_tensor(self._cvar_lambda) * cvar_gap_pos
+                        loss = loss + loss.new_tensor(lambda_scaled) * cvar_gap_pos
 
                     loss_weighted = loss * loss.new_tensor(weight)
                     loss_weighted.backward()
@@ -3092,17 +3253,32 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_raw", cvar_raw_value)
         self.logger.record("train/cvar_loss", cvar_loss_value)
         self.logger.record("train/cvar_term", cvar_term_value)
-        self.logger.record("train/cvar_empirical", cvar_empirical_value)
+        cvar_empirical_ema_value = float(
+            self._cvar_empirical_ema if self._cvar_empirical_ema is not None else cvar_empirical_value
+        )
+        self.logger.record("train/cvar_empirical", float(cvar_empirical_value))
+        self.logger.record("train/cvar_empirical_ema", cvar_empirical_ema_value)
+        self.logger.record("debug/cvar_empirical_raw", cvar_empirical_value)
         self.logger.record("train/cvar_gap", cvar_gap_value)
-        self.logger.record("debug/reward_raw_p50", reward_raw_p50_value)
-        self.logger.record("debug/reward_raw_p95", reward_raw_p95_value)
+        self.logger.record("train/reward_raw_p50_pct", reward_raw_p50_value)
+        self.logger.record("train/reward_raw_p95_pct", reward_raw_p95_value)
+        self.logger.record("train/returns_abs_p95_pct", returns_abs_p95_pct_value)
+        self.logger.record("train/returns_abs_p95", returns_abs_p95_value)
+        # Backward-compatible aliases without explicit units
+        self.logger.record("train/reward_raw_p50", reward_raw_p50_value)
+        self.logger.record("train/reward_raw_p95", reward_raw_p95_value)
+        self.logger.record("train/reward_clip_bound_pct", float(clip_bound_value))
         self.logger.record("debug/cvar_limit", cvar_limit_raw_value)
 
-        # Temporary alias for backwards compatibility with existing dashboards
-        self.logger.record("train/cvar_violation", cvar_gap_value)
-
+        cvar_violation_ema_value = float(
+            self._cvar_violation_ema if self._cvar_violation_ema is not None else cvar_gap_pos_value
+        )
+        self.logger.record("train/cvar_violation", float(cvar_gap_pos_value))
+        self.logger.record("train/cvar_violation_ema", cvar_violation_ema_value)
+        self.logger.record("debug/cvar_violation_raw", cvar_gap_pos_value)
 
         self.logger.record("train/cvar_gap_pos", cvar_gap_pos_value)
+        self.logger.record("train/cvar_penalty_active", float(cvar_penalty_active_value))
         self.logger.record("train/cvar_lambda", float(self._cvar_lambda))
         if self.cvar_use_constraint:
             self.logger.record("train/cvar_constraint", constraint_term_value)
@@ -3121,7 +3297,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef", float(self.ent_coef))
         self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
-        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight))
+        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight_scaled))
+        self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
+        self.logger.record("debug/cvar_penalty_scale", float(cvar_penalty_scale))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
         if (not self._use_quantile_value) and clamp_raw_weight > 0.0:
             self.logger.record(

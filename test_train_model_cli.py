@@ -440,6 +440,9 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             actions={},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
+        risk=types.SimpleNamespace(
+            cvar=types.SimpleNamespace(limit=-0.02, winsor_pct=0.1, ema_beta=0.9)
+        ),
         optimization={"scheduler": {"enabled": False}},
     )
 
@@ -461,12 +464,15 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
         def __init__(self, env_fns):
             self.env_fns = env_fns
 
+    constructed_vecnorm: list[object] = []
+
     class _StubVecNormalize:
         def __init__(self, env, **_kwargs):
             self.env = env
             self.training = True
             self.norm_reward = _kwargs.get("norm_reward")
             self.clip_reward = _kwargs.get("clip_reward")
+            constructed_vecnorm.append(self)
 
         def save(self, _path):
             return None
@@ -480,12 +486,15 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             return inst
 
     captured_policy_kwargs: dict[str, object] = {}
+    captured_algo_kwargs: dict[str, object] = {}
 
     class _StubAlgo:
-        def __init__(self, *_, policy_kwargs=None, **__):
+        def __init__(self, *_, policy_kwargs=None, **kwargs):
             captured_policy_kwargs.clear()
             if policy_kwargs:
                 captured_policy_kwargs.update(policy_kwargs)
+            captured_algo_kwargs.clear()
+            captured_algo_kwargs.update(kwargs)
             raise RuntimeError("stop before training")
 
     def _fail_one_cycle_lr(*_args, **_kwargs):
@@ -524,6 +533,11 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             tensorboard_log_dir=None,
             n_envs_override=1,
         )
+
+    assert constructed_vecnorm, "VecNormalize should have been constructed"
+    assert constructed_vecnorm[0].norm_reward is False
+    assert captured_algo_kwargs.get("cvar_limit") == pytest.approx(-2.0)
+    assert captured_algo_kwargs.get("cvar_winsor_pct") == pytest.approx(0.1)
 
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 

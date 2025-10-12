@@ -115,6 +115,47 @@ def _make_frame(n: int) -> pd.DataFrame:
     )
 
 
+def test_signal_only_reward_applies_atr_clip() -> None:
+    df = pd.DataFrame(
+        {
+            "open": [100.0, 102.0, 104.0],
+            "high": [105.0, 106.0, 108.0],
+            "low": [95.0, 100.0, 103.0],
+            "close": [100.0, 104.0, 107.0],
+            "price": [100.0, 104.0, 107.0],
+            "ts_ms": [0, 60_000, 120_000],
+        }
+    )
+    clip_cfg = {"adaptive": True, "atr_window": 2, "hard_cap_pct": 50.0, "multiplier": 1.5}
+    env = TradingEnv(df, seed=7, reward_signal_only=True, reward_clip=clip_cfg)
+    env.reset()
+    assert env._reward_signal_only is True
+    env.state.net_worth = 1_000.0
+    env.state.cash = 1_000.0
+    env.state.units = 0.0
+
+    mediator = _TestMediator(env)
+    env._mediator = mediator
+    mediator.reset()
+
+    # Manually seed prior signal state to verify ATR-based clipping mechanics.
+    env._last_signal_position = 0.5
+    env._last_reward_price = df["price"].iloc[1]
+
+    env.state.step_idx = 2
+    mediator.queue(net_worth=1_000.0, turnover_notional=0.0, fee_total=0.0)
+    _, reward_final, terminated, truncated, info_final = env.step(ActionProto(ActionType.HOLD, 0.0))
+    assert not terminated and not truncated
+    atr_pct = info_final["reward_clip_atr_pct"]
+    expected_clip = min(clip_cfg["hard_cap_pct"], clip_cfg["multiplier"] * atr_pct)
+    expected_raw = 100.0 * math.log(107.0 / 104.0) * 0.5
+    assert reward_final == pytest.approx(expected_raw, rel=1e-6)
+    assert info_final["reward_clip_bound_pct"] == pytest.approx(expected_clip, rel=1e-6)
+    assert info_final["reward_clip_atr_pct"] == pytest.approx(atr_pct, rel=1e-9)
+    assert info_final["reward_raw_pct"] == pytest.approx(expected_raw, rel=1e-6)
+    assert info_final["reward_used_pct"] == pytest.approx(expected_raw, rel=1e-6)
+
+
 def test_reward_clip_bar_matches_reference() -> None:
     steps = 512
     rng = np.random.default_rng(1234)

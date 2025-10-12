@@ -249,6 +249,11 @@ def _wrap_action_space_if_needed(
         )
         _ACTION_WRAPPER_CONFIG_LOGGED = True
 
+    try:
+        setattr(env, "_signal_long_only", bool(long_only))
+    except Exception:
+        pass
+
     wrapped_env = env
     try:
         if long_only:
@@ -1370,6 +1375,49 @@ def objective(trial: optuna.Trial,
     if reward_cap_cfg is None or not math.isfinite(reward_cap_cfg) or reward_cap_cfg <= 0.0:
         reward_cap_cfg = 10.0
 
+    reward_clip_defaults = {
+        "adaptive": True,
+        "atr_window": 14,
+        "hard_cap_pct": 2.0,
+        "multiplier": 4.0,
+    }
+    reward_clip_cfg_raw = _get_model_param_value(cfg, "reward_clip")
+    if isinstance(reward_clip_cfg_raw, Mapping):
+        reward_clip_cfg_map = dict(reward_clip_cfg_raw)
+    elif reward_clip_cfg_raw is None:
+        reward_clip_cfg_map = {}
+    else:
+        reward_clip_cfg_map = {
+            key: getattr(reward_clip_cfg_raw, key)
+            for key in ("adaptive", "atr_window", "hard_cap_pct", "multiplier")
+            if hasattr(reward_clip_cfg_raw, key)
+        }
+    reward_clip_params = dict(reward_clip_defaults)
+    adaptive_cfg = reward_clip_cfg_map.get("adaptive")
+    if adaptive_cfg is not None:
+        reward_clip_params["adaptive"] = bool(adaptive_cfg)
+    atr_window_cfg = reward_clip_cfg_map.get("atr_window")
+    if atr_window_cfg is not None:
+        try:
+            reward_clip_params["atr_window"] = max(1, int(atr_window_cfg))
+        except (TypeError, ValueError):
+            pass
+    hard_cap_cfg = reward_clip_cfg_map.get("hard_cap_pct")
+    if hard_cap_cfg is not None:
+        try:
+            value = float(hard_cap_cfg)
+            if math.isfinite(value) and value > 0.0:
+                reward_clip_params["hard_cap_pct"] = value
+        except (TypeError, ValueError):
+            pass
+    multiplier_cfg = reward_clip_cfg_map.get("multiplier")
+    if multiplier_cfg is not None:
+        try:
+            value = float(multiplier_cfg)
+            if math.isfinite(value) and value >= 0.0:
+                reward_clip_params["multiplier"] = value
+        except (TypeError, ValueError):
+            pass
     v_range_ema_alpha_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "v_range_ema_alpha"), "v_range_ema_alpha"
     )
@@ -1835,7 +1883,19 @@ def objective(trial: optuna.Trial,
         if isinstance(candidate, Mapping):
             return dict(candidate)
         payload: Dict[str, Any] = {}
-        for key in ("use_constraint", "alpha", "limit", "lambda_lr", "use_penalty", "penalty_cap"):
+        for key in (
+            "use_constraint",
+            "alpha",
+            "limit",
+            "limit_pct",
+            "lambda_lr",
+            "use_penalty",
+            "penalty_cap",
+            "weight",
+            "cap",
+            "winsor_pct",
+            "ema_beta",
+        ):
             if hasattr(candidate, key):
                 payload[key] = getattr(candidate, key)
         dict_method = getattr(candidate, "dict", None)
@@ -1850,10 +1910,45 @@ def objective(trial: optuna.Trial,
     if "alpha" in risk_cvar_cfg and risk_cvar_cfg["alpha"] is not None:
         params["cvar_alpha"] = float(risk_cvar_cfg["alpha"])
     params["cvar_use_constraint"] = bool(risk_cvar_cfg.get("use_constraint", False))
-    params["cvar_limit"] = float(risk_cvar_cfg.get("limit", -0.02))
+    limit_pct_value = risk_cvar_cfg.get("limit_pct")
+    if limit_pct_value is not None:
+        try:
+            limit_pct_value = float(limit_pct_value)
+        except (TypeError, ValueError):
+            limit_pct_value = None
+    if limit_pct_value is None:
+        limit_raw_value = risk_cvar_cfg.get("limit")
+        if limit_raw_value is not None:
+            try:
+                candidate_float = float(limit_raw_value)
+            except (TypeError, ValueError):
+                candidate_float = None
+            if candidate_float is not None:
+                if abs(candidate_float) <= 1.0:
+                    candidate_float *= 100.0
+                limit_pct_value = candidate_float
+    params["cvar_limit"] = float(limit_pct_value if limit_pct_value is not None else -2.0)
     params["cvar_lambda_lr"] = max(float(risk_cvar_cfg.get("lambda_lr", 1e-2)), 0.0)
     params["cvar_use_penalty"] = bool(risk_cvar_cfg.get("use_penalty", True))
     params["cvar_penalty_cap"] = max(float(risk_cvar_cfg.get("penalty_cap", 0.7)), 0.0)
+    if "weight" in risk_cvar_cfg and risk_cvar_cfg["weight"] is not None:
+        params["cvar_weight"] = float(risk_cvar_cfg["weight"])
+    if "cap" in risk_cvar_cfg and risk_cvar_cfg["cap"] is not None:
+        params["cvar_cap"] = float(risk_cvar_cfg["cap"])
+    winsor_cfg_value = risk_cvar_cfg.get("winsor_pct", 0.1)
+    try:
+        winsor_pct_value = float(winsor_cfg_value)
+    except (TypeError, ValueError):
+        winsor_pct_value = 0.1
+    if winsor_pct_value <= 0.005:
+        # Backward compatibility for legacy fraction inputs (~0.1% => 0.001)
+        winsor_pct_value *= 100.0
+    winsor_pct_value = max(winsor_pct_value, 0.0)
+    if winsor_pct_value > 50.0:
+        winsor_pct_value = 50.0
+    params["cvar_winsor_pct"] = winsor_pct_value
+    ema_beta_cfg = risk_cvar_cfg.get("ema_beta", 0.9)
+    params["cvar_ema_beta"] = float(ema_beta_cfg if ema_beta_cfg is not None else 0.9)
     # 1. Определяем окно самого "медленного" индикатора на основе статических параметров.
     #    Эти параметры передаются в C++ симулятор.
     #    (В данном проекте они жестко заданы в TradingEnv, но для надежности берем их из HPO)
@@ -2009,6 +2104,7 @@ def objective(trial: optuna.Trial,
                 "reward_return_clip": params["reward_return_clip"],
                 "turnover_norm_cap": params["turnover_norm_cap"],
                 "reward_cap": params["reward_cap"],
+                "reward_clip": reward_clip_params,
                 "momentum_factor": params["momentum_factor"],
                 "mean_reversion_factor": params["mean_reversion_factor"],
                 "adversarial_factor": params["adversarial_factor"],
@@ -2098,6 +2194,7 @@ def objective(trial: optuna.Trial,
             "reward_return_clip": params["reward_return_clip"],
             "turnover_norm_cap": params["turnover_norm_cap"],
             "reward_cap": params["reward_cap"],
+            "reward_clip": reward_clip_params,
             "mode": "val",
             "reward_shaping": False,
             "warmup_period": warmup_period,
@@ -2285,6 +2382,8 @@ def objective(trial: optuna.Trial,
         cvar_lambda_lr=params["cvar_lambda_lr"],
         cvar_use_penalty=params["cvar_use_penalty"],
         cvar_penalty_cap=params["cvar_penalty_cap"],
+        cvar_winsor_pct=params["cvar_winsor_pct"],
+        cvar_ema_beta=params["cvar_ema_beta"],
         value_scale=value_scale_kwargs,
 
         bc_warmup_steps=params["bc_warmup_steps"],
@@ -2403,6 +2502,7 @@ def objective(trial: optuna.Trial,
                     "reward_return_clip": params["reward_return_clip"],
                     "turnover_norm_cap": params["turnover_norm_cap"],
                     "reward_cap": params["reward_cap"],
+                    "reward_clip": reward_clip_params,
                     "reward_shaping": False, "warmup_period": warmup_period,
                     "ma5_window": MA5_WINDOW, "ma20_window": MA20_WINDOW, "atr_window": ATR_WINDOW,
                     "rsi_window": RSI_WINDOW, "macd_fast": MACD_FAST, "macd_slow": MACD_SLOW,
@@ -3024,6 +3124,7 @@ def main():
                     "reward_return_clip": params["reward_return_clip"],
                     "turnover_norm_cap": params["turnover_norm_cap"],
                     "reward_cap": params["reward_cap"],
+                    "reward_clip": params.get("reward_clip", reward_clip_params),
                     "mode": final_eval_mode,
                     "reward_shaping": False,
                     "warmup_period": warmup_period,

@@ -33,6 +33,27 @@ fees:
   half_spread_bps: 5.0
   impact_coeff: 0.0
 
+reward:
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+risk:
+  enabled: false
+  cvar:
+    use_constraint: false
+    alpha: 0.05
+    limit_pct: -2.0
+    lambda_lr: 0.01
+    use_penalty: true
+    penalty_cap: 0.7
+    weight: 0.15
+    cap: 0.5
+    winsor_pct: 0.1
+    ema_beta: 0.9
+
 model:
   algo: "ppo"
   params:
@@ -40,6 +61,11 @@ model:
     reward_return_clip: 10.0
     turnover_norm_cap: 1.0
     reward_cap: 10.0
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
 
 algo:
   actions:
