@@ -298,6 +298,18 @@ class DistributionalPPO(RecurrentPPO):
         self._pending_ret_mean = float(self._ret_mean_snapshot)
         self._pending_ret_std = float(self._ret_std_snapshot)
 
+    def _to_raw_returns(self, x: torch.Tensor) -> torch.Tensor:
+        if self.normalize_returns:
+            mean = x.new_tensor(self._ret_mean_snapshot)
+            std = x.new_tensor(self._ret_std_snapshot)
+            return x * std + mean
+
+        eff = float(getattr(self, "_value_target_scale_effective", self.value_target_scale))
+        base = float(self.value_target_scale)
+        eff = eff if abs(eff) > 1e-8 else 1.0
+        base = base if abs(base) > 1e-8 else 1.0
+        return (x / eff) * base
+
     def _limit_mean_step(self, old_value: float, proposed: float, reference_std: float) -> float:
         max_rel_step = float(self._value_scale_max_rel_step)
         if max_rel_step <= 0.0 or not math.isfinite(max_rel_step):
@@ -2078,29 +2090,30 @@ class DistributionalPPO(RecurrentPPO):
 
         base_scale = float(self.value_target_scale)
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
+
         returns_raw_tensor = returns_tensor * base_scale_safe
 
         rewards_tensor = torch.as_tensor(
             self.rollout_buffer.rewards, device=self.device, dtype=torch.float32
         ).flatten()
-        rewards_raw_tensor = rewards_tensor  # CVaR uses natural bar returns
+        rewards_raw_tensor = rewards_tensor * base_scale_safe  # CVaR uses natural bar returns
         if rewards_raw_tensor.numel() == 0:
             cvar_empirical_tensor = rewards_raw_tensor.new_tensor(0.0)
         else:
-            rewards_sorted, _ = torch.sort(rewards_raw_tensor)
             alpha = float(self.cvar_alpha)
             if not math.isfinite(alpha) or alpha <= 0.0:
-                tail_count = rewards_sorted.numel()
+                tail = rewards_raw_tensor
             else:
-                tail_count = max(int(math.ceil(alpha * rewards_sorted.numel())), 1)
-            tail = rewards_sorted[:tail_count]
-            cvar_empirical_tensor = tail.mean() if tail.numel() > 0 else rewards_sorted.new_tensor(0.0)
+                tail_count = max(int(math.ceil(alpha * rewards_raw_tensor.numel())), 1)
+                tail, _ = torch.topk(rewards_raw_tensor, tail_count, largest=False)
+            cvar_empirical_tensor = tail.mean() if tail.numel() > 0 else rewards_raw_tensor.new_tensor(0.0)
         cvar_empirical_value = float(cvar_empirical_tensor.item())
-        gap_tensor = float(self.cvar_limit) - cvar_empirical_tensor  # >0 if CVaR below limit (violation)
-        gap_value = float(gap_tensor.item())
-        self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * gap_value))
-        gap_pos = torch.clamp(gap_tensor.detach(), min=0.0)
-        constraint_term_value = float(self._cvar_lambda * gap_pos.item())
+        cvar_gap_tensor = float(self.cvar_limit) - cvar_empirical_tensor  # >0 if CVaR below limit
+        cvar_gap_value = float(cvar_gap_tensor.item())
+        self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * cvar_gap_value))
+        cvar_gap_pos = torch.clamp(cvar_gap_tensor.detach(), min=0.0)
+        cvar_gap_pos_value = float(cvar_gap_pos.item())
+        constraint_term_value = float(self._cvar_lambda * cvar_gap_pos_value)
 
         if returns_raw_tensor.numel() == 0:
             ret_abs_p95_value = 0.0
@@ -2177,6 +2190,7 @@ class DistributionalPPO(RecurrentPPO):
             running_v_min_unscaled = updated_v_min * ret_std_value + ret_mu_value
             running_v_max_unscaled = updated_v_max * ret_std_value + ret_mu_value
         else:
+            base_scale = float(self.value_target_scale)
             if returns_tensor.numel() == 0:
                 robust_scale_value = 1.0
             else:
@@ -2557,7 +2571,7 @@ class DistributionalPPO(RecurrentPPO):
                         target_distribution = torch.zeros_like(value_logits_fp32)
 
                     with torch.no_grad():
-                        buffer_returns = rollout_data.returns.to(dtype=torch.float32)
+                        buffer_returns = rollout_data.returns.to(device=self.device, dtype=torch.float32)
                         target_returns_raw = buffer_returns * base_scale_safe
 
                         # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
@@ -2581,6 +2595,10 @@ class DistributionalPPO(RecurrentPPO):
                                 -self.ret_clip, self.ret_clip
                             )
                         else:
+                            base_scale = float(self.value_target_scale)
+                            base_scale_safe = (
+                                base_scale if abs(base_scale) > 1e-8 else 1.0
+                            )
                             target_returns_norm_raw = (
                                 (target_returns_raw / base_scale_safe)
                                 * self._value_target_scale_effective
@@ -2671,31 +2689,21 @@ class DistributionalPPO(RecurrentPPO):
                     if self._use_quantile_value:
                         quantiles_fp32 = value_head_fp32
                         mean_values_norm = quantiles_fp32.mean(dim=1, keepdim=True)
-                        if self.normalize_returns:
-                            mean_values_unscaled = (
-                                mean_values_norm * ret_std_tensor + ret_mu_tensor
+                        mean_values_unscaled = self._to_raw_returns(mean_values_norm)
+                        quantiles_unscaled = self._to_raw_returns(quantiles_fp32)
+                        if (not self.normalize_returns) and (
+                            self._value_clip_limit_unscaled is not None
+                        ):
+                            mean_values_unscaled = torch.clamp(
+                                mean_values_unscaled,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
                             )
-                            quantiles_unscaled = (
-                                quantiles_fp32 * ret_std_tensor + ret_mu_tensor
+                            quantiles_unscaled = torch.clamp(
+                                quantiles_unscaled,
+                                min=-self._value_clip_limit_unscaled,
+                                max=self._value_clip_limit_unscaled,
                             )
-                        else:
-                            mean_values_unscaled = (
-                                mean_values_norm / self._value_target_scale_effective
-                            ) * base_scale_safe
-                            quantiles_unscaled = (
-                                quantiles_fp32 / self._value_target_scale_effective
-                            ) * base_scale_safe
-                            if self._value_clip_limit_unscaled is not None:
-                                mean_values_unscaled = torch.clamp(
-                                    mean_values_unscaled,
-                                    min=-self._value_clip_limit_unscaled,
-                                    max=self._value_clip_limit_unscaled,
-                                )
-                                quantiles_unscaled = torch.clamp(
-                                    quantiles_unscaled,
-                                    min=-self._value_clip_limit_unscaled,
-                                    max=self._value_clip_limit_unscaled,
-                                )
 
                         mean_value_batches.append(mean_values_unscaled.detach())
                         quantile_batches_unscaled.append(quantiles_unscaled.detach())
@@ -2711,14 +2719,7 @@ class DistributionalPPO(RecurrentPPO):
                         bucket_value_mse_value += float(mse_tensor.item()) * weight
 
                         predicted_cvar_norm = self._cvar_from_quantiles(quantiles_fp32)
-                        if self.normalize_returns:
-                            cvar_raw = (
-                                predicted_cvar_norm * ret_std_tensor + ret_mu_tensor
-                            ).mean()
-                        else:
-                            cvar_raw = (
-                                predicted_cvar_norm / self._value_target_scale_effective
-                            ).mean() * base_scale_safe
+                        cvar_raw = self._to_raw_returns(predicted_cvar_norm).mean()
 
                         critic_loss = self._quantile_huber_loss(
                             quantiles_fp32, target_returns_norm
@@ -2732,14 +2733,7 @@ class DistributionalPPO(RecurrentPPO):
                         with torch.no_grad():
 
                             mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
-                            if self.normalize_returns:
-                                mean_values_unscaled = (
-                                    mean_values_norm * ret_std_tensor + ret_mu_tensor
-                                )
-                            else:
-                                mean_values_unscaled = (
-                                    mean_values_norm / self._value_target_scale_effective
-                                ) * base_scale_safe
+                            mean_values_unscaled = self._to_raw_returns(mean_values_norm)
 
                             mean_values_flat = mean_values_unscaled.view(-1)
                             target_returns_flat = target_returns_raw.view(-1)
@@ -2763,14 +2757,7 @@ class DistributionalPPO(RecurrentPPO):
                         predicted_cvar = calculate_cvar(
                             pred_probs_fp32, self.policy.atoms, self.cvar_alpha
                         )
-                        if self.normalize_returns:
-                            cvar_raw = (
-                                predicted_cvar * ret_std_tensor + ret_mu_tensor
-                            ).mean()
-                        else:
-                            cvar_raw = (
-                                predicted_cvar / self._value_target_scale_effective
-                            ).mean() * base_scale_safe
+                        cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
                     cvar_loss = -cvar_raw
                     cvar_term = current_cvar_weight * cvar_loss
@@ -2785,7 +2772,7 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     if self.cvar_use_constraint:
-                        loss = loss + loss.new_tensor(self._cvar_lambda) * gap_pos
+                        loss = loss + loss.new_tensor(self._cvar_lambda) * cvar_gap_pos
 
                     loss_weighted = loss * loss.new_tensor(weight)
                     loss_weighted.backward()
@@ -2957,27 +2944,23 @@ class DistributionalPPO(RecurrentPPO):
                 raise RuntimeError("No value logits captured during training loop")
 
         if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
-            rollout_returns = (
-                torch.as_tensor(
-                    self.rollout_buffer.returns, device=self.device, dtype=torch.float32
-                )
-                * base_scale_safe
+            rollout_returns = torch.as_tensor(
+                self.rollout_buffer.returns, device=self.device, dtype=torch.float32
             )
+            rollout_returns = rollout_returns * base_scale_safe
             with torch.no_grad():
                 if self._use_quantile_value:
                     quantiles_fp32 = value_quantiles_final
                     value_pred_norm = quantiles_fp32.mean(dim=1, keepdim=True)
+                    value_pred_raw = self._to_raw_returns(value_pred_norm)
+                    quantiles_raw = self._to_raw_returns(quantiles_fp32)
                     if self.normalize_returns:
-                        y_pred_tensor = value_pred_norm * ret_std_tensor + ret_mu_tensor
+                        y_pred_tensor = value_pred_raw
                         if not quantile_batches_unscaled:
-                            quantile_batches_unscaled.append(
-                                (quantiles_fp32 * ret_std_tensor + ret_mu_tensor).detach()
-                            )
+                            quantile_batches_unscaled.append(quantiles_raw.detach())
                             quantile_batches_norm.append(quantiles_fp32.detach())
                     else:
-                        y_pred_tensor = (
-                            value_pred_norm / self._value_target_scale_effective
-                        ) * base_scale_safe
+                        y_pred_tensor = value_pred_raw
                         if self._value_clip_limit_unscaled is not None:
                             y_pred_tensor = torch.clamp(
                                 y_pred_tensor,
@@ -2985,24 +2968,16 @@ class DistributionalPPO(RecurrentPPO):
                                 max=self._value_clip_limit_unscaled,
                             )
                         if not quantile_batches_unscaled:
-                            quantile_batches_unscaled.append(
-                                (
-                                    quantiles_fp32
-                                    / self._value_target_scale_effective
-                                )
-                                .detach()
-                                * base_scale_safe
-                            )
+                            quantile_batches_unscaled.append(quantiles_raw.detach())
                             quantile_batches_norm.append(quantiles_fp32.detach())
                 else:
                     pred_probs = torch.softmax(value_logits_final, dim=1)
                     value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                    value_pred_raw = self._to_raw_returns(value_pred_norm)
                     if self.normalize_returns:
-                        y_pred_tensor = (value_pred_norm * ret_std_tensor + ret_mu_tensor)
+                        y_pred_tensor = value_pred_raw
                     else:
-                        y_pred_tensor = (
-                            value_pred_norm / self._value_target_scale_effective
-                        ) * base_scale_safe
+                        y_pred_tensor = value_pred_raw
                         if self._value_clip_limit_unscaled is not None:
                             y_pred_tensor = torch.clamp(
                                 y_pred_tensor,
@@ -3079,7 +3054,8 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_loss", cvar_loss_value)
         self.logger.record("train/cvar_term", cvar_term_value)
         self.logger.record("train/cvar_empirical", cvar_empirical_value)
-        self.logger.record("train/cvar_violation", gap_value)  # now (limit - CVaR)
+        self.logger.record("train/cvar_gap", cvar_gap_value)
+        self.logger.record("train/cvar_gap_pos", cvar_gap_pos_value)
         self.logger.record("train/cvar_lambda", float(self._cvar_lambda))
         if self.cvar_use_constraint:
             self.logger.record("train/cvar_constraint", constraint_term_value)
