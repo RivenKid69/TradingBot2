@@ -639,7 +639,9 @@ class TradingEnv(gym.Env):
             first_price = float(self._resolve_reward_price(0))
         self._last_reward_price = first_price if math.isfinite(first_price) and first_price > 0.0 else 0.0
         obs = np.zeros(self.observation_space.shape, dtype=np.float32)
-        return obs, {}
+        info: dict[str, Any] = {}
+        self._attach_bar_interval_info(info)
+        return obs, info
 
     def _resolve_reward_price(self, row_idx: int, row: pd.Series | None = None) -> float:
         candidate: float | None = None
@@ -753,8 +755,10 @@ class TradingEnv(gym.Env):
         ts_candidates = [
             "decision_ts",
             "ts_ms",
+            "timestamp_ms",
             "close_ts",
             "open_ts",
+            "timestamp",
         ]
         for col in ts_candidates:
             if col not in self.df.columns:
@@ -845,7 +849,7 @@ class TradingEnv(gym.Env):
         return None
 
     def _bar_interval_from_index(self, idx: int) -> int | None:
-        ts_cols = ["decision_ts", "ts_ms", "close_ts", "open_ts"]
+        ts_cols = ["decision_ts", "ts_ms", "timestamp_ms", "close_ts", "open_ts", "timestamp"]
         for col in ts_cols:
             if col not in self.df.columns:
                 continue
@@ -879,6 +883,21 @@ class TradingEnv(gym.Env):
         if not math.isfinite(seconds) or seconds <= 0:
             return None
         return seconds
+
+    def _attach_bar_interval_info(self, info: dict[str, Any]) -> None:
+        """Populate ``info`` with interval metadata when available."""
+
+        seconds = self.get_bar_interval_seconds()
+        if seconds is None:
+            return
+        try:
+            bar_ms = int(round(float(self.bar_interval_ms)))
+        except (TypeError, ValueError):
+            bar_ms = int(round(seconds * 1000.0))
+        if bar_ms <= 0 or not math.isfinite(bar_ms):
+            return
+        info["bar_interval_ms"] = int(bar_ms)
+        info["bar_seconds"] = float(seconds)
 
     def _coerce_timestamp(self, value: Any, is_ms: bool | None, column_name: str) -> int | None:
         if value is None:
@@ -1225,6 +1244,7 @@ class TradingEnv(gym.Env):
             self._mediator.calls.append(proto)
         obs, reward, terminated, truncated, info = result
         info = dict(info or {})
+        self._attach_bar_interval_info(info)
 
         trades_payload = info.get("trades") or []
         agent_trade_events = 0
