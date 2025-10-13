@@ -258,6 +258,117 @@ def test_cvar_scale_logging_and_freeze() -> None:
     assert logger.records["train/cvar_unit"] == pytest.approx(-0.01 / scale_after_drift)
 
 
+@pytest.mark.parametrize("normalize_returns", [False, True])
+def test_cvar_penalty_active_unit_consistency(normalize_returns: bool) -> None:
+    model = _make_cvar_model()
+    model.normalize_returns = normalize_returns
+    model.cvar_use_penalty = True
+    model.cvar_limit = -0.02
+    model.cvar_lambda_lr = 0.1
+
+    if normalize_returns:
+        model._ret_mean_snapshot = 0.012
+        model._ret_std_snapshot = 0.05
+        model._value_scale_std_floor = 0.01
+    else:
+        model._value_target_scale_robust = 0.25
+        model.value_target_scale = 0.05
+
+    rewards = torch.tensor([-0.03, -0.015, 0.01, 0.02, -0.005], dtype=torch.float32)
+    _, cvar_empirical_tensor, *_ = model._compute_cvar_statistics(rewards)
+    cvar_empirical = float(cvar_empirical_tensor.item())
+
+    offset, scale = model._get_cvar_normalization_params()
+    assert scale > 0.0
+    limit_raw = float(model._get_cvar_limit_raw())
+    limit_unit = (limit_raw - offset) / scale
+
+    cvar_unit = (cvar_empirical - offset) / scale
+    cvar_loss_unit = -cvar_unit
+    cvar_loss_raw = cvar_loss_unit * scale
+
+    cvar_gap_raw = limit_raw - cvar_empirical
+    cvar_gap_unit = limit_unit - cvar_unit
+    violation_raw = max(cvar_gap_raw, 0.0)
+    violation_unit = max(cvar_gap_unit, 0.0)
+
+    penalty_nominal, penalty_raw, penalty_active = model._resolve_cvar_penalty_state(
+        0.0, 0.0, violation_unit
+    )
+    assert penalty_active
+    assert 0.0 < penalty_nominal <= model.cvar_penalty_cap
+    assert penalty_raw == pytest.approx(penalty_nominal)
+
+    lambda_values = []
+    lambda_state = 0.0
+    for _ in range(3):
+        lambda_state = DistributionalPPO._bounded_dual_update(
+            lambda_state, model.cvar_lambda_lr, violation_unit
+        )
+        lambda_values.append(lambda_state)
+
+    assert lambda_values == sorted(lambda_values)
+    assert all(0.0 <= value <= 1.0 for value in lambda_values)
+
+    cvar_term_unit = penalty_raw * cvar_loss_unit
+    cvar_term_raw = penalty_raw * cvar_loss_raw
+
+    model.logger = _CaptureLogger()
+    model._record_cvar_logs(
+        cvar_raw_value=cvar_empirical,
+        cvar_unit_value=cvar_unit,
+        cvar_loss_raw_value=cvar_loss_raw,
+        cvar_loss_unit_value=cvar_loss_unit,
+        cvar_term_raw_value=cvar_term_raw,
+        cvar_term_unit_value=cvar_term_unit,
+        cvar_empirical_value=cvar_empirical,
+        cvar_empirical_unit_value=cvar_unit,
+        cvar_empirical_ema_value=cvar_empirical,
+        cvar_violation_raw_value=violation_raw,
+        cvar_violation_raw_unclipped_value=cvar_gap_raw,
+        cvar_violation_unit_value=violation_unit,
+        cvar_violation_ema_value=violation_unit,
+        cvar_gap_raw_value=cvar_gap_raw,
+        cvar_gap_unit_value=cvar_gap_unit,
+        cvar_penalty_active_value=1.0,
+        cvar_lambda_value=lambda_values[-1],
+        cvar_scale_value=scale,
+        cvar_limit_raw_value=limit_raw,
+        cvar_limit_unit_value=limit_unit,
+        current_cvar_weight_scaled=penalty_raw,
+        current_cvar_weight_nominal=penalty_nominal,
+        current_cvar_weight_raw=penalty_raw,
+        cvar_penalty_cap_value=model.cvar_penalty_cap,
+    )
+
+    records = model.logger.records
+    assert records["train/cvar_penalty_active"] == pytest.approx(1.0)
+    assert records["train/cvar_loss"] == pytest.approx(cvar_loss_raw)
+    assert records["train/cvar_loss_unit"] == pytest.approx(cvar_loss_unit)
+    assert records["train/cvar_term_in_fraction"] == pytest.approx(cvar_term_raw)
+    assert records["train/cvar_term"] == pytest.approx(cvar_term_unit)
+    assert records["train/cvar_scale"] == pytest.approx(scale)
+    assert records["train/cvar_loss"] == pytest.approx(records["train/cvar_loss_in_fraction"])
+    assert records["train/cvar_loss"] == pytest.approx(records["train/cvar_loss_unit"] * scale)
+    assert records["train/cvar_term_in_fraction"] == pytest.approx(
+        records["train/cvar_term"] * scale
+    )
+    assert records["train/cvar_unit"] == pytest.approx(cvar_unit)
+    assert records["train/cvar_limit_unit"] == pytest.approx(limit_unit)
+
+    offset_again, scale_again = model._get_cvar_normalization_params()
+    assert offset_again == pytest.approx(offset)
+    assert scale_again == pytest.approx(scale)
+
+    model.value_target_scale *= 10.0
+    offset_drift, scale_drift = model._get_cvar_normalization_params()
+    assert offset_drift == pytest.approx(offset)
+    assert scale_drift == pytest.approx(scale)
+
+    cvar_unit_rescaled = (cvar_empirical - offset_drift) / scale_drift
+    assert cvar_unit_rescaled == pytest.approx(cvar_unit)
+
+
 def test_value_scale_snapshot_prevents_mismatch() -> None:
     returns_raw = np.array([100.0, 110.0, 90.0, 105.0], dtype=np.float32)
     snapshot_mean = 0.0
