@@ -2063,13 +2063,14 @@ class DistributionalPPO(RecurrentPPO):
                         min=-self._value_clip_limit_scaled,
                         max=self._value_clip_limit_scaled,
                     )
-                scalar_values = scalar_values / self.value_target_scale  # стабильная шкала буфера (обычно =1)
+                scalar_values_raw = self._to_raw_returns(scalar_values)
                 if self._value_clip_limit_unscaled is not None:
-                    scalar_values = torch.clamp(
-                        scalar_values,
+                    scalar_values_raw = torch.clamp(
+                        scalar_values_raw,
                         min=-self._value_clip_limit_unscaled,
                         max=self._value_clip_limit_unscaled,
                     )
+                scalar_values = scalar_values_raw / base_reward_scale  # стабильная шкала буфера (обычно =1)
 
             actions_np = actions.cpu().numpy()
             if isinstance(self.action_space, gym.spaces.Box):
@@ -2220,20 +2221,21 @@ class DistributionalPPO(RecurrentPPO):
             ret_mu_tensor = last_mean_norm.new_tensor(self._ret_mean_snapshot)
             last_scalar_values = (last_mean_norm * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
         else:
-            last_scalar_values = last_mean_norm
+            last_scalar_scaled = last_mean_norm
             if self._value_clip_limit_scaled is not None:
-                last_scalar_values = torch.clamp(
-                    last_scalar_values,
+                last_scalar_scaled = torch.clamp(
+                    last_scalar_scaled,
                     min=-self._value_clip_limit_scaled,
                     max=self._value_clip_limit_scaled,
                 )
-            last_scalar_values = last_scalar_values / self.value_target_scale
+            last_scalar_raw = self._to_raw_returns(last_scalar_scaled)
             if self._value_clip_limit_unscaled is not None:
-                last_scalar_values = torch.clamp(
-                    last_scalar_values,
+                last_scalar_raw = torch.clamp(
+                    last_scalar_raw,
                     min=-self._value_clip_limit_unscaled,
                     max=self._value_clip_limit_unscaled,
                 )
+            last_scalar_values = last_scalar_raw / base_reward_scale
 
         rollout_buffer.compute_returns_and_advantage(last_values=last_scalar_values, dones=dones)
         callback.on_rollout_end()
