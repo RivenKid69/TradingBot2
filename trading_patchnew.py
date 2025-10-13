@@ -12,6 +12,7 @@ import json
 import logging
 import math
 import time
+import heapq
 from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
@@ -458,8 +459,18 @@ class TradingEnv(gym.Env):
             self.reward_cap = 10.0
 
         self.debug_asserts = bool(kwargs.get("debug_asserts", False))
-        self._reward_equity_floor = 1e-8
         self._turnover_total = 0.0
+
+        self._diag_top_k = int(kwargs.get("diag_top_k", 5) or 5)
+        if self._diag_top_k <= 0:
+            self._diag_top_k = 5
+        self._diag_metric_heaps: dict[str, list[float]] = {
+            "reward_costs_pct": [],
+            "fees_pct": [],
+            "turnover_penalty_pct": [],
+            "equity": [],
+            "executed_notional": [],
+        }
 
         # optional strict data validation
         if validate_data or os.getenv("DATA_VALIDATE") == "1":
@@ -485,11 +496,15 @@ class TradingEnv(gym.Env):
                 raise
 
         self.initial_cash = float(initial_cash)
-        base_equity_floor = float(kwargs.get("reward_equity_floor", 0.0) or 0.0)
-        if not math.isfinite(base_equity_floor) or base_equity_floor <= 0.0:
-            base_equity_floor = 0.0
-        inferred_floor = max(abs(self.initial_cash), 1.0) * 1e-4
-        self._reward_equity_floor = max(self._reward_equity_floor, base_equity_floor, inferred_floor)
+        ic_abs = abs(self.initial_cash) if math.isfinite(self.initial_cash) else 0.0
+        eps_floor = max(1e-6 * ic_abs, 1.0)
+        log_floor = max(1e-3 * ic_abs, 10.0)
+        cfg_floor = float(kwargs.get("reward_equity_floor", 0.0) or 0.0)
+        if not math.isfinite(cfg_floor) or cfg_floor < 0.0:
+            cfg_floor = 0.0
+        self._equity_floor_norm = max(eps_floor, cfg_floor)
+        self._equity_floor_log = max(log_floor, cfg_floor)
+        self._reward_equity_floor = float(self._equity_floor_norm)
         self._max_steps = len(self.df)
 
         # store config for Mediator
@@ -683,6 +698,29 @@ class TradingEnv(gym.Env):
             raise AssertionError(msg)
         logger.error(msg)
         return 0.0
+
+    def _diag_track_metric(self, name: str, value: float) -> None:
+        if not math.isfinite(value):
+            return
+        heap = self._diag_metric_heaps.get(name)
+        if heap is None:
+            return
+        updated = False
+        if len(heap) < self._diag_top_k:
+            heapq.heappush(heap, float(value))
+            updated = True
+        elif value > heap[0]:
+            heapq.heapreplace(heap, float(value))
+            updated = True
+        if updated:
+            top_values = sorted(heap, reverse=True)
+            logger.debug(
+                "diag top-%d %s @step %d: %s",
+                self._diag_top_k,
+                name,
+                getattr(self, "total_steps", 0),
+                top_values,
+            )
 
     def _assert_feature_timestamps(self, row: pd.Series) -> None:
         decision_ts = row.get("decision_ts")
@@ -1251,15 +1289,19 @@ class TradingEnv(gym.Env):
             self._turnover_total = prev_turnover_total
 
         prev_equity_raw = prev_net_worth
-        if not math.isfinite(prev_equity_raw):
-            prev_equity_raw = 0.0
-        prev_equity = max(prev_equity_raw, self._reward_equity_floor)
+        prev_equity_safe = prev_equity_raw
+        if not math.isfinite(prev_equity_safe):
+            prev_equity_safe = 0.0
+        prev_equity = max(prev_equity_safe, self._equity_floor_norm)
+        prev_equity_issue = (not math.isfinite(prev_equity_raw)) or (
+            prev_equity_raw <= 0.0
+        )
 
         equity = new_net_worth
         if not math.isfinite(equity):
             equity = prev_equity
         if equity <= 0.0:
-            equity = max(prev_equity, self._reward_equity_floor)
+            equity = max(prev_equity, self._equity_floor_norm)
 
         turnover_norm = 0.0
         if prev_equity > 0.0:
@@ -1285,6 +1327,14 @@ class TradingEnv(gym.Env):
         trade_frequency_penalty = self.trade_frequency_penalty * agent_trade_events
         if not math.isfinite(trade_frequency_penalty) or trade_frequency_penalty < 0.0:
             trade_frequency_penalty = 0.0
+
+        if prev_equity_issue:
+            logger.warning(
+                "prev_equity anomaly (raw=%s, floor=%s, step=%s): using safe denominators",
+                prev_equity_raw,
+                self._equity_floor_norm,
+                self.total_steps,
+            )
 
         prev_signal_pos = float(self._last_signal_position)
         reward_price_prev = self._last_reward_price if self._last_reward_price > 0.0 else self._resolve_reward_price(max(row_idx - 1, 0))
@@ -1314,21 +1364,19 @@ class TradingEnv(gym.Env):
 
         reward_used_pct_before_costs = float(reward_used_pct)
 
-        start_equity = self._safe_float(getattr(self, "initial_cash", None))
-        if start_equity is None or not math.isfinite(start_equity) or start_equity <= 0.0:
-            start_equity = 0.0
-        equity_floor_safe = max(
-            self._reward_equity_floor,
-            0.001 * start_equity if start_equity > 0.0 else self._reward_equity_floor,
-        )
+        equity_floor_log = float(self._equity_floor_log)
 
         equity_for_pct_logging = float("nan")
-        if prev_equity_raw >= equity_floor_safe and prev_equity > 0.0:
+        if (
+            math.isfinite(prev_equity_raw)
+            and prev_equity_raw >= equity_floor_log
+            and prev_equity > 0.0
+        ):
             equity_for_pct_logging = float(prev_equity)
 
-        fees_pct_raw = 0.0
-        if prev_equity > 0.0:
-            fees_pct_raw = 100.0 * (fees / prev_equity)
+        fees_pct_raw = 100.0 * (
+            fees / max(prev_equity_safe, self._equity_floor_norm)
+        )
         if not math.isfinite(fees_pct_raw):
             fees_pct_raw = 0.0
 
@@ -1377,7 +1425,7 @@ class TradingEnv(gym.Env):
         info["reward_used_pct_before_costs"] = float(reward_used_pct_before_costs)
         denom_for_logging: float | None = None
         if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0:
-            denom_for_logging = max(prev_equity, equity_floor_safe)
+            denom_for_logging = max(prev_equity_safe, self._equity_floor_log)
 
         if denom_for_logging is None or denom_for_logging <= 0.0:
             reward_costs_pct_logged = float("nan")
@@ -1403,6 +1451,12 @@ class TradingEnv(gym.Env):
             reward_costs_pct_logged = float(
                 max(0.0, fees_pct_logged + turnover_penalty_pct_logged)
             )
+
+        self._diag_track_metric("reward_costs_pct", reward_costs_pct_logged)
+        self._diag_track_metric("fees_pct", fees_pct_logged)
+        self._diag_track_metric("turnover_penalty_pct", turnover_penalty_pct_logged)
+        self._diag_track_metric("equity", equity)
+        self._diag_track_metric("executed_notional", step_turnover_notional)
 
         info["reward_costs_pct"] = reward_costs_pct_logged
         info["fees_pct"] = fees_pct_logged
