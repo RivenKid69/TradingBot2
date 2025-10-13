@@ -1103,6 +1103,11 @@ class DistributionalPPO(RecurrentPPO):
         self._last_rollout_reward_raw: Optional[np.ndarray] = None
         self._last_rollout_reward_costs: Optional[np.ndarray] = None
         self._last_rollout_clip_bounds: Optional[np.ndarray] = None
+        self._last_rollout_clip_hard_caps: Optional[np.ndarray] = None
+        self._last_rollout_clip_bounds_min: Optional[float] = None
+        self._last_rollout_clip_bounds_median: Optional[float] = None
+        self._last_rollout_clip_bounds_max: Optional[float] = None
+        self._last_rollout_clip_cap_fraction: Optional[float] = None
 
         self.v_range_ema_alpha = float(v_range_ema_alpha)
         if not (0.0 < self.v_range_ema_alpha <= 1.0):
@@ -2005,6 +2010,7 @@ class DistributionalPPO(RecurrentPPO):
         reward_raw_buffer = np.zeros((buffer_size, n_envs), dtype=np.float32)
         reward_costs_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
+        clip_cap_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         base_reward_scale = float(self.value_target_scale)
         if not math.isfinite(base_reward_scale) or abs(base_reward_scale) <= 1e-8:
             base_reward_scale = 1.0
@@ -2091,6 +2097,7 @@ class DistributionalPPO(RecurrentPPO):
             reward_raw_step = np.zeros(n_envs, dtype=np.float32)
             reward_costs_step = np.full(n_envs, np.nan, dtype=np.float32)
             clip_bound_step = np.full(n_envs, np.nan, dtype=np.float32)
+            clip_hard_cap_step = np.full(n_envs, np.nan, dtype=np.float32)
             for env_idx, info in enumerate(infos):
                 if env_idx < scaled_rewards.size:
                     safe_fallback = float(scaled_rewards[env_idx]) * base_reward_scale
@@ -2099,6 +2106,7 @@ class DistributionalPPO(RecurrentPPO):
                 raw_value = safe_fallback
                 clip_value = 0.0
                 costs_value: float = float("nan")
+                hard_cap_value: float = float("nan")
                 if isinstance(info, Mapping):
                     candidate = info.get("reward_used_pct")
                     if candidate is None:
@@ -2114,6 +2122,12 @@ class DistributionalPPO(RecurrentPPO):
                             clip_value = float(clip_candidate)
                         except (TypeError, ValueError):
                             clip_value = 0.0
+                    hard_cap_candidate = info.get("reward_clip_hard_cap_pct")
+                    if hard_cap_candidate is not None:
+                        try:
+                            hard_cap_value = float(hard_cap_candidate)
+                        except (TypeError, ValueError):
+                            hard_cap_value = float("nan")
                     cost_candidate = info.get("reward_costs_pct")
                     if cost_candidate is not None:
                         try:
@@ -2123,10 +2137,12 @@ class DistributionalPPO(RecurrentPPO):
                 reward_raw_step[env_idx] = float(raw_value)
                 reward_costs_step[env_idx] = float(costs_value)
                 clip_bound_step[env_idx] = clip_value
+                clip_hard_cap_step[env_idx] = hard_cap_value
 
             reward_raw_buffer[step_pos] = reward_raw_step
             reward_costs_buffer[step_pos] = reward_costs_step
             clip_bound_buffer[step_pos] = clip_bound_step
+            clip_cap_buffer[step_pos] = clip_hard_cap_step
 
             rollout_buffer.add(
                 self._last_obs,
@@ -2156,6 +2172,26 @@ class DistributionalPPO(RecurrentPPO):
         self._last_rollout_reward_raw = reward_raw_buffer.copy()
         self._last_rollout_reward_costs = reward_costs_buffer.copy()
         self._last_rollout_clip_bounds = clip_bound_buffer.copy()
+        self._last_rollout_clip_hard_caps = clip_cap_buffer.copy()
+
+        self._last_rollout_clip_bounds_min = None
+        self._last_rollout_clip_bounds_median = None
+        self._last_rollout_clip_bounds_max = None
+        self._last_rollout_clip_cap_fraction = None
+        if self._last_rollout_clip_bounds is not None:
+            clip_bounds_np = np.asarray(self._last_rollout_clip_bounds, dtype=np.float32).flatten()
+            finite_mask = np.isfinite(clip_bounds_np)
+            if np.any(finite_mask):
+                finite_bounds = clip_bounds_np[finite_mask]
+                self._last_rollout_clip_bounds_min = float(np.min(finite_bounds))
+                self._last_rollout_clip_bounds_median = float(np.median(finite_bounds))
+                self._last_rollout_clip_bounds_max = float(np.max(finite_bounds))
+            if self._last_rollout_clip_hard_caps is not None:
+                hard_caps_np = np.asarray(self._last_rollout_clip_hard_caps, dtype=np.float32).flatten()
+                mask = np.isfinite(clip_bounds_np) & np.isfinite(hard_caps_np)
+                if np.any(mask):
+                    hits = np.abs(clip_bounds_np[mask] - hard_caps_np[mask]) <= 1e-6
+                    self._last_rollout_clip_cap_fraction = float(np.mean(hits.astype(np.float32)))
 
         if self._use_quantile_value:
             if last_value_quantiles is None:
@@ -2256,6 +2292,8 @@ class DistributionalPPO(RecurrentPPO):
         # Rollout returns are stored directly in the base percent scale; decode via the
         # static value_target_scale without reapplying any running mean/std factors.
         returns_raw_tensor = returns_tensor * float(base_scale_safe)
+        returns_decode_path = "scale_only"
+        self.logger.record("train/returns_decode_path", returns_decode_path)
 
 
         rewards_tensor = torch.as_tensor(
@@ -2322,12 +2360,16 @@ class DistributionalPPO(RecurrentPPO):
                 reward_costs_pct_value = float(np.median(finite_costs))
                 reward_costs_pct_mean_value = float(np.mean(finite_costs))
 
-        clip_bound_value = 0.0
-        if self._last_rollout_clip_bounds is not None:
-            clip_bounds_np = np.asarray(self._last_rollout_clip_bounds, dtype=np.float32).flatten()
-            finite_mask = np.isfinite(clip_bounds_np)
-            if np.any(finite_mask):
-                clip_bound_value = float(np.nanmedian(clip_bounds_np[finite_mask]))
+        clip_bound_min_value = self._last_rollout_clip_bounds_min
+        clip_bound_median_value = self._last_rollout_clip_bounds_median
+        clip_bound_max_value = self._last_rollout_clip_bounds_max
+        clip_bound_value = float(clip_bound_median_value) if clip_bound_median_value is not None else 0.0
+        clip_bound_cap_frac_value = self._last_rollout_clip_cap_fraction
+        clip_bound_cap_frac_logged = (
+            float(clip_bound_cap_frac_value)
+            if clip_bound_cap_frac_value is not None
+            else 0.0
+        )
 
         returns_abs_p95_pct_value = float(returns_abs_p95_pct_tensor.item())
         returns_abs_p95_value = float(returns_abs_p95_value_tensor.item())
@@ -3293,6 +3335,11 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/reward_raw_p50", reward_raw_p50_value)
         self.logger.record("train/reward_raw_p95", reward_raw_p95_value)
         self.logger.record("train/reward_clip_bound_pct", float(clip_bound_value))
+        self.logger.record("train/reward_clip_bound_is_cap_frac", float(clip_bound_cap_frac_logged))
+        if clip_bound_min_value is not None:
+            self.logger.record("train/reward_clip_bound_min_pct", float(clip_bound_min_value))
+        if clip_bound_max_value is not None:
+            self.logger.record("train/reward_clip_bound_max_pct", float(clip_bound_max_value))
         self.logger.record("debug/cvar_limit", cvar_limit_raw_value)
 
         cvar_violation_ema_value = float(
