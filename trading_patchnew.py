@@ -326,18 +326,19 @@ class TradingEnv(gym.Env):
         self.reward_clip_adaptive = bool(clip_cfg_raw.get("adaptive", True))
         self.reward_clip_atr_window = max(1, int(clip_cfg_raw.get("atr_window", 14) or 14))
         hard_cap_raw = float(clip_cfg_raw.get("hard_cap_pct", 4.0) or 4.0)
-        if not math.isfinite(hard_cap_raw) or hard_cap_raw <= 0.0:
+        if not math.isfinite(hard_cap_raw):
             hard_cap_raw = 4.0
         # Accept configuration either as fraction (≤1) or percentage (>1).
-        hard_cap_pct = hard_cap_raw * 100.0 if hard_cap_raw <= 1.0 else hard_cap_raw
-        self.reward_clip_hard_cap_pct = float(hard_cap_pct)
-        self.reward_clip_hard_cap_fraction = float(self.reward_clip_hard_cap_pct / 100.0)
+        hard_cap_fraction = hard_cap_raw / 100.0 if hard_cap_raw > 1.0 else hard_cap_raw
+        if not math.isfinite(hard_cap_fraction) or hard_cap_fraction <= 0.0:
+            hard_cap_fraction = 0.04
+        self.reward_clip_hard_cap_fraction = float(hard_cap_fraction)
         multiplier = float(clip_cfg_raw.get("multiplier", 1.5) or 1.5)
         if not math.isfinite(multiplier) or multiplier < 0.0:
             multiplier = 1.5
         self.reward_clip_multiplier = float(multiplier)
-        self._reward_clip_bound_last = float(self.reward_clip_hard_cap_pct)
-        self._reward_clip_atr_pct_last = 0.0
+        self._reward_clip_bound_last = float(self.reward_clip_hard_cap_fraction)
+        self._reward_clip_atr_fraction_last = 0.0
 
         # capture signal-mode defaults for reset without relying on transient kwargs
         self._signal_long_only_default = bool(kwargs.get("signal_long_only", kwargs.get("long_only", False)))
@@ -364,14 +365,13 @@ class TradingEnv(gym.Env):
             clip_alpha = 1 / max(1, int(self.reward_clip_atr_window))
             atr_clip = tr.ewm(alpha=clip_alpha, adjust=False).mean()
             atr_clip_fraction = (atr_clip / denom).ffill().fillna(0.0)
-            # The internal cache keeps ATR as a fraction. Downstream telemetry
-            # converts it back to percentage for human-facing metrics.
-            self.df["_reward_clip_atr_pct"] = atr_clip_fraction
+            # The internal cache keeps ATR as a fraction for consistent reward scaling.
+            self.df["_reward_clip_atr_fraction"] = atr_clip_fraction
         else:
             self.df["tr"] = 0.0
             self.df["atr"] = 0.0
             self.df["atr_pct"] = 0.0
-            self.df["_reward_clip_atr_pct"] = 0.0
+            self.df["_reward_clip_atr_fraction"] = 0.0
 
         # dynamic spread config and rolling liquidity
         dyn_cfg_dict = dict(kwargs.get("dynamic_spread", {}) or {})
@@ -465,12 +465,23 @@ class TradingEnv(gym.Env):
         if self._diag_top_k <= 0:
             self._diag_top_k = 5
         self._diag_metric_heaps: dict[str, list[float]] = {
-            "reward_costs_pct": [],
-            "fees_pct": [],
-            "turnover_penalty_pct": [],
+            "reward_costs_fraction": [],
+            "fees_fraction": [],
+            "turnover_penalty_fraction": [],
             "equity": [],
             "executed_notional": [],
         }
+
+        robust_override_raw = kwargs.get("reward_robust_clip_fraction")
+        robust_clip_fraction = None
+        if robust_override_raw is not None:
+            try:
+                robust_clip_fraction = float(robust_override_raw)
+            except (TypeError, ValueError):
+                robust_clip_fraction = None
+        if robust_clip_fraction is None or not math.isfinite(robust_clip_fraction) or robust_clip_fraction <= 0.0:
+            robust_clip_fraction = self._estimate_reward_robust_clip_fraction()
+        self.reward_robust_clip_fraction = float(max(robust_clip_fraction, 0.0))
 
         # optional strict data validation
         if validate_data or os.getenv("DATA_VALIDATE") == "1":
@@ -666,6 +677,34 @@ class TradingEnv(gym.Env):
                 return float(prev_price)
             return 0.0
         return float(candidate)
+
+    def _estimate_reward_robust_clip_fraction(self) -> float:
+        price_series: Optional[pd.Series] = None
+        for key in ("close", "price"):
+            if key in self.df.columns:
+                candidate = self.df[key]
+                if isinstance(candidate, pd.Series):
+                    price_series = candidate.astype(float)
+                    break
+        if price_series is None or price_series.size <= 1:
+            return 0.1
+
+        values = price_series.to_numpy(dtype=float)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            log_prices = np.log(values)
+        diffs = np.diff(log_prices, prepend=np.nan)
+        if diffs.size <= 1:
+            return 0.1
+        finite = diffs[np.isfinite(diffs)]
+        if finite.size == 0:
+            return 0.1
+        abs_values = np.abs(finite)
+        if abs_values.size == 0:
+            return 0.1
+        clip_value = float(np.nanpercentile(abs_values, 99))
+        if not math.isfinite(clip_value) or clip_value <= 0.0:
+            return 0.1
+        return clip_value
 
     def _signal_position_from_proto(self, proto: ActionProto, previous: float) -> float:
         action_type = getattr(proto, "action_type", ActionType.HOLD)
@@ -1357,32 +1396,53 @@ class TradingEnv(gym.Env):
             )
 
         prev_signal_pos = float(self._last_signal_position)
-        reward_price_prev = self._last_reward_price if self._last_reward_price > 0.0 else self._resolve_reward_price(max(row_idx - 1, 0))
+        reward_price_prev = (
+            self._last_reward_price
+            if self._last_reward_price > 0.0
+            else self._resolve_reward_price(max(row_idx - 1, 0))
+        )
         reward_price_curr = self._resolve_reward_price(row_idx, row)
-        if reward_price_prev <= 0.0 or reward_price_curr <= 0.0 or not math.isfinite(prev_signal_pos):
-            reward_raw_pct = 0.0
+        if (
+            reward_price_prev <= 0.0
+            or reward_price_curr <= 0.0
+            or not math.isfinite(prev_signal_pos)
+        ):
+            reward_raw_fraction = 0.0
         else:
-            reward_raw_pct = 100.0 * math.log(reward_price_curr / reward_price_prev) * prev_signal_pos
+            reward_raw_fraction = math.log(reward_price_curr / reward_price_prev) * prev_signal_pos
 
-        atr_fraction = self._safe_float(row.get("_reward_clip_atr_pct", 0.0))
+        atr_fraction = self._safe_float(row.get("_reward_clip_atr_fraction", 0.0))
         if atr_fraction is None or not math.isfinite(atr_fraction) or atr_fraction < 0.0:
             atr_fraction = 0.0
 
-        clip_bound_effective_pct = float(self.reward_clip_hard_cap_pct)
+        clip_bound_effective_fraction = float(self.reward_clip_hard_cap_fraction)
         apply_adaptive_clip = bool(self.reward_clip_adaptive and self._reward_signal_only)
         if apply_adaptive_clip:
             candidate_fraction = float(self.reward_clip_multiplier) * float(atr_fraction)
             candidate_fraction = max(candidate_fraction, 0.0)
             candidate_fraction = min(candidate_fraction, float(self.reward_clip_hard_cap_fraction))
-            clip_bound_effective_pct = float(candidate_fraction * 100.0)
-        clip_logged = float(clip_bound_effective_pct if self._reward_signal_only else 0.0)
-        clip_for_clamp = clip_bound_effective_pct if apply_adaptive_clip else None
-        if clip_for_clamp is None:
-            reward_used_pct = float(reward_raw_pct)
-        else:
-            reward_used_pct = float(np.clip(reward_raw_pct, -clip_for_clamp, clip_for_clamp))
+            clip_bound_effective_fraction = float(candidate_fraction)
 
-        reward_used_pct_before_costs = float(reward_used_pct)
+        robust_clip_fraction = float(self.reward_robust_clip_fraction)
+        if not math.isfinite(robust_clip_fraction) or robust_clip_fraction <= 0.0:
+            robust_clip_fraction = 0.0
+
+        clip_for_clamp: float | None = None
+        if clip_bound_effective_fraction > 0.0:
+            clip_for_clamp = float(clip_bound_effective_fraction)
+        if robust_clip_fraction > 0.0:
+            clip_for_clamp = (
+                float(robust_clip_fraction)
+                if clip_for_clamp is None
+                else float(min(clip_for_clamp, robust_clip_fraction))
+            )
+
+        if clip_for_clamp is None:
+            reward_used_fraction = float(reward_raw_fraction)
+        else:
+            reward_used_fraction = float(np.clip(reward_raw_fraction, -clip_for_clamp, clip_for_clamp))
+
+        reward_used_fraction_before_costs = float(reward_used_fraction)
 
         equity_floor_log = float(self._equity_floor_log)
 
@@ -1394,21 +1454,28 @@ class TradingEnv(gym.Env):
         ):
             equity_for_pct_logging = float(prev_equity)
 
-        fees_pct_raw = 100.0 * (
+        fees_fraction_raw = (
             fees / max(prev_equity_safe, self._equity_floor_norm)
         )
-        if not math.isfinite(fees_pct_raw):
-            fees_pct_raw = 0.0
+        if not math.isfinite(fees_fraction_raw):
+            fees_fraction_raw = 0.0
 
-        turnover_penalty_pct_raw = 100.0 * float(turnover_penalty)
-        if not math.isfinite(turnover_penalty_pct_raw):
-            turnover_penalty_pct_raw = 0.0
+        turnover_penalty_fraction_raw = float(turnover_penalty)
+        if not math.isfinite(turnover_penalty_fraction_raw):
+            turnover_penalty_fraction_raw = 0.0
 
-        reward_costs_pct = float(max(0.0, fees_pct_raw + turnover_penalty_pct_raw))
-        reward_used_pct = float(reward_used_pct_before_costs - reward_costs_pct)
+        reward_costs_fraction = float(
+            max(0.0, fees_fraction_raw + turnover_penalty_fraction_raw)
+        )
+        reward_used_fraction = float(
+            reward_used_fraction_before_costs - reward_costs_fraction
+        )
 
-        reward_unclipped = float(reward_raw_pct)
-        reward = float(reward_used_pct)
+        reward_unclipped = float(reward_raw_fraction)
+        if clip_for_clamp is None:
+            reward = float(reward_used_fraction)
+        else:
+            reward = float(np.clip(reward_used_fraction, -clip_for_clamp, clip_for_clamp))
         reward = self._assert_finite("reward", reward)
 
         ratio_price = reward_price_curr / reward_price_prev if reward_price_prev > 0.0 else 1.0
@@ -1420,9 +1487,10 @@ class TradingEnv(gym.Env):
         ratio_clip_ceiling = math.exp(self.reward_return_clip)
         ratio_clipped = float(np.clip(ratio_price, ratio_clip_floor, ratio_clip_ceiling))
 
-        atr_pct_logged = float(atr_fraction * 100.0)
-        self._reward_clip_bound_last = float(clip_logged)
-        self._reward_clip_atr_pct_last = float(atr_pct_logged)
+        atr_fraction_logged = float(atr_fraction)
+        clip_logged_fraction = float(clip_for_clamp or 0.0)
+        self._reward_clip_bound_last = float(clip_logged_fraction)
+        self._reward_clip_atr_fraction_last = float(atr_fraction_logged)
         if reward_price_curr > 0.0:
             self._last_reward_price = float(reward_price_curr)
         self._last_signal_position = self._signal_position_from_proto(proto, prev_signal_pos)
@@ -1440,21 +1508,23 @@ class TradingEnv(gym.Env):
         info["fees"] = float(fees)
         info["reward_unclipped"] = float(reward_unclipped)
         info["reward"] = float(reward)
-        info["reward_raw_pct"] = float(reward_raw_pct)
-        info["reward_used_pct"] = float(reward_used_pct)
-        info["reward_used_pct_before_costs"] = float(reward_used_pct_before_costs)
+        info["reward_raw_fraction"] = float(reward_raw_fraction)
+        info["reward_used_fraction"] = float(reward_used_fraction)
+        info["reward_used_fraction_before_costs"] = float(
+            reward_used_fraction_before_costs
+        )
         denom_for_logging: float | None = None
         if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0:
             denom_for_logging = max(prev_equity_safe, self._equity_floor_log)
 
         if denom_for_logging is None or denom_for_logging <= 0.0:
-            reward_costs_pct_logged = float("nan")
-            fees_pct_logged = float("nan")
-            turnover_penalty_pct_logged = float("nan")
+            reward_costs_fraction_logged = float("nan")
+            fees_fraction_logged = float("nan")
+            turnover_penalty_fraction_logged = float("nan")
         else:
-            fees_pct_logged = 100.0 * float(fees) / float(denom_for_logging)
-            if not math.isfinite(fees_pct_logged):
-                fees_pct_logged = 0.0
+            fees_fraction_logged = float(fees) / float(denom_for_logging)
+            if not math.isfinite(fees_fraction_logged):
+                fees_fraction_logged = 0.0
 
             turnover_norm_logged = step_turnover_notional / float(denom_for_logging)
             if not math.isfinite(turnover_norm_logged) or turnover_norm_logged < 0.0:
@@ -1462,28 +1532,35 @@ class TradingEnv(gym.Env):
             turnover_norm_logged = float(
                 np.clip(turnover_norm_logged, 0.0, float(self.turnover_norm_cap))
             )
-            turnover_penalty_pct_logged = 100.0 * float(
+            turnover_penalty_fraction_logged = float(
                 self.turnover_penalty_coef * turnover_norm_logged
             )
-            if not math.isfinite(turnover_penalty_pct_logged):
-                turnover_penalty_pct_logged = 0.0
+            if not math.isfinite(turnover_penalty_fraction_logged):
+                turnover_penalty_fraction_logged = 0.0
 
-            reward_costs_pct_logged = float(
-                max(0.0, fees_pct_logged + turnover_penalty_pct_logged)
+            reward_costs_fraction_logged = float(
+                max(0.0, fees_fraction_logged + turnover_penalty_fraction_logged)
             )
 
-        self._diag_track_metric("reward_costs_pct", reward_costs_pct_logged)
-        self._diag_track_metric("fees_pct", fees_pct_logged)
-        self._diag_track_metric("turnover_penalty_pct", turnover_penalty_pct_logged)
+        self._diag_track_metric(
+            "reward_costs_fraction", reward_costs_fraction_logged
+        )
+        self._diag_track_metric("fees_fraction", fees_fraction_logged)
+        self._diag_track_metric(
+            "turnover_penalty_fraction", turnover_penalty_fraction_logged
+        )
         self._diag_track_metric("equity", equity)
         self._diag_track_metric("executed_notional", step_turnover_notional)
 
-        info["reward_costs_pct"] = reward_costs_pct_logged
-        info["fees_pct"] = fees_pct_logged
-        info["turnover_penalty_pct"] = turnover_penalty_pct_logged
-        info["reward_clip_bound_pct"] = float(clip_logged)
-        info["reward_clip_atr_pct"] = float(atr_pct_logged)
-        info["reward_clip_hard_cap_pct"] = float(self.reward_clip_hard_cap_pct)
+        info["reward_costs_fraction"] = reward_costs_fraction_logged
+        info["fees_fraction"] = fees_fraction_logged
+        info["turnover_penalty_fraction"] = turnover_penalty_fraction_logged
+        info["reward_clip_bound_fraction"] = float(clip_logged_fraction)
+        info["reward_clip_atr_fraction"] = float(atr_fraction_logged)
+        info["reward_clip_hard_cap_fraction"] = float(
+            self.reward_clip_hard_cap_fraction
+        )
+        info["reward_robust_clip_fraction"] = float(self.reward_robust_clip_fraction)
         info["signal_position_prev"] = float(prev_signal_pos)
         info["ratio_raw"] = float(ratio_price)
         info["ratio_clipped"] = float(ratio_clipped)

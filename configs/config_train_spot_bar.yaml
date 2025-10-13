@@ -45,7 +45,7 @@ risk:
   cvar:
     use_constraint: false
     alpha: 0.05
-    limit_pct: -2.0
+    limit_pct: -0.02
     lambda_lr: 0.01
     use_penalty: true
     penalty_cap: 0.7

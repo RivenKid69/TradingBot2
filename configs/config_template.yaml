@@ -220,7 +220,7 @@ risk:
   cvar:
     use_constraint: false         # Enable CVaR inequality constraint during training updates
     alpha: 0.05                   # Tail mass used for empirical CVaR estimation
-    limit_pct: -2.0               # Minimum acceptable CVaR of realised per-bar returns (percent per bar)
+    limit_pct: -0.02              # Minimum acceptable CVaR of realised per-bar returns (fraction per bar)
     lambda_lr: 0.01               # Learning rate for dual ascent on the CVaR multiplier
     use_penalty: true             # Retain CVaR penalty term in the policy loss
     penalty_cap: 0.7              # Maximum effective penalty weight applied during training

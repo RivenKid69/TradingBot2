@@ -139,22 +139,22 @@ def test_compute_empirical_cvar_scales_linearly(scale: float) -> None:
 def test_cvar_limit_units_consistent() -> None:
     model = _make_cvar_model()
     model.cvar_alpha = 0.5
-    rewards = torch.tensor([-2.0, -2.0, 1.0, 1.0], dtype=torch.float32)
+    rewards = torch.tensor([-0.02, -0.02, 0.01, 0.01], dtype=torch.float32)
     _, cvar_empirical, _, _, _ = model._compute_cvar_statistics(rewards)
-    limit_pct = -2.0
-    assert cvar_empirical.item() == pytest.approx(limit_pct, abs=1e-6)
-    violation = max(0.0, limit_pct - cvar_empirical.item())
+    limit_fraction = -0.02
+    assert cvar_empirical.item() == pytest.approx(limit_fraction, abs=1e-6)
+    violation = max(0.0, limit_fraction - cvar_empirical.item())
     assert violation == pytest.approx(0.0, abs=1e-6)
 
 
-def test_cvar_violation_uses_percent_units() -> None:
+def test_cvar_violation_uses_fraction_units() -> None:
     model = _make_cvar_model()
-    model.cvar_limit = -1.0
+    model.cvar_limit = -0.01
 
-    violation = model._compute_cvar_violation(-2.0)
-    assert violation == pytest.approx(1.0)
+    violation = model._compute_cvar_violation(-0.02)
+    assert violation == pytest.approx(0.01)
 
-    no_violation = model._compute_cvar_violation(-0.5)
+    no_violation = model._compute_cvar_violation(-0.005)
     assert no_violation == pytest.approx(0.0)
 
 

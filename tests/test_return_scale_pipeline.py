@@ -1,5 +1,8 @@
+import inspect
+
 import pytest
 import torch
+import trading_patchnew
 
 distributional_ppo = pytest.importorskip(
     "distributional_ppo", reason="distributional PPO module requires optional sb3_contrib dependency"
@@ -16,11 +19,11 @@ def _discounted_series(rewards, gamma, last):
     return list(reversed(out))
 
 
-def test_return_scale_pipeline_percent_units():
+def test_return_scale_pipeline_fraction_units():
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.normalize_returns = False
-    algo.value_target_scale = 100.0
-    algo._value_target_scale_effective = 400.0
+    algo.value_target_scale = 1.0
+    algo._value_target_scale_effective = 4.0
     algo._ret_mean_snapshot = 0.0
     algo._ret_std_snapshot = 1.0
     algo._value_clip_limit_unscaled = None
@@ -30,8 +33,8 @@ def test_return_scale_pipeline_percent_units():
     eff_scale = float(algo._value_target_scale_effective)
     gamma = 0.9
 
-    rewards_raw = torch.tensor([0.3, -0.25, 0.1], dtype=torch.float32)
-    values_raw = torch.tensor([0.45, 0.2, 0.05], dtype=torch.float32)
+    rewards_raw = torch.tensor([0.03, -0.025, 0.01], dtype=torch.float32)
+    values_raw = torch.tensor([0.045, 0.02, 0.005], dtype=torch.float32)
 
     mean_values_norm = values_raw / base_scale * eff_scale
     buffer_values = [
@@ -57,8 +60,8 @@ def test_return_scale_pipeline_percent_units():
     expected_norm = expected_raw / base_scale * eff_scale
     assert torch.allclose(target_norm, expected_norm, atol=1e-6)
 
-    returns_abs_p95 = torch.quantile(decoded.abs(), 0.95)
-    assert returns_abs_p95.item() < 10.0
+    returns_abs_p99 = torch.quantile(decoded.abs(), 0.99)
+    assert returns_abs_p99.item() < 0.2
 
     buggy_last = float(mean_values_norm[-1] / base_scale)
     buggy_returns = _discounted_series(buffer_rewards, gamma, buggy_last)
@@ -71,8 +74,8 @@ def test_return_scale_pipeline_percent_units():
 def test_return_scale_pipeline_with_normalization():
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.normalize_returns = True
-    algo.value_target_scale = 100.0
-    algo._value_target_scale_effective = 100.0
+    algo.value_target_scale = 1.0
+    algo._value_target_scale_effective = 1.0
     algo._ret_mean_snapshot = 0.05
     algo._ret_std_snapshot = 0.5
     algo._value_clip_limit_unscaled = None
@@ -81,8 +84,8 @@ def test_return_scale_pipeline_with_normalization():
     base_scale = float(algo.value_target_scale)
     gamma = 0.9
 
-    rewards_raw = torch.tensor([0.12, -0.18, 0.08], dtype=torch.float32)
-    values_raw = torch.tensor([0.25, 0.15, 0.02], dtype=torch.float32)
+    rewards_raw = torch.tensor([0.012, -0.018, 0.008], dtype=torch.float32)
+    values_raw = torch.tensor([0.025, 0.015, 0.002], dtype=torch.float32)
     mean_values_norm = (values_raw - algo._ret_mean_snapshot) / algo._ret_std_snapshot
 
     last_scalar_value = float(
@@ -102,5 +105,15 @@ def test_return_scale_pipeline_with_normalization():
     expected_norm = (expected_raw - algo._ret_mean_snapshot) / algo._ret_std_snapshot
     assert torch.allclose(target_norm, expected_norm, atol=1e-6)
 
-    returns_abs_p95 = torch.quantile(decoded.abs(), 0.95)
-    assert returns_abs_p95.item() < 10.0
+    returns_abs_p99 = torch.quantile(decoded.abs(), 0.99)
+    assert returns_abs_p99.item() < 0.2
+
+
+def test_reward_pipeline_has_no_percent_scaling():
+    step_src = inspect.getsource(trading_patchnew.TradingEnv.step)
+    for pattern in ("*100", "* 100", "/100", "/ 100"):
+        assert pattern not in step_src
+
+    collect_src = inspect.getsource(DistributionalPPO._collect_rollouts)
+    for pattern in ("*100", "* 100", "/100", "/ 100"):
+        assert pattern not in collect_src
