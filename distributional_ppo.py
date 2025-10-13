@@ -2790,10 +2790,6 @@ class DistributionalPPO(RecurrentPPO):
                         # Consistently decode buffer returns into natural units
                         target_returns_raw = self._to_raw_returns(buffer_returns)
 
-                        buffer_returns = rollout_data.returns.to(device=self.device, dtype=torch.float32)
-                        target_returns_raw = buffer_returns * base_scale_safe
-
-
                         # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
                         if (not self.normalize_returns) and (
                             self._value_clip_limit_unscaled is not None
@@ -3170,8 +3166,6 @@ class DistributionalPPO(RecurrentPPO):
 
             # Final EV/MSE metrics also need fully decoded raw returns
             rollout_returns = self._to_raw_returns(rollout_returns)
-
-            rollout_returns = rollout_returns * base_scale_safe
 
             with torch.no_grad():
                 if self._use_quantile_value:
