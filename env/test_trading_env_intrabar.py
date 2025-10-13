@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
 import types
 from typing import Any, Callable
@@ -10,6 +11,11 @@ from typing import Any, Callable
 import numpy as np
 import pandas as pd
 import pytest
+
+try:  # optional dependency for vectorized env wrappers
+    from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
+except Exception:  # pragma: no cover - skip tests when SB3 is unavailable
+    DummyVecEnv = VecMonitor = VecNormalize = None  # type: ignore[assignment]
 
 
 _lob_state_module = types.ModuleType("lob_state_cython")
@@ -98,7 +104,9 @@ def env_factory(
 
             def step(self, action: Any) -> Any:
                 self.calls.append(action)
-                return action
+                obs_shape = getattr(self.env.observation_space, "shape", ()) or (1,)
+                obs = np.zeros(obs_shape, dtype=np.float32)
+                return obs, 0.0, False, False, {}
 
         monkeypatch.setattr(trading_patchnew, "Mediator", _DummyMediator)
         frame = df.copy() if df is not None else _make_intrabar_dataframe()
@@ -264,3 +272,63 @@ def test_forward_intrabar_path_caching_and_error_handling(
 
     env._maybe_forward_intrabar_path(missing_exec, env.df.iloc[3])
     assert missing_exec.lookups  # ensured the first attempt tried to resolve hooks
+
+
+def test_reset_and_step_expose_bar_interval_info(
+    env_factory: Callable[..., trading_patchnew.TradingEnv],
+) -> None:
+    """Both reset and step should surface bar interval metadata in ``info``."""
+
+    env = env_factory()
+
+    _obs, reset_info = env.reset()
+    assert reset_info["bar_interval_ms"] == 60_000
+    assert reset_info["bar_seconds"] == pytest.approx(60.0)
+
+    action = trading_patchnew.ActionProto(trading_patchnew.ActionType.HOLD, 0.0)
+    _obs, _reward, _terminated, _truncated, step_info = env.step(action)
+    assert step_info["bar_interval_ms"] == 60_000
+    assert step_info["bar_seconds"] == pytest.approx(60.0)
+
+
+@pytest.mark.skipif(
+    DummyVecEnv is None or VecMonitor is None or VecNormalize is None,
+    reason="stable_baselines3 not installed",
+)
+def test_vec_wrappers_expose_bar_interval(
+    env_factory: Callable[..., trading_patchnew.TradingEnv],
+) -> None:
+    """VecEnv wrappers should preserve bar interval metadata and allow annualization."""
+
+    base = _make_intrabar_dataframe()
+    timestamp_ms = (np.arange(base.shape[0], dtype=np.int64) * 60_000) + 1_000
+    df = (
+        base.drop(columns=["ts_ms", "decision_ts"], errors="ignore")
+        .assign(timestamp_ms=timestamp_ms)
+        .assign(timestamp=(timestamp_ms // 1000).astype(np.int64))
+    )
+
+    env = env_factory(df=df)
+    assert env.bar_interval_ms == 60_000
+
+    vec_env = VecNormalize(
+        VecMonitor(DummyVecEnv([lambda: env])),
+        norm_obs=False,
+        norm_reward=False,
+        clip_obs=1e6,
+    )
+
+    bar_ms_values = vec_env.get_attr("bar_interval_ms")
+    assert isinstance(bar_ms_values, (list, tuple))
+    assert bar_ms_values and int(bar_ms_values[0]) == 60_000
+
+    bar_seconds_values = vec_env.env_method("get_bar_interval_seconds")
+    bar_seconds_candidates = [value for value in bar_seconds_values if value is not None]
+    assert bar_seconds_candidates
+    bar_seconds = float(bar_seconds_candidates[0])
+    assert math.isfinite(bar_seconds) and bar_seconds > 0
+
+    annualization = math.sqrt((365.0 * 24.0 * 60.0 * 60.0) / bar_seconds)
+    assert math.isfinite(annualization)
+
+    vec_env.close()
