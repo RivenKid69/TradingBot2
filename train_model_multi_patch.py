@@ -921,10 +921,15 @@ def sortino_ratio(returns: np.ndarray, risk_free_rate: float = 0.0) -> float:
             return 0.0
         return np.mean(returns - risk_free_rate) / std * np.sqrt(365 * 24)
 
-    downside_std = np.sqrt(np.mean(downside**2)) + 1e-9
+    downside_std = np.sqrt(np.mean(downside**2))
+    # Если выборка практически стационарна, возвращаем 0, чтобы не завышать метрику.
+    if downside_std < 1e-9:
+        return 0.0
+
+    safe_downside_std = max(downside_std, 1e-9)
     # Эта проверка становится избыточной, если downside_std используется только один раз,
     # но оставим для безопасности.
-    return np.mean(returns - risk_free_rate) / downside_std * np.sqrt(365 * 24)
+    return np.mean(returns - risk_free_rate) / safe_downside_std * np.sqrt(365 * 24)
 
 # --- ИЗМЕНЕНИЕ: Старая Python-функция удалена, так как заменена на Cython-версию ---
 
