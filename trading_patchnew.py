@@ -1289,6 +1289,21 @@ class TradingEnv(gym.Env):
         else:
             reward_used_pct = float(np.clip(reward_raw_pct, -clip_for_clamp, clip_for_clamp))
 
+        reward_used_pct_before_costs = float(reward_used_pct)
+
+        fees_pct = 0.0
+        if prev_equity > 0.0:
+            fees_pct = 100.0 * (fees / prev_equity)
+        if not math.isfinite(fees_pct):
+            fees_pct = 0.0
+
+        turnover_penalty_pct = 100.0 * float(turnover_penalty)
+        if not math.isfinite(turnover_penalty_pct):
+            turnover_penalty_pct = 0.0
+
+        reward_costs_pct = float(max(0.0, fees_pct + turnover_penalty_pct))
+        reward_used_pct = float(reward_used_pct_before_costs - reward_costs_pct)
+
         reward_unclipped = float(reward_raw_pct)
         reward = float(reward_used_pct)
         reward = self._assert_finite("reward", reward)
@@ -1323,6 +1338,10 @@ class TradingEnv(gym.Env):
         info["reward"] = float(reward)
         info["reward_raw_pct"] = float(reward_raw_pct)
         info["reward_used_pct"] = float(reward_used_pct)
+        info["reward_used_pct_before_costs"] = float(reward_used_pct_before_costs)
+        info["reward_costs_pct"] = float(reward_costs_pct)
+        info["fees_pct"] = float(fees_pct)
+        info["turnover_penalty_pct"] = float(turnover_penalty_pct)
         info["reward_clip_bound_pct"] = float(clip_logged)
         info["reward_clip_atr_pct"] = float(atr_pct)
         info["signal_position_prev"] = float(prev_signal_pos)
