@@ -16,6 +16,14 @@ from utils.model_io import upgrade_quantile_value_state_dict
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 
+class _CaptureLogger:
+    def __init__(self) -> None:
+        self.records: dict[str, float] = {}
+
+    def record(self, key: str, value: float, **_: object) -> None:
+        self.records[key] = float(value)
+
+
 def _discrete_cvar_reference(probs: np.ndarray, atoms: np.ndarray, alpha: float) -> float:
     order = np.argsort(atoms)
     atoms_sorted = atoms[order]
@@ -108,6 +116,15 @@ def _make_cvar_model() -> DistributionalPPO:
     model.cvar_alpha = 0.05
     model.cvar_winsor_pct = 0.0
     model.cvar_ema_beta = 0.9
+    model._value_scale_std_floor = 1e-6
+    model._cvar_weight_target = 0.5
+    model._cvar_ramp_updates = 1
+    model.cvar_penalty_cap = 0.7
+    model.value_target_scale = 1.0
+    model._value_target_scale_robust = 1.0
+    model.normalize_returns = False
+    model._ret_mean_snapshot = 0.0
+    model._ret_std_snapshot = 1.0
     return model
 
 
@@ -156,6 +173,89 @@ def test_cvar_violation_uses_fraction_units() -> None:
 
     no_violation = model._compute_cvar_violation(-0.005)
     assert no_violation == pytest.approx(0.0)
+
+
+def test_cvar_lambda_stays_bounded() -> None:
+    assert DistributionalPPO._bounded_dual_update(0.9, 0.5, 10.0) == pytest.approx(1.0)
+    assert DistributionalPPO._bounded_dual_update(0.1, 0.5, -10.0) == pytest.approx(0.0)
+    mid = DistributionalPPO._bounded_dual_update(0.4, 0.1, 0.2)
+    assert 0.0 <= mid <= 1.0
+
+
+def test_cvar_penalty_turns_off_when_no_violation() -> None:
+    model = _make_cvar_model()
+    nominal, raw, active = model._resolve_cvar_penalty_state(0.2, 0.2, 0.0)
+    assert not active
+    assert nominal == pytest.approx(0.0)
+    assert raw == pytest.approx(0.0)
+
+    fallback_nominal, fallback_raw, fallback_active = model._resolve_cvar_penalty_state(0.0, 0.0, 0.25)
+    assert fallback_active
+    assert fallback_nominal > 0.0
+    assert fallback_raw == pytest.approx(fallback_nominal)
+
+
+def test_cvar_normalised_matches_zscore_reference() -> None:
+    model = _make_cvar_model()
+    model.normalize_returns = True
+    model._ret_mean_snapshot = 0.01
+    model._ret_std_snapshot = 0.02
+    rewards = torch.tensor([-0.03, -0.015, 0.01, 0.02, -0.005], dtype=torch.float32)
+
+    _, cvar_empirical_tensor, *_ = model._compute_cvar_statistics(rewards)
+    cvar_empirical = float(cvar_empirical_tensor.item())
+    offset, scale = model._get_cvar_normalization_params()
+    cvar_unit = (cvar_empirical - offset) / scale
+
+    zscores = (rewards.numpy() - offset) / scale
+    tail_count = max(int(math.ceil(model.cvar_alpha * rewards.numel())), 1)
+    expected_unit = float(np.mean(np.sort(zscores)[:tail_count]))
+
+    assert cvar_unit == pytest.approx(expected_unit, rel=1e-6, abs=1e-6)
+
+
+def test_cvar_scale_logging_and_freeze() -> None:
+    model = _make_cvar_model()
+    model.normalize_returns = False
+    model._value_target_scale_robust = 0.12
+    model.value_target_scale = 0.03
+    _, scale_initial = model._get_cvar_normalization_params()
+    model.value_target_scale = 0.9
+    _, scale_after_drift = model._get_cvar_normalization_params()
+    assert scale_initial == pytest.approx(0.12)
+    assert scale_after_drift == pytest.approx(0.12)
+
+    logger = _CaptureLogger()
+    model.logger = logger
+    model._record_cvar_logs(
+        cvar_raw_value=-0.01,
+        cvar_unit_value=-0.01 / scale_after_drift,
+        cvar_loss_raw_value=0.01,
+        cvar_loss_unit_value=0.01 / scale_after_drift,
+        cvar_term_raw_value=0.0,
+        cvar_term_unit_value=0.0,
+        cvar_empirical_value=-0.01,
+        cvar_empirical_unit_value=-0.01 / scale_after_drift,
+        cvar_empirical_ema_value=-0.01,
+        cvar_violation_raw_value=0.02,
+        cvar_violation_raw_unclipped_value=0.02,
+        cvar_violation_unit_value=0.02 / scale_after_drift,
+        cvar_violation_ema_value=0.02,
+        cvar_gap_raw_value=0.02,
+        cvar_gap_unit_value=0.02 / scale_after_drift,
+        cvar_penalty_active_value=1.0,
+        cvar_lambda_value=0.5,
+        cvar_scale_value=scale_after_drift,
+        cvar_limit_raw_value=-0.02,
+        cvar_limit_unit_value=-0.02 / scale_after_drift,
+        current_cvar_weight_scaled=0.1,
+        current_cvar_weight_nominal=0.1,
+        current_cvar_weight_raw=0.1,
+        cvar_penalty_cap_value=0.7,
+    )
+
+    assert logger.records["train/cvar_scale"] == pytest.approx(scale_after_drift)
+    assert logger.records["train/cvar_unit"] == pytest.approx(-0.01 / scale_after_drift)
 
 
 def test_value_scale_snapshot_prevents_mismatch() -> None:

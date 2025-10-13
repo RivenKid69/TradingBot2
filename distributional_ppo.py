@@ -423,6 +423,132 @@ class DistributionalPPO(RecurrentPPO):
 
         return float(self.cvar_limit)
 
+    def _get_cvar_normalization_params(self) -> tuple[float, float]:
+        """Return offset and scale for normalising CVaR statistics."""
+
+        if getattr(self, "normalize_returns", False):
+            mean_snapshot = float(getattr(self, "_ret_mean_snapshot", 0.0))
+            std_snapshot = float(getattr(self, "_ret_std_snapshot", 1.0))
+            std_floor = float(getattr(self, "_value_scale_std_floor", 1e-8))
+            scale = max(abs(std_snapshot), std_floor, 1e-8)
+            if not math.isfinite(scale):
+                scale = 1.0
+            return float(mean_snapshot), float(scale)
+
+        robust_scale = float(getattr(self, "_value_target_scale_robust", 1.0))
+        if not math.isfinite(robust_scale) or robust_scale <= 0.0:
+            robust_scale = float(self._resolve_value_scale_safe())
+        return 0.0, float(max(abs(robust_scale), 1e-8))
+
+    @staticmethod
+    def _bounded_dual_update(lambda_value: float, lr: float, gap_unit: float) -> float:
+        """Project dual variable updates into the unit interval."""
+
+        lambda_float = float(lambda_value)
+        lr_float = float(lr)
+        gap_float = float(gap_unit)
+        if not math.isfinite(lambda_float):
+            lambda_float = 0.0
+        if not math.isfinite(lr_float):
+            lr_float = 0.0
+        if not math.isfinite(gap_float):
+            gap_float = 0.0
+        candidate = lambda_float + lr_float * gap_float
+        if candidate <= 0.0:
+            return 0.0
+        if candidate >= 1.0:
+            return 1.0
+        return float(candidate)
+
+    def _resolve_cvar_penalty_state(
+        self,
+        current_weight_nominal: float,
+        current_weight_raw: float,
+        violation_unit_value: float,
+    ) -> tuple[float, float, bool]:
+        """Determine CVaR penalty activation and fallback weights in normalised units."""
+
+        penalty_active = float(violation_unit_value) > 0.0
+        if not penalty_active:
+            return 0.0, 0.0, False
+
+        if current_weight_raw > 0.0:
+            return float(current_weight_nominal), float(current_weight_raw), True
+
+        ramp_updates = max(1.0, float(getattr(self, "_cvar_ramp_updates", 0)))
+        fallback_weight = float(getattr(self, "_cvar_weight_target", 0.0)) / ramp_updates
+        fallback_weight = max(fallback_weight, 1e-6)
+        penalty_cap = float(getattr(self, "cvar_penalty_cap", float("inf")))
+        if math.isfinite(penalty_cap):
+            fallback_weight = min(fallback_weight, penalty_cap)
+            fallback_weight = max(fallback_weight, 1e-6)
+        fallback = float(fallback_weight)
+        return fallback, fallback, True
+
+    def _record_cvar_logs(
+        self,
+        *,
+        cvar_raw_value: float,
+        cvar_unit_value: float,
+        cvar_loss_raw_value: float,
+        cvar_loss_unit_value: float,
+        cvar_term_raw_value: float,
+        cvar_term_unit_value: float,
+        cvar_empirical_value: float,
+        cvar_empirical_unit_value: float,
+        cvar_empirical_ema_value: float,
+        cvar_violation_raw_value: float,
+        cvar_violation_raw_unclipped_value: float,
+        cvar_violation_unit_value: float,
+        cvar_violation_ema_value: float,
+        cvar_gap_raw_value: float,
+        cvar_gap_unit_value: float,
+        cvar_penalty_active_value: float,
+        cvar_lambda_value: float,
+        cvar_scale_value: float,
+        cvar_limit_raw_value: float,
+        cvar_limit_unit_value: float,
+        current_cvar_weight_scaled: float,
+        current_cvar_weight_nominal: float,
+        current_cvar_weight_raw: float,
+        cvar_penalty_cap_value: float,
+    ) -> None:
+        """Emit CVaR telemetry in both raw fraction and normalised units."""
+
+        self.logger.record("train/cvar_raw", float(cvar_raw_value))
+        self.logger.record("train/cvar_raw_in_fraction", float(cvar_raw_value))
+        self.logger.record("train/cvar_unit", float(cvar_unit_value))
+        self.logger.record("train/cvar_loss", float(cvar_loss_raw_value))
+        self.logger.record("train/cvar_loss_in_fraction", float(cvar_loss_raw_value))
+        self.logger.record("train/cvar_loss_unit", float(cvar_loss_unit_value))
+        self.logger.record("train/cvar_term", float(cvar_term_unit_value))
+        self.logger.record("train/cvar_term_in_fraction", float(cvar_term_raw_value))
+        self.logger.record("train/cvar_empirical", float(cvar_empirical_value))
+        self.logger.record("train/cvar_empirical_in_fraction", float(cvar_empirical_value))
+        self.logger.record("train/cvar_empirical_unit", float(cvar_empirical_unit_value))
+        self.logger.record("train/cvar_empirical_ema", float(cvar_empirical_ema_value))
+        self.logger.record("train/cvar_gap", float(cvar_gap_raw_value))
+        self.logger.record("train/cvar_gap_in_fraction", float(cvar_gap_raw_value))
+        self.logger.record("train/cvar_gap_unit", float(cvar_gap_unit_value))
+        self.logger.record("train/cvar_violation", float(cvar_violation_raw_value))
+        self.logger.record("train/cvar_violation_in_fraction", float(cvar_violation_raw_value))
+        self.logger.record("train/cvar_violation_unit", float(cvar_violation_unit_value))
+        self.logger.record("train/cvar_violation_ema", float(cvar_violation_ema_value))
+        self.logger.record("train/cvar_gap_pos", float(cvar_violation_unit_value))
+        self.logger.record("train/cvar_penalty_active", float(cvar_penalty_active_value))
+        self.logger.record("train/cvar_lambda", float(cvar_lambda_value))
+        self.logger.record("train/cvar_scale", float(cvar_scale_value))
+        self.logger.record("train/cvar_limit_unit", float(cvar_limit_unit_value))
+        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight_scaled))
+        self.logger.record("debug/cvar_empirical_raw", float(cvar_empirical_value))
+        self.logger.record("debug/cvar_violation_raw", float(cvar_violation_raw_unclipped_value))
+        self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
+        self.logger.record("debug/cvar_weight_effective_raw", float(current_cvar_weight_raw))
+        self.logger.record("debug/cvar_penalty_cap", float(cvar_penalty_cap_value))
+        self.logger.record("debug/cvar_lambda", float(cvar_lambda_value))
+        self.logger.record("debug/cvar_limit", float(cvar_limit_raw_value))
+        self.logger.record("debug/cvar_limit_unit", float(cvar_limit_unit_value))
+
     def _limit_mean_step(self, old_value: float, proposed: float, reference_std: float) -> float:
         max_rel_step = float(self._value_scale_max_rel_step)
         if max_rel_step <= 0.0 or not math.isfinite(max_rel_step):
@@ -2305,7 +2431,7 @@ class DistributionalPPO(RecurrentPPO):
 
         base_scale = float(self.value_target_scale)
         returns_raw_tensor, base_scale_safe = self._decode_returns_scale_only(returns_tensor)
-        cvar_penalty_scale = 1.0 / base_scale_safe
+        cvar_penalty_scale = 1.0 / base_scale_safe  # legacy telemetry only
 
         # Rollout returns are stored directly in the base fraction scale; decode via the
         # static value_target_scale without reapplying any running mean/std factors.
@@ -2339,51 +2465,57 @@ class DistributionalPPO(RecurrentPPO):
             returns_abs_p95_value_tensor = returns_raw_tensor.new_tensor(0.0)
 
         cvar_empirical_value = float(cvar_empirical_tensor.item())
+        cvar_offset_value, cvar_scale_value = self._get_cvar_normalization_params()
+        cvar_offset_tensor = rewards_raw_tensor.new_tensor(cvar_offset_value)
+        cvar_scale_value = max(float(cvar_scale_value), 1e-8)
+        cvar_scale_tensor = rewards_raw_tensor.new_tensor(cvar_scale_value)
+        cvar_empirical_unit_tensor = (cvar_empirical_tensor - cvar_offset_tensor) / cvar_scale_tensor
+        cvar_empirical_unit_value = float(cvar_empirical_unit_tensor.item())
         cvar_limit_raw_value = self._get_cvar_limit_raw()
         cvar_limit_raw_tensor = rewards_raw_tensor.new_tensor(cvar_limit_raw_value)
-        cvar_gap_tensor = cvar_limit_raw_tensor - cvar_empirical_tensor  # >0 if CVaR below limit
+        cvar_limit_unit_tensor = (cvar_limit_raw_tensor - cvar_offset_tensor) / cvar_scale_tensor
+        cvar_limit_unit_value = float(cvar_limit_unit_tensor.item())
+        cvar_gap_tensor = cvar_limit_raw_tensor - cvar_empirical_tensor  # >0 if CVaR below limit (raw)
         cvar_gap_value = float(cvar_gap_tensor.item())
-        self._cvar_lambda = float(max(0.0, self._cvar_lambda + self.cvar_lambda_lr * cvar_gap_value))
-        cvar_gap_pos = torch.clamp(cvar_gap_tensor.detach(), min=0.0)
-        cvar_gap_pos_value = self._compute_cvar_violation(cvar_empirical_value)
-        penalty_active = cvar_gap_pos_value > 0.0
-        if not penalty_active:
+        cvar_gap_unit_tensor = cvar_limit_unit_tensor - cvar_empirical_unit_tensor
+        cvar_gap_unit_value = float(cvar_gap_unit_tensor.item())
+        self._cvar_lambda = self._bounded_dual_update(
+            float(self._cvar_lambda), float(self.cvar_lambda_lr), cvar_gap_unit_value
+        )
+        cvar_violation_unit_tensor = torch.clamp(cvar_gap_unit_tensor.detach(), min=0.0)
+        cvar_violation_unit_value = float(cvar_violation_unit_tensor.item())
+        cvar_gap_pos_value_raw = self._compute_cvar_violation(cvar_empirical_value)
+        if not self.cvar_use_penalty:
             current_cvar_weight_nominal = 0.0
             current_cvar_weight_raw = 0.0
-        elif current_cvar_weight_raw <= 0.0:
-            ramp_updates = max(1.0, float(self._cvar_ramp_updates))
-            fallback_weight = float(self._cvar_weight_target) / ramp_updates
-            fallback_weight = max(fallback_weight, 1e-6)
-            if math.isfinite(self.cvar_penalty_cap):
-                fallback_weight = min(fallback_weight, float(self.cvar_penalty_cap))
-                fallback_weight = max(fallback_weight, 1e-6)
-            current_cvar_weight_nominal = float(fallback_weight)
-            current_cvar_weight_raw = float(fallback_weight)
-        current_cvar_weight_scaled = float(current_cvar_weight_raw * cvar_penalty_scale)
+            penalty_active = False
+        else:
+            (
+                current_cvar_weight_nominal,
+                current_cvar_weight_raw,
+                penalty_active,
+            ) = self._resolve_cvar_penalty_state(
+                current_cvar_weight_nominal, current_cvar_weight_raw, cvar_violation_unit_value
+            )
+        current_cvar_weight_scaled = float(current_cvar_weight_raw)
         self._current_cvar_weight = float(current_cvar_weight_scaled)
         cvar_penalty_active_value = 1.0 if penalty_active else 0.0
         cvar_violation_raw = float(cvar_gap_value)      # может быть < 0
-        cvar_violation = float(cvar_gap_pos_value)      # всегда >= 0 (клиповано)
+        cvar_violation = float(cvar_gap_pos_value_raw)  # всегда >= 0 (клиповано)
         self.cvar_lambda = float(self._cvar_lambda)
         # --- CVaR debug block: не дублируем train/*, оставляем debug/*
         self.logger.record("debug/cvar_violation", float(cvar_violation))
-        self.logger.record("debug/cvar_violation_raw", float(cvar_violation_raw))
-        self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
-        # effective = scaled; raw логируем отдельно под debug/*
-        self.logger.record("debug/cvar_weight_effective_raw", float(current_cvar_weight_raw))
-        self.logger.record("debug/cvar_penalty_cap", float(self.cvar_penalty_cap))
-        self.logger.record("debug/cvar_lambda", float(self.cvar_lambda))
         beta = float(self.cvar_ema_beta)
         if self._cvar_empirical_ema is None:
             self._cvar_empirical_ema = float(cvar_empirical_value)
         else:
             self._cvar_empirical_ema = beta * self._cvar_empirical_ema + (1.0 - beta) * float(cvar_empirical_value)
         if self._cvar_violation_ema is None:
-            self._cvar_violation_ema = float(cvar_gap_pos_value)
+            self._cvar_violation_ema = float(cvar_gap_pos_value_raw)
         else:
-            self._cvar_violation_ema = beta * self._cvar_violation_ema + (1.0 - beta) * float(cvar_gap_pos_value)
-        lambda_scaled = float(self._cvar_lambda * cvar_penalty_scale)
-        constraint_term_value = float(lambda_scaled * cvar_gap_pos_value)
+            self._cvar_violation_ema = beta * self._cvar_violation_ema + (1.0 - beta) * float(cvar_gap_pos_value_raw)
+        lambda_scaled = float(self._cvar_lambda)
+        constraint_term_value = float(lambda_scaled * cvar_violation_unit_value)
 
         reward_raw_p50_value = float(reward_raw_p50_tensor.item())
         reward_raw_p95_value = float(reward_raw_p95_tensor.item())
@@ -2619,7 +2751,10 @@ class DistributionalPPO(RecurrentPPO):
         policy_loss_bc_weighted_value = 0.0
         critic_loss_value = 0.0
         cvar_raw_value = 0.0
+        cvar_unit_value = 0.0
         cvar_loss_value = 0.0
+        cvar_loss_unit_value = 0.0
+        cvar_term_raw_value = 0.0
         cvar_term_value = 0.0
         total_loss_value = 0.0
         clamp_below_sum = 0.0
@@ -2728,7 +2863,10 @@ class DistributionalPPO(RecurrentPPO):
                 bucket_policy_loss_bc_weighted_value = 0.0
                 bucket_critic_loss_value = 0.0
                 bucket_cvar_raw_value = 0.0
+                bucket_cvar_unit_value = 0.0
                 bucket_cvar_loss_value = 0.0
+                bucket_cvar_loss_unit_value = 0.0
+                bucket_cvar_term_raw_value = 0.0
                 bucket_cvar_term_value = 0.0
                 bucket_total_loss_value = 0.0
                 bucket_value_mse_value = 0.0
@@ -3059,8 +3197,11 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
-                    cvar_loss = -cvar_raw
+                    cvar_loss_raw = -cvar_raw
+                    cvar_unit_tensor = (cvar_raw - cvar_offset_tensor) / cvar_scale_tensor
+                    cvar_loss = -cvar_unit_tensor
                     cvar_term = current_cvar_weight_scaled * cvar_loss
+                    cvar_term_raw_tensor = current_cvar_weight_scaled * cvar_loss_raw
                     if self.cvar_cap is not None:
                         cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
 
@@ -3072,7 +3213,7 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     if self.cvar_use_constraint:
-                        loss = loss + loss.new_tensor(lambda_scaled) * cvar_gap_pos
+                        loss = loss + loss.new_tensor(lambda_scaled) * cvar_violation_unit_tensor
 
                     loss_weighted = loss * loss.new_tensor(weight)
                     loss_weighted.backward()
@@ -3083,7 +3224,10 @@ class DistributionalPPO(RecurrentPPO):
                     bucket_policy_loss_bc_weighted_value += float(policy_loss_bc_weighted.item()) * weight
                     bucket_critic_loss_value += float(critic_loss.item()) * weight
                     bucket_cvar_raw_value += float(cvar_raw.item()) * weight
-                    bucket_cvar_loss_value += float(cvar_loss.item()) * weight
+                    bucket_cvar_unit_value += float(cvar_unit_tensor.item()) * weight
+                    bucket_cvar_loss_value += float(cvar_loss_raw.item()) * weight
+                    bucket_cvar_loss_unit_value += float(cvar_loss.item()) * weight
+                    bucket_cvar_term_raw_value += float(cvar_term_raw_tensor.item()) * weight
                     bucket_cvar_term_value += float(cvar_term.item()) * weight
                     bucket_total_loss_value += float(loss.item()) * weight
                     if self._use_quantile_value:
@@ -3182,7 +3326,10 @@ class DistributionalPPO(RecurrentPPO):
                 critic_loss_value = bucket_critic_loss_value
                 value_mse_value = bucket_value_mse_value
                 cvar_raw_value = bucket_cvar_raw_value
+                cvar_unit_value = bucket_cvar_unit_value
                 cvar_loss_value = bucket_cvar_loss_value
+                cvar_loss_unit_value = bucket_cvar_loss_unit_value
+                cvar_term_raw_value = bucket_cvar_term_raw_value
                 cvar_term_value = bucket_cvar_term_value
                 total_loss_value = bucket_total_loss_value
 
@@ -3352,17 +3499,41 @@ class DistributionalPPO(RecurrentPPO):
             avg_kl_penalty_component = 0.0
         self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
-        self.logger.record("train/value_ce_loss", critic_loss_value)
-        self.logger.record("train/cvar_raw", cvar_raw_value)
-        self.logger.record("train/cvar_loss", cvar_loss_value)
-        self.logger.record("train/cvar_term", cvar_term_value)
         cvar_empirical_ema_value = float(
             self._cvar_empirical_ema if self._cvar_empirical_ema is not None else cvar_empirical_value
         )
-        self.logger.record("train/cvar_empirical", float(cvar_empirical_value))
-        self.logger.record("train/cvar_empirical_ema", cvar_empirical_ema_value)
-        self.logger.record("debug/cvar_empirical_raw", cvar_empirical_value)
-        self.logger.record("train/cvar_gap", cvar_gap_value)
+        cvar_violation_ema_value = float(
+            self._cvar_violation_ema if self._cvar_violation_ema is not None else cvar_violation
+        )
+        self.logger.record("train/value_ce_loss", critic_loss_value)
+        self._record_cvar_logs(
+            cvar_raw_value=cvar_raw_value,
+            cvar_unit_value=cvar_unit_value,
+            cvar_loss_raw_value=cvar_loss_value,
+            cvar_loss_unit_value=cvar_loss_unit_value,
+            cvar_term_raw_value=cvar_term_raw_value,
+            cvar_term_unit_value=cvar_term_value,
+            cvar_empirical_value=cvar_empirical_value,
+            cvar_empirical_unit_value=cvar_empirical_unit_value,
+            cvar_empirical_ema_value=cvar_empirical_ema_value,
+            cvar_violation_raw_value=cvar_violation,
+            cvar_violation_raw_unclipped_value=cvar_violation_raw,
+            cvar_violation_unit_value=cvar_violation_unit_value,
+            cvar_violation_ema_value=cvar_violation_ema_value,
+            cvar_gap_raw_value=cvar_gap_value,
+            cvar_gap_unit_value=cvar_gap_unit_value,
+            cvar_penalty_active_value=cvar_penalty_active_value,
+            cvar_lambda_value=float(self.cvar_lambda),
+            cvar_scale_value=cvar_scale_value,
+            cvar_limit_raw_value=cvar_limit_raw_value,
+            cvar_limit_unit_value=cvar_limit_unit_value,
+            current_cvar_weight_scaled=current_cvar_weight_scaled,
+            current_cvar_weight_nominal=current_cvar_weight_nominal,
+            current_cvar_weight_raw=current_cvar_weight_raw,
+            cvar_penalty_cap_value=float(self.cvar_penalty_cap)
+            if self.cvar_penalty_cap is not None
+            else 0.0,
+        )
         if reward_costs_fraction_value is not None:
             self.logger.record(
                 "train/reward_costs_in_fraction", reward_costs_fraction_value
@@ -3407,17 +3578,6 @@ class DistributionalPPO(RecurrentPPO):
                 float(clip_bound_max_value),
             )
         self.logger.record("debug/cvar_limit", cvar_limit_raw_value)
-
-        cvar_violation_ema_value = float(
-            self._cvar_violation_ema if self._cvar_violation_ema is not None else cvar_gap_pos_value
-        )
-        self.logger.record("train/cvar_violation", float(cvar_violation))  # клипованная (>=0)
-        self.logger.record("train/cvar_violation_ema", cvar_violation_ema_value)
-        self.logger.record("debug/cvar_violation_raw", float(cvar_violation_raw))  # именно raw (может быть <0)
-
-        self.logger.record("train/cvar_gap_pos", cvar_gap_pos_value)
-        self.logger.record("train/cvar_penalty_active", float(cvar_penalty_active_value))
-        self.logger.record("train/cvar_lambda", float(self.cvar_lambda))
         if self.cvar_use_constraint:
             self.logger.record("train/cvar_constraint", constraint_term_value)
         if self.cvar_cap is not None:
@@ -3435,8 +3595,6 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef", float(self.ent_coef))
         self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
-        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight_scaled))  # только scaled в train/*
-        self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
         self.logger.record("debug/cvar_penalty_scale", float(cvar_penalty_scale))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
         if (not self._use_quantile_value) and clamp_raw_weight > 0.0:
