@@ -324,10 +324,13 @@ class TradingEnv(gym.Env):
             clip_cfg_raw = {}
         self.reward_clip_adaptive = bool(clip_cfg_raw.get("adaptive", True))
         self.reward_clip_atr_window = max(1, int(clip_cfg_raw.get("atr_window", 14) or 14))
-        hard_cap = float(clip_cfg_raw.get("hard_cap_pct", 2.0) or 2.0)
-        if not math.isfinite(hard_cap) or hard_cap <= 0.0:
-            hard_cap = 2.0
-        self.reward_clip_hard_cap_pct = float(hard_cap)
+        hard_cap_raw = float(clip_cfg_raw.get("hard_cap_pct", 2.0) or 2.0)
+        if not math.isfinite(hard_cap_raw) or hard_cap_raw <= 0.0:
+            hard_cap_raw = 2.0
+        # Accept configuration either as fraction (≤1) or percentage (>1).
+        hard_cap_pct = hard_cap_raw * 100.0 if hard_cap_raw <= 1.0 else hard_cap_raw
+        self.reward_clip_hard_cap_pct = float(hard_cap_pct)
+        self.reward_clip_hard_cap_fraction = float(self.reward_clip_hard_cap_pct / 100.0)
         multiplier = float(clip_cfg_raw.get("multiplier", 4.0) or 4.0)
         if not math.isfinite(multiplier) or multiplier < 0.0:
             multiplier = 4.0
@@ -359,8 +362,10 @@ class TradingEnv(gym.Env):
 
             clip_alpha = 1 / max(1, int(self.reward_clip_atr_window))
             atr_clip = tr.ewm(alpha=clip_alpha, adjust=False).mean()
-            atr_clip_pct = ((atr_clip / denom) * 100.0).ffill().fillna(0.0)
-            self.df["_reward_clip_atr_pct"] = atr_clip_pct
+            atr_clip_fraction = (atr_clip / denom).ffill().fillna(0.0)
+            # The internal cache keeps ATR as a fraction. Downstream telemetry
+            # converts it back to percentage for human-facing metrics.
+            self.df["_reward_clip_atr_pct"] = atr_clip_fraction
         else:
             self.df["tr"] = 0.0
             self.df["atr"] = 0.0
@@ -1271,19 +1276,19 @@ class TradingEnv(gym.Env):
         else:
             reward_raw_pct = 100.0 * math.log(reward_price_curr / reward_price_prev) * prev_signal_pos
 
-        atr_pct = self._safe_float(row.get("_reward_clip_atr_pct", 0.0))
-        if atr_pct is None or not math.isfinite(atr_pct) or atr_pct < 0.0:
-            atr_pct = 0.0
+        atr_fraction = self._safe_float(row.get("_reward_clip_atr_pct", 0.0))
+        if atr_fraction is None or not math.isfinite(atr_fraction) or atr_fraction < 0.0:
+            atr_fraction = 0.0
 
-        clip_bound_effective = float(self.reward_clip_hard_cap_pct)
+        clip_bound_effective_pct = float(self.reward_clip_hard_cap_pct)
         apply_adaptive_clip = bool(self.reward_clip_adaptive and self._reward_signal_only)
         if apply_adaptive_clip:
-            candidate = float(self.reward_clip_multiplier) * float(atr_pct)
-            clip_bound_effective = float(
-                min(self.reward_clip_hard_cap_pct, max(candidate, 0.0))
+            candidate_pct = float(self.reward_clip_multiplier) * float(atr_fraction) * 100.0
+            clip_bound_effective_pct = float(
+                min(self.reward_clip_hard_cap_pct, max(candidate_pct, 0.0))
             )
-        clip_logged = float(clip_bound_effective if self._reward_signal_only else 0.0)
-        clip_for_clamp = clip_bound_effective if apply_adaptive_clip else None
+        clip_logged = float(clip_bound_effective_pct if self._reward_signal_only else 0.0)
+        clip_for_clamp = clip_bound_effective_pct if apply_adaptive_clip else None
         if clip_for_clamp is None:
             reward_used_pct = float(reward_raw_pct)
         else:
@@ -1317,8 +1322,9 @@ class TradingEnv(gym.Env):
         ratio_clip_ceiling = math.exp(self.reward_return_clip)
         ratio_clipped = float(np.clip(ratio_price, ratio_clip_floor, ratio_clip_ceiling))
 
+        atr_pct_logged = float(atr_fraction * 100.0)
         self._reward_clip_bound_last = float(clip_logged)
-        self._reward_clip_atr_pct_last = float(atr_pct)
+        self._reward_clip_atr_pct_last = float(atr_pct_logged)
         if reward_price_curr > 0.0:
             self._last_reward_price = float(reward_price_curr)
         self._last_signal_position = self._signal_position_from_proto(proto, prev_signal_pos)
@@ -1343,7 +1349,7 @@ class TradingEnv(gym.Env):
         info["fees_pct"] = float(fees_pct)
         info["turnover_penalty_pct"] = float(turnover_penalty_pct)
         info["reward_clip_bound_pct"] = float(clip_logged)
-        info["reward_clip_atr_pct"] = float(atr_pct)
+        info["reward_clip_atr_pct"] = float(atr_pct_logged)
         info["signal_position_prev"] = float(prev_signal_pos)
         info["ratio_raw"] = float(ratio_price)
         info["ratio_clipped"] = float(ratio_clipped)
