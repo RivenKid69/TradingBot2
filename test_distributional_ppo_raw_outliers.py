@@ -173,6 +173,9 @@ def _install_rl_stubs() -> None:
         class _Space:  # pragma: no cover - stub for import
             pass
 
+        class _ActionWrapper:  # pragma: no cover - stub for import
+            pass
+
         class _Box(_Space):  # pragma: no cover - stub for import
             pass
 
@@ -186,6 +189,7 @@ def _install_rl_stubs() -> None:
         spaces.Box = _Box
         spaces.Discrete = _Discrete
         spaces.MultiDiscrete = _MultiDiscrete
+        gymnasium.ActionWrapper = _ActionWrapper
         gymnasium.spaces = spaces
         sys.modules["gymnasium"] = gymnasium
         sys.modules["gymnasium.spaces"] = spaces
@@ -240,6 +244,7 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
     model.normalize_returns = True
     model.ret_clip = 5.0
     model.value_target_scale = 1.0
+    model.device = torch.device("cpu") if torch is not None and not torch_is_stub else None
     model.ret_rms = RunningMeanStd(shape=())
     model.ret_rms.mean[...] = 0.0
     model.ret_rms.var[...] = 1.0
@@ -261,6 +266,20 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
     model._value_scale_stats_second = 1.0
     model._value_target_scale_effective = 1.0 / (model.ret_clip * model._ret_std_value)
     model._value_target_scale_robust = 1.0
+    model._value_scale_warmup_limit = 3
+    model._value_scale_warmup_updates = 3
+    model._value_scale_min_samples = 256
+    model._value_scale_warmup_buffer = []
+    model._value_scale_warmup_buffer_limit = 65536
+    model._value_scale_update_count = 0
+    model._value_scale_frozen = False
+    model._use_quantile_value = False
+    model._last_raw_outlier_frac = 0.0
+    model._value_target_raw_outlier_warn_threshold = 1.0
+    model._value_scale_stable_counter = 0
+    model._value_scale_frame_stable = True
+    model._value_scale_stability_patience = 0
+    model._value_scale_requires_stability = False
     model.running_v_min = -model.ret_clip
     model.running_v_max = model.ret_clip
     model.v_range_initialized = True
@@ -276,10 +295,11 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
 
     model.logger = _Recorder()
 
-    base_returns = np.array([-1.0, -0.5, 0.25, 0.5, 1.0], dtype=np.float32)
+    base_returns = np.linspace(-1.0, 1.0, model._value_scale_min_samples, dtype=np.float32)
     scales = [1.0, 1.2, 0.8, 1.0, 25.0, 1.1]
 
     stds: list[float] = []
+    means: list[float] = []
     scales_effective: list[float] = []
     spans: list[float] = []
     mse_history: list[float] = []
@@ -290,12 +310,14 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
         returns = base_returns * scale
         model._pending_rms = RunningMeanStd(shape=())
         model._pending_rms.update(returns)
+        model.rollout_buffer = types.SimpleNamespace(returns=returns.copy())
 
         model._finalize_return_stats()
 
         std = float(model._ret_std_snapshot)
         mean = float(model._ret_mean_snapshot)
         stds.append(std)
+        means.append(mean)
         scales_effective.append(float(model._value_target_scale_effective))
         span = (model.running_v_max - model.running_v_min) * std
         spans.append(span)
@@ -311,3 +333,115 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
     assert min(scales_effective) > 1.0 / (model.ret_clip * 3.0)
     assert max(spans) < model.ret_clip * 4.0
     assert max(mse_history) < model.ret_clip**2
+    assert model._value_scale_update_count == model._value_scale_warmup_limit
+    assert model._value_scale_frozen is True
+    frozen_std = stds[model._value_scale_warmup_limit - 1]
+    frozen_scale = scales_effective[model._value_scale_warmup_limit - 1]
+    frozen_mean = means[model._value_scale_warmup_limit - 1]
+    for idx in range(model._value_scale_warmup_limit, len(stds)):
+        assert stds[idx] == pytest.approx(frozen_std)
+        assert scales_effective[idx] == pytest.approx(frozen_scale)
+        assert means[idx] == pytest.approx(frozen_mean)
+
+
+@pytest.mark.skipif(
+    torch is None or torch_is_stub, reason="torch is required for tensor-based checks"
+)
+def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    model.normalize_returns = False
+    model.ret_clip = 5.0
+    model.value_target_scale = 1.0
+    model.device = torch.device("cpu") if torch is not None and not torch_is_stub else None
+    model.ret_rms = RunningMeanStd(shape=())
+    model.ret_rms.mean[...] = 0.0
+    model.ret_rms.var[...] = 1.0
+    model.ret_rms.count = 1.0
+    model._ret_mean_value = 0.0
+    model._ret_std_value = 1.0
+    model._ret_mean_snapshot = 0.0
+    model._ret_std_snapshot = 1.0
+    model._pending_rms = None
+    model._pending_ret_mean = None
+    model._pending_ret_std = None
+    model._value_scale_ema_beta = 0.2
+    model._value_scale_max_rel_step = 0.5
+    model._value_scale_std_floor = 1e-2
+    model._value_scale_window_updates = 0
+    model._value_scale_recent_stats = deque()
+    model._value_scale_stats_initialized = True
+    model._value_scale_stats_mean = 0.0
+    model._value_scale_stats_second = 1.0
+    model._value_target_scale_effective = float(model.value_target_scale)
+    model._value_target_scale_robust = 1.0
+    model._value_scale_warmup_limit = 3
+    model._value_scale_warmup_updates = 3
+    model._value_scale_min_samples = 256
+    model._value_scale_warmup_buffer = []
+    model._value_scale_warmup_buffer_limit = 65536
+    model._value_scale_update_count = 0
+    model._value_scale_frozen = False
+    model._use_quantile_value = False
+    model._last_raw_outlier_frac = 0.0
+    model._value_target_raw_outlier_warn_threshold = 1.0
+    model._value_scale_stable_counter = 0
+    model._value_scale_frame_stable = True
+    model._value_scale_stability_patience = 0
+    model._value_scale_requires_stability = False
+    model._value_clip_limit_unscaled = None
+    model._value_clip_limit_scaled = None
+    model.running_v_min = -model.ret_clip
+    model.running_v_max = model.ret_clip
+    model.v_range_initialized = True
+    model.v_range_ema_alpha = 0.1
+    model.policy = types.SimpleNamespace(update_atoms=lambda *_args, **_kwargs: None)
+
+    class _Recorder:
+        def __init__(self) -> None:
+            self.records: dict[str, object] = {}
+
+        def record(self, key: str, value: object) -> None:
+            self.records[key] = value
+
+    model.logger = _Recorder()
+
+    core = np.linspace(-0.05, 0.05, model._value_scale_min_samples - 2, dtype=np.float32)
+    base_returns = np.concatenate([core, np.array([0.5, -0.45], dtype=np.float32)])
+
+    for _ in range(model._value_scale_warmup_limit):
+        model.rollout_buffer = types.SimpleNamespace(returns=base_returns.copy())
+        model._finalize_return_stats()
+
+    assert model._value_scale_update_count == model._value_scale_warmup_limit
+    assert model._value_scale_frozen is True
+
+    returns_tensor = torch.as_tensor(base_returns, dtype=torch.float32)
+    decode_returns, scale_safe = model._decode_returns_scale_only(returns_tensor)
+    assert scale_safe == pytest.approx(model.value_target_scale)
+    assert torch.allclose(decode_returns, returns_tensor * scale_safe)
+    abs_p99 = float(torch.quantile(decode_returns.abs(), 0.99).item())
+    # In the non-normalized path the decoded returns remain raw fractions scaled
+    # by ``value_target_scale``; the p99 absolute magnitude should therefore
+    # match the robust scale estimate captured during warmup.
+    assert abs_p99 == pytest.approx(
+        float(model._value_target_scale_robust), rel=1e-3, abs=1e-3
+    )
+
+    returns_decode_path = "scale_only"
+    model.logger.record("train/returns_decode_path", returns_decode_path)
+    model.logger.record("train/value_target_scale", float(model._value_target_scale_effective))
+    model.logger.record("train/value_target_scale_config", float(model.value_target_scale))
+    model.logger.record("train/value_target_scale_robust", float(model._value_target_scale_robust))
+    model.logger.record(
+        "train/value_target_scale[1/fraction]", float(model._value_target_scale_effective)
+    )
+    model.logger.record(
+        "train/value_target_scale_config[fraction]", float(model.value_target_scale)
+    )
+    model.logger.record(
+        "train/value_target_scale_robust[fraction]", float(model._value_target_scale_robust)
+    )
+
+    assert model.logger.records["train/returns_decode_path"] == "scale_only"
+    assert "train/value_target_scale" in model.logger.records
+    assert "train/value_target_scale[1/fraction]" in model.logger.records
