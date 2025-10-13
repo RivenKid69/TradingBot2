@@ -216,7 +216,7 @@ class DistributionalPPO(RecurrentPPO):
     def _compute_empirical_cvar(
         self, raw_rewards: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Winsorise raw rewards and estimate empirical CVaR in percent units."""
+        """Winsorise raw rewards and estimate empirical CVaR in fraction units."""
 
         if raw_rewards.numel() == 0:
             zero = raw_rewards.new_tensor(0.0)
@@ -271,7 +271,7 @@ class DistributionalPPO(RecurrentPPO):
         return rewards_winsor, cvar_empirical, reward_p50, reward_p95, returns_abs_p95
 
     def _compute_cvar_violation(self, cvar_empirical: float) -> float:
-        """Return positive CVaR violation in percent-per-bar units."""
+        """Return positive CVaR violation in fraction-per-bar units."""
 
         limit = float(self._get_cvar_limit_raw())
         violation = limit - float(cvar_empirical)
@@ -403,7 +403,7 @@ class DistributionalPPO(RecurrentPPO):
     def _decode_returns_scale_only(
         self, returns_tensor: torch.Tensor
     ) -> tuple[torch.Tensor, float]:
-        """Convert rollout-buffer returns back to raw pct units without RMS factors."""
+        """Convert rollout-buffer returns back to raw fraction units without RMS factors."""
 
         scale_safe = self._resolve_value_scale_safe()
         return returns_tensor * float(scale_safe), scale_safe
@@ -1120,6 +1120,7 @@ class DistributionalPPO(RecurrentPPO):
         self._last_rollout_clip_bounds_median: Optional[float] = None
         self._last_rollout_clip_bounds_max: Optional[float] = None
         self._last_rollout_clip_cap_fraction: Optional[float] = None
+        self._reward_robust_clip_fraction: Optional[float] = None
 
         self.v_range_ema_alpha = float(v_range_ema_alpha)
         if not (0.0 < self.v_range_ema_alpha <= 1.0):
@@ -2085,9 +2086,12 @@ class DistributionalPPO(RecurrentPPO):
                 raw_rewards = vec_normalize_env.get_original_reward()
             raw_rewards = np.asarray(raw_rewards, dtype=np.float32)
             if raw_rewards.size > 0:
-                self.logger.record("rollout/raw_reward_mean", float(np.mean(raw_rewards)))
+                self.logger.record(
+                    "rollout/raw_reward_mean_in_fraction",
+                    float(np.mean(raw_rewards)),
+                )
                 frac_gt_log10 = float(np.mean(raw_rewards > math.log(10.0)))
-                self.logger.record("rollout/reward_gt_log10_frac", frac_gt_log10)
+                self.logger.record("rollout/reward_gt_log10_fraction", frac_gt_log10)
 
             scaled_rewards = (
                 raw_rewards / self.value_target_scale
@@ -2120,32 +2124,58 @@ class DistributionalPPO(RecurrentPPO):
                 costs_value: float = float("nan")
                 hard_cap_value: float = float("nan")
                 if isinstance(info, Mapping):
-                    candidate = info.get("reward_used_pct")
+                    candidate = info.get("reward_used_fraction")
                     if candidate is None:
-                        candidate = info.get("reward_raw_pct")
+                        candidate = info.get("reward_raw_fraction")
                     if candidate is not None:
                         try:
                             raw_value = float(candidate)
                         except (TypeError, ValueError):
                             raw_value = safe_fallback
-                    clip_candidate = info.get("reward_clip_bound_pct")
+                    clip_candidate = info.get("reward_clip_bound_fraction")
                     if clip_candidate is not None:
                         try:
                             clip_value = float(clip_candidate)
                         except (TypeError, ValueError):
                             clip_value = 0.0
-                    hard_cap_candidate = info.get("reward_clip_hard_cap_pct")
+                    hard_cap_candidate = info.get("reward_clip_hard_cap_fraction")
                     if hard_cap_candidate is not None:
                         try:
                             hard_cap_value = float(hard_cap_candidate)
                         except (TypeError, ValueError):
                             hard_cap_value = float("nan")
-                    cost_candidate = info.get("reward_costs_pct")
+                    cost_candidate = info.get("reward_costs_fraction")
                     if cost_candidate is not None:
                         try:
                             costs_value = float(cost_candidate)
                         except (TypeError, ValueError):
                             costs_value = float("nan")
+                    robust_candidate = info.get("reward_robust_clip_fraction")
+                    if robust_candidate is not None:
+                        try:
+                            robust_value = float(robust_candidate)
+                        except (TypeError, ValueError):
+                            robust_value = float("nan")
+                        if math.isfinite(robust_value) and robust_value > 0.0:
+                            if self._reward_robust_clip_fraction is None:
+                                self._reward_robust_clip_fraction = float(robust_value)
+                if (
+                    self._reward_robust_clip_fraction is not None
+                    and math.isfinite(self._reward_robust_clip_fraction)
+                    and self._reward_robust_clip_fraction > 0.0
+                ):
+                    # ``raw_value`` is already clipped inside the environment; this
+                    # duplicate clip exists purely to keep logged diagnostics within
+                    # the robust bound and avoid confusing out-of-range telemetry.
+                    raw_value = float(
+                        np.clip(
+                            raw_value,
+                            -self._reward_robust_clip_fraction,
+                            self._reward_robust_clip_fraction,
+                        )
+                    )
+                    if clip_value <= 0.0 or not math.isfinite(clip_value):
+                        clip_value = float(self._reward_robust_clip_fraction)
                 reward_raw_step[env_idx] = float(raw_value)
                 reward_costs_step[env_idx] = float(costs_value)
                 clip_bound_step[env_idx] = clip_value
@@ -2302,7 +2332,7 @@ class DistributionalPPO(RecurrentPPO):
         returns_raw_tensor, base_scale_safe = self._decode_returns_scale_only(returns_tensor)
         cvar_penalty_scale = 1.0 / base_scale_safe
 
-        # Rollout returns are stored directly in the base percent scale; decode via the
+        # Rollout returns are stored directly in the base fraction scale; decode via the
         # static value_target_scale without reapplying any running mean/std factors.
         returns_decode_path = "scale_only"
         self.logger.record("train/returns_decode_path", returns_decode_path)
@@ -2323,7 +2353,7 @@ class DistributionalPPO(RecurrentPPO):
             cvar_empirical_tensor,
             reward_raw_p50_tensor,
             reward_raw_p95_tensor,
-            returns_abs_p95_pct_tensor,
+            returns_abs_p95_fraction_tensor,
         ) = self._compute_cvar_statistics(rewards_raw_tensor)
 
         if returns_raw_tensor.numel() > 0:
@@ -2383,15 +2413,15 @@ class DistributionalPPO(RecurrentPPO):
         reward_raw_p50_value = float(reward_raw_p50_tensor.item())
         reward_raw_p95_value = float(reward_raw_p95_tensor.item())
 
-        reward_costs_pct_value: Optional[float] = None
-        reward_costs_pct_mean_value: Optional[float] = None
+        reward_costs_fraction_value: Optional[float] = None
+        reward_costs_fraction_mean_value: Optional[float] = None
         if self._last_rollout_reward_costs is not None:
             reward_costs_np = np.asarray(self._last_rollout_reward_costs, dtype=np.float32).flatten()
             finite_costs_mask = np.isfinite(reward_costs_np)
             if np.any(finite_costs_mask):
                 finite_costs = reward_costs_np[finite_costs_mask]
-                reward_costs_pct_value = float(np.median(finite_costs))
-                reward_costs_pct_mean_value = float(np.mean(finite_costs))
+                reward_costs_fraction_value = float(np.median(finite_costs))
+                reward_costs_fraction_mean_value = float(np.mean(finite_costs))
 
         clip_bound_min_value = self._last_rollout_clip_bounds_min
         clip_bound_median_value = self._last_rollout_clip_bounds_median
@@ -2404,7 +2434,7 @@ class DistributionalPPO(RecurrentPPO):
             else 0.0
         )
 
-        returns_abs_p95_pct_value = float(returns_abs_p95_pct_tensor.item())
+        returns_abs_p95_fraction_value = float(returns_abs_p95_fraction_tensor.item())
         returns_abs_p95_value = float(returns_abs_p95_value_tensor.item())
 
         self._value_scale_latest_ret_abs_p95 = float(returns_abs_p95_value)
@@ -2862,7 +2892,7 @@ class DistributionalPPO(RecurrentPPO):
                         buffer_returns = rollout_data.returns.to(
                             device=self.device, dtype=torch.float32
                         )
-                        # Rollout-returns храним в базе (pct / value_target_scale):
+                        # Rollout-returns храним в базе (fraction / value_target_scale):
                         # декодируем БЕЗ μ/σ, используя только базовый масштаб.
                         target_returns_raw, base_scale_safe = self._decode_returns_scale_only(
                             buffer_returns
@@ -3353,23 +3383,49 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_empirical_ema", cvar_empirical_ema_value)
         self.logger.record("debug/cvar_empirical_raw", cvar_empirical_value)
         self.logger.record("train/cvar_gap", cvar_gap_value)
-        if reward_costs_pct_value is not None:
-            self.logger.record("train/reward_costs_pct", reward_costs_pct_value)
-            if reward_costs_pct_mean_value is not None:
-                self.logger.record("train/reward_costs_pct_mean", reward_costs_pct_mean_value)
-        self.logger.record("train/reward_raw_p50_pct", reward_raw_p50_value)
-        self.logger.record("train/reward_raw_p95_pct", reward_raw_p95_value)
-        self.logger.record("train/returns_abs_p95_pct", returns_abs_p95_pct_value)
+        if reward_costs_fraction_value is not None:
+            self.logger.record(
+                "train/reward_costs_in_fraction", reward_costs_fraction_value
+            )
+            if reward_costs_fraction_mean_value is not None:
+                self.logger.record(
+                    "train/reward_costs_mean_in_fraction",
+                    reward_costs_fraction_mean_value,
+                )
+        if (
+            self._reward_robust_clip_fraction is not None
+            and math.isfinite(self._reward_robust_clip_fraction)
+        ):
+            self.logger.record(
+                "train/reward_robust_clip_in_fraction",
+                float(self._reward_robust_clip_fraction),
+            )
+        self.logger.record("train/reward_raw_p50_in_fraction", reward_raw_p50_value)
+        self.logger.record("train/reward_raw_p95_in_fraction", reward_raw_p95_value)
+        self.logger.record(
+            "train/returns_abs_p95_in_fraction", returns_abs_p95_fraction_value
+        )
         self.logger.record("train/returns_abs_p95", returns_abs_p95_value)
         # Backward-compatible aliases without explicit units
         self.logger.record("train/reward_raw_p50", reward_raw_p50_value)
         self.logger.record("train/reward_raw_p95", reward_raw_p95_value)
-        self.logger.record("train/reward_clip_bound_pct", float(clip_bound_value))
-        self.logger.record("train/reward_clip_bound_is_cap_frac", float(clip_bound_cap_frac_logged))
+        self.logger.record(
+            "train/reward_clip_bound_in_fraction", float(clip_bound_value)
+        )
+        self.logger.record(
+            "train/reward_clip_bound_is_cap_fraction",
+            float(clip_bound_cap_frac_logged),
+        )
         if clip_bound_min_value is not None:
-            self.logger.record("train/reward_clip_bound_min_pct", float(clip_bound_min_value))
+            self.logger.record(
+                "train/reward_clip_bound_min_in_fraction",
+                float(clip_bound_min_value),
+            )
         if clip_bound_max_value is not None:
-            self.logger.record("train/reward_clip_bound_max_pct", float(clip_bound_max_value))
+            self.logger.record(
+                "train/reward_clip_bound_max_in_fraction",
+                float(clip_bound_max_value),
+            )
         self.logger.record("debug/cvar_limit", cvar_limit_raw_value)
 
         cvar_violation_ema_value = float(

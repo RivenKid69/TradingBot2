@@ -2111,13 +2111,16 @@ def objective(trial: optuna.Trial,
     if "alpha" in risk_cvar_cfg and risk_cvar_cfg["alpha"] is not None:
         params["cvar_alpha"] = float(risk_cvar_cfg["alpha"])
     params["cvar_use_constraint"] = bool(risk_cvar_cfg.get("use_constraint", False))
-    limit_pct_value = risk_cvar_cfg.get("limit_pct")
-    if limit_pct_value is not None:
+    limit_fraction_value = risk_cvar_cfg.get("limit_pct")
+    if limit_fraction_value is not None:
         try:
-            limit_pct_value = float(limit_pct_value)
+            limit_fraction_value = float(limit_fraction_value)
         except (TypeError, ValueError):
-            limit_pct_value = None
-    if limit_pct_value is None:
+            limit_fraction_value = None
+        else:
+            if abs(limit_fraction_value) > 1.0:
+                limit_fraction_value /= 100.0
+    if limit_fraction_value is None:
         limit_raw_value = risk_cvar_cfg.get("limit")
         if limit_raw_value is not None:
             try:
@@ -2125,10 +2128,12 @@ def objective(trial: optuna.Trial,
             except (TypeError, ValueError):
                 candidate_float = None
             if candidate_float is not None:
-                if abs(candidate_float) <= 1.0:
-                    candidate_float *= 100.0
-                limit_pct_value = candidate_float
-    params["cvar_limit"] = float(limit_pct_value if limit_pct_value is not None else -2.0)
+                limit_fraction_value = candidate_float
+                if abs(limit_fraction_value) > 1.0:
+                    limit_fraction_value /= 100.0
+    params["cvar_limit"] = float(
+        limit_fraction_value if limit_fraction_value is not None else -0.02
+    )
     params["cvar_lambda_lr"] = max(float(risk_cvar_cfg.get("lambda_lr", 1e-2)), 0.0)
     params["cvar_use_penalty"] = bool(risk_cvar_cfg.get("use_penalty", True))
     params["cvar_penalty_cap"] = max(float(risk_cvar_cfg.get("penalty_cap", 0.7)), 0.0)
@@ -2284,11 +2289,14 @@ def objective(trial: optuna.Trial,
     if not train_symbol_items:
         raise ValueError("Нет тренировочных символов для создания сред.")
 
+    reward_robust_clip_fraction_value: Optional[float] = None
+
     def make_env_train(rank: int):
         symbol_idx = rank % len(train_symbol_items)
         symbol, df = train_symbol_items[symbol_idx]
 
         def _init():
+            nonlocal reward_robust_clip_fraction_value
             # Создаем детерминированный seed для каждого воркера на основе базового seed
             unique_seed = base_seed + rank
             env_params = {
@@ -2335,12 +2343,31 @@ def objective(trial: optuna.Trial,
             env_params.update(env_runtime_overrides)
 
             # Создаем и возвращаем экземпляр среды
+            if (
+                reward_robust_clip_fraction_value is not None
+                and math.isfinite(reward_robust_clip_fraction_value)
+                and reward_robust_clip_fraction_value > 0.0
+            ):
+                env_params["reward_robust_clip_fraction"] = (
+                    reward_robust_clip_fraction_value
+                )
+
             env = TradingEnv(
                 df,
                 **env_params,
                 leak_guard=leak_guard_train,
                 seed=unique_seed,
             )
+            if reward_robust_clip_fraction_value is None:
+                candidate_fraction = float(
+                    getattr(env, "reward_robust_clip_fraction", 0.0)
+                )
+                if math.isfinite(candidate_fraction) and candidate_fraction > 0.0:
+                    reward_robust_clip_fraction_value = candidate_fraction
+            elif hasattr(env, "reward_robust_clip_fraction"):
+                env.reward_robust_clip_fraction = float(
+                    reward_robust_clip_fraction_value
+                )
             setattr(env, "selected_symbol", symbol)
             env = _wrap_action_space_if_needed(
                 env,
@@ -2414,6 +2441,15 @@ def objective(trial: optuna.Trial,
         env_val_params.update(sim_config)
         env_val_params.update(timing_env_kwargs)
         env_val_params.update(env_runtime_overrides)
+        if (
+            reward_robust_clip_fraction_value is not None
+            and math.isfinite(reward_robust_clip_fraction_value)
+            and reward_robust_clip_fraction_value > 0.0
+        ):
+            env_val_params["reward_robust_clip_fraction"] = (
+                reward_robust_clip_fraction_value
+            )
+
         env = TradingEnv(
             df,
             **env_val_params,
@@ -2713,6 +2749,14 @@ def objective(trial: optuna.Trial,
                 final_env_params.update(sim_config)
                 final_env_params.update(timing_env_kwargs)
                 final_env_params.update(env_runtime_overrides)
+                if (
+                    reward_robust_clip_fraction_value is not None
+                    and math.isfinite(reward_robust_clip_fraction_value)
+                    and reward_robust_clip_fraction_value > 0.0
+                ):
+                    final_env_params["reward_robust_clip_fraction"] = (
+                        reward_robust_clip_fraction_value
+                    )
                 env = TradingEnv(
                     df,
                     **final_env_params,
@@ -3364,6 +3408,14 @@ def main():
                 env_val_params.update(sim_config)
                 env_val_params.update(timing_env_kwargs)
                 env_val_params.update(env_runtime_overrides)
+                if (
+                    reward_robust_clip_fraction_value is not None
+                    and math.isfinite(reward_robust_clip_fraction_value)
+                    and reward_robust_clip_fraction_value > 0.0
+                ):
+                    env_val_params["reward_robust_clip_fraction"] = (
+                        reward_robust_clip_fraction_value
+                    )
                 env = TradingEnv(
                     df,
                     **env_val_params,

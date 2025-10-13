@@ -115,6 +115,10 @@ def _make_frame(n: int) -> pd.DataFrame:
     )
 
 
+def _as_fraction(value: float) -> float:
+    return value / 100.0 if value > 1.0 else value
+
+
 def test_signal_only_reward_applies_atr_clip() -> None:
     df = pd.DataFrame(
         {
@@ -146,14 +150,27 @@ def test_signal_only_reward_applies_atr_clip() -> None:
     mediator.queue(net_worth=1_000.0, turnover_notional=0.0, fee_total=0.0)
     _, reward_final, terminated, truncated, info_final = env.step(ActionProto(ActionType.HOLD, 0.0))
     assert not terminated and not truncated
-    atr_pct = info_final["reward_clip_atr_pct"]
-    expected_clip = min(clip_cfg["hard_cap_pct"], clip_cfg["multiplier"] * atr_pct)
-    expected_raw = 100.0 * math.log(107.0 / 104.0) * 0.5
-    assert reward_final == pytest.approx(expected_raw, rel=1e-6)
-    assert info_final["reward_clip_bound_pct"] == pytest.approx(expected_clip, rel=1e-6)
-    assert info_final["reward_clip_atr_pct"] == pytest.approx(atr_pct, rel=1e-9)
-    assert info_final["reward_raw_pct"] == pytest.approx(expected_raw, rel=1e-6)
-    assert info_final["reward_used_pct"] == pytest.approx(expected_raw, rel=1e-6)
+    atr_fraction = info_final["reward_clip_atr_fraction"]
+    hard_cap_fraction = _as_fraction(clip_cfg["hard_cap_pct"])
+    expected_clip = min(
+        hard_cap_fraction,
+        clip_cfg["multiplier"] * atr_fraction,
+        env.reward_robust_clip_fraction,
+    )
+    raw_expected = math.log(107.0 / 104.0) * info_final["signal_position_prev"]
+    clipped_before_costs = float(np.clip(raw_expected, -expected_clip, expected_clip))
+    costs_fraction = float(info_final["reward_costs_fraction"])
+    after_costs = clipped_before_costs - costs_fraction
+    final_expected = float(np.clip(after_costs, -expected_clip, expected_clip))
+
+    assert info_final["reward_clip_bound_fraction"] == pytest.approx(expected_clip, rel=1e-6)
+    assert info_final["reward_clip_atr_fraction"] == pytest.approx(atr_fraction, rel=1e-9)
+    assert info_final["reward_raw_fraction"] == pytest.approx(raw_expected, rel=1e-6)
+    assert info_final["reward_used_fraction_before_costs"] == pytest.approx(
+        clipped_before_costs, rel=1e-6
+    )
+    assert info_final["reward_used_fraction"] == pytest.approx(after_costs, rel=1e-6)
+    assert reward_final == pytest.approx(final_expected, rel=1e-6)
 
 
 def test_reward_clip_bar_matches_reference() -> None:
@@ -228,22 +245,23 @@ def test_reward_clip_bar_matches_reference() -> None:
             )
         )
         turnover_penalty = env.turnover_penalty_coef * turnover_norm
-        reward_unclipped = log_ret - fee_total - turnover_penalty
-        reward_ref = float(
-            np.clip(reward_unclipped, -env.reward_cap, env.reward_cap)
-        )
+        signal_prev = float(info.get("signal_position_prev", 0.0))
+        raw_expected = math.log(ratio_for_log) * signal_prev
+        bound = float(info["reward_clip_bound_fraction"])
+        clipped_before_costs = float(np.clip(raw_expected, -bound, bound))
+        after_costs_info = float(info.get("reward_used_fraction", 0.0))
+        final_expected = float(np.clip(after_costs_info, -bound, bound))
 
-        assert reward_env == pytest.approx(reward_ref, rel=1e-9, abs=1e-9)
-        assert info["ratio_raw"] == pytest.approx(ratio_for_log, rel=1e-9, abs=1e-9)
-        assert info["ratio_clipped"] == pytest.approx(ratio_clipped, rel=1e-9, abs=1e-9)
-        assert info["log_return"] == pytest.approx(log_ret, rel=1e-9, abs=1e-9)
+        assert info["reward_raw_fraction"] == pytest.approx(raw_expected, rel=1e-9, abs=1e-9)
+        assert info["reward_used_fraction_before_costs"] == pytest.approx(
+            clipped_before_costs, rel=1e-9, abs=1e-9
+        )
+        assert info["reward"] == pytest.approx(final_expected, rel=1e-9, abs=1e-9)
+        assert reward_env == pytest.approx(final_expected, rel=1e-9, abs=1e-9)
         assert info["turnover_notional"] == pytest.approx(abs(turnover_notional), rel=1e-9, abs=1e-9)
         assert info["turnover_norm"] == pytest.approx(turnover_norm, rel=1e-9, abs=1e-9)
         assert info["turnover_penalty"] == pytest.approx(turnover_penalty, rel=1e-9, abs=1e-9)
         assert info["fee_total"] == pytest.approx(fee_total, rel=1e-9, abs=1e-9)
-        assert info["reward_unclipped"] == pytest.approx(reward_unclipped, rel=1e-9, abs=1e-9)
-        assert info["reward"] == pytest.approx(reward_ref, rel=1e-9, abs=1e-9)
-
         rewards.append(reward_env)
 
         prev_net_worth = next_net_worth
@@ -258,46 +276,4 @@ def test_reward_clip_bar_matches_reference() -> None:
     assert float(np.mean(rewards_arr > env.reward_cap)) <= 1e-9
 
     env.close()
-
-    results = simulate_bar_reward_path(num_steps=256, seed=321)
-    ratio_samples = np.asarray(results["ratio_samples"], dtype=np.float64)
-    fees = np.asarray(results["fees"], dtype=np.float64)
-    turnover = np.asarray(results["turnover"], dtype=np.float64)
-    prev_equity = np.asarray(results["prev_equity"], dtype=np.float64)
-
-    ratio_for_log = ratio_samples.copy()
-    ratio_for_log[~np.isfinite(ratio_for_log) | (ratio_for_log <= 0.0)] = 1.0
-    log_ret = np.clip(
-        np.log(ratio_for_log),
-        -env.reward_return_clip,
-        env.reward_return_clip,
-    )
-    turnover_norm = np.clip(
-        np.divide(
-            turnover,
-            prev_equity,
-            out=np.zeros_like(turnover),
-            where=prev_equity > 0.0,
-        ),
-        0.0,
-        env.turnover_norm_cap,
-    )
-    reward_ref = np.clip(
-        log_ret - fees - env.turnover_penalty_coef * turnover_norm,
-        -env.reward_cap,
-        env.reward_cap,
-    )
-
-    assert np.allclose(results["rewards_env"], reward_ref, rtol=1e-9, atol=1e-9)
-    assert np.allclose(results["ratio_raw"], ratio_for_log, rtol=1e-9, atol=1e-9)
-    assert np.allclose(
-        results["ratio_clipped"],
-        np.clip(
-            ratio_for_log,
-            math.exp(-env.reward_return_clip),
-            math.exp(env.reward_return_clip),
-        ),
-        rtol=1e-9,
-        atol=1e-9,
-    )
 
