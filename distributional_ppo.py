@@ -396,6 +396,18 @@ class DistributionalPPO(RecurrentPPO):
         base = base if abs(base) > 1e-8 else 1.0
         return (x / eff) * base
 
+    def _resolve_value_scale_safe(self) -> float:
+        base_scale = float(self.value_target_scale)
+        return base_scale if abs(base_scale) > 1e-8 else 1.0
+
+    def _decode_returns_scale_only(
+        self, returns_tensor: torch.Tensor
+    ) -> tuple[torch.Tensor, float]:
+        """Convert rollout-buffer returns back to raw pct units without RMS factors."""
+
+        scale_safe = self._resolve_value_scale_safe()
+        return returns_tensor * float(scale_safe), scale_safe
+
     def _get_cvar_limit_raw(self) -> float:
         """Return the CVaR limit expressed in the same units as raw rewards."""
 
@@ -2011,9 +2023,7 @@ class DistributionalPPO(RecurrentPPO):
         reward_costs_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_cap_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
-        base_reward_scale = float(self.value_target_scale)
-        if not math.isfinite(base_reward_scale) or abs(base_reward_scale) <= 1e-8:
-            base_reward_scale = 1.0
+        base_reward_scale = self._resolve_value_scale_safe()
 
         while n_steps < n_rollout_steps:
             with torch.no_grad():
@@ -2286,12 +2296,11 @@ class DistributionalPPO(RecurrentPPO):
         ).flatten()
 
         base_scale = float(self.value_target_scale)
-        base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
+        returns_raw_tensor, base_scale_safe = self._decode_returns_scale_only(returns_tensor)
         cvar_penalty_scale = 1.0 / base_scale_safe
 
         # Rollout returns are stored directly in the base percent scale; decode via the
         # static value_target_scale without reapplying any running mean/std factors.
-        returns_raw_tensor = returns_tensor * float(base_scale_safe)
         returns_decode_path = "scale_only"
         self.logger.record("train/returns_decode_path", returns_decode_path)
 
@@ -2829,10 +2838,11 @@ class DistributionalPPO(RecurrentPPO):
                         buffer_returns = rollout_data.returns.to(
                             device=self.device, dtype=torch.float32
                         )
-                        # Buffer returns already include only the base scaling.  Avoid
-                        # invoking _to_raw_returns here to keep the branch free from
-                        # any dynamic mean/std adjustments.
-                        target_returns_raw = buffer_returns * float(base_scale_safe)
+                        # Rollout-returns храним в базе (pct / value_target_scale):
+                        # декодируем БЕЗ μ/σ, используя только базовый масштаб.
+                        target_returns_raw, base_scale_safe = self._decode_returns_scale_only(
+                            buffer_returns
+                        )
 
                         # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
                         if (not self.normalize_returns) and (
@@ -2855,12 +2865,8 @@ class DistributionalPPO(RecurrentPPO):
                                 -self.ret_clip, self.ret_clip
                             )
                         else:
-                            base_scale = float(self.value_target_scale)
-                            base_scale_safe = (
-                                base_scale if abs(base_scale) > 1e-8 else 1.0
-                            )
                             target_returns_norm_raw = (
-                                (target_returns_raw / base_scale_safe)
+                                (target_returns_raw / float(base_scale_safe))
                                 * self._value_target_scale_effective
                             )
                             target_returns_norm = target_returns_norm_raw
@@ -3209,7 +3215,7 @@ class DistributionalPPO(RecurrentPPO):
             )
 
             # Final EV/MSE metrics also need fully decoded raw returns
-            rollout_returns = rollout_returns * float(base_scale_safe)
+            rollout_returns, _ = self._decode_returns_scale_only(rollout_returns)
 
             with torch.no_grad():
                 if self._use_quantile_value:

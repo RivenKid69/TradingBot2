@@ -324,16 +324,16 @@ class TradingEnv(gym.Env):
             clip_cfg_raw = {}
         self.reward_clip_adaptive = bool(clip_cfg_raw.get("adaptive", True))
         self.reward_clip_atr_window = max(1, int(clip_cfg_raw.get("atr_window", 14) or 14))
-        hard_cap_raw = float(clip_cfg_raw.get("hard_cap_pct", 2.0) or 2.0)
+        hard_cap_raw = float(clip_cfg_raw.get("hard_cap_pct", 4.0) or 4.0)
         if not math.isfinite(hard_cap_raw) or hard_cap_raw <= 0.0:
-            hard_cap_raw = 2.0
+            hard_cap_raw = 4.0
         # Accept configuration either as fraction (≤1) or percentage (>1).
         hard_cap_pct = hard_cap_raw * 100.0 if hard_cap_raw <= 1.0 else hard_cap_raw
         self.reward_clip_hard_cap_pct = float(hard_cap_pct)
         self.reward_clip_hard_cap_fraction = float(self.reward_clip_hard_cap_pct / 100.0)
-        multiplier = float(clip_cfg_raw.get("multiplier", 2.0) or 2.0)
+        multiplier = float(clip_cfg_raw.get("multiplier", 1.5) or 1.5)
         if not math.isfinite(multiplier) or multiplier < 0.0:
-            multiplier = 2.0
+            multiplier = 1.5
         self.reward_clip_multiplier = float(multiplier)
         self._reward_clip_bound_last = float(self.reward_clip_hard_cap_pct)
         self._reward_clip_atr_pct_last = 0.0
@@ -829,6 +829,19 @@ class TradingEnv(gym.Env):
         if candidate is not None and candidate > 0:
             self.bar_interval_ms = int(candidate)
 
+    def get_bar_interval_seconds(self) -> float | None:
+        """Return the current bar interval expressed in seconds, if known."""
+
+        if self.bar_interval_ms is None:
+            return None
+        try:
+            seconds = float(self.bar_interval_ms) / 1000.0
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(seconds) or seconds <= 0:
+            return None
+        return seconds
+
     def _coerce_timestamp(self, value: Any, is_ms: bool | None, column_name: str) -> int | None:
         if value is None:
             return None
@@ -1301,21 +1314,29 @@ class TradingEnv(gym.Env):
 
         reward_used_pct_before_costs = float(reward_used_pct)
 
+        start_equity = self._safe_float(getattr(self, "initial_cash", None))
+        if start_equity is None or not math.isfinite(start_equity) or start_equity <= 0.0:
+            start_equity = 0.0
+        equity_floor_safe = max(
+            self._reward_equity_floor,
+            0.001 * start_equity if start_equity > 0.0 else self._reward_equity_floor,
+        )
+
         equity_for_pct_logging = float("nan")
-        if prev_equity_raw >= self._reward_equity_floor and prev_equity > 0.0:
+        if prev_equity_raw >= equity_floor_safe and prev_equity > 0.0:
             equity_for_pct_logging = float(prev_equity)
 
-        fees_pct = 0.0
+        fees_pct_raw = 0.0
         if prev_equity > 0.0:
-            fees_pct = 100.0 * (fees / prev_equity)
-        if not math.isfinite(fees_pct):
-            fees_pct = 0.0
+            fees_pct_raw = 100.0 * (fees / prev_equity)
+        if not math.isfinite(fees_pct_raw):
+            fees_pct_raw = 0.0
 
-        turnover_penalty_pct = 100.0 * float(turnover_penalty)
-        if not math.isfinite(turnover_penalty_pct):
-            turnover_penalty_pct = 0.0
+        turnover_penalty_pct_raw = 100.0 * float(turnover_penalty)
+        if not math.isfinite(turnover_penalty_pct_raw):
+            turnover_penalty_pct_raw = 0.0
 
-        reward_costs_pct = float(max(0.0, fees_pct + turnover_penalty_pct))
+        reward_costs_pct = float(max(0.0, fees_pct_raw + turnover_penalty_pct_raw))
         reward_used_pct = float(reward_used_pct_before_costs - reward_costs_pct)
 
         reward_unclipped = float(reward_raw_pct)
@@ -1354,21 +1375,34 @@ class TradingEnv(gym.Env):
         info["reward_raw_pct"] = float(reward_raw_pct)
         info["reward_used_pct"] = float(reward_used_pct)
         info["reward_used_pct_before_costs"] = float(reward_used_pct_before_costs)
-        reward_costs_pct_logged = (
-            float(reward_costs_pct)
-            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
-            else float("nan")
-        )
-        fees_pct_logged = (
-            float(fees_pct)
-            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
-            else float("nan")
-        )
-        turnover_penalty_pct_logged = (
-            float(turnover_penalty_pct)
-            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
-            else float("nan")
-        )
+        denom_for_logging: float | None = None
+        if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0:
+            denom_for_logging = max(prev_equity, equity_floor_safe)
+
+        if denom_for_logging is None or denom_for_logging <= 0.0:
+            reward_costs_pct_logged = float("nan")
+            fees_pct_logged = float("nan")
+            turnover_penalty_pct_logged = float("nan")
+        else:
+            fees_pct_logged = 100.0 * float(fees) / float(denom_for_logging)
+            if not math.isfinite(fees_pct_logged):
+                fees_pct_logged = 0.0
+
+            turnover_norm_logged = step_turnover_notional / float(denom_for_logging)
+            if not math.isfinite(turnover_norm_logged) or turnover_norm_logged < 0.0:
+                turnover_norm_logged = 0.0
+            turnover_norm_logged = float(
+                np.clip(turnover_norm_logged, 0.0, float(self.turnover_norm_cap))
+            )
+            turnover_penalty_pct_logged = 100.0 * float(
+                self.turnover_penalty_coef * turnover_norm_logged
+            )
+            if not math.isfinite(turnover_penalty_pct_logged):
+                turnover_penalty_pct_logged = 0.0
+
+            reward_costs_pct_logged = float(
+                max(0.0, fees_pct_logged + turnover_penalty_pct_logged)
+            )
 
         info["reward_costs_pct"] = reward_costs_pct_logged
         info["fees_pct"] = fees_pct_logged
