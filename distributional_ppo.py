@@ -1151,6 +1151,7 @@ class DistributionalPPO(RecurrentPPO):
         self._cvar_ramp_progress = 0
         self._current_cvar_weight = 0.0
         self._cvar_lambda = 0.0
+        self.cvar_lambda = 0.0
 
         self.value_target_scale = self._coerce_value_target_scale(value_target_scale)
         normalize_returns_sentinel: object = object()
@@ -2344,6 +2345,17 @@ class DistributionalPPO(RecurrentPPO):
         current_cvar_weight_scaled = float(current_cvar_weight_raw * cvar_penalty_scale)
         self._current_cvar_weight = float(current_cvar_weight_scaled)
         cvar_penalty_active_value = 1.0 if penalty_active else 0.0
+        cvar_violation_raw = float(cvar_gap_value)      # может быть < 0
+        cvar_violation = float(cvar_gap_pos_value)      # всегда >= 0 (клиповано)
+        self.cvar_lambda = float(self._cvar_lambda)
+        # --- CVaR debug block: не дублируем train/*, оставляем debug/*
+        self.logger.record("debug/cvar_violation", float(cvar_violation))
+        self.logger.record("debug/cvar_violation_raw", float(cvar_violation_raw))
+        self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
+        # effective = scaled; raw логируем отдельно под debug/*
+        self.logger.record("debug/cvar_weight_effective_raw", float(current_cvar_weight_raw))
+        self.logger.record("debug/cvar_penalty_cap", float(self.cvar_penalty_cap))
+        self.logger.record("debug/cvar_lambda", float(self.cvar_lambda))
         beta = float(self.cvar_ema_beta)
         if self._cvar_empirical_ema is None:
             self._cvar_empirical_ema = float(cvar_empirical_value)
@@ -3351,13 +3363,13 @@ class DistributionalPPO(RecurrentPPO):
         cvar_violation_ema_value = float(
             self._cvar_violation_ema if self._cvar_violation_ema is not None else cvar_gap_pos_value
         )
-        self.logger.record("train/cvar_violation", float(cvar_gap_pos_value))
+        self.logger.record("train/cvar_violation", float(cvar_violation))  # клипованная (>=0)
         self.logger.record("train/cvar_violation_ema", cvar_violation_ema_value)
-        self.logger.record("debug/cvar_violation_raw", cvar_gap_pos_value)
+        self.logger.record("debug/cvar_violation_raw", float(cvar_violation_raw))  # именно raw (может быть <0)
 
         self.logger.record("train/cvar_gap_pos", cvar_gap_pos_value)
         self.logger.record("train/cvar_penalty_active", float(cvar_penalty_active_value))
-        self.logger.record("train/cvar_lambda", float(self._cvar_lambda))
+        self.logger.record("train/cvar_lambda", float(self.cvar_lambda))
         if self.cvar_use_constraint:
             self.logger.record("train/cvar_constraint", constraint_term_value)
         if self.cvar_cap is not None:
@@ -3375,7 +3387,7 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef", float(self.ent_coef))
         self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
-        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight_scaled))
+        self.logger.record("train/cvar_weight_effective", float(current_cvar_weight_scaled))  # только scaled в train/*
         self.logger.record("debug/cvar_weight_nominal", float(current_cvar_weight_nominal))
         self.logger.record("debug/cvar_penalty_scale", float(cvar_penalty_scale))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
