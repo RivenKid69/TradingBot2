@@ -2253,9 +2253,9 @@ class DistributionalPPO(RecurrentPPO):
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
         cvar_penalty_scale = 1.0 / base_scale_safe
 
-
-        # Raw returns via the helper to respect either μ/σ or fixed scaling
-        returns_raw_tensor = self._to_raw_returns(returns_tensor)
+        # Rollout returns are stored directly in the base percent scale; decode via the
+        # static value_target_scale without reapplying any running mean/std factors.
+        returns_raw_tensor = returns_tensor * float(base_scale_safe)
 
 
         rewards_tensor = torch.as_tensor(
@@ -2276,12 +2276,12 @@ class DistributionalPPO(RecurrentPPO):
             returns_abs_p95_pct_tensor,
         ) = self._compute_cvar_statistics(rewards_raw_tensor)
 
-        if returns_tensor.numel() > 0:
+        if returns_raw_tensor.numel() > 0:
             returns_abs_p95_value_tensor = torch.quantile(
-                returns_tensor.abs(), 0.95
+                returns_raw_tensor.abs(), 0.95
             ).clamp_min(0.0)
         else:
-            returns_abs_p95_value_tensor = returns_tensor.new_tensor(0.0)
+            returns_abs_p95_value_tensor = returns_raw_tensor.new_tensor(0.0)
 
         cvar_empirical_value = float(cvar_empirical_tensor.item())
         cvar_limit_raw_value = self._get_cvar_limit_raw()
@@ -2787,8 +2787,10 @@ class DistributionalPPO(RecurrentPPO):
                         buffer_returns = rollout_data.returns.to(
                             device=self.device, dtype=torch.float32
                         )
-                        # Consistently decode buffer returns into natural units
-                        target_returns_raw = self._to_raw_returns(buffer_returns)
+                        # Buffer returns already include only the base scaling.  Avoid
+                        # invoking _to_raw_returns here to keep the branch free from
+                        # any dynamic mean/std adjustments.
+                        target_returns_raw = buffer_returns * float(base_scale_safe)
 
                         # НЕТ raw-clip при normalize_returns: полагаемся на нормализованный ±ret_clip
                         if (not self.normalize_returns) and (
@@ -3165,7 +3167,7 @@ class DistributionalPPO(RecurrentPPO):
             )
 
             # Final EV/MSE metrics also need fully decoded raw returns
-            rollout_returns = self._to_raw_returns(rollout_returns)
+            rollout_returns = rollout_returns * float(base_scale_safe)
 
             with torch.no_grad():
                 if self._use_quantile_value:
