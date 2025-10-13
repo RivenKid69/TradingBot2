@@ -331,9 +331,9 @@ class TradingEnv(gym.Env):
         hard_cap_pct = hard_cap_raw * 100.0 if hard_cap_raw <= 1.0 else hard_cap_raw
         self.reward_clip_hard_cap_pct = float(hard_cap_pct)
         self.reward_clip_hard_cap_fraction = float(self.reward_clip_hard_cap_pct / 100.0)
-        multiplier = float(clip_cfg_raw.get("multiplier", 4.0) or 4.0)
+        multiplier = float(clip_cfg_raw.get("multiplier", 2.0) or 2.0)
         if not math.isfinite(multiplier) or multiplier < 0.0:
-            multiplier = 4.0
+            multiplier = 2.0
         self.reward_clip_multiplier = float(multiplier)
         self._reward_clip_bound_last = float(self.reward_clip_hard_cap_pct)
         self._reward_clip_atr_pct_last = 0.0
@@ -485,6 +485,11 @@ class TradingEnv(gym.Env):
                 raise
 
         self.initial_cash = float(initial_cash)
+        base_equity_floor = float(kwargs.get("reward_equity_floor", 0.0) or 0.0)
+        if not math.isfinite(base_equity_floor) or base_equity_floor <= 0.0:
+            base_equity_floor = 0.0
+        inferred_floor = max(abs(self.initial_cash), 1.0) * 1e-4
+        self._reward_equity_floor = max(self._reward_equity_floor, base_equity_floor, inferred_floor)
         self._max_steps = len(self.df)
 
         # store config for Mediator
@@ -1232,10 +1237,10 @@ class TradingEnv(gym.Env):
         if not math.isfinite(self._turnover_total):
             self._turnover_total = prev_turnover_total
 
-        prev_equity = prev_net_worth
-        if not math.isfinite(prev_equity):
-            prev_equity = 0.0
-        prev_equity = max(prev_equity, self._reward_equity_floor)
+        prev_equity_raw = prev_net_worth
+        if not math.isfinite(prev_equity_raw):
+            prev_equity_raw = 0.0
+        prev_equity = max(prev_equity_raw, self._reward_equity_floor)
 
         equity = new_net_worth
         if not math.isfinite(equity):
@@ -1283,10 +1288,10 @@ class TradingEnv(gym.Env):
         clip_bound_effective_pct = float(self.reward_clip_hard_cap_pct)
         apply_adaptive_clip = bool(self.reward_clip_adaptive and self._reward_signal_only)
         if apply_adaptive_clip:
-            candidate_pct = float(self.reward_clip_multiplier) * float(atr_fraction) * 100.0
-            clip_bound_effective_pct = float(
-                min(self.reward_clip_hard_cap_pct, max(candidate_pct, 0.0))
-            )
+            candidate_fraction = float(self.reward_clip_multiplier) * float(atr_fraction)
+            candidate_fraction = max(candidate_fraction, 0.0)
+            candidate_fraction = min(candidate_fraction, float(self.reward_clip_hard_cap_fraction))
+            clip_bound_effective_pct = float(candidate_fraction * 100.0)
         clip_logged = float(clip_bound_effective_pct if self._reward_signal_only else 0.0)
         clip_for_clamp = clip_bound_effective_pct if apply_adaptive_clip else None
         if clip_for_clamp is None:
@@ -1295,6 +1300,10 @@ class TradingEnv(gym.Env):
             reward_used_pct = float(np.clip(reward_raw_pct, -clip_for_clamp, clip_for_clamp))
 
         reward_used_pct_before_costs = float(reward_used_pct)
+
+        equity_for_pct_logging = float("nan")
+        if prev_equity_raw >= self._reward_equity_floor and prev_equity > 0.0:
+            equity_for_pct_logging = float(prev_equity)
 
         fees_pct = 0.0
         if prev_equity > 0.0:
@@ -1345,11 +1354,28 @@ class TradingEnv(gym.Env):
         info["reward_raw_pct"] = float(reward_raw_pct)
         info["reward_used_pct"] = float(reward_used_pct)
         info["reward_used_pct_before_costs"] = float(reward_used_pct_before_costs)
-        info["reward_costs_pct"] = float(reward_costs_pct)
-        info["fees_pct"] = float(fees_pct)
-        info["turnover_penalty_pct"] = float(turnover_penalty_pct)
+        reward_costs_pct_logged = (
+            float(reward_costs_pct)
+            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
+            else float("nan")
+        )
+        fees_pct_logged = (
+            float(fees_pct)
+            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
+            else float("nan")
+        )
+        turnover_penalty_pct_logged = (
+            float(turnover_penalty_pct)
+            if math.isfinite(equity_for_pct_logging) and equity_for_pct_logging > 0.0
+            else float("nan")
+        )
+
+        info["reward_costs_pct"] = reward_costs_pct_logged
+        info["fees_pct"] = fees_pct_logged
+        info["turnover_penalty_pct"] = turnover_penalty_pct_logged
         info["reward_clip_bound_pct"] = float(clip_logged)
         info["reward_clip_atr_pct"] = float(atr_pct_logged)
+        info["reward_clip_hard_cap_pct"] = float(self.reward_clip_hard_cap_pct)
         info["signal_position_prev"] = float(prev_signal_pos)
         info["ratio_raw"] = float(ratio_price)
         info["ratio_clipped"] = float(ratio_clipped)
