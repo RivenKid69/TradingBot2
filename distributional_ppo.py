@@ -3197,11 +3197,11 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
-                    cvar_loss_raw = -cvar_raw
                     cvar_unit_tensor = (cvar_raw - cvar_offset_tensor) / cvar_scale_tensor
                     cvar_loss = -cvar_unit_tensor
+                    cvar_loss_raw_tensor = cvar_loss * cvar_scale_tensor
                     cvar_term = current_cvar_weight_scaled * cvar_loss
-                    cvar_term_raw_tensor = current_cvar_weight_scaled * cvar_loss_raw
+                    cvar_term_raw_tensor = current_cvar_weight_scaled * cvar_loss_raw_tensor
                     if self.cvar_cap is not None:
                         cvar_term = torch.clamp(cvar_term, min=-self.cvar_cap, max=self.cvar_cap)
 
@@ -3225,7 +3225,7 @@ class DistributionalPPO(RecurrentPPO):
                     bucket_critic_loss_value += float(critic_loss.item()) * weight
                     bucket_cvar_raw_value += float(cvar_raw.item()) * weight
                     bucket_cvar_unit_value += float(cvar_unit_tensor.item()) * weight
-                    bucket_cvar_loss_value += float(cvar_loss_raw.item()) * weight
+                    bucket_cvar_loss_value += float(cvar_loss_raw_tensor.item()) * weight
                     bucket_cvar_loss_unit_value += float(cvar_loss.item()) * weight
                     bucket_cvar_term_raw_value += float(cvar_term_raw_tensor.item()) * weight
                     bucket_cvar_term_value += float(cvar_term.item()) * weight
