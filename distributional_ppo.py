@@ -2341,7 +2341,17 @@ class DistributionalPPO(RecurrentPPO):
         cvar_gap_pos_value = self._compute_cvar_violation(cvar_empirical_value)
         penalty_active = cvar_gap_pos_value > 0.0
         if not penalty_active:
+            current_cvar_weight_nominal = 0.0
             current_cvar_weight_raw = 0.0
+        elif current_cvar_weight_raw <= 0.0:
+            ramp_updates = max(1.0, float(self._cvar_ramp_updates))
+            fallback_weight = float(self._cvar_weight_target) / ramp_updates
+            fallback_weight = max(fallback_weight, 1e-6)
+            if math.isfinite(self.cvar_penalty_cap):
+                fallback_weight = min(fallback_weight, float(self.cvar_penalty_cap))
+                fallback_weight = max(fallback_weight, 1e-6)
+            current_cvar_weight_nominal = float(fallback_weight)
+            current_cvar_weight_raw = float(fallback_weight)
         current_cvar_weight_scaled = float(current_cvar_weight_raw * cvar_penalty_scale)
         self._current_cvar_weight = float(current_cvar_weight_scaled)
         cvar_penalty_active_value = 1.0 if penalty_active else 0.0
