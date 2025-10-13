@@ -90,6 +90,127 @@ from leakguard import LeakGuard, LeakConfig
 logger = logging.getLogger(__name__)
 _ACTION_WRAPPER_CONFIG_LOGGED = False
 
+_SECONDS_PER_YEAR = 365 * 24 * 60 * 60
+_DEFAULT_ANNUALIZATION_SQRT = float(np.sqrt(365 * 24))
+
+
+def _flatten_candidates(values: Any):
+    if isinstance(values, (list, tuple, set, np.ndarray)):
+        for item in values:
+            yield from _flatten_candidates(item)
+    elif values is not None:
+        yield values
+
+
+def _coerce_positive_seconds(value: Any, *, assumes_ms: bool = False) -> float | None:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(numeric):
+        return None
+    if assumes_ms:
+        numeric /= 1000.0
+    if numeric <= 0:
+        return None
+    return numeric
+
+
+def _resolve_bar_seconds(source: Any) -> float | None:
+    """Attempt to extract bar interval (seconds) from an env or wrapper."""
+
+    visited: set[int] = set()
+
+    def _resolve(obj: Any) -> float | None:
+        if obj is None:
+            return None
+        ident = id(obj)
+        if ident in visited:
+            return None
+        visited.add(ident)
+
+        getter = getattr(obj, "get_bar_interval_seconds", None)
+        if callable(getter):
+            try:
+                sec = _coerce_positive_seconds(getter())
+            except Exception:
+                sec = None
+            if sec is not None:
+                return sec
+
+        for attr, assumes_ms in (("bar_interval_seconds", False), ("bar_seconds", False), ("bar_interval_ms", True)):
+            if hasattr(obj, attr):
+                sec = _coerce_positive_seconds(getattr(obj, attr), assumes_ms=assumes_ms)
+                if sec is not None:
+                    return sec
+
+        env_method = getattr(obj, "env_method", None)
+        if callable(env_method):
+            try:
+                values = env_method("get_bar_interval_seconds")
+            except Exception:
+                values = []
+            for value in _flatten_candidates(values):
+                sec = _coerce_positive_seconds(value)
+                if sec is not None:
+                    return sec
+
+        get_attr = getattr(obj, "get_attr", None)
+        if callable(get_attr):
+            try:
+                values = get_attr("bar_interval_ms")
+            except Exception:
+                values = []
+            for value in _flatten_candidates(values):
+                sec = _coerce_positive_seconds(value, assumes_ms=True)
+                if sec is not None:
+                    return sec
+
+        for attr in ("venv", "env", "_vec_env", "envs"):
+            if not hasattr(obj, attr):
+                continue
+            child = getattr(obj, attr)
+            if isinstance(child, (list, tuple)):
+                for item in child:
+                    sec = _resolve(item)
+                    if sec is not None:
+                        return sec
+            else:
+                sec = _resolve(child)
+                if sec is not None:
+                    return sec
+        return None
+
+    return _resolve(source)
+
+
+def _annualization_sqrt_from_env(source: Any) -> tuple[float, float | None]:
+    bar_seconds = _resolve_bar_seconds(source)
+    if bar_seconds is None:
+        return _DEFAULT_ANNUALIZATION_SQRT, None
+    return float(np.sqrt(_SECONDS_PER_YEAR / float(bar_seconds))), bar_seconds
+
+
+def _log_annualization(label: str, ann_sqrt: float, bar_seconds: float | None) -> None:
+    if bar_seconds is None:
+        logger.info("%s: using fallback annualization sqrt factor %.6f (bar interval unknown)", label, ann_sqrt)
+    else:
+        steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
+        logger.info(
+            "%s: annualization sqrt factor %.6f (bar_seconds=%.6f, steps_per_year=%.2f)",
+            label,
+            ann_sqrt,
+            bar_seconds,
+            steps_per_year,
+        )
+
+
+def _value_changed(previous: float | None, current: float | None) -> bool:
+    if previous is None or current is None:
+        return previous is not None or current is not None
+    return not math.isclose(previous, current, rel_tol=1e-9, abs_tol=1e-9)
+
+
 
 def _freeze_vecnormalize(vec_env: VecNormalize) -> VecNormalize:
     """Ensure VecNormalize stops updating statistics during evaluation."""
@@ -128,11 +249,23 @@ class AdversarialCallback(BaseCallback):
         if regime_config_path:
             os.environ["MARKET_REGIMES_JSON"] = regime_config_path
         self._liq_seasonality_path = liquidity_seasonality_path
+        self._sortino_ann_sqrt: float = _DEFAULT_ANNUALIZATION_SQRT
+        self._sortino_bar_seconds: float | None = None
+
+    def _resolve_sortino_factor(self) -> float:
+        ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
+        if _value_changed(self._sortino_bar_seconds, bar_seconds) or _value_changed(self._sortino_ann_sqrt, ann_sqrt):
+            _log_annualization("AdversarialCallback", ann_sqrt, bar_seconds)
+            self._sortino_bar_seconds = bar_seconds
+            self._sortino_ann_sqrt = ann_sqrt
+        return self._sortino_ann_sqrt
 
     def _on_step(self) -> bool:
         if self.n_calls % self.eval_freq == 0:
             print("\n--- Starting Adversarial Regime Stress Tests ---")
-            
+
+            ann_sqrt = self._resolve_sortino_factor()
+
             for regime in self.regimes:
                 print(f"Testing regime: {regime}...")
                 # Устанавливаем режим в среде
@@ -144,13 +277,13 @@ class AdversarialCallback(BaseCallback):
                     self.eval_env,
                     num_episodes=1 # Один длинный эпизод для каждого режима
                 )
-                
+
                 # Считаем Sortino и сохраняем
                 all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in equity_curves if len(c) > 1]
                 flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
-                score = sortino_ratio(flat_returns)
+                score = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
                 self.regime_metrics[regime] = score
-                
+
                 print(f"Regime '{regime}' | Sortino: {score:.4f}")
 
             # Сбрасываем среду в нормальный режим
@@ -758,6 +891,16 @@ class SortinoPruningCallback(BaseCallback):
         self.n_eval_episodes = n_eval_episodes
         self.eval_freq = eval_freq
         self._last_eval_step = 0
+        self._ann_sqrt: float = _DEFAULT_ANNUALIZATION_SQRT
+        self._bar_seconds: float | None = None
+
+    def _resolve_sortino_factor(self) -> tuple[float, float | None]:
+        ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
+        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(self._ann_sqrt, ann_sqrt):
+            _log_annualization("SortinoPruningCallback", ann_sqrt, bar_seconds)
+            self._ann_sqrt = ann_sqrt
+            self._bar_seconds = bar_seconds
+        return self._ann_sqrt, self._bar_seconds
 
     def _on_step(self) -> bool:
         # Запускаем оценку в заданные интервалы (по числу таймстепов)
@@ -775,18 +918,20 @@ class SortinoPruningCallback(BaseCallback):
                 self.eval_env,
                 num_episodes=self.n_eval_episodes
             )
-            
+
+            ann_sqrt, bar_seconds = self._resolve_sortino_factor()
+
             # Рассчитываем Sortino на основе полученных кривых капитала
             if not equity_curves:
                 # Если по какой-то причине оценка не вернула результатов, считаем Sortino равным 0
                 current_sortino = 0.0
             else:
                 all_returns = [
-                    pd.Series(curve).pct_change().dropna().to_numpy() 
+                    pd.Series(curve).pct_change().dropna().to_numpy()
                     for curve in equity_curves if len(curve) > 1
                 ]
                 flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
-                current_sortino = sortino_ratio(flat_returns)
+                current_sortino = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
 
             if self.verbose > 0:
                 print(
@@ -794,6 +939,14 @@ class SortinoPruningCallback(BaseCallback):
                 )
 
             if self.logger is not None:
+                if bar_seconds is None:
+                    self.logger.record("pruning/bar_seconds", float("nan"))
+                    self.logger.record("pruning/sortino_steps_per_year", float("nan"))
+                else:
+                    steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
+                    self.logger.record("pruning/bar_seconds", float(bar_seconds))
+                    self.logger.record("pruning/sortino_steps_per_year", float(steps_per_year))
+                self.logger.record("pruning/sortino_ann_factor", float(ann_sqrt))
                 self.logger.record("pruning/sortino_ratio", current_sortino)
 
             # 1. Сообщаем Optuna о промежуточном результате (теперь это Sortino)
@@ -831,6 +984,16 @@ class ObjectiveScorePruningCallback(BaseCallback):
         self.trend_weight = 0.2
         self.regime_duration = 2_500
         self._last_eval_step = 0
+        self._ann_sqrt: float = _DEFAULT_ANNUALIZATION_SQRT
+        self._bar_seconds: float | None = None
+
+    def _resolve_sortino_factor(self) -> tuple[float, float | None]:
+        ann_sqrt, bar_seconds = _annualization_sqrt_from_env(self.eval_env)
+        if _value_changed(self._bar_seconds, bar_seconds) or _value_changed(self._ann_sqrt, ann_sqrt):
+            _log_annualization("ObjectiveScorePruningCallback", ann_sqrt, bar_seconds)
+            self._bar_seconds = bar_seconds
+            self._ann_sqrt = ann_sqrt
+        return self._ann_sqrt, self._bar_seconds
 
     def _on_step(self) -> bool:
         current_step = self.num_timesteps
@@ -844,9 +1007,10 @@ class ObjectiveScorePruningCallback(BaseCallback):
             print(
                 f"\n--- Step {current_step}: Starting comprehensive pruning check with Objective Score ---"
             )
-            
+
             regimes_to_evaluate = ['normal', 'choppy_flat', 'strong_trend']
             evaluated_metrics = {}
+            ann_sqrt, bar_seconds = self._resolve_sortino_factor()
 
             try:
                 for regime in regimes_to_evaluate:
@@ -863,10 +1027,10 @@ class ObjectiveScorePruningCallback(BaseCallback):
                     _rewards, equity_curves = evaluate_policy_custom_cython(
                         self.model, self.eval_env, num_episodes=num_episodes
                     )
-                    
+
                     all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in equity_curves if len(c) > 1]
                     flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
-                    score = sortino_ratio(flat_returns)
+                    score = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
                     evaluated_metrics[regime] = score
 
             finally:
@@ -906,20 +1070,52 @@ class ObjectiveScorePruningCallback(BaseCallback):
 
         return True
 
-def sharpe_ratio(returns: np.ndarray, risk_free_rate: float = 0.0) -> float:
-    std = np.std(returns)
-    return np.mean(returns - risk_free_rate) / (std + 1e-9) * np.sqrt(365 * 24)
+def _resolve_ann_sqrt(annualization_sqrt: float | None) -> float:
+    if annualization_sqrt is None:
+        return _DEFAULT_ANNUALIZATION_SQRT
+    try:
+        value = float(annualization_sqrt)
+    except (TypeError, ValueError):
+        return _DEFAULT_ANNUALIZATION_SQRT
+    if not math.isfinite(value) or value <= 0:
+        return _DEFAULT_ANNUALIZATION_SQRT
+    return value
 
-def sortino_ratio(returns: np.ndarray, risk_free_rate: float = 0.0) -> float:
+
+def sharpe_ratio(
+    returns: np.ndarray,
+    risk_free_rate: float = 0.0,
+    *,
+    annualization_sqrt: float | None = None,
+) -> float:
+    ann = _resolve_ann_sqrt(annualization_sqrt)
+    std = np.std(returns)
+    return np.mean(returns - risk_free_rate) / (std + 1e-9) * ann
+
+
+def sortino_ratio(
+    returns: np.ndarray,
+    risk_free_rate: float = 0.0,
+    *,
+    annualization_sqrt: float | None = None,
+) -> float:
+    ann = _resolve_ann_sqrt(annualization_sqrt)
     downside = returns[returns < risk_free_rate] - risk_free_rate
-    if downside.size == 0:
+    downside_count = downside.size
+    if downside_count == 0:
         # Если нет убытков, используем стандартное отклонение (как в Шарпе).
         # Это более адекватно оценивает риск, чем возврат константы.
         std = np.std(returns)
         # Предотвращаем деление на ноль, если все доходности одинаковы.
         if std < 1e-9:
             return 0.0
-        return np.mean(returns - risk_free_rate) / std * np.sqrt(365 * 24)
+        return np.mean(returns - risk_free_rate) / std * ann
+
+    if downside_count < 20:
+        std = np.std(returns)
+        if std < 1e-9:
+            return 0.0
+        return np.mean(returns - risk_free_rate) / std * ann
 
     downside_std = np.sqrt(np.mean(downside**2))
     # Если выборка практически стационарна, возвращаем 0, чтобы не завышать метрику.
@@ -929,7 +1125,7 @@ def sortino_ratio(returns: np.ndarray, risk_free_rate: float = 0.0) -> float:
     safe_downside_std = max(downside_std, 1e-9)
     # Эта проверка становится избыточной, если downside_std используется только один раз,
     # но оставим для безопасности.
-    return np.mean(returns - risk_free_rate) / safe_downside_std * np.sqrt(365 * 24)
+    return np.mean(returns - risk_free_rate) / safe_downside_std * ann
 
 # --- ИЗМЕНЕНИЕ: Старая Python-функция удалена, так как заменена на Cython-версию ---
 
@@ -2542,6 +2738,26 @@ def objective(trial: optuna.Trial,
             final_eval_norm.clip_reward = None
             final_eval_env = VecMonitor(final_eval_norm)
 
+            ann_sqrt, bar_seconds = _annualization_sqrt_from_env(final_eval_env)
+            _log_annualization(f"Final evaluation ({regime})", ann_sqrt, bar_seconds)
+            if bar_seconds is None:
+                steps_per_year = None
+                print(f"[{regime}] Annualization sqrt factor: {ann_sqrt:.6f} (bar interval unknown)")
+            else:
+                steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
+                print(
+                    f"[{regime}] Annualization sqrt factor: {ann_sqrt:.6f} "
+                    f"(bar_seconds={bar_seconds:.3f}, steps_per_year={steps_per_year:.2f})"
+                )
+            if model.logger is not None:
+                if bar_seconds is None:
+                    model.logger.record(f"evaluation/{regime}_bar_seconds", float("nan"))
+                    model.logger.record(f"evaluation/{regime}_steps_per_year", float("nan"))
+                else:
+                    model.logger.record(f"evaluation/{regime}_bar_seconds", float(bar_seconds))
+                    model.logger.record(f"evaluation/{regime}_steps_per_year", float(steps_per_year))
+                model.logger.record(f"evaluation/{regime}_ann_factor", float(ann_sqrt))
+
             if regime != 'normal':
                 final_eval_env.env_method("set_market_regime", regime=regime, duration=regime_duration)
 
@@ -2567,7 +2783,7 @@ def objective(trial: optuna.Trial,
 
         all_returns = [pd.Series(c).pct_change().dropna().to_numpy() for c in symbol_equity_curves if len(c) > 1]
         flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
-        final_metrics[regime] = sortino_ratio(flat_returns)
+        final_metrics[regime] = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
 
     # --- РАСЧЕТ ИТОГОВОЙ ВЗВЕШЕННОЙ МЕТРИКИ ---
     main_sortino = final_metrics.get('normal', -1.0)
@@ -3180,6 +3396,21 @@ def main():
             DistributionalPPO = _get_distributional_ppo()
             best_model = DistributionalPPO.load(str(best_model_path), env=eval_env)
 
+            ann_sqrt, bar_seconds = _annualization_sqrt_from_env(eval_env)
+            _log_annualization("Validation evaluation", ann_sqrt, bar_seconds)
+            if bar_seconds is None:
+                steps_per_year = None
+                print(
+                    "[validation] Annualization sqrt factor: "
+                    f"{ann_sqrt:.6f} (bar interval unknown)"
+                )
+            else:
+                steps_per_year = _SECONDS_PER_YEAR / float(bar_seconds)
+                print(
+                    "[validation] Annualization sqrt factor: "
+                    f"{ann_sqrt:.6f} (bar_seconds={bar_seconds:.3f}, steps_per_year={steps_per_year:.2f})"
+                )
+
             rewards, equity_curves = evaluate_policy_custom_cython(
                 best_model, eval_env, num_episodes=max(1, len(final_eval_data))
             )
@@ -3188,8 +3419,8 @@ def main():
                 for curve in equity_curves if len(curve) > 1
             ]
             flat_returns = np.concatenate(all_returns) if all_returns else np.array([0.0])
-            sortino = sortino_ratio(flat_returns)
-            sharpe = sharpe_ratio(flat_returns)
+            sortino = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
+            sharpe = sharpe_ratio(flat_returns, annualization_sqrt=ann_sqrt)
 
             report = {
                 "mean_reward": float(np.mean(rewards)),
