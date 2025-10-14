@@ -169,7 +169,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._include_heads_bool: Optional[Dict[str, bool]] = None
         self._execution_mode = "score"
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
-        self._score_clip_eps: float = 1e-6
+        self._score_clip_eps: float = 5e-3
 
         act_str = arch_params.get('activation', 'relu').lower()
         if act_str == 'relu':
@@ -799,7 +799,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
     def _get_action_dist_from_latent(self, latent_pi: torch.Tensor):
         mean_actions = self.action_net(latent_pi)
-        log_std = -2.5 + 2.5 * torch.tanh(self.unconstrained_log_std)
+        log_std = -1.5 + 1.5 * torch.tanh(self.unconstrained_log_std)
         return self.action_dist.proba_distribution(mean_actions, log_std)
 
     def _get_value_logits(self, latent_vf: torch.Tensor) -> torch.Tensor:
@@ -935,7 +935,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             if not torch.isfinite(scores).all():
                 raise RuntimeError("Received non-finite score when computing log_prob")
             raw_actions = self._score_to_raw(scores)
-            log_prob_raw = distribution.log_prob(raw_actions)
+            raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
+            log_prob_raw = distribution.log_prob(raw_for_logprob)
             log_det = torch.sum(self._log_sigmoid_jacobian(scores), dim=-1)
             return log_prob_raw - log_det
 
