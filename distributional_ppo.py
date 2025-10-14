@@ -1089,6 +1089,7 @@ class DistributionalPPO(RecurrentPPO):
     ) -> None:
         self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
         self._last_rollout_entropy: float = 0.0
+        self._last_rollout_entropy_raw: float = 0.0
         self._update_calls: int = 0
         self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
@@ -2377,8 +2378,10 @@ class DistributionalPPO(RecurrentPPO):
         if entropy_loss_count > 0:
             self._last_rollout_entropy = entropy_loss_total / float(entropy_loss_count)
             self.logger.record("rollout/policy_entropy", self._last_rollout_entropy)
+            self._last_rollout_entropy_raw = self._last_rollout_entropy
         else:
             self._last_rollout_entropy = 0.0
+            self._last_rollout_entropy_raw = 0.0
 
         return True
 
@@ -2741,6 +2744,8 @@ class DistributionalPPO(RecurrentPPO):
 
         policy_entropy_sum = 0.0
         policy_entropy_count = 0
+        policy_entropy_raw_sum = 0.0
+        policy_entropy_raw_count = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -2951,27 +2956,36 @@ class DistributionalPPO(RecurrentPPO):
                         kl_penalty_component_count += 1
 
                     entropy_tensor = entropy
+                    actor_states = self._extract_actor_states(rollout_data.lstm_states)
+                    dist_output = self.policy.get_distribution(
+                        rollout_data.observations,
+                        actor_states,
+                        rollout_data.episode_starts,
+                    )
+                    # Some recurrent policies (including custom ones used in this
+                    # project) return auxiliary data such as the updated RNN
+                    # states alongside the action distribution. When the method
+                    # returns a tuple, the actual distribution object is the
+                    # first element, so unwrap it before proceeding.
+                    if isinstance(dist_output, tuple):
+                        dist = dist_output[0]
+                    else:
+                        dist = dist_output
+
+                    entropy_raw_tensor = dist.entropy()
                     if entropy_tensor is None:
-                        actor_states = self._extract_actor_states(rollout_data.lstm_states)
-                        dist_output = self.policy.get_distribution(
-                            rollout_data.observations,
-                            actor_states,
-                            rollout_data.episode_starts,
-                        )
-                        # Some recurrent policies (including custom ones used in
-                        # this project) return auxiliary data such as the updated
-                        # RNN states alongside the action distribution. When the
-                        # method returns a tuple, the actual distribution object
-                        # is the first element, so unwrap it before proceeding.
-                        if isinstance(dist_output, tuple):
-                            dist = dist_output[0]
-                        else:
-                            dist = dist_output
                         entropy_fn = getattr(self.policy, "weighted_entropy", None)
                         if callable(entropy_fn):
                             entropy_tensor = entropy_fn(dist)
                         else:
-                            entropy_tensor = dist.entropy()
+                            entropy_tensor = entropy_raw_tensor
+
+                    entropy_raw_for_log = entropy_raw_tensor
+                    if entropy_raw_for_log.ndim > 1:
+                        entropy_raw_for_log = entropy_raw_for_log.sum(dim=-1)
+                    entropy_raw_detached = entropy_raw_for_log.detach().to(dtype=torch.float32)
+                    policy_entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
+                    policy_entropy_raw_count += int(entropy_raw_detached.numel())
 
                     if entropy_tensor.ndim > 1:
                         entropy_tensor = entropy_tensor.sum(dim=-1)
@@ -3354,8 +3368,14 @@ class DistributionalPPO(RecurrentPPO):
             if policy_entropy_count > 0
             else self._last_rollout_entropy
         )
+        avg_policy_entropy_raw = (
+            policy_entropy_raw_sum / float(policy_entropy_raw_count)
+            if policy_entropy_raw_count > 0
+            else self._last_rollout_entropy_raw
+        )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
         self.logger.record("train/policy_entropy", float(avg_policy_entropy))
+        self.logger.record("train/policy_entropy_raw", float(avg_policy_entropy_raw))
         if self._use_quantile_value:
             if value_quantiles_final is None:
                 cached_quantiles = getattr(self.policy, "last_value_quantiles", None)
