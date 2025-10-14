@@ -279,6 +279,11 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             **kwargs,
         )
 
+        # ``ActorCriticPolicy`` exposes ``squash_output`` as a read-only property in SB3.
+        # Older code mutates this flag, expecting to bypass action squashing.  In the
+        # refactor this assignment happens after ``super().__init__`` which now raises
+        # ``AttributeError`` because the property has no setter.  Provide a lightweight
+        # override with our own setter so legacy code can keep toggling the behaviour.
         self.squash_output = False
 
         # После инициализации базовый класс знает фактическую размерность скрытого
@@ -959,6 +964,16 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         scores = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
         log_jac = torch.log(scores) + torch.log1p(-scores)
         return entropy + log_jac.sum(dim=-1)
+
+    @property
+    def squash_output(self) -> bool:
+        if hasattr(self, "_squash_output_override"):
+            return bool(self._squash_output_override)
+        return super().squash_output
+
+    @squash_output.setter
+    def squash_output(self, value: bool) -> None:
+        self._squash_output_override = bool(value)
 
     @property
     def last_value_logits(self) -> Optional[torch.Tensor]:
