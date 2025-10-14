@@ -11,7 +11,7 @@ pytest.importorskip("sb3_contrib", reason="distributional_ppo depends on sb3_con
 
 from collections import deque
 
-from distributional_ppo import DistributionalPPO, calculate_cvar
+from distributional_ppo import DistributionalPPO, calculate_cvar, create_sequencers
 from utils.model_io import upgrade_quantile_value_state_dict
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
@@ -22,6 +22,38 @@ class _CaptureLogger:
 
     def record(self, key: str, value: float, **_: object) -> None:
         self.records[key] = float(value)
+
+
+def test_create_sequencers_groups_sequences_and_pads() -> None:
+    episode_starts = np.array([0, 0, 1, 0, 0, 0, 1], dtype=bool)
+    env_change = np.array([1, 0, 0, 0, 1, 0, 0], dtype=bool)
+
+    seq_start_indices, pad, pad_and_flatten = create_sequencers(
+        episode_starts, env_change, device="cpu"
+    )
+
+    assert seq_start_indices.tolist() == [0, 2, 4, 6]
+
+    values = np.arange(1, episode_starts.size + 1, dtype=np.int64)
+    padded = pad(values)
+    expected = np.array([[1, 2], [3, 4], [5, 6], [7, 0]], dtype=np.int64)
+    assert np.array_equal(padded, expected)
+
+    mask = pad_and_flatten(np.ones_like(values, dtype=np.float32))
+    assert mask.tolist() == [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0]
+
+
+def test_create_sequencers_forces_initial_boundary() -> None:
+    episode_starts = np.zeros(4, dtype=bool)
+    env_change = np.zeros(4, dtype=bool)
+
+    seq_start_indices, pad, _ = create_sequencers(episode_starts, env_change, device="cpu")
+
+    assert seq_start_indices.tolist() == [0]
+
+    padded = pad(np.array([10, 11, 12, 13], dtype=np.int64))
+    assert padded.shape == (1, 4)
+    assert padded[0].tolist() == [10, 11, 12, 13]
 
 
 def _discrete_cvar_reference(probs: np.ndarray, atoms: np.ndarray, alpha: float) -> float:

@@ -2,7 +2,7 @@ import itertools
 import math
 from collections import deque
 from collections.abc import Mapping
-from typing import Any, Generator, Iterable, NamedTuple, Optional, Sequence, Type, Union
+from typing import Any, Callable, Generator, Iterable, NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -17,6 +17,9 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+
+
+PadFn = Callable[[Union[np.ndarray, torch.Tensor]], np.ndarray]
 
 try:
     from stable_baselines3.common.vec_env.vec_normalize import unwrap_vec_normalize as _sb3_unwrap
@@ -101,6 +104,80 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
 
     cvar = (tail_expectation + weight_on_var * var_values) / (alpha_float + 1e-8)
     return cvar
+
+
+def create_sequencers(
+    episode_starts: np.ndarray,
+    env_change: np.ndarray,
+    device: Union[str, torch.device],
+) -> Tuple[np.ndarray, PadFn, PadFn]:
+    """Utility that builds padding helpers for variable length RNN rollouts.
+
+    Parameters
+    ----------
+    episode_starts:
+        Flat array indicating when a new episode begins inside the sampled
+        rollout segment.
+    env_change:
+        Flat array indicating when we jump to the next environment chunk.
+    device:
+        Unused placeholder, kept for backwards compatibility with older
+        implementations that expected a device argument.
+
+    Returns
+    -------
+    seq_start_indices:
+        Indices in the flattened batch where each RNN sequence begins.
+    pad:
+        Function that pads an array according to the computed sequences,
+        returning a ``(n_seq, max_len, *rest)`` tensor.
+    pad_and_flatten:
+        Convenience wrapper that first pads and then flattens the leading
+        dimensions back to ``(n_seq * max_len, *rest)``.
+    """
+
+    del device  # The helpers operate purely on numpy arrays.
+
+    episode_starts_np = np.asarray(episode_starts, dtype=bool)
+    env_change_np = np.asarray(env_change, dtype=bool)
+
+    if episode_starts_np.shape != env_change_np.shape:
+        raise ValueError("'episode_starts' and 'env_change' must share the same shape")
+
+    if episode_starts_np.ndim != 1:
+        raise ValueError("'episode_starts' and 'env_change' must be 1D arrays")
+
+    combined_flags = np.logical_or(episode_starts_np, env_change_np)
+    if combined_flags.size == 0:
+        raise ValueError("Cannot create sequencers from empty rollout segments")
+
+    combined_flags[0] = True
+    seq_start_indices = np.flatnonzero(combined_flags).astype(np.int64, copy=False)
+
+    # Determine the unpadded length of each sequence so we can pad consistently.
+    seq_ends = np.concatenate((seq_start_indices[1:], np.array([combined_flags.size], dtype=np.int64)))
+    seq_lengths = seq_ends - seq_start_indices
+    max_length = int(seq_lengths.max()) if seq_lengths.size > 0 else 0
+
+    def pad(array: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+        arr_np = array.detach().cpu().numpy() if isinstance(array, torch.Tensor) else np.asarray(array)
+        if arr_np.shape[0] != combined_flags.size:
+            raise ValueError("Input has incompatible leading dimension for padding")
+
+        trailing_shape = arr_np.shape[1:]
+        padded_shape = (len(seq_start_indices), max_length) + trailing_shape
+        padded = np.zeros(padded_shape, dtype=arr_np.dtype)
+
+        for i, (start, length) in enumerate(zip(seq_start_indices, seq_lengths)):
+            padded[i, :length, ...] = arr_np[start : start + length, ...]
+
+        return padded
+
+    def pad_and_flatten(array: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+        padded = pad(array)
+        return padded.reshape((len(seq_start_indices) * max_length, *padded.shape[2:]))
+
+    return seq_start_indices, pad, pad_and_flatten
 
 
 class RawRecurrentRolloutBufferSamples(NamedTuple):
