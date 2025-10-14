@@ -117,3 +117,8 @@ def test_reward_pipeline_has_no_percent_scaling():
     collect_src = inspect.getsource(DistributionalPPO._collect_rollouts)
     for pattern in ("*100", "* 100", "/100", "/ 100"):
         assert pattern not in collect_src
+
+
+def test_distributional_ppo_source_has_no_action_nvec_logging():
+    src = inspect.getsource(DistributionalPPO)
+    assert "action_nvec" not in src

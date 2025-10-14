@@ -1,238 +1,76 @@
 from __future__ import annotations
+
+"""Utilities for enforcing the score-based action space."""
+
+from dataclasses import replace
 from typing import Any
-from collections.abc import Mapping
-from dataclasses import replace, is_dataclass
-import copy
 
 import numpy as np
-from gymnasium import spaces
-from gymnasium import ActionWrapper  # <-- ключевое: наследуемся от ActionWrapper
+from gymnasium import ActionWrapper, spaces
 
-from action_proto import ActionType, ActionProto
-
-
-VOLUME_LEVELS: np.ndarray = np.asarray([0.0, 0.2, 0.6, 1.0], dtype=np.float32)
+from action_proto import ActionProto
 
 
-class DictToMultiDiscreteActionWrapper(ActionWrapper):
-    """
-    Convert Dict action space:
-      { price_offset_ticks: Discrete(201),
-        ttl_steps:          Discrete(33),
-        type:               Discrete(4),
-        volume_frac:        Box(-1,1,(1,),float32) }
-    -> MultiDiscrete([201, 33, 4, bins_vol])
+SCORE_LOW: float = 0.0
+SCORE_HIGH: float = 1.0
+SCORE_SHAPE: tuple[int, ...] = (1,)
 
-    Agent outputs [i_price, i_ttl, i_type, i_vol]; wrapper maps to Dict and
-    delegates to underlying env.step(...). Observation space is proxied unchanged.
-    """
 
-    def __init__(
-        self,
-        env: Any,
-        bins_vol: int = 4,
-        action_overrides: Mapping[str, Any] | None = None,
-    ):
-        # делаем класс полноценным Gymnasium-энвом
+class ScoreActionWrapper(ActionWrapper):
+    """Project all outgoing actions to the ``[0, 1]`` score interval."""
+
+    def __init__(self, env: Any) -> None:
         super().__init__(env)
-        expected_bins = int(len(VOLUME_LEVELS))
-        bins_raw = int(bins_vol)
-        if bins_raw != expected_bins:
-            raise ValueError(
-                "BAR volume head requires exactly "
-                f"{expected_bins} bins (received {bins_raw})."
-            )
-        self.bins_vol = expected_bins
-        normalized = self._normalize_overrides(action_overrides)
-        self._lock_price_offset = normalized["lock_price_offset"]
-        self._lock_ttl = normalized["lock_ttl"]
-        self._fixed_type = normalized["fixed_type"]
-        self._fixed_price_offset_ticks = normalized["fixed_price_offset_ticks"]
-        self._fixed_ttl_steps = normalized["fixed_ttl_steps"]
-
-        # обновляем action_space на MultiDiscrete; observation_space оставляем как у базовой среды
-        self.action_space = spaces.MultiDiscrete([201, 33, 4, self.bins_vol])
+        self.action_space = spaces.Box(
+            low=SCORE_LOW,
+            high=SCORE_HIGH,
+            shape=SCORE_SHAPE,
+            dtype=np.float32,
+        )
         self.observation_space = env.observation_space
 
-    @staticmethod
-    def _normalize_overrides(
-        overrides: Mapping[str, Any] | None,
-    ) -> dict[str, Any]:
-        if overrides is None:
-            return {
-                "lock_price_offset": False,
-                "lock_ttl": False,
-                "fixed_type": None,
-                "fixed_price_offset_ticks": None,
-                "fixed_ttl_steps": None,
-            }
-
-        if hasattr(overrides, "dict"):
-            try:
-                overrides = overrides.dict()  # type: ignore[assignment]
-            except TypeError:
-                pass
-
-        data: Mapping[str, Any]
-        if isinstance(overrides, Mapping):
-            data = overrides
-        else:
-            data = {}
-
-        lock_price_offset = bool(data.get("lock_price_offset", False))
-        lock_ttl = bool(data.get("lock_ttl", False))
-
-        fixed_type_raw = data.get("fixed_type", None)
-        fixed_type = None
-        if fixed_type_raw is not None:
-            fixed_type = DictToMultiDiscreteActionWrapper._coerce_action_type(
-                fixed_type_raw
+    def action(self, action: Any) -> np.ndarray:
+        arr = np.asarray(action, dtype=np.float32).reshape(-1)
+        if arr.size != 1:
+            raise ValueError(
+                f"ScoreActionWrapper expects a single scalar action, got shape {arr.shape}"
             )
-
-        fixed_price_offset_raw = data.get("fixed_price_offset_ticks", None)
-        fixed_price_offset_ticks = None
-        if fixed_price_offset_raw is not None:
-            if isinstance(fixed_price_offset_raw, bool):
-                raise ValueError(
-                    "fixed_price_offset_ticks expects an integer, got boolean"
-                )
-            try:
-                fixed_price_offset_ticks = int(fixed_price_offset_raw)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"Unsupported fixed_price_offset_ticks value: {fixed_price_offset_raw!r}"
-                ) from exc
-            fixed_price_offset_ticks = int(np.clip(fixed_price_offset_ticks, 0, 200))
-
-        fixed_ttl_raw = data.get("fixed_ttl_steps", None)
-        fixed_ttl_steps = None
-        if fixed_ttl_raw is not None:
-            if isinstance(fixed_ttl_raw, bool):
-                raise ValueError("fixed_ttl_steps expects an integer, got boolean")
-            try:
-                fixed_ttl_steps = int(fixed_ttl_raw)
-            except (TypeError, ValueError) as exc:
-                raise ValueError(
-                    f"Unsupported fixed_ttl_steps value: {fixed_ttl_raw!r}"
-                ) from exc
-            fixed_ttl_steps = int(np.clip(fixed_ttl_steps, 0, 32))
-
-        return {
-            "lock_price_offset": lock_price_offset,
-            "lock_ttl": lock_ttl,
-            "fixed_type": fixed_type,
-            "fixed_price_offset_ticks": fixed_price_offset_ticks,
-            "fixed_ttl_steps": fixed_ttl_steps,
-        }
-
-    @staticmethod
-    def _coerce_action_type(value: Any) -> int | None:
-        if value is None:
-            return None
-        if isinstance(value, ActionType):
-            member = value
-            return int(getattr(member, "value", member))
-        if isinstance(value, str):
-            name = value.strip().upper()
-            if not name:
-                return None
-            try:
-                member = ActionType[name]
-            except KeyError as exc:
-                raise ValueError(f"Unknown action type name: {value}") from exc
-            return int(getattr(member, "value", member))
-        try:
-            member = ActionType(int(value))
-        except (ValueError, TypeError) as exc:
-            raise ValueError(f"Unsupported action type value: {value!r}") from exc
-        return int(getattr(member, "value", member))
-
-    def _vol_center(self, idx: int) -> float:
-        idx = int(np.clip(idx, 0, self.bins_vol - 1))
-        return float(VOLUME_LEVELS[idx])
-
-    # Метод ActionWrapper.action(a) преобразует действие ПЕРЕД вызовом env.step(...)
-    def action(self, action):
-        a = np.asarray(action, dtype=np.int64).reshape(-1)
-        if a.size != 4:
-            raise ValueError(f"Expected 4-dim MultiDiscrete action, got shape {a.shape}")
-        price_i, ttl_i, type_i, vol_i = a.tolist()
-
-        # Собираем dict-действие для исходной среды
-        dict_action = {
-            "price_offset_ticks": int(np.clip(price_i, 0, 200)),
-            "ttl_steps":          int(np.clip(ttl_i,   0, 32)),
-            "type":               int(np.clip(type_i,  0, 3)),
-            "volume_frac":        np.array([self._vol_center(vol_i)], dtype=np.float32),
-        }
-        if self._lock_price_offset:
-            dict_action["price_offset_ticks"] = 0
-        if self._fixed_price_offset_ticks is not None:
-            dict_action["price_offset_ticks"] = self._fixed_price_offset_ticks
-        if self._lock_ttl:
-            dict_action["ttl_steps"] = 0
-        if self._fixed_ttl_steps is not None:
-            dict_action["ttl_steps"] = self._fixed_ttl_steps
-        if self._fixed_type is not None:
-            dict_action["type"] = self._fixed_type
-        return dict_action
+        score = float(arr[0])
+        if not np.isfinite(score):
+            raise ValueError(f"Received non-finite score action: {score}")
+        clipped = np.clip(score, SCORE_LOW, SCORE_HIGH)
+        return np.asarray([clipped], dtype=np.float32)
 
 
 class LongOnlyActionWrapper(ActionWrapper):
-    """Clamp outgoing ``volume_frac`` values to keep the policy long-only."""
+    """Clamp outgoing ``score`` actions to keep the policy long-only."""
 
-    def __init__(self, env: Any):
+    def __init__(self, env: Any) -> None:
         super().__init__(env)
-        # Preserve the underlying spaces so downstream wrappers observe original specs.
         self.action_space = getattr(env, "action_space", None)
         self.observation_space = getattr(env, "observation_space", None)
 
-    @staticmethod
-    def _clamp_volume(value: Any) -> Any:
-        if value is None:
-            return value
-        if isinstance(value, np.ndarray):
-            if value.size == 0:
-                return value
-            clipped = value.copy()
-            np.maximum(clipped, 0.0, out=clipped)
-            return clipped
-        if isinstance(value, (list, tuple)):
-            arr = np.asarray(value, dtype=float)
-            arr = np.maximum(arr, 0.0)
-            if isinstance(value, tuple):
-                return tuple(arr.tolist())
-            return arr.tolist()
-        try:
-            scalar = float(value)
-        except (TypeError, ValueError):
-            return value
-        clipped = max(0.0, scalar)
-        try:
-            return type(value)(clipped)
-        except Exception:
-            return clipped
-
-    def action(self, action):
-        if isinstance(action, ActionProto):
-            vol = float(action.volume_frac)
-            if vol < 0.0:
-                if is_dataclass(action):
-                    return replace(action, volume_frac=0.0)
-                cloned = copy.copy(action)
-                cloned.volume_frac = 0.0
-                return cloned
+    def action(self, action: Any) -> Any:
+        if action is None:
             return action
-        if isinstance(action, Mapping):
-            payload = action.copy() if hasattr(action, "copy") else dict(action)
-            vol = payload.get("volume_frac")
-            payload["volume_frac"] = self._clamp_volume(vol)
-            return payload
-        return action
+        if isinstance(action, np.ndarray):
+            if action.size == 0:
+                return action
+            clipped = np.clip(action.astype(np.float32, copy=False), SCORE_LOW, SCORE_HIGH)
+            return clipped
+        if isinstance(action, (list, tuple)):
+            arr = np.asarray(action, dtype=np.float32)
+            return np.clip(arr, SCORE_LOW, SCORE_HIGH)
+        if isinstance(action, ActionProto):
+            clipped = float(np.clip(action.volume_frac, SCORE_LOW, SCORE_HIGH))
+            if clipped == action.volume_frac:
+                return action
+            return replace(action, volume_frac=clipped)
+        try:
+            value = float(action)
+        except (TypeError, ValueError):
+            return action
+        if not np.isfinite(value):
+            raise ValueError(f"Non-finite long-only score: {value}")
+        return float(np.clip(value, SCORE_LOW, SCORE_HIGH))
 
-
-__all__ = [
-    "DictToMultiDiscreteActionWrapper",
-    "LongOnlyActionWrapper",
-    "VOLUME_LEVELS",
-]

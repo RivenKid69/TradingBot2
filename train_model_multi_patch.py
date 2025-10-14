@@ -329,10 +329,7 @@ torch.backends.cudnn.benchmark = True
 
 from trading_patchnew import TradingEnv, DecisionTiming
 from gymnasium import spaces
-from wrappers.action_space import (
-    DictToMultiDiscreteActionWrapper,
-    LongOnlyActionWrapper,
-)
+from wrappers.action_space import LongOnlyActionWrapper, ScoreActionWrapper
 from custom_policy_patch1 import CustomActorCriticPolicy
 from fetch_all_data_patch import load_all_data
 # --- ИЗМЕНЕНИЕ: Импортируем быструю Cython-функцию оценки ---
@@ -354,20 +351,13 @@ def _file_sha256(path: str | None) -> str | None:
         return None
 
 
-EXPECTED_VOLUME_BINS = 4
-
-
 def _wrap_action_space_if_needed(
     env,
-    bins_vol: int = EXPECTED_VOLUME_BINS,
     *,
     action_overrides: dict[str, object] | None = None,
     long_only: bool = False,
 ):
-    """
-    If env.action_space is Dict with expected keys, wrap it into MultiDiscrete.
-    Otherwise return as is.
-    """
+    """Ensure the environment exposes a score-based Box(1) action space."""
 
     global _ACTION_WRAPPER_CONFIG_LOGGED
     if not _ACTION_WRAPPER_CONFIG_LOGGED:
@@ -375,8 +365,7 @@ def _wrap_action_space_if_needed(
         if isinstance(action_overrides, Mapping):
             max_asset_weight = action_overrides.get("max_asset_weight")
         logger.info(
-            "[action wrapper] volume_bins=%s, long_only=%s, max_asset_weight=%s",
-            bins_vol,
+            "[action wrapper] long_only=%s, max_asset_weight=%s",
             long_only,
             max_asset_weight,
         )
@@ -391,18 +380,14 @@ def _wrap_action_space_if_needed(
     try:
         if long_only:
             wrapped_env = LongOnlyActionWrapper(wrapped_env)
-        if isinstance(wrapped_env.action_space, spaces.Dict):
-            keys = set(getattr(wrapped_env.action_space, "spaces", {}).keys())
-            expected = {"price_offset_ticks", "ttl_steps", "type", "volume_frac"}
-            if expected.issubset(keys):
-                return DictToMultiDiscreteActionWrapper(
-                    wrapped_env,
-                    bins_vol=bins_vol,
-                    action_overrides=action_overrides,
-                )
+        action_space = getattr(wrapped_env, "action_space", None)
+        if not isinstance(action_space, spaces.Box) or tuple(action_space.shape) != (1,):
+            wrapped_env = ScoreActionWrapper(wrapped_env)
     except Exception:
-        # If anything goes wrong, fail open (no wrapping)
         return wrapped_env
+    final_space = getattr(wrapped_env, "action_space", None)
+    if not isinstance(final_space, spaces.Box) or tuple(final_space.shape) != (1,):
+        raise RuntimeError("Score action space wrapper failed to enforce Box(1)")
     return wrapped_env
 
 
@@ -1230,36 +1215,6 @@ def objective(trial: optuna.Trial,
             nonlocal long_only_flag
             if not payload:
                 return
-            if "lock_price_offset" in payload:
-                overrides["lock_price_offset"] = _coerce_bool(
-                    payload.get("lock_price_offset")
-                )
-            if "lock_ttl" in payload:
-                overrides["lock_ttl"] = _coerce_bool(payload.get("lock_ttl"))
-            if "fixed_type" in payload:
-                overrides["fixed_type"] = payload.get("fixed_type")
-            if "fixed_price_offset_ticks" in payload and payload.get("fixed_price_offset_ticks") is not None:
-                value = payload.get("fixed_price_offset_ticks")
-                if isinstance(value, bool):
-                    raise ValueError(
-                        "fixed_price_offset_ticks expects an integer, got boolean"
-                    )
-                try:
-                    overrides["fixed_price_offset_ticks"] = int(value)
-                except (TypeError, ValueError) as exc:
-                    raise ValueError(
-                        f"Invalid fixed_price_offset_ticks value: {value!r}"
-                    ) from exc
-            if "fixed_ttl_steps" in payload and payload.get("fixed_ttl_steps") is not None:
-                value = payload.get("fixed_ttl_steps")
-                if isinstance(value, bool):
-                    raise ValueError(
-                        "fixed_ttl_steps expects an integer, got boolean"
-                    )
-                try:
-                    overrides["fixed_ttl_steps"] = int(value)
-                except (TypeError, ValueError) as exc:
-                    raise ValueError(f"Invalid fixed_ttl_steps value: {value!r}") from exc
             if "long_only" in payload:
                 long_only_flag = _coerce_bool(payload.get("long_only"))
             if "max_asset_weight" in payload and payload.get("max_asset_weight") is not None:
@@ -1277,6 +1232,17 @@ def objective(trial: optuna.Trial,
         return overrides, long_only_flag
 
     action_overrides, long_only_flag = _extract_action_overrides_from_cfg(cfg)
+
+    market_name = str(getattr(cfg, "market", "spot") or "spot").strip().lower()
+    if market_name != "spot":
+        raise RuntimeError(
+            "Score-based training supports only spot market configurations (derivatives disabled)"
+        )
+
+    if not long_only_flag:
+        raise RuntimeError(
+            "Score-based policy requires cfg.algo.actions.long_only = true"
+        )
 
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
@@ -2221,8 +2187,12 @@ def objective(trial: optuna.Trial,
         execution_blob = getattr(cfg, "__dict__", {}).get("execution")
         if isinstance(execution_blob, Mapping):
             execution_mode = execution_blob.get("mode")
-    if isinstance(execution_mode, str) and execution_mode.strip():
-        policy_arch_params["execution_mode"] = execution_mode.strip().lower()
+    normalized_exec_mode = str(execution_mode or "").strip().lower()
+    if normalized_exec_mode != "bar":
+        raise RuntimeError(
+            "Score-based policy requires execution.mode='bar' in configuration"
+        )
+    policy_arch_params["execution_mode"] = normalized_exec_mode
 
     if not train_data_by_token: raise ValueError("Нет данных для обучения в этом trial.")
 
@@ -3062,31 +3032,6 @@ def main():
     env_runtime_overrides, decision_override = _extract_env_runtime_overrides(
         env_payload_candidate
     )
-
-    bins_vol = EXPECTED_VOLUME_BINS
-    try:
-        maybe = None
-        algo_cfg = getattr(cfg, "algo", None)
-        if algo_cfg is not None and hasattr(algo_cfg, "action_wrapper"):
-            aw = algo_cfg.action_wrapper
-            maybe = getattr(aw, "bins_vol", None)
-            if maybe is None and hasattr(aw, "__dict__"):
-                maybe = aw.__dict__.get("bins_vol")
-        if maybe is None and hasattr(cfg, "__dict__"):
-            maybe = (cfg.__dict__.get("algo", {}) or {}).get("action_wrapper", {}).get("bins_vol")
-        if maybe is not None:
-            bins_vol = int(maybe)
-    except Exception:
-        bins_vol = EXPECTED_VOLUME_BINS
-    try:
-        if int(bins_vol) != EXPECTED_VOLUME_BINS:
-            raise ValueError(
-                "BAR volume head requires exactly "
-                f"{EXPECTED_VOLUME_BINS} bins (config requested {bins_vol})."
-            )
-        bins_vol = EXPECTED_VOLUME_BINS
-    except Exception as exc:
-        raise ValueError("Failed to resolve volume bins for training") from exc
 
     timing_defaults, timing_profiles = load_timing_profiles()
     exec_profile = getattr(cfg, "execution_profile", ExecutionProfile.MKT_OPEN_NEXT_H1)

@@ -26,9 +26,7 @@ from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import Schedule  # тип коллбэка lr_schedule
 from stable_baselines3.common.utils import zip_strict
 
-from action_proto import ActionType
 from utils.model_io import upgrade_quantile_value_state_dict
-from wrappers.action_space import VOLUME_LEVELS
 
 
 class QuantileValueHead(nn.Module):
@@ -140,8 +138,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         # класса создаст LSTM размером по умолчанию (256), а дальнейшие головы,
         # построенные на «hidden_dim», начнут конфликтовать по размерностям.
         kwargs = dict(kwargs)
-        exec_mode_override = kwargs.pop("execution_mode", None)
-        include_heads_override = kwargs.pop("include_heads", None)
+        kwargs.pop("execution_mode", None)
+        kwargs.pop("include_heads", None)
         kwargs.setdefault("lstm_hidden_size", hidden_dim)
         enable_critic_lstm = arch_params.get("enable_critic_lstm")
         if enable_critic_lstm is not None:
@@ -151,86 +149,27 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if optimizer_class is None:
             optimizer_class = torch.optim.Adam
 
-        # super().__init__ вызывает _build, поэтому заранее сохраняем размерность действия
-        if isinstance(action_space, spaces.Box):
-            self.action_dim = int(np.prod(action_space.shape))
-            self._multi_discrete_nvec: Optional[np.ndarray] = None
-        elif isinstance(action_space, spaces.Discrete):
-            self.action_dim = action_space.n
-            self._multi_discrete_nvec = None
-        elif isinstance(action_space, spaces.MultiDiscrete):
-            # MultiDiscrete actions are modeled via a MultiCategorical distribution
-            # whose logits are concatenated for every sub-action.
-            self._multi_discrete_nvec = action_space.nvec.astype(np.int64)
-            self.action_dim = int(self._multi_discrete_nvec.sum())
-            if self._multi_discrete_nvec.size == 4:
-                self._multi_discrete_head_names: Tuple[str, ...] = (
-                    "price_offset_ticks",
-                    "ttl_steps",
-                    "type",
-                    "volume_frac",
-                )
-            else:
-                self._multi_discrete_head_names = tuple(
-                    f"head_{i}" for i in range(int(self._multi_discrete_nvec.size))
-                )
-            self._multi_head_sizes: Tuple[int, ...] = tuple(
-                int(x) for x in self._multi_discrete_nvec.tolist()
-            )
-            name_to_idx = {name: idx for idx, name in enumerate(self._multi_discrete_head_names)}
-            self._price_head_index: Optional[int] = name_to_idx.get("price_offset_ticks")
-            self._ttl_head_index: Optional[int] = name_to_idx.get("ttl_steps")
-            self._type_head_index: Optional[int] = name_to_idx.get("type")
-            self._volume_head_index: Optional[int] = name_to_idx.get("volume_frac")
-        else:
+        if not isinstance(action_space, spaces.Box):
             raise NotImplementedError(
-                f"Action space {type(action_space)} is not supported by CustomActorCriticPolicy"
+                f"Score policy requires Box action space, got {type(action_space)!r}"
             )
-
-        if not hasattr(self, "_multi_head_sizes"):
-            self._multi_head_sizes = tuple()
-        if not hasattr(self, "_price_head_index"):
-            self._price_head_index = None
-        if not hasattr(self, "_ttl_head_index"):
-            self._ttl_head_index = None
-        if not hasattr(self, "_type_head_index"):
-            self._type_head_index = None
-        if not hasattr(self, "_volume_head_index"):
-            self._volume_head_index = None
-
-        self._expected_volume_bins = len(VOLUME_LEVELS)
-        if (
-            self._volume_head_index is not None
-            and self._multi_head_sizes
-            and int(self._multi_head_sizes[self._volume_head_index]) != self._expected_volume_bins
-        ):
+        if int(np.prod(action_space.shape)) != 1:
             raise ValueError(
-                "Volume head configuration mismatch:"
-                f" expected {self._expected_volume_bins} bins, got"
-                f" {self._multi_head_sizes[self._volume_head_index]}"
+                "Score policy expects a single-dimensional Box action space"
             )
+        self.action_dim = 1
+        self._multi_discrete_nvec = None
+        self._multi_head_sizes: Tuple[int, ...] = tuple()
+        self._price_head_index = None
+        self._ttl_head_index = None
+        self._type_head_index = None
+        self._volume_head_index = None
 
-        try:
-            self._bar_market_type_index = int(ActionType.MARKET)
-        except Exception:
-            self._bar_market_type_index = 0
-        self._bar_fixed_price_offset: int = 0
-        self._bar_fixed_ttl: int = 0
-        self._active_heads_logged: bool = False
+        self._active_heads_logged = False
         self._include_heads_bool: Optional[Dict[str, bool]] = None
-        self._execution_mode = self._coerce_execution_mode(
-            arch_params.get("execution_mode") if arch_params else None
-        )
-        if exec_mode_override is not None and not self._execution_mode:
-            self._execution_mode = self._coerce_execution_mode(exec_mode_override)
-        include_heads_cfg = arch_params.get("include_heads") if arch_params else None
-        if isinstance(include_heads_cfg, Mapping) and not include_heads_cfg:
-            include_heads_cfg = None
-        self._register_active_heads(include_heads_cfg)
-        if include_heads_override is not None:
-            self._register_active_heads(include_heads_override)
-
+        self._execution_mode = "score"
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
+        self._score_clip_eps: float = 1e-6
 
         act_str = arch_params.get('activation', 'relu').lower()
         if act_str == 'relu':
@@ -340,6 +279,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             **kwargs,
         )
 
+        self.squash_output = False
+
         # После инициализации базовый класс знает фактическую размерность скрытого
         # состояния (self.lstm_output_dim). Синхронизируем её с кастомным полем,
         # чтобы избежать расхождений при создании голов актёра и критика.
@@ -360,6 +301,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         if isinstance(self.action_space, spaces.Box):
             self.unconstrained_log_std = nn.Parameter(torch.zeros(self.action_dim))
+            param = getattr(self, "unconstrained_log_std", None)
+            assert isinstance(param, torch.nn.Parameter), "missing unconstrained_log_std parameter"
+            assert tuple(param.shape) == (self.action_dim,), \
+                f"bad log_std shape {tuple(param.shape)} != ({self.action_dim},)"
 
         def _zeros_for(module: Optional[nn.Module]) -> Tuple[torch.Tensor, ...]:
             zeros = torch.zeros(self.lstm_hidden_state_shape, device=self.device)
@@ -499,14 +444,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 )
 
     def _is_bar_execution_mode(self) -> bool:
-        return self._execution_mode == "bar" and self._volume_head_index is not None
-
-    def _extract_volume_logits(self, action_logits: torch.Tensor) -> torch.Tensor:
-        if self._volume_head_index is None or not self._multi_head_sizes:
-            raise RuntimeError("Volume head is not configured for BAR execution mode")
-        start = int(sum(self._multi_head_sizes[: self._volume_head_index]))
-        end = start + int(self._multi_head_sizes[self._volume_head_index])
-        return action_logits[..., start:end]
+        return False
 
     def _volume_actions_from_tensor(self, actions: torch.Tensor) -> torch.Tensor:
         if actions.ndim == 1:
@@ -517,60 +455,6 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if idx is None:
             idx = actions.shape[-1] - 1
         return actions[:, idx].to(dtype=torch.long)
-
-    def _volume_categorical(
-        self, distribution: torch.distributions.Distribution
-    ) -> torch.distributions.Categorical:
-        if isinstance(distribution, _CategoricalAdapter):
-            inner = getattr(distribution, "distribution", None) or getattr(
-                distribution, "_dist", None
-            )
-            if inner is None:
-                raise RuntimeError(
-                    "Categorical adapter does not expose an underlying distribution"
-                )
-            logits = getattr(inner, "logits", None)
-            if logits is None:
-                raise RuntimeError("Categorical adapter lacks logits attribute")
-            return torch.distributions.Categorical(logits=logits)
-
-        comps = self._iter_multi_heads(distribution)
-        if comps is None:
-            raise RuntimeError("Distribution does not expose multi-head components")
-        if not comps:
-            raise RuntimeError("Empty multi-head distribution components")
-        idx = self._volume_head_index
-        if idx is None or idx >= len(comps):
-            idx = len(comps) - 1
-        categorical = comps[idx]
-        logits = getattr(categorical, "logits", None)
-        if logits is None:
-            raise RuntimeError("Volume categorical component lacks logits")
-        return torch.distributions.Categorical(logits=logits)
-
-    def _bar_action_distribution(self, latent_pi: torch.Tensor) -> _CategoricalAdapter:
-        action_logits = self.action_net(latent_pi)
-        volume_logits = self._extract_volume_logits(action_logits)
-        return _CategoricalAdapter(volume_logits)
-
-    def _assemble_bar_actions(self, volume_actions: torch.Tensor) -> torch.Tensor:
-        if not self._multi_head_sizes:
-            return volume_actions.unsqueeze(-1)
-
-        batch_size = volume_actions.shape[0]
-        num_heads = len(self._multi_head_sizes)
-        actions = torch.zeros(
-            (batch_size, num_heads), device=volume_actions.device, dtype=torch.long
-        )
-        if self._price_head_index is not None:
-            actions[:, self._price_head_index] = self._bar_fixed_price_offset
-        if self._ttl_head_index is not None:
-            actions[:, self._ttl_head_index] = self._bar_fixed_ttl
-        if self._type_head_index is not None:
-            actions[:, self._type_head_index] = self._bar_market_type_index
-        if self._volume_head_index is not None:
-            actions[:, self._volume_head_index] = volume_actions.to(dtype=torch.long)
-        return actions
 
     @torch.no_grad()
     def update_atoms(self, v_min: float, v_max: float) -> None:
@@ -909,25 +793,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         return self._forward_recurrent(features, lstm_states, episode_starts)
 
     def _get_action_dist_from_latent(self, latent_pi: torch.Tensor):
-        if self._is_bar_execution_mode():
-            return self._bar_action_distribution(latent_pi)
-        if isinstance(self.action_space, spaces.Box):
-            mean_actions = self.action_net(latent_pi)
-            # Smoothly map the unconstrained parameter into the range [-5, 0]
-            # torch.tanh returns [-1, 1]; rescale and shift it accordingly.
-            log_std = -2.5 + 2.5 * torch.tanh(self.unconstrained_log_std)
-            return self.action_dist.proba_distribution(mean_actions, log_std)
-        elif isinstance(self.action_space, spaces.Discrete):
-            action_logits = self.action_net(latent_pi)
-            return self.action_dist.proba_distribution(action_logits)
-        elif isinstance(self.action_space, spaces.MultiDiscrete):
-            action_logits = self.action_net(latent_pi)
-            # The underlying MultiCategorical distribution expects a concatenated
-            # logits tensor of shape [batch_size, sum(nvec)]. The policy head
-            # already produces the required dimensionality.
-            return self.action_dist.proba_distribution(action_logits)
-        else:
-            raise NotImplementedError(f"Action space {type(self.action_space)} not supported")
+        mean_actions = self.action_net(latent_pi)
+        log_std = -2.5 + 2.5 * torch.tanh(self.unconstrained_log_std)
+        return self.action_dist.proba_distribution(mean_actions, log_std)
 
     def _get_value_logits(self, latent_vf: torch.Tensor) -> torch.Tensor:
         """Возвращает логиты распределения/квантили ценностей без агрегации."""
@@ -1038,33 +906,59 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             comps = getattr(inner, "distributions", None)
         return comps if isinstance(comps, (list, tuple)) and len(comps) > 0 else None
 
+    def _prepare_score_tensor(self, actions: Any, device: torch.device) -> torch.Tensor:
+        tensor = torch.as_tensor(actions, dtype=torch.float32, device=device)
+        if tensor.ndim == 0:
+            tensor = tensor.view(1, 1)
+        elif tensor.ndim == 1:
+            tensor = tensor.view(-1, 1)
+        return tensor
+
+    def _score_to_raw(self, scores: torch.Tensor) -> torch.Tensor:
+        clipped = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
+        return torch.log(clipped) - torch.log1p(-clipped)
+
+    def _log_sigmoid_jacobian(self, scores: torch.Tensor) -> torch.Tensor:
+        clipped = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
+        return torch.log(clipped) + torch.log1p(-clipped)
+
     def _weighted_log_prob(
         self, distribution: torch.distributions.Distribution, actions: torch.Tensor
     ) -> torch.Tensor:
-        if self._multi_discrete_nvec is None:
-            return distribution.log_prob(actions)
+        if isinstance(self.action_space, spaces.Box):
+            scores = self._prepare_score_tensor(actions, self.device)
+            if not torch.isfinite(scores).all():
+                raise RuntimeError("Received non-finite score when computing log_prob")
+            raw_actions = self._score_to_raw(scores)
+            log_prob_raw = distribution.log_prob(raw_actions)
+            log_det = torch.sum(self._log_sigmoid_jacobian(scores), dim=-1)
+            return log_prob_raw - log_det
 
-        try:
-            categorical = self._volume_categorical(distribution)
-        except RuntimeError:
-            return distribution.log_prob(actions)
-
-        actions_tensor = torch.as_tensor(actions, device=categorical.logits.device)
-        volume_actions = self._volume_actions_from_tensor(actions_tensor)
-        return categorical.log_prob(volume_actions)
+        return distribution.log_prob(actions)
 
     def weighted_entropy(
         self, distribution: torch.distributions.Distribution
     ) -> torch.Tensor:
-        if self._multi_discrete_nvec is None:
-            return distribution.entropy()
+        entropy = distribution.entropy()
+        if entropy.ndim > 1:
+            entropy = entropy.sum(dim=-1)
 
-        try:
-            categorical = self._volume_categorical(distribution)
-        except RuntimeError:
-            return distribution.entropy()
+        inner = getattr(distribution, "distribution", None)
+        if inner is None:
+            mean = getattr(distribution, "mean_actions", None)
+            get_std = getattr(distribution, "get_std", None)
+            if mean is not None and callable(get_std):
+                std = get_std()
+                inner = torch.distributions.Normal(mean, std)
 
-        return categorical.entropy()
+        if inner is None:
+            return entropy
+
+        raw = inner.rsample()
+        scores = torch.sigmoid(raw)
+        scores = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
+        log_jac = torch.log(scores) + torch.log1p(-scores)
+        return entropy + log_jac.sum(dim=-1)
 
     @property
     def last_value_logits(self) -> Optional[torch.Tensor]:
@@ -1102,21 +996,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         values = self._get_value_from_latent(latent_vf)
 
-        if self._is_bar_execution_mode():
-            distribution = self._bar_action_distribution(latent_pi)
-            if deterministic:
-                volume_actions = torch.argmax(distribution.logits, dim=-1)
-            else:
-                volume_actions = distribution.sample()
-            volume_actions = volume_actions.to(dtype=torch.long)
-            log_prob = distribution.log_prob(volume_actions)
-            actions = self._assemble_bar_actions(volume_actions)
-        else:
-            distribution = self._get_action_dist_from_latent(latent_pi)
-            actions = distribution.get_actions(deterministic=deterministic)
-            log_prob = self._weighted_log_prob(distribution, actions)
-
-        return actions, values, log_prob, new_states
+        distribution = self._get_action_dist_from_latent(latent_pi)
+        raw_actions = distribution.get_actions(deterministic=deterministic)
+        scores = torch.sigmoid(raw_actions)
+        scores = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
+        if not torch.isfinite(scores).all():
+            raise RuntimeError("Policy produced non-finite score action")
+        log_prob = self._weighted_log_prob(distribution, scores)
+        return scores, values, log_prob, new_states
 
     def _predict(
         self,
@@ -1125,21 +1012,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         episode_starts: torch.Tensor,
         deterministic: bool = False,
     ) -> Tuple[torch.Tensor, RNNStates]:
-        """
-        В BAR-режиме базовый SB3 _predict вернёт скаляр (volume),
-        что ломает MultiDiscrete враппер. Делаем предсказание
-        через наш forward(), где экшен уже собран в (B, 4).
-        """
+        """Route predictions through ``forward`` to obtain sigmoid-clipped scores."""
         actions, _, _, new_states = self.forward(
             observation, lstm_states, episode_starts, deterministic=deterministic
         )
-        # страхуем dtype/форму для MultiDiscrete
-        if isinstance(self.action_space, spaces.MultiDiscrete):
-            actions = actions.to(dtype=torch.long)
-            if actions.ndim == 1:
-                # на всякий случай, если где-то вернулся (B,)
-                num_heads = len(self._multi_head_sizes) if self._multi_head_sizes else 4
-                actions = actions.view(-1, num_heads)
         return actions, new_states
 
     def predict(
@@ -1210,7 +1086,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             else:
                 states_out = tuple(state.detach().cpu().numpy() for state in new_states)
 
-            actions = actions_tensor.detach().cpu().numpy()
+            actions = actions_tensor
+            if isinstance(actions, torch.Tensor):
+                actions = actions.detach().cpu().numpy()
 
             if isinstance(self.action_space, spaces.Box):
                 if self.squash_output:
@@ -1243,24 +1121,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         values = self._get_value_from_latent(latent_vf)
 
-        if self._is_bar_execution_mode():
-            distribution = self._bar_action_distribution(latent_pi)
-            actions_tensor = torch.as_tensor(
-                actions, device=distribution.logits.device
-            )
-            num_heads = len(self._multi_head_sizes) if self._multi_head_sizes else 1
-            if actions_tensor.ndim == 1:
-                actions_tensor = actions_tensor.view(-1, num_heads)
-            elif actions_tensor.ndim > 2:
-                actions_tensor = actions_tensor.reshape(actions_tensor.shape[0], num_heads)
-            volume_actions = actions_tensor[:, self._volume_head_index]  # type: ignore[index]
-            volume_actions = volume_actions.to(dtype=torch.long)
-            log_prob = distribution.log_prob(volume_actions)
-            entropy = distribution.entropy()
-        else:
-            distribution = self._get_action_dist_from_latent(latent_pi)
-            log_prob = self._weighted_log_prob(distribution, actions)
-            entropy = self.weighted_entropy(distribution)
+        distribution = self._get_action_dist_from_latent(latent_pi)
+        log_prob = self._weighted_log_prob(distribution, actions)
+        entropy = self.weighted_entropy(distribution)
 
         return values, log_prob, entropy
 
@@ -1318,4 +1181,24 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 num_quantiles=int(self.num_quantiles),
                 fallback_prefixes=("value_net", "dist_head"),
             )
-        return super().load_state_dict(state_dict, strict=strict)
+        filtered_state = dict(state_dict)
+        removed_action_keys: list[str] = []
+        need_relax = False
+        if "unconstrained_log_std" not in state_dict:
+            need_relax = True
+        action_head = getattr(self, "action_net", None)
+        if isinstance(action_head, nn.Linear):
+            weight_key = "action_net.weight"
+            bias_key = "action_net.bias"
+            expected_weight_shape = tuple(action_head.weight.shape)
+            expected_bias_shape = tuple(action_head.bias.shape)
+            if weight_key in filtered_state and tuple(filtered_state[weight_key].shape) != expected_weight_shape:
+                removed_action_keys.append(weight_key)
+                filtered_state.pop(weight_key, None)
+            if bias_key in filtered_state and tuple(filtered_state[bias_key].shape) != expected_bias_shape:
+                removed_action_keys.append(bias_key)
+                filtered_state.pop(bias_key, None)
+        if removed_action_keys:
+            need_relax = True
+        load_strict = strict and not need_relax
+        return super().load_state_dict(filtered_state, strict=load_strict)
