@@ -1555,6 +1555,9 @@ def objective(trial: optuna.Trial,
     kl_lr_scale_min_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "kl_lr_scale_min"), "kl_lr_scale_min"
     )
+    kl_penalty_beta_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_penalty_beta"), "kl_penalty_beta"
+    )
 
     trade_frequency_penalty_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "trade_frequency_penalty"),
@@ -1578,18 +1581,17 @@ def objective(trial: optuna.Trial,
     )
 
     if target_kl_cfg is None:
-        clip_reference = clip_range_cfg if clip_range_cfg is not None else 0.1
-        fallback_target_kl = float(np.clip(float(clip_reference), 0.02, 1.6))
+        fallback_target_kl = 0.03
         print(
             "Warning: cfg.model.params.target_kl is missing; "
-            f"defaulting to {fallback_target_kl:.4f} derived from clip_range."
+            f"defaulting to {fallback_target_kl:.4f}."
         )
         target_kl_cfg = fallback_target_kl
     if kl_early_stop_cfg is None:
         print(
-            "Warning: cfg.model.params.kl_early_stop is missing; defaulting to False"
+            "Warning: cfg.model.params.kl_early_stop is missing; defaulting to True"
         )
-        kl_early_stop_cfg = False
+        kl_early_stop_cfg = True
     if turnover_penalty_coef_cfg is None:
         print(
             "Warning: cfg.model.params.turnover_penalty_coef is missing; defaulting to 0.0"
@@ -2043,11 +2045,27 @@ def objective(trial: optuna.Trial,
     if kl_exceed_stop_fraction_cfg is not None:
         kl_exceed_stop_fraction_value = float(np.clip(kl_exceed_stop_fraction_cfg, 0.0, 1.0))
     elif kl_early_stop_cfg:
-        kl_exceed_stop_fraction_value = 0.25
+        kl_exceed_stop_fraction_value = 0.03
     else:
         kl_exceed_stop_fraction_value = 0.0
 
+    params["kl_early_stop"] = bool(kl_early_stop_cfg)
     params["kl_exceed_stop_fraction"] = kl_exceed_stop_fraction_value
+
+    if kl_penalty_beta_cfg is not None:
+        kl_penalty_beta_value = float(max(0.0, kl_penalty_beta_cfg))
+        if not math.isfinite(kl_penalty_beta_value):
+            kl_penalty_beta_value = 0.05
+        params["kl_penalty_beta"] = kl_penalty_beta_value
+
+    params.setdefault("target_kl", 0.03)
+    params.setdefault(
+        "kl_exceed_stop_fraction",
+        0.03 if params.get("kl_early_stop", True) else 0.0,
+    )
+    params.setdefault("kl_early_stop", True)
+    params.setdefault("kl_lr_decay", 0.5)
+    params.setdefault("kl_penalty_beta", 0.05)
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
@@ -2548,7 +2566,15 @@ def objective(trial: optuna.Trial,
     params["kl_epoch_decay"] = kl_epoch_decay_value
 
     kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.5))
-    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 1.0), 0.5)
+    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 1.0), 0.1)
+
+    kl_penalty_beta_value = params.get("kl_penalty_beta", 0.05)
+    if isinstance(kl_penalty_beta_value, bool):
+        kl_penalty_beta_value = 0.05
+    kl_penalty_beta_value = float(kl_penalty_beta_value)
+    if not math.isfinite(kl_penalty_beta_value) or kl_penalty_beta_value < 0.0:
+        kl_penalty_beta_value = 0.05
+    params["kl_penalty_beta"] = kl_penalty_beta_value
 
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
@@ -2667,10 +2693,11 @@ def objective(trial: optuna.Trial,
         cvar_activation_threshold=params["cvar_activation_threshold"],
         cvar_activation_hysteresis=params["cvar_activation_hysteresis"],
         cvar_ramp_updates=int(params["cvar_ramp_updates"]),
-        kl_lr_decay=params["kl_lr_decay"],
+        kl_lr_decay=params.get("kl_lr_decay", 0.5),
         kl_epoch_decay=params["kl_epoch_decay"],
         kl_lr_scale_min=params["kl_lr_scale_min"],
         kl_exceed_stop_fraction=params.get("kl_exceed_stop_fraction"),
+        kl_penalty_beta=params.get("kl_penalty_beta", 0.05),
 
         learning_rate=params["learning_rate"],
         n_steps=params["n_steps"],
@@ -2685,13 +2712,44 @@ def objective(trial: optuna.Trial,
         clip_range_warmup_updates=int(params["clip_range_warmup_updates"]),
         critic_grad_warmup_updates=int(params["critic_grad_warmup_updates"]),
         max_grad_norm=params["max_grad_norm"],
-        target_kl=params["target_kl"],
+        target_kl=params.get("target_kl", 0.03),
         seed=params["seed"],
         loss_head_weights=loss_head_weights,
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
         verbose=1
     )
+
+    kl_lr_decay_logged = getattr(
+        model,
+        "_kl_lr_decay",
+        getattr(model, "kl_lr_decay", params.get("kl_lr_decay", 0.5)),
+    )
+    kl_penalty_beta_logged = getattr(
+        model,
+        "_kl_penalty_beta",
+        params.get("kl_penalty_beta", 0.05),
+    )
+    kl_early_stop_logged = bool(
+        getattr(model, "kl_early_stop", params.get("kl_early_stop", True))
+    )
+    target_kl_logged = getattr(model, "target_kl", params.get("target_kl", 0.03))
+    if target_kl_logged is None:
+        target_kl_logged = params.get("target_kl", 0.03)
+    kl_exceed_stop_fraction_logged = getattr(
+        model,
+        "kl_exceed_stop_fraction",
+        params.get("kl_exceed_stop_fraction", 0.03),
+    )
+    logger = getattr(model, "logger", None) or getattr(model, "_logger", None)
+    if logger is not None:
+        logger.record("config/target_kl", float(target_kl_logged))
+        logger.record(
+            "config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged)
+        )
+        logger.record("config/kl_early_stop", 1.0 if kl_early_stop_logged else 0.0)
+        logger.record("config/kl_lr_decay", float(kl_lr_decay_logged))
+        logger.record("config/kl_penalty_beta", float(kl_penalty_beta_logged))
 
     
 
