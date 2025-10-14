@@ -144,6 +144,9 @@ def create_sequencers(
     if episode_starts_np.shape != env_change_np.shape:
         raise ValueError("'episode_starts' and 'env_change' must share the same shape")
 
+    episode_starts_np = np.squeeze(episode_starts_np)
+    env_change_np = np.squeeze(env_change_np)
+
     if episode_starts_np.ndim != 1:
         raise ValueError("'episode_starts' and 'env_change' must be 1D arrays")
 
