@@ -358,6 +358,7 @@ def _file_sha256(path: str | None) -> str | None:
 def _wrap_action_space_if_needed(
     env,
     *,
+    bins_vol: int | None = None,
     action_overrides: dict[str, object] | None = None,
     long_only: bool = False,
 ):
@@ -368,6 +369,12 @@ def _wrap_action_space_if_needed(
         max_asset_weight = None
         if isinstance(action_overrides, Mapping):
             max_asset_weight = action_overrides.get("max_asset_weight")
+        if bins_vol is not None and bins_vol != EXPECTED_VOLUME_BINS:
+            logger.warning(
+                "Unexpected bins_vol value received: expected %s, got %s",
+                EXPECTED_VOLUME_BINS,
+                bins_vol,
+            )
         logger.info(
             "[action wrapper] long_only=%s, max_asset_weight=%s",
             long_only,
@@ -377,6 +384,8 @@ def _wrap_action_space_if_needed(
 
     try:
         setattr(env, "_signal_long_only", bool(long_only))
+        if bins_vol is not None:
+            setattr(env, "bins_vol", int(bins_vol))
     except Exception:
         pass
 
