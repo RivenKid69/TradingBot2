@@ -3827,28 +3827,22 @@ class DistributionalPPO(RecurrentPPO):
                 post_clip_norm = math.sqrt(post_clip_norm_sq) if post_clip_norm_sq > 0.0 else 0.0
                 self.logger.record("train/grad_norm_post_clip", float(post_clip_norm))
 
-                if hasattr(self, "_kl_lr_scale"):
-                    scale = float(self._kl_lr_scale)
+                # KL-scale не должен ломать внешний шедулер:
+                # - при scale == 1.0 ничего не делаем,
+                # - при scale != 1.0 масштабируем ТЕКУЩИЙ LR из оптимайзера.
+                scale = float(getattr(self, "_kl_lr_scale", 1.0))
+                if scale != 1.0:
                     for group in self.policy.optimizer.param_groups:
-                        base_lr = float(group.get("_kl_base_lr", group.get("lr", 0.0)))
-                        scaled_lr = max(base_lr * scale, self._kl_min_lr)
+                        cur_lr = float(group.get("lr", 0.0))
+                        scaled_lr = max(cur_lr * scale, self._kl_min_lr)
                         group["lr"] = scaled_lr
                         if "initial_lr" in group:
                             group["initial_lr"] = scaled_lr
 
                 self.policy.optimizer.step()
 
-                if len(self.policy.optimizer.param_groups) > 0:
-                    lrs = [float(g["lr"]) for g in self.policy.optimizer.param_groups]
-                    last_optimizer_lr = lrs[0]
-                    self.logger.record("train/optimizer_lr", last_optimizer_lr)
-                    self.logger.record("train/optimizer_lr_min", min(lrs))
-                    self.logger.record("train/optimizer_lr_max", max(lrs))
-
-                # Сначала шаг оптимизатора, затем шедулер.
-                scheduler = getattr(self.policy, "lr_scheduler", None)
-                if scheduler is None:
-                    scheduler = self.lr_scheduler
+                # Шаг шедулера (если он есть) — и только ПОСЛЕ него логируем optimizer_lr
+                scheduler = getattr(self.policy, "lr_scheduler", None) or self.lr_scheduler
                 if scheduler is not None:
                     scheduler.step()
                     get_last_lr = getattr(scheduler, "get_last_lr", None)
@@ -3862,6 +3856,13 @@ class DistributionalPPO(RecurrentPPO):
                             self.logger.record("train/scheduler_lr", last_scheduler_lr)
                     # Освежаем _kl_base_lr для корректного KL-скейла при внешнем шедулере
                     self._refresh_kl_base_lrs()
+
+                # Теперь логируем уже ФАКТИЧЕСКИЙ LR из оптимизатора (после scheduler.step())
+                if len(self.policy.optimizer.param_groups) > 0:
+                    lrs = [float(g["lr"]) for g in self.policy.optimizer.param_groups]
+                    self.logger.record("train/optimizer_lr", lrs[0])
+                    self.logger.record("train/optimizer_lr_min", min(lrs))
+                    self.logger.record("train/optimizer_lr_max", max(lrs))
 
                 optimizer = getattr(self.policy, "optimizer", None)
                 if optimizer is not None:
