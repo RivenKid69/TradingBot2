@@ -17,7 +17,6 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
-from wrappers.action_space import VOLUME_LEVELS
 
 try:
     from stable_baselines3.common.vec_env.vec_normalize import unwrap_vec_normalize as _sb3_unwrap
@@ -310,30 +309,41 @@ class DistributionalPPO(RecurrentPPO):
             iqr_norm = (q75_norm - q25_norm).mean().item()
             self.logger.record("train/value_quantile_iqr_norm", float(iqr_norm))
 
-    def _ensure_volume_head_config(self) -> None:
-        """Validate that policy and environment agree on BAR volume discretisation."""
+    def _ensure_score_action_space(self) -> None:
+        """Validate that policy and environment expose a score-based Box(1) action."""
+
+        def _check_box(space: gym.Space, *, owner: str) -> None:
+            if not isinstance(space, gym.spaces.Box):
+                raise RuntimeError(
+                    f"{owner} action space must be gym.spaces.Box for score actions"
+                )
+            shape = tuple(int(x) for x in getattr(space, "shape", tuple()))
+            if shape != (1,):
+                raise RuntimeError(
+                    f"{owner} action space must have shape (1,), got {shape}"
+                )
+            low = np.asarray(space.low, dtype=np.float32)
+            high = np.asarray(space.high, dtype=np.float32)
+            if np.any(~np.isfinite(low)) or np.any(~np.isfinite(high)):
+                raise RuntimeError(f"{owner} action bounds must be finite")
+            if np.min(low) > 0.0 or np.max(high) < 1.0:
+                raise RuntimeError(
+                    f"{owner} action bounds must cover [0, 1], got [{float(np.min(low))}, {float(np.max(high))}]"
+                )
+
+        action_space = getattr(self, "action_space", None)
+        if action_space is not None:
+            _check_box(action_space, owner="Environment")
 
         policy = getattr(self, "policy", None)
         if policy is not None:
-            head_sizes = getattr(policy, "_multi_head_sizes", None)
-            volume_idx = getattr(policy, "_volume_head_index", None)
-            if isinstance(head_sizes, (list, tuple)) and volume_idx is not None:
-                try:
-                    volume_bins = int(head_sizes[volume_idx])
-                except (TypeError, ValueError):
-                    volume_bins = -1
-                if volume_bins != VOLUME_HEAD_BINS:
-                    raise RuntimeError(
-                        "Loaded policy volume head is incompatible with BAR mode: "
-                        f"expected {VOLUME_HEAD_BINS} bins, got {volume_bins}."
-                    )
-
-        action_space = getattr(self, "action_space", None)
-        if isinstance(action_space, gym.spaces.MultiDiscrete):
-            if int(action_space.nvec[-1]) != VOLUME_HEAD_BINS:
+            policy_space = getattr(policy, "action_space", None)
+            if policy_space is not None:
+                _check_box(policy_space, owner="Policy")
+            action_dim = getattr(policy, "action_dim", None)
+            if action_dim is not None and int(action_dim) != 1:
                 raise RuntimeError(
-                    "Environment MultiDiscrete action space reports "
-                    f"{int(action_space.nvec[-1])} volume bins; expected {VOLUME_HEAD_BINS}."
+                    f"Policy action_dim must be 1 for score actions, got {action_dim}"
                 )
 
     @staticmethod
@@ -1082,7 +1092,6 @@ class DistributionalPPO(RecurrentPPO):
         self._update_calls: int = 0
         self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
-        self._action_nvec_snapshot: Optional[tuple[int, ...]] = None
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
@@ -1463,12 +1472,6 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
-        if isinstance(self.action_space, gym.spaces.MultiDiscrete):
-            nvec_list = self.action_space.nvec.tolist()
-            self._action_nvec_snapshot = tuple(int(x) for x in nvec_list)
-        else:
-            self._action_nvec_snapshot = None
-
         self._use_quantile_value = bool(
             getattr(self.policy, "uses_quantile_value_head", False)
         )
@@ -1476,7 +1479,7 @@ class DistributionalPPO(RecurrentPPO):
             getattr(self.policy, "quantile_huber_kappa", 1.0)
         )
 
-        self._ensure_volume_head_config()
+        self._ensure_score_action_space()
 
         # Stable-Baselines3 lazily initialises the internal logger, but older
         # versions may skip creating ``self._logger`` when ``logger=None`` is
@@ -2093,7 +2096,7 @@ class DistributionalPPO(RecurrentPPO):
             self._last_lstm_states = self._clone_states_to_device(init_states, self.device)
 
         self.policy.set_training_mode(False)
-        self._ensure_volume_head_config()
+        self._ensure_score_action_space()
 
         vec_normalize_env: Optional[VecNormalize] = None
         for candidate_env in (env, getattr(self, "env", None)):
@@ -2383,7 +2386,7 @@ class DistributionalPPO(RecurrentPPO):
         self.policy.set_training_mode(True)
         self._update_learning_rate(self.policy.optimizer)
         self._refresh_kl_base_lrs()
-        self._ensure_volume_head_config()
+        self._ensure_score_action_space()
 
         current_update = self._global_update_step
         # hard-kill any warmup coming from configs/CLI
@@ -2947,12 +2950,8 @@ class DistributionalPPO(RecurrentPPO):
                         kl_penalty_component_total += float(kl_penalty_component.item())
                         kl_penalty_component_count += 1
 
-                    if entropy is None:
-                        entropy_loss = -torch.mean(-log_prob)
-                    else:
-                        entropy_loss = -torch.mean(entropy)
-
-                    with torch.no_grad():
+                    entropy_tensor = entropy
+                    if entropy_tensor is None:
                         actor_states = self._extract_actor_states(rollout_data.lstm_states)
                         dist_output = self.policy.get_distribution(
                             rollout_data.observations,
@@ -2961,13 +2960,9 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         # Some recurrent policies (including custom ones used in
                         # this project) return auxiliary data such as the updated
-                        # RNN states alongside the action distribution.  The
-                        # original implementation assumed that
-                        # ``get_distribution`` always returned the distribution
-                        # instance directly which is not true anymore after the
-                        # recent policy refactor.  When the method returns a
-                        # tuple, the actual distribution object is the first
-                        # element, so we unwrap it here before proceeding.
+                        # RNN states alongside the action distribution. When the
+                        # method returns a tuple, the actual distribution object
+                        # is the first element, so unwrap it before proceeding.
                         if isinstance(dist_output, tuple):
                             dist = dist_output[0]
                         else:
@@ -2977,15 +2972,14 @@ class DistributionalPPO(RecurrentPPO):
                             entropy_tensor = entropy_fn(dist)
                         else:
                             entropy_tensor = dist.entropy()
-                        if entropy_tensor.ndim > 1:
-                            entropy_tensor = entropy_tensor.sum(dim=-1)
-                        entropy_tensor = entropy_tensor.detach().to(dtype=torch.float32)
-                        if torch.any(
-                            entropy_tensor > MAX_VOLUME_ENTROPY + VOLUME_ENTROPY_TOLERANCE
-                        ):
-                            self.logger.record("warn/entropy_exceeds_theory", 1.0)
-                    policy_entropy_sum += float(entropy_tensor.sum().cpu().item())
-                    policy_entropy_count += int(entropy_tensor.numel())
+
+                    if entropy_tensor.ndim > 1:
+                        entropy_tensor = entropy_tensor.sum(dim=-1)
+                    entropy_loss = -torch.mean(entropy_tensor)
+
+                    entropy_detached = entropy_tensor.detach().to(dtype=torch.float32)
+                    policy_entropy_sum += float(entropy_detached.sum().cpu().item())
+                    policy_entropy_count += int(entropy_detached.numel())
 
                     if self._use_quantile_value:
                         value_quantiles = self.policy.last_value_quantiles
@@ -3362,15 +3356,6 @@ class DistributionalPPO(RecurrentPPO):
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
         self.logger.record("train/policy_entropy", float(avg_policy_entropy))
-        if self._action_nvec_snapshot is not None:
-            action_nvec_str = ",".join(str(x) for x in self._action_nvec_snapshot)
-            self.logger.record("train/action_bins_volume", VOLUME_HEAD_BINS)
-            self.logger.record(
-                "train/action_nvec",
-                action_nvec_str,
-                exclude=["tensorboard", "csv"],
-            )
-
         if self._use_quantile_value:
             if value_quantiles_final is None:
                 cached_quantiles = getattr(self.policy, "last_value_quantiles", None)
@@ -3774,9 +3759,6 @@ class DistributionalPPO(RecurrentPPO):
             **kwargs,
         )
         if isinstance(model, DistributionalPPO):
-            model._ensure_volume_head_config()
+            model._ensure_score_action_space()
         return model
-VOLUME_HEAD_BINS = len(VOLUME_LEVELS)
-MAX_VOLUME_ENTROPY = math.log(VOLUME_HEAD_BINS)
-VOLUME_ENTROPY_TOLERANCE = 1e-3
 

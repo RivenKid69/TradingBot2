@@ -79,7 +79,7 @@ if "domain.adapters" not in sys.modules:
 
 
 from trading_patchnew import TradingEnv
-from wrappers.action_space import DictToMultiDiscreteActionWrapper, VOLUME_LEVELS
+from wrappers.action_space import ScoreActionWrapper
 
 
 def make_single_env() -> TradingEnv:
@@ -100,26 +100,9 @@ def make_single_env() -> TradingEnv:
 
 def main() -> None:
     env = make_single_env()
-    if isinstance(env.action_space, spaces.Dict):
-        env = DictToMultiDiscreteActionWrapper(env, bins_vol=len(VOLUME_LEVELS))
-
-    assert isinstance(env.action_space, spaces.MultiDiscrete)
-    assert env.action_space.nvec.tolist() == [201, 33, 4, len(VOLUME_LEVELS)]
-
-    # Ensure discrete volume indices map to the expected fractional levels.
-    for idx, expected in enumerate(VOLUME_LEVELS.tolist()):
-        action = np.array([0, 0, 0, idx], dtype=np.int64)
-        mapped = env.action(action)
-        assert np.isclose(mapped["volume_frac"][0], expected)
-
-    # Ensure out-of-range indices clamp to the nearest valid bin without NaNs.
-    underflow_action = np.array([0, 0, 0, -5], dtype=np.int64)
-    underflow_mapped = env.action(underflow_action)
-    assert np.isclose(underflow_mapped["volume_frac"][0], VOLUME_LEVELS[0])
-
-    overflow_action = np.array([0, 0, 0, len(VOLUME_LEVELS) + 3], dtype=np.int64)
-    overflow_mapped = env.action(overflow_action)
-    assert np.isclose(overflow_mapped["volume_frac"][0], VOLUME_LEVELS[-1])
+    env = ScoreActionWrapper(env)
+    assert isinstance(env.action_space, spaces.Box)
+    assert tuple(env.action_space.shape) == (1,)
 
     obs, info = env.reset()
     action = env.action_space.sample()

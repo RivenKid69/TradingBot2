@@ -1,5 +1,5 @@
 """Utility wrappers for adapting environment interfaces."""
 
-from .action_space import DictToMultiDiscreteActionWrapper, LongOnlyActionWrapper
+from .action_space import LongOnlyActionWrapper, ScoreActionWrapper
 
-__all__ = ["DictToMultiDiscreteActionWrapper", "LongOnlyActionWrapper"]
+__all__ = ["LongOnlyActionWrapper", "ScoreActionWrapper"]

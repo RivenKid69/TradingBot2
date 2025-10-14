@@ -7,7 +7,7 @@ from typing import Dict, Tuple
 import numpy as np
 from gymnasium import spaces
 
-from wrappers.action_space import DictToMultiDiscreteActionWrapper, VOLUME_LEVELS
+from wrappers.action_space import ScoreActionWrapper
 
 
 class _DummyEnv:
@@ -39,25 +39,11 @@ class _DummyEnv:
         return 0, 0.0, False, info
 
 
-def _wrap_action_space_if_needed(
-    env,
-    bins_vol: int = len(VOLUME_LEVELS),
-    *,
-    action_overrides: dict[str, object] | None = None,
-):
+def _wrap_action_space_if_needed(env):
     try:
-        if isinstance(env.action_space, spaces.Dict):
-            keys = set(getattr(env.action_space, "spaces", {}).keys())
-            expected = {"price_offset_ticks", "ttl_steps", "type", "volume_frac"}
-            if expected.issubset(keys):
-                return DictToMultiDiscreteActionWrapper(
-                    env,
-                    bins_vol=bins_vol,
-                    action_overrides=action_overrides,
-                )
+        return ScoreActionWrapper(env)
     except Exception:
         return env
-    return env
 
 
 def _set_regime(env, regime: str, duration: int):

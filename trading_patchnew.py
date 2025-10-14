@@ -5,7 +5,7 @@ except Exception:
     pass
 """
 TradingEnv – Phase 11
-Fully modern pipeline (Dict action‑space). Legacy box/array paths removed.
+Score-based BAR pipeline with Box(1) action space.
 """
 import os
 import json
@@ -528,14 +528,7 @@ class TradingEnv(gym.Env):
         self.bankruptcy_cash_th = bankruptcy_cash_th or -1e12
 
         # spaces
-        self.action_space = spaces.Dict(
-            {
-                "type": spaces.Discrete(4),
-                "price_offset_ticks": spaces.Discrete(201),
-                "volume_frac": spaces.Box(-1.0, 1.0, shape=(1,), dtype=np.float32),
-                "ttl_steps": spaces.Discrete(33),
-            }
-        )
+        self.action_space = spaces.Box(low=0.0, high=1.0, shape=(1,), dtype=np.float32)
         # --- patched: dynamic N_FEATURES shim ---
         try:
             import lob_state_cython as _lob_module  # type: ignore[import-not-found]
@@ -722,14 +715,32 @@ class TradingEnv(gym.Env):
     def _to_proto(self, action) -> ActionProto:
         if isinstance(action, ActionProto):
             return action
-        if isinstance(action, dict):
-            from domain.adapters import gym_to_action_v1, action_v1_to_proto
-            v1 = gym_to_action_v1(action)
-            return action_v1_to_proto(v1)
-        if isinstance(action, np.ndarray):
-            # старые массивы не поддерживаем (используй legacy_bridge.from_legacy_box вручную)
-            raise TypeError("NumPy array actions are no longer supported")
-        raise TypeError("Unsupported action type")
+
+        def _coerce_score(value: Any) -> float:
+            if isinstance(value, ActionProto):
+                return float(value.volume_frac)
+            if isinstance(value, Mapping):
+                if "score" in value:
+                    return _coerce_score(value.get("score"))
+                if "volume_frac" in value:
+                    return _coerce_score(value.get("volume_frac"))
+            if isinstance(value, np.ndarray):
+                if value.size == 0:
+                    raise ValueError("Empty score array received from policy")
+                scalar = float(value.reshape(-1)[0])
+            else:
+                try:
+                    scalar = float(value)
+                except (TypeError, ValueError) as exc:
+                    raise TypeError(f"Unsupported score payload: {value!r}") from exc
+            if not math.isfinite(scalar):
+                raise ValueError(f"Policy produced non-finite score: {scalar}")
+            if scalar < 0.0 or scalar > 1.0:
+                scalar = float(np.clip(scalar, 0.0, 1.0))
+            return scalar
+
+        score = _coerce_score(action)
+        return ActionProto(ActionType.MARKET, volume_frac=score)
 
     def _assert_finite(self, name: str, value: float) -> float:
         if math.isfinite(value):
