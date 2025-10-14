@@ -1399,7 +1399,7 @@ class TradingEnv(gym.Env):
             trade_frequency_penalty = 0.0
 
         if prev_equity_issue:
-            logger.warning(
+            logger.debug(
                 "prev_equity anomaly (raw=%s, floor=%s, step=%s): using safe denominators",
                 prev_equity_raw,
                 self._equity_floor_norm,
