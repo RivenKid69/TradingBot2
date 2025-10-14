@@ -263,6 +263,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._value_head_module: Optional[nn.Module] = None
         self._last_value_logits: Optional[torch.Tensor] = None
         self._last_value_quantiles: Optional[torch.Tensor] = None
+        self._last_raw_actions: Optional[torch.Tensor] = None
         self._critic_gradient_blocked: bool = False
 
         # lr_schedule уже используется базовым классом во время вызова super().__init__.
@@ -923,6 +924,24 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             tensor = tensor.view(-1, 1)
         return tensor
 
+    def _prepare_raw_tensor(self, raw: Any, device: torch.device) -> torch.Tensor:
+        tensor = torch.as_tensor(raw, dtype=torch.float32, device=device)
+        if tensor.ndim == 0:
+            tensor = tensor.view(1, 1)
+        elif tensor.ndim == 1:
+            tensor = tensor.view(-1, 1)
+        return tensor
+
+    def _log_prob_raw_only(
+        self, distribution: torch.distributions.Distribution, raw: torch.Tensor
+    ) -> torch.Tensor:
+        inner = getattr(distribution, "distribution", None)
+        base = inner if inner is not None else distribution
+        log_prob = base.log_prob(raw)
+        if log_prob.ndim == raw.ndim:
+            log_prob = log_prob.sum(dim=-1)
+        return log_prob
+
     def _score_to_raw(self, scores: torch.Tensor) -> torch.Tensor:
         # Fallback для evaluate(): безопасный logit только когда нет raw
         clipped = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
@@ -958,21 +977,24 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self,
         distribution: torch.distributions.Distribution,
         actions: torch.Tensor,
-        raw: torch.Tensor | None = None,
+        raw: torch.Tensor,
     ) -> torch.Tensor:
         if isinstance(self.action_space, spaces.Box):
-            # Если есть реальный raw (из forward), работаем с ним.
-            # В evaluate() raw нет — восстановим через безопасный logit.
-            if raw is None:
-                scores = self._prepare_score_tensor(actions, self.device)
-                if not torch.isfinite(scores).all():
-                    raise RuntimeError("Received non-finite score when computing log_prob")
-                raw = self._score_to_raw(scores)
-            elif not torch.isfinite(raw).all():
+            scores = self._prepare_score_tensor(actions, self.device)
+            if not torch.isfinite(scores).all():
+                raise RuntimeError("Received non-finite score when computing log_prob")
+
+            raw_tensor = self._prepare_raw_tensor(raw, self.device)
+            if not torch.isfinite(raw_tensor).all():
                 raise RuntimeError("Received non-finite raw action when computing log_prob")
-            raw_stable = self._clamp_by_z(distribution, raw, zmax=8.0)
-            log_prob_raw = distribution.log_prob(raw_stable)
-            log_det = self._log_sigmoid_jacobian_from_raw(raw).sum(dim=-1)
+
+            assert (
+                scores.shape == raw_tensor.shape
+            ), "scores/raw shape mismatch"
+            log_prob_raw = self._log_prob_raw_only(distribution, raw_tensor)
+            log_det = self._log_sigmoid_jacobian_from_raw(raw_tensor)
+            if log_det.ndim > 1:
+                log_det = log_det.sum(dim=-1)
             # p_s(s) = p_raw(raw) / σ'(raw)  ⇒  log p_s = log p_raw - log σ'(raw)
             return log_prob_raw - log_det
         return distribution.log_prob(actions)
@@ -980,25 +1002,36 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def weighted_entropy(
         self, distribution: torch.distributions.Distribution
     ) -> torch.Tensor:
-        entropy = distribution.entropy()
-        if entropy.ndim > 1:
-            entropy = entropy.sum(dim=-1)
-
-        inner = getattr(distribution, "distribution", None)
-        if inner is None:
-            mean = getattr(distribution, "mean_actions", None)
-            get_std = getattr(distribution, "get_std", None)
-            if mean is not None and callable(get_std):
-                std = get_std()
-                inner = torch.distributions.Normal(mean, std)
-
-        if inner is None:
+        if not isinstance(self.action_space, spaces.Box):
+            entropy = distribution.entropy()
+            if entropy.ndim > 1:
+                entropy = entropy.sum(dim=-1)
             return entropy
 
-        raw = inner.rsample()
-        # h(s) = h(raw) + E[log |ds/dr|] = h(raw) + E[log σ'(raw)]
-        log_jac = self._log_sigmoid_jacobian_from_raw(raw)
-        return entropy + log_jac.sum(dim=-1)
+        inner = getattr(distribution, "distribution", None) or distribution
+        rsample_fn = getattr(inner, "rsample", None)
+        if not callable(rsample_fn):
+            entropy = distribution.entropy()
+            if entropy.ndim > 1:
+                entropy = entropy.sum(dim=-1)
+            return entropy
+
+        samples = 4
+        entropy_accum: Optional[torch.Tensor] = None
+        for _ in range(samples):
+            raw_sample = rsample_fn()
+            raw_sample = self._clamp_by_z(distribution, raw_sample, zmax=8.0)
+            scores_sample = torch.sigmoid(raw_sample)
+            lp_sample = self._weighted_log_prob(distribution, scores_sample, raw_sample)
+            entropy_accum = lp_sample if entropy_accum is None else entropy_accum + lp_sample
+
+        if entropy_accum is None:
+            raise RuntimeError("Failed to sample raw actions for entropy estimation")
+
+        entropy_estimate = -(entropy_accum / float(samples))
+        if entropy_estimate.ndim > 1:
+            entropy_estimate = entropy_estimate.sum(dim=-1)
+        return entropy_estimate
 
     @property
     def squash_output(self) -> bool:
@@ -1017,6 +1050,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     @property
     def last_value_quantiles(self) -> Optional[torch.Tensor]:
         return self._last_value_quantiles
+
+    @property
+    def last_raw_actions(self) -> Optional[torch.Tensor]:
+        return self._last_raw_actions
 
     @property
     def uses_quantile_value_head(self) -> bool:
@@ -1046,15 +1083,16 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         values = self._get_value_from_latent(latent_vf)
 
+        self._last_raw_actions = None
+
         distribution = self._get_action_dist_from_latent(latent_pi)
         raw_actions = distribution.get_actions(deterministic=deterministic)
-        scores = torch.sigmoid(raw_actions)  # без clamp — работаем с реальным raw
+        raw_stable = self._clamp_by_z(distribution, raw_actions, zmax=8.0)
+        scores = torch.sigmoid(raw_stable)
         if not torch.isfinite(scores).all():
             raise RuntimeError("Policy produced non-finite score action")
-        eps = self._score_clip_eps
-        scores_clipped = torch.clamp(scores, eps, 1.0 - eps)
-        raw_used = torch.log(scores_clipped) - torch.log1p(-scores_clipped)
-        log_prob = self._weighted_log_prob(distribution, scores, raw_used)
+        log_prob = self._weighted_log_prob(distribution, scores, raw_stable)
+        self._last_raw_actions = raw_stable.detach()
         return scores, values, log_prob, new_states
 
     def _predict(
@@ -1159,11 +1197,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self,
         obs: torch.Tensor,
         actions: torch.Tensor,
-        lstm_states: Optional[RNNStates],
-        episode_starts: torch.Tensor,
+        lstm_states: Optional[RNNStates] = None,
+        episode_starts: Optional[torch.Tensor] = None,
+        actions_raw: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if lstm_states is None:
             lstm_states = self.recurrent_initial_state
+        if episode_starts is None:
+            raise TypeError("'episode_starts' must be provided when evaluating actions")
 
         features = self.extract_features(obs)
         latent_pi, latent_vf, _ = self._forward_recurrent(features, lstm_states, episode_starts)
@@ -1175,10 +1216,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         distribution = self._get_action_dist_from_latent(latent_pi)
         scores = self._prepare_score_tensor(actions, self.device)
-        eps = self._score_clip_eps
-        scores_clipped = torch.clamp(scores, eps, 1.0 - eps)
-        raw_used = torch.log(scores_clipped) - torch.log1p(-scores_clipped)
-        log_prob = self._weighted_log_prob(distribution, scores, raw_used)
+        if actions_raw is None:
+            raw_tensor = self._prepare_raw_tensor(self._score_to_raw(scores), self.device)
+            raw_tensor = self._clamp_by_z(distribution, raw_tensor, zmax=8.0)
+        else:
+            raw_tensor = self._prepare_raw_tensor(actions_raw, self.device)
+        log_prob = self._weighted_log_prob(distribution, scores, raw_tensor)
+        if log_prob.ndim == 1:
+            log_prob = log_prob.unsqueeze(-1)
         entropy = self.weighted_entropy(distribution)
 
         return values, log_prob, entropy

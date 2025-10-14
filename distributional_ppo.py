@@ -2,7 +2,7 @@ import itertools
 import math
 from collections import deque
 from collections.abc import Mapping
-from typing import Any, Iterable, Optional, Sequence, Type, Union
+from typing import Any, Generator, Iterable, NamedTuple, Optional, Sequence, Type, Union
 
 import gymnasium as gym
 import numpy as np
@@ -103,8 +103,182 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     return cvar
 
 
+class RawRecurrentRolloutBufferSamples(NamedTuple):
+    observations: torch.Tensor
+    actions: torch.Tensor
+    old_values: torch.Tensor
+    old_log_prob: torch.Tensor
+    advantages: torch.Tensor
+    returns: torch.Tensor
+    lstm_states: RNNStates
+    episode_starts: torch.Tensor
+    mask: torch.Tensor
+    actions_raw: torch.Tensor
+    old_log_prob_raw: torch.Tensor
+
+
+class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
+    def reset(self) -> None:
+        super().reset()
+        self.actions_raw = np.zeros_like(self.actions, dtype=self.actions.dtype)
+        self.old_log_prob_raw = np.zeros_like(self.log_probs, dtype=self.log_probs.dtype)
+
+    @staticmethod
+    def _to_numpy(value: Any) -> np.ndarray:
+        if isinstance(value, torch.Tensor):
+            return value.detach().cpu().numpy()
+        return np.asarray(value)
+
+    def add(
+        self,
+        *args: Any,
+        lstm_states: RNNStates,
+        actions_raw: Any,
+        log_prob_raw: Any,
+        **kwargs: Any,
+    ) -> None:
+        if actions_raw is None or log_prob_raw is None:
+            raise TypeError("'actions_raw' and 'log_prob_raw' must be provided when adding to the rollout buffer")
+
+        super().add(*args, lstm_states=lstm_states, **kwargs)
+
+        pos = (self.pos - 1) % self.buffer_size
+
+        raw_np = self._to_numpy(actions_raw)
+        raw_np = np.reshape(raw_np, self.actions_raw[pos].shape)
+        self.actions_raw[pos] = raw_np.astype(self.actions_raw.dtype, copy=False)
+
+        log_prob_raw_np = self._to_numpy(log_prob_raw)
+        log_prob_raw_np = np.reshape(log_prob_raw_np, self.old_log_prob_raw[pos].shape)
+        self.old_log_prob_raw[pos] = log_prob_raw_np.astype(self.old_log_prob_raw.dtype, copy=False)
+
+    def get(
+        self, batch_size: Optional[int] = None
+    ) -> Generator[RawRecurrentRolloutBufferSamples, None, None]:
+        assert self.full, "Rollout buffer must be full before sampling from it"
+
+        if not self.generator_ready:
+            for tensor in ["hidden_states_pi", "cell_states_pi", "hidden_states_vf", "cell_states_vf"]:
+                self.__dict__[tensor] = self.__dict__[tensor].swapaxes(1, 2)
+
+            for tensor in [
+                "observations",
+                "actions",
+                "values",
+                "log_probs",
+                "advantages",
+                "returns",
+                "hidden_states_pi",
+                "cell_states_pi",
+                "hidden_states_vf",
+                "cell_states_vf",
+                "episode_starts",
+                "actions_raw",
+                "old_log_prob_raw",
+            ]:
+                self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
+            self.generator_ready = True
+
+        if batch_size is None:
+            batch_size = self.buffer_size * self.n_envs
+
+        split_index = np.random.randint(self.buffer_size * self.n_envs)
+        indices = np.arange(self.buffer_size * self.n_envs)
+        indices = np.concatenate((indices[split_index:], indices[:split_index]))
+
+        env_change = np.zeros(self.buffer_size * self.n_envs).reshape(self.buffer_size, self.n_envs)
+        env_change[0, :] = 1.0
+        env_change = self.swap_and_flatten(env_change)
+
+        start_idx = 0
+        while start_idx < self.buffer_size * self.n_envs:
+            batch_inds = indices[start_idx : start_idx + batch_size]
+            yield self._get_samples(batch_inds, env_change)
+            start_idx += batch_size
+
+    def _get_samples(
+        self,
+        batch_inds: np.ndarray,
+        env_change: np.ndarray,
+        env: Optional[VecNormalize] = None,
+    ) -> RawRecurrentRolloutBufferSamples:
+        self.seq_start_indices, self.pad, self.pad_and_flatten = create_sequencers(
+            self.episode_starts[batch_inds], env_change[batch_inds], self.device
+        )
+
+        n_seq = len(self.seq_start_indices)
+        max_length = self.pad(self.actions[batch_inds]).shape[1]
+        padded_batch_size = n_seq * max_length
+
+        lstm_states_pi = (
+            self.hidden_states_pi[batch_inds][self.seq_start_indices].swapaxes(0, 1),
+            self.cell_states_pi[batch_inds][self.seq_start_indices].swapaxes(0, 1),
+        )
+        lstm_states_vf = (
+            self.hidden_states_vf[batch_inds][self.seq_start_indices].swapaxes(0, 1),
+            self.cell_states_vf[batch_inds][self.seq_start_indices].swapaxes(0, 1),
+        )
+        lstm_states_pi = (
+            self.to_torch(lstm_states_pi[0]).contiguous(),
+            self.to_torch(lstm_states_pi[1]).contiguous(),
+        )
+        lstm_states_vf = (
+            self.to_torch(lstm_states_vf[0]).contiguous(),
+            self.to_torch(lstm_states_vf[1]).contiguous(),
+        )
+
+        observations = self.pad(self.observations[batch_inds]).reshape((padded_batch_size, *self.obs_shape))
+        actions = self.pad(self.actions[batch_inds]).reshape((padded_batch_size, *self.actions.shape[1:]))
+        actions_raw = self.pad(self.actions_raw[batch_inds]).reshape(
+            (padded_batch_size, *self.actions_raw.shape[1:])
+        )
+
+        return RawRecurrentRolloutBufferSamples(
+            observations=observations,
+            actions=actions,
+            old_values=self.pad_and_flatten(self.values[batch_inds]),
+            old_log_prob=self.pad_and_flatten(self.log_probs[batch_inds]),
+            advantages=self.pad_and_flatten(self.advantages[batch_inds]),
+            returns=self.pad_and_flatten(self.returns[batch_inds]),
+            lstm_states=RNNStates(lstm_states_pi, lstm_states_vf),
+            episode_starts=self.pad_and_flatten(self.episode_starts[batch_inds]),
+            mask=self.pad_and_flatten(np.ones_like(self.returns[batch_inds])),
+            actions_raw=actions_raw,
+            old_log_prob_raw=self.pad_and_flatten(self.old_log_prob_raw[batch_inds]),
+        )
+
+
 class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
+
+    def _setup_model(self) -> None:
+        super()._setup_model()
+
+        if isinstance(self.rollout_buffer, RecurrentRolloutBuffer) and not isinstance(
+            self.rollout_buffer, RawRecurrentRolloutBuffer
+        ):
+            lstm = getattr(self.policy, "lstm_actor", None) or getattr(
+                self.policy, "lstm_critic", None
+            )
+            if lstm is None:
+                hidden_state_buffer_shape = (self.n_steps, 1, self.n_envs, 1)
+            else:
+                hidden_state_buffer_shape = (
+                    self.n_steps,
+                    lstm.num_layers,
+                    self.n_envs,
+                    lstm.hidden_size,
+                )
+            self.rollout_buffer = RawRecurrentRolloutBuffer(
+                self.n_steps,
+                self.observation_space,
+                self.action_space,
+                hidden_state_buffer_shape,
+                self.device,
+                gamma=self.gamma,
+                gae_lambda=self.gae_lambda,
+                n_envs=self.n_envs,
+            )
 
     @property
     def cvar_winsor_pct(self) -> float:
@@ -2105,13 +2279,8 @@ class DistributionalPPO(RecurrentPPO):
                 get_std = getattr(inner, "get_std", None)
                 std_new = get_std() if callable(get_std) else None
 
-            eps = float(getattr(self.policy, "_score_clip_eps", 1e-6))
-            scores = torch.clamp(
-                rollout_data.actions.to(device=self.device, dtype=torch.float32),
-                eps,
-                1.0 - eps,
-            )
-            raw_actions = torch.logit(scores)
+            scores = rollout_data.actions.to(device=self.device, dtype=torch.float32)
+            raw_actions = rollout_data.actions_raw.to(device=self.device, dtype=torch.float32)
 
             def _coerce(value: Any) -> Optional[torch.Tensor]:
                 if value is None:
@@ -2170,18 +2339,9 @@ class DistributionalPPO(RecurrentPPO):
             edge_frac = edge_mask.float().mean() if edge_mask.numel() > 0 else scores.new_tensor(float("nan"))
             self.logger.record("diag/score_edge_frac", float(edge_frac.item()))
 
-            self.logger.record("diag/eps_used", float(eps))
+            raw_lp_new = self.policy._log_prob_raw_only(dist, raw_actions).reshape(-1)
 
-            log_det = (scores.log() + torch.log1p(-scores)).reshape(-1)
-
-            if mean_tensor is not None and std_safe is not None:
-                z_unclamped = (raw_actions - mean_tensor) / std_safe
-                z_clamped = z_unclamped.clamp(-8.0, 8.0)
-                raw_lp_new = inner.log_prob(mean_tensor + std_safe * z_clamped).reshape(-1)
-            else:
-                raw_lp_new = dist.log_prob(raw_actions.clamp(-8.0, 8.0)).reshape(-1)
-
-            old_lp_raw = rollout_data.old_log_prob.reshape(-1) + log_det
+            old_lp_raw = rollout_data.old_log_prob_raw.reshape(-1)
             kl_raw = old_lp_raw - raw_lp_new
             kl_stats = _quantiles(kl_raw, (0.5, 0.9, 1.0)).detach().cpu().tolist()
             self.logger.record("diag/kl_raw_p50", float(kl_stats[0]))
@@ -2309,6 +2469,9 @@ class DistributionalPPO(RecurrentPPO):
         base_reward_scale = self._resolve_value_scale_safe()
 
         while n_steps < n_rollout_steps:
+            raw_actions_tensor: Optional[torch.Tensor] = None
+            old_log_prob_raw_tensor: Optional[torch.Tensor] = None
+
             with torch.no_grad():
                 obs_tensor = self.policy.obs_to_tensor(self._last_obs)[0]
                 episode_starts = torch.as_tensor(
@@ -2338,6 +2501,22 @@ class DistributionalPPO(RecurrentPPO):
                         entropy_raw_detached = entropy_raw_tensor.to(dtype=torch.float32)
                         entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
                         entropy_raw_count += int(entropy_raw_detached.numel())
+
+                if isinstance(self.action_space, gym.spaces.Box):
+                    raw_actions_tensor = self.policy.last_raw_actions
+                    if raw_actions_tensor is None:
+                        raise RuntimeError("Policy did not cache raw actions during rollout collection")
+                    raw_actions_tensor = raw_actions_tensor.to(device=self.device)
+                    old_log_prob_raw_tensor = self.policy._log_prob_raw_only(
+                        dist, raw_actions_tensor
+                    ).unsqueeze(-1)
+                else:
+                    raw_actions_tensor = actions
+                    if not isinstance(raw_actions_tensor, torch.Tensor):
+                        raw_actions_tensor = torch.as_tensor(
+                            raw_actions_tensor, dtype=torch.float32, device=self.device
+                        )
+                    old_log_prob_raw_tensor = log_probs
 
             if self._use_quantile_value:
                 if value_quantiles is None:
@@ -2492,6 +2671,8 @@ class DistributionalPPO(RecurrentPPO):
                 scalar_values.squeeze(-1),
                 log_probs,
                 lstm_states=self._last_lstm_states,
+                actions_raw=raw_actions_tensor,
+                log_prob_raw=old_log_prob_raw_tensor,
             )
 
             entropy_loss_total += float(-log_probs.mean().item())
@@ -3089,12 +3270,8 @@ class DistributionalPPO(RecurrentPPO):
                         rollout_data.actions,
                         rollout_data.lstm_states,
                         rollout_data.episode_starts,
+                        actions_raw=rollout_data.actions_raw,
                     )
-
-                    if log_prob.shape != rollout_data.old_log_prob.shape:
-                        raise RuntimeError(
-                            "Log-prob shape mismatch between rollout buffer and training step"
-                        )
 
                     advantages = rollout_data.advantages
                     if sample_count <= 0:
@@ -3115,6 +3292,34 @@ class DistributionalPPO(RecurrentPPO):
                     advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
                     with torch.no_grad():
                         adv_z_values.append(advantages.detach().cpu())
+
+                    entropy_tensor = entropy
+                    actor_states = self._extract_actor_states(rollout_data.lstm_states)
+                    dist_output = self.policy.get_distribution(
+                        rollout_data.observations,
+                        actor_states,
+                        rollout_data.episode_starts,
+                    )
+                    # Some recurrent policies (including custom ones used in this
+                    # project) return auxiliary data such as the updated RNN
+                    # states alongside the action distribution. When the method
+                    # returns a tuple, the actual distribution object is the
+                    # first element, so unwrap it before proceeding.
+                    if isinstance(dist_output, tuple):
+                        dist = dist_output[0]
+                    else:
+                        dist = dist_output
+
+                    if self._kl_diag:
+                        try:
+                            self._kl_diag_step(dist, rollout_data)
+                        except Exception:
+                            self.logger.record("diag/error", 1.0)
+
+                    if log_prob.shape != rollout_data.old_log_prob.shape:
+                        raise RuntimeError(
+                            "Log-prob shape mismatch between rollout buffer and training step"
+                        )
 
                     log_ratio = log_prob - rollout_data.old_log_prob
                     ratio = torch.exp(log_ratio)
@@ -3155,29 +3360,6 @@ class DistributionalPPO(RecurrentPPO):
                         kl_penalty_component_total += float(kl_penalty_component.item())
                         kl_penalty_component_count += 1
 
-                    entropy_tensor = entropy
-                    actor_states = self._extract_actor_states(rollout_data.lstm_states)
-                    dist_output = self.policy.get_distribution(
-                        rollout_data.observations,
-                        actor_states,
-                        rollout_data.episode_starts,
-                    )
-                    # Some recurrent policies (including custom ones used in this
-                    # project) return auxiliary data such as the updated RNN
-                    # states alongside the action distribution. When the method
-                    # returns a tuple, the actual distribution object is the
-                    # first element, so unwrap it before proceeding.
-                    if isinstance(dist_output, tuple):
-                        dist = dist_output[0]
-                    else:
-                        dist = dist_output
-
-                    if self._kl_diag:
-                        try:
-                            self._kl_diag_step(dist, rollout_data)
-                        except Exception:
-                            self.logger.record("diag/error", 1.0)
-
                     inner_dist = getattr(dist, "distribution", None)
                     if entropy_tensor is None:
                         entropy_fn = getattr(self.policy, "weighted_entropy", None)
@@ -3201,25 +3383,16 @@ class DistributionalPPO(RecurrentPPO):
                             and inner_dist is not None
                         ):
                             eps = float(getattr(self.policy, "_score_clip_eps", 1e-6))
-                            scores = torch.clamp(rollout_data.actions, eps, 1.0 - eps)
-                            log_det = torch.log(scores) + torch.log1p(-scores)
-                            if log_det.ndim > 1:
-                                log_det = log_det.sum(dim=-1)
-                            log_det = log_det.reshape(-1)
-                            raw_actions = torch.logit(scores)
+                            raw_actions = rollout_data.actions_raw.to(
+                                device=self.device, dtype=torch.float32
+                            )
                             mean = getattr(inner_dist, "mean", None)
-                            # Some distribution implementations expose ``mean`` as a
-                            # tensor attribute while others provide a callable
-                            # accessor.  Using ``or`` directly on the result can
-                            # invoke Python's boolean conversion rules, which
-                            # raises ``RuntimeError: Boolean value of Tensor with
-                            # more than one value is ambiguous``.  Instead, fetch
-                            # the candidate values sequentially and normalise the
-                            # callable case.
                             if callable(mean):
                                 mean = mean()
                             if mean is None:
                                 mean = getattr(dist, "mean_actions", None)
+                                if callable(mean):
+                                    mean = mean()
                             std = getattr(inner_dist, "stddev", None)
                             if std is None:
                                 get_std = getattr(inner_dist, "get_std", None)
@@ -3233,18 +3406,14 @@ class DistributionalPPO(RecurrentPPO):
                                 )
                                 z_unclamped = (raw_actions - mean) / std_safe
                                 z_clip_mask = z_unclamped.abs() > 8.0
-                                z = torch.clamp(z_unclamped, -8.0, 8.0)
-                                raw_for_logprob = mean + std * z
-                            else:
-                                raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
                             if z_clip_mask is not None:
                                 raw_z_clip_count += float(z_clip_mask.sum().item())
                                 raw_z_total += int(z_clip_mask.numel())
-                            log_prob_raw_new = dist.log_prob(raw_for_logprob).reshape(-1)
-                            old_log_prob_raw = rollout_data.old_log_prob.reshape(-1)
-                            approx_kl_raw_tensor = (
-                                old_log_prob_raw + log_det - log_prob_raw_new
-                            )
+                            log_prob_raw_new = self.policy._log_prob_raw_only(
+                                dist, raw_actions
+                            ).reshape(-1)
+                            old_log_prob_raw = rollout_data.old_log_prob_raw.reshape(-1)
+                            approx_kl_raw_tensor = old_log_prob_raw - log_prob_raw_new
                             if torch.isfinite(approx_kl_raw_tensor).all() and approx_kl_raw_tensor.numel() > 0:
                                 kl_raw_sum += float(approx_kl_raw_tensor.sum().item())
                                 kl_raw_count += int(approx_kl_raw_tensor.numel())
