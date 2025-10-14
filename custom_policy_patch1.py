@@ -1051,7 +1051,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         scores = torch.sigmoid(raw_actions)  # без clamp — работаем с реальным raw
         if not torch.isfinite(scores).all():
             raise RuntimeError("Policy produced non-finite score action")
-        log_prob = self._weighted_log_prob(distribution, scores, raw_actions)
+        eps = self._score_clip_eps
+        scores_clipped = torch.clamp(scores, eps, 1.0 - eps)
+        raw_used = torch.log(scores_clipped) - torch.log1p(-scores_clipped)
+        log_prob = self._weighted_log_prob(distribution, scores, raw_used)
         return scores, values, log_prob, new_states
 
     def _predict(
@@ -1171,7 +1174,11 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         values = self._get_value_from_latent(latent_vf)
 
         distribution = self._get_action_dist_from_latent(latent_pi)
-        log_prob = self._weighted_log_prob(distribution, actions)
+        scores = self._prepare_score_tensor(actions, self.device)
+        eps = self._score_clip_eps
+        scores_clipped = torch.clamp(scores, eps, 1.0 - eps)
+        raw_used = torch.log(scores_clipped) - torch.log1p(-scores_clipped)
+        log_prob = self._weighted_log_prob(distribution, scores, raw_used)
         entropy = self.weighted_entropy(distribution)
 
         return values, log_prob, entropy
