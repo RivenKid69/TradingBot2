@@ -1062,6 +1062,7 @@ class DistributionalPPO(RecurrentPPO):
         value_target_scale: Union[str, float, None] = 1.0,
         normalize_returns: bool = True,
         ret_clip: float = 10.0,
+        enable_kl_diagnostics: bool = True,
         bc_warmup_steps: int = 0,
         bc_decay_steps: int = 0,
         bc_final_coef: Optional[float] = None,
@@ -1093,6 +1094,7 @@ class DistributionalPPO(RecurrentPPO):
         self._update_calls: int = 0
         self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
+        self._kl_diag = bool(enable_kl_diagnostics)
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
@@ -2079,6 +2081,160 @@ class DistributionalPPO(RecurrentPPO):
             self._entropy_plateau = True
             self._entropy_decay_start_update = update_index
 
+    def _kl_diag_step(self, dist: torch.distributions.Distribution, rollout_data) -> None:
+        if not hasattr(self, "logger"):
+            return
+
+        with torch.no_grad():
+            inner = getattr(dist, "distribution", None)
+            if inner is None:
+                inner = dist
+
+            mean_new = getattr(inner, "mean", None)
+            if callable(mean_new):
+                mean_new = mean_new()
+            if mean_new is None:
+                mean_new = getattr(dist, "mean_actions", None)
+                if callable(mean_new):
+                    mean_new = mean_new()
+
+            std_new = getattr(inner, "stddev", None)
+            if callable(std_new):
+                std_new = std_new()
+            if std_new is None:
+                get_std = getattr(inner, "get_std", None)
+                std_new = get_std() if callable(get_std) else None
+
+            eps = float(getattr(self.policy, "_score_clip_eps", 1e-6))
+            scores = torch.clamp(
+                rollout_data.actions.to(device=self.device, dtype=torch.float32),
+                eps,
+                1.0 - eps,
+            )
+            raw_actions = torch.logit(scores)
+
+            def _coerce(value: Any) -> Optional[torch.Tensor]:
+                if value is None:
+                    return None
+                if torch.is_tensor(value):
+                    return value.to(device=scores.device, dtype=scores.dtype)
+                return torch.as_tensor(value, device=scores.device, dtype=scores.dtype)
+
+            mean_tensor = _coerce(mean_new)
+            std_tensor = _coerce(std_new)
+            std_safe: Optional[torch.Tensor]
+            if std_tensor is not None:
+                std_safe = torch.clamp(std_tensor, min=1e-6)
+            else:
+                std_safe = None
+
+            def _quantiles(values: Optional[torch.Tensor], probs: Sequence[float]) -> torch.Tensor:
+                if values is None:
+                    return torch.full(
+                        (len(probs),),
+                        float("nan"),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    )
+                flat = values.reshape(-1).to(dtype=torch.float32)
+                finite = flat[torch.isfinite(flat)]
+                if finite.numel() == 0:
+                    return torch.full(
+                        (len(probs),),
+                        float("nan"),
+                        device=scores.device,
+                        dtype=torch.float32,
+                    )
+                q = torch.tensor(probs, device=scores.device, dtype=torch.float32)
+                return torch.quantile(finite, q)
+
+            z_abs: Optional[torch.Tensor] = None
+            if mean_tensor is not None and std_safe is not None:
+                z = (raw_actions - mean_tensor) / std_safe
+                z_abs = z.abs()
+
+            z_stats = _quantiles(z_abs, (0.5, 0.9, 1.0)) if z_abs is not None else _quantiles(None, (0.5, 0.9, 1.0))
+            z_values = z_stats.detach().cpu().tolist()
+            self.logger.record("diag/z_abs_p50", float(z_values[0]))
+            self.logger.record("diag/z_abs_p90", float(z_values[1]))
+            self.logger.record("diag/z_abs_max", float(z_values[2]))
+
+            sigma_stats = (
+                _quantiles(std_safe, (0.1, 0.5)) if std_safe is not None else _quantiles(None, (0.1, 0.5))
+            )
+            sigma_values = sigma_stats.detach().cpu().tolist()
+            self.logger.record("diag/sigma_new_p10", float(sigma_values[0]))
+            self.logger.record("diag/sigma_new_p50", float(sigma_values[1]))
+
+            edge_mask = (scores < 0.02) | (scores > 0.98)
+            edge_frac = edge_mask.float().mean() if edge_mask.numel() > 0 else scores.new_tensor(float("nan"))
+            self.logger.record("diag/score_edge_frac", float(edge_frac.item()))
+
+            self.logger.record("diag/eps_used", float(eps))
+
+            log_det = (scores.log() + torch.log1p(-scores)).reshape(-1)
+
+            if mean_tensor is not None and std_safe is not None:
+                z_unclamped = (raw_actions - mean_tensor) / std_safe
+                z_clamped = z_unclamped.clamp(-8.0, 8.0)
+                raw_lp_new = inner.log_prob(mean_tensor + std_safe * z_clamped).reshape(-1)
+            else:
+                raw_lp_new = dist.log_prob(raw_actions.clamp(-8.0, 8.0)).reshape(-1)
+
+            old_lp_raw = rollout_data.old_log_prob.reshape(-1) + log_det
+            kl_raw = old_lp_raw - raw_lp_new
+            kl_stats = _quantiles(kl_raw, (0.5, 0.9, 1.0)).detach().cpu().tolist()
+            self.logger.record("diag/kl_raw_p50", float(kl_stats[0]))
+            self.logger.record("diag/kl_raw_p90", float(kl_stats[1]))
+            self.logger.record("diag/kl_raw_max", float(kl_stats[2]))
+
+            finite_mask = torch.isfinite(kl_raw)
+            if finite_mask.any():
+                exceed_frac = (kl_raw[finite_mask] > 0.1).float().mean()
+                self.logger.record("diag/kl_raw_exceed_frac@0.1", float(exceed_frac.item()))
+            else:
+                self.logger.record("diag/kl_raw_exceed_frac@0.1", float("nan"))
+
+            raw_actions_flat = raw_actions.reshape(-1)
+            if raw_actions_flat.numel() > 0:
+                mu_old = raw_actions_flat.mean()
+                sigma_old = raw_actions_flat.std(unbiased=True)
+                if not torch.isfinite(sigma_old):
+                    sigma_old = raw_actions_flat.std(unbiased=False)
+                if not torch.isfinite(sigma_old):
+                    sigma_old = raw_actions_flat.new_tensor(1e-6)
+            else:
+                mu_old = raw_actions.new_tensor(0.0)
+                sigma_old = raw_actions.new_tensor(1e-6)
+            sigma_old = torch.clamp(sigma_old, min=1e-6)
+
+            if mean_tensor is not None and std_safe is not None:
+                std_ratio = std_safe / sigma_old
+                kl_gauss = torch.log(std_ratio) + (
+                    (sigma_old**2 + (mu_old - mean_tensor) ** 2) / (2 * std_safe**2)
+                ) - 0.5
+                kl_gauss_stats = _quantiles(kl_gauss, (0.5, 0.9)).detach().cpu().tolist()
+                self.logger.record("diag/kl_gauss_p50", float(kl_gauss_stats[0]))
+                self.logger.record("diag/kl_gauss_p90", float(kl_gauss_stats[1]))
+
+                mean_term = ((mu_old - mean_tensor) ** 2) / (2 * std_safe**2)
+                var_ratio = (sigma_old**2) / (std_safe**2)
+                var_term = (sigma_old**2) / (2 * std_safe**2) - 0.5 - 0.5 * torch.log(var_ratio)
+                self.logger.record(
+                    "diag/kl_mean_term_p90",
+                    float(_quantiles(mean_term, (0.9,)).detach().cpu().numpy()[0]),
+                )
+                self.logger.record(
+                    "diag/kl_var_term_p90",
+                    float(_quantiles(var_term, (0.9,)).detach().cpu().numpy()[0]),
+                )
+            else:
+                nan_stats = _quantiles(None, (0.5, 0.9)).detach().cpu().tolist()
+                self.logger.record("diag/kl_gauss_p50", float(nan_stats[0]))
+                self.logger.record("diag/kl_gauss_p90", float(nan_stats[1]))
+                self.logger.record("diag/kl_mean_term_p90", float("nan"))
+                self.logger.record("diag/kl_var_term_p90", float("nan"))
+
     def _record_raw_policy_metrics(
         self,
         avg_policy_entropy_raw: float,
@@ -3015,6 +3171,12 @@ class DistributionalPPO(RecurrentPPO):
                         dist = dist_output[0]
                     else:
                         dist = dist_output
+
+                    if self._kl_diag:
+                        try:
+                            self._kl_diag_step(dist, rollout_data)
+                        except Exception:
+                            self.logger.record("diag/error", 1.0)
 
                     inner_dist = getattr(dist, "distribution", None)
                     if entropy_tensor is None:
