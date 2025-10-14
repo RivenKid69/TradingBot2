@@ -307,24 +307,56 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
             self.to_torch(lstm_states_vf[1]).contiguous(),
         )
 
-        observations = self.pad(self.observations[batch_inds]).reshape((padded_batch_size, *self.obs_shape))
-        actions = self.pad(self.actions[batch_inds]).reshape((padded_batch_size, *self.actions.shape[1:]))
-        actions_raw = self.pad(self.actions_raw[batch_inds]).reshape(
+        def _to_tensor(
+            array: np.ndarray,
+            *,
+            convert_floats: bool = False,
+            force_float32: bool = False,
+        ) -> torch.Tensor:
+            tensor = torch.as_tensor(array, device=self.device)
+            if force_float32:
+                return tensor.to(dtype=torch.float32)
+            if convert_floats and tensor.is_floating_point() and tensor.dtype != torch.float32:
+                tensor = tensor.to(dtype=torch.float32)
+            return tensor
+
+        observations_np = self.pad(self.observations[batch_inds]).reshape((padded_batch_size, *self.obs_shape))
+        actions_np = self.pad(self.actions[batch_inds]).reshape((padded_batch_size, *self.actions.shape[1:]))
+        actions_raw_np = self.pad(self.actions_raw[batch_inds]).reshape(
             (padded_batch_size, *self.actions_raw.shape[1:])
         )
+
+        old_values_np = self.pad_and_flatten(self.values[batch_inds])
+        old_log_prob_np = self.pad_and_flatten(self.log_probs[batch_inds])
+        advantages_np = self.pad_and_flatten(self.advantages[batch_inds])
+        returns_np = self.pad_and_flatten(self.returns[batch_inds])
+        episode_starts_np = self.pad_and_flatten(self.episode_starts[batch_inds])
+        mask_np = self.pad_and_flatten(np.ones_like(self.returns[batch_inds]))
+        old_log_prob_raw_np = self.pad_and_flatten(self.old_log_prob_raw[batch_inds])
+
+        observations = _to_tensor(observations_np, convert_floats=True)
+        actions = _to_tensor(actions_np, convert_floats=True)
+        actions_raw = _to_tensor(actions_raw_np, convert_floats=True)
+        old_values = _to_tensor(old_values_np, convert_floats=True)
+        old_log_prob = _to_tensor(old_log_prob_np, convert_floats=True)
+        advantages = _to_tensor(advantages_np, convert_floats=True)
+        returns = _to_tensor(returns_np, convert_floats=True)
+        episode_starts = _to_tensor(episode_starts_np, force_float32=True)
+        mask = _to_tensor(mask_np, force_float32=True)
+        old_log_prob_raw = _to_tensor(old_log_prob_raw_np, convert_floats=True)
 
         return RawRecurrentRolloutBufferSamples(
             observations=observations,
             actions=actions,
-            old_values=self.pad_and_flatten(self.values[batch_inds]),
-            old_log_prob=self.pad_and_flatten(self.log_probs[batch_inds]),
-            advantages=self.pad_and_flatten(self.advantages[batch_inds]),
-            returns=self.pad_and_flatten(self.returns[batch_inds]),
+            old_values=old_values,
+            old_log_prob=old_log_prob,
+            advantages=advantages,
+            returns=returns,
             lstm_states=RNNStates(lstm_states_pi, lstm_states_vf),
-            episode_starts=self.pad_and_flatten(self.episode_starts[batch_inds]),
-            mask=self.pad_and_flatten(np.ones_like(self.returns[batch_inds])),
+            episode_starts=episode_starts,
+            mask=mask,
             actions_raw=actions_raw,
-            old_log_prob_raw=self.pad_and_flatten(self.old_log_prob_raw[batch_inds]),
+            old_log_prob_raw=old_log_prob_raw,
         )
 
 
