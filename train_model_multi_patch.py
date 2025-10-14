@@ -1068,6 +1068,54 @@ class ObjectiveScorePruningCallback(BaseCallback):
 
         return True
 
+
+class OptimizerLrLoggingCallback(BaseCallback):
+    """Логирует фактические значения learning rate оптимизатора и шедулера."""
+
+    def _on_step(self) -> bool:
+        if self.logger is None:
+            return True
+
+        policy = getattr(self.model, "policy", None)
+        if policy is None:
+            return True
+
+        optimizer = getattr(policy, "optimizer", None)
+        opt_lrs: list[float] = []
+        if optimizer is not None:
+            for group in getattr(optimizer, "param_groups", []):
+                lr_value = group.get("lr")
+                if lr_value is None:
+                    continue
+                try:
+                    opt_lrs.append(float(lr_value))
+                except (TypeError, ValueError):
+                    continue
+
+        if opt_lrs:
+            self.logger.record("train/optimizer_lr", opt_lrs[0])
+        else:
+            self.logger.record("train/optimizer_lr", None)
+
+        scheduler = getattr(policy, "lr_scheduler", None)
+        if scheduler is None:
+            scheduler = getattr(policy, "optimizer_scheduler", None)
+
+        if scheduler is not None and hasattr(scheduler, "get_last_lr"):
+            try:
+                sch_lrs = scheduler.get_last_lr()
+            except TypeError:
+                sch_lrs = None
+            if sch_lrs:
+                self.logger.record("train/scheduler_lr", float(sch_lrs[0]))
+            else:
+                self.logger.record("train/scheduler_lr", None)
+        else:
+            self.logger.record("train/scheduler_lr", None)
+
+        return True
+
+
 def _resolve_ann_sqrt(annualization_sqrt: float | None) -> float:
     if annualization_sqrt is None:
         return _DEFAULT_ANNUALIZATION_SQRT
@@ -2649,6 +2697,7 @@ def objective(trial: optuna.Trial,
 
 
 
+    lr_logger = OptimizerLrLoggingCallback()
     nan_guard = NanGuardCallback()
 
     # Быстрый колбэк для раннего отсечения по простой метрике
@@ -2657,7 +2706,7 @@ def objective(trial: optuna.Trial,
     # Медленный, но точный колбэк для позднего отсечения по финальной метрике
     objective_pruner = ObjectiveScorePruningCallback(trial, eval_env=env_va, eval_freq=40_000, verbose=1)
 
-    all_callbacks = [nan_guard, sortino_pruner, objective_pruner]
+    all_callbacks = [lr_logger, nan_guard, sortino_pruner, objective_pruner]
 
     try:
         model.learn(

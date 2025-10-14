@@ -557,6 +557,12 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         else:
             self.optimizer_scheduler = None
 
+        # Совместимость: наружный код ожидает policy.lr_scheduler, если шедулер активирован.
+        if self.optimizer_scheduler is not None:
+            setattr(self, "lr_scheduler", self.optimizer_scheduler)
+        elif hasattr(self, "lr_scheduler"):
+            setattr(self, "lr_scheduler", None)
+
         # После настройки оптимизатора ссылка на lr_schedule больше не нужна.
         self._pending_lr_schedule = None
     # --- ИСПРАВЛЕНИЕ: Метод переименован с forward_rnn на _forward_recurrent ---

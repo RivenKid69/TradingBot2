@@ -2021,6 +2021,12 @@ class DistributionalPPO(RecurrentPPO):
         if optimizer is None:
             return
 
+        # Если у политики уже есть внешний шедулер (например, OneCycleLR),
+        # не пытаемся перезаписывать lr статическим расписанием SB3.
+        external_scheduler = getattr(self.policy, "lr_scheduler", None)
+        if external_scheduler is not None:
+            return
+
         base_lr = float(self.lr_schedule(self._current_progress_remaining))
         self.logger.record("train/learning_rate", base_lr)
 
@@ -3839,9 +3845,13 @@ class DistributionalPPO(RecurrentPPO):
                     self.logger.record("train/optimizer_lr_min", min(lrs))
                     self.logger.record("train/optimizer_lr_max", max(lrs))
 
-                if self.lr_scheduler is not None:
-                    self.lr_scheduler.step()
-                    get_last_lr = getattr(self.lr_scheduler, "get_last_lr", None)
+                # Сначала шаг оптимизатора, затем шедулер.
+                scheduler = getattr(self.policy, "lr_scheduler", None)
+                if scheduler is None:
+                    scheduler = self.lr_scheduler
+                if scheduler is not None:
+                    scheduler.step()
+                    get_last_lr = getattr(scheduler, "get_last_lr", None)
                     if callable(get_last_lr):
                         try:
                             scheduler_lrs = get_last_lr()
@@ -3850,6 +3860,7 @@ class DistributionalPPO(RecurrentPPO):
                         if scheduler_lrs:
                             last_scheduler_lr = float(scheduler_lrs[0])
                             self.logger.record("train/scheduler_lr", last_scheduler_lr)
+                    # Освежаем _kl_base_lr для корректного KL-скейла при внешнем шедулере
                     self._refresh_kl_base_lrs()
 
                 optimizer = getattr(self.policy, "optimizer", None)
