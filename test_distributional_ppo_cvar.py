@@ -56,6 +56,19 @@ def test_create_sequencers_forces_initial_boundary() -> None:
     assert padded[0].tolist() == [10, 11, 12, 13]
 
 
+def test_create_sequencers_squeezes_unit_dimensions() -> None:
+    episode_starts = np.zeros((4, 1), dtype=bool)
+    env_change = np.zeros((4, 1), dtype=bool)
+
+    seq_start_indices, pad, _ = create_sequencers(episode_starts, env_change, device="cpu")
+
+    assert seq_start_indices.tolist() == [0]
+
+    padded = pad(np.array([[10], [11], [12], [13]], dtype=np.int64))
+    assert padded.shape == (1, 4)
+    assert padded[0].tolist() == [10, 11, 12, 13]
+
+
 def _discrete_cvar_reference(probs: np.ndarray, atoms: np.ndarray, alpha: float) -> float:
     order = np.argsort(atoms)
     atoms_sorted = atoms[order]
