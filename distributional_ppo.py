@@ -2085,12 +2085,17 @@ class DistributionalPPO(RecurrentPPO):
         entropy_raw_count: int,
         kl_raw_sum: float,
         kl_raw_count: int,
+        raw_z_clip_count: float = 0.0,
+        raw_z_total: int = 0,
     ) -> None:
         if entropy_raw_count > 0:
             self.logger.record("train/policy_entropy_raw", float(avg_policy_entropy_raw))
         if kl_raw_count > 0:
             approx_kl_raw_mean = kl_raw_sum / float(kl_raw_count)
             self.logger.record("train/approx_kl_raw", float(approx_kl_raw_mean))
+        if raw_z_total > 0:
+            fraction = float(raw_z_clip_count) / float(raw_z_total)
+            self.logger.record("train/raw_z_clip_fraction", fraction)
 
     def collect_rollouts(
         self,
@@ -2783,6 +2788,8 @@ class DistributionalPPO(RecurrentPPO):
         entropy_raw_count = 0
         kl_raw_sum = 0.0
         kl_raw_count = 0
+        raw_z_clip_count = 0.0
+        raw_z_total = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -3038,7 +3045,27 @@ class DistributionalPPO(RecurrentPPO):
                                 log_det = log_det.sum(dim=-1)
                             log_det = log_det.reshape(-1)
                             raw_actions = torch.logit(scores)
-                            raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
+                            mean = getattr(inner_dist, "mean", None) or getattr(dist, "mean_actions", None)
+                            std = getattr(inner_dist, "stddev", None)
+                            if std is None:
+                                get_std = getattr(inner_dist, "get_std", None)
+                                std = get_std() if callable(get_std) else None
+                            z_clip_mask: Optional[torch.Tensor] = None
+                            if mean is not None and std is not None:
+                                std_safe = torch.where(
+                                    std > 0.0,
+                                    std,
+                                    torch.full_like(std, eps),
+                                )
+                                z_unclamped = (raw_actions - mean) / std_safe
+                                z_clip_mask = z_unclamped.abs() > 8.0
+                                z = torch.clamp(z_unclamped, -8.0, 8.0)
+                                raw_for_logprob = mean + std * z
+                            else:
+                                raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
+                            if z_clip_mask is not None:
+                                raw_z_clip_count += float(z_clip_mask.sum().item())
+                                raw_z_total += int(z_clip_mask.numel())
                             log_prob_raw_new = dist.log_prob(raw_for_logprob).reshape(-1)
                             old_log_prob_raw = rollout_data.old_log_prob.reshape(-1)
                             approx_kl_raw_tensor = (
@@ -3441,6 +3468,8 @@ class DistributionalPPO(RecurrentPPO):
             entropy_raw_count,
             kl_raw_sum,
             kl_raw_count,
+            raw_z_clip_count,
+            raw_z_total,
         )
         if self._use_quantile_value:
             if value_quantiles_final is None:

@@ -15,6 +15,7 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from gymnasium import spaces
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
 
@@ -169,7 +170,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._include_heads_bool: Optional[Dict[str, bool]] = None
         self._execution_mode = "score"
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
-        self._score_clip_eps: float = 5e-3
+        self._score_clip_eps: float = 5e-3  # используется только как fallback при logit() вне train-path
 
         act_str = arch_params.get('activation', 'relu').lower()
         if act_str == 'relu':
@@ -799,7 +800,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
     def _get_action_dist_from_latent(self, latent_pi: torch.Tensor):
         mean_actions = self.action_net(latent_pi)
-        log_std = -1.5 + 1.5 * torch.tanh(self.unconstrained_log_std)
+        # σ ∈ [0.2, 1.5] — безопаснее для сигмоидной головы
+        sigma_min, sigma_max = 0.2, 1.5
+        sigma = sigma_min + (sigma_max - sigma_min) * torch.sigmoid(self.unconstrained_log_std)
+        log_std = torch.log(sigma)
         return self.action_dist.proba_distribution(mean_actions, log_std)
 
     def _get_value_logits(self, latent_vf: torch.Tensor) -> torch.Tensor:
@@ -920,26 +924,57 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         return tensor
 
     def _score_to_raw(self, scores: torch.Tensor) -> torch.Tensor:
+        # Fallback для evaluate(): безопасный logit только когда нет raw
         clipped = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
         return torch.log(clipped) - torch.log1p(-clipped)
 
-    def _log_sigmoid_jacobian(self, scores: torch.Tensor) -> torch.Tensor:
-        clipped = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
-        return torch.log(clipped) + torch.log1p(-clipped)
+    def _log_sigmoid_jacobian_from_raw(self, raw: torch.Tensor) -> torch.Tensor:
+        # log σ'(x) = log σ(x) + log(1-σ(x)) = -softplus(-x) - softplus(x)
+        return -(F.softplus(-raw) + F.softplus(raw))
+
+    def _clamp_by_z(
+        self,
+        distribution: torch.distributions.Distribution,
+        raw: torch.Tensor,
+        zmax: float = 8.0,
+    ) -> torch.Tensor:
+        """Ограничить |z| = |(raw-μ)/σ| ≤ zmax, возвращая скорректированный raw."""
+        inner = getattr(distribution, "distribution", None) or distribution
+        mean = getattr(inner, "mean", None)
+        if mean is None:
+            mean = getattr(inner, "mean_actions", None)
+        std = getattr(inner, "stddev", None)
+        if std is None:
+            get_std = getattr(inner, "get_std", None)
+            std = get_std() if callable(get_std) else None
+        if mean is None or std is None:
+            # страховка на случай нестандартного адаптера
+            return torch.clamp(raw, -8.0, 8.0)
+        z = (raw - mean) / std
+        z = torch.clamp(z, -zmax, zmax)
+        return mean + std * z
 
     def _weighted_log_prob(
-        self, distribution: torch.distributions.Distribution, actions: torch.Tensor
+        self,
+        distribution: torch.distributions.Distribution,
+        actions: torch.Tensor,
+        raw: torch.Tensor | None = None,
     ) -> torch.Tensor:
         if isinstance(self.action_space, spaces.Box):
-            scores = self._prepare_score_tensor(actions, self.device)
-            if not torch.isfinite(scores).all():
-                raise RuntimeError("Received non-finite score when computing log_prob")
-            raw_actions = self._score_to_raw(scores)
-            raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
-            log_prob_raw = distribution.log_prob(raw_for_logprob)
-            log_det = torch.sum(self._log_sigmoid_jacobian(scores), dim=-1)
+            # Если есть реальный raw (из forward), работаем с ним.
+            # В evaluate() raw нет — восстановим через безопасный logit.
+            if raw is None:
+                scores = self._prepare_score_tensor(actions, self.device)
+                if not torch.isfinite(scores).all():
+                    raise RuntimeError("Received non-finite score when computing log_prob")
+                raw = self._score_to_raw(scores)
+            elif not torch.isfinite(raw).all():
+                raise RuntimeError("Received non-finite raw action when computing log_prob")
+            raw_stable = self._clamp_by_z(distribution, raw, zmax=8.0)
+            log_prob_raw = distribution.log_prob(raw_stable)
+            log_det = self._log_sigmoid_jacobian_from_raw(raw).sum(dim=-1)
+            # p_s(s) = p_raw(raw) / σ'(raw)  ⇒  log p_s = log p_raw - log σ'(raw)
             return log_prob_raw - log_det
-
         return distribution.log_prob(actions)
 
     def weighted_entropy(
@@ -961,9 +996,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             return entropy
 
         raw = inner.rsample()
-        scores = torch.sigmoid(raw)
-        scores = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
-        log_jac = torch.log(scores) + torch.log1p(-scores)
+        # h(s) = h(raw) + E[log |ds/dr|] = h(raw) + E[log σ'(raw)]
+        log_jac = self._log_sigmoid_jacobian_from_raw(raw)
         return entropy + log_jac.sum(dim=-1)
 
     @property
@@ -1014,11 +1048,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         distribution = self._get_action_dist_from_latent(latent_pi)
         raw_actions = distribution.get_actions(deterministic=deterministic)
-        scores = torch.sigmoid(raw_actions)
-        scores = torch.clamp(scores, self._score_clip_eps, 1.0 - self._score_clip_eps)
+        scores = torch.sigmoid(raw_actions)  # без clamp — работаем с реальным raw
         if not torch.isfinite(scores).all():
             raise RuntimeError("Policy produced non-finite score action")
-        log_prob = self._weighted_log_prob(distribution, scores)
+        log_prob = self._weighted_log_prob(distribution, scores, raw_actions)
         return scores, values, log_prob, new_states
 
     def _predict(
