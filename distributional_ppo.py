@@ -1761,6 +1761,8 @@ class DistributionalPPO(RecurrentPPO):
 
         super().__init__(policy=policy, env=env, **kwargs_local)
 
+        self._rebuild_scheduler_if_needed()
+
         self._use_quantile_value = bool(
             getattr(self.policy, "uses_quantile_value_head", False)
         )
@@ -2024,6 +2026,8 @@ class DistributionalPPO(RecurrentPPO):
         # Если у политики уже есть внешний шедулер (например, OneCycleLR),
         # не пытаемся перезаписывать lr статическим расписанием SB3.
         external_scheduler = getattr(self.policy, "lr_scheduler", None)
+        if external_scheduler is None:
+            external_scheduler = getattr(self, "lr_scheduler", None)
         if external_scheduler is not None:
             return
 
@@ -2197,6 +2201,41 @@ class DistributionalPPO(RecurrentPPO):
             setter(normalized)
         for head_name, weight in normalized.items():
             self.logger.record(f"config/loss_head_weight_{head_name}", float(weight))
+
+    def _rebuild_scheduler_if_needed(self) -> None:
+        """Ensure the policy scheduler tracks the current optimizer instance."""
+
+        policy = getattr(self, "policy", None)
+        if policy is None:
+            return
+
+        optimizer = getattr(policy, "optimizer", None)
+        if optimizer is None:
+            return
+
+        scheduler = getattr(policy, "lr_scheduler", None)
+        if scheduler is None:
+            scheduler = getattr(policy, "optimizer_scheduler", None)
+
+        scheduler_fn = getattr(policy, "optimizer_scheduler_fn", None)
+        need_rebuild = bool(scheduler_fn is not None) and (
+            scheduler is None or getattr(scheduler, "optimizer", None) is not optimizer
+        )
+
+        if not need_rebuild:
+            if scheduler is not None:
+                setattr(self, "lr_scheduler", scheduler)
+            return
+
+        policy.optimizer_scheduler = scheduler_fn(optimizer)
+        policy.lr_scheduler = policy.optimizer_scheduler
+        setattr(self, "lr_scheduler", policy.lr_scheduler)
+
+        if hasattr(policy.lr_scheduler, "base_lrs"):
+            policy.lr_scheduler.base_lrs = [
+                float(group.get("initial_lr", group.get("lr", 0.0)))
+                for group in optimizer.param_groups
+            ]
 
 
     def _refresh_kl_base_lrs(self) -> None:
@@ -2882,6 +2921,7 @@ class DistributionalPPO(RecurrentPPO):
 
     def train(self) -> None:
         self.policy.set_training_mode(True)
+        self._rebuild_scheduler_if_needed()
         self._update_learning_rate(self.policy.optimizer)
         self._refresh_kl_base_lrs()
         self._ensure_score_action_space()
@@ -3841,6 +3881,8 @@ class DistributionalPPO(RecurrentPPO):
 
                 self.policy.optimizer.step()
 
+                # Ensure any scheduler is wired to the active optimizer before stepping it.
+                self._rebuild_scheduler_if_needed()
                 # Шаг шедулера (если он есть) — и только ПОСЛЕ него логируем optimizer_lr
                 scheduler = getattr(self.policy, "lr_scheduler", None) or self.lr_scheduler
                 if scheduler is not None:
