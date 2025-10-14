@@ -92,6 +92,10 @@ _ACTION_WRAPPER_CONFIG_LOGGED = False
 
 _SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 _DEFAULT_ANNUALIZATION_SQRT = float(np.sqrt(365 * 24))
+# BAR volume discretization is fixed to four buckets [0.0, 0.2, 0.6, 1.0].
+# Keep the expected count in a dedicated constant so validation logic can
+# reference a single source of truth.
+EXPECTED_VOLUME_BINS = 4
 
 
 def _flatten_candidates(values: Any):
