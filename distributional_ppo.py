@@ -3045,7 +3045,19 @@ class DistributionalPPO(RecurrentPPO):
                                 log_det = log_det.sum(dim=-1)
                             log_det = log_det.reshape(-1)
                             raw_actions = torch.logit(scores)
-                            mean = getattr(inner_dist, "mean", None) or getattr(dist, "mean_actions", None)
+                            mean = getattr(inner_dist, "mean", None)
+                            # Some distribution implementations expose ``mean`` as a
+                            # tensor attribute while others provide a callable
+                            # accessor.  Using ``or`` directly on the result can
+                            # invoke Python's boolean conversion rules, which
+                            # raises ``RuntimeError: Boolean value of Tensor with
+                            # more than one value is ambiguous``.  Instead, fetch
+                            # the candidate values sequentially and normalise the
+                            # callable case.
+                            if callable(mean):
+                                mean = mean()
+                            if mean is None:
+                                mean = getattr(dist, "mean_actions", None)
                             std = getattr(inner_dist, "stddev", None)
                             if std is None:
                                 get_std = getattr(inner_dist, "get_std", None)
