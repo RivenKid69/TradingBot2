@@ -2079,6 +2079,19 @@ class DistributionalPPO(RecurrentPPO):
             self._entropy_plateau = True
             self._entropy_decay_start_update = update_index
 
+    def _record_raw_policy_metrics(
+        self,
+        avg_policy_entropy_raw: float,
+        entropy_raw_count: int,
+        kl_raw_sum: float,
+        kl_raw_count: int,
+    ) -> None:
+        if entropy_raw_count > 0:
+            self.logger.record("train/policy_entropy_raw", float(avg_policy_entropy_raw))
+        if kl_raw_count > 0:
+            approx_kl_raw_mean = kl_raw_sum / float(kl_raw_count)
+            self.logger.record("train/approx_kl_raw", float(approx_kl_raw_mean))
+
     def collect_rollouts(
         self,
         env: VecEnv,
@@ -2118,6 +2131,8 @@ class DistributionalPPO(RecurrentPPO):
 
         entropy_loss_total = 0.0
         entropy_loss_count = 0
+        entropy_raw_sum = 0.0
+        entropy_raw_count = 0
 
         n_steps = 0
         self._activate_return_scale_snapshot()
@@ -2138,6 +2153,7 @@ class DistributionalPPO(RecurrentPPO):
                 episode_starts = torch.as_tensor(
                     self._last_episode_starts, dtype=torch.float32, device=self.device
                 )
+                prev_actor_states = self._extract_actor_states(self._last_lstm_states)
                 actions, _, log_probs, self._last_lstm_states = self.policy.forward(
                     obs_tensor, self._last_lstm_states, episode_starts
                 )
@@ -2145,6 +2161,22 @@ class DistributionalPPO(RecurrentPPO):
                     value_quantiles = self.policy.last_value_quantiles
                 else:
                     value_logits = self.policy.last_value_logits
+
+                dist_output = self.policy.get_distribution(
+                    obs_tensor,
+                    prev_actor_states,
+                    episode_starts,
+                )
+                dist = dist_output[0] if isinstance(dist_output, tuple) else dist_output
+                inner_dist = getattr(dist, "distribution", None)
+                if inner_dist is not None:
+                    entropy_raw_tensor = inner_dist.entropy()
+                    if entropy_raw_tensor.ndim > 1:
+                        entropy_raw_tensor = entropy_raw_tensor.sum(dim=-1)
+                    if torch.isfinite(entropy_raw_tensor).all():
+                        entropy_raw_detached = entropy_raw_tensor.to(dtype=torch.float32)
+                        entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
+                        entropy_raw_count += int(entropy_raw_detached.numel())
 
             if self._use_quantile_value:
                 if value_quantiles is None:
@@ -2378,10 +2410,13 @@ class DistributionalPPO(RecurrentPPO):
         if entropy_loss_count > 0:
             self._last_rollout_entropy = entropy_loss_total / float(entropy_loss_count)
             self.logger.record("rollout/policy_entropy", self._last_rollout_entropy)
-            self._last_rollout_entropy_raw = self._last_rollout_entropy
         else:
             self._last_rollout_entropy = 0.0
-            self._last_rollout_entropy_raw = 0.0
+
+        if entropy_raw_count > 0:
+            self._last_rollout_entropy_raw = entropy_raw_sum / float(entropy_raw_count)
+        else:
+            self._last_rollout_entropy_raw = self._last_rollout_entropy
 
         return True
 
@@ -2744,8 +2779,10 @@ class DistributionalPPO(RecurrentPPO):
 
         policy_entropy_sum = 0.0
         policy_entropy_count = 0
-        policy_entropy_raw_sum = 0.0
-        policy_entropy_raw_count = 0
+        entropy_raw_sum = 0.0
+        entropy_raw_count = 0
+        kl_raw_sum = 0.0
+        kl_raw_count = 0
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
@@ -2972,20 +3009,44 @@ class DistributionalPPO(RecurrentPPO):
                     else:
                         dist = dist_output
 
-                    entropy_raw_tensor = dist.entropy()
+                    inner_dist = getattr(dist, "distribution", None)
                     if entropy_tensor is None:
                         entropy_fn = getattr(self.policy, "weighted_entropy", None)
                         if callable(entropy_fn):
                             entropy_tensor = entropy_fn(dist)
                         else:
-                            entropy_tensor = entropy_raw_tensor
+                            entropy_tensor = dist.entropy()
 
-                    entropy_raw_for_log = entropy_raw_tensor
-                    if entropy_raw_for_log.ndim > 1:
-                        entropy_raw_for_log = entropy_raw_for_log.sum(dim=-1)
-                    entropy_raw_detached = entropy_raw_for_log.detach().to(dtype=torch.float32)
-                    policy_entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
-                    policy_entropy_raw_count += int(entropy_raw_detached.numel())
+                    with torch.no_grad():
+                        if inner_dist is not None:
+                            entropy_raw_tensor = inner_dist.entropy()
+                            if entropy_raw_tensor.ndim > 1:
+                                entropy_raw_tensor = entropy_raw_tensor.sum(dim=-1)
+                            if torch.isfinite(entropy_raw_tensor).all():
+                                entropy_raw_detached = entropy_raw_tensor.to(dtype=torch.float32)
+                                entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
+                                entropy_raw_count += int(entropy_raw_detached.numel())
+
+                        if (
+                            isinstance(self.action_space, gym.spaces.Box)
+                            and inner_dist is not None
+                        ):
+                            eps = float(getattr(self.policy, "_score_clip_eps", 1e-6))
+                            scores = torch.clamp(rollout_data.actions, eps, 1.0 - eps)
+                            log_det = torch.log(scores) + torch.log1p(-scores)
+                            if log_det.ndim > 1:
+                                log_det = log_det.sum(dim=-1)
+                            log_det = log_det.reshape(-1)
+                            raw_actions = torch.logit(scores)
+                            raw_for_logprob = torch.clamp(raw_actions, -8.0, 8.0)
+                            log_prob_raw_new = dist.log_prob(raw_for_logprob).reshape(-1)
+                            old_log_prob_raw = rollout_data.old_log_prob.reshape(-1)
+                            approx_kl_raw_tensor = (
+                                old_log_prob_raw + log_det - log_prob_raw_new
+                            )
+                            if torch.isfinite(approx_kl_raw_tensor).all() and approx_kl_raw_tensor.numel() > 0:
+                                kl_raw_sum += float(approx_kl_raw_tensor.sum().item())
+                                kl_raw_count += int(approx_kl_raw_tensor.numel())
 
                     if entropy_tensor.ndim > 1:
                         entropy_tensor = entropy_tensor.sum(dim=-1)
@@ -3369,13 +3430,18 @@ class DistributionalPPO(RecurrentPPO):
             else self._last_rollout_entropy
         )
         avg_policy_entropy_raw = (
-            policy_entropy_raw_sum / float(policy_entropy_raw_count)
-            if policy_entropy_raw_count > 0
+            entropy_raw_sum / float(entropy_raw_count)
+            if entropy_raw_count > 0
             else self._last_rollout_entropy_raw
         )
         self._maybe_update_entropy_schedule(current_update, avg_policy_entropy)
         self.logger.record("train/policy_entropy", float(avg_policy_entropy))
-        self.logger.record("train/policy_entropy_raw", float(avg_policy_entropy_raw))
+        self._record_raw_policy_metrics(
+            avg_policy_entropy_raw,
+            entropy_raw_count,
+            kl_raw_sum,
+            kl_raw_count,
+        )
         if self._use_quantile_value:
             if value_quantiles_final is None:
                 cached_quantiles = getattr(self.policy, "last_value_quantiles", None)
