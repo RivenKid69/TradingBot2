@@ -1885,6 +1885,10 @@ def objective(trial: optuna.Trial,
     value_scale_window_updates_cfg = None
     value_scale_warmup_updates_cfg = None
     value_scale_freeze_after_cfg = None
+    value_scale_freeze_after_updates_cfg = None
+    value_scale_never_freeze_cfg = None
+    value_scale_target_scale_ema_beta_cfg = None
+    value_scale_max_change_pct_cfg = None
     value_scale_range_max_rel_step_cfg = None
     value_scale_range_max_rel_step_provided = False
     value_scale_stability_cfg: dict[str, Any] | None = None
@@ -1908,10 +1912,25 @@ def objective(trial: optuna.Trial,
         value_scale_freeze_after_cfg = _coerce_optional_int(
             value_scale_cfg.get("freeze_after"), "value_scale.freeze_after"
         )
+        value_scale_freeze_after_updates_cfg = _coerce_optional_int(
+            value_scale_cfg.get("freeze_after_updates"),
+            "value_scale.freeze_after_updates",
+        )
+        value_scale_never_freeze_cfg = _coerce_optional_bool(
+            value_scale_cfg.get("never_freeze"), "value_scale.never_freeze"
+        )
         if "range_max_rel_step" in value_scale_cfg:
             value_scale_range_max_rel_step_provided = True
         value_scale_range_max_rel_step_cfg = _coerce_optional_float(
             value_scale_cfg.get("range_max_rel_step"), "value_scale.range_max_rel_step"
+        )
+        value_scale_target_scale_ema_beta_cfg = _coerce_optional_float(
+            value_scale_cfg.get("target_scale_ema_beta"),
+            "value_scale.target_scale_ema_beta",
+        )
+        value_scale_max_change_pct_cfg = _coerce_optional_float(
+            value_scale_cfg.get("max_change_pct"),
+            "value_scale.max_change_pct",
         )
         stability_raw = value_scale_cfg.get("stability")
         if isinstance(stability_raw, Mapping):
@@ -1975,6 +1994,14 @@ def objective(trial: optuna.Trial,
         value_scale_freeze_after_cfg = _coerce_optional_int(
             getattr(value_scale_cfg, "freeze_after", None), "value_scale.freeze_after"
         )
+        value_scale_freeze_after_updates_cfg = _coerce_optional_int(
+            getattr(value_scale_cfg, "freeze_after_updates", None),
+            "value_scale.freeze_after_updates",
+        )
+        value_scale_never_freeze_cfg = _coerce_optional_bool(
+            getattr(value_scale_cfg, "never_freeze", None),
+            "value_scale.never_freeze",
+        )
         if hasattr(value_scale_cfg, "range_max_rel_step") or (
             hasattr(value_scale_cfg, "__dict__")
             and "range_max_rel_step" in getattr(value_scale_cfg, "__dict__", {})
@@ -1983,6 +2010,14 @@ def objective(trial: optuna.Trial,
         value_scale_range_max_rel_step_cfg = _coerce_optional_float(
             getattr(value_scale_cfg, "range_max_rel_step", None),
             "value_scale.range_max_rel_step",
+        )
+        value_scale_target_scale_ema_beta_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "target_scale_ema_beta", None),
+            "value_scale.target_scale_ema_beta",
+        )
+        value_scale_max_change_pct_cfg = _coerce_optional_float(
+            getattr(value_scale_cfg, "max_change_pct", None),
+            "value_scale.max_change_pct",
         )
         stability_raw = getattr(value_scale_cfg, "stability", None)
         if isinstance(stability_raw, Mapping):
@@ -2273,6 +2308,10 @@ def objective(trial: optuna.Trial,
         else 0
     )
     params["value_scale_freeze_after"] = value_scale_freeze_after_cfg
+    params["value_scale_freeze_after_updates"] = value_scale_freeze_after_updates_cfg
+    params["value_scale_never_freeze"] = value_scale_never_freeze_cfg
+    params["value_scale_target_ema_beta"] = value_scale_target_scale_ema_beta_cfg
+    params["value_scale_max_change_pct"] = value_scale_max_change_pct_cfg
     params["value_scale_range_max_rel_step"] = value_scale_range_max_rel_step_cfg
     params["value_scale_stability_patience"] = value_scale_stability_patience_cfg
     params["value_scale_stability"] = value_scale_stability_cfg
@@ -2977,6 +3016,18 @@ def objective(trial: optuna.Trial,
         "freeze_after": params["value_scale_freeze_after"],
         "range_max_rel_step": params["value_scale_range_max_rel_step"],
     }
+    if params["value_scale_freeze_after_updates"] is not None:
+        value_scale_kwargs["freeze_after_updates"] = params[
+            "value_scale_freeze_after_updates"
+        ]
+    if params["value_scale_never_freeze"] is not None:
+        value_scale_kwargs["never_freeze"] = params["value_scale_never_freeze"]
+    if params["value_scale_target_ema_beta"] is not None:
+        value_scale_kwargs["target_scale_ema_beta"] = params[
+            "value_scale_target_ema_beta"
+        ]
+    if params["value_scale_max_change_pct"] is not None:
+        value_scale_kwargs["max_change_pct"] = params["value_scale_max_change_pct"]
     stability_params = params["value_scale_stability"]
     if stability_params:
         value_scale_kwargs["stability"] = stability_params
