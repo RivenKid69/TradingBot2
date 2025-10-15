@@ -37,7 +37,7 @@ from copy import deepcopy
 from functools import lru_cache
 from collections.abc import Mapping
 import logging
-from typing import Any, Callable, Dict, MutableMapping, Sequence
+from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -1640,6 +1640,10 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "kl_exceed_stop_fraction"),
         "kl_exceed_stop_fraction",
     )
+    kl_absolute_stop_factor_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "kl_absolute_stop_factor"),
+        "kl_absolute_stop_factor",
+    )
     seed_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "seed"), "seed"
     )
@@ -1650,6 +1654,7 @@ def objective(trial: optuna.Trial,
     kl_ema_updates_cfg = None
     kl_ema_alpha_cfg = None
     kl_consec_minibatches_cfg = None
+    kl_absolute_stop_factor_override = None
     kl_exceed_stop_fraction_override = None
     kl_section_raw = _get_model_param_value(cfg, "kl")
     kl_section_map = _extract_section_payload(
@@ -1682,6 +1687,7 @@ def objective(trial: optuna.Trial,
             "ema_alpha",
             "exceed_stop_fraction",
             "consec_minibatches",
+            "absolute_stop_factor",
         ],
     )
     if early_stop_section_map:
@@ -1749,6 +1755,18 @@ def objective(trial: optuna.Trial,
                     "Warning: cfg.model.params.kl.early_stop.consec_minibatches is invalid; ignoring override"
                 )
                 kl_consec_minibatches_cfg = None
+
+        if "absolute_stop_factor" in early_stop_section_map:
+            try:
+                kl_absolute_stop_factor_override = _coerce_optional_float(
+                    early_stop_section_map.get("absolute_stop_factor"),
+                    "kl.early_stop.absolute_stop_factor",
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.absolute_stop_factor is invalid; ignoring override",
+                )
+                kl_absolute_stop_factor_override = None
 
     penalty_section_map = _extract_section_payload(
         kl_section_map.get("penalty"), ["type", "beta_init", "pid"]
@@ -2355,6 +2373,8 @@ def objective(trial: optuna.Trial,
 
     if kl_exceed_stop_fraction_override is not None:
         kl_exceed_stop_fraction_cfg = kl_exceed_stop_fraction_override
+    if kl_absolute_stop_factor_override is not None:
+        kl_absolute_stop_factor_cfg = kl_absolute_stop_factor_override
 
     kl_early_stop_value = (
         True if kl_early_stop_cfg is None else bool(kl_early_stop_cfg)
@@ -2387,6 +2407,19 @@ def objective(trial: optuna.Trial,
     params["kl_ema_alpha"] = kl_ema_alpha_value
     params["kl_consec_minibatches"] = kl_consec_minibatches_value
 
+    if (
+        kl_absolute_stop_factor_cfg is not None
+        and math.isfinite(kl_absolute_stop_factor_cfg)
+        and kl_absolute_stop_factor_cfg > 0.0
+    ):
+        kl_absolute_stop_factor_value: Optional[float] = float(kl_absolute_stop_factor_cfg)
+    elif kl_early_stop_value:
+        kl_absolute_stop_factor_value = 2.5
+    else:
+        kl_absolute_stop_factor_value = None
+
+    params["kl_absolute_stop_factor"] = kl_absolute_stop_factor_value
+
     params.setdefault("target_kl", 0.08)
     params.setdefault("kl_early_stop", True)
     params.setdefault(
@@ -2397,6 +2430,7 @@ def objective(trial: optuna.Trial,
     params.setdefault("kl_ema_updates", 10)
     params.setdefault("kl_ema_alpha", None)
     params.setdefault("kl_consec_minibatches", 3)
+    params.setdefault("kl_absolute_stop_factor", 2.5)
     params.setdefault("kl_penalty_beta_init", 0.01)
     params.setdefault("kl_penalty_beta_min", 1e-4)
     params.setdefault("kl_penalty_beta_max", 1.0)
@@ -3083,6 +3117,7 @@ def objective(trial: optuna.Trial,
         kl_ema_updates=int(params.get("kl_ema_updates", 10)),
         kl_ema_alpha=params.get("kl_ema_alpha"),
         kl_consec_minibatches=int(params.get("kl_consec_minibatches", 3)),
+        kl_absolute_stop_factor=params.get("kl_absolute_stop_factor"),
         kl_penalty_beta=params.get("kl_penalty_beta_init", 0.01),
         kl_penalty_beta_min=params.get("kl_penalty_beta_min", 1e-4),
         kl_penalty_beta_max=params.get("kl_penalty_beta_max", 1.0),
@@ -3134,12 +3169,28 @@ def objective(trial: optuna.Trial,
         "kl_exceed_stop_fraction",
         kl_exceed_stop_fraction_default,
     )
+    kl_absolute_stop_factor_default = params.get(
+        "kl_absolute_stop_factor",
+        2.5 if params.get("kl_early_stop", True) else None,
+    )
+    kl_absolute_stop_factor_logged = getattr(
+        model,
+        "kl_absolute_stop_factor",
+        kl_absolute_stop_factor_default,
+    )
     logger = getattr(model, "logger", None) or getattr(model, "_logger", None)
     if logger is not None:
         logger.record("config/target_kl", float(target_kl_logged))
         logger.record(
             "config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged)
         )
+        if kl_absolute_stop_factor_logged is not None:
+            logger.record(
+                "config/kl_absolute_stop_factor",
+                float(kl_absolute_stop_factor_logged),
+            )
+        else:
+            logger.record("config/kl_absolute_stop_factor", 0.0)
         logger.record("config/kl_early_stop", 1.0 if kl_early_stop_logged else 0.0)
         logger.record(
             "config/kl_use_ema", 1.0 if params.get("kl_early_stop_use_ema", True) else 0.0
