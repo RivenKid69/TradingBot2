@@ -80,6 +80,7 @@ model:
     kl_penalty_beta: 0.02              # включаем KL-пенализацию по умолчанию
     kl_epoch_decay: 1.0
     kl_lr_scale_min: 0.20              # даже если включится — не в ноль
+    optimizer_lr_min: 5.0e-6
     trade_frequency_penalty: 0.0
     turnover_penalty_coef: 0.0005      # ≈ комиссия 5 bps в долях
     reward_return_clip: 10.0           # Лимит лог-доходности

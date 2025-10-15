@@ -1,4 +1,5 @@
 import itertools
+import logging
 import math
 from collections import deque
 from collections.abc import Mapping
@@ -18,6 +19,8 @@ from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
+
+logger = logging.getLogger(__name__)
 
 PadFn = Callable[[Union[np.ndarray, torch.Tensor]], np.ndarray]
 
@@ -497,6 +500,111 @@ class DistributionalPPO(RecurrentPPO):
         expectation = mass * (tail_sum + partial)
         tail_mass = max(alpha, mass * (full_mass + frac))
         return expectation / tail_mass
+
+    def _enforce_optimizer_lr_bounds(
+        self,
+        *,
+        scheduler_lr: Optional[float] = None,
+        log_values: bool = True,
+        warn_on_floor: bool = True,
+    ) -> None:
+        optimizer = getattr(self.policy, "optimizer", None)
+        if optimizer is None:
+            return
+
+        param_groups = getattr(optimizer, "param_groups", [])
+        if not param_groups:
+            return
+
+        min_lr = float(getattr(self, "_optimizer_lr_min", 0.0))
+        max_lr = float(getattr(self, "_optimizer_lr_max", float("inf")))
+        if max_lr < min_lr:
+            max_lr = min_lr
+
+        before_lrs = [float(group.get("lr", 0.0)) for group in param_groups]
+        if not before_lrs:
+            return
+
+        lr_before_clip = float(before_lrs[0])
+        clipped_lrs: list[float] = []
+        floor_hit = False
+        for lr_value in before_lrs:
+            clipped = float(lr_value)
+            if math.isfinite(max_lr):
+                clipped = min(clipped, max_lr)
+            if clipped < min_lr:
+                floor_hit = True
+                clipped = min_lr
+            clipped_lrs.append(clipped)
+
+        for group, new_lr in zip(param_groups, clipped_lrs):
+            group["lr"] = float(new_lr)
+            if "initial_lr" in group:
+                initial_lr = float(group["initial_lr"])
+                if math.isfinite(max_lr):
+                    initial_lr = min(max(initial_lr, min_lr), max_lr)
+                else:
+                    initial_lr = max(initial_lr, min_lr)
+                group["initial_lr"] = initial_lr
+
+        lr_after_clip = float(clipped_lrs[0])
+
+        if warn_on_floor and floor_hit and lr_before_clip < min_lr - 1e-12:
+            if not getattr(self, "_optimizer_lr_floor_warned", False):
+                logger.warning(
+                    "Optimizer LR %.6e fell below floor %.6e; clamping to floor",
+                    lr_before_clip,
+                    min_lr,
+                )
+                self._optimizer_lr_floor_warned = True
+            if getattr(self, "logger", None) is not None:
+                self.logger.record("warn/optimizer_lr_floor_hit", float(lr_before_clip))
+
+        if not log_values or getattr(self, "logger", None) is None:
+            return
+
+        base_schedule = getattr(self, "_base_lr_schedule", None)
+        progress = getattr(self, "_current_progress_remaining", None)
+        base_lr = None
+        if callable(base_schedule) and progress is not None:
+            try:
+                base_lr = float(base_schedule(progress))
+            except Exception:
+                base_lr = None
+        if base_lr is None:
+            kl_scale = float(getattr(self, "_kl_lr_scale", 1.0))
+            if kl_scale > 0.0:
+                base_lr = lr_after_clip / kl_scale
+            else:
+                base_lr = lr_after_clip
+        kl_scale_value = float(getattr(self, "_kl_lr_scale", 1.0))
+
+        if scheduler_lr is None:
+            scheduler = getattr(self.policy, "lr_scheduler", None) or getattr(self, "lr_scheduler", None)
+            if scheduler is not None:
+                get_last_lr = getattr(scheduler, "get_last_lr", None)
+                if callable(get_last_lr):
+                    try:
+                        last_values = get_last_lr()
+                    except TypeError:
+                        last_values = None
+                    if last_values:
+                        scheduler_lr = float(last_values[0])
+        if scheduler_lr is None:
+            scheduler_lr = lr_after_clip
+
+        min_group_lr = float(min(clipped_lrs))
+        max_group_lr = float(max(clipped_lrs))
+
+        self.logger.record("train/lr_base", float(base_lr))
+        self.logger.record("train/lr_kl_scale", float(kl_scale_value))
+        self.logger.record("train/lr_scheduler", float(scheduler_lr))
+        self.logger.record("train/lr_before_clip", float(lr_before_clip))
+        self.logger.record("train/lr_after_clip", float(lr_after_clip))
+        self.logger.record("train/learning_rate", float(lr_after_clip))
+        self.logger.record("train/optimizer_lr", float(clipped_lrs[0]))
+        self.logger.record("train/optimizer_lr_group_min", min_group_lr)
+        self.logger.record("train/optimizer_lr_group_max", max_group_lr)
 
     def _compute_empirical_cvar(
         self, raw_rewards: torch.Tensor
@@ -1372,6 +1480,8 @@ class DistributionalPPO(RecurrentPPO):
         microbatch_size: Optional[int] = None,
         gradient_accumulation_steps: Optional[int] = None,
         loss_head_weights: Optional[Mapping[str, Union[float, bool]]] = None,
+        optimizer_lr_min: Optional[float] = None,
+        optimizer_lr_max: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
@@ -1381,6 +1491,7 @@ class DistributionalPPO(RecurrentPPO):
         self._global_update_step: int = 0
         self._loss_head_weights: Optional[dict[str, float]] = None
         self._kl_diag = bool(enable_kl_diagnostics)
+        self._optimizer_lr_floor_warned = False
 
         if not math.isfinite(kl_lr_scale_min):
             raise ValueError("'kl_lr_scale_min' must be finite")
@@ -1392,6 +1503,30 @@ class DistributionalPPO(RecurrentPPO):
             kl_lr_scale_min_requested = kl_lr_scale_min_value
 
         kwargs_local = dict(kwargs)
+
+        optimizer_lr_min_candidate = kwargs_local.pop("optimizer_lr_min", optimizer_lr_min)
+        if optimizer_lr_min_candidate is None:
+            optimizer_lr_min_value = 0.0
+        else:
+            optimizer_lr_min_value = float(optimizer_lr_min_candidate)
+            if not math.isfinite(optimizer_lr_min_value) or optimizer_lr_min_value < 0.0:
+                raise ValueError("'optimizer_lr_min' must be a non-negative finite value")
+
+        optimizer_lr_max_candidate = kwargs_local.pop("optimizer_lr_max", optimizer_lr_max)
+        if optimizer_lr_max_candidate is None:
+            optimizer_lr_max_value = float("inf")
+        else:
+            optimizer_lr_max_value = float(optimizer_lr_max_candidate)
+            if optimizer_lr_max_value <= 0.0:
+                raise ValueError("'optimizer_lr_max' must be positive when provided")
+            if not math.isfinite(optimizer_lr_max_value):
+                optimizer_lr_max_value = float("inf")
+
+        if math.isfinite(optimizer_lr_max_value) and optimizer_lr_max_value < optimizer_lr_min_value:
+            optimizer_lr_max_value = optimizer_lr_min_value
+
+        self._optimizer_lr_min = float(optimizer_lr_min_value)
+        self._optimizer_lr_max = float(optimizer_lr_max_value)
 
         if ppo_clip_range is not None:
             clip_range_candidate = ppo_clip_range
@@ -1824,6 +1959,10 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("debug/patch_tag", 1.0)
         self.logger.record("debug/loaded_from", 1.0)
 
+        self.logger.record("config/optimizer_lr_min", float(self._optimizer_lr_min))
+        if math.isfinite(self._optimizer_lr_max):
+            self.logger.record("config/optimizer_lr_max", float(self._optimizer_lr_max))
+
         base_lr = float(self.lr_schedule(1.0))
         value_params: list[torch.nn.Parameter] = []
         other_params: list[torch.nn.Parameter] = []
@@ -2029,6 +2168,20 @@ class DistributionalPPO(RecurrentPPO):
         if external_scheduler is None:
             external_scheduler = getattr(self, "lr_scheduler", None)
         if external_scheduler is not None:
+            base_schedule = getattr(self, "_base_lr_schedule", None)
+            base_value = None
+            if callable(base_schedule):
+                try:
+                    base_value = float(base_schedule(self._current_progress_remaining))
+                except Exception:
+                    base_value = None
+            if base_value is None:
+                groups = getattr(optimizer, "param_groups", [])
+                if groups:
+                    base_value = float(groups[0].get("lr", 0.0))
+            if base_value is not None:
+                self.logger.record("train/learning_rate", float(base_value))
+            self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=True)
             return
 
         base_lr = float(self.lr_schedule(self._current_progress_remaining))
@@ -2048,16 +2201,7 @@ class DistributionalPPO(RecurrentPPO):
         if self.lr_scheduler is not None and hasattr(self.lr_scheduler, "base_lrs"):
             self.lr_scheduler.base_lrs = list(group_lrs)
 
-        if group_lrs:
-            min_group_lr = min(group_lrs)
-            max_group_lr = max(group_lrs)
-            self.logger.record("train/optimizer_lr", min_group_lr)
-            self.logger.record("train/optimizer_lr_min", min_group_lr)
-            self.logger.record("train/optimizer_lr_max", max_group_lr)
-        else:
-            self.logger.record("train/optimizer_lr", base_lr)
-            self.logger.record("train/optimizer_lr_min", base_lr)
-            self.logger.record("train/optimizer_lr_max", base_lr)
+        self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=True)
 
     def _compute_clip_range_value(self, update_index: Optional[int] = None) -> float:
         idx = self._update_calls if update_index is None else max(0, int(update_index))
@@ -2290,6 +2434,7 @@ class DistributionalPPO(RecurrentPPO):
 
         self._refresh_kl_base_lrs()
         self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
+        self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=True)
         return actual_decay
 
     def _apply_epoch_decay(self) -> float:
@@ -3879,12 +4024,16 @@ class DistributionalPPO(RecurrentPPO):
                         if "initial_lr" in group:
                             group["initial_lr"] = scaled_lr
 
+                # Перед шагом оптимизатора удостоверимся, что LR не ниже жёсткого пола.
+                self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=False)
+
                 self.policy.optimizer.step()
 
                 # Ensure any scheduler is wired to the active optimizer before stepping it.
                 self._rebuild_scheduler_if_needed()
                 # Шаг шедулера (если он есть) — и только ПОСЛЕ него логируем optimizer_lr
                 scheduler = getattr(self.policy, "lr_scheduler", None) or self.lr_scheduler
+                last_scheduler_lr: Optional[float] = None
                 if scheduler is not None:
                     scheduler.step()
                     get_last_lr = getattr(scheduler, "get_last_lr", None)
@@ -3895,24 +4044,16 @@ class DistributionalPPO(RecurrentPPO):
                             scheduler_lrs = None
                         if scheduler_lrs:
                             last_scheduler_lr = float(scheduler_lrs[0])
-                            self.logger.record("train/scheduler_lr", last_scheduler_lr)
                     # Освежаем _kl_base_lr для корректного KL-скейла при внешнем шедулере
                     self._refresh_kl_base_lrs()
+                else:
+                    self._refresh_kl_base_lrs()
 
-                # Теперь логируем уже ФАКТИЧЕСКИЙ LR из оптимизатора (после scheduler.step())
-                if len(self.policy.optimizer.param_groups) > 0:
-                    lrs = [float(g["lr"]) for g in self.policy.optimizer.param_groups]
-                    self.logger.record("train/optimizer_lr", lrs[0])
-                    self.logger.record("train/optimizer_lr_min", min(lrs))
-                    self.logger.record("train/optimizer_lr_max", max(lrs))
-
-                optimizer = getattr(self.policy, "optimizer", None)
-                if optimizer is not None:
-                    for group in getattr(optimizer, "param_groups", []):
-                        if "lr" in group:
-                            cur_lr = float(group["lr"])
-                            self.logger.record("train/learning_rate", cur_lr)
-                            break
+                self._enforce_optimizer_lr_bounds(
+                    scheduler_lr=last_scheduler_lr,
+                    log_values=True,
+                    warn_on_floor=True,
+                )
 
                 approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
                 approx_kl_latest = approx_kl
