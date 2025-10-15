@@ -1596,6 +1596,9 @@ def objective(trial: optuna.Trial,
     ent_coef_final_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "ent_coef_final"), "ent_coef_final"
     )
+    ent_coef_min_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "ent_coef_min"), "ent_coef_min"
+    )
     ent_coef_decay_steps_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "ent_coef_decay_steps"), "ent_coef_decay_steps"
     )
@@ -2179,6 +2182,7 @@ def objective(trial: optuna.Trial,
         "batch_size": batch_size_cfg if batch_size_cfg is not None else trial.suggest_categorical("batch_size", [64, 128, 256]),
         "ent_coef": ent_coef_cfg if ent_coef_cfg is not None else trial.suggest_float("ent_coef", 5e-5, 5e-3, log=True),
         "ent_coef_final": ent_coef_final_cfg if ent_coef_final_cfg is not None else None,
+        "ent_coef_min": ent_coef_min_cfg if ent_coef_min_cfg is not None else 5e-4,
         "ent_coef_decay_steps": ent_coef_decay_steps_cfg if ent_coef_decay_steps_cfg is not None else 0,
         "ent_coef_plateau_window": ent_coef_plateau_window_cfg if ent_coef_plateau_window_cfg is not None else 0,
         "ent_coef_plateau_tolerance": ent_coef_plateau_tolerance_cfg if ent_coef_plateau_tolerance_cfg is not None else 0.0,
@@ -3011,6 +3015,7 @@ def objective(trial: optuna.Trial,
         bc_decay_steps=params["bc_decay_steps"],
         bc_final_coef=0.0,
         ent_coef_final=params["ent_coef_final"],
+        ent_coef_min=params["ent_coef_min"],
         ent_coef_decay_steps=params["ent_coef_decay_steps"],
         ent_coef_plateau_window=params["ent_coef_plateau_window"],
         ent_coef_plateau_tolerance=params["ent_coef_plateau_tolerance"],
