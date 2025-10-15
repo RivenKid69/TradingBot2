@@ -78,7 +78,7 @@ model:
     seed: 20240518
     # target_kl можно переопределить через вложенный блок algo.params.kl
     kl_early_stop: true
-    kl_exceed_stop_fraction: 0.30      # стопим эпоху, если ≥30% батчей вышли за target_kl
+    kl_exceed_stop_fraction: 0.15      # стопим эпоху, если ≥15% батчей вышли за target_kl
     kl_epoch_decay: 1.0
     kl:
       target_kl: 0.08
@@ -87,8 +87,9 @@ model:
         use_ema: true
         ema_updates: 10
         ema_alpha: null
-        exceed_stop_fraction: 0.30
-        consec_minibatches: 3
+        exceed_stop_fraction: 0.15
+        consec_minibatches: 2
+        absolute_stop_factor: 2.5
       use_lr_decay: false
       penalty:
         type: adaptive_beta

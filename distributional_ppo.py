@@ -1550,6 +1550,7 @@ class DistributionalPPO(RecurrentPPO):
         kl_ema_updates: int = 10,
         kl_ema_alpha: Optional[float] = None,
         kl_consec_minibatches: int = 0,
+        kl_absolute_stop_factor: Optional[float] = 2.5,
         kl_penalty_beta: float = 0.0,
         kl_penalty_beta_min: float = 0.0,
         kl_penalty_beta_max: float = 0.1,
@@ -2307,6 +2308,8 @@ class DistributionalPPO(RecurrentPPO):
                 raise ValueError("'kl_ema_alpha' must be within (0, 1]")
             self._kl_ema_alpha = alpha_value
         self._kl_consec_minibatches = max(0, int(kl_consec_minibatches))
+        self._kl_absolute_stop_factor: Optional[float] = None
+        self.kl_absolute_stop_factor = kl_absolute_stop_factor
         self._base_n_epochs = max(1, int(self.n_epochs))
         self._kl_epoch_factor = 1.0
         self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
@@ -2371,6 +2374,24 @@ class DistributionalPPO(RecurrentPPO):
     @kl_exceed_stop_fraction.setter
     def kl_exceed_stop_fraction(self, value: float) -> None:
         self._kl_exceed_stop_fraction = float(value)
+
+    @property
+    def kl_absolute_stop_factor(self) -> Optional[float]:
+        """Return the absolute KL stop multiplier if configured."""
+
+        return self._kl_absolute_stop_factor
+
+    @kl_absolute_stop_factor.setter
+    def kl_absolute_stop_factor(self, value: Optional[float]) -> None:
+        if value is None:
+            self._kl_absolute_stop_factor = None
+            return
+
+        factor_value = float(value)
+        if not math.isfinite(factor_value) or factor_value <= 0.0:
+            raise ValueError("'kl_absolute_stop_factor' must be a positive finite value when provided")
+
+        self._kl_absolute_stop_factor = factor_value
 
     def _update_learning_rate(self, optimizer: Optional[torch.optim.Optimizer]) -> None:
         if optimizer is None:
@@ -3717,6 +3738,7 @@ class DistributionalPPO(RecurrentPPO):
         approx_kl_last_exceeded_smooth = 0.0
         kl_exceed_consec_max_latest = 0
         kl_stop_trigger_value_raw: Optional[float] = None
+        kl_absolute_stop_triggered = False
 
         base_n_epochs = max(1, int(self.n_epochs))
         if base_n_epochs != self._base_n_epochs:
@@ -4333,6 +4355,27 @@ class DistributionalPPO(RecurrentPPO):
 
                 approx_kl_smooth_latest = float(approx_kl_smooth_value)
 
+                if (
+                    self.target_kl is not None
+                    and self.target_kl > 0.0
+                    and self._kl_absolute_stop_factor is not None
+                ):
+                    target_kl_value = float(self.target_kl)
+                    kl_absolute_threshold = self._kl_absolute_stop_factor * target_kl_value
+                    if approx_kl_smooth_value >= kl_absolute_threshold:
+                        kl_early_stop_triggered = True
+                        kl_absolute_stop_triggered = True
+                        approx_kl_last_exceeded_raw = float(approx_kl)
+                        approx_kl_last_exceeded_smooth = float(approx_kl_smooth_value)
+                        approx_kl_exceed_count += 1
+                        epoch_exceed_count += 1
+                        epoch_consec_run += 1
+                        if epoch_consec_run > epoch_consec_max:
+                            epoch_consec_max = epoch_consec_run
+                        kl_stop_trigger_value_raw = float(approx_kl)
+                        self._handle_kl_divergence(float(approx_kl))
+                        break
+
                 exceed_flag = False
                 if self.target_kl is not None and self.target_kl > 0.0:
                     exceed_flag = approx_kl_smooth_value > float(self.target_kl)
@@ -4412,6 +4455,7 @@ class DistributionalPPO(RecurrentPPO):
                 self.kl_early_stop
                 and self.target_kl is not None
                 and self.target_kl > 0.0
+                and not kl_absolute_stop_triggered
             ):
                 trigger_value = (
                     kl_stop_trigger_value_raw
@@ -4724,6 +4768,10 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
             self.logger.record("train/kl_last_exceeded", float(approx_kl_last_exceeded_raw))
             self.logger.record("train/kl_exceed_consec_max", float(kl_exceed_consec_max_latest))
+            self.logger.record(
+                "train/kl_absolute_stop_trigger",
+                1.0 if kl_absolute_stop_triggered else 0.0,
+            )
             if kl_early_stop_triggered:
                 self.logger.record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
         if last_optimizer_lr is not None:
