@@ -73,13 +73,13 @@ model:
     batch_size: 64                     # типичный минибатч для PPO
     microbatch_size: 64
     seed: 20240518
-    target_kl: 0.03                    # агрессивно контролируем дивергенцию
+    target_kl: 0.05                    # агрессивно контролируем дивергенцию
     kl_early_stop: true
-    kl_exceed_stop_fraction: 0.03      # стопим эпоху, если ≥3% батчей вышли за target_kl
-    kl_lr_decay: 0.5                   # не душить LR «за KL»
-    kl_penalty_beta: 0.05              # включаем KL-пенализацию по умолчанию
+    kl_exceed_stop_fraction: 0.10      # стопим эпоху, если ≥3% батчей вышли за target_kl
+    kl_lr_decay: 0.7                   # не душить LR «за KL»
+    kl_penalty_beta: 0.02              # включаем KL-пенализацию по умолчанию
     kl_epoch_decay: 1.0
-    kl_lr_scale_min: 0.10              # даже если включится — не в ноль
+    kl_lr_scale_min: 0.20              # даже если включится — не в ноль
     trade_frequency_penalty: 0.0
     turnover_penalty_coef: 0.0005      # ≈ комиссия 5 bps в долях
     reward_return_clip: 10.0           # Лимит лог-доходности
