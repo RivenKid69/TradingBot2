@@ -1489,6 +1489,12 @@ def objective(trial: optuna.Trial,
     learning_rate_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "learning_rate"), "learning_rate"
     )
+    optimizer_lr_min_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "optimizer_lr_min"), "optimizer_lr_min"
+    )
+    optimizer_lr_max_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "optimizer_lr_max"), "optimizer_lr_max"
+    )
     gamma_cfg = _coerce_optional_float(_get_model_param_value(cfg, "gamma"), "gamma")
     gae_lambda_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "gae_lambda"), "gae_lambda"
@@ -1931,6 +1937,21 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "cvar_ramp_updates"), "cvar_ramp_updates"
     )
 
+    optimizer_lr_min_value = 0.0
+    if optimizer_lr_min_cfg is not None and math.isfinite(optimizer_lr_min_cfg):
+        optimizer_lr_min_value = float(max(0.0, optimizer_lr_min_cfg))
+
+    optimizer_lr_max_value = float("inf")
+    if (
+        optimizer_lr_max_cfg is not None
+        and math.isfinite(optimizer_lr_max_cfg)
+        and optimizer_lr_max_cfg > 0.0
+    ):
+        optimizer_lr_max_value = float(optimizer_lr_max_cfg)
+
+    if math.isfinite(optimizer_lr_max_value) and optimizer_lr_max_value < optimizer_lr_min_value:
+        optimizer_lr_max_value = optimizer_lr_min_value
+
     params = {
         "window_size": trial.suggest_categorical("window_size", [10, 20, 30]),
         "n_steps": n_steps_cfg if n_steps_cfg is not None else trial.suggest_categorical("n_steps", [512, 1024, 2048]),
@@ -1943,6 +1964,8 @@ def objective(trial: optuna.Trial,
         "ent_coef_plateau_tolerance": ent_coef_plateau_tolerance_cfg if ent_coef_plateau_tolerance_cfg is not None else 0.0,
         "ent_coef_plateau_min_updates": ent_coef_plateau_min_updates_cfg if ent_coef_plateau_min_updates_cfg is not None else 0,
         "learning_rate": learning_rate_cfg if learning_rate_cfg is not None else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
+        "optimizer_lr_min": optimizer_lr_min_value,
+        "optimizer_lr_max": optimizer_lr_max_value,
         "risk_aversion_drawdown": trial.suggest_float("risk_aversion_drawdown", 0.05, 0.3),
         "risk_aversion_variance": trial.suggest_float("risk_aversion_variance", 0.005, 0.01),
         "weight_decay": trial.suggest_float("weight_decay", 1e-6, 1e-2, log=True),
@@ -2706,6 +2729,8 @@ def objective(trial: optuna.Trial,
         kl_penalty_beta=params.get("kl_penalty_beta", 0.02),
 
         learning_rate=params["learning_rate"],
+        optimizer_lr_min=params["optimizer_lr_min"],
+        optimizer_lr_max=params["optimizer_lr_max"],
         n_steps=params["n_steps"],
         n_epochs=params["n_epochs"],
         batch_size=params["batch_size"],
