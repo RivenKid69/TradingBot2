@@ -1643,9 +1643,14 @@ def objective(trial: optuna.Trial,
     kl_epoch_decay_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "kl_epoch_decay"), "kl_epoch_decay"
     )
+    kl_early_stop_use_ema_cfg = None
+    kl_ema_updates_cfg = None
+    kl_ema_alpha_cfg = None
+    kl_consec_minibatches_cfg = None
+    kl_exceed_stop_fraction_override = None
     kl_section_raw = _get_model_param_value(cfg, "kl")
     kl_section_map = _extract_section_payload(
-        kl_section_raw, ["target_kl", "use_lr_decay", "penalty"]
+        kl_section_raw, ["target_kl", "use_lr_decay", "penalty", "early_stop"]
     )
     kl_use_lr_decay_cfg = None
     if "target_kl" in kl_section_map:
@@ -1664,6 +1669,83 @@ def objective(trial: optuna.Trial,
                 "Warning: cfg.model.params.kl.use_lr_decay is invalid; ignoring override"
             )
             kl_use_lr_decay_cfg = None
+
+    early_stop_section_map = _extract_section_payload(
+        kl_section_map.get("early_stop"),
+        [
+            "enabled",
+            "use_ema",
+            "ema_updates",
+            "ema_alpha",
+            "exceed_stop_fraction",
+            "consec_minibatches",
+        ],
+    )
+    if early_stop_section_map:
+        if "enabled" in early_stop_section_map:
+            try:
+                early_stop_enabled = _coerce_optional_bool(
+                    early_stop_section_map.get("enabled"), "kl.early_stop.enabled"
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.enabled is invalid; ignoring override"
+                )
+                early_stop_enabled = None
+            if early_stop_enabled is not None:
+                kl_early_stop_cfg = early_stop_enabled
+        if "use_ema" in early_stop_section_map:
+            try:
+                kl_early_stop_use_ema_cfg = _coerce_optional_bool(
+                    early_stop_section_map.get("use_ema"), "kl.early_stop.use_ema"
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.use_ema is invalid; ignoring override"
+                )
+                kl_early_stop_use_ema_cfg = None
+        if "ema_updates" in early_stop_section_map:
+            try:
+                kl_ema_updates_cfg = _coerce_optional_int(
+                    early_stop_section_map.get("ema_updates"), "kl.early_stop.ema_updates"
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.ema_updates is invalid; ignoring override"
+                )
+                kl_ema_updates_cfg = None
+        if "ema_alpha" in early_stop_section_map:
+            try:
+                kl_ema_alpha_cfg = _coerce_optional_float(
+                    early_stop_section_map.get("ema_alpha"), "kl.early_stop.ema_alpha"
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.ema_alpha is invalid; ignoring override"
+                )
+                kl_ema_alpha_cfg = None
+        if "exceed_stop_fraction" in early_stop_section_map:
+            try:
+                kl_exceed_stop_fraction_override = _coerce_optional_float(
+                    early_stop_section_map.get("exceed_stop_fraction"),
+                    "kl.early_stop.exceed_stop_fraction",
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.exceed_stop_fraction is invalid; ignoring override"
+                )
+                kl_exceed_stop_fraction_override = None
+        if "consec_minibatches" in early_stop_section_map:
+            try:
+                kl_consec_minibatches_cfg = _coerce_optional_int(
+                    early_stop_section_map.get("consec_minibatches"),
+                    "kl.early_stop.consec_minibatches",
+                )
+            except ValueError:
+                print(
+                    "Warning: cfg.model.params.kl.early_stop.consec_minibatches is invalid; ignoring override"
+                )
+                kl_consec_minibatches_cfg = None
 
     penalty_section_map = _extract_section_payload(
         kl_section_map.get("penalty"), ["type", "beta_init", "pid"]
@@ -1732,7 +1814,7 @@ def objective(trial: optuna.Trial,
         kl_early_stop_cfg = True
     if kl_exceed_stop_fraction_cfg is None:
         kl_exceed_stop_fraction_cfg = (
-            0.10 if kl_early_stop_cfg else 0.0
+            0.30 if kl_early_stop_cfg else 0.0
         )
     if turnover_penalty_coef_cfg is None:
         print(
@@ -2228,24 +2310,50 @@ def objective(trial: optuna.Trial,
         cvar_ramp_updates_cfg if cvar_ramp_updates_cfg is not None else 6
     )
 
+    if kl_exceed_stop_fraction_override is not None:
+        kl_exceed_stop_fraction_cfg = kl_exceed_stop_fraction_override
+
+    kl_early_stop_value = (
+        True if kl_early_stop_cfg is None else bool(kl_early_stop_cfg)
+    )
+    params["kl_early_stop"] = kl_early_stop_value
+
     if kl_exceed_stop_fraction_cfg is not None:
         kl_exceed_stop_fraction_value = float(
             np.clip(kl_exceed_stop_fraction_cfg, 0.0, 1.0)
         )
-    elif kl_early_stop_cfg:
-        kl_exceed_stop_fraction_value = 0.10
+    elif kl_early_stop_value:
+        kl_exceed_stop_fraction_value = 0.30
     else:
         kl_exceed_stop_fraction_value = 0.0
-
-    params["kl_early_stop"] = bool(kl_early_stop_cfg)
     params["kl_exceed_stop_fraction"] = kl_exceed_stop_fraction_value
+
+    kl_early_stop_use_ema_value = True if kl_early_stop_use_ema_cfg is None else bool(kl_early_stop_use_ema_cfg)
+    if kl_ema_updates_cfg is None:
+        kl_ema_updates_value = 10
+    else:
+        kl_ema_updates_value = max(1, int(kl_ema_updates_cfg))
+    kl_ema_alpha_value = float(kl_ema_alpha_cfg) if kl_ema_alpha_cfg is not None else None
+    if kl_consec_minibatches_cfg is None:
+        kl_consec_minibatches_value = 3
+    else:
+        kl_consec_minibatches_value = max(0, int(kl_consec_minibatches_cfg))
+
+    params["kl_early_stop_use_ema"] = kl_early_stop_use_ema_value
+    params["kl_ema_updates"] = kl_ema_updates_value
+    params["kl_ema_alpha"] = kl_ema_alpha_value
+    params["kl_consec_minibatches"] = kl_consec_minibatches_value
 
     params.setdefault("target_kl", 0.08)
     params.setdefault("kl_early_stop", True)
     params.setdefault(
         "kl_exceed_stop_fraction",
-        0.10 if params.get("kl_early_stop", True) else 0.0,
+        0.30 if params.get("kl_early_stop", True) else 0.0,
     )
+    params.setdefault("kl_early_stop_use_ema", True)
+    params.setdefault("kl_ema_updates", 10)
+    params.setdefault("kl_ema_alpha", None)
+    params.setdefault("kl_consec_minibatches", 3)
     params.setdefault("kl_penalty_beta_init", 0.01)
     params.setdefault("kl_penalty_beta_min", 1e-4)
     params.setdefault("kl_penalty_beta_max", 1.0)
@@ -2912,8 +3020,13 @@ def objective(trial: optuna.Trial,
         cvar_activation_threshold=params["cvar_activation_threshold"],
         cvar_activation_hysteresis=params["cvar_activation_hysteresis"],
         cvar_ramp_updates=int(params["cvar_ramp_updates"]),
+        kl_early_stop=params["kl_early_stop"],
         kl_epoch_decay=params["kl_epoch_decay"],
         kl_exceed_stop_fraction=params.get("kl_exceed_stop_fraction"),
+        kl_early_stop_use_ema=params.get("kl_early_stop_use_ema", True),
+        kl_ema_updates=int(params.get("kl_ema_updates", 10)),
+        kl_ema_alpha=params.get("kl_ema_alpha"),
+        kl_consec_minibatches=int(params.get("kl_consec_minibatches", 3)),
         kl_penalty_beta=params.get("kl_penalty_beta_init", 0.01),
         kl_penalty_beta_min=params.get("kl_penalty_beta_min", 1e-4),
         kl_penalty_beta_max=params.get("kl_penalty_beta_max", 1.0),
@@ -2958,7 +3071,7 @@ def objective(trial: optuna.Trial,
         target_kl_logged = params.get("target_kl", 0.08)
     kl_exceed_stop_fraction_default = params.get(
         "kl_exceed_stop_fraction",
-        0.10 if params.get("kl_early_stop", True) else 0.0,
+        0.30 if params.get("kl_early_stop", True) else 0.0,
     )
     kl_exceed_stop_fraction_logged = getattr(
         model,
@@ -2972,6 +3085,15 @@ def objective(trial: optuna.Trial,
             "config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged)
         )
         logger.record("config/kl_early_stop", 1.0 if kl_early_stop_logged else 0.0)
+        logger.record(
+            "config/kl_use_ema", 1.0 if params.get("kl_early_stop_use_ema", True) else 0.0
+        )
+        logger.record("config/kl_ema_updates", float(params.get("kl_ema_updates", 10)))
+        if params.get("kl_ema_alpha") is not None:
+            logger.record("config/kl_ema_alpha", float(params["kl_ema_alpha"]))
+        logger.record(
+            "config/kl_consec_minibatches", float(params.get("kl_consec_minibatches", 3))
+        )
         logger.record("config/kl_penalty_beta_init", float(params["kl_penalty_beta_init"]))
         logger.record("config/kl_penalty_beta_min", float(params["kl_penalty_beta_min"]))
         logger.record("config/kl_penalty_beta_max", float(params["kl_penalty_beta_max"]))

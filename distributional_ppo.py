@@ -1480,8 +1480,13 @@ class DistributionalPPO(RecurrentPPO):
         ent_coef_plateau_tolerance: float = 0.0,
         ent_coef_plateau_min_updates: int = 0,
         target_kl: Optional[float] = None,
+        kl_early_stop: bool = True,
         kl_epoch_decay: float = 0.5,
         kl_exceed_stop_fraction: float = 0.25,
+        kl_early_stop_use_ema: bool = True,
+        kl_ema_updates: int = 10,
+        kl_ema_alpha: Optional[float] = None,
+        kl_consec_minibatches: int = 0,
         kl_penalty_beta: float = 0.0,
         kl_penalty_beta_min: float = 0.0,
         kl_penalty_beta_max: float = 0.1,
@@ -2125,6 +2130,18 @@ class DistributionalPPO(RecurrentPPO):
             return float(max(base_lr, self._kl_min_lr))
 
         self.lr_schedule = _scaled_lr_schedule
+        self.kl_early_stop = bool(kl_early_stop)
+        self._kl_early_stop_use_ema = bool(kl_early_stop_use_ema)
+        ema_updates_value = max(1, int(kl_ema_updates))
+        self._kl_ema_window = int(ema_updates_value)
+        if kl_ema_alpha is None:
+            self._kl_ema_alpha: Optional[float] = None
+        else:
+            alpha_value = float(kl_ema_alpha)
+            if not math.isfinite(alpha_value) or not (0.0 < alpha_value <= 1.0):
+                raise ValueError("'kl_ema_alpha' must be within (0, 1]")
+            self._kl_ema_alpha = alpha_value
+        self._kl_consec_minibatches = max(0, int(kl_consec_minibatches))
         self._base_n_epochs = max(1, int(self.n_epochs))
         self._kl_epoch_factor = 1.0
         self._kl_epoch_factor_min = 1.0 / float(self._base_n_epochs)
@@ -2134,6 +2151,8 @@ class DistributionalPPO(RecurrentPPO):
         self._kl_exceed_stop_fraction = float(kl_exceed_stop_fraction)
         if not (0.0 <= self._kl_exceed_stop_fraction <= 1.0):
             raise ValueError("'kl_exceed_stop_fraction' must be within [0, 1]")
+        # Alias used by logging and update routines.
+        self.kl_exceed_stop_fraction = self._kl_exceed_stop_fraction
 
         beta_min = max(0.0, float(kl_penalty_beta_min))
         beta_max = max(beta_min, float(kl_penalty_beta_max))
@@ -2183,6 +2202,10 @@ class DistributionalPPO(RecurrentPPO):
         """Return the configured KL exceed stop fraction."""
 
         return self._kl_exceed_stop_fraction
+
+    @kl_exceed_stop_fraction.setter
+    def kl_exceed_stop_fraction(self, value: float) -> None:
+        self._kl_exceed_stop_fraction = float(value)
 
     def _update_learning_rate(self, optimizer: Optional[torch.optim.Optimizer]) -> None:
         if optimizer is None:
@@ -3516,6 +3539,11 @@ class DistributionalPPO(RecurrentPPO):
         adv_z_values: list[torch.Tensor] = []
         approx_kl_exceed_count = 0
         minibatches_processed = 0
+        approx_kl_smooth_latest = 0.0
+        approx_kl_last_exceeded_raw = 0.0
+        approx_kl_last_exceeded_smooth = 0.0
+        kl_exceed_consec_max_latest = 0
+        kl_stop_trigger_value_raw: Optional[float] = None
 
         base_n_epochs = max(1, int(self.n_epochs))
         if base_n_epochs != self._base_n_epochs:
@@ -3573,8 +3601,15 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/microbatch_size", float(microbatch_size_effective))
             self.logger.record("train/grad_accum_steps", float(grad_accum_steps))
 
+            epoch_minibatches_processed = 0
+            epoch_exceed_count = 0
+            epoch_consec_run = 0
+            epoch_consec_max = 0
+            kl_window: Optional[deque[float]] = None
+            kl_window_sum = 0.0
+            kl_smooth_value: Optional[float] = None
+
             for microbatch_group in minibatch_iterator:
-                minibatches_processed += 1
                 microbatch_items = tuple(microbatch_group)
                 sample_counts = [int(data.advantages.shape[0]) for data in microbatch_items]
                 bucket_target_size = int(sum(sample_counts))
@@ -4094,12 +4129,62 @@ class DistributionalPPO(RecurrentPPO):
                 approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
                 approx_kl_latest = approx_kl
                 approx_kl_divs.append(approx_kl)
+                minibatches_processed += 1
+                epoch_minibatches_processed += 1
+
+                approx_kl_smooth_value = approx_kl
+                if self._kl_early_stop_use_ema:
+                    if self._kl_ema_alpha is not None:
+                        if kl_smooth_value is None:
+                            kl_smooth_value = approx_kl
+                        else:
+                            kl_smooth_value = (
+                                self._kl_ema_alpha * approx_kl
+                                + (1.0 - self._kl_ema_alpha) * kl_smooth_value
+                            )
+                        approx_kl_smooth_value = kl_smooth_value
+                    else:
+                        if kl_window is None:
+                            kl_window = deque()
+                            kl_window_sum = 0.0
+                        kl_window.append(approx_kl)
+                        kl_window_sum += float(approx_kl)
+                        if len(kl_window) > self._kl_ema_window:
+                            removed_value = float(kl_window.popleft())
+                            kl_window_sum -= removed_value
+                        approx_kl_smooth_value = kl_window_sum / float(len(kl_window))
+                        kl_smooth_value = approx_kl_smooth_value
+                else:
+                    kl_smooth_value = approx_kl
+                    approx_kl_smooth_value = approx_kl
+
+                approx_kl_smooth_latest = float(approx_kl_smooth_value)
+
+                exceed_flag = False
+                if self.target_kl is not None and self.target_kl > 0.0:
+                    exceed_flag = approx_kl_smooth_value > float(self.target_kl)
+                    if exceed_flag:
+                        approx_kl_exceed_count += 1
+                        epoch_exceed_count += 1
+                        epoch_consec_run += 1
+                        if epoch_consec_run > epoch_consec_max:
+                            epoch_consec_max = epoch_consec_run
+                        approx_kl_last_exceeded_raw = float(approx_kl)
+                        approx_kl_last_exceeded_smooth = float(approx_kl_smooth_value)
+                    else:
+                        epoch_consec_run = 0
+                else:
+                    epoch_consec_run = 0
+
                 if (
-                    self.target_kl is not None
-                    and self.target_kl > 0.0
-                    and approx_kl > float(self.target_kl)
+                    exceed_flag
+                    and self.kl_early_stop
+                    and self._kl_consec_minibatches > 0
+                    and epoch_consec_run >= self._kl_consec_minibatches
                 ):
-                    approx_kl_exceed_count += 1
+                    kl_early_stop_triggered = True
+                    kl_stop_trigger_value_raw = float(approx_kl)
+                    break
 
                 policy_loss_value = bucket_policy_loss_value
                 policy_loss_ppo_value = bucket_policy_loss_ppo_value
@@ -4118,21 +4203,49 @@ class DistributionalPPO(RecurrentPPO):
                 if bucket_value_logits_fp32 is not None:
                     value_logits_final = bucket_value_logits_fp32
 
-                if (
-                    self.target_kl is not None
-                    and self.target_kl > 0.0
-                    and self.kl_exceed_stop_fraction > 0.0
-                    and minibatches_processed > 0
-                ):
-                    exceed_fraction = float(approx_kl_exceed_count) / float(minibatches_processed)
-                    kl_exceed_fraction_latest = exceed_fraction
-                    if exceed_fraction >= self.kl_exceed_stop_fraction:
-                        kl_early_stop_triggered = True
-                        self._handle_kl_divergence(approx_kl_latest)
-                        break
+                # Fraction-based KL stop evaluated after completing the epoch
 
             if kl_early_stop_triggered:
+                if epoch_minibatches_processed > 0:
+                    epoch_exceed_fraction = float(epoch_exceed_count) / float(epoch_minibatches_processed)
+                else:
+                    epoch_exceed_fraction = 0.0
+                kl_exceed_fraction_latest = epoch_exceed_fraction
+                kl_exceed_consec_max_latest = epoch_consec_max
                 break
+
+            if epoch_minibatches_processed > 0:
+                epoch_exceed_fraction = float(epoch_exceed_count) / float(epoch_minibatches_processed)
+            else:
+                epoch_exceed_fraction = 0.0
+            kl_exceed_fraction_latest = epoch_exceed_fraction
+            kl_exceed_consec_max_latest = epoch_consec_max
+
+            if (
+                self.kl_early_stop
+                and self.target_kl is not None
+                and self.target_kl > 0.0
+                and self.kl_exceed_stop_fraction > 0.0
+                and epoch_exceed_fraction >= self.kl_exceed_stop_fraction
+            ):
+                kl_early_stop_triggered = True
+                kl_stop_trigger_value_raw = (
+                    approx_kl_last_exceeded_raw if approx_kl_last_exceeded_raw > 0.0 else float(approx_kl_latest)
+                )
+                break
+
+        if kl_early_stop_triggered:
+            if (
+                self.kl_early_stop
+                and self.target_kl is not None
+                and self.target_kl > 0.0
+            ):
+                trigger_value = (
+                    kl_stop_trigger_value_raw
+                    if kl_stop_trigger_value_raw is not None
+                    else float(approx_kl_last_exceeded_raw or approx_kl_latest)
+                )
+                self._handle_kl_divergence(trigger_value)
         self._n_updates += epochs_completed
         self._update_calls += 1
         self._global_update_step += 1
@@ -4404,7 +4517,7 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/ent_coef_final", float(self.ent_coef_final))
 
         approx_kl_exceed_frac = (
-            float(approx_kl_exceed_count) / float(minibatches_processed)
+            float(kl_exceed_fraction_latest)
             if minibatches_processed > 0
             else 0.0
         )
@@ -4417,9 +4530,12 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/approx_kl_max", float(np.max(approx_kl_array)))
             if self.target_kl is not None and self.target_kl > 0.0:
                 self._adjust_kl_penalty(approx_kl_mean)
+        self.logger.record("train/approx_kl_ema", float(approx_kl_smooth_latest))
         if self.target_kl is not None and self.target_kl > 0.0:
             self.logger.record("train/kl_exceed_frac", approx_kl_exceed_frac)
             self.logger.record("train/kl_exceed_stop_fraction", float(self.kl_exceed_stop_fraction))
+            self.logger.record("train/kl_last_exceeded", float(approx_kl_last_exceeded_raw))
+            self.logger.record("train/kl_exceed_consec_max", float(kl_exceed_consec_max_latest))
             if kl_early_stop_triggered:
                 self.logger.record("train/kl_exceed_frac_at_stop", float(kl_exceed_fraction_latest))
         if last_optimizer_lr is not None:
