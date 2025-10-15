@@ -995,6 +995,45 @@ class DistributionalPPO(RecurrentPPO):
         clamped_ratio = min(max(ratio, lower / base), upper / base)
         return float(max(base * clamped_ratio, 1e-8))
 
+    def _smooth_value_target_scale(self, previous: float, target: float) -> float:
+        """Blend and clamp the effective value-target scale update."""
+
+        target = float(target)
+        if not math.isfinite(target) or target <= 0.0:
+            target = 1.0
+
+        previous = float(previous)
+        if not math.isfinite(previous) or previous <= 0.0:
+            previous = target
+
+        beta = float(getattr(self, "_value_target_scale_smoothing_beta", 1.0))
+        if not math.isfinite(beta):
+            beta = 1.0
+        beta = min(max(beta, 0.0), 1.0)
+
+        if beta <= 0.0:
+            candidate = previous
+        elif beta >= 1.0:
+            candidate = target
+        else:
+            candidate = previous + beta * (target - previous)
+
+        pct_limit = getattr(self, "_value_target_scale_max_change_pct", None)
+        if pct_limit is None:
+            return float(max(candidate, 1e-8))
+
+        pct_limit = float(pct_limit)
+        if pct_limit <= 0.0 or not math.isfinite(pct_limit):
+            return float(max(candidate, 1e-8))
+
+        base = max(previous, 1e-8)
+        upper = base * (1.0 + pct_limit)
+        lower = base * max(1.0 - pct_limit, 1e-6)
+        if lower > upper:
+            lower, upper = upper, lower
+        candidate = min(max(candidate, lower), upper)
+        return float(max(candidate, 1e-8))
+
     def _limit_v_range_step(
         self,
         old_min: float,
@@ -1244,9 +1283,24 @@ class DistributionalPPO(RecurrentPPO):
         warmup_limit = int(getattr(self, "_value_scale_warmup_limit", 3))
         min_samples = int(getattr(self, "_value_scale_min_samples", 256))
         frozen = bool(getattr(self, "_value_scale_frozen", False))
-        warmup_active = (not frozen) and (self._value_scale_update_count < warmup_limit)
+        never_freeze = bool(getattr(self, "_value_scale_never_freeze", False))
+        if frozen and never_freeze:
+            frozen = False
+            self._value_scale_frozen = False
+        freeze_after_limit = getattr(self, "_value_scale_freeze_after", None)
+        if (
+            not frozen
+            and not never_freeze
+            and freeze_after_limit is not None
+            and self._value_scale_update_count >= int(freeze_after_limit)
+        ):
+            frozen = True
+            self._value_scale_frozen = True
+        allow_updates = not frozen
+        warmup_phase = self._value_scale_update_count < warmup_limit
+        warmup_active = allow_updates and warmup_phase
 
-        if warmup_active and returns_raw_tensor.numel() > 0:
+        if allow_updates and returns_raw_tensor.numel() > 0:
             returns_np = returns_raw_tensor.detach().cpu().numpy().astype(np.float32)
             finite_mask = np.isfinite(returns_np)
             if np.any(finite_mask):
@@ -1257,7 +1311,10 @@ class DistributionalPPO(RecurrentPPO):
                     del buffer[:-buffer_limit]
 
         sample_count = len(self._value_scale_warmup_buffer)
-        sample_ready = warmup_active and sample_count >= min_samples
+        sample_ready = allow_updates and (
+            (warmup_phase and sample_count >= min_samples)
+            or (not warmup_phase and sample_count > 0)
+        )
 
         before_mean = float(self._ret_mean_value)
         before_std = max(float(self._ret_std_value), self._value_scale_std_floor)
@@ -1281,13 +1338,13 @@ class DistributionalPPO(RecurrentPPO):
         new_mean = before_mean
         new_std = before_std
 
-        block_samples = 1 if (warmup_active and not sample_ready) else 0
-        block_freeze = 1 if (not warmup_active and frozen) else 0
+        block_samples = 1 if (allow_updates and warmup_phase and not sample_ready) else 0
+        block_freeze = 1 if (not allow_updates and frozen) else 0
         block_stability = 0
 
         if self.normalize_returns:
             pending_rms = self._pending_rms
-            if warmup_active and pending_rms is not None and returns_raw_tensor.numel() > 0:
+            if allow_updates and pending_rms is not None and returns_raw_tensor.numel() > 0:
                 with torch.no_grad():
                     pending_values = (
                         returns_raw_tensor.detach().cpu().numpy().astype(np.float64)
@@ -1297,12 +1354,15 @@ class DistributionalPPO(RecurrentPPO):
                         pending_rms.update(pending_values[finite_mask])
 
             rms_ready = (
-                warmup_active
+                allow_updates
                 and pending_rms is not None
-                and pending_rms.count >= float(min_samples)
+                and (
+                    pending_rms.count >= float(min_samples)
+                    or not warmup_phase
+                )
             )
 
-            if warmup_active and sample_ready and rms_ready and pending_rms is not None:
+            if allow_updates and sample_ready and rms_ready and pending_rms is not None:
                 sample_stats = self._extract_rms_stats(pending_rms)
                 if sample_stats is not None:
                     sample_mean, sample_var, sample_weight = sample_stats
@@ -1348,7 +1408,11 @@ class DistributionalPPO(RecurrentPPO):
                         self.ret_clip * new_std,
                         self.ret_clip * self._value_scale_std_floor,
                     )
-                    self._value_target_scale_effective = float(1.0 / denom)
+                    target_scale = float(1.0 / denom)
+                    prev_scale = float(self._value_target_scale_effective)
+                    self._value_target_scale_effective = self._smooth_value_target_scale(
+                        prev_scale, target_scale
+                    )
                     self._value_target_scale_robust = 1.0
 
                     running_v_min_unscaled = self.running_v_min * new_std + new_mean
@@ -1356,9 +1420,6 @@ class DistributionalPPO(RecurrentPPO):
 
                     update_applied = True
                     self._value_scale_update_count += 1
-                    if self._value_scale_update_count >= warmup_limit:
-                        self._value_scale_frozen = True
-                        self._value_scale_warmup_buffer.clear()
 
                     self.ret_rms.mean[...] = float(new_mean)
                     self.ret_rms.var[...] = float(new_std * new_std)
@@ -1374,7 +1435,7 @@ class DistributionalPPO(RecurrentPPO):
             self._pending_ret_std = float(self._ret_std_snapshot)
             self._pending_rms = None
         else:
-            if warmup_active and sample_ready:
+            if allow_updates and sample_ready:
                 abs_buffer = np.abs(
                     np.asarray(self._value_scale_warmup_buffer, dtype=np.float32)
                 )
@@ -1391,7 +1452,10 @@ class DistributionalPPO(RecurrentPPO):
                 self._value_target_scale_robust = robust_scale_value
                 effective_scale = float(self.value_target_scale) / robust_scale_value
                 effective_scale = float(min(max(effective_scale, 1e-3), 1e3))
-                self._value_target_scale_effective = effective_scale
+                prev_scale = float(self._value_target_scale_effective)
+                self._value_target_scale_effective = self._smooth_value_target_scale(
+                    prev_scale, effective_scale
+                )
                 if self._value_clip_limit_unscaled is not None:
                     self._value_clip_limit_scaled = (
                         self._value_clip_limit_unscaled * self._value_target_scale_effective
@@ -1399,9 +1463,6 @@ class DistributionalPPO(RecurrentPPO):
 
                 update_applied = True
                 self._value_scale_update_count += 1
-                if self._value_scale_update_count >= warmup_limit:
-                    self._value_scale_frozen = True
-                    self._value_scale_warmup_buffer.clear()
 
             self._pending_ret_mean = None
             self._pending_ret_std = None
@@ -1433,9 +1494,10 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/value_scale_update_block_freeze", float(block_freeze))
         self.logger.record("train/value_scale_update_block_stability", float(block_stability))
 
-        if self._value_scale_update_count >= warmup_limit:
-            self._value_scale_frozen = True
-        self.logger.record("train/value_scale_frozen", float(self._value_scale_frozen))
+        self.logger.record(
+            "train/value_scale_frozen",
+            1.0 if getattr(self, "_value_scale_frozen", False) else 0.0,
+        )
 
     def __init__(
         self,
@@ -1757,9 +1819,13 @@ class DistributionalPPO(RecurrentPPO):
         value_scale_window_updates = None
         value_scale_warmup_updates = None
         value_scale_freeze_after = None
+        value_scale_freeze_after_updates = None
+        value_scale_never_freeze = None
         value_scale_range_max_rel_step = None
         value_scale_stability_cfg_raw: Optional[Mapping[str, Any]] = None
         value_scale_stability_patience = None
+        value_scale_target_ema_beta = None
+        value_scale_max_change_pct = None
         if isinstance(value_scale_cfg, Mapping):
             value_scale_ema_beta = value_scale_cfg.get("ema_beta")
             value_scale_max_rel_step = value_scale_cfg.get("max_rel_step")
@@ -1767,11 +1833,15 @@ class DistributionalPPO(RecurrentPPO):
             value_scale_window_updates = value_scale_cfg.get("window_updates")
             value_scale_warmup_updates = value_scale_cfg.get("warmup_updates")
             value_scale_freeze_after = value_scale_cfg.get("freeze_after")
+            value_scale_freeze_after_updates = value_scale_cfg.get("freeze_after_updates")
+            value_scale_never_freeze = value_scale_cfg.get("never_freeze")
             value_scale_range_max_rel_step = value_scale_cfg.get("range_max_rel_step")
             stability_candidate = value_scale_cfg.get("stability")
             if isinstance(stability_candidate, Mapping):
                 value_scale_stability_cfg_raw = stability_candidate
             value_scale_stability_patience = value_scale_cfg.get("stability_patience")
+            value_scale_target_ema_beta = value_scale_cfg.get("target_scale_ema_beta")
+            value_scale_max_change_pct = value_scale_cfg.get("max_change_pct")
         elif value_scale_cfg is not None:
             value_scale_ema_beta = getattr(value_scale_cfg, "ema_beta", None)
             value_scale_max_rel_step = getattr(value_scale_cfg, "max_rel_step", None)
@@ -1779,6 +1849,10 @@ class DistributionalPPO(RecurrentPPO):
             value_scale_window_updates = getattr(value_scale_cfg, "window_updates", None)
             value_scale_warmup_updates = getattr(value_scale_cfg, "warmup_updates", None)
             value_scale_freeze_after = getattr(value_scale_cfg, "freeze_after", None)
+            value_scale_freeze_after_updates = getattr(
+                value_scale_cfg, "freeze_after_updates", None
+            )
+            value_scale_never_freeze = getattr(value_scale_cfg, "never_freeze", None)
             value_scale_range_max_rel_step = getattr(
                 value_scale_cfg, "range_max_rel_step", None
             )
@@ -1788,6 +1862,10 @@ class DistributionalPPO(RecurrentPPO):
             value_scale_stability_patience = getattr(
                 value_scale_cfg, "stability_patience", None
             )
+            value_scale_target_ema_beta = getattr(
+                value_scale_cfg, "target_scale_ema_beta", None
+            )
+            value_scale_max_change_pct = getattr(value_scale_cfg, "max_change_pct", None)
 
         if value_scale_ema_beta is None:
             value_scale_ema_beta = kwargs_local.pop("value_scale_ema_beta", 0.2)
@@ -1809,12 +1887,34 @@ class DistributionalPPO(RecurrentPPO):
             value_scale_freeze_after = kwargs_local.pop("value_scale_freeze_after", None)
         else:
             kwargs_local.pop("value_scale_freeze_after", None)
+        if value_scale_freeze_after_updates is None:
+            value_scale_freeze_after_updates = kwargs_local.pop(
+                "value_scale_freeze_after_updates", None
+            )
+        else:
+            kwargs_local.pop("value_scale_freeze_after_updates", None)
         if value_scale_range_max_rel_step is None:
             value_scale_range_max_rel_step = kwargs_local.pop(
                 "value_scale_range_max_rel_step", None
             )
         else:
             kwargs_local.pop("value_scale_range_max_rel_step", None)
+        if value_scale_never_freeze is None:
+            value_scale_never_freeze = kwargs_local.pop("value_scale_never_freeze", None)
+        else:
+            kwargs_local.pop("value_scale_never_freeze", None)
+        if value_scale_target_ema_beta is None:
+            value_scale_target_ema_beta = kwargs_local.pop(
+                "value_scale_target_ema_beta", None
+            )
+        else:
+            kwargs_local.pop("value_scale_target_ema_beta", None)
+        if value_scale_max_change_pct is None:
+            value_scale_max_change_pct = kwargs_local.pop(
+                "value_scale_max_change_pct", None
+            )
+        else:
+            kwargs_local.pop("value_scale_max_change_pct", None)
         if value_scale_stability_cfg_raw is None:
             stability_raw_alt = kwargs_local.pop("value_scale_stability", None)
             if isinstance(stability_raw_alt, Mapping):
@@ -1846,13 +1946,46 @@ class DistributionalPPO(RecurrentPPO):
         self._value_scale_stats_second = 1.0
         self._value_target_scale_effective = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
-        self._value_scale_warmup_limit = 3
+
+        if value_scale_target_ema_beta is None:
+            value_scale_target_ema_beta = value_scale_ema_beta
+        target_beta = float(value_scale_target_ema_beta)
+        if not math.isfinite(target_beta):
+            raise ValueError("'value_scale.ema_beta' for target smoothing must be finite")
+        if target_beta < 0.0 or target_beta > 1.0:
+            raise ValueError("'value_scale.ema_beta' must be in [0, 1]")
+        self._value_target_scale_smoothing_beta = target_beta
+
+        if value_scale_max_change_pct is None:
+            self._value_target_scale_max_change_pct = None
+        else:
+            pct_value = float(value_scale_max_change_pct)
+            if not math.isfinite(pct_value):
+                raise ValueError("'value_scale.max_change_pct' must be finite")
+            if pct_value < 0.0:
+                raise ValueError("'value_scale.max_change_pct' must be non-negative")
+            self._value_target_scale_max_change_pct = pct_value
+
+        warmup_limit_value = 3
+        if value_scale_warmup_updates is not None:
+            warmup_limit_value = max(1, int(value_scale_warmup_updates))
+        self._value_scale_warmup_limit = int(warmup_limit_value)
         self._value_scale_min_samples = 256
         self._value_scale_warmup_buffer: list[float] = []
         self._value_scale_warmup_buffer_limit = 65536
         self._value_clip_limit_scaled: Optional[float] = None
         self._value_scale_warmup_updates = int(self._value_scale_warmup_limit)
-        self._value_scale_freeze_after = int(self._value_scale_warmup_limit)
+
+        freeze_after_candidate = value_scale_freeze_after_updates
+        if freeze_after_candidate is None:
+            freeze_after_candidate = value_scale_freeze_after
+        if freeze_after_candidate is None:
+            self._value_scale_freeze_after = None
+        else:
+            freeze_after_int = int(freeze_after_candidate)
+            self._value_scale_freeze_after = max(freeze_after_int, 0)
+        self._value_scale_never_freeze = bool(value_scale_never_freeze)
+        self._value_scale_auto_thaw_bad_ev = 8
         if value_scale_range_max_rel_step is None:
             range_step_value = 0.15
         else:
@@ -1958,6 +2091,23 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record(
             "debug/value_scale_warmup_updates", float(self._value_scale_warmup_updates)
         )
+        self.logger.record(
+            "debug/value_target_scale_ema_beta",
+            float(self._value_target_scale_smoothing_beta),
+        )
+        if self._value_target_scale_max_change_pct is not None:
+            self.logger.record(
+                "debug/value_target_scale_max_change_pct",
+                float(self._value_target_scale_max_change_pct),
+            )
+        self.logger.record(
+            "debug/value_scale_never_freeze", float(self._value_scale_never_freeze)
+        )
+        if getattr(self, "_value_scale_auto_thaw_bad_ev", 0) > 0:
+            self.logger.record(
+                "debug/value_scale_auto_thaw_bad_ev",
+                float(self._value_scale_auto_thaw_bad_ev),
+            )
         if self._value_scale_freeze_after is not None:
             self.logger.record(
                 "debug/value_scale_freeze_after", float(self._value_scale_freeze_after)
@@ -4394,6 +4544,15 @@ class DistributionalPPO(RecurrentPPO):
         else:
             self._bad_explained_counter = 0
         self._last_explained_variance = float(explained_var)
+
+        auto_thaw_patience = int(getattr(self, "_value_scale_auto_thaw_bad_ev", 0))
+        if (
+            auto_thaw_patience > 0
+            and self._bad_explained_counter >= auto_thaw_patience
+            and getattr(self, "_value_scale_frozen", False)
+        ):
+            self._value_scale_frozen = False
+            self.logger.record("train/value_scale_auto_thaw", float(self._bad_explained_counter))
 
         frame_stable = self._is_value_scale_frame_stable(
             self._value_scale_latest_ret_abs_p95, self._last_explained_variance
