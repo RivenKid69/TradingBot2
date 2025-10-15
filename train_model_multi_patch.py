@@ -1308,82 +1308,125 @@ def objective(trial: optuna.Trial,
 
     # ИСПРАВЛЕНО: window_size возвращен в пространство поиска HPO
     def _get_model_param_value(cfg: TrainConfig, key: str):
-        try:
-            model_cfg = getattr(cfg, "model", None)
-            if model_cfg is None:
-                return None
-            params_obj = getattr(model_cfg, "params", None)
-            if params_obj is None:
-                return None
-            if isinstance(params_obj, Mapping):
-                return params_obj.get(key)
-            getter = getattr(params_obj, "get", None)
-            if callable(getter):
-                try:
-                    return getter(key)
-                except Exception:
-                    pass
-            if hasattr(params_obj, key):
-                return getattr(params_obj, key)
-            if hasattr(params_obj, "__dict__"):
-                if key in params_obj.__dict__:
-                    return params_obj.__dict__.get(key)
-            dict_method = getattr(params_obj, "dict", None)
-            if callable(dict_method):
-                try:
-                    params_dict = dict_method()
-                except TypeError:
-                    params_dict = None
-                if isinstance(params_dict, Mapping):
-                    return params_dict.get(key)
-        except Exception:
+        model_cfg = getattr(cfg, "model", None)
+        if model_cfg is None:
             return None
+        sentinel = object()
+        try:
+            value = getattr(model_cfg, key, sentinel)
+        except Exception:
+            value = sentinel
+        if value is not sentinel:
+            return value
+        try:
+            model_extra = _get_extra_mapping(model_cfg)
+        except Exception:
+            model_extra = getattr(model_cfg, "__dict__", {}) or {}
+        if isinstance(model_extra, Mapping) and key in model_extra:
+            return model_extra[key]
+        params_obj = getattr(model_cfg, "params", None)
+        if params_obj is None:
+            return None
+        if isinstance(params_obj, Mapping):
+            return params_obj.get(key)
+        getter = getattr(params_obj, "get", None)
+        if callable(getter):
+            sentinel = object()
+            try:
+                value = getter(key, sentinel)
+            except TypeError:
+                try:
+                    value = getter(key)
+                except Exception:
+                    value = sentinel
+            except Exception:
+                value = sentinel
+            if value is not sentinel:
+                return value
+        attr_sentinel = object()
+        try:
+            attr_value = getattr(params_obj, key, attr_sentinel)
+        except Exception:
+            attr_value = attr_sentinel
+        if attr_value is not attr_sentinel:
+            return attr_value
+        d = getattr(params_obj, "__dict__", None)
+        if isinstance(d, Mapping) and key in d:
+            return d.get(key)
+        dict_method = getattr(params_obj, "dict", None)
+        if callable(dict_method):
+            try:
+                pd = dict_method()
+            except TypeError:
+                pd = None
+            if isinstance(pd, Mapping):
+                return pd.get(key)
         return None
 
     def _has_model_param(cfg: TrainConfig, key: str) -> bool:
         try:
             model_cfg = getattr(cfg, "model", None)
-            if model_cfg is None:
-                return False
-            params_obj = getattr(model_cfg, "params", None)
-            if params_obj is None:
-                return False
-            if isinstance(params_obj, Mapping):
-                return key in params_obj
-            if hasattr(params_obj, key):
-                return True
-            contains = getattr(params_obj, "__contains__", None)
-            if callable(contains):
-                try:
-                    if contains(key):
-                        return True
-                except Exception:
-                    pass
-            getter = getattr(params_obj, "get", None)
-            if callable(getter):
-                sentinel = object()
-                try:
-                    value = getter(key, sentinel)
-                except TypeError:
-                    try:
-                        value = getter(key)
-                    except Exception:
-                        value = sentinel
-                if value is not sentinel:
-                    return True
-            if hasattr(params_obj, "__dict__") and isinstance(params_obj.__dict__, Mapping):
-                if key in params_obj.__dict__:
-                    return True
-            dict_method = getattr(params_obj, "dict", None)
-            if callable(dict_method):
-                try:
-                    params_dict = dict_method()
-                except TypeError:
-                    params_dict = None
-                if isinstance(params_dict, Mapping):
-                    return key in params_dict
         except Exception:
             return False
+        if model_cfg is None:
+            return False
+        sentinel = object()
+        try:
+            value = getattr(model_cfg, key, sentinel)
+        except Exception:
+            value = sentinel
+        if value is not sentinel:
+            return True
+        try:
+            model_extra = _get_extra_mapping(model_cfg)
+        except Exception:
+            model_extra = getattr(model_cfg, "__dict__", {}) or {}
+        if isinstance(model_extra, Mapping) and key in model_extra:
+            return True
+        params_obj = getattr(model_cfg, "params", None)
+        if params_obj is None:
+            return False
+        if isinstance(params_obj, Mapping):
+            return key in params_obj
+        attr_sentinel = object()
+        try:
+            attr_value = getattr(params_obj, key, attr_sentinel)
+        except Exception:
+            attr_value = attr_sentinel
+        if attr_value is not attr_sentinel:
+            return True
+        contains = getattr(params_obj, "__contains__", None)
+        if callable(contains):
+            try:
+                if contains(key):
+                    return True
+            except Exception:
+                pass
+        getter = getattr(params_obj, "get", None)
+        if callable(getter):
+            sentinel = object()
+            try:
+                value = getter(key, sentinel)
+            except TypeError:
+                try:
+                    value = getter(key)
+                except Exception:
+                    value = sentinel
+            except Exception:
+                value = sentinel
+            if value is not sentinel:
+                return True
+        d = getattr(params_obj, "__dict__", None)
+        if isinstance(d, Mapping) and key in d:
+            return True
+        dict_method = getattr(params_obj, "dict", None)
+        if callable(dict_method):
+            try:
+                pd = dict_method()
+            except TypeError:
+                pd = None
+            if isinstance(pd, Mapping):
+                return key in pd
         return False
 
     def _get_extra_mapping(obj):
