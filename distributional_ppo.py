@@ -1475,6 +1475,7 @@ class DistributionalPPO(RecurrentPPO):
         bc_decay_steps: int = 0,
         bc_final_coef: Optional[float] = None,
         ent_coef_final: Optional[float] = None,
+        ent_coef_min: float = 5e-4,
         ent_coef_decay_steps: int = 0,
         ent_coef_plateau_window: int = 0,
         ent_coef_plateau_tolerance: float = 0.0,
@@ -2087,6 +2088,20 @@ class DistributionalPPO(RecurrentPPO):
         self.bc_final_coef = float(bc_final_coef) if bc_final_coef is not None else 0.0
         self._current_bc_coef = float(self.bc_initial_coef)
 
+        ent_coef_min_value = float(ent_coef_min)
+        if not math.isfinite(ent_coef_min_value) or ent_coef_min_value < 0.0:
+            raise ValueError("'ent_coef_min' must be a non-negative finite value")
+        self.ent_coef_min = ent_coef_min_value
+
+        initial_ent_coef_raw = float(self.ent_coef)
+        if initial_ent_coef_raw < self.ent_coef_min:
+            self.ent_coef = float(self.ent_coef_min)
+        self._ent_coef_last_raw = float(initial_ent_coef_raw)
+        self._ent_coef_last_clamped = float(self.ent_coef)
+        self._ent_coef_last_clamp_applied = bool(
+            self._ent_coef_last_clamped > initial_ent_coef_raw + 1e-12
+        )
+
         self.ent_coef_initial = float(self.ent_coef)
         self.ent_coef_final = (
             float(ent_coef_final) if ent_coef_final is not None else float(self.ent_coef_initial)
@@ -2565,18 +2580,21 @@ class DistributionalPPO(RecurrentPPO):
 
     def _update_ent_coef(self, update_index: int) -> float:
         if self.ent_coef_decay_steps <= 0:
-            self.ent_coef = float(self.ent_coef_final)
-            return self.ent_coef
+            raw_value = float(self.ent_coef_final)
+        elif self._entropy_decay_start_update is None:
+            raw_value = float(self.ent_coef_initial)
+        else:
+            steps_since_start = max(0, update_index - self._entropy_decay_start_update)
+            progress = min(1.0, steps_since_start / float(self.ent_coef_decay_steps))
+            raw_value = float(
+                self.ent_coef_initial + (self.ent_coef_final - self.ent_coef_initial) * progress
+            )
 
-        if self._entropy_decay_start_update is None:
-            self.ent_coef = float(self.ent_coef_initial)
-            return self.ent_coef
-
-        steps_since_start = max(0, update_index - self._entropy_decay_start_update)
-        progress = min(1.0, steps_since_start / float(self.ent_coef_decay_steps))
-        self.ent_coef = float(
-            self.ent_coef_initial + (self.ent_coef_final - self.ent_coef_initial) * progress
-        )
+        clamped_value = float(max(raw_value, self.ent_coef_min))
+        self._ent_coef_last_raw = float(raw_value)
+        self._ent_coef_last_clamped = float(clamped_value)
+        self._ent_coef_last_clamp_applied = bool(clamped_value > raw_value + 1e-12)
+        self.ent_coef = clamped_value
         return self.ent_coef
 
     def _maybe_update_entropy_schedule(self, update_index: int, avg_entropy: float) -> None:
@@ -3144,9 +3162,14 @@ class DistributionalPPO(RecurrentPPO):
         self._clip_range_current = self._compute_clip_range_value(current_update)
         clip_range = float(self._clip_range_current)
         self._update_ent_coef(current_update)
-        nominal_ent_coef = float(self.ent_coef)
-        ent_coef_effective = self._compute_entropy_boost(nominal_ent_coef)
-        self.ent_coef = ent_coef_effective
+        ent_coef_raw_value = float(self._ent_coef_last_raw)
+        ent_coef_nominal_value = float(self._ent_coef_last_clamped)
+        ent_coef_boosted_value = float(self._compute_entropy_boost(ent_coef_nominal_value))
+        ent_coef_eff_value = float(max(ent_coef_boosted_value, self.ent_coef_min))
+        ent_coef_autoclamp_flag = bool(
+            self._ent_coef_last_clamp_applied or ent_coef_eff_value > ent_coef_boosted_value + 1e-12
+        )
+        self.ent_coef = ent_coef_eff_value
         vf_coef_effective = self._compute_vf_coef_value(current_update)
         self.vf_coef = vf_coef_effective
         current_cvar_weight_nominal = float(max(self._compute_cvar_weight(), 0.0))
@@ -4020,7 +4043,7 @@ class DistributionalPPO(RecurrentPPO):
 
                     loss = (
                         policy_loss.to(dtype=torch.float32)
-                        + self.ent_coef * entropy_loss.to(dtype=torch.float32)
+                        + ent_coef_eff_value * entropy_loss.to(dtype=torch.float32)
                         + vf_coef_effective * critic_loss
                         + cvar_term
                     )
@@ -4486,8 +4509,14 @@ class DistributionalPPO(RecurrentPPO):
         decay_start = self._entropy_decay_start_update if self._entropy_decay_start_update is not None else -1
         self.logger.record("train/entropy_decay_start_update", float(decay_start))
 
-        self.logger.record("train/ent_coef", float(self.ent_coef))
-        self.logger.record("train/ent_coef_nominal", float(nominal_ent_coef))
+        self.logger.record("train/ent_coef", float(ent_coef_raw_value))
+        self.logger.record("train/ent_coef_nominal", float(ent_coef_nominal_value))
+        self.logger.record("train/ent_coef_eff", float(ent_coef_eff_value))
+        self.logger.record("train/ent_coef_min", float(self.ent_coef_min))
+        self.logger.record(
+            "train/ent_coef_autoclamp",
+            1.0 if ent_coef_autoclamp_flag else 0.0,
+        )
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
         self.logger.record("debug/cvar_penalty_scale", float(cvar_penalty_scale))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
