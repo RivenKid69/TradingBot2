@@ -1080,6 +1080,12 @@ class OptimizerLrLoggingCallback(BaseCallback):
         if policy is None:
             return True
 
+        algo = getattr(self, "model", None)
+        opt_floor = float(getattr(algo, "_optimizer_lr_min", 0.0))
+        sch_floor = float(getattr(algo, "_scheduler_min_lr", opt_floor))
+        if sch_floor < opt_floor:
+            sch_floor = opt_floor
+
         optimizer = getattr(policy, "optimizer", None)
         opt_lrs: list[float] = []
         if optimizer is not None:
@@ -1093,7 +1099,7 @@ class OptimizerLrLoggingCallback(BaseCallback):
                     continue
 
         if opt_lrs:
-            self.logger.record("train/optimizer_lr", opt_lrs[0])
+            self.logger.record("train/optimizer_lr", max(opt_lrs[0], opt_floor))
         else:
             self.logger.record("train/optimizer_lr", None)
 
@@ -1107,7 +1113,7 @@ class OptimizerLrLoggingCallback(BaseCallback):
             except TypeError:
                 sch_lrs = None
             if sch_lrs:
-                self.logger.record("train/scheduler_lr", float(sch_lrs[0]))
+                self.logger.record("train/scheduler_lr", max(float(sch_lrs[0]), sch_floor))
             else:
                 self.logger.record("train/scheduler_lr", None)
         else:
@@ -1565,6 +1571,15 @@ def objective(trial: optuna.Trial,
     optimizer_lr_min_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "optimizer_lr_min"), "optimizer_lr_min"
     )
+    scheduler_min_lr_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "scheduler_min_lr"), "scheduler_min_lr"
+    )
+    # Fallback to top-level model scheduler_min_lr if not found within params
+    if scheduler_min_lr_cfg is None:
+        try:
+            scheduler_min_lr_cfg = float(getattr(cfg.model, "scheduler_min_lr", None))
+        except Exception:
+            scheduler_min_lr_cfg = None
     optimizer_lr_max_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "optimizer_lr_max"), "optimizer_lr_max"
     )
@@ -2054,9 +2069,15 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "cvar_ramp_updates"), "cvar_ramp_updates"
     )
 
-    optimizer_lr_min_value = 0.0
+    optimizer_lr_min_value = 1e-5
     if optimizer_lr_min_cfg is not None and math.isfinite(optimizer_lr_min_cfg):
         optimizer_lr_min_value = float(max(0.0, optimizer_lr_min_cfg))
+
+    scheduler_min_lr_value = optimizer_lr_min_value
+    if scheduler_min_lr_cfg is not None and math.isfinite(scheduler_min_lr_cfg):
+        scheduler_min_lr_value = float(max(0.0, scheduler_min_lr_cfg))
+        if scheduler_min_lr_value < optimizer_lr_min_value:
+            scheduler_min_lr_value = optimizer_lr_min_value
 
     optimizer_lr_max_value = float("inf")
     if (
@@ -2082,6 +2103,7 @@ def objective(trial: optuna.Trial,
         "ent_coef_plateau_min_updates": ent_coef_plateau_min_updates_cfg if ent_coef_plateau_min_updates_cfg is not None else 0,
         "learning_rate": learning_rate_cfg if learning_rate_cfg is not None else trial.suggest_float("learning_rate", 1e-4, 5e-4, log=True),
         "optimizer_lr_min": optimizer_lr_min_value,
+        "scheduler_min_lr": scheduler_min_lr_value,
         "optimizer_lr_max": optimizer_lr_max_value,
         "risk_aversion_drawdown": trial.suggest_float("risk_aversion_drawdown", 0.05, 0.3),
         "risk_aversion_variance": trial.suggest_float("risk_aversion_variance", 0.005, 0.01),
@@ -2901,6 +2923,7 @@ def objective(trial: optuna.Trial,
 
         learning_rate=params["learning_rate"],
         optimizer_lr_min=params["optimizer_lr_min"],
+        scheduler_min_lr=params["scheduler_min_lr"],
         optimizer_lr_max=params["optimizer_lr_max"],
         n_steps=params["n_steps"],
         n_epochs=params["n_epochs"],

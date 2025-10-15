@@ -12,7 +12,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 
 import yaml
-from pydantic import BaseModel, Field, root_validator, model_validator, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, root_validator, model_validator
 import logging
 import math
 
@@ -1162,8 +1162,12 @@ class TrainDataConfig(BaseModel):
 
 
 class ModelConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     algo: str = Field(..., description="Например: 'ppo', 'xgboost', 'lgbm'")
     params: Dict[str, Any] = Field(default_factory=dict)
+    optimizer_lr_min: Optional[float] = Field(default=None)
+    scheduler_min_lr: Optional[float] = Field(default=None)
 
 
 class TrainConfig(CommonRunConfig):
