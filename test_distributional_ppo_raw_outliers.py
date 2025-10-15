@@ -92,6 +92,14 @@ def _install_rl_stubs() -> None:
         type_aliases_common.GymEnv = object
         sys.modules["stable_baselines3.common.type_aliases"] = type_aliases_common
 
+        save_util = types.ModuleType("stable_baselines3.common.save_util")
+
+        def _load_from_zip_file(*_args, **_kwargs):  # pragma: no cover - stub loader
+            return None, {}, None
+
+        save_util.load_from_zip_file = _load_from_zip_file
+        sys.modules["stable_baselines3.common.save_util"] = save_util
+
         running_mean_std = types.ModuleType("stable_baselines3.common.running_mean_std")
 
         class _RunningMeanStd:  # pragma: no cover - stub for import

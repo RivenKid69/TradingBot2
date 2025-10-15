@@ -1436,6 +1436,36 @@ def objective(trial: optuna.Trial,
                 return extra
         return {}
 
+    def _extract_section_payload(section: Any, keys: Sequence[str]) -> Dict[str, Any]:
+        if section is None:
+            return {}
+        if isinstance(section, Mapping):
+            return dict(section)
+
+        payload: Dict[str, Any] = {}
+        getter = getattr(section, "dict", None)
+        if callable(getter):
+            try:
+                data = getter()
+            except TypeError:
+                data = None
+            if isinstance(data, Mapping):
+                payload.update(dict(data))
+
+        extra = _get_extra_mapping(section)
+        if isinstance(extra, Mapping):
+            payload.update(dict(extra))
+
+        for key in keys:
+            try:
+                value = getattr(section, key)
+            except Exception:
+                value = None
+            if value is not None and key not in payload:
+                payload[key] = value
+
+        return payload
+
     def _extract_loss_head_config(
         cfg: TrainConfig,
     ) -> tuple[Optional[Dict[str, float]], Optional[Dict[str, bool]]]:
@@ -1595,18 +1625,62 @@ def objective(trial: optuna.Trial,
     seed_cfg = _coerce_optional_int(
         _get_model_param_value(cfg, "seed"), "seed"
     )
-    kl_lr_decay_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "kl_lr_decay"), "kl_lr_decay"
-    )
     kl_epoch_decay_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "kl_epoch_decay"), "kl_epoch_decay"
     )
-    kl_lr_scale_min_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "kl_lr_scale_min"), "kl_lr_scale_min"
+    kl_section_raw = _get_model_param_value(cfg, "kl")
+    kl_section_map = _extract_section_payload(
+        kl_section_raw, ["target_kl", "use_lr_decay", "penalty"]
     )
-    kl_penalty_beta_cfg = _coerce_optional_float(
-        _get_model_param_value(cfg, "kl_penalty_beta"), "kl_penalty_beta"
+    kl_use_lr_decay_cfg = None
+    if "target_kl" in kl_section_map:
+        nested_target_kl = _coerce_optional_float(
+            kl_section_map.get("target_kl"), "kl.target_kl"
+        )
+        if nested_target_kl is not None:
+            target_kl_cfg = nested_target_kl
+    if "use_lr_decay" in kl_section_map:
+        try:
+            kl_use_lr_decay_cfg = _coerce_optional_bool(
+                kl_section_map.get("use_lr_decay"), "kl.use_lr_decay"
+            )
+        except ValueError:
+            print(
+                "Warning: cfg.model.params.kl.use_lr_decay is invalid; ignoring override"
+            )
+            kl_use_lr_decay_cfg = None
+
+    penalty_section_map = _extract_section_payload(
+        kl_section_map.get("penalty"), ["type", "beta_init", "pid"]
     )
+    penalty_type_raw = penalty_section_map.get("type")
+    kl_penalty_type = str(penalty_type_raw) if penalty_type_raw is not None else "adaptive_beta"
+    kl_penalty_beta_init_cfg = _coerce_optional_float(
+        penalty_section_map.get("beta_init"), "kl.penalty.beta_init"
+    )
+    pid_section_map = _extract_section_payload(
+        penalty_section_map.get("pid"), ["kp", "ki", "kd", "beta_min", "beta_max"]
+    )
+    kl_penalty_pid_kp_cfg = _coerce_optional_float(
+        pid_section_map.get("kp"), "kl.penalty.pid.kp"
+    )
+    kl_penalty_pid_ki_cfg = _coerce_optional_float(
+        pid_section_map.get("ki"), "kl.penalty.pid.ki"
+    )
+    kl_penalty_pid_kd_cfg = _coerce_optional_float(
+        pid_section_map.get("kd"), "kl.penalty.pid.kd"
+    )
+    kl_penalty_beta_min_cfg = _coerce_optional_float(
+        pid_section_map.get("beta_min"), "kl.penalty.pid.beta_min"
+    )
+    kl_penalty_beta_max_cfg = _coerce_optional_float(
+        pid_section_map.get("beta_max"), "kl.penalty.pid.beta_max"
+    )
+
+    if kl_penalty_beta_init_cfg is None:
+        kl_penalty_beta_init_cfg = _coerce_optional_float(
+            _get_model_param_value(cfg, "kl_penalty_beta"), "kl_penalty_beta"
+        )
 
     trade_frequency_penalty_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "trade_frequency_penalty"),
@@ -1630,7 +1704,7 @@ def objective(trial: optuna.Trial,
     )
 
     if target_kl_cfg is None:
-        fallback_target_kl = 0.05
+        fallback_target_kl = 0.08
         print(
             "Warning: cfg.model.params.target_kl is missing; "
             f"defaulting to {fallback_target_kl:.4f}."
@@ -2017,9 +2091,29 @@ def objective(trial: optuna.Trial,
         "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.08, 0.12),
         "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
         "target_kl": float(np.clip(target_kl_cfg, 0.02, 1.6)),
-        "kl_lr_decay": kl_lr_decay_cfg if kl_lr_decay_cfg is not None else 0.7,
         "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
-        "kl_lr_scale_min": kl_lr_scale_min_cfg if kl_lr_scale_min_cfg is not None else 0.2,
+        "kl_penalty_beta_init": (
+            kl_penalty_beta_init_cfg if kl_penalty_beta_init_cfg is not None else 0.01
+        ),
+        "kl_penalty_beta_min": (
+            kl_penalty_beta_min_cfg if kl_penalty_beta_min_cfg is not None else 1e-4
+        ),
+        "kl_penalty_beta_max": (
+            kl_penalty_beta_max_cfg if kl_penalty_beta_max_cfg is not None else 1.0
+        ),
+        "kl_penalty_pid_kp": (
+            kl_penalty_pid_kp_cfg if kl_penalty_pid_kp_cfg is not None else 0.5
+        ),
+        "kl_penalty_pid_ki": (
+            kl_penalty_pid_ki_cfg if kl_penalty_pid_ki_cfg is not None else 0.05
+        ),
+        "kl_penalty_pid_kd": (
+            kl_penalty_pid_kd_cfg if kl_penalty_pid_kd_cfg is not None else 0.10
+        ),
+        "kl_penalty_type": kl_penalty_type,
+        "kl_use_lr_decay_requested": bool(kl_use_lr_decay_cfg)
+        if kl_use_lr_decay_cfg is not None
+        else False,
         "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
         "atr_multiplier": trial.suggest_float("atr_multiplier", 1.5, 3.0),
         "trailing_atr_mult": trial.suggest_float("trailing_atr_mult", 1.0, 2.0),
@@ -2124,20 +2218,18 @@ def objective(trial: optuna.Trial,
     params["kl_early_stop"] = bool(kl_early_stop_cfg)
     params["kl_exceed_stop_fraction"] = kl_exceed_stop_fraction_value
 
-    if kl_penalty_beta_cfg is not None:
-        kl_penalty_beta_value = float(max(0.0, kl_penalty_beta_cfg))
-        if not math.isfinite(kl_penalty_beta_value):
-            kl_penalty_beta_value = 0.02
-        params["kl_penalty_beta"] = kl_penalty_beta_value
-
-    params.setdefault("target_kl", 0.05)
+    params.setdefault("target_kl", 0.08)
     params.setdefault("kl_early_stop", True)
     params.setdefault(
         "kl_exceed_stop_fraction",
         0.10 if params.get("kl_early_stop", True) else 0.0,
     )
-    params.setdefault("kl_lr_decay", 0.7)
-    params.setdefault("kl_penalty_beta", 0.02)
+    params.setdefault("kl_penalty_beta_init", 0.01)
+    params.setdefault("kl_penalty_beta_min", 1e-4)
+    params.setdefault("kl_penalty_beta_max", 1.0)
+    params.setdefault("kl_penalty_pid_kp", 0.5)
+    params.setdefault("kl_penalty_pid_ki", 0.05)
+    params.setdefault("kl_penalty_pid_kd", 0.10)
 
     params["microbatch_size"] = (
         microbatch_size_cfg if microbatch_size_cfg is not None else params["batch_size"]
@@ -2621,14 +2713,6 @@ def objective(trial: optuna.Trial,
 
     # Рассчитываем, сколько раз будет собран полный буфер данных (rollout)
 
-    kl_lr_decay_value = params.get("kl_lr_decay", 0.7)
-    if isinstance(kl_lr_decay_value, bool):
-        kl_lr_decay_value = 0.7
-    kl_lr_decay_value = float(kl_lr_decay_value)
-    if not (0.0 < kl_lr_decay_value < 1.0):
-        kl_lr_decay_value = 0.7
-    params["kl_lr_decay"] = kl_lr_decay_value
-
     kl_epoch_decay_value = params.get("kl_epoch_decay", 0.5)
     if isinstance(kl_epoch_decay_value, bool):
         kl_epoch_decay_value = 0.5
@@ -2637,16 +2721,57 @@ def objective(trial: optuna.Trial,
         kl_epoch_decay_value = 0.5
     params["kl_epoch_decay"] = kl_epoch_decay_value
 
-    kl_lr_scale_min_value = float(params.get("kl_lr_scale_min", 0.2))
-    params["kl_lr_scale_min"] = max(min(kl_lr_scale_min_value, 1.0), 0.1)
+    try:
+        beta_min_value = float(params.get("kl_penalty_beta_min", 1e-4))
+    except (TypeError, ValueError):
+        beta_min_value = 1e-4
+    if not math.isfinite(beta_min_value) or beta_min_value < 0.0:
+        beta_min_value = 1e-4
 
-    kl_penalty_beta_value = params.get("kl_penalty_beta", 0.02)
-    if isinstance(kl_penalty_beta_value, bool):
-        kl_penalty_beta_value = 0.02
-    kl_penalty_beta_value = float(kl_penalty_beta_value)
-    if not math.isfinite(kl_penalty_beta_value) or kl_penalty_beta_value < 0.0:
-        kl_penalty_beta_value = 0.02
-    params["kl_penalty_beta"] = kl_penalty_beta_value
+    try:
+        beta_max_value = float(params.get("kl_penalty_beta_max", 1.0))
+    except (TypeError, ValueError):
+        beta_max_value = 1.0
+    if not math.isfinite(beta_max_value) or beta_max_value <= 0.0:
+        beta_max_value = 1.0
+    if beta_max_value < beta_min_value:
+        beta_max_value = beta_min_value
+
+    try:
+        beta_init_value = float(params.get("kl_penalty_beta_init", 0.01))
+    except (TypeError, ValueError):
+        beta_init_value = 0.01
+    if not math.isfinite(beta_init_value):
+        beta_init_value = 0.01
+    beta_init_value = min(max(beta_init_value, beta_min_value), beta_max_value)
+
+    def _sanitize_pid(value: Any, default: float) -> float:
+        try:
+            coerced = float(value)
+        except (TypeError, ValueError):
+            coerced = default
+        if not math.isfinite(coerced) or coerced < 0.0:
+            coerced = default
+        return coerced
+
+    kp_value = _sanitize_pid(params.get("kl_penalty_pid_kp", 0.5), 0.5)
+    ki_value = _sanitize_pid(params.get("kl_penalty_pid_ki", 0.05), 0.05)
+    kd_value = _sanitize_pid(params.get("kl_penalty_pid_kd", 0.10), 0.10)
+
+    penalty_type_value = params.get("kl_penalty_type", "adaptive_beta")
+    if penalty_type_value is None:
+        penalty_type_value = "adaptive_beta"
+    else:
+        penalty_type_value = str(penalty_type_value)
+
+    params["kl_penalty_beta_min"] = beta_min_value
+    params["kl_penalty_beta_max"] = beta_max_value
+    params["kl_penalty_beta_init"] = beta_init_value
+    params["kl_penalty_pid_kp"] = kp_value
+    params["kl_penalty_pid_ki"] = ki_value
+    params["kl_penalty_pid_kd"] = kd_value
+    params["kl_penalty_type"] = penalty_type_value
+    params["kl_use_lr_decay_requested"] = bool(params.get("kl_use_lr_decay_requested", False))
 
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
     
@@ -2765,11 +2890,14 @@ def objective(trial: optuna.Trial,
         cvar_activation_threshold=params["cvar_activation_threshold"],
         cvar_activation_hysteresis=params["cvar_activation_hysteresis"],
         cvar_ramp_updates=int(params["cvar_ramp_updates"]),
-        kl_lr_decay=params.get("kl_lr_decay", 0.7),
         kl_epoch_decay=params["kl_epoch_decay"],
-        kl_lr_scale_min=params["kl_lr_scale_min"],
         kl_exceed_stop_fraction=params.get("kl_exceed_stop_fraction"),
-        kl_penalty_beta=params.get("kl_penalty_beta", 0.02),
+        kl_penalty_beta=params.get("kl_penalty_beta_init", 0.01),
+        kl_penalty_beta_min=params.get("kl_penalty_beta_min", 1e-4),
+        kl_penalty_beta_max=params.get("kl_penalty_beta_max", 1.0),
+        kl_penalty_pid_kp=params.get("kl_penalty_pid_kp", 0.5),
+        kl_penalty_pid_ki=params.get("kl_penalty_pid_ki", 0.05),
+        kl_penalty_pid_kd=params.get("kl_penalty_pid_kd", 0.10),
 
         learning_rate=params["learning_rate"],
         optimizer_lr_min=params["optimizer_lr_min"],
@@ -2786,7 +2914,7 @@ def objective(trial: optuna.Trial,
         clip_range_warmup_updates=int(params["clip_range_warmup_updates"]),
         critic_grad_warmup_updates=int(params["critic_grad_warmup_updates"]),
         max_grad_norm=params["max_grad_norm"],
-        target_kl=params.get("target_kl", 0.05),
+        target_kl=params.get("target_kl", 0.08),
         seed=params["seed"],
         loss_head_weights=loss_head_weights,
         policy_kwargs=policy_kwargs,
@@ -2794,22 +2922,17 @@ def objective(trial: optuna.Trial,
         verbose=1
     )
 
-    kl_lr_decay_logged = getattr(
-        model,
-        "_kl_lr_decay",
-        getattr(model, "kl_lr_decay", params.get("kl_lr_decay", 0.7)),
-    )
     kl_penalty_beta_logged = getattr(
         model,
-        "_kl_penalty_beta",
-        params.get("kl_penalty_beta", 0.02),
+        "kl_beta",
+        params.get("kl_penalty_beta_init", 0.01),
     )
     kl_early_stop_logged = bool(
         getattr(model, "kl_early_stop", params.get("kl_early_stop", True))
     )
-    target_kl_logged = getattr(model, "target_kl", params.get("target_kl", 0.05))
+    target_kl_logged = getattr(model, "target_kl", params.get("target_kl", 0.08))
     if target_kl_logged is None:
-        target_kl_logged = params.get("target_kl", 0.05)
+        target_kl_logged = params.get("target_kl", 0.08)
     kl_exceed_stop_fraction_default = params.get(
         "kl_exceed_stop_fraction",
         0.10 if params.get("kl_early_stop", True) else 0.0,
@@ -2826,8 +2949,21 @@ def objective(trial: optuna.Trial,
             "config/kl_exceed_stop_fraction", float(kl_exceed_stop_fraction_logged)
         )
         logger.record("config/kl_early_stop", 1.0 if kl_early_stop_logged else 0.0)
-        logger.record("config/kl_lr_decay", float(kl_lr_decay_logged))
+        logger.record("config/kl_penalty_beta_init", float(params["kl_penalty_beta_init"]))
+        logger.record("config/kl_penalty_beta_min", float(params["kl_penalty_beta_min"]))
+        logger.record("config/kl_penalty_beta_max", float(params["kl_penalty_beta_max"]))
+        logger.record("config/kl_penalty_pid_kp", float(params["kl_penalty_pid_kp"]))
+        logger.record("config/kl_penalty_pid_ki", float(params["kl_penalty_pid_ki"]))
+        logger.record("config/kl_penalty_pid_kd", float(params["kl_penalty_pid_kd"]))
         logger.record("config/kl_penalty_beta", float(kl_penalty_beta_logged))
+        logger.record(
+            "config/kl_penalty_type",
+            params.get("kl_penalty_type", "adaptive_beta"),
+        )
+        logger.record(
+            "config/kl_use_lr_decay_requested",
+            1.0 if params.get("kl_use_lr_decay_requested", False) else 0.0,
+        )
 
     
 

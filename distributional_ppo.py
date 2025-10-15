@@ -1,3 +1,4 @@
+import io
 import itertools
 import logging
 import math
@@ -18,6 +19,7 @@ from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+from stable_baselines3.common.save_util import load_from_zip_file
 
 
 logger = logging.getLogger(__name__)
@@ -1466,15 +1468,14 @@ class DistributionalPPO(RecurrentPPO):
         ent_coef_plateau_tolerance: float = 0.0,
         ent_coef_plateau_min_updates: int = 0,
         target_kl: Optional[float] = None,
-        kl_lr_decay: float = 0.5,
         kl_epoch_decay: float = 0.5,
-        kl_lr_scale_min: float = 0.01,
         kl_exceed_stop_fraction: float = 0.25,
         kl_penalty_beta: float = 0.0,
         kl_penalty_beta_min: float = 0.0,
         kl_penalty_beta_max: float = 0.1,
-        kl_penalty_increase: float = 1.5,
-        kl_penalty_decrease: float = 0.75,
+        kl_penalty_pid_kp: float = 0.0,
+        kl_penalty_pid_ki: float = 0.0,
+        kl_penalty_pid_kd: float = 0.0,
         ppo_clip_range: Optional[float] = None,
         use_torch_compile: bool = False,
         microbatch_size: Optional[int] = None,
@@ -1492,15 +1493,6 @@ class DistributionalPPO(RecurrentPPO):
         self._loss_head_weights: Optional[dict[str, float]] = None
         self._kl_diag = bool(enable_kl_diagnostics)
         self._optimizer_lr_floor_warned = False
-
-        if not math.isfinite(kl_lr_scale_min):
-            raise ValueError("'kl_lr_scale_min' must be finite")
-        kl_lr_scale_min_value = float(kl_lr_scale_min)
-        if kl_lr_scale_min_value <= 0.0:
-            raise ValueError("'kl_lr_scale_min' must be strictly positive")
-        kl_lr_scale_min_requested: Optional[float] = None
-        if abs(kl_lr_scale_min_value - 0.01) > 1e-12:
-            kl_lr_scale_min_requested = kl_lr_scale_min_value
 
         kwargs_local = dict(kwargs)
 
@@ -1892,8 +1884,6 @@ class DistributionalPPO(RecurrentPPO):
         self._value_scale_latest_ret_abs_p95 = 0.0
         self._value_scale_frozen = False
 
-        kl_lr_scale_min_log_request = kl_lr_scale_min_requested
-
         super().__init__(policy=policy, env=env, **kwargs_local)
 
         self._rebuild_scheduler_if_needed()
@@ -2092,25 +2082,16 @@ class DistributionalPPO(RecurrentPPO):
             self.policy = torch.compile(self.policy, mode="reduce-overhead")
 
         # --- KL-adaptive training controls ----------------------------------------------------
-        self.kl_lr_decay = float(kl_lr_decay)
-        if not (0.0 < self.kl_lr_decay < 1.0):
-            raise ValueError("'kl_lr_decay' must be in (0, 1)")
         self.kl_epoch_decay = float(kl_epoch_decay)
         if not (0.0 < self.kl_epoch_decay <= 1.0):
             raise ValueError("'kl_epoch_decay' must be in (0, 1]")
         self._kl_min_lr = 1e-6
         self._kl_lr_scale = 1.0
-        self._kl_lr_scale_min = kl_lr_scale_min_value
         self._base_lr_schedule = self.lr_schedule
-
-        if kl_lr_scale_min_log_request is not None and base_logger is not None:
-            base_logger.record("warn/kl_lr_scale_min_requested", float(kl_lr_scale_min_log_request))
-            base_logger.record("warn/kl_lr_scale_min_effective", float(self._kl_lr_scale_min))
 
         def _scaled_lr_schedule(progress_remaining: float) -> float:
             base_lr = self._base_lr_schedule(progress_remaining)
-            scaled_lr = base_lr * self._kl_lr_scale
-            return float(max(scaled_lr, self._kl_min_lr))
+            return float(max(base_lr, self._kl_min_lr))
 
         self.lr_schedule = _scaled_lr_schedule
         self._base_n_epochs = max(1, int(self.n_epochs))
@@ -2129,13 +2110,27 @@ class DistributionalPPO(RecurrentPPO):
         if not math.isfinite(beta_initial):
             raise ValueError("'kl_penalty_beta' must be finite")
         beta_initial = min(max(beta_initial, beta_min), beta_max)
-        self._kl_penalty_beta = beta_initial
+        kp = float(kl_penalty_pid_kp)
+        if not math.isfinite(kp) or kp < 0.0:
+            kp = 0.0
+        ki = float(kl_penalty_pid_ki)
+        if not math.isfinite(ki) or ki < 0.0:
+            ki = 0.0
+        kd = float(kl_penalty_pid_kd)
+        if not math.isfinite(kd) or kd < 0.0:
+            kd = 0.0
+        self.kl_beta = beta_initial
         self.kl_penalty_beta_min = beta_min
         self.kl_penalty_beta_max = beta_max
-        self.kl_penalty_increase = max(1.0, float(kl_penalty_increase))
-        self.kl_penalty_decrease = float(kl_penalty_decrease)
-        if not (0.0 < self.kl_penalty_decrease <= 1.0):
-            raise ValueError("'kl_penalty_decrease' must be in (0, 1]")
+        self.kl_penalty_kp = kp
+        self.kl_penalty_ki = ki
+        self.kl_penalty_kd = kd
+        self._kl_err_int = 0.0
+        self._kl_err_prev = 0.0
+        self._kl_penalty_error = 0.0
+        self._kl_pid_p = 0.0
+        self._kl_pid_i = 0.0
+        self._kl_pid_d = 0.0
 
         self._fixed_clip_range = clip_range_value
         self.clip_range = lambda _: self._compute_clip_range_value()
@@ -2403,40 +2398,6 @@ class DistributionalPPO(RecurrentPPO):
 
         self._kl_base_param_lrs = base_lrs
 
-    def _apply_lr_decay(self, requested_decay: float) -> float:
-        """Reduce optimizer LR by ``requested_decay`` (capped by ``_kl_lr_scale_min``)."""
-
-        if requested_decay <= 0.0:
-            return 1.0
-
-        previous_scale = self._kl_lr_scale
-        proposed_scale = previous_scale * requested_decay
-        if proposed_scale < self._kl_lr_scale_min:
-            self._kl_lr_scale = self._kl_lr_scale_min
-        else:
-            self._kl_lr_scale = proposed_scale
-
-        if previous_scale <= 0.0:
-            actual_decay = 1.0
-        else:
-            actual_decay = self._kl_lr_scale / previous_scale
-
-        for param_group in self.policy.optimizer.param_groups:
-            new_lr = max(param_group["lr"] * actual_decay, self._kl_min_lr)
-            param_group["lr"] = new_lr
-            if "initial_lr" in param_group:
-                param_group["initial_lr"] = max(param_group["initial_lr"] * actual_decay, self._kl_min_lr)
-
-        if self.lr_scheduler is not None and hasattr(self.lr_scheduler, "base_lrs"):
-            self.lr_scheduler.base_lrs = [
-                max(lr * actual_decay, self._kl_min_lr) for lr in self.lr_scheduler.base_lrs
-            ]
-
-        self._refresh_kl_base_lrs()
-        self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
-        self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=True)
-        return actual_decay
-
     def _apply_epoch_decay(self) -> float:
         """Shrink effective epoch multiplier respecting minimum of one epoch."""
 
@@ -2452,39 +2413,71 @@ class DistributionalPPO(RecurrentPPO):
             return 1.0
         return self._kl_epoch_factor / previous_factor
 
-    def _adjust_kl_penalty(self, observed_kl: float) -> None:
-        """Adapt the KL penalty strength based on observed divergence."""
+    def _kl_integral_limit(self) -> float:
+        """Return symmetric bounds for the KL error integrator."""
 
-        if self._kl_penalty_beta <= 0.0:
-            return
+        limit: float
+        if self.target_kl is not None and self.target_kl > 0.0:
+            limit = 100.0 * float(self.target_kl)
+        else:
+            if self.kl_penalty_ki > 0.0:
+                limit = self.kl_penalty_beta_max / max(self.kl_penalty_ki, 1e-6)
+            else:
+                limit = self.kl_penalty_beta_max
+        if not math.isfinite(limit) or limit <= 0.0:
+            limit = 1.0
+        return float(limit)
+
+    def _adjust_kl_penalty(self, observed_kl: float) -> None:
+        """Adapt the KL penalty strength using a PID regulator."""
+
         if self.target_kl is None or self.target_kl <= 0.0:
             return
 
         if not math.isfinite(observed_kl):
             return
 
-        if observed_kl > float(self.target_kl):
-            updated_beta = self._kl_penalty_beta * self.kl_penalty_increase
-            updated_beta = min(updated_beta, self.kl_penalty_beta_max)
-        else:
-            updated_beta = self._kl_penalty_beta * self.kl_penalty_decrease
-            updated_beta = max(updated_beta, self.kl_penalty_beta_min)
+        error = float(observed_kl) - float(self.target_kl)
+        if not math.isfinite(error):
+            return
 
-        if not math.isfinite(updated_beta):
-            updated_beta = self.kl_penalty_beta_max
+        self._kl_penalty_error = error
+        self._kl_err_int += error
+        integral_limit = self._kl_integral_limit()
+        self._kl_err_int = float(np.clip(self._kl_err_int, -integral_limit, integral_limit))
+        p_term = self.kl_penalty_kp * error
+        i_term = self.kl_penalty_ki * self._kl_err_int
+        d_term = self.kl_penalty_kd * (error - self._kl_err_prev)
+        self._kl_err_prev = error
 
-        self._kl_penalty_beta = updated_beta
-        self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
+        candidate_beta = self.kl_beta + p_term + i_term + d_term
+        if not math.isfinite(candidate_beta):
+            candidate_beta = self.kl_penalty_beta_max
+
+        candidate_beta = min(max(candidate_beta, self.kl_penalty_beta_min), self.kl_penalty_beta_max)
+        self.kl_beta = candidate_beta
+        self._kl_pid_p = p_term
+        self._kl_pid_i = i_term
+        self._kl_pid_d = d_term
+
+        self.logger.record("train/kl_penalty_beta", float(self.kl_beta))
+        self.logger.record("train/kl_penalty_error", float(self._kl_penalty_error))
+        self.logger.record("train/kl_penalty_pid_p", float(self._kl_pid_p))
+        self.logger.record("train/kl_penalty_pid_i", float(self._kl_pid_i))
+        self.logger.record("train/kl_penalty_pid_d", float(self._kl_pid_d))
 
     def _handle_kl_divergence(self, approx_kl: float) -> tuple[float, float]:
-        """React to KL overshoot by reducing LR and future epoch budget."""
+        """React to KL overshoot by shrinking future epoch budget."""
 
-        lr_decay = self._apply_lr_decay(self.kl_lr_decay)
+        self._kl_lr_scale = 1.0
+        self._refresh_kl_base_lrs()
+        self._enforce_optimizer_lr_bounds(log_values=False, warn_on_floor=True)
         epoch_decay = self._apply_epoch_decay()
         self.logger.record("train/kl_last_exceeded", approx_kl)
-        self.logger.record("train/kl_lr_decay_applied", lr_decay)
+        self.logger.record("train/kl_lr_decay_applied", 0.0)
+        self.logger.record("train/kl_lr_scale", 1.0)
         self.logger.record("train/kl_epoch_decay_applied", epoch_decay)
-        return lr_decay, epoch_decay
+        return 0.0, epoch_decay
 
     def parameters(self, recurse: bool = True):  # type: ignore[override]
         return self.policy.parameters(recurse)
@@ -3656,9 +3649,9 @@ class DistributionalPPO(RecurrentPPO):
                         policy_loss_bc_weighted = policy_loss_bc * bc_coef
 
                     policy_loss = policy_loss_ppo + policy_loss_bc_weighted
-                    if self._kl_penalty_beta > 0.0:
+                    if self.kl_beta > 0.0:
                         kl_penalty_sample = (rollout_data.old_log_prob - log_prob).mean()
-                        kl_penalty_component = self._kl_penalty_beta * kl_penalty_sample
+                        kl_penalty_component = self.kl_beta * kl_penalty_sample
                         policy_loss = policy_loss + kl_penalty_component
                         kl_penalty_component_total += float(kl_penalty_component.item())
                         kl_penalty_component_count += 1
@@ -4244,10 +4237,10 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/policy_loss_bc", policy_loss_bc_value)
         self.logger.record("train/policy_loss_bc_weighted", policy_loss_bc_weighted_value)
         if kl_penalty_component_count > 0:
-            avg_kl_penalty_component = kl_penalty_component_total / float(kl_penalty_component_count)
-        else:
-            avg_kl_penalty_component = 0.0
-        self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
+            avg_kl_penalty_component = (
+                kl_penalty_component_total / float(kl_penalty_component_count)
+            )
+            self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
         cvar_empirical_ema_value = float(
             self._cvar_empirical_ema if self._cvar_empirical_ema is not None else cvar_empirical_value
@@ -4435,7 +4428,12 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/target_kl", float(self.target_kl))
             self.logger.record("train/kl_lr_scale", float(self._kl_lr_scale))
             self.logger.record("train/kl_epoch_factor", float(self._kl_epoch_factor))
-            self.logger.record("train/kl_penalty_beta", float(self._kl_penalty_beta))
+            self.logger.record("train/kl_lr_decay_applied", 0.0)
+            self.logger.record("train/kl_penalty_beta", float(self.kl_beta))
+            self.logger.record("train/kl_penalty_error", float(self._kl_penalty_error))
+            self.logger.record("train/kl_penalty_pid_p", float(self._kl_pid_p))
+            self.logger.record("train/kl_penalty_pid_i", float(self._kl_pid_i))
+            self.logger.record("train/kl_penalty_pid_d", float(self._kl_pid_d))
 
         if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
             y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
@@ -4451,6 +4449,69 @@ class DistributionalPPO(RecurrentPPO):
             )
 
         self._finalize_return_stats()
+
+    def _serialize_kl_penalty_state(self) -> dict[str, float]:
+        return {
+            "kl_beta": float(self.kl_beta),
+            "kl_err_int": float(self._kl_err_int),
+            "kl_err_prev": float(self._kl_err_prev),
+            "kl_penalty_error": float(self._kl_penalty_error),
+            "kl_pid_p": float(self._kl_pid_p),
+            "kl_pid_i": float(self._kl_pid_i),
+            "kl_pid_d": float(self._kl_pid_d),
+        }
+
+    def _restore_kl_penalty_state(self, state: Optional[Mapping[str, Any]]) -> None:
+        if not isinstance(state, Mapping):
+            return
+
+        def _safe_float(key: str, default: float) -> float:
+            value = state.get(key, default)
+            try:
+                value_f = float(value)
+            except (TypeError, ValueError):
+                return default
+            if not math.isfinite(value_f):
+                return default
+            return value_f
+
+        beta_value = _safe_float("kl_beta", float(self.kl_beta))
+        beta_value = min(max(beta_value, self.kl_penalty_beta_min), self.kl_penalty_beta_max)
+        self.kl_beta = beta_value
+        self._kl_err_int = _safe_float("kl_err_int", float(self._kl_err_int))
+        self._kl_err_prev = _safe_float("kl_err_prev", float(self._kl_err_prev))
+        self._kl_penalty_error = _safe_float("kl_penalty_error", float(self._kl_penalty_error))
+        self._kl_pid_p = _safe_float("kl_pid_p", float(self._kl_pid_p))
+        self._kl_pid_i = _safe_float("kl_pid_i", float(self._kl_pid_i))
+        self._kl_pid_d = _safe_float("kl_pid_d", float(self._kl_pid_d))
+
+        integral_limit = self._kl_integral_limit()
+        self._kl_err_int = float(np.clip(self._kl_err_int, -integral_limit, integral_limit))
+
+    def get_parameters(self) -> dict[str, dict]:
+        params = super().get_parameters()
+        params["kl_penalty_state"] = self._serialize_kl_penalty_state()
+        return params
+
+    def set_parameters(
+        self,
+        load_path_or_dict: Union[str, io.BufferedIOBase, Mapping[str, Any]],
+        exact_match: bool = True,
+        device: Union[torch.device, str] = "auto",
+    ) -> None:
+        if isinstance(load_path_or_dict, Mapping):
+            params: dict[str, Any] = dict(load_path_or_dict)
+        else:
+            _, params_loaded, _ = load_from_zip_file(
+                load_path_or_dict,
+                device=device,
+                load_data=False,
+            )
+            params = dict(params_loaded)
+
+        kl_state = params.pop("kl_penalty_state", None)
+        super().set_parameters(params, exact_match=exact_match, device=device)
+        self._restore_kl_penalty_state(kl_state)
 
     def learn(
         self,
