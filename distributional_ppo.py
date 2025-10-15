@@ -523,6 +523,10 @@ class DistributionalPPO(RecurrentPPO):
         if max_lr < min_lr:
             max_lr = min_lr
 
+        scheduler_min_lr = float(getattr(self, "_scheduler_min_lr", min_lr))
+        if scheduler_min_lr < min_lr:
+            scheduler_min_lr = min_lr
+
         before_lrs = [float(group.get("lr", 0.0)) for group in param_groups]
         if not before_lrs:
             return
@@ -562,9 +566,6 @@ class DistributionalPPO(RecurrentPPO):
             if getattr(self, "logger", None) is not None:
                 self.logger.record("warn/optimizer_lr_floor_hit", float(lr_before_clip))
 
-        if not log_values or getattr(self, "logger", None) is None:
-            return
-
         base_schedule = getattr(self, "_base_lr_schedule", None)
         progress = getattr(self, "_current_progress_remaining", None)
         base_lr = None
@@ -581,7 +582,11 @@ class DistributionalPPO(RecurrentPPO):
                 base_lr = lr_after_clip
         kl_scale_value = float(getattr(self, "_kl_lr_scale", 1.0))
 
-        if scheduler_lr is None:
+        scheduler_lr_value: Optional[float]
+        if scheduler_lr is not None:
+            scheduler_lr_value = float(scheduler_lr)
+        else:
+            scheduler_lr_value = None
             scheduler = getattr(self.policy, "lr_scheduler", None) or getattr(self, "lr_scheduler", None)
             if scheduler is not None:
                 get_last_lr = getattr(scheduler, "get_last_lr", None)
@@ -591,20 +596,27 @@ class DistributionalPPO(RecurrentPPO):
                     except TypeError:
                         last_values = None
                     if last_values:
-                        scheduler_lr = float(last_values[0])
-        if scheduler_lr is None:
-            scheduler_lr = lr_after_clip
+                        scheduler_lr_value = float(last_values[0])
+        if scheduler_lr_value is None:
+            scheduler_lr_value = float(lr_after_clip)
+        scheduler_lr_value = max(float(scheduler_lr_value), scheduler_min_lr)
 
         min_group_lr = float(min(clipped_lrs))
         max_group_lr = float(max(clipped_lrs))
 
+        if not log_values or getattr(self, "logger", None) is None:
+            return
+
         self.logger.record("train/lr_base", float(base_lr))
         self.logger.record("train/lr_kl_scale", float(kl_scale_value))
-        self.logger.record("train/lr_scheduler", float(scheduler_lr))
+        self.logger.record("train/lr_scheduler", float(scheduler_lr_value))
+        self.logger.record("train/scheduler_lr", float(scheduler_lr_value))
         self.logger.record("train/lr_before_clip", float(lr_before_clip))
         self.logger.record("train/lr_after_clip", float(lr_after_clip))
         self.logger.record("train/learning_rate", float(lr_after_clip))
         self.logger.record("train/optimizer_lr", float(clipped_lrs[0]))
+        self.logger.record("train/optimizer_lr_min", float(min_lr))
+        self.logger.record("train/scheduler_lr_min", float(scheduler_min_lr))
         self.logger.record("train/optimizer_lr_group_min", min_group_lr)
         self.logger.record("train/optimizer_lr_group_max", max_group_lr)
 
@@ -1482,6 +1494,7 @@ class DistributionalPPO(RecurrentPPO):
         gradient_accumulation_steps: Optional[int] = None,
         loss_head_weights: Optional[Mapping[str, Union[float, bool]]] = None,
         optimizer_lr_min: Optional[float] = None,
+        scheduler_min_lr: Optional[float] = None,
         optimizer_lr_max: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
@@ -1498,11 +1511,19 @@ class DistributionalPPO(RecurrentPPO):
 
         optimizer_lr_min_candidate = kwargs_local.pop("optimizer_lr_min", optimizer_lr_min)
         if optimizer_lr_min_candidate is None:
-            optimizer_lr_min_value = 0.0
+            optimizer_lr_min_value = 1e-5
         else:
             optimizer_lr_min_value = float(optimizer_lr_min_candidate)
             if not math.isfinite(optimizer_lr_min_value) or optimizer_lr_min_value < 0.0:
                 raise ValueError("'optimizer_lr_min' must be a non-negative finite value")
+
+        scheduler_min_lr_candidate = kwargs_local.pop("scheduler_min_lr", scheduler_min_lr)
+        if scheduler_min_lr_candidate is None:
+            scheduler_min_lr_value = float(optimizer_lr_min_value)
+        else:
+            scheduler_min_lr_value = float(scheduler_min_lr_candidate)
+            if not math.isfinite(scheduler_min_lr_value) or scheduler_min_lr_value < 0.0:
+                raise ValueError("'scheduler_min_lr' must be a non-negative finite value")
 
         optimizer_lr_max_candidate = kwargs_local.pop("optimizer_lr_max", optimizer_lr_max)
         if optimizer_lr_max_candidate is None:
@@ -1517,8 +1538,17 @@ class DistributionalPPO(RecurrentPPO):
         if math.isfinite(optimizer_lr_max_value) and optimizer_lr_max_value < optimizer_lr_min_value:
             optimizer_lr_max_value = optimizer_lr_min_value
 
+        if scheduler_min_lr_value < optimizer_lr_min_value:
+            scheduler_min_lr_value = optimizer_lr_min_value
+        else:
+            optimizer_lr_min_value = scheduler_min_lr_value
+
+        if math.isfinite(optimizer_lr_max_value) and optimizer_lr_max_value < optimizer_lr_min_value:
+            optimizer_lr_max_value = optimizer_lr_min_value
+
         self._optimizer_lr_min = float(optimizer_lr_min_value)
         self._optimizer_lr_max = float(optimizer_lr_max_value)
+        self._scheduler_min_lr = float(scheduler_min_lr_value)
 
         if ppo_clip_range is not None:
             clip_range_candidate = ppo_clip_range
@@ -1952,6 +1982,7 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("config/optimizer_lr_min", float(self._optimizer_lr_min))
         if math.isfinite(self._optimizer_lr_max):
             self.logger.record("config/optimizer_lr_max", float(self._optimizer_lr_max))
+        self.logger.record("config/scheduler_min_lr", float(self._scheduler_min_lr))
 
         base_lr = float(self.lr_schedule(1.0))
         value_params: list[torch.nn.Parameter] = []
@@ -2085,7 +2116,7 @@ class DistributionalPPO(RecurrentPPO):
         self.kl_epoch_decay = float(kl_epoch_decay)
         if not (0.0 < self.kl_epoch_decay <= 1.0):
             raise ValueError("'kl_epoch_decay' must be in (0, 1]")
-        self._kl_min_lr = 1e-6
+        self._kl_min_lr = float(self._scheduler_min_lr)
         self._kl_lr_scale = 1.0
         self._base_lr_schedule = self.lr_schedule
 
@@ -2416,17 +2447,13 @@ class DistributionalPPO(RecurrentPPO):
     def _kl_integral_limit(self) -> float:
         """Return symmetric bounds for the KL error integrator."""
 
-        limit: float
-        if self.target_kl is not None and self.target_kl > 0.0:
-            limit = 100.0 * float(self.target_kl)
-        else:
-            if self.kl_penalty_ki > 0.0:
-                limit = self.kl_penalty_beta_max / max(self.kl_penalty_ki, 1e-6)
-            else:
-                limit = self.kl_penalty_beta_max
-        if not math.isfinite(limit) or limit <= 0.0:
-            limit = 1.0
-        return float(limit)
+        if self.kl_penalty_ki > 0.0:
+            span = self.kl_penalty_beta_max - self.kl_penalty_beta_min
+            limit = span / max(self.kl_penalty_ki, 1e-12)
+            if not math.isfinite(limit) or limit <= 0.0:
+                return 0.0
+            return float(limit)
+        return 0.0
 
     def _adjust_kl_penalty(self, observed_kl: float) -> None:
         """Adapt the KL penalty strength using a PID regulator."""
@@ -2443,8 +2470,17 @@ class DistributionalPPO(RecurrentPPO):
 
         self._kl_penalty_error = error
         self._kl_err_int += error
-        integral_limit = self._kl_integral_limit()
-        self._kl_err_int = float(np.clip(self._kl_err_int, -integral_limit, integral_limit))
+
+        # --- Anti-windup for integral term ------------------------------------
+        if self.kl_penalty_ki > 0.0:
+            i_cap = (self.kl_penalty_beta_max - self.kl_penalty_beta_min) / max(
+                self.kl_penalty_ki, 1e-12
+            )
+            # symmetric clamp to keep I-term from pushing beta beyond limits
+            self._kl_err_int = float(min(max(self._kl_err_int, -i_cap), i_cap))
+        else:
+            # disable integral accumulation when I-term is off
+            self._kl_err_int = 0.0
         p_term = self.kl_penalty_kp * error
         i_term = self.kl_penalty_ki * self._kl_err_int
         d_term = self.kl_penalty_kd * (error - self._kl_err_prev)
@@ -2459,6 +2495,12 @@ class DistributionalPPO(RecurrentPPO):
         self._kl_pid_p = p_term
         self._kl_pid_i = i_term
         self._kl_pid_d = d_term
+
+        # Back-calculation: soften integral when beta saturates against error direction.
+        sat_min = self.kl_beta <= (self.kl_penalty_beta_min + 1e-12)
+        sat_max = self.kl_beta >= (self.kl_penalty_beta_max - 1e-12)
+        if (sat_min and error < 0.0) or (sat_max and error > 0.0):
+            self._kl_err_int *= 0.9
 
         self.logger.record("train/kl_penalty_beta", float(self.kl_beta))
         self.logger.record("train/kl_penalty_error", float(self._kl_penalty_error))
@@ -3468,11 +3510,12 @@ class DistributionalPPO(RecurrentPPO):
         ratio_count = 0
         log_prob_sum = 0.0
         log_prob_count = 0
+        # KL penalty aggregation (for logging average component)
+        kl_penalty_component_total = 0.0
+        kl_penalty_component_count = 0
         adv_z_values: list[torch.Tensor] = []
         approx_kl_exceed_count = 0
         minibatches_processed = 0
-        kl_penalty_component_total = 0.0
-        kl_penalty_component_count = 0
 
         base_n_epochs = max(1, int(self.n_epochs))
         if base_n_epochs != self._base_n_epochs:
@@ -4236,11 +4279,6 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
         self.logger.record("train/policy_loss_bc", policy_loss_bc_value)
         self.logger.record("train/policy_loss_bc_weighted", policy_loss_bc_weighted_value)
-        if kl_penalty_component_count > 0:
-            avg_kl_penalty_component = (
-                kl_penalty_component_total / float(kl_penalty_component_count)
-            )
-            self.logger.record("train/policy_loss_kl_penalty", avg_kl_penalty_component)
         self.logger.record("train/policy_bc_vs_ppo_ratio", bc_ratio)
         cvar_empirical_ema_value = float(
             self._cvar_empirical_ema if self._cvar_empirical_ema is not None else cvar_empirical_value
@@ -4434,6 +4472,11 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("train/kl_penalty_pid_p", float(self._kl_pid_p))
             self.logger.record("train/kl_penalty_pid_i", float(self._kl_pid_i))
             self.logger.record("train/kl_penalty_pid_d", float(self._kl_pid_d))
+            if kl_penalty_component_count > 0:
+                self.logger.record(
+                    "train/policy_loss_kl_penalty",
+                    float(kl_penalty_component_total) / float(kl_penalty_component_count),
+                )
 
         if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
             y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
