@@ -465,15 +465,12 @@ def _ensure_model_popart_holdout_loader(
             except Exception as exc:
                 logger.warning("PopArt: holdout materialization failed: %s", exc)
 
-    if existing_loader is loader:
-        _materialize(loader)
-        return
-
-    try:
-        setattr(model, "_popart_holdout_loader", loader)
-    except Exception:
-        logger.warning("Failed to assign PopArt holdout loader to model", exc_info=True)
-        return
+    if existing_loader is not loader:
+        try:
+            setattr(model, "_popart_holdout_loader", loader)
+        except Exception:
+            logger.warning("Failed to assign PopArt holdout loader to model", exc_info=True)
+            return
 
     _materialize(loader)
 
