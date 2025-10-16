@@ -1,3 +1,4 @@
+import copy
 import sys
 import types
 from pathlib import Path
@@ -356,3 +357,190 @@ def test_ensure_model_popart_holdout_loader_assigns_and_reinitialises() -> None:
     assert algo.calls == [cfg, cfg]
     assert loader.materialise_calls == 2
     assert algo.logger.records[-1] == ("popart/reinitialised", 2.0)
+
+
+def test_popart_config_persists_through_save_and_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    saved_payload: dict[str, Any] = {}
+
+    class _PolicyStub:
+        uses_quantile_value_head = False
+        quantile_huber_kappa = 1.0
+
+        def named_parameters(self):  # pragma: no cover - stub returns empty iterable
+            return []
+
+    def _fake_super_init(self, *args: Any, **kwargs: Any) -> None:
+        logger = getattr(self, "logger", _CaptureLogger())
+        self.logger = logger
+        self._logger = logger
+        self.policy = _PolicyStub()
+        self.policy_class = _PolicyStub
+        self.device = torch.device("cpu")
+        self.observation_space = types.SimpleNamespace()
+        self.action_space = types.SimpleNamespace()
+        self.n_steps = 1
+        self.n_envs = 1
+        self.gamma = 0.99
+        self.gae_lambda = 0.95
+        self.n_epochs = 1
+        self.lr_schedule = lambda _progress: 0.001
+        self.normalize_returns = True
+        self._value_scale_updates_enabled = True
+        self.ent_coef = 0.01
+        self.policy_kwargs: dict[str, Any] = {}
+        self.verbose = 0
+
+    monkeypatch.setattr(
+        distributional_ppo_module.RecurrentPPO,
+        "__init__",
+        _fake_super_init,
+        raising=False,
+    )
+
+    def _fake_setup_model(self) -> None:
+        pending_cfg: dict[str, Any] = getattr(self, "_popart_cfg_pending", {}) or {}
+        if not pending_cfg:
+            serialized_cfg = getattr(self, "_popart_cfg_serialized", None)
+            if serialized_cfg:
+                pending_cfg = copy.deepcopy(serialized_cfg)
+                self._popart_cfg_pending = pending_cfg
+        if pending_cfg:
+            self._initialise_popart_controller(pending_cfg)
+            self._popart_cfg_pending = {}
+
+    monkeypatch.setattr(DistributionalPPO, "_setup_model", _fake_setup_model)
+    monkeypatch.setattr(DistributionalPPO, "_rebuild_scheduler_if_needed", lambda self: None)
+    monkeypatch.setattr(DistributionalPPO, "_ensure_score_action_space", lambda self: None)
+    monkeypatch.setattr(
+        DistributionalPPO,
+        "_configure_loss_head_weights",
+        lambda self, *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        DistributionalPPO,
+        "_configure_gradient_accumulation",
+        lambda self, **kwargs: None,
+    )
+
+    from stable_baselines3.common import base_class as sb3_base_class
+
+    monkeypatch.setattr(sb3_base_class, "_convert_space", lambda space: space, raising=False)
+
+    def _fake_save(self, path: Path, *args: Any, **kwargs: Any) -> None:
+        data = {
+            "policy_class": self.policy_class,
+            "observation_space": self.observation_space,
+            "action_space": self.action_space,
+            "policy_kwargs": dict(getattr(self, "policy_kwargs", {})),
+            "verbose": getattr(self, "verbose", 0),
+            "n_envs": getattr(self, "n_envs", 1),
+        }
+        cfg_serialized = getattr(self, "_popart_cfg_serialized", None)
+        if cfg_serialized is not None:
+            data["_popart_cfg_serialized"] = copy.deepcopy(cfg_serialized)
+        saved_payload["data"] = data
+        saved_payload["params"] = {}
+        saved_payload["pytorch_variables"] = None
+        Path(path).write_text("stub")
+
+    monkeypatch.setattr(
+        distributional_ppo_module.RecurrentPPO,
+        "save",
+        _fake_save,
+        raising=False,
+    )
+
+    def _fake_load_from_zip_file(
+        path: Path,
+        *,
+        device: Any = None,
+        custom_objects: Optional[dict[str, Any]] = None,
+        print_system_info: bool = False,
+    ) -> tuple[dict[str, Any], dict[str, Any], None]:
+        assert saved_payload, "Model data was not saved before load invocation"
+        return (
+            copy.deepcopy(saved_payload["data"]),
+            copy.deepcopy(saved_payload["params"]),
+            saved_payload["pytorch_variables"],
+        )
+
+    monkeypatch.setattr(
+        distributional_ppo_module,
+        "load_from_zip_file",
+        _fake_load_from_zip_file,
+    )
+
+    def _fake_super_load(
+        cls,
+        path: Path,
+        *,
+        env: Any = None,
+        device: Any = "auto",
+        custom_objects: Optional[dict[str, Any]] = None,
+        print_system_info: bool = False,
+        force_reset: bool = True,
+        **kwargs: Any,
+    ) -> DistributionalPPO:
+        data, params, pytorch_variables = _fake_load_from_zip_file(
+            path,
+            device=device,
+            custom_objects=custom_objects,
+            print_system_info=print_system_info,
+        )
+        model = cls(
+            policy=data.get("policy_class"),
+            env=env,
+            device=device,
+            _init_setup_model=False,
+            **kwargs,
+        )
+        model.__dict__.update(data)
+        model.__dict__.update(kwargs)
+        model._setup_model()
+        return model
+
+    monkeypatch.setattr(
+        distributional_ppo_module.RecurrentPPO,
+        "load",
+        classmethod(_fake_super_load),
+        raising=False,
+    )
+
+    cfg = {
+        "enabled": True,
+        "mode": "live",
+        "ema_beta": 0.9,
+        "min_samples": 8,
+        "warmup_updates": 0,
+        "max_rel_step": 0.5,
+        "ev_floor": 0.2,
+        "ret_std_band": (0.1, 2.0),
+        "gate_patience": 1,
+    }
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    logger = _CaptureLogger()
+    algo.logger = logger
+    algo._logger = logger
+
+    DistributionalPPO.__init__(
+        algo,
+        policy=_PolicyStub(),
+        env=object(),
+        value_scale_controller=cfg,
+        value_scale_max_rel_step=0.5,
+    )
+
+    assert logger.records.get("config/popart/enabled") == pytest.approx(1.0)
+
+    save_path = tmp_path / "popart_model.zip"
+    algo.save(save_path)
+
+    loaded = DistributionalPPO.load(save_path, value_scale_max_rel_step=0.5)
+
+    assert isinstance(loaded, DistributionalPPO)
+    loaded_logger = getattr(loaded, "logger", None)
+    assert isinstance(loaded_logger, _CaptureLogger)
+    assert loaded_logger.records.get("config/popart/enabled") == pytest.approx(1.0)

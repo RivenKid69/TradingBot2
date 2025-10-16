@@ -1,8 +1,10 @@
+import copy
 import dataclasses
 import io
 import itertools
 import logging
 import math
+import os
 import warnings
 from collections import deque
 from collections.abc import Mapping
@@ -59,6 +61,28 @@ def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
         except Exception:
             pass
     return default
+
+
+def _popart_value_to_serializable(value: Any) -> Any:
+    if isinstance(value, (str, bool)) or value is None:
+        return value
+    if isinstance(value, (int, float)):
+        return float(value) if isinstance(value, float) else int(value)
+    if isinstance(value, np.generic):
+        return value.item()
+    if hasattr(value, "__fspath__"):
+        return os.fspath(value)
+    if isinstance(value, Mapping):
+        return {
+            str(key): _popart_value_to_serializable(val) for key, val in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_popart_value_to_serializable(item) for item in value]
+    return str(value)
+
+
+def _serialize_popart_config(cfg: Mapping[str, Any]) -> dict[str, Any]:
+    return {key: _popart_value_to_serializable(value) for key, value in cfg.items()}
 
 
 PadFn = Callable[[Union[np.ndarray, torch.Tensor]], np.ndarray]
@@ -1074,6 +1098,16 @@ class DistributionalPPO(RecurrentPPO):
 
     def _setup_model(self) -> None:
         super()._setup_model()
+
+        pending_cfg: dict[str, Any] = getattr(self, "_popart_cfg_pending", {}) or {}
+        if not pending_cfg:
+            serialized_cfg = getattr(self, "_popart_cfg_serialized", None)
+            if serialized_cfg:
+                pending_cfg = copy.deepcopy(serialized_cfg)
+                self._popart_cfg_pending = pending_cfg
+        if pending_cfg:
+            self._initialise_popart_controller(pending_cfg)
+            self._popart_cfg_pending = {}
 
         if isinstance(self.rollout_buffer, RecurrentRolloutBuffer) and not isinstance(
             self.rollout_buffer, RawRecurrentRolloutBuffer
@@ -2513,7 +2547,15 @@ class DistributionalPPO(RecurrentPPO):
             ):
                 if hasattr(popart_cfg_raw, key):
                     popart_cfg_map[key] = getattr(popart_cfg_raw, key)
-        self._popart_cfg_pending: dict[str, Any] = popart_cfg_map
+        popart_cfg_serialized = (
+            _serialize_popart_config(popart_cfg_map) if popart_cfg_map else {}
+        )
+        self._popart_cfg_serialized: Optional[dict[str, Any]] = (
+            copy.deepcopy(popart_cfg_serialized) if popart_cfg_serialized else None
+        )
+        self._popart_cfg_pending: dict[str, Any] = (
+            copy.deepcopy(popart_cfg_serialized) if popart_cfg_serialized else {}
+        )
         self._popart_controller: Optional[PopArtController] = None
         self._popart_shadow_metrics: Optional[PopArtCandidateMetrics] = None
         self._popart_last_stats: Optional[tuple[float, float]] = None
@@ -3056,7 +3098,8 @@ class DistributionalPPO(RecurrentPPO):
 
             self._logger = configure()
 
-        self._initialise_popart_controller(self._popart_cfg_pending)
+        if getattr(self, "_popart_controller", None) is None and self._popart_cfg_pending:
+            self._initialise_popart_controller(self._popart_cfg_pending)
         self._popart_cfg_pending = {}
 
         value_scale_fixed_log = (
@@ -6140,6 +6183,10 @@ class DistributionalPPO(RecurrentPPO):
             **kwargs,
         )
         if isinstance(model, DistributionalPPO):
+            cfg_serialized = getattr(model, "_popart_cfg_serialized", None)
+            if cfg_serialized and getattr(model, "_popart_controller", None) is None:
+                model._initialise_popart_controller(copy.deepcopy(cfg_serialized))
+                model._popart_cfg_pending = {}
             model._ensure_score_action_space()
         return model
 
