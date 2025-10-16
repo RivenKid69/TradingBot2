@@ -358,17 +358,17 @@ model:
   params:
     value_scale_controller:
       enabled: true
-      mode: "live"
-      ema_beta: 0.99
-      min_samples: 4096
-      warmup_updates: 4
-      max_rel_step: 0.06
-      ev_floor: 0.2
-      ret_std_band: [0.01, 2.0]
-      gate_patience: 2
+      mode: "shadow"
       replay_path: "artifacts/popart_holdout.npz"
       replay_seed: 17
       replay_batch_size: 4096
+      ema_beta: 0.99
+      min_samples: 4096
+      warmup_updates: 4
+      max_rel_step: 0.04
+      ev_floor: 0.3
+      ret_std_band: [0.01, 2.0]
+      gate_patience: 2
 ```
 
 * `enabled` — фича‑флаг; при `false` тренировка полностью повторяет текущее
