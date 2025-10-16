@@ -233,8 +233,10 @@ def create_sequencers(
 class RawRecurrentRolloutBufferSamples(NamedTuple):
     observations: torch.Tensor
     actions: torch.Tensor
+    actions_raw: torch.Tensor
     old_values: torch.Tensor
     old_log_prob: torch.Tensor
+    old_log_prob_raw: torch.Tensor
     advantages: torch.Tensor
     returns: torch.Tensor
     lstm_states: RNNStates
