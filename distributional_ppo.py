@@ -2,6 +2,7 @@ import io
 import itertools
 import logging
 import math
+import warnings
 from collections import deque
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -454,8 +455,33 @@ class PopArtController:
         returns_raw: torch.Tensor,
         ret_mean: float,
         ret_std: float,
-        explained_variance_train: float,
+        explained_variance_train: Optional[float] = None,
     ) -> Optional[PopArtCandidateMetrics]:
+        """Evaluate a PopArt candidate in shadow mode.
+
+        Args:
+            model: Distributional PPO model providing policy/value utilities.
+            returns_raw: Raw returns sampled from the training batch.
+            ret_mean: Mean of the current PopArt returns normalizer.
+            ret_std: Standard deviation of the current PopArt returns normalizer.
+            explained_variance_train: deprecated, ignored.
+
+        Returns:
+            Optional metrics describing the candidate evaluation.
+        """
+        if explained_variance_train is not None:
+            warnings.warn(
+                "evaluate_shadow(explained_variance_train=...) is deprecated and ignored",
+                DeprecationWarning,
+            )
+            self._log(
+                "shadow_popart/ev_train_input",
+                float(
+                    np.nan_to_num(
+                        explained_variance_train, nan=0.0, posinf=0.0, neginf=0.0
+                    )
+                ),
+            )
         if not self.enabled:
             return None
 
@@ -5611,7 +5637,6 @@ class DistributionalPPO(RecurrentPPO):
                     returns_raw=y_true_tensor.flatten(),
                     ret_mean=float(ret_mu_value),
                     ret_std=float(ret_std_value),
-                    explained_variance_train=float(explained_var),
                 )
             except Exception:
                 logging.getLogger(__name__).exception("PopArt shadow evaluation failed")
