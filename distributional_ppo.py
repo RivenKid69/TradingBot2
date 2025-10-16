@@ -1,3 +1,4 @@
+import dataclasses
 import io
 import itertools
 import logging
@@ -25,6 +26,40 @@ from stable_baselines3.common.save_util import load_from_zip_file
 
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Generic getter for dicts, pydantic/dataclass objects, and custom cfgs."""
+
+    if cfg is None:
+        return default
+    if isinstance(cfg, Mapping):
+        return cfg.get(key, default)
+    if hasattr(cfg, key):
+        return getattr(cfg, key)
+    get = getattr(cfg, "get", None)
+    if callable(get):
+        try:
+            return get(key, default)
+        except TypeError:
+            try:
+                return get(key)
+            except Exception:
+                pass
+    for dump in ("model_dump", "dict"):
+        fn = getattr(cfg, dump, None)
+        if callable(fn):
+            try:
+                return fn().get(key, default)
+            except Exception:
+                pass
+    if dataclasses.is_dataclass(cfg):
+        try:
+            return dataclasses.asdict(cfg).get(key, default)
+        except Exception:
+            pass
+    return default
+
 
 PadFn = Callable[[Union[np.ndarray, torch.Tensor]], np.ndarray]
 
@@ -1502,49 +1537,61 @@ class DistributionalPPO(RecurrentPPO):
                     f"Policy action_dim must be 1 for score actions, got {action_dim}"
                 )
 
-    def _initialise_popart_controller(self, cfg: Mapping[str, Any]) -> None:
-        if not cfg:
+    def _initialise_popart_controller(self, cfg: Any) -> None:
+        enabled = bool(_cfg_get(cfg, "enabled", False))
+
+        def _coerce_mode(raw: Any) -> Literal["shadow", "live"]:
+            if isinstance(raw, str):
+                cleaned = raw.strip().lower()
+                if cleaned in {"shadow", "live"}:
+                    return cast(Literal["shadow", "live"], cleaned)
+            return "shadow"
+
+        mode_value = _coerce_mode(_cfg_get(cfg, "mode", "shadow"))
+
+        def _coerce_float(value: Any, *, default: float = 0.0) -> float:
+            try:
+                if isinstance(value, (int, float)):
+                    return float(value)
+                return float(value)  # type: ignore[arg-type]
+            except Exception:
+                return default
+
+        def _coerce_int(value: Any, *, default: int = 0) -> int:
+            try:
+                return int(value)
+            except Exception:
+                return default
+
+        replay_path_value = _cfg_get(cfg, "replay_path")
+        replay_path_str = "" if replay_path_value is None else str(replay_path_value)
+        replay_seed_raw = _cfg_get(cfg, "replay_seed", 0)
+        replay_batch_size_raw = _cfg_get(cfg, "replay_batch_size", 0)
+        replay_seed_value = _coerce_float(replay_seed_raw)
+        replay_batch_size_value = _coerce_float(replay_batch_size_raw)
+
+        if not enabled:
             self._popart_controller = None
+            disabled_mode = "shadow"
             self.logger.record("config/popart/enabled", 0.0)
-            self.logger.record("config/popart/mode", "shadow")
+            self.logger.record("config/popart/mode", disabled_mode)
             self.logger.record("config/popart/mode_live", 0.0)
-            self.logger.record("config/popart/replay_path", "")
-            self.logger.record("config/popart/replay_seed", 0.0)
-            self.logger.record("config/popart/replay_batch_size", 0.0)
+            self.logger.record("config/popart/replay_path", replay_path_str)
+            self.logger.record("config/popart/replay_seed", replay_seed_value)
+            self.logger.record("config/popart/replay_batch_size", replay_batch_size_value)
             return
 
-        enabled = bool(cfg.get("enabled", False))
-        mode_raw = cfg.get("mode", "shadow")
-        if isinstance(mode_raw, str):
-            mode_clean = mode_raw.strip().lower()
-            mode_value: Literal["shadow", "live"] = "shadow"
-            if mode_clean in {"shadow", "live"}:
-                mode_value = cast(Literal["shadow", "live"], mode_clean)
-        else:
-            mode_value = "shadow"
-
-        ema_beta = float(cfg.get("ema_beta", 0.99))
-        min_samples = int(cfg.get("min_samples", 4096))
-        warmup_updates = int(cfg.get("warmup_updates", 4))
-        max_rel_step = float(cfg.get("max_rel_step", 0.04))
-        ev_floor = float(cfg.get("ev_floor", 0.3))
-        gate_patience = int(cfg.get("gate_patience", 2))
-        band_raw = cfg.get("ret_std_band", (0.5, 0.9))
+        ema_beta = float(_cfg_get(cfg, "ema_beta", 0.99))
+        min_samples = _coerce_int(_cfg_get(cfg, "min_samples", 4096), default=4096)
+        warmup_updates = _coerce_int(_cfg_get(cfg, "warmup_updates", 4), default=4)
+        max_rel_step = float(_cfg_get(cfg, "max_rel_step", 0.04))
+        ev_floor = float(_cfg_get(cfg, "ev_floor", 0.3))
+        gate_patience = _coerce_int(_cfg_get(cfg, "gate_patience", 2), default=2)
+        band_raw = _cfg_get(cfg, "ret_std_band", (0.01, 2.0))
         if isinstance(band_raw, (list, tuple)) and len(band_raw) >= 2:
             ret_std_band = (float(band_raw[0]), float(band_raw[1]))
         else:
-            ret_std_band = (0.5, 0.9)
-        batch_size_raw = cfg.get("replay_batch_size", 0)
-        try:
-            replay_batch_size = float(int(batch_size_raw))
-        except Exception:
-            replay_batch_size = float(batch_size_raw) if isinstance(batch_size_raw, (int, float)) else 0.0
-        seed_raw = cfg.get("replay_seed", 0)
-        try:
-            replay_seed_value = float(int(seed_raw))
-        except Exception:
-            replay_seed_value = float(seed_raw) if isinstance(seed_raw, (int, float)) else 0.0
-        replay_path_value = cfg.get("replay_path")
+            ret_std_band = (0.01, 2.0)
 
         controller = PopArtController(
             enabled=enabled,
@@ -1571,13 +1618,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("config/popart/ret_std_band_low", float(ret_std_band[0]))
         self.logger.record("config/popart/ret_std_band_high", float(ret_std_band[1]))
         self.logger.record("config/popart/gate_patience", float(controller.gate_patience))
-        if replay_path_value is None:
-            replay_path_str = ""
-        else:
-            replay_path_str = str(replay_path_value)
         self.logger.record("config/popart/replay_path", replay_path_str)
         self.logger.record("config/popart/replay_seed", replay_seed_value)
-        self.logger.record("config/popart/replay_batch_size", replay_batch_size)
+        self.logger.record("config/popart/replay_batch_size", replay_batch_size_value)
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
