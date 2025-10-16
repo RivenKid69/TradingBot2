@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import glob
 import json
@@ -52,6 +53,45 @@ from core_config import (
 
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
+    """Достаёт поле из dict/pydantic/dataclass/кастомного конфига."""
+
+    if cfg is None:
+        return default
+    if isinstance(cfg, Mapping):
+        return cfg.get(key, default)
+    if hasattr(cfg, key):
+        return getattr(cfg, key)
+    get = getattr(cfg, "get", None)
+    if callable(get):
+        try:
+            return get(key, default)
+        except TypeError:
+            try:
+                return get(key)
+            except Exception:
+                pass
+    for dump in ("model_dump", "dict"):
+        fn = getattr(cfg, dump, None)
+        if callable(fn):
+            try:
+                data = fn()
+            except Exception:
+                continue
+            if isinstance(data, Mapping):
+                return data.get(key, default)
+            try:
+                return dict(data).get(key, default)  # type: ignore[arg-type]
+            except Exception:
+                continue
+    if dataclasses.is_dataclass(cfg):
+        try:
+            return dataclasses.asdict(cfg).get(key, default)
+        except Exception:
+            pass
+    return default
 
 
 class _PopArtHoldoutLoaderWrapper:
@@ -357,30 +397,38 @@ def _build_popart_holdout_loader(
 
     if PopArtHoldoutBatch is None:
         return None
-    if not isinstance(controller_cfg, Mapping):
-        return None
-    replay_path = controller_cfg.get("replay_path")
-    if not replay_path:
+
+    enabled = bool(_cfg_get(controller_cfg, "enabled", False))
+    if not enabled:
         return None
 
-    batch_size_raw = controller_cfg.get("replay_batch_size", 2048)
+    replay_path = _cfg_get(controller_cfg, "replay_path", "artifacts/popart_holdout.npz")
+    if replay_path is None:
+        return None
+
+    try:
+        path = Path(str(replay_path))
+    except Exception:
+        return None
+
+    batch_size_raw = _cfg_get(controller_cfg, "replay_batch_size", 2048)
     try:
         batch_size = max(int(batch_size_raw), 1)
     except Exception:
         batch_size = 2048
-    seed_raw = controller_cfg.get("replay_seed", 17)
+    seed_raw = _cfg_get(controller_cfg, "replay_seed", 17)
     try:
         replay_seed = int(seed_raw)
     except Exception:
         replay_seed = 17
-    min_samples_raw = controller_cfg.get("min_samples", 4096)
+    min_samples_raw = _cfg_get(controller_cfg, "min_samples", 4096)
     try:
         min_samples = int(min_samples_raw)
     except Exception:
         min_samples = 4096
 
     loader = _PopArtHoldoutLoaderWrapper(
-        path=Path(str(replay_path)),
+        path=path,
         batch_size=batch_size,
         seed=replay_seed,
         min_samples=min_samples,
@@ -396,11 +444,29 @@ def _ensure_model_popart_holdout_loader(
 ) -> None:
     """Ensure the DistributionalPPO instance uses the prepared PopArt loader."""
 
-    if loader is None:
+    enabled = bool(_cfg_get(controller_cfg, "enabled", False))
+    if not enabled:
         return
 
     existing_loader = getattr(model, "_popart_holdout_loader", None)
+    if loader is None:
+        loader = existing_loader or _build_popart_holdout_loader(controller_cfg)
+        if loader is None:
+            return
+
+    def _materialize(target_loader: Callable[[], Optional["PopArtHoldoutBatch"]]) -> None:
+        ensure_fn = getattr(target_loader, "ensure_materialized", None)
+        if not callable(ensure_fn):
+            bound = getattr(target_loader, "__self__", None)
+            ensure_fn = getattr(bound, "ensure_materialized", None)
+        if callable(ensure_fn):
+            try:
+                ensure_fn()
+            except Exception as exc:
+                logger.warning("PopArt: holdout materialization failed: %s", exc)
+
     if existing_loader is loader:
+        _materialize(loader)
         return
 
     try:
@@ -409,8 +475,7 @@ def _ensure_model_popart_holdout_loader(
         logger.warning("Failed to assign PopArt holdout loader to model", exc_info=True)
         return
 
-    if not isinstance(controller_cfg, Mapping) or not controller_cfg:
-        return
+    _materialize(loader)
 
     initialise = getattr(model, "_initialise_popart_controller", None)
     if not callable(initialise):
