@@ -133,14 +133,16 @@ model:
       ema_beta: 0.9
       max_rel_step: 0.35
       std_floor: 0.01
-      window_updates: 8
+      window_updates: 14
       warmup_updates: 6
-      freeze_after_updates: null
-      never_freeze: true
-      max_change_pct: 0.10
+      freeze_after_updates: 7
+      never_freeze: false
+      max_change_pct: 0.06
+      target_scale_ema_beta: 0.75
       range_max_rel_step: 0.25
+      freeze_after: null
       stability:
-        min_explained_variance: 0.15
+        min_explained_variance: 0.2
         max_abs_p95: 6.0
         patience: 2
     clip_range_warmup: 0.18
