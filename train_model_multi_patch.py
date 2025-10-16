@@ -33,6 +33,7 @@ import yaml
 import sys
 import hashlib
 import random
+import threading
 from copy import deepcopy
 from functools import lru_cache
 from collections.abc import Mapping
@@ -48,6 +49,380 @@ from core_config import (
     resolve_execution_timing,
     TrainConfig,
 )
+
+
+logger = logging.getLogger(__name__)
+
+
+class _PopArtHoldoutLoaderWrapper:
+    """Lazily loads or materialises PopArt holdout batches."""
+
+    def __init__(
+        self,
+        *,
+        path: Path,
+        batch_size: int,
+        seed: int,
+        min_samples: int,
+        batch_cls: Any,
+    ) -> None:
+        self._path = path
+        self._batch_size = max(int(batch_size), 1)
+        self._seed = int(seed)
+        self._min_samples = max(int(min_samples), 1)
+        self._batch_cls = batch_cls
+        self._logger = logging.getLogger(__name__)
+        self._cache: dict[str, Optional[Any]] = {}
+        self._env: Optional["VecEnv"] = None
+        self._lock = threading.RLock()
+        self._fallback_attempted = False
+        self.fallback_generated = False
+        self._target_samples = max(self._min_samples, self._batch_size, 2048)
+
+    # ------------------------------------------------------------------
+    # Public API used by the training pipeline
+    # ------------------------------------------------------------------
+    def attach_env(self, env: "VecEnv") -> None:
+        with self._lock:
+            self._env = env
+
+    def ensure_materialized(self) -> None:
+        if self._path.exists():
+            return
+        self._generate_if_missing()
+
+    def __call__(self) -> Optional[Any]:
+        with self._lock:
+            if "batch" in self._cache:
+                return self._cache["batch"]
+
+        self._generate_if_missing()
+
+        with self._lock:
+            if not self._path.exists():
+                self._logger.warning("PopArt replay file not found at %s", self._path)
+                self._cache["batch"] = None
+                return None
+            try:
+                payload = np.load(str(self._path), allow_pickle=False)
+            except Exception as exc:
+                self._logger.warning(
+                    "Failed to load PopArt replay %s: %s", self._path, exc
+                )
+                self._cache["batch"] = None
+                return None
+
+        obs = payload.get("obs")
+        if obs is None:
+            obs = payload.get("observations")
+        if obs is None:
+            obs = payload.get("states")
+        targets = payload.get("returns")
+        if targets is None:
+            targets = payload.get("returns_raw")
+        if targets is None:
+            targets = payload.get("target")
+        if obs is None or targets is None:
+            self._logger.warning(
+                "PopArt replay %s missing 'obs'/'returns' arrays", self._path
+            )
+            with self._lock:
+                self._cache["batch"] = None
+            return None
+
+        obs_np = np.asarray(obs, dtype=np.float32)
+        returns_np = np.asarray(targets, dtype=np.float32)
+        if returns_np.ndim == 1:
+            returns_np = returns_np.reshape(-1, 1)
+        if obs_np.shape[0] == 0 or returns_np.shape[0] == 0:
+            with self._lock:
+                self._cache["batch"] = None
+            return None
+        count = int(min(obs_np.shape[0], returns_np.shape[0]))
+        rng = np.random.default_rng(self._seed)
+        if self._batch_size >= count:
+            indices = np.arange(count)
+        else:
+            indices = rng.choice(count, size=self._batch_size, replace=False)
+
+        obs_tensor = torch.as_tensor(obs_np[indices], dtype=torch.float32)
+        returns_tensor = torch.as_tensor(returns_np[indices], dtype=torch.float32)
+
+        starts = payload.get("episode_starts")
+        if starts is None:
+            starts = payload.get("episode_start")
+        if starts is None:
+            starts = payload.get("dones")
+        if starts is None:
+            starts_np = np.zeros((count,), dtype=np.float32)
+        else:
+            starts_np = np.asarray(starts, dtype=np.float32).reshape(count)
+        starts_tensor = torch.as_tensor(starts_np[indices], dtype=torch.float32)
+
+        mask_arr = payload.get("mask")
+        if mask_arr is None:
+            mask_arr = payload.get("weights")
+        if mask_arr is None:
+            mask_tensor: Optional[torch.Tensor] = None
+        else:
+            mask_tensor = torch.as_tensor(
+                np.asarray(mask_arr, dtype=np.float32).reshape(-1)[indices],
+                dtype=torch.float32,
+            )
+
+        batch = self._batch_cls(
+            observations=obs_tensor,
+            returns_raw=returns_tensor,
+            episode_starts=starts_tensor,
+            lstm_states=None,
+            mask=mask_tensor,
+        )
+        with self._lock:
+            self._cache["batch"] = batch
+        return batch
+
+    # ------------------------------------------------------------------
+    # Fallback generation helpers
+    # ------------------------------------------------------------------
+    def _generate_if_missing(self) -> None:
+        with self._lock:
+            if self._path.exists() or self.fallback_generated:
+                return
+            env = self._env
+            if env is None:
+                if not self._fallback_attempted:
+                    self._logger.warning(
+                        "PopArt replay %s is missing and no environment is available for fallback generation",
+                        self._path,
+                    )
+                    self._fallback_attempted = True
+                return
+            self._fallback_attempted = True
+
+        try:
+            data = self._collect_holdout(env)
+        except Exception as exc:
+            self._logger.warning(
+                "Failed to auto-generate PopArt replay %s: %s", self._path, exc
+            )
+            return
+
+        obs_arr = data["obs"]
+        sample_count = int(obs_arr.shape[0])
+
+        self._logger.warning(
+            "PopArt replay %s not found, generated fallback batch with %d samples",
+            self._path,
+            sample_count,
+        )
+
+        self._path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(
+            str(self._path),
+            obs=data["obs"],
+            returns=data["returns"],
+            episode_starts=data["episode_starts"],
+            mask=data.get("mask"),
+        )
+        with self._lock:
+            self._cache.pop("batch", None)
+            self.fallback_generated = True
+
+    def _collect_holdout(self, env: "VecEnv") -> dict[str, np.ndarray]:
+        import gym
+
+        rng = np.random.default_rng(self._seed)
+        target_samples = int(self._target_samples)
+
+        try:
+            env.seed(self._seed)
+        except Exception:
+            pass
+
+        try:
+            obs = env.reset(seed=self._seed)
+        except TypeError:
+            obs = env.reset()
+
+        num_envs = int(getattr(env, "num_envs", 1))
+        try:
+            action_space = env.action_space
+        except AttributeError:
+            action_space = None
+
+        previous_training_flag = getattr(env, "training", None)
+        if previous_training_flag is not None:
+            env.training = False
+
+        obs_samples: list[np.ndarray] = []
+        ret_samples: list[np.ndarray] = []
+        start_samples: list[np.ndarray] = []
+        episode_starts = np.ones((num_envs,), dtype=np.float32)
+
+        try:
+            while len(obs_samples) * num_envs < target_samples:
+                obs_np = np.asarray(obs, dtype=np.float32)
+                if obs_np.shape[:1] == (num_envs,):
+                    obs_np = obs_np.reshape((num_envs,) + obs_np.shape[1:])
+                else:
+                    obs_np = obs_np.reshape((num_envs,) + obs_np.shape)
+                obs_samples.append(obs_np)
+                start_samples.append(episode_starts.astype(np.float32))
+
+                actions = self._sample_actions(action_space, num_envs, rng, gym)
+                step_result = env.step(actions)
+                if isinstance(step_result, tuple) and len(step_result) >= 4:
+                    next_obs, rewards, dones, _ = step_result[:4]
+                else:  # pragma: no cover - safety for unexpected VecEnv API
+                    next_obs = step_result[0]
+                    rewards = step_result[1]
+                    dones = step_result[2]
+
+                rewards_np = np.asarray(rewards, dtype=np.float32).reshape(num_envs, -1)
+                if rewards_np.shape[1] == 0:
+                    rewards_np = np.zeros((num_envs, 1), dtype=np.float32)
+                ret_samples.append(rewards_np[:, :1])
+
+                episode_starts = np.asarray(dones, dtype=np.float32).reshape(num_envs)
+                obs = next_obs
+
+            obs_arr = np.concatenate(obs_samples, axis=0).astype(np.float32)
+            returns_arr = np.concatenate(ret_samples, axis=0).astype(np.float32)
+            starts_arr = np.concatenate(start_samples, axis=0).astype(np.float32)
+
+            if obs_arr.shape[0] > target_samples:
+                obs_arr = obs_arr[:target_samples]
+                returns_arr = returns_arr[:target_samples]
+                starts_arr = starts_arr[:target_samples]
+
+            mask_arr = np.ones((obs_arr.shape[0], 1), dtype=np.float32)
+
+            return {
+                "obs": obs_arr,
+                "returns": returns_arr.reshape(-1, 1),
+                "episode_starts": starts_arr.reshape(-1),
+                "mask": mask_arr,
+            }
+        finally:
+            try:
+                env.reset()
+            except Exception:
+                pass
+            if previous_training_flag is not None:
+                env.training = previous_training_flag
+
+    @staticmethod
+    def _sample_actions(
+        action_space: Any,
+        num_envs: int,
+        rng: np.random.Generator,
+        gym_module: Any,
+    ) -> np.ndarray:
+        if action_space is None:
+            return np.zeros((num_envs, 1), dtype=np.float32)
+
+        if gym_module is not None and isinstance(action_space, gym_module.spaces.Box):
+            dtype = action_space.dtype if action_space.dtype is not None else np.float32
+            zeros = np.zeros((num_envs,) + action_space.shape, dtype=dtype)
+            actions = zeros.copy()
+            low = np.asarray(action_space.low, dtype=np.float32)
+            high = np.asarray(action_space.high, dtype=np.float32)
+            low = np.where(np.isfinite(low), low, -1.0)
+            high = np.where(np.isfinite(high), high, 1.0)
+            for idx in range(num_envs):
+                if rng.random() < 0.25:
+                    sample = rng.uniform(low=low, high=high).astype(dtype)
+                    actions[idx] = sample
+            return actions
+
+        if gym_module is not None and isinstance(action_space, gym_module.spaces.Discrete):
+            base = int(getattr(action_space, "start", 0))
+            actions = np.full((num_envs,), base, dtype=np.int64)
+            for idx in range(num_envs):
+                if rng.random() < 0.25:
+                    actions[idx] = int(rng.integers(action_space.n))
+            return actions
+
+        samples = [action_space.sample() for _ in range(num_envs)]
+        return np.asarray(samples)
+
+
+def _build_popart_holdout_loader(
+    controller_cfg: Any,
+) -> Optional[Callable[[], Optional["PopArtHoldoutBatch"]]]:
+    try:
+        from distributional_ppo import PopArtHoldoutBatch  # Local import to avoid cycles
+    except Exception:  # pragma: no cover - safeguard if training module unavailable
+        PopArtHoldoutBatch = None
+
+    if PopArtHoldoutBatch is None:
+        return None
+    if not isinstance(controller_cfg, Mapping):
+        return None
+    replay_path = controller_cfg.get("replay_path")
+    if not replay_path:
+        return None
+
+    batch_size_raw = controller_cfg.get("replay_batch_size", 2048)
+    try:
+        batch_size = max(int(batch_size_raw), 1)
+    except Exception:
+        batch_size = 2048
+    seed_raw = controller_cfg.get("replay_seed", 17)
+    try:
+        replay_seed = int(seed_raw)
+    except Exception:
+        replay_seed = 17
+    min_samples_raw = controller_cfg.get("min_samples", 4096)
+    try:
+        min_samples = int(min_samples_raw)
+    except Exception:
+        min_samples = 4096
+
+    loader = _PopArtHoldoutLoaderWrapper(
+        path=Path(str(replay_path)),
+        batch_size=batch_size,
+        seed=replay_seed,
+        min_samples=min_samples,
+        batch_cls=PopArtHoldoutBatch,
+    )
+    return loader
+
+
+def _ensure_model_popart_holdout_loader(
+    model: Any,
+    loader: Optional[Callable[[], Optional["PopArtHoldoutBatch"]]],
+    controller_cfg: Any,
+) -> None:
+    """Ensure the DistributionalPPO instance uses the prepared PopArt loader."""
+
+    if loader is None:
+        return
+
+    existing_loader = getattr(model, "_popart_holdout_loader", None)
+    if existing_loader is loader:
+        return
+
+    try:
+        setattr(model, "_popart_holdout_loader", loader)
+    except Exception:
+        logger.warning("Failed to assign PopArt holdout loader to model", exc_info=True)
+        return
+
+    if not isinstance(controller_cfg, Mapping) or not controller_cfg:
+        return
+
+    initialise = getattr(model, "_initialise_popart_controller", None)
+    if not callable(initialise):
+        return
+
+    try:
+        initialise(controller_cfg)
+    except Exception:
+        logger.warning(
+            "Failed to re-initialise PopArt controller with assigned holdout loader",
+            exc_info=True,
+        )
 
 try:
     from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor, DummyVecEnv, VecEnv
@@ -1516,122 +1891,6 @@ def objective(trial: optuna.Trial,
             include_map = {}
         return (weights or None, include_map or None)
 
-    def _build_popart_holdout_loader(
-        controller_cfg: Any,
-    ) -> Optional[Callable[[], Optional["PopArtHoldoutBatch"]]]:
-        try:
-            from distributional_ppo import PopArtHoldoutBatch  # Local import to avoid cycles
-        except Exception:  # pragma: no cover - safeguard if training module unavailable
-            PopArtHoldoutBatch = None
-
-        if PopArtHoldoutBatch is None:
-            return None
-        if not isinstance(controller_cfg, Mapping):
-            return None
-        replay_path = controller_cfg.get("replay_path")
-        if not replay_path:
-            return None
-
-        batch_size_raw = controller_cfg.get("replay_batch_size", 2048)
-        try:
-            batch_size = max(int(batch_size_raw), 1)
-        except Exception:
-            batch_size = 2048
-        seed_raw = controller_cfg.get("replay_seed", 17)
-        try:
-            replay_seed = int(seed_raw)
-        except Exception:
-            replay_seed = 17
-        replay_path_obj = Path(str(replay_path))
-        cache: dict[str, Optional[PopArtHoldoutBatch]] = {}
-
-        def _loader() -> Optional[PopArtHoldoutBatch]:
-            if "batch" in cache:
-                return cache["batch"]
-            if not replay_path_obj.exists():
-                logging.getLogger(__name__).warning(
-                    "PopArt replay file not found at %s", replay_path_obj
-                )
-                cache["batch"] = None
-                return None
-            try:
-                payload = np.load(str(replay_path_obj))
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    "Failed to load PopArt replay %s: %s", replay_path_obj, exc
-                )
-                cache["batch"] = None
-                return None
-
-            obs = payload.get("obs")
-            if obs is None:
-                obs = payload.get("observations")
-            if obs is None:
-                obs = payload.get("states")
-            targets = payload.get("returns")
-            if targets is None:
-                targets = payload.get("returns_raw")
-            if targets is None:
-                targets = payload.get("target")
-            if obs is None or targets is None:
-                logging.getLogger(__name__).warning(
-                    "PopArt replay %s missing 'obs'/'returns' arrays", replay_path_obj
-                )
-                cache["batch"] = None
-                return None
-
-            obs_np = np.asarray(obs, dtype=np.float32)
-            returns_np = np.asarray(targets, dtype=np.float32)
-            if returns_np.ndim == 1:
-                returns_np = returns_np.reshape(-1, 1)
-            if obs_np.shape[0] == 0 or returns_np.shape[0] == 0:
-                cache["batch"] = None
-                return None
-            count = int(min(obs_np.shape[0], returns_np.shape[0]))
-            rng = np.random.default_rng(replay_seed)
-            if batch_size >= count:
-                indices = np.arange(count)
-            else:
-                indices = rng.choice(count, size=batch_size, replace=False)
-
-            obs_tensor = torch.as_tensor(obs_np[indices], dtype=torch.float32)
-            returns_tensor = torch.as_tensor(returns_np[indices], dtype=torch.float32)
-
-            starts = payload.get("episode_starts")
-            if starts is None:
-                starts = payload.get("episode_start")
-            if starts is None:
-                starts = payload.get("dones")
-            if starts is None:
-                starts_np = np.zeros((count,), dtype=np.float32)
-            else:
-                starts_np = np.asarray(starts, dtype=np.float32).reshape(count)
-            starts_tensor = torch.as_tensor(starts_np[indices], dtype=torch.float32)
-
-            mask_arr = payload.get("mask")
-            if mask_arr is None:
-                mask_arr = payload.get("weights")
-            mask_tensor: Optional[torch.Tensor]
-            if mask_arr is None:
-                mask_tensor = None
-            else:
-                mask_tensor = torch.as_tensor(
-                    np.asarray(mask_arr, dtype=np.float32).reshape(-1)[indices],
-                    dtype=torch.float32,
-                )
-
-            batch = PopArtHoldoutBatch(
-                observations=obs_tensor,
-                returns_raw=returns_tensor,
-                episode_starts=starts_tensor,
-                lstm_states=None,
-                mask=mask_tensor,
-            )
-            cache["batch"] = batch
-            return batch
-
-        return _loader
-
     def _coerce_optional_int(value, key: str):
         if value is None:
             return None
@@ -2960,6 +3219,14 @@ def objective(trial: optuna.Trial,
     # and prevents the training crash observed when Optuna launches trials.
     env_tr.norm_reward = False
 
+    if popart_holdout_loader is not None:
+        attach_env = getattr(popart_holdout_loader, "attach_env", None)
+        if callable(attach_env):
+            attach_env(env_tr)
+        ensure_ready = getattr(popart_holdout_loader, "ensure_materialized", None)
+        if callable(ensure_ready):
+            ensure_ready()
+
     env_tr.save(str(train_stats_path))
     save_sidecar_metadata(str(train_stats_path), extra={"kind": "vecnorm_stats", "phase": "train"})
 
@@ -3287,6 +3554,12 @@ def objective(trial: optuna.Trial,
         policy_kwargs=policy_kwargs,
         tensorboard_log=str(tb_log_path) if tb_log_path is not None else None,
         verbose=1
+    )
+
+    _ensure_model_popart_holdout_loader(
+        model,
+        popart_holdout_loader,
+        value_scale_controller_cfg,
     )
 
     kl_penalty_beta_logged = getattr(

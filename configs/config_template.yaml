@@ -69,6 +69,19 @@ model:
       atr_window: 14
       hard_cap_pct: 2.0
       multiplier: 4.0
+    value_scale_controller:
+      enabled: true
+      mode: "shadow"
+      ema_beta: 0.99
+      min_samples: 4096
+      warmup_updates: 4
+      max_rel_step: 0.04
+      ev_floor: 0.3
+      ret_std_band: [0.5, 0.9]
+      gate_patience: 2
+      replay_path: "artifacts/popart_holdout.npz"
+      replay_seed: 17
+      replay_batch_size: 4096
 
 quantizer:
   filters_path: "data/binance_filters.json"
