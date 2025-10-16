@@ -364,7 +364,7 @@ model:
       warmup_updates: 4
       max_rel_step: 0.04
       ev_floor: 0.3
-      ret_std_band: [0.5, 0.9]
+      ret_std_band: [0.01, 2.0]
       gate_patience: 2
       replay_path: "artifacts/popart_holdout.npz"
       replay_seed: 17
@@ -378,7 +378,8 @@ model:
   и компенсирует голову критика.
 * `ema_beta`, `min_samples`, `warmup_updates`, `max_rel_step`, `ev_floor`,
   `ret_std_band` и `gate_patience` повторяют параметры контроллера и гарды,
-  использованные в реализации.
+  использованные в реализации. Диапазон `[0.01, 2.0]` покрывает сценарии с
+  низкой трендовой волатильностью (σ≈0.02), исключая ложные блокировки.
 * `replay_path` указывает на npz‑снимок удержанного батча, который будет
   детерминированно (по `replay_seed`) загружен при первом обращении и
   использоваться для off-policy оценок.
