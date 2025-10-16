@@ -61,6 +61,10 @@ model:
     reward_return_clip: 10.0
     turnover_norm_cap: 1.0
     reward_cap: 10.0
+    value_scale_update_enabled: false
+    value_target_scale_fixed: 0.12
+    clip_range_vf: 0.15
+    gae_lambda: 0.95
     reward_clip:
       adaptive: true
       atr_window: 14
