@@ -346,6 +346,49 @@ python train_model_multi_patch.py --config configs/config_train.yaml --slippage.
 Шаблон с единичными множителями по-прежнему доступен в
 `configs/liquidity_latency_seasonality.sample.json`.
 
+### Попарт‑контроллер нормализации значений
+
+`DistributionalPPO` поддерживает оффлайн PopArt‑регулятор, который измеряет
+кандидатные обновления статистик нормализации и в «теневом» режиме проверяет
+их на удержанном батче. Фича выключена по умолчанию; чтобы её активировать,
+добавьте в секцию `model.params` конфигурации блока обучения:
+
+```yaml
+model:
+  params:
+    value_scale_controller:
+      enabled: true
+      mode: "shadow"
+      ema_beta: 0.99
+      min_samples: 4096
+      warmup_updates: 4
+      max_rel_step: 0.04
+      ev_floor: 0.3
+      ret_std_band: [0.5, 0.9]
+      gate_patience: 2
+      replay_path: "artifacts/popart_holdout.npz"
+      replay_seed: 17
+      replay_batch_size: 4096
+```
+
+* `enabled` — фича‑флаг; при `false` тренировка полностью повторяет текущее
+  поведение.
+* `mode` (`shadow`/`live`) определяет стартовый режим; «тень» только собирает
+  статистики и логирует метрики, «live» дополнительно применяет PopArt‑перенормировку
+  и компенсирует голову критика.
+* `ema_beta`, `min_samples`, `warmup_updates`, `max_rel_step`, `ev_floor`,
+  `ret_std_band` и `gate_patience` повторяют параметры контроллера и гарды,
+  использованные в реализации.
+* `replay_path` указывает на npz‑снимок удержанного батча, который будет
+  детерминированно (по `replay_seed`) загружен при первом обращении и
+  использоваться для off-policy оценок.
+
+Логи с конфигурацией и телеметрией PopArt попадают в группы
+`config/popart/*`, `shadow_popart/*`, `popart/*` и `gate/*`, что облегчает
+диагностику (например, причины блокировок гейта). В «live» режиме счётчик
+`popart/apply_count` фиксирует количество применённых корректировок, а
+метрики дрейфа позволяют контролировать числовые допуски.
+
 ### Параметры исполнения
 
 Блоки `execution_params` и `execution_config` в YAML управляют поведением
