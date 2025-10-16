@@ -3562,6 +3562,21 @@ def objective(trial: optuna.Trial,
         value_scale_controller_cfg,
     )
 
+    controller_enabled = False
+    if isinstance(value_scale_controller_cfg, Mapping):
+        controller_enabled = bool(value_scale_controller_cfg.get("enabled", False))
+    elif value_scale_controller_cfg is not None:
+        getter = getattr(value_scale_controller_cfg, "get", None)
+        if callable(getter):
+            try:
+                controller_enabled = bool(getter("enabled", False))
+            except TypeError:
+                controller_enabled = bool(getter("enabled"))
+        elif hasattr(value_scale_controller_cfg, "enabled"):
+            controller_enabled = bool(getattr(value_scale_controller_cfg, "enabled"))
+    if controller_enabled:
+        assert getattr(model, "_popart_controller", None) is not None, "PopArt not initialised"
+
     kl_penalty_beta_logged = getattr(
         model,
         "kl_beta",
