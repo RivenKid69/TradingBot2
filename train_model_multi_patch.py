@@ -1516,6 +1516,122 @@ def objective(trial: optuna.Trial,
             include_map = {}
         return (weights or None, include_map or None)
 
+    def _build_popart_holdout_loader(
+        controller_cfg: Any,
+    ) -> Optional[Callable[[], Optional["PopArtHoldoutBatch"]]]:
+        try:
+            from distributional_ppo import PopArtHoldoutBatch  # Local import to avoid cycles
+        except Exception:  # pragma: no cover - safeguard if training module unavailable
+            PopArtHoldoutBatch = None
+
+        if PopArtHoldoutBatch is None:
+            return None
+        if not isinstance(controller_cfg, Mapping):
+            return None
+        replay_path = controller_cfg.get("replay_path")
+        if not replay_path:
+            return None
+
+        batch_size_raw = controller_cfg.get("replay_batch_size", 2048)
+        try:
+            batch_size = max(int(batch_size_raw), 1)
+        except Exception:
+            batch_size = 2048
+        seed_raw = controller_cfg.get("replay_seed", 17)
+        try:
+            replay_seed = int(seed_raw)
+        except Exception:
+            replay_seed = 17
+        replay_path_obj = Path(str(replay_path))
+        cache: dict[str, Optional[PopArtHoldoutBatch]] = {}
+
+        def _loader() -> Optional[PopArtHoldoutBatch]:
+            if "batch" in cache:
+                return cache["batch"]
+            if not replay_path_obj.exists():
+                logging.getLogger(__name__).warning(
+                    "PopArt replay file not found at %s", replay_path_obj
+                )
+                cache["batch"] = None
+                return None
+            try:
+                payload = np.load(str(replay_path_obj))
+            except Exception as exc:
+                logging.getLogger(__name__).warning(
+                    "Failed to load PopArt replay %s: %s", replay_path_obj, exc
+                )
+                cache["batch"] = None
+                return None
+
+            obs = payload.get("obs")
+            if obs is None:
+                obs = payload.get("observations")
+            if obs is None:
+                obs = payload.get("states")
+            targets = payload.get("returns")
+            if targets is None:
+                targets = payload.get("returns_raw")
+            if targets is None:
+                targets = payload.get("target")
+            if obs is None or targets is None:
+                logging.getLogger(__name__).warning(
+                    "PopArt replay %s missing 'obs'/'returns' arrays", replay_path_obj
+                )
+                cache["batch"] = None
+                return None
+
+            obs_np = np.asarray(obs, dtype=np.float32)
+            returns_np = np.asarray(targets, dtype=np.float32)
+            if returns_np.ndim == 1:
+                returns_np = returns_np.reshape(-1, 1)
+            if obs_np.shape[0] == 0 or returns_np.shape[0] == 0:
+                cache["batch"] = None
+                return None
+            count = int(min(obs_np.shape[0], returns_np.shape[0]))
+            rng = np.random.default_rng(replay_seed)
+            if batch_size >= count:
+                indices = np.arange(count)
+            else:
+                indices = rng.choice(count, size=batch_size, replace=False)
+
+            obs_tensor = torch.as_tensor(obs_np[indices], dtype=torch.float32)
+            returns_tensor = torch.as_tensor(returns_np[indices], dtype=torch.float32)
+
+            starts = payload.get("episode_starts")
+            if starts is None:
+                starts = payload.get("episode_start")
+            if starts is None:
+                starts = payload.get("dones")
+            if starts is None:
+                starts_np = np.zeros((count,), dtype=np.float32)
+            else:
+                starts_np = np.asarray(starts, dtype=np.float32).reshape(count)
+            starts_tensor = torch.as_tensor(starts_np[indices], dtype=torch.float32)
+
+            mask_arr = payload.get("mask")
+            if mask_arr is None:
+                mask_arr = payload.get("weights")
+            mask_tensor: Optional[torch.Tensor]
+            if mask_arr is None:
+                mask_tensor = None
+            else:
+                mask_tensor = torch.as_tensor(
+                    np.asarray(mask_arr, dtype=np.float32).reshape(-1)[indices],
+                    dtype=torch.float32,
+                )
+
+            batch = PopArtHoldoutBatch(
+                observations=obs_tensor,
+                returns_raw=returns_tensor,
+                episode_starts=starts_tensor,
+                lstm_states=None,
+                mask=mask_tensor,
+            )
+            cache["batch"] = batch
+            return batch
+
+        return _loader
+
     def _coerce_optional_int(value, key: str):
         if value is None:
             return None
@@ -1601,6 +1717,8 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "value_target_scale_fixed"),
         "value_target_scale_fixed",
     )
+    value_scale_controller_cfg = _get_model_param_value(cfg, "value_scale_controller")
+    popart_holdout_loader = _build_popart_holdout_loader(value_scale_controller_cfg)
     ent_coef_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "ent_coef"), "ent_coef"
     )
@@ -2309,6 +2427,7 @@ def objective(trial: optuna.Trial,
         else True
     )
     params["value_target_scale_fixed"] = value_target_scale_fixed_cfg
+    params["value_scale_controller"] = value_scale_controller_cfg
 
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
@@ -3114,6 +3233,8 @@ def objective(trial: optuna.Trial,
         cvar_winsor_pct=params["cvar_winsor_pct"],
         cvar_ema_beta=params["cvar_ema_beta"],
         value_scale=value_scale_kwargs,
+        value_scale_controller=params.get("value_scale_controller"),
+        value_scale_controller_holdout=popart_holdout_loader,
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],

@@ -4,7 +4,8 @@ import logging
 import math
 from collections import deque
 from collections.abc import Mapping
-from typing import Any, Callable, Generator, Iterable, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from dataclasses import dataclass
+from typing import Any, Callable, Generator, Iterable, Literal, NamedTuple, Optional, Sequence, Tuple, Type, Union, cast
 
 import gymnasium as gym
 import numpy as np
@@ -32,7 +33,8 @@ except Exception:  # pragma: no cover - backcompat guard
     _sb3_unwrap = None
 
 
-torch.set_float32_matmul_precision("high")
+if hasattr(torch, "set_float32_matmul_precision"):
+    torch.set_float32_matmul_precision("high")
 
 
 def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
@@ -56,11 +58,50 @@ def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
     return None
 
 
-def safe_explained_variance(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    """Stable explained variance that guards against zero variance targets."""
+def safe_explained_variance(
+    y_true: np.ndarray, y_pred: np.ndarray, weights: Optional[np.ndarray] = None
+) -> float:
+    """Stable explained variance that optionally supports per-sample weights."""
 
-    y_true64 = y_true.astype(np.float64)
-    y_pred64 = y_pred.astype(np.float64)
+    y_true64 = np.asarray(y_true, dtype=np.float64).reshape(-1)
+    y_pred64 = np.asarray(y_pred, dtype=np.float64).reshape(-1)
+    length = min(y_true64.size, y_pred64.size)
+    if length == 0:
+        return float("nan")
+
+    y_true64 = y_true64[:length]
+    y_pred64 = y_pred64[:length]
+
+    if weights is not None:
+        weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+        weights64 = weights64[:length]
+        finite_mask = (
+            np.isfinite(y_true64)
+            & np.isfinite(y_pred64)
+            & np.isfinite(weights64)
+            & (weights64 > 0.0)
+        )
+        if not np.any(finite_mask):
+            return float("nan")
+        y_true64 = y_true64[finite_mask]
+        y_pred64 = y_pred64[finite_mask]
+        weights64 = weights64[finite_mask]
+        sum_w = float(np.sum(weights64))
+        if not math.isfinite(sum_w) or sum_w <= 0.0:
+            return float("nan")
+        mean_y = float(np.sum(weights64 * y_true64) / sum_w)
+        var_y = float(np.sum(weights64 * (y_true64 - mean_y) ** 2) / sum_w)
+        if not math.isfinite(var_y) or var_y == 0.0:
+            return float("nan")
+        residual = y_true64 - y_pred64
+        var_res = float(np.sum(weights64 * residual**2) / sum_w)
+        return float(1.0 - var_res / var_y)
+
+    finite_mask = np.isfinite(y_true64) & np.isfinite(y_pred64)
+    if not np.any(finite_mask):
+        return float("nan")
+    y_true64 = y_true64[finite_mask]
+    y_pred64 = y_pred64[finite_mask]
     var_y = np.var(y_true64)
     if var_y == 0.0:
         return float("nan")
@@ -198,9 +239,609 @@ class RawRecurrentRolloutBufferSamples(NamedTuple):
     lstm_states: RNNStates
     episode_starts: torch.Tensor
     mask: torch.Tensor
-    actions_raw: torch.Tensor
-    old_log_prob_raw: torch.Tensor
 
+
+class PopArtHoldoutBatch(NamedTuple):
+    """Lightweight container with the minimal data required for PopArt evaluation."""
+
+    observations: torch.Tensor
+    """Batch of observations formatted for :meth:`policy.obs_to_tensor`."""
+
+    returns_raw: torch.Tensor
+    """Target returns expressed in raw units (e.g. fraction ΔPnL)."""
+
+    episode_starts: torch.Tensor
+    """Binary indicator marking episode boundaries for recurrent critics."""
+
+    lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]]
+    """Initial recurrent state associated with ``observations`` if applicable."""
+
+    mask: Optional[torch.Tensor] = None
+    """Optional sample weights applied when computing explained variance."""
+
+
+@dataclass
+class PopArtCandidateMetrics:
+    """Evaluation artefacts computed for a PopArt normalisation candidate."""
+
+    mean: float
+    std: float
+    samples: int
+    ev_before: float
+    ev_after: float
+    clip_fraction_before: float
+    clip_fraction_after: float
+    delta_mean: float
+    delta_std: float
+    passed_guards: bool
+    blocked_reason: Optional[str]
+
+
+@dataclass
+class PopArtHoldoutEvaluation:
+    """Cached holdout predictions for drift checks and guard evaluation."""
+
+    baseline_raw: torch.Tensor
+    candidate_raw: torch.Tensor
+    target_raw: torch.Tensor
+    mask: Optional[torch.Tensor]
+    ev_before: float
+    ev_after: float
+    clip_fraction_before: float
+    clip_fraction_after: float
+
+
+class PopArtController:
+    """Offline PopArt regulator that guards return normalisation updates."""
+
+    def __init__(
+        self,
+        *,
+        enabled: bool,
+        mode: Literal["shadow", "live"] = "shadow",
+        ema_beta: float = 0.99,
+        min_samples: int = 4096,
+        warmup_updates: int = 4,
+        max_rel_step: float = 0.04,
+        ev_floor: float = 0.3,
+        ret_std_band: tuple[float, float] = (0.5, 0.9),
+        gate_patience: int = 2,
+        holdout_loader: Optional[Callable[[], Optional[PopArtHoldoutBatch]]] = None,
+        logger: Optional[Any] = None,
+    ) -> None:
+        self.enabled = bool(enabled)
+        self.mode: Literal["shadow", "live"] = "shadow"
+        if mode not in {"shadow", "live"}:
+            raise ValueError("PopArtController mode must be either 'shadow' or 'live'")
+        if not self.enabled:
+            mode = "shadow"
+        self.mode = cast(Literal["shadow", "live"], mode)
+
+        self.ema_beta = float(ema_beta)
+        if not math.isfinite(self.ema_beta) or not (0.0 < self.ema_beta <= 1.0):
+            raise ValueError("PopArtController.ema_beta must be in (0, 1]")
+        self.min_samples = int(max(min_samples, 0))
+        self.warmup_updates = int(max(warmup_updates, 0))
+        self.max_rel_step = float(max(max_rel_step, 0.0))
+        self.ev_floor = float(ev_floor)
+        self.ret_std_band = (float(ret_std_band[0]), float(ret_std_band[1]))
+        self.gate_patience = int(max(gate_patience, 1))
+
+        self._holdout_loader = holdout_loader
+        self._holdout_cache: Optional[PopArtHoldoutBatch] = None
+        self._logger = logger
+
+        self._shadow_mean: Optional[float] = None
+        self._shadow_std: Optional[float] = None
+        self._shadow_samples: int = 0
+
+        self._update_counter: int = 0
+        self._pass_streak: int = 0
+        self._ev_reference: Optional[float] = None
+        self._last_metrics: Optional[PopArtCandidateMetrics] = None
+        self._last_holdout_eval: Optional[PopArtHoldoutEvaluation] = None
+
+        self.apply_count: int = 0
+
+        self._log("popart/mode", self.mode)
+        self._log("popart/mode_live", 1.0 if self.mode == "live" else 0.0)
+
+    # ------------------------------------------------------------------
+    # Helper utilities
+    # ------------------------------------------------------------------
+    def _log(self, key: str, value: float | int | str) -> None:
+        logger_obj = self._logger
+        if logger_obj is None:
+            return
+        record = getattr(logger_obj, "record", None)
+        if callable(record):
+            try:
+                if isinstance(value, (float, int, np.floating, np.integer)):
+                    numeric = float(value)
+                    numeric = float(np.nan_to_num(numeric, nan=0.0, posinf=0.0, neginf=0.0))
+                    record(key, numeric)
+                else:
+                    record(key, value)
+            except Exception:
+                pass
+
+    @staticmethod
+    def _weighted_mean_std(
+        values: np.ndarray, weights: Optional[np.ndarray]
+    ) -> tuple[float, float]:
+        values64 = np.asarray(values, dtype=np.float64).reshape(-1)
+        if values64.size == 0:
+            return float("nan"), float("nan")
+
+        if weights is None:
+            finite_mask = np.isfinite(values64)
+            if not np.any(finite_mask):
+                return float("nan"), float("nan")
+            filtered = values64[finite_mask]
+            mean_val = float(np.mean(filtered))
+            std_val = float(np.std(filtered))
+            return mean_val, std_val
+
+        weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+        limit = min(values64.size, weights64.size)
+        if limit == 0:
+            return float("nan"), float("nan")
+        values64 = values64[:limit]
+        weights64 = weights64[:limit]
+        finite_mask = (
+            np.isfinite(values64)
+            & np.isfinite(weights64)
+            & (weights64 > 0.0)
+        )
+        if not np.any(finite_mask):
+            return float("nan"), float("nan")
+        values64 = values64[finite_mask]
+        weights64 = weights64[finite_mask]
+        sum_w = float(np.sum(weights64))
+        if not math.isfinite(sum_w) or sum_w <= 0.0:
+            return float("nan"), float("nan")
+        mean_val = float(np.sum(weights64 * values64) / sum_w)
+        var_val = float(np.sum(weights64 * (values64 - mean_val) ** 2) / sum_w)
+        var_val = max(var_val, 0.0)
+        std_val = float(math.sqrt(var_val))
+        return mean_val, std_val
+
+    @staticmethod
+    def _within_tolerance(
+        delta: float,
+        reference: float,
+        *,
+        abs_tol: float,
+        rel_tol: float,
+    ) -> bool:
+        if not math.isfinite(delta):
+            return False
+        reference_abs = abs(reference) if math.isfinite(reference) else 0.0
+        return abs(delta) <= abs_tol or abs(delta) <= rel_tol * max(reference_abs, 1e-8)
+
+    def _load_holdout(self) -> Optional[PopArtHoldoutBatch]:
+        if self._holdout_cache is not None:
+            return self._holdout_cache
+        if self._holdout_loader is None:
+            return None
+        holdout = self._holdout_loader()
+        if holdout is None:
+            return None
+        self._holdout_cache = holdout
+        return holdout
+
+    @staticmethod
+    def _safe_numpy(tensor: torch.Tensor) -> np.ndarray:
+        return tensor.detach().cpu().numpy().astype(np.float64, copy=False)
+
+    @staticmethod
+    def _clip_fraction(values: torch.Tensor, low: float, high: float) -> float:
+        if values.numel() == 0:
+            return 0.0
+        clipped = values.clamp(min=low, max=high)
+        if clipped.numel() == 0:
+            return 0.0
+        hits = (clipped != values).float().mean().item()
+        return float(max(min(hits, 1.0), 0.0))
+
+    # ------------------------------------------------------------------
+    # Shadow evaluation
+    # ------------------------------------------------------------------
+    def evaluate_shadow(
+        self,
+        *,
+        model: "DistributionalPPO",
+        returns_raw: torch.Tensor,
+        ret_mean: float,
+        ret_std: float,
+        explained_variance_train: float,
+    ) -> Optional[PopArtCandidateMetrics]:
+        if not self.enabled:
+            return None
+
+        self._update_counter += 1
+
+        returns_fp32 = returns_raw.to(dtype=torch.float32)
+        finite_mask = torch.isfinite(returns_fp32)
+        if finite_mask.ndimension() == 0:
+            finite_mask = finite_mask.unsqueeze(0)
+        filtered = returns_fp32[finite_mask]
+        sample_count = int(filtered.numel())
+        if sample_count == 0:
+            candidate_mean = float(ret_mean)
+            candidate_std = float(ret_std)
+        else:
+            candidate_mean = float(filtered.mean().item())
+            candidate_std = float(filtered.std(unbiased=False).item())
+        if not math.isfinite(candidate_std) or candidate_std <= 1e-12:
+            candidate_std = max(float(ret_std), 1e-6)
+        if not math.isfinite(candidate_mean):
+            candidate_mean = float(ret_mean)
+
+        if self._shadow_mean is None:
+            self._shadow_mean = candidate_mean
+            self._shadow_std = candidate_std
+            self._shadow_samples = sample_count
+        else:
+            beta = self.ema_beta
+            self._shadow_mean = float(
+                beta * self._shadow_mean + (1.0 - beta) * candidate_mean
+            )
+            shadow_var = max(self._shadow_std or 0.0, 1e-8) ** 2
+            candidate_var = candidate_std**2
+            blended_var = float(beta * shadow_var + (1.0 - beta) * candidate_var)
+            self._shadow_std = float(math.sqrt(max(blended_var, 1e-12)))
+            self._shadow_samples = int(self._shadow_samples + sample_count)
+
+        holdout = self._load_holdout()
+        ev_before = float("nan")
+        ev_after = float("nan")
+        clip_before = 0.0
+        clip_after = 0.0
+        delta_mean = float("nan")
+        delta_std = float("nan")
+        blocked_reason: Optional[str] = None
+        passed = True
+
+        baseline_mean_ref = float("nan")
+        baseline_std_ref = float("nan")
+        if holdout is None:
+            blocked_reason = "no_holdout"
+            passed = False
+        else:
+            eval_result = self._evaluate_holdout(
+                model=model,
+                holdout=holdout,
+                old_mean=float(ret_mean),
+                old_std=float(ret_std),
+                new_mean=candidate_mean,
+                new_std=candidate_std,
+            )
+            ev_before = eval_result.ev_before
+            ev_after = eval_result.ev_after
+            clip_before = eval_result.clip_fraction_before
+            clip_after = eval_result.clip_fraction_after
+            self._last_holdout_eval = eval_result
+
+            baseline_np = self._safe_numpy(eval_result.baseline_raw)
+            candidate_np = self._safe_numpy(eval_result.candidate_raw)
+            weights_np: Optional[np.ndarray] = None
+            if eval_result.mask is not None:
+                weights_np = self._safe_numpy(eval_result.mask)
+            baseline_mean_ref, baseline_std_ref = self._weighted_mean_std(
+                baseline_np, weights_np
+            )
+            cand_mean, cand_std = self._weighted_mean_std(candidate_np, weights_np)
+            if math.isfinite(baseline_mean_ref) and math.isfinite(cand_mean):
+                delta_mean = float(abs(cand_mean - baseline_mean_ref))
+            else:
+                delta_mean = float("nan")
+            if math.isfinite(baseline_std_ref) and math.isfinite(cand_std):
+                delta_std = float(abs(cand_std - baseline_std_ref))
+            else:
+                delta_std = float("nan")
+
+        if blocked_reason is None and sample_count < self.min_samples:
+            blocked_reason = "min_samples"
+            passed = False
+        elif blocked_reason is None and self._update_counter <= self.warmup_updates:
+            blocked_reason = "warmup"
+            passed = False
+        elif blocked_reason is None and not (
+            self.ret_std_band[0] <= candidate_std <= self.ret_std_band[1]
+        ):
+            blocked_reason = "std_band"
+            passed = False
+        elif blocked_reason is None and (
+            abs(candidate_std - ret_std) / max(ret_std, 1e-6) > self.max_rel_step
+        ):
+            blocked_reason = "rel_step"
+            passed = False
+        elif (
+            blocked_reason is None
+            and holdout is not None
+            and (not math.isfinite(ev_after) or ev_after < self.ev_floor)
+        ):
+            blocked_reason = "ev_floor"
+            passed = False
+        elif (
+            blocked_reason is None
+            and holdout is not None
+            and self._ev_reference is not None
+            and ev_after + 1e-9 < self._ev_reference
+        ):
+            blocked_reason = "ev_regress"
+            passed = False
+
+        if passed:
+            self._pass_streak += 1
+            if self._ev_reference is None:
+                self._ev_reference = ev_after
+            else:
+                self._ev_reference = max(self._ev_reference, ev_after)
+        else:
+            self._pass_streak = 0
+
+        metrics = PopArtCandidateMetrics(
+            mean=candidate_mean,
+            std=candidate_std,
+            samples=sample_count,
+            ev_before=ev_before,
+            ev_after=ev_after,
+            clip_fraction_before=clip_before,
+            clip_fraction_after=clip_after,
+            delta_mean=delta_mean,
+            delta_std=delta_std,
+            passed_guards=passed,
+            blocked_reason=blocked_reason,
+        )
+        self._last_metrics = metrics
+
+        self._log("shadow_popart/mu", float(candidate_mean))
+        self._log("shadow_popart/sigma", float(candidate_std))
+        self._log("shadow_popart/samples", float(sample_count))
+        self._log("shadow_popart/ev_before", float(ev_before))
+        self._log("shadow_popart/ev_after", float(ev_after))
+        self._log("shadow_popart/clip_fraction_before", float(clip_before))
+        self._log("shadow_popart/clip_fraction_after", float(clip_after))
+        self._log("shadow_popart/delta_mean", float(delta_mean))
+        self._log("shadow_popart/delta_std", float(delta_std))
+        self._log("shadow_popart/pass", 1.0 if passed else 0.0)
+        if blocked_reason is not None:
+            self._log(f"gate/{blocked_reason}", float(self._update_counter))
+
+        if (
+            self.mode == "shadow"
+            and passed
+            and self._pass_streak >= self.gate_patience
+            and self._within_tolerance(delta_mean, baseline_mean_ref, abs_tol=1e-5, rel_tol=1e-6)
+            and self._within_tolerance(delta_std, baseline_std_ref, abs_tol=1e-5, rel_tol=1e-6)
+        ):
+            if self._ev_reference is None or ev_after + 1e-9 >= self._ev_reference:
+                self.mode = "live"
+                self._log("popart/mode", "live")
+                self._log("popart/mode_live", 1.0)
+                self.apply_count = 0
+                self._ev_reference = None
+                self._pass_streak = 0
+
+        return metrics
+
+    # ------------------------------------------------------------------
+    # Holdout evaluation helpers
+    # ------------------------------------------------------------------
+    def _evaluate_holdout(
+        self,
+        *,
+        model: "DistributionalPPO",
+        holdout: PopArtHoldoutBatch,
+        old_mean: float,
+        old_std: float,
+        new_mean: float,
+        new_std: float,
+    ) -> PopArtHoldoutEvaluation:
+        policy = model.policy
+        device = policy.device
+        with torch.no_grad():
+            obs_tensor = holdout.observations.to(device=device)
+            episode_starts = holdout.episode_starts.to(device=device)
+            if episode_starts.dtype != torch.bool:
+                episode_starts = episode_starts.to(dtype=torch.bool)
+            lstm_states = holdout.lstm_states
+            if lstm_states is not None:
+                if isinstance(lstm_states, RNNStates):
+                    lstm_states_eval = RNNStates(
+                        pi=tuple(t.to(device=device) for t in lstm_states.pi),
+                        vf=tuple(t.to(device=device) for t in lstm_states.vf),
+                    )
+                else:
+                    lstm_states_eval = tuple(t.to(device=device) for t in lstm_states)
+            else:
+                lstm_states_eval = policy.recurrent_initial_state
+
+            value_outputs = model._policy_value_outputs(
+                obs_tensor, lstm_states_eval, episode_starts
+            )
+            if model._use_quantile_value:
+                quantiles_norm = value_outputs.to(dtype=torch.float32)
+                baseline_norm = quantiles_norm.mean(dim=-1, keepdim=True)
+                candidate_norm = (quantiles_norm * (old_std / max(new_std, 1e-6)))
+                shift = (old_mean - new_mean) / max(new_std, 1e-6)
+                candidate_norm = candidate_norm + shift
+                baseline_raw = model._to_raw_returns(baseline_norm)
+                candidate_raw = candidate_norm * candidate_norm.new_tensor(new_std)
+                candidate_raw = candidate_raw + candidate_norm.new_tensor(new_mean)
+            else:
+                baseline_norm = value_outputs.to(dtype=torch.float32)
+                if baseline_norm.ndim == 1:
+                    baseline_norm = baseline_norm.view(-1, 1)
+                baseline_raw = model._to_raw_returns(baseline_norm)
+                scale = old_std / max(new_std, 1e-6)
+                shift = (old_mean - new_mean) / max(new_std, 1e-6)
+                candidate_norm = baseline_norm * scale + shift
+                candidate_raw = candidate_norm * candidate_norm.new_tensor(new_std)
+                candidate_raw = candidate_raw + candidate_norm.new_tensor(new_mean)
+
+        target_raw = holdout.returns_raw.to(device=device, dtype=torch.float32)
+        mask = holdout.mask
+        if mask is not None:
+            mask = mask.to(device=device, dtype=torch.float32)
+        baseline_np = self._safe_numpy(baseline_raw).reshape(-1)
+        candidate_np = self._safe_numpy(candidate_raw).reshape(-1)
+        target_np = self._safe_numpy(target_raw).reshape(-1)
+        weights_np: Optional[np.ndarray] = None
+        if mask is not None:
+            weights_np = self._safe_numpy(mask).reshape(-1)
+
+        ev_before = safe_explained_variance(target_np, baseline_np, weights_np)
+        ev_after = safe_explained_variance(target_np, candidate_np, weights_np)
+
+        clip_before = 0.0
+        clip_after = 0.0
+        if model.normalize_returns:
+            clip_limit = None
+        else:
+            clip_limit = getattr(model, "_value_clip_limit_unscaled", None)
+        if clip_limit is not None and math.isfinite(float(clip_limit)):
+            clip_before = self._clip_fraction(baseline_raw, -float(clip_limit), float(clip_limit))
+            clip_after = self._clip_fraction(candidate_raw, -float(clip_limit), float(clip_limit))
+
+        return PopArtHoldoutEvaluation(
+            baseline_raw=baseline_raw.detach(),
+            candidate_raw=candidate_raw.detach(),
+            target_raw=target_raw.detach(),
+            mask=mask.detach() if mask is not None else None,
+            ev_before=float(ev_before),
+            ev_after=float(ev_after),
+            clip_fraction_before=float(clip_before),
+            clip_fraction_after=float(clip_after),
+        )
+
+    # ------------------------------------------------------------------
+    # Live application
+    # ------------------------------------------------------------------
+    def apply_live_update(
+        self,
+        *,
+        model: "DistributionalPPO",
+        old_mean: float,
+        old_std: float,
+        new_mean: float,
+        new_std: float,
+    ) -> None:
+        if not self.enabled or self.mode != "live":
+            return
+
+        tol_abs = 1e-8
+        if not math.isfinite(new_std) or new_std <= tol_abs:
+            return
+
+        with torch.no_grad():
+            if model._use_quantile_value:
+                self._apply_quantile_transform(
+                    model=model,
+                    old_mean=old_mean,
+                    old_std=old_std,
+                    new_mean=new_mean,
+                    new_std=new_std,
+                )
+            else:
+                self._apply_categorical_transform(
+                    model=model,
+                    old_mean=old_mean,
+                    old_std=old_std,
+                    new_mean=new_mean,
+                    new_std=new_std,
+                )
+
+        self.apply_count += 1
+        self._log("popart/apply_count", float(self.apply_count))
+
+        eval_result = self._last_holdout_eval
+        if eval_result is not None:
+            baseline_np = self._safe_numpy(eval_result.baseline_raw)
+            holdout = self._load_holdout()
+            if holdout is not None:
+                drift = self._evaluate_holdout(
+                    model=model,
+                    holdout=holdout,
+                    old_mean=new_mean,
+                    old_std=new_std,
+                    new_mean=new_mean,
+                    new_std=new_std,
+                )
+                new_np = self._safe_numpy(drift.baseline_raw)
+                if baseline_np.shape == new_np.shape and baseline_np.size > 0:
+                    abs_err = float(np.max(np.abs(new_np - baseline_np)))
+                    rel_err = float(
+                        np.max(
+                            np.divide(
+                                np.abs(new_np - baseline_np),
+                                np.maximum(np.abs(baseline_np), 1e-8),
+                                out=np.zeros_like(new_np),
+                                where=np.isfinite(baseline_np),
+                            )
+                        )
+                    )
+                    self._log("popart/drift_abs", abs_err)
+                    self._log("popart/drift_rel", rel_err)
+                    if abs_err > 1e-5 and rel_err > 1e-6:
+                        logging.getLogger(__name__).warning(
+                            "PopArt live update drift exceeded tolerance: abs=%.3e rel=%.3e",
+                            abs_err,
+                            rel_err,
+                        )
+
+    def _apply_quantile_transform(
+        self,
+        *,
+        model: "DistributionalPPO",
+        old_mean: float,
+        old_std: float,
+        new_mean: float,
+        new_std: float,
+    ) -> None:
+        quantile_head = getattr(model.policy, "quantile_head", None)
+        if quantile_head is None:
+            return
+        linear = getattr(quantile_head, "linear", None)
+        if linear is None:
+            return
+        scale = float(old_std / max(new_std, 1e-6))
+        shift = float((old_mean - new_mean) / max(new_std, 1e-6))
+        linear.weight.mul_(scale)
+        if linear.bias is not None:
+            linear.bias.mul_(scale).add_(shift)
+
+    def _apply_categorical_transform(
+        self,
+        *,
+        model: "DistributionalPPO",
+        old_mean: float,
+        old_std: float,
+        new_mean: float,
+        new_std: float,
+    ) -> None:
+        policy = model.policy
+        atoms = getattr(policy, "atoms", None)
+        if atoms is None:
+            return
+        scale = float(old_std / max(new_std, 1e-6))
+        shift = float((old_mean - new_mean) / max(new_std, 1e-6))
+        v_min_attr = float(getattr(policy, "v_min", float(atoms.min().item())))
+        v_max_attr = float(getattr(policy, "v_max", float(atoms.max().item())))
+        new_v_min = float(scale * v_min_attr + shift)
+        new_v_max = float(scale * v_max_attr + shift)
+        if hasattr(policy, "update_atoms"):
+            policy.update_atoms(new_v_min, new_v_max)
+        else:
+            atoms.mul_(scale).add_(shift)
+            setattr(policy, "v_min", new_v_min)
+            setattr(policy, "v_max", new_v_max)
+        if hasattr(policy, "delta_z"):
+            denom = max(atoms.numel() - 1, 1)
+            delta = (new_v_max - new_v_min) / float(denom)
+            setattr(policy, "delta_z", float(delta))
 
 class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
     def reset(self) -> None:
@@ -442,6 +1083,35 @@ class DistributionalPPO(RecurrentPPO):
             return tuple(states.pi)
 
         return tuple(states)
+
+    def _policy_value_outputs(
+        self,
+        obs: torch.Tensor,
+        lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]],
+        episode_starts: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return critic head outputs for PopArt evaluation across value head types."""
+
+        policy = self.policy
+        uses_quantile = bool(getattr(policy, "uses_quantile_value_head", False))
+
+        if uses_quantile:
+            value_quantiles_fn = getattr(policy, "value_quantiles", None)
+            if not callable(value_quantiles_fn):
+                raise AttributeError("Quantile value head requires 'value_quantiles' accessor")
+            return value_quantiles_fn(obs, lstm_states, episode_starts)
+
+        predict_values_fn = getattr(policy, "predict_values", None)
+        if callable(predict_values_fn):
+            return predict_values_fn(obs, lstm_states, episode_starts)
+
+        value_logits_fn = getattr(policy, "value_quantiles", None)
+        if callable(value_logits_fn):  # pragma: no cover - legacy compatibility path
+            return value_logits_fn(obs, lstm_states, episode_starts)
+
+        raise AttributeError(
+            "Policy does not expose a compatible value output method for PopArt evaluation"
+        )
 
     @staticmethod
     def _value_target_outlier_fractions(
@@ -803,6 +1473,62 @@ class DistributionalPPO(RecurrentPPO):
                 raise RuntimeError(
                     f"Policy action_dim must be 1 for score actions, got {action_dim}"
                 )
+
+    def _initialise_popart_controller(self, cfg: Mapping[str, Any]) -> None:
+        if not cfg:
+            self._popart_controller = None
+            self.logger.record("config/popart/enabled", 0.0)
+            self.logger.record("config/popart/mode", "shadow")
+            self.logger.record("config/popart/mode_live", 0.0)
+            return
+
+        enabled = bool(cfg.get("enabled", False))
+        mode_raw = cfg.get("mode", "shadow")
+        if isinstance(mode_raw, str):
+            mode_clean = mode_raw.strip().lower()
+            mode_value: Literal["shadow", "live"] = "shadow"
+            if mode_clean in {"shadow", "live"}:
+                mode_value = cast(Literal["shadow", "live"], mode_clean)
+        else:
+            mode_value = "shadow"
+
+        ema_beta = float(cfg.get("ema_beta", 0.99))
+        min_samples = int(cfg.get("min_samples", 4096))
+        warmup_updates = int(cfg.get("warmup_updates", 4))
+        max_rel_step = float(cfg.get("max_rel_step", 0.04))
+        ev_floor = float(cfg.get("ev_floor", 0.3))
+        gate_patience = int(cfg.get("gate_patience", 2))
+        band_raw = cfg.get("ret_std_band", (0.5, 0.9))
+        if isinstance(band_raw, (list, tuple)) and len(band_raw) >= 2:
+            ret_std_band = (float(band_raw[0]), float(band_raw[1]))
+        else:
+            ret_std_band = (0.5, 0.9)
+
+        controller = PopArtController(
+            enabled=enabled,
+            mode=mode_value,
+            ema_beta=ema_beta,
+            min_samples=min_samples,
+            warmup_updates=warmup_updates,
+            max_rel_step=max_rel_step,
+            ev_floor=ev_floor,
+            ret_std_band=ret_std_band,
+            gate_patience=gate_patience,
+            holdout_loader=self._popart_holdout_loader,
+            logger=self.logger,
+        )
+        self._popart_controller = controller
+        self.logger.record("config/popart/enabled", float(controller.enabled))
+        self.logger.record("config/popart/mode", controller.mode)
+        self.logger.record("config/popart/mode_live", 1.0 if controller.mode == "live" else 0.0)
+        self.logger.record("config/popart/ema_beta", float(controller.ema_beta))
+        self.logger.record("config/popart/min_samples", float(controller.min_samples))
+        self.logger.record("config/popart/warmup_updates", float(controller.warmup_updates))
+        self.logger.record("config/popart/max_rel_step", float(controller.max_rel_step))
+        self.logger.record("config/popart/ev_floor", float(controller.ev_floor))
+        self.logger.record("config/popart/ret_std_band_low", float(ret_std_band[0]))
+        self.logger.record("config/popart/ret_std_band_high", float(ret_std_band[1]))
+        self.logger.record("config/popart/gate_patience", float(controller.gate_patience))
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
@@ -1669,6 +2395,34 @@ class DistributionalPPO(RecurrentPPO):
 
         kwargs_local = dict(kwargs)
 
+        popart_cfg_raw = kwargs_local.pop("value_scale_controller", None)
+        popart_holdout_loader = kwargs_local.pop("value_scale_controller_holdout", None)
+        if callable(popart_holdout_loader):
+            self._popart_holdout_loader: Optional[Callable[[], Optional[PopArtHoldoutBatch]]] = popart_holdout_loader
+        else:
+            self._popart_holdout_loader = None
+        popart_cfg_map: dict[str, Any] = {}
+        if isinstance(popart_cfg_raw, Mapping):
+            popart_cfg_map = dict(popart_cfg_raw)
+        elif popart_cfg_raw is not None:
+            for key in (
+                "enabled",
+                "mode",
+                "ema_beta",
+                "min_samples",
+                "warmup_updates",
+                "max_rel_step",
+                "ev_floor",
+                "ret_std_band",
+                "gate_patience",
+            ):
+                if hasattr(popart_cfg_raw, key):
+                    popart_cfg_map[key] = getattr(popart_cfg_raw, key)
+        self._popart_cfg_pending: dict[str, Any] = popart_cfg_map
+        self._popart_controller: Optional[PopArtController] = None
+        self._popart_shadow_metrics: Optional[PopArtCandidateMetrics] = None
+        self._popart_last_stats: Optional[tuple[float, float]] = None
+
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
         if clip_range_vf_candidate is None:
             self.clip_range_vf: Optional[float] = None
@@ -2206,6 +2960,9 @@ class DistributionalPPO(RecurrentPPO):
             from stable_baselines3.common.logger import configure
 
             self._logger = configure()
+
+        self._initialise_popart_controller(self._popart_cfg_pending)
+        self._popart_cfg_pending = {}
 
         value_scale_fixed_log = (
             float(self._value_target_scale_fixed)
@@ -3504,6 +4261,11 @@ class DistributionalPPO(RecurrentPPO):
         current_cvar_weight_raw = float(current_cvar_weight_nominal)
 
         self._activate_return_scale_snapshot()
+
+        if self._popart_controller is not None:
+            prev_mean = float(getattr(self, "_ret_mean_value", 0.0))
+            prev_std = float(max(getattr(self, "_ret_std_value", 1.0), 1e-6))
+            self._popart_last_stats = (prev_mean, prev_std)
 
         if current_update < 3:
             self.logger.record(
@@ -4842,6 +5604,18 @@ class DistributionalPPO(RecurrentPPO):
                     ).item()
                 )
 
+        if self._popart_controller is not None:
+            try:
+                self._popart_shadow_metrics = self._popart_controller.evaluate_shadow(
+                    model=self,
+                    returns_raw=y_true_tensor.flatten(),
+                    ret_mean=float(ret_mu_value),
+                    ret_std=float(ret_std_value),
+                    explained_variance_train=float(explained_var),
+                )
+            except Exception:
+                logging.getLogger(__name__).exception("PopArt shadow evaluation failed")
+
         if self._use_quantile_value:
             self._record_quantile_summary(quantile_batches_unscaled, quantile_batches_norm)
 
@@ -5120,6 +5894,22 @@ class DistributionalPPO(RecurrentPPO):
             )
 
         self._finalize_return_stats()
+
+        if self._popart_controller is not None and self._popart_last_stats is not None:
+            old_mean, old_std = self._popart_last_stats
+            new_mean = float(getattr(self, "_ret_mean_value", old_mean))
+            new_std = float(getattr(self, "_ret_std_value", old_std))
+            try:
+                self._popart_controller.apply_live_update(
+                    model=self,
+                    old_mean=float(old_mean),
+                    old_std=float(old_std),
+                    new_mean=float(new_mean),
+                    new_std=float(new_std),
+                )
+            except Exception:
+                logging.getLogger(__name__).exception("PopArt live update failed")
+            self._popart_last_stats = (float(new_mean), float(new_std))
 
     def _serialize_kl_penalty_state(self) -> dict[str, float]:
         return {
