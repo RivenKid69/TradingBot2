@@ -145,7 +145,6 @@ def test_quantile_live_update_preserves_raw_predictions() -> None:
         returns_raw=returns_raw,
         ret_mean=model.raw_mean,
         ret_std=model.raw_std,
-        explained_variance_train=1.0,
     )
     assert metrics is not None
     assert metrics.passed_guards
@@ -209,7 +208,6 @@ def test_shadow_evaluation_does_not_mutate_policy() -> None:
         returns_raw=torch.ones(6),
         ret_mean=0.0,
         ret_std=1.0,
-        explained_variance_train=1.0,
     )
 
     assert torch.allclose(policy.quantile_head.linear.weight, weight_before)
@@ -239,7 +237,6 @@ def test_guard_blocks_when_min_samples_not_met() -> None:
         returns_raw=torch.tensor([0.1, 0.2, 0.3], dtype=torch.float32),
         ret_mean=0.0,
         ret_std=0.8,
-        explained_variance_train=0.9,
     )
     assert metrics is not None
     assert not metrics.passed_guards
@@ -271,7 +268,6 @@ def test_gate_switches_to_live_after_consecutive_passes() -> None:
             returns_raw=returns_raw,
             ret_mean=model.raw_mean,
             ret_std=model.raw_std,
-            explained_variance_train=1.0,
         )
         assert metrics is not None and metrics.passed_guards
     assert controller.mode == "live"
@@ -302,7 +298,6 @@ def test_categorical_live_update_preserves_expectation() -> None:
         returns_raw=returns,
         ret_mean=model.raw_mean,
         ret_std=model.raw_std,
-        explained_variance_train=0.5,
     )
     assert metrics is not None
 
