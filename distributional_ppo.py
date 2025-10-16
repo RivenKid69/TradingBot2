@@ -4362,7 +4362,7 @@ class DistributionalPPO(RecurrentPPO):
                 ):
                     target_kl_value = float(self.target_kl)
                     kl_absolute_threshold = self._kl_absolute_stop_factor * target_kl_value
-                    if approx_kl_smooth_value >= kl_absolute_threshold:
+                    if approx_kl >= kl_absolute_threshold:
                         kl_early_stop_triggered = True
                         kl_absolute_stop_triggered = True
                         approx_kl_last_exceeded_raw = float(approx_kl)
@@ -4373,22 +4373,36 @@ class DistributionalPPO(RecurrentPPO):
                         if epoch_consec_run > epoch_consec_max:
                             epoch_consec_max = epoch_consec_run
                         kl_stop_trigger_value_raw = float(approx_kl)
+                        try:
+                            self.logger.record("train/kl_absolute_stop_trigger", 1.0)
+                        except Exception:
+                            pass
+                        try:
+                            self.logger.record("train/kl_stop_reason", "absolute_raw")
+                        except Exception:
+                            pass
                         self._handle_kl_divergence(float(approx_kl))
                         break
 
-                exceed_flag = False
-                if self.target_kl is not None and self.target_kl > 0.0:
-                    exceed_flag = approx_kl_smooth_value > float(self.target_kl)
-                    if exceed_flag:
-                        approx_kl_exceed_count += 1
-                        epoch_exceed_count += 1
-                        epoch_consec_run += 1
-                        if epoch_consec_run > epoch_consec_max:
-                            epoch_consec_max = epoch_consec_run
-                        approx_kl_last_exceeded_raw = float(approx_kl)
-                        approx_kl_last_exceeded_smooth = float(approx_kl_smooth_value)
-                    else:
-                        epoch_consec_run = 0
+                exceed_flag_raw = (
+                    self.target_kl is not None
+                    and self.target_kl > 0.0
+                    and approx_kl > float(self.target_kl)
+                )
+                exceed_flag_smooth = (
+                    self.target_kl is not None
+                    and self.target_kl > 0.0
+                    and approx_kl_smooth_value > float(self.target_kl)
+                )
+                exceed_flag = exceed_flag_raw or exceed_flag_smooth
+                if exceed_flag:
+                    approx_kl_exceed_count += 1
+                    epoch_exceed_count += 1
+                    epoch_consec_run += 1
+                    if epoch_consec_run > epoch_consec_max:
+                        epoch_consec_max = epoch_consec_run
+                    approx_kl_last_exceeded_raw = float(approx_kl)
+                    approx_kl_last_exceeded_smooth = float(approx_kl_smooth_value)
                 else:
                     epoch_consec_run = 0
 
@@ -4400,6 +4414,10 @@ class DistributionalPPO(RecurrentPPO):
                 ):
                     kl_early_stop_triggered = True
                     kl_stop_trigger_value_raw = float(approx_kl)
+                    try:
+                        self.logger.record("train/kl_stop_reason", "consec")
+                    except Exception:
+                        pass
                     break
 
                 policy_loss_value = bucket_policy_loss_value
@@ -4421,6 +4439,7 @@ class DistributionalPPO(RecurrentPPO):
 
                 # Fraction-based KL stop evaluated after completing the epoch
 
+            # Если любой триггер сработал внутри минибатчей — завершаем эпоху немедленно.
             if kl_early_stop_triggered:
                 if epoch_minibatches_processed > 0:
                     epoch_exceed_fraction = float(epoch_exceed_count) / float(epoch_minibatches_processed)
@@ -4448,6 +4467,10 @@ class DistributionalPPO(RecurrentPPO):
                 kl_stop_trigger_value_raw = (
                     approx_kl_last_exceeded_raw if approx_kl_last_exceeded_raw > 0.0 else float(approx_kl_latest)
                 )
+                try:
+                    self.logger.record("train/kl_stop_reason", "fraction")
+                except Exception:
+                    pass
                 break
 
         if kl_early_stop_triggered:
