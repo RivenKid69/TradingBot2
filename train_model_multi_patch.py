@@ -1590,6 +1590,17 @@ def objective(trial: optuna.Trial,
     clip_range_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "clip_range"), "clip_range"
     )
+    clip_range_vf_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "clip_range_vf"), "clip_range_vf"
+    )
+    value_scale_update_enabled_cfg = _coerce_optional_bool(
+        _get_model_param_value(cfg, "value_scale_update_enabled"),
+        "value_scale_update_enabled",
+    )
+    value_target_scale_fixed_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "value_target_scale_fixed"),
+        "value_target_scale_fixed",
+    )
     ent_coef_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "ent_coef"), "ent_coef"
     )
@@ -2250,6 +2261,7 @@ def objective(trial: optuna.Trial,
         "gamma": gamma_cfg if gamma_cfg is not None else trial.suggest_float("gamma", 0.97, 0.995),
         "gae_lambda": gae_lambda_cfg if gae_lambda_cfg is not None else trial.suggest_float("gae_lambda", 0.8, 1.0),
         "clip_range": clip_range_cfg if clip_range_cfg is not None else trial.suggest_float("clip_range", 0.08, 0.12),
+        "clip_range_vf": clip_range_vf_cfg,
         "max_grad_norm": max_grad_norm_cfg if max_grad_norm_cfg is not None else trial.suggest_float("max_grad_norm", 0.3, 1.0),
         "target_kl": float(np.clip(target_kl_cfg, 0.02, 1.6)),
         "kl_epoch_decay": kl_epoch_decay_cfg if kl_epoch_decay_cfg is not None else 0.5,
@@ -2290,6 +2302,13 @@ def objective(trial: optuna.Trial,
         "bc_decay_steps": bc_decay_steps_cfg if bc_decay_steps_cfg is not None else 0,
         "bc_final_coef": bc_final_coef_cfg if bc_final_coef_cfg is not None else 0.0,
     }
+
+    params["value_scale_update_enabled"] = (
+        bool(value_scale_update_enabled_cfg)
+        if value_scale_update_enabled_cfg is not None
+        else True
+    )
+    params["value_target_scale_fixed"] = value_target_scale_fixed_cfg
 
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
