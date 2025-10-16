@@ -234,27 +234,45 @@ def test_popart_controller_initialises_with_existing_holdout(tmp_path: Path) -> 
 
 
 def test_ensure_model_popart_holdout_loader_assigns_and_reinitialises() -> None:
+    class _LoggerStub:
+        def __init__(self) -> None:
+            self.records: list[tuple[str, float]] = []
+
+        def record(self, key: str, value: float, **_: object) -> None:  # pragma: no cover - simple stub
+            self.records.append((key, float(value)))
+
+    class _LoaderStub:
+        def __init__(self) -> None:
+            self.materialise_calls = 0
+
+        def ensure_materialized(self) -> None:
+            self.materialise_calls += 1
+
+        def __call__(self) -> Optional[Any]:  # pragma: no cover - callable interface for parity with real loader
+            return None
+
     class _AlgoStub:
         def __init__(self) -> None:
             self.calls: list[Any] = []
+            self.logger = _LoggerStub()
 
         def _initialise_popart_controller(self, cfg: Any) -> None:
             self.calls.append(cfg)
+            self.logger.record("popart/reinitialised", float(len(self.calls)))
 
-    loader_invocations = []
-
-    def _loader() -> Optional[Any]:  # pragma: no cover - simple callable for type checking
-        loader_invocations.append(True)
-        return None
-
+    loader = _LoaderStub()
     algo = _AlgoStub()
     cfg = {"enabled": True, "mode": "shadow"}
 
-    _ensure_model_popart_holdout_loader(algo, _loader, cfg)
+    _ensure_model_popart_holdout_loader(algo, loader, cfg)
 
-    assert getattr(algo, "_popart_holdout_loader") is _loader
+    assert getattr(algo, "_popart_holdout_loader") is loader
     assert algo.calls == [cfg]
+    assert loader.materialise_calls == 1
+    assert algo.logger.records == [("popart/reinitialised", 1.0)]
 
-    _ensure_model_popart_holdout_loader(algo, _loader, cfg)
-    assert algo.calls == [cfg]
-    assert loader_invocations == []
+    _ensure_model_popart_holdout_loader(algo, loader, cfg)
+
+    assert algo.calls == [cfg, cfg]
+    assert loader.materialise_calls == 2
+    assert algo.logger.records[-1] == ("popart/reinitialised", 2.0)
