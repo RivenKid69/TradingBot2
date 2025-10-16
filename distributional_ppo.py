@@ -2507,6 +2507,9 @@ class DistributionalPPO(RecurrentPPO):
                 "ev_floor",
                 "ret_std_band",
                 "gate_patience",
+                "replay_path",
+                "replay_seed",
+                "replay_batch_size",
             ):
                 if hasattr(popart_cfg_raw, key):
                     popart_cfg_map[key] = getattr(popart_cfg_raw, key)

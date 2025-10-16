@@ -6,8 +6,11 @@ from typing import Any, Callable, Optional
 import numpy as np
 import torch
 
+import pytest
+
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are registered
 
+import distributional_ppo as distributional_ppo_module
 if "stable_baselines3.common.vec_env.base_vec_env" not in sys.modules:
     base_vec_env = types.ModuleType("stable_baselines3.common.vec_env.base_vec_env")
 
@@ -231,6 +234,83 @@ def test_popart_controller_initialises_with_existing_holdout(tmp_path: Path) -> 
     assert metrics.blocked_reason != "no_holdout"
     assert "shadow_popart/pass" in logger.records
     assert getattr(loader, "fallback_generated", False) is False
+
+
+def test_popart_namespace_config_replay_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _PolicyStub:
+        def __init__(self) -> None:
+            self.uses_quantile_value_head = False
+            self.quantile_huber_kappa = 1.0
+            self.device = torch.device("cpu")
+
+        def named_parameters(self):  # pragma: no cover - simple stub returning empty iterable
+            return []
+
+    def _fake_super_init(self, *args: Any, **kwargs: Any) -> None:
+        logger = getattr(self, "logger", _CaptureLogger())
+        self.logger = logger
+        self._logger = logger
+        self.policy = _PolicyStub()
+        self.device = torch.device("cpu")
+        self.n_steps = 1
+        self.n_envs = 1
+        self.gae_lambda = 0.95
+        self.n_epochs = 1
+        self.lr_schedule = lambda _: 0.001
+        self.normalize_returns = True
+        self._value_scale_updates_enabled = True
+        self.ent_coef = 0.01
+
+    monkeypatch.setattr(
+        distributional_ppo_module.RecurrentPPO,
+        "__init__",
+        _fake_super_init,
+        raising=False,
+    )
+    monkeypatch.setattr(DistributionalPPO, "_rebuild_scheduler_if_needed", lambda self: None)
+    monkeypatch.setattr(DistributionalPPO, "_ensure_score_action_space", lambda self: None)
+    monkeypatch.setattr(
+        DistributionalPPO,
+        "_configure_loss_head_weights",
+        lambda self, *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        DistributionalPPO,
+        "_configure_gradient_accumulation",
+        lambda self, **kwargs: None,
+    )
+
+    replay_path = "/tmp/replay_metadata.npz"
+    config_namespace = types.SimpleNamespace(
+        enabled=True,
+        mode="shadow",
+        ema_beta=0.9,
+        min_samples=8,
+        warmup_updates=1,
+        max_rel_step=0.5,
+        ev_floor=0.1,
+        ret_std_band=(0.0, 1.0),
+        gate_patience=2,
+        replay_path=replay_path,
+        replay_seed=123,
+        replay_batch_size=42,
+    )
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.logger = _CaptureLogger()
+    algo._logger = algo.logger
+
+    DistributionalPPO.__init__(
+        algo,
+        policy=_PolicyStub(),
+        env=object(),
+        value_scale_controller=config_namespace,
+        value_scale_max_rel_step=0.1,
+    )
+
+    assert algo.logger.records.get("config/popart/replay_path") == replay_path
+    assert algo.logger.records.get("config/popart/replay_seed") == pytest.approx(123.0)
+    assert algo.logger.records.get("config/popart/replay_batch_size") == pytest.approx(42.0)
 
 
 def test_ensure_model_popart_holdout_loader_assigns_and_reinitialises() -> None:
