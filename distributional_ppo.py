@@ -1508,6 +1508,9 @@ class DistributionalPPO(RecurrentPPO):
             self.logger.record("config/popart/enabled", 0.0)
             self.logger.record("config/popart/mode", "shadow")
             self.logger.record("config/popart/mode_live", 0.0)
+            self.logger.record("config/popart/replay_path", "")
+            self.logger.record("config/popart/replay_seed", 0.0)
+            self.logger.record("config/popart/replay_batch_size", 0.0)
             return
 
         enabled = bool(cfg.get("enabled", False))
@@ -1531,6 +1534,17 @@ class DistributionalPPO(RecurrentPPO):
             ret_std_band = (float(band_raw[0]), float(band_raw[1]))
         else:
             ret_std_band = (0.5, 0.9)
+        batch_size_raw = cfg.get("replay_batch_size", 0)
+        try:
+            replay_batch_size = float(int(batch_size_raw))
+        except Exception:
+            replay_batch_size = float(batch_size_raw) if isinstance(batch_size_raw, (int, float)) else 0.0
+        seed_raw = cfg.get("replay_seed", 0)
+        try:
+            replay_seed_value = float(int(seed_raw))
+        except Exception:
+            replay_seed_value = float(seed_raw) if isinstance(seed_raw, (int, float)) else 0.0
+        replay_path_value = cfg.get("replay_path")
 
         controller = PopArtController(
             enabled=enabled,
@@ -1557,6 +1571,13 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("config/popart/ret_std_band_low", float(ret_std_band[0]))
         self.logger.record("config/popart/ret_std_band_high", float(ret_std_band[1]))
         self.logger.record("config/popart/gate_patience", float(controller.gate_patience))
+        if replay_path_value is None:
+            replay_path_str = ""
+        else:
+            replay_path_str = str(replay_path_value)
+        self.logger.record("config/popart/replay_path", replay_path_str)
+        self.logger.record("config/popart/replay_seed", replay_seed_value)
+        self.logger.record("config/popart/replay_batch_size", replay_batch_size)
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
