@@ -65,6 +65,19 @@ model:
     value_target_scale_fixed: 0.12
     clip_range_vf: 0.15
     gae_lambda: 0.95
+    value_scale_controller:
+      enabled: true
+      mode: "shadow"
+      replay_path: "artifacts/popart_holdout.npz"
+      replay_seed: 17
+      replay_batch_size: 4096
+      ema_beta: 0.99
+      min_samples: 4096
+      warmup_updates: 4
+      max_rel_step: 0.04
+      ev_floor: 0.3
+      ret_std_band: [0.01, 2.0]
+      gate_patience: 2
     reward_clip:
       adaptive: true
       atr_window: 14
