@@ -2034,6 +2034,10 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "value_scale_update_enabled"),
         "value_scale_update_enabled",
     )
+    value_target_scale_cfg = _coerce_optional_float(
+        _get_model_param_value(cfg, "value_target_scale"),
+        "value_target_scale",
+    )
     value_target_scale_fixed_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "value_target_scale_fixed"),
         "value_target_scale_fixed",
@@ -2747,6 +2751,7 @@ def objective(trial: optuna.Trial,
         if value_scale_update_enabled_cfg is not None
         else True
     )
+    params["value_target_scale"] = value_target_scale_cfg
     params["value_target_scale_fixed"] = value_target_scale_fixed_cfg
     params["value_scale_controller"] = value_scale_controller_cfg
 
@@ -3537,6 +3542,16 @@ def objective(trial: optuna.Trial,
             "value_scale_stability_patience"
         ]
 
+    value_scale_runtime_overrides: dict[str, Any] = {}
+    if value_target_scale_cfg is not None:
+        value_scale_runtime_overrides["value_target_scale"] = value_target_scale_cfg
+    if value_target_scale_fixed_cfg is not None:
+        value_scale_runtime_overrides["value_target_scale_fixed"] = value_target_scale_fixed_cfg
+    if value_scale_update_enabled_cfg is not None:
+        value_scale_runtime_overrides["value_scale_update_enabled"] = bool(
+            value_scale_update_enabled_cfg
+        )
+
     model = DistributionalPPO(
         use_torch_compile=use_torch_compile,
         v_range_ema_alpha=params["v_range_ema_alpha"],
@@ -3564,6 +3579,7 @@ def objective(trial: optuna.Trial,
         value_scale=value_scale_kwargs,
         value_scale_controller=params.get("value_scale_controller"),
         value_scale_controller_holdout=popart_holdout_loader,
+        **value_scale_runtime_overrides,
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
