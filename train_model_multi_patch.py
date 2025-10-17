@@ -3715,10 +3715,10 @@ def objective(trial: optuna.Trial,
     nan_guard = NanGuardCallback()
 
     # Быстрый колбэк для раннего отсечения по простой метрике
-    sortino_pruner = SortinoPruningCallback(trial, eval_env=env_va, eval_freq=8_000, n_eval_episodes=10)
+    sortino_pruner = SortinoPruningCallback(trial, eval_env=env_va, eval_freq=50_000, n_eval_episodes=10)
 
     # Медленный, но точный колбэк для позднего отсечения по финальной метрике
-    objective_pruner = ObjectiveScorePruningCallback(trial, eval_env=env_va, eval_freq=40_000, verbose=1)
+    objective_pruner = ObjectiveScorePruningCallback(trial, eval_env=env_va, eval_freq=250_000, verbose=1)
 
     all_callbacks = [lr_logger, nan_guard, sortino_pruner, objective_pruner]
 
