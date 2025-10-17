@@ -294,7 +294,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -304,9 +304,10 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             }
         ),
         algo=types.SimpleNamespace(
-            actions={},
+            actions={"long_only": True},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
+        execution=types.SimpleNamespace(mode="bar"),
     )
 
     trial = _DummyTrial()
@@ -361,7 +362,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -414,7 +415,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -548,7 +549,7 @@ def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,

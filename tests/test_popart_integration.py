@@ -255,7 +255,7 @@ def test_popart_namespace_config_replay_metadata(monkeypatch: pytest.MonkeyPatch
         self.device = torch.device("cpu")
         self.n_steps = 1
         self.n_envs = 1
-        self.gae_lambda = 0.95
+        self.gae_lambda = 0.98
         self.n_epochs = 1
         self.lr_schedule = lambda _: 0.001
         self.normalize_returns = True
@@ -383,7 +383,7 @@ def test_popart_config_persists_through_save_and_load(
         self.n_steps = 1
         self.n_envs = 1
         self.gamma = 0.99
-        self.gae_lambda = 0.95
+        self.gae_lambda = 0.98
         self.n_epochs = 1
         self.lr_schedule = lambda _progress: 0.001
         self.normalize_returns = True
