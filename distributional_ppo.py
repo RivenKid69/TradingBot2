@@ -1096,6 +1096,22 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
 class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
 
+    def _ensure_internal_logger(self) -> None:
+        """Make sure ``self._logger`` exists before accessing :pyattr:`logger`.
+
+        Stable-Baselines3 lazily initialises the internal logger and historically
+        skipped creating ``self._logger`` when ``logger=None`` was forwarded
+        through the constructor.  Our PopArt initialisation path accesses
+        :pyattr:`self.logger` during :meth:`_setup_model`, which runs before the
+        post-constructor guard located later in ``__init__``.  Ensure the
+        attribute exists so that ``self.logger`` can be dereferenced safely.
+        """
+
+        if not hasattr(self, "_logger") or self._logger is None:  # pragma: no cover - safety guard
+            from stable_baselines3.common.logger import configure
+
+            self._logger = configure()
+
     def _setup_model(self) -> None:
         super()._setup_model()
 
@@ -1106,6 +1122,7 @@ class DistributionalPPO(RecurrentPPO):
                 pending_cfg = copy.deepcopy(serialized_cfg)
                 self._popart_cfg_pending = pending_cfg
         if pending_cfg:
+            self._ensure_internal_logger()
             self._initialise_popart_controller(pending_cfg)
             self._popart_cfg_pending = {}
 
@@ -3088,15 +3105,7 @@ class DistributionalPPO(RecurrentPPO):
 
         self._ensure_score_action_space()
 
-        # Stable-Baselines3 lazily initialises the internal logger, but older
-        # versions may skip creating ``self._logger`` when ``logger=None`` is
-        # passed through the constructor.  Accessing :pyattr:`self.logger`
-        # would then raise ``AttributeError``.  Guard against this scenario by
-        # ensuring the attribute exists before we start recording metrics.
-        if not hasattr(self, "_logger") or self._logger is None:  # pragma: no cover - safety guard
-            from stable_baselines3.common.logger import configure
-
-            self._logger = configure()
+        self._ensure_internal_logger()
 
         if getattr(self, "_popart_controller", None) is None and self._popart_cfg_pending:
             self._initialise_popart_controller(self._popart_cfg_pending)
