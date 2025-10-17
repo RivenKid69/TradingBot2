@@ -2726,7 +2726,7 @@ class DistributionalPPO(RecurrentPPO):
             0, int(kwargs_local.pop("clip_range_warmup_updates", clip_range_warmup_updates))
         )
 
-        vf_coef_target_value = float(kwargs_local.get("vf_coef", kwargs.get("vf_coef", 0.5)))
+        vf_coef_target_value = float(kwargs_local.get("vf_coef", kwargs.get("vf_coef", 1.0)))
         vf_coef_warmup_candidate = kwargs_local.pop("vf_coef_warmup", vf_coef_warmup)
         if vf_coef_warmup_candidate is None:
             vf_coef_warmup_value = float(vf_coef_target_value)
