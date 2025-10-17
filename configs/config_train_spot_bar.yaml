@@ -66,7 +66,7 @@ model:
     clip_range_vf: 0.15
     gae_lambda: 0.95
     value_scale_controller:
-      enabled: true
+      enabled: false
       mode: "shadow"
       replay_path: "artifacts/popart_holdout.npz"
       replay_seed: 17

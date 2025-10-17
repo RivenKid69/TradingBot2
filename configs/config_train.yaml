@@ -146,7 +146,7 @@ model:
         max_abs_p95: 6.0
         patience: 2
     value_scale_controller:
-      enabled: true
+      enabled: false
       mode: "shadow"
       replay_path: "artifacts/popart_holdout.npz"
       replay_seed: 17
