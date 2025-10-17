@@ -391,7 +391,8 @@ class PopArtController:
 
         self._holdout_loader = holdout_loader
         self._holdout_cache: Optional[PopArtHoldoutBatch] = None
-        self._logger = logger
+        self._logger: Optional[Any] = None
+        self.set_logger(logger)
 
         self._shadow_mean: Optional[float] = None
         self._shadow_std: Optional[float] = None
@@ -411,6 +412,11 @@ class PopArtController:
     # ------------------------------------------------------------------
     # Helper utilities
     # ------------------------------------------------------------------
+    def set_logger(self, logger: Optional[Any]) -> None:
+        """Assign a new logger used for metric emission."""
+
+        self._logger = logger
+
     def _log(self, key: str, value: float | int | str) -> None:
         logger_obj = self._logger
         if logger_obj is None:
@@ -1112,6 +1118,24 @@ class DistributionalPPO(RecurrentPPO):
 
             self._logger = configure()
 
+    def _replay_popart_config_logs(self) -> None:
+        """Re-emit cached PopArt configuration metrics to the active logger."""
+
+        config_logs = getattr(self, "_popart_config_logs", None)
+        if not config_logs:
+            return
+
+        logger_obj = getattr(self, "logger", None)
+        record = getattr(logger_obj, "record", None) if logger_obj is not None else None
+        if not callable(record):
+            return
+
+        for key, value in config_logs.items():
+            try:
+                record(key, value)
+            except Exception:
+                continue
+
     def _setup_model(self) -> None:
         super()._setup_model()
 
@@ -1151,6 +1175,30 @@ class DistributionalPPO(RecurrentPPO):
                 gae_lambda=self.gae_lambda,
                 n_envs=self.n_envs,
             )
+
+    def _setup_learn(
+        self,
+        total_timesteps: int,
+        callback: Optional[BaseCallback] = None,
+        reset_num_timesteps: bool = True,
+        tb_log_name: str = "run",
+        progress_bar: bool = False,
+    ):
+        setup_result = super()._setup_learn(
+            total_timesteps,
+            callback,
+            reset_num_timesteps,
+            tb_log_name,
+            progress_bar,
+        )
+
+        controller = getattr(self, "_popart_controller", None)
+        if controller is not None:
+            controller.set_logger(self.logger)
+
+        self._replay_popart_config_logs()
+
+        return setup_result
 
     @property
     def cvar_winsor_pct(self) -> float:
@@ -1624,12 +1672,16 @@ class DistributionalPPO(RecurrentPPO):
         if not enabled:
             self._popart_controller = None
             disabled_mode = "shadow"
-            self.logger.record("config/popart/enabled", 0.0)
-            self.logger.record("config/popart/mode", disabled_mode)
-            self.logger.record("config/popart/mode_live", 0.0)
-            self.logger.record("config/popart/replay_path", replay_path_str)
-            self.logger.record("config/popart/replay_seed", replay_seed_value)
-            self.logger.record("config/popart/replay_batch_size", replay_batch_size_value)
+            config_logs: dict[str, Any] = {
+                "config/popart/enabled": 0.0,
+                "config/popart/mode": disabled_mode,
+                "config/popart/mode_live": 0.0,
+                "config/popart/replay_path": replay_path_str,
+                "config/popart/replay_seed": replay_seed_value,
+                "config/popart/replay_batch_size": replay_batch_size_value,
+            }
+            self._popart_config_logs = config_logs
+            self._replay_popart_config_logs()
             return
 
         ema_beta = float(_cfg_get(cfg, "ema_beta", 0.99))
@@ -1658,20 +1710,24 @@ class DistributionalPPO(RecurrentPPO):
             logger=self.logger,
         )
         self._popart_controller = controller
-        self.logger.record("config/popart/enabled", float(controller.enabled))
-        self.logger.record("config/popart/mode", controller.mode)
-        self.logger.record("config/popart/mode_live", 1.0 if controller.mode == "live" else 0.0)
-        self.logger.record("config/popart/ema_beta", float(controller.ema_beta))
-        self.logger.record("config/popart/min_samples", float(controller.min_samples))
-        self.logger.record("config/popart/warmup_updates", float(controller.warmup_updates))
-        self.logger.record("config/popart/max_rel_step", float(controller.max_rel_step))
-        self.logger.record("config/popart/ev_floor", float(controller.ev_floor))
-        self.logger.record("config/popart/ret_std_band_low", float(ret_std_band[0]))
-        self.logger.record("config/popart/ret_std_band_high", float(ret_std_band[1]))
-        self.logger.record("config/popart/gate_patience", float(controller.gate_patience))
-        self.logger.record("config/popart/replay_path", replay_path_str)
-        self.logger.record("config/popart/replay_seed", replay_seed_value)
-        self.logger.record("config/popart/replay_batch_size", replay_batch_size_value)
+        config_logs = {
+            "config/popart/enabled": float(controller.enabled),
+            "config/popart/mode": controller.mode,
+            "config/popart/mode_live": 1.0 if controller.mode == "live" else 0.0,
+            "config/popart/ema_beta": float(controller.ema_beta),
+            "config/popart/min_samples": float(controller.min_samples),
+            "config/popart/warmup_updates": float(controller.warmup_updates),
+            "config/popart/max_rel_step": float(controller.max_rel_step),
+            "config/popart/ev_floor": float(controller.ev_floor),
+            "config/popart/ret_std_band_low": float(ret_std_band[0]),
+            "config/popart/ret_std_band_high": float(ret_std_band[1]),
+            "config/popart/gate_patience": float(controller.gate_patience),
+            "config/popart/replay_path": replay_path_str,
+            "config/popart/replay_seed": replay_seed_value,
+            "config/popart/replay_batch_size": replay_batch_size_value,
+        }
+        self._popart_config_logs = config_logs
+        self._replay_popart_config_logs()
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
@@ -2576,6 +2632,7 @@ class DistributionalPPO(RecurrentPPO):
         self._popart_controller: Optional[PopArtController] = None
         self._popart_shadow_metrics: Optional[PopArtCandidateMetrics] = None
         self._popart_last_stats: Optional[tuple[float, float]] = None
+        self._popart_config_logs: dict[str, Any] = {}
 
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
         if clip_range_vf_candidate is None:
