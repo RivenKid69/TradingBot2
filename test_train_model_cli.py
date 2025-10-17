@@ -294,7 +294,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -304,9 +304,10 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             }
         ),
         algo=types.SimpleNamespace(
-            actions={},
+            actions={"long_only": True},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
+        execution=types.SimpleNamespace(mode="bar"),
     )
 
     trial = _DummyTrial()
@@ -361,7 +362,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -371,9 +372,10 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
             }
         ),
         algo=types.SimpleNamespace(
-            actions={},
+            actions={"long_only": True},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
+        execution=types.SimpleNamespace(mode="bar"),
     )
 
     trial = _DummyTrial()
@@ -414,7 +416,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -437,13 +439,14 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             }
         ),
         algo=types.SimpleNamespace(
-            actions={},
+            actions={"long_only": True},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
         risk=types.SimpleNamespace(
             cvar=types.SimpleNamespace(limit=-0.02, winsor_pct=0.1, ema_beta=0.9)
         ),
         optimization={"scheduler": {"enabled": False}},
+        execution=types.SimpleNamespace(mode="bar"),
     )
 
     trial = _DummyTrial()
@@ -536,8 +539,11 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
 
     assert constructed_vecnorm, "VecNormalize should have been constructed"
     assert constructed_vecnorm[0].norm_reward is False
-    assert captured_algo_kwargs.get("cvar_limit") == pytest.approx(-2.0)
+    assert captured_algo_kwargs.get("cvar_limit") == pytest.approx(
+        cfg.risk.cvar.limit
+    )
     assert captured_algo_kwargs.get("cvar_winsor_pct") == pytest.approx(0.1)
+    assert captured_algo_kwargs.get("gae_lambda") == pytest.approx(0.98)
 
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 
@@ -548,7 +554,7 @@ def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.95,
+                "gae_lambda": 0.98,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.5,
@@ -560,9 +566,10 @@ def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
             }
         ),
         algo=types.SimpleNamespace(
-            actions={},
+            actions={"long_only": True},
             action_wrapper=types.SimpleNamespace(bins_vol=4),
         ),
+        execution=types.SimpleNamespace(mode="bar"),
     )
 
     trial = _DummyTrial()
