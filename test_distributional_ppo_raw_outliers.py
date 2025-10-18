@@ -205,7 +205,7 @@ def _install_rl_stubs() -> None:
 
 _install_rl_stubs()
 
-from distributional_ppo import DistributionalPPO
+from distributional_ppo import DistributionalPPO, safe_explained_variance
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 
@@ -453,3 +453,18 @@ def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     assert model.logger.records["train/returns_decode_path"] == "scale_only"
     assert "train/value_target_scale" in model.logger.records
     assert "train/value_target_scale[1/fraction]" in model.logger.records
+
+
+def test_normalized_clipping_preserves_positive_explained_variance() -> None:
+    targets = np.array([0.5, -0.7, 0.2, 50.0], dtype=np.float64)
+    predictions = np.array([0.45, -0.6, 0.25, 5.0], dtype=np.float64)
+    weights = np.ones_like(targets, dtype=np.float64)
+
+    ev_raw = safe_explained_variance(targets, predictions, weights)
+    clip_limit = 5.0
+    targets_clipped = np.clip(targets, -clip_limit, clip_limit)
+    predictions_clipped = np.clip(predictions, -clip_limit, clip_limit)
+    ev_clipped = safe_explained_variance(targets_clipped, predictions_clipped, weights)
+
+    assert ev_raw < 0.0
+    assert ev_clipped > 0.0
