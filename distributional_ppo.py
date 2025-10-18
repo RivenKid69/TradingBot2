@@ -1227,12 +1227,24 @@ class DistributionalPPO(RecurrentPPO):
         if states is None:
             return None
 
+        def _clone_item(item: Any) -> Any:
+            if isinstance(item, torch.Tensor):
+                return item.to(device)
+            if isinstance(item, tuple):
+                cloned_items = tuple(_clone_item(sub_item) for sub_item in item)
+                if hasattr(item, "_fields"):
+                    return type(item)(*cloned_items)
+                return type(item)(cloned_items)
+            if isinstance(item, list):
+                return type(item)(_clone_item(sub_item) for sub_item in item)
+            return item
+
         if hasattr(states, "pi") and hasattr(states, "vf"):
-            pi_states = tuple(state.to(device) for state in states.pi)
-            vf_states = tuple(state.to(device) for state in states.vf)
+            pi_states = tuple(_clone_item(state) for state in states.pi)
+            vf_states = tuple(_clone_item(state) for state in states.vf)
             return RNNStates(pi=pi_states, vf=vf_states)
 
-        return tuple(state.to(device) for state in states)
+        return _clone_item(states)
 
     @staticmethod
     def _extract_actor_states(
@@ -2168,6 +2180,50 @@ class DistributionalPPO(RecurrentPPO):
                 return False
 
         return True
+
+    def _build_explained_variance_tensors(
+        self,
+        target_batches_norm: Sequence[torch.Tensor],
+        pred_batches_norm: Sequence[torch.Tensor],
+        target_batches_raw: Sequence[torch.Tensor],
+        weight_batches: Sequence[torch.Tensor],
+        reserve_targets_norm: Sequence[torch.Tensor],
+        reserve_preds_norm: Sequence[torch.Tensor],
+        reserve_targets_raw: Sequence[torch.Tensor],
+        reserve_weight_batches: Sequence[torch.Tensor],
+    ) -> tuple[
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
+        """Select explained-variance tensors from primary or reserve caches."""
+
+        def _concat(batches: Sequence[torch.Tensor]) -> Optional[torch.Tensor]:
+            filtered: list[torch.Tensor] = []
+            for tensor in batches:
+                if tensor is None or tensor.numel() == 0:
+                    continue
+                filtered.append(tensor.reshape(-1, 1))
+            if not filtered:
+                return None
+            return torch.cat(filtered, dim=0)
+
+        y_true_tensor = _concat(target_batches_norm)
+        y_pred_tensor = _concat(pred_batches_norm)
+        if y_true_tensor is not None and y_pred_tensor is not None:
+            y_true_tensor_raw = _concat(target_batches_raw)
+            mask_tensor = _concat(weight_batches)
+            return y_true_tensor, y_pred_tensor, y_true_tensor_raw, mask_tensor
+
+        reserve_true_tensor = _concat(reserve_targets_norm)
+        reserve_pred_tensor = _concat(reserve_preds_norm)
+        if reserve_true_tensor is not None and reserve_pred_tensor is not None:
+            reserve_true_raw = _concat(reserve_targets_raw)
+            reserve_mask = _concat(reserve_weight_batches)
+            return reserve_true_tensor, reserve_pred_tensor, reserve_true_raw, reserve_mask
+
+        return None, None, None, None
 
     def _summarize_recent_return_stats(
         self,
@@ -4806,6 +4862,257 @@ class DistributionalPPO(RecurrentPPO):
         value_target_batches_raw: list[torch.Tensor] = []
         value_pred_batches_norm: list[torch.Tensor] = []
         value_weight_batches: list[torch.Tensor] = []
+        value_ev_reserve_target_norm: list[torch.Tensor] = []
+        value_ev_reserve_target_raw: list[torch.Tensor] = []
+        value_ev_reserve_pred_norm: list[torch.Tensor] = []
+        value_ev_reserve_weight: list[torch.Tensor] = []
+
+        def _reserve_ev_samples(
+            rollout_data,
+            valid_indices: Optional[torch.Tensor],
+            mask_values: Optional[torch.Tensor],
+        ) -> None:
+            with torch.no_grad():
+                buffer_returns = rollout_data.returns.to(
+                    device=self.device, dtype=torch.float32
+                )
+                target_returns_raw, base_scale_safe = self._decode_returns_scale_only(
+                    buffer_returns
+                )
+                old_values_raw_tensor: Optional[torch.Tensor] = None
+                clip_old_values_available = False
+                if clip_range_vf_value is not None:
+                    old_values_tensor = getattr(rollout_data, "old_values", None)
+                    if old_values_tensor is not None:
+                        old_values_tensor = old_values_tensor.to(
+                            device=self.device, dtype=torch.float32
+                        )
+                        old_values_raw_tensor, _ = self._decode_returns_scale_only(
+                            old_values_tensor
+                        )
+                        clip_old_values_available = True
+                    else:
+                        self.logger.record("warn/ev_reserve_missing_old_values", 1.0)
+
+                def _refresh_value_cache() -> None:
+                    obs_value = rollout_data.observations
+                    if isinstance(obs_value, torch.Tensor):
+                        obs_device = obs_value.to(device=self.device)
+                    elif isinstance(obs_value, Mapping):
+                        obs_device = {
+                            key: tensor.to(device=self.device)
+                            for key, tensor in obs_value.items()
+                        }
+                    else:  # pragma: no cover - legacy/custom observation container
+                        obs_device = obs_value
+                        to_fn = getattr(obs_device, "to", None)
+                        if callable(to_fn):
+                            obs_device = to_fn(device=self.device)
+
+                    lstm_states_value = self._clone_states_to_device(
+                        rollout_data.lstm_states, self.device
+                    )
+                    episode_starts_tensor = rollout_data.episode_starts
+                    if not isinstance(episode_starts_tensor, torch.Tensor):
+                        episode_starts_tensor = torch.as_tensor(
+                            episode_starts_tensor,
+                            device=self.device,
+                            dtype=torch.bool,
+                        )
+                    else:
+                        episode_starts_tensor = episode_starts_tensor.to(device=self.device)
+                        if episode_starts_tensor.dtype != torch.bool:
+                            episode_starts_tensor = episode_starts_tensor.to(dtype=torch.bool)
+
+                    actor_states = self._extract_actor_states(lstm_states_value)
+                    dist_output = self.policy.get_distribution(
+                        obs_device,
+                        actor_states,
+                        episode_starts_tensor,
+                    )
+                    if isinstance(dist_output, tuple):  # pragma: no cover - legacy structure
+                        dist_output = dist_output[0]
+                    value_states = getattr(dist_output, "value_states", None)
+                    if value_states is not None:
+                        self.policy.last_value_state = value_states
+                if (not self.normalize_returns) and (
+                    self._value_clip_limit_unscaled is not None
+                ):
+                    target_returns_raw = torch.clamp(
+                        target_returns_raw,
+                        min=-self._value_clip_limit_unscaled,
+                        max=self._value_clip_limit_unscaled,
+                    )
+                if self.normalize_returns:
+                    target_returns_norm = (
+                        (target_returns_raw - ret_mu_tensor) / ret_std_tensor
+                    ).clamp(-self.ret_clip, self.ret_clip)
+                else:
+                    target_returns_norm = (
+                        (target_returns_raw / float(base_scale_safe))
+                        * self._value_target_scale_effective
+                    )
+                    if self._value_clip_limit_scaled is not None:
+                        target_returns_norm = torch.clamp(
+                            target_returns_norm,
+                            min=-self._value_clip_limit_scaled,
+                            max=self._value_clip_limit_scaled,
+                        )
+
+                target_returns_raw_clipped = target_returns_raw
+                target_returns_norm_clipped = target_returns_norm
+                if clip_range_vf_value is not None and clip_old_values_available:
+                    clip_delta = float(clip_range_vf_value)
+                    old_values_aligned = old_values_raw_tensor.to(
+                        device=target_returns_raw.device, dtype=torch.float32
+                    )
+                    old_values_aligned = old_values_aligned.reshape_as(target_returns_raw)
+                    target_returns_raw_clipped = torch.clamp(
+                        target_returns_raw,
+                        min=old_values_aligned - clip_delta,
+                        max=old_values_aligned + clip_delta,
+                    )
+                    if self.normalize_returns:
+                        target_returns_norm_clipped = (
+                            (target_returns_raw_clipped - ret_mu_tensor)
+                            / ret_std_tensor
+                        ).clamp(-self.ret_clip, self.ret_clip)
+                    else:
+                        target_returns_norm_clipped = (
+                            (target_returns_raw_clipped / float(base_scale_safe))
+                            * self._value_target_scale_effective
+                        )
+                        if self._value_clip_limit_scaled is not None:
+                            target_returns_norm_clipped = torch.clamp(
+                                target_returns_norm_clipped,
+                                min=-self._value_clip_limit_scaled,
+                                max=self._value_clip_limit_scaled,
+                            )
+
+                target_norm_col = target_returns_norm_clipped.reshape(-1, 1)
+                target_raw_col = target_returns_raw_clipped.reshape(-1, 1)
+
+                weights_tensor: Optional[torch.Tensor] = None
+                index_tensor: Optional[torch.Tensor] = None
+                if valid_indices is not None:
+                    if valid_indices.numel() == 0:
+                        return
+                    index_tensor = valid_indices.to(device=target_norm_col.device)
+                    target_norm_col = target_norm_col[index_tensor]
+                    target_raw_col = target_raw_col[index_tensor]
+                    if mask_values is not None and mask_values.numel() > 0:
+                        weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
+                elif mask_values is not None and mask_values.numel() > 0:
+                    weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
+
+                if target_norm_col.numel() == 0 or target_raw_col.numel() == 0:
+                    return
+
+                if self._use_quantile_value:
+                    value_quantiles = self.policy.last_value_quantiles
+                    if value_quantiles is None:
+                        _refresh_value_cache()
+                        value_quantiles = self.policy.last_value_quantiles
+                        if value_quantiles is None:
+                            return
+                    quantiles_fp32 = value_quantiles.to(dtype=torch.float32)
+                    if clip_range_vf_value is not None and clip_old_values_available:
+                        clip_delta = float(clip_range_vf_value)
+                        quantiles_raw = self._to_raw_returns(quantiles_fp32)
+                        old_values_raw_clipped = old_values_raw_tensor
+                        while old_values_raw_clipped.dim() < quantiles_raw.dim():
+                            old_values_raw_clipped = old_values_raw_clipped.unsqueeze(-1)
+                        delta_raw = quantiles_raw - old_values_raw_clipped
+                        quantiles_raw_clipped = old_values_raw_clipped + delta_raw.clamp(
+                            min=-clip_delta, max=clip_delta
+                        )
+                        if self.normalize_returns:
+                            quantiles_norm_for_pred = (
+                                (quantiles_raw_clipped - ret_mu_tensor)
+                                / ret_std_tensor
+                            ).clamp(-self.ret_clip, self.ret_clip)
+                        else:
+                            quantiles_norm_for_pred = (
+                                (quantiles_raw_clipped / float(base_scale_safe))
+                                * self._value_target_scale_effective
+                            )
+                            if self._value_clip_limit_scaled is not None:
+                                quantiles_norm_for_pred = torch.clamp(
+                                    quantiles_norm_for_pred,
+                                    min=-self._value_clip_limit_scaled,
+                                    max=self._value_clip_limit_scaled,
+                                )
+                    else:
+                        quantiles_norm_for_pred = quantiles_fp32
+                    value_pred = quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                else:
+                    value_logits = self.policy.last_value_logits
+                    if value_logits is None:
+                        _refresh_value_cache()
+                        value_logits = self.policy.last_value_logits
+                        if value_logits is None:
+                            return
+                    value_logits_fp32 = value_logits.to(dtype=torch.float32)
+                    probs = torch.softmax(value_logits_fp32, dim=1).clamp(
+                        min=1e-8, max=1.0
+                    )
+                    value_pred = (probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                    if clip_range_vf_value is not None and clip_old_values_available:
+                        clip_delta = float(clip_range_vf_value)
+                        value_pred_raw = self._to_raw_returns(value_pred)
+                        old_values_raw_aligned = old_values_raw_tensor
+                        while old_values_raw_aligned.dim() < value_pred_raw.dim():
+                            old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
+                        value_pred_raw_clipped = torch.clamp(
+                            value_pred_raw,
+                            min=old_values_raw_aligned - clip_delta,
+                            max=old_values_raw_aligned + clip_delta,
+                        )
+                        if self.normalize_returns:
+                            value_pred = (
+                                (value_pred_raw_clipped - ret_mu_tensor)
+                                / ret_std_tensor
+                            ).clamp(-self.ret_clip, self.ret_clip)
+                        else:
+                            value_pred = (
+                                (value_pred_raw_clipped / float(base_scale_safe))
+                                * self._value_target_scale_effective
+                            )
+                            if self._value_clip_limit_scaled is not None:
+                                value_pred = torch.clamp(
+                                    value_pred,
+                                    min=-self._value_clip_limit_scaled,
+                                    max=self._value_clip_limit_scaled,
+                                )
+
+                if self.normalize_returns:
+                    value_pred = value_pred.clamp(-self.ret_clip, self.ret_clip)
+                elif self._value_clip_limit_scaled is not None:
+                    value_pred = torch.clamp(
+                        value_pred,
+                        min=-self._value_clip_limit_scaled,
+                        max=self._value_clip_limit_scaled,
+                    )
+
+                value_pred_col = value_pred.reshape(-1, 1)
+                if index_tensor is not None:
+                    value_pred_col = value_pred_col[index_tensor]
+
+                if (
+                    value_pred_col.numel() == 0
+                    or value_pred_col.shape[0] != target_norm_col.shape[0]
+                ):
+                    return
+
+                value_ev_reserve_target_norm.append(target_norm_col.detach())
+                value_ev_reserve_target_raw.append(target_raw_col.detach())
+                value_ev_reserve_pred_norm.append(value_pred_col.detach())
+                if (
+                    weights_tensor is not None
+                    and weights_tensor.numel() > 0
+                    and weights_tensor.shape[0] == target_norm_col.shape[0]
+                ):
+                    value_ev_reserve_weight.append(weights_tensor.detach())
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
         kl_exceed_fraction_latest = 0.0
@@ -4993,8 +5300,6 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     advantages = rollout_data.advantages
-                    if sample_count <= 0 or sample_weight <= 0.0:
-                        continue
 
                     mask_values_for_ev: Optional[torch.Tensor]
                     valid_indices: Optional[torch.Tensor]
@@ -5006,15 +5311,19 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             mask_float = mask_view.to(dtype=torch.float32)
                             valid_mask = mask_float > 0
-                        valid_indices = valid_mask.nonzero(as_tuple=False).squeeze(1)
-                        if valid_indices.numel() == 0:
+                        valid_indices_local = valid_mask.nonzero(as_tuple=False).squeeze(1)
+                        mask_values_local = mask_float[valid_indices_local].to(dtype=torch.float32)
+                        weight_sum_local = float(mask_values_local.sum().item())
+                        if valid_indices_local.numel() == 0 or weight_sum_local <= 0.0:
+                            _reserve_ev_samples(rollout_data, valid_indices_local, mask_values_local)
                             continue
-                        mask_values_for_ev = mask_float[valid_indices].to(dtype=torch.float32)
+                        mask_values_for_ev = mask_values_local.to(device=self.device)
+                        valid_indices = valid_indices_local.to(device=advantages.device)
                         sample_weight = float(mask_values_for_ev.sum().item())
-                        if sample_weight <= 0.0:
-                            continue
-                        mask_values_for_ev = mask_values_for_ev.to(device=self.device)
                     else:
+                        if sample_count <= 0 or sample_weight <= 0.0:
+                            _reserve_ev_samples(rollout_data, None, None)
+                            continue
                         valid_indices = None
                         mask_values_for_ev = torch.ones(
                             sample_count,
@@ -6006,149 +6315,91 @@ class DistributionalPPO(RecurrentPPO):
         mask_tensor_for_ev: Optional[torch.Tensor] = None
         y_true_tensor_raw: Optional[torch.Tensor] = None
 
-        if value_target_batches_norm and value_pred_batches_norm:
-            y_true_tensor = torch.cat(
-                [t.reshape(-1, 1) for t in value_target_batches_norm], dim=0
-            )
-            y_pred_tensor = torch.cat(
-                [t.reshape(-1, 1) for t in value_pred_batches_norm], dim=0
-            )
-            if value_target_batches_raw:
-                y_true_tensor_raw = torch.cat(
-                    [t.reshape(-1, 1) for t in value_target_batches_raw], dim=0
-                )
-            if len(value_weight_batches) == len(value_target_batches_norm):
-                mask_tensor_for_ev = torch.cat(
-                    [mask.reshape(-1, 1) for mask in value_weight_batches], dim=0
-                )
-        else:
-            rollout_returns = torch.as_tensor(
-                self.rollout_buffer.returns, device=self.device, dtype=torch.float32
-            )
+        (
+            y_true_tensor,
+            y_pred_tensor,
+            y_true_tensor_raw,
+            mask_tensor_for_ev,
+        ) = self._build_explained_variance_tensors(
+            value_target_batches_norm,
+            value_pred_batches_norm,
+            value_target_batches_raw,
+            value_weight_batches,
+            value_ev_reserve_target_norm,
+            value_ev_reserve_pred_norm,
+            value_ev_reserve_target_raw,
+            value_ev_reserve_weight,
+        )
 
-            # Final EV/MSE metrics also need fully decoded raw returns
-            rollout_returns, _ = self._decode_returns_scale_only(rollout_returns)
-            y_true_tensor_raw = rollout_returns.reshape(-1, 1)
-
-            base_scale_safe = self._resolve_value_scale_safe()
-
-            with torch.no_grad():
-                ret_mu_tensor = torch.as_tensor(
-                    ret_mu_value, device=self.device, dtype=torch.float32
-                )
-                ret_std_tensor = torch.as_tensor(
-                    ret_std_value, device=self.device, dtype=torch.float32
-                )
-                if self.normalize_returns:
-                    y_true_tensor = ((rollout_returns - ret_mu_tensor) / ret_std_tensor).clamp(
-                        -self.ret_clip, self.ret_clip
-                    )
-                else:
-                    y_true_tensor = (
-                        (rollout_returns / float(base_scale_safe))
-                        * self._value_target_scale_effective
-                    )
-                    if self._value_clip_limit_scaled is not None:
-                        y_true_tensor = torch.clamp(
-                            y_true_tensor,
-                            min=-self._value_clip_limit_scaled,
-                            max=self._value_clip_limit_scaled,
-                        )
-                y_true_tensor = y_true_tensor.reshape(-1, 1)
-
-                if self._use_quantile_value:
-                    quantiles_fp32 = value_quantiles_final
-                    value_pred_norm = quantiles_fp32.mean(dim=1, keepdim=True)
-                    quantiles_raw = self._to_raw_returns(quantiles_fp32)
-                    if self.normalize_returns:
-                        value_pred_tensor = value_pred_norm.clamp(-self.ret_clip, self.ret_clip)
-                        if not quantile_batches_unscaled:
-                            quantile_batches_unscaled.append(quantiles_raw.detach())
-                            quantile_batches_norm.append(quantiles_fp32.detach())
-                    else:
-                        value_pred_tensor = value_pred_norm
-                        if self._value_clip_limit_scaled is not None:
-                            value_pred_tensor = torch.clamp(
-                                value_pred_tensor,
-                                min=-self._value_clip_limit_scaled,
-                                max=self._value_clip_limit_scaled,
-                            )
-                        if not quantile_batches_unscaled:
-                            quantile_batches_unscaled.append(quantiles_raw.detach())
-                            quantile_batches_norm.append(quantiles_fp32.detach())
-                else:
-                    pred_probs = torch.softmax(value_logits_final, dim=1)
-                    value_pred_norm = (pred_probs * self.policy.atoms).sum(dim=1, keepdim=True)
-                    if self.normalize_returns:
-                        value_pred_tensor = value_pred_norm.clamp(-self.ret_clip, self.ret_clip)
-                    else:
-                        value_pred_tensor = value_pred_norm
-                        if self._value_clip_limit_scaled is not None:
-                            value_pred_tensor = torch.clamp(
-                                value_pred_tensor,
-                                min=-self._value_clip_limit_scaled,
-                                max=self._value_clip_limit_scaled,
-                            )
-
-            y_pred_tensor = value_pred_tensor.reshape(-1, 1)
-
-        if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
-            explained_var = 0.0
-        else:
-            y_true_flat = y_true_tensor.flatten()
-            y_pred_flat = y_pred_tensor.flatten()
-            weights_np: Optional[np.ndarray] = None
-            if mask_tensor_for_ev is not None:
-                mask_flat = mask_tensor_for_ev.flatten()
-                min_elems = min(
-                    mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0]
-                )
-                y_true_flat = y_true_flat[:min_elems]
-                y_pred_flat = y_pred_flat[:min_elems]
-                mask_flat = mask_flat[:min_elems]
-                valid_mask = mask_flat > 0.0
-                if not torch.all(valid_mask):
-                    y_true_flat = y_true_flat[valid_mask]
-                    y_pred_flat = y_pred_flat[valid_mask]
-                    mask_flat = mask_flat[valid_mask]
-                if mask_flat.numel() > 0:
-                    weights_np = mask_flat.detach().cpu().numpy()
-            else:
-                min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
-                y_true_flat = y_true_flat[:min_elems]
-                y_pred_flat = y_pred_flat[:min_elems]
-
-            if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
+        explained_var: Optional[float] = None
+        if y_true_tensor is not None and y_pred_tensor is not None:
+            if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
                 explained_var = 0.0
             else:
-                y_true_np = y_true_flat.detach().cpu().numpy()
-                y_pred_np = y_pred_flat.detach().cpu().numpy()
-                explained_var = np.nan_to_num(
-                    safe_explained_variance(y_true_np, y_pred_np, weights_np)
-                )
+                y_true_flat = y_true_tensor.flatten()
+                y_pred_flat = y_pred_tensor.flatten()
+                weights_np: Optional[np.ndarray] = None
+                if mask_tensor_for_ev is not None:
+                    mask_flat = mask_tensor_for_ev.flatten()
+                    min_elems = min(
+                        mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0]
+                    )
+                    y_true_flat = y_true_flat[:min_elems]
+                    y_pred_flat = y_pred_flat[:min_elems]
+                    mask_flat = mask_flat[:min_elems]
+                    valid_mask = mask_flat > 0.0
+                    if not torch.all(valid_mask):
+                        y_true_flat = y_true_flat[valid_mask]
+                        y_pred_flat = y_pred_flat[valid_mask]
+                        mask_flat = mask_flat[valid_mask]
+                    if mask_flat.numel() > 0:
+                        weights_np = mask_flat.detach().cpu().numpy()
+                else:
+                    min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
+                    y_true_flat = y_true_flat[:min_elems]
+                    y_pred_flat = y_pred_flat[:min_elems]
 
-                with torch.no_grad():
-                    value_mse_value = float(
-                        F.mse_loss(
-                            y_pred_flat.to(dtype=torch.float32),
-                            y_true_flat.to(dtype=torch.float32),
-                            reduction="mean",
-                        ).item()
+                if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
+                    explained_var = 0.0
+                else:
+                    y_true_np = y_true_flat.detach().cpu().numpy()
+                    y_pred_np = y_pred_flat.detach().cpu().numpy()
+                    explained_var = np.nan_to_num(
+                        safe_explained_variance(y_true_np, y_pred_np, weights_np)
                     )
 
-        if self._popart_controller is not None:
+                    with torch.no_grad():
+                        value_mse_value = float(
+                            F.mse_loss(
+                                y_pred_flat.to(dtype=torch.float32),
+                                y_true_flat.to(dtype=torch.float32),
+                                reduction="mean",
+                            ).item()
+                        )
+
+        if (
+            self._use_quantile_value
+            and not quantile_batches_unscaled
+            and value_quantiles_final is not None
+        ):
+            quantiles_fp32 = value_quantiles_final.detach()
+            quantile_batches_norm.append(quantiles_fp32)
+            quantile_batches_unscaled.append(self._to_raw_returns(quantiles_fp32).detach())
+
+        if self._popart_controller is not None and y_true_tensor is not None:
             try:
                 returns_raw_tensor = (
                     y_true_tensor_raw.flatten()
-                    if y_true_tensor_raw is not None
+                    if (y_true_tensor_raw is not None and y_true_tensor_raw.numel() > 0)
                     else y_true_tensor.flatten()
                 )
-                self._popart_shadow_metrics = self._popart_controller.evaluate_shadow(
-                    model=self,
-                    returns_raw=returns_raw_tensor,
-                    ret_mean=float(ret_mu_value),
-                    ret_std=float(ret_std_value),
-                )
+                if returns_raw_tensor.numel() > 0:
+                    self._popart_shadow_metrics = self._popart_controller.evaluate_shadow(
+                        model=self,
+                        returns_raw=returns_raw_tensor,
+                        ret_mean=float(ret_mu_value),
+                        ret_std=float(ret_std_value),
+                    )
             except Exception:
                 logging.getLogger(__name__).exception("PopArt shadow evaluation failed")
 
@@ -6157,11 +6408,14 @@ class DistributionalPPO(RecurrentPPO):
 
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
 
-        if explained_var < 0.0:
-            self._bad_explained_counter += 1
+        if explained_var is not None:
+            if explained_var < 0.0:
+                self._bad_explained_counter += 1
+            else:
+                self._bad_explained_counter = 0
+            self._last_explained_variance = float(explained_var)
         else:
-            self._bad_explained_counter = 0
-        self._last_explained_variance = float(explained_var)
+            self._last_explained_variance = None
 
         auto_thaw_patience = int(getattr(self, "_value_scale_auto_thaw_bad_ev", 0))
         if (
@@ -6172,9 +6426,12 @@ class DistributionalPPO(RecurrentPPO):
             self._value_scale_frozen = False
             self.logger.record("train/value_scale_auto_thaw", float(self._bad_explained_counter))
 
-        frame_stable = self._is_value_scale_frame_stable(
-            self._value_scale_latest_ret_abs_p95, self._last_explained_variance
-        )
+        if self._last_explained_variance is not None:
+            frame_stable = self._is_value_scale_frame_stable(
+                self._value_scale_latest_ret_abs_p95, self._last_explained_variance
+            )
+        else:
+            frame_stable = False
         self._value_scale_frame_stable = frame_stable
         if frame_stable:
             self._value_scale_stable_counter += 1
@@ -6353,19 +6610,23 @@ class DistributionalPPO(RecurrentPPO):
         if last_scheduler_lr is not None:
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
-        self.logger.record("train/explained_variance", explained_var)
+        if explained_var is not None:
+            self.logger.record("train/explained_variance", explained_var)
+        else:
+            self.logger.record("train/explained_variance_available", 0.0)
         if not (0.5 <= float(ret_std_value) <= 0.9):
             self._ret_std_warn_streak += 1
         else:
             self._ret_std_warn_streak = 0
         if self._ret_std_warn_streak >= 3:
             self.logger.record("warn/ret_std_out_of_range", float(ret_std_value))
-        if float(explained_var) <= 0.3:
-            self._explained_variance_warn_streak += 1
-        else:
-            self._explained_variance_warn_streak = 0
-        if self._explained_variance_warn_streak >= 3:
-            self.logger.record("warn/explained_variance_low", float(explained_var))
+        if explained_var is not None:
+            if float(explained_var) <= 0.3:
+                self._explained_variance_warn_streak += 1
+            else:
+                self._explained_variance_warn_streak = 0
+            if self._explained_variance_warn_streak >= 3:
+                self.logger.record("warn/explained_variance_low", float(explained_var))
         self.logger.record("train/clip_range", float(self._clip_range_current))
         clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
         self.logger.record("train/clip_range_schedule", clip_range_for_log)
