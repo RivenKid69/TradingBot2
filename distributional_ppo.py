@@ -5773,10 +5773,13 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm_clipped = target_returns_norm
 
                         target_returns_norm_clipped_flat = target_returns_norm_clipped.reshape(-1)
+                        target_returns_raw_clipped_flat = target_returns_raw_clipped.reshape(-1)
                         if valid_indices is not None:
                             target_returns_norm_clipped_selected = target_returns_norm_clipped_flat[valid_indices]
+                            target_returns_raw_for_ev_selected = target_returns_raw_clipped_flat[valid_indices]
                         else:
                             target_returns_norm_clipped_selected = target_returns_norm_clipped_flat
+                            target_returns_raw_for_ev_selected = target_returns_raw_clipped_flat
 
                         if self._use_quantile_value:
                             raw_outlier_frac = 0.0
@@ -5845,7 +5848,7 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm_clipped_selected.reshape(-1, 1).detach()
                         )
                         value_target_batches_raw.append(
-                            target_returns_raw_selected.reshape(-1, 1).detach()
+                            target_returns_raw_for_ev_selected.reshape(-1, 1).detach()
                         )
                         value_weight_batches.append(
                             mask_values_for_ev.detach().reshape(-1, 1)
