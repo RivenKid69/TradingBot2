@@ -32,7 +32,7 @@ def test_popart_logger_rebound_after_setup_learn(monkeypatch: pytest.MonkeyPatch
     algo.policy = types.SimpleNamespace()
     algo.device = None
     algo.gamma = 0.99
-    algo.gae_lambda = 0.98
+    algo.gae_lambda = 0.97
     algo.n_envs = 1
     algo.n_steps = 1
     algo.observation_space = None
