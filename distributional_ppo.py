@@ -4928,18 +4928,37 @@ class DistributionalPPO(RecurrentPPO):
             for microbatch_group in minibatch_iterator:
                 microbatch_items = tuple(microbatch_group)
                 microbatch_masks = [getattr(data, "mask", None) for data in microbatch_items]
-                sample_counts = []
+                sample_counts: list[int] = []
+                sample_weight_sums: list[float] = []
                 for data, mask_tensor in zip(microbatch_items, microbatch_masks):
                     if mask_tensor is not None:
-                        count = int(torch.count_nonzero(mask_tensor).item())
+                        mask_view = mask_tensor.reshape(-1)
+                        if mask_view.dtype == torch.bool:
+                            positive_mask = mask_view
+                            has_positive = bool(torch.any(positive_mask).item())
+                            mask_positive_values = mask_view[positive_mask].to(dtype=torch.float32)
+                        else:
+                            mask_view_float = mask_view.to(dtype=torch.float32)
+                            positive_mask = mask_view_float > 0
+                            has_positive = bool(torch.any(positive_mask).item())
+                            mask_positive_values = mask_view_float[positive_mask]
+                        if has_positive:
+                            weight_sum = float(mask_positive_values.sum().item())
+                            count = int(math.ceil(weight_sum))
+                        else:
+                            weight_sum = 0.0
+                            count = 0
                     else:
                         count = int(data.advantages.shape[0])
+                        weight_sum = float(count)
                     sample_counts.append(count)
+                    sample_weight_sums.append(weight_sum)
                 bucket_target_size = int(sum(sample_counts))
-                if bucket_target_size <= 0:
+                bucket_target_weight = float(sum(sample_weight_sums))
+                if bucket_target_weight <= 0.0:
                     self.logger.record("warn/empty_microbatch_group", 1.0)
                     continue
-                self.logger.record("train/actual_batch_size", float(bucket_target_size))
+                self.logger.record("train/actual_batch_size", float(bucket_target_weight))
                 clip_range = float(self._clip_range_current)
                 self.policy.optimizer.zero_grad(set_to_none=True)
 
@@ -4960,9 +4979,10 @@ class DistributionalPPO(RecurrentPPO):
                 bucket_value_quantiles_fp32: Optional[torch.Tensor] = None
                 approx_kl_weighted_sum = 0.0
                 bucket_sample_count = 0
+                bucket_sample_weight = 0.0
 
-                for rollout_data, sample_count, mask_tensor in zip(
-                    microbatch_items, sample_counts, microbatch_masks
+                for rollout_data, sample_count, mask_tensor, sample_weight in zip(
+                    microbatch_items, sample_counts, microbatch_masks, sample_weight_sums
                 ):
                     _values, log_prob, entropy = self.policy.evaluate_actions(
                         rollout_data.observations,
@@ -4973,23 +4993,27 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     advantages = rollout_data.advantages
-                    if sample_count <= 0:
+                    if sample_count <= 0 or sample_weight <= 0.0:
                         continue
 
                     mask_values_for_ev: Optional[torch.Tensor]
                     valid_indices: Optional[torch.Tensor]
                     if mask_tensor is not None:
-                        mask_view = mask_tensor.reshape(-1)
+                        mask_view = mask_tensor.reshape(-1).to(device=advantages.device)
                         if mask_view.dtype == torch.bool:
-                            mask_bool = mask_view
+                            valid_mask = mask_view
+                            mask_float = mask_view.to(dtype=torch.float32)
                         else:
-                            mask_bool = mask_view > 0.5
-                        mask_bool = mask_bool.to(device=advantages.device)
-                        valid_indices = mask_bool.nonzero(as_tuple=False).squeeze(1)
-                        sample_count = int(valid_indices.numel())
-                        if sample_count <= 0:
+                            mask_float = mask_view.to(dtype=torch.float32)
+                            valid_mask = mask_float > 0
+                        valid_indices = valid_mask.nonzero(as_tuple=False).squeeze(1)
+                        if valid_indices.numel() == 0:
                             continue
-                        mask_values_for_ev = mask_bool[valid_indices].to(dtype=torch.float32)
+                        mask_values_for_ev = mask_float[valid_indices].to(dtype=torch.float32)
+                        sample_weight = float(mask_values_for_ev.sum().item())
+                        if sample_weight <= 0.0:
+                            continue
+                        mask_values_for_ev = mask_values_for_ev.to(device=self.device)
                     else:
                         valid_indices = None
                         mask_values_for_ev = torch.ones(
@@ -4997,12 +5021,18 @@ class DistributionalPPO(RecurrentPPO):
                             device=self.device,
                             dtype=torch.float32,
                         )
+                        sample_weight = float(mask_values_for_ev.sum().item())
 
                     if valid_indices is not None:
                         valid_indices = valid_indices.to(device=advantages.device)
 
                     bucket_sample_count += sample_count
-                    weight = float(sample_count) / float(bucket_target_size)
+                    bucket_sample_weight += sample_weight
+                    weight = (
+                        sample_weight / bucket_target_weight
+                        if bucket_target_weight > 0.0
+                        else 0.0
+                    )
 
                     target_returns_norm_clipped: Optional[torch.Tensor] = None
                     target_returns_raw_clipped: Optional[torch.Tensor] = None
@@ -5240,7 +5270,7 @@ class DistributionalPPO(RecurrentPPO):
                             )
 
                         weight_before_raw = weight
-                        raw_weight = float(sample_count)
+                        raw_weight = float(sample_weight)
 
                         if self.normalize_returns:
                             target_returns_norm_raw = (
@@ -5642,7 +5672,7 @@ class DistributionalPPO(RecurrentPPO):
                         bucket_value_logits_fp32 = value_logits_fp32.detach()
 
                     approx_kl_component = ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
-                    approx_kl_weighted_sum += approx_kl_component * float(sample_count)
+                    approx_kl_weighted_sum += approx_kl_component * float(sample_weight)
 
                 if bucket_sample_count != bucket_target_size:
                     self.logger.record(
@@ -5719,7 +5749,11 @@ class DistributionalPPO(RecurrentPPO):
                     warn_on_floor=True,
                 )
 
-                approx_kl = approx_kl_weighted_sum / float(bucket_sample_count)
+                approx_kl = (
+                    approx_kl_weighted_sum / float(bucket_sample_weight)
+                    if bucket_sample_weight > 0.0
+                    else 0.0
+                )
                 approx_kl_latest = approx_kl
                 approx_kl_divs.append(approx_kl)
                 minibatches_processed += 1

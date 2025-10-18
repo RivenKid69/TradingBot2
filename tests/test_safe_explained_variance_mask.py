@@ -94,3 +94,17 @@ def test_safe_explained_variance_ignores_padded_entries():
 
     assert np.isclose(ev_masked, ev_truncated, equal_nan=True)
     assert not np.isclose(ev_unmasked, ev_truncated, equal_nan=True)
+
+
+def test_safe_explained_variance_fractional_mask_weights_positive():
+    module = _load_distributional_ppo_module()
+    safe_ev = module.safe_explained_variance
+
+    y_true = np.array([0.5, 1.25, 2.0, -0.25], dtype=float)
+    y_pred = np.array([0.45, 1.3, 1.9, -0.2], dtype=float)
+    mask = np.array([0.2, 0.4, 0.3, 0.1], dtype=float)
+
+    ev_weighted = safe_ev(y_true, y_pred, mask)
+
+    assert np.isfinite(ev_weighted)
+    assert ev_weighted > 0.0
