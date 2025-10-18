@@ -4,6 +4,7 @@ import types
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 
 def _ensure_module(name: str) -> types.ModuleType:
@@ -108,3 +109,40 @@ def test_safe_explained_variance_fractional_mask_weights_positive():
 
     assert np.isfinite(ev_weighted)
     assert ev_weighted > 0.0
+
+
+def test_safe_explained_variance_uses_unbiased_variance() -> None:
+    module = _load_distributional_ppo_module()
+    safe_ev = module.safe_explained_variance
+
+    y_true = np.array([1.0, 2.0, 4.0], dtype=float)
+    y_pred = np.array([0.8, 1.9, 3.7], dtype=float)
+
+    ev = safe_ev(y_true, y_pred)
+
+    var_true = np.var(y_true, ddof=1)
+    var_res = np.var(y_true - y_pred, ddof=1)
+    expected = 1.0 - var_res / var_true
+
+    assert ev == pytest.approx(expected)
+
+
+def test_safe_explained_variance_weighted_unbiased() -> None:
+    module = _load_distributional_ppo_module()
+    safe_ev = module.safe_explained_variance
+
+    y_true = np.array([0.5, 1.25, 2.0, -0.25], dtype=float)
+    y_pred = np.array([0.45, 1.3, 1.9, -0.2], dtype=float)
+    weights = np.array([0.2, 0.4, 0.3, 0.1], dtype=float)
+
+    ev = safe_ev(y_true, y_pred, weights)
+
+    sum_w = np.sum(weights)
+    mean_true = np.sum(weights * y_true) / sum_w
+    sum_w_sq = np.sum(weights**2)
+    denom = sum_w - sum_w_sq / sum_w
+    var_true = np.sum(weights * (y_true - mean_true) ** 2) / denom
+    var_res = np.sum(weights * (y_true - y_pred) ** 2) / denom
+    expected = 1.0 - var_res / var_true
+
+    assert ev == pytest.approx(expected)
