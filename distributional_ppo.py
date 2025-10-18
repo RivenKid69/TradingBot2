@@ -5579,13 +5579,53 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_unscaled,
                                     max=self._value_clip_limit_unscaled,
                                 )
+
+                            if clip_range_vf_value is not None:
+                                if old_values_raw_tensor is None:
+                                    raise RuntimeError(
+                                        "clip_range_vf requires old value predictions "
+                                        "(distributional_ppo.py::_train_step)"
+                                    )
+                                clip_delta = float(clip_range_vf_value)
+                                old_values_raw_aligned = old_values_raw_tensor
+                                while old_values_raw_aligned.dim() < mean_values_unscaled.dim():
+                                    old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
+                                mean_values_unscaled_clipped = torch.clamp(
+                                    mean_values_unscaled,
+                                    min=old_values_raw_aligned - clip_delta,
+                                    max=old_values_raw_aligned + clip_delta,
+                                )
+                                if self.normalize_returns:
+                                    mean_values_norm_clipped = (
+                                        (mean_values_unscaled_clipped - ret_mu_tensor)
+                                        / ret_std_tensor
+                                    ).clamp(-self.ret_clip, self.ret_clip)
+                                else:
+                                    mean_values_norm_clipped = (
+                                        (mean_values_unscaled_clipped / float(base_scale_safe))
+                                        * self._value_target_scale_effective
+                                    )
+                                    if self._value_clip_limit_scaled is not None:
+                                        mean_values_norm_clipped = torch.clamp(
+                                            mean_values_norm_clipped,
+                                            min=-self._value_clip_limit_scaled,
+                                            max=self._value_clip_limit_scaled,
+                                        )
+                            else:
+                                mean_values_norm_clipped = mean_values_norm
+
                             mean_values_norm_flat = mean_values_norm.view(-1)
+                            mean_values_norm_clipped_flat = mean_values_norm_clipped.view(-1)
                             mean_values_unscaled_flat = mean_values_unscaled.view(-1)
                             if valid_indices is not None:
                                 mean_values_norm_selected = mean_values_norm_flat[valid_indices]
+                                mean_values_norm_clipped_selected = mean_values_norm_clipped_flat[
+                                    valid_indices
+                                ]
                                 mean_values_selected = mean_values_unscaled_flat[valid_indices]
                             else:
                                 mean_values_norm_selected = mean_values_norm_flat
+                                mean_values_norm_clipped_selected = mean_values_norm_clipped_flat
                                 mean_values_selected = mean_values_unscaled_flat
                             mean_values_flat = mean_values_selected
                             target_returns_flat = target_returns_raw_selected
@@ -5596,7 +5636,9 @@ class DistributionalPPO(RecurrentPPO):
                             )
                             bucket_value_mse_value += float(mse_tensor.item()) * weight
 
-                            value_pred_norm_for_ev = mean_values_norm_selected.reshape(-1, 1)
+                            value_pred_norm_for_ev = (
+                                mean_values_norm_clipped_selected.reshape(-1, 1)
+                            )
                             if self.normalize_returns:
                                 value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(
                                     -self.ret_clip, self.ret_clip
