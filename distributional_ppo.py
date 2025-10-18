@@ -2225,6 +2225,118 @@ class DistributionalPPO(RecurrentPPO):
 
         return None, None, None, None
 
+    def _compute_explained_variance_metric(
+        self,
+        y_true_tensor: Optional[torch.Tensor],
+        y_pred_tensor: Optional[torch.Tensor],
+        *,
+        mask_tensor: Optional[torch.Tensor] = None,
+        y_true_tensor_raw: Optional[torch.Tensor] = None,
+        variance_floor: float = 1e-8,
+    ) -> tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]:
+        """Return explained variance and flattened tensors used for evaluation."""
+
+        if y_true_tensor is None or y_pred_tensor is None:
+            return None, None, None
+
+        y_true_flat = y_true_tensor.flatten()
+        y_pred_flat = y_pred_tensor.flatten()
+
+        if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
+            return 0.0, y_true_flat.detach(), y_pred_flat.detach()
+
+        mask_flat: Optional[torch.Tensor]
+        selected_indices: Optional[torch.Tensor] = None
+
+        if mask_tensor is not None:
+            mask_flat = mask_tensor.flatten()
+            min_elems = min(mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0])
+            if min_elems == 0:
+                empty = y_true_flat.new_zeros(0)
+                return 0.0, empty.detach(), empty.detach()
+            y_true_flat = y_true_flat[:min_elems]
+            y_pred_flat = y_pred_flat[:min_elems]
+            mask_flat = mask_flat[:min_elems]
+            positive_mask = mask_flat > 0.0
+            if torch.any(positive_mask):
+                selected_indices = torch.nonzero(positive_mask, as_tuple=False).flatten()
+                y_true_flat = y_true_flat[selected_indices]
+                y_pred_flat = y_pred_flat[selected_indices]
+                mask_flat = mask_flat[selected_indices]
+            else:
+                empty = y_true_flat.new_zeros(0)
+                return 0.0, empty.detach(), empty.detach()
+        else:
+            mask_flat = None
+            min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
+            if min_elems == 0:
+                empty = y_true_flat.new_zeros(0)
+                return 0.0, empty.detach(), empty.detach()
+            y_true_flat = y_true_flat[:min_elems]
+            y_pred_flat = y_pred_flat[:min_elems]
+
+        y_true_eval = y_true_flat.detach()
+        y_pred_eval = y_pred_flat.detach()
+        if y_true_eval.numel() == 0 or y_pred_eval.numel() == 0:
+            return 0.0, y_true_eval, y_pred_eval
+
+        weights_np: Optional[np.ndarray] = None
+        if mask_flat is not None and mask_flat.numel() > 0:
+            weights_np = mask_flat.detach().cpu().numpy()
+
+        y_true_np = y_true_eval.cpu().numpy()
+        y_pred_np = y_pred_eval.cpu().numpy()
+        primary_ev = safe_explained_variance(y_true_np, y_pred_np, weights_np)
+
+        def _weighted_variance(values: np.ndarray, weights: Optional[np.ndarray]) -> float:
+            if weights is None:
+                return float(np.var(values))
+            sum_w = float(np.sum(weights))
+            if not math.isfinite(sum_w) or sum_w <= 0.0:
+                return 0.0
+            mean_w = float(np.sum(weights * values) / sum_w)
+            var_w = float(np.sum(weights * (values - mean_w) ** 2) / sum_w)
+            return var_w
+
+        var_y = _weighted_variance(y_true_np, weights_np)
+        need_fallback = (not math.isfinite(primary_ev)) or (var_y <= variance_floor)
+
+        explained_var: Optional[float] = None
+        fallback_used = False
+
+        if need_fallback and y_true_tensor_raw is not None:
+            y_true_raw_flat = y_true_tensor_raw.flatten()
+            y_true_raw_flat = y_true_raw_flat[:min_elems]
+            if selected_indices is not None:
+                y_true_raw_flat = y_true_raw_flat[selected_indices]
+
+            if y_true_raw_flat.numel() > 0:
+                y_pred_raw_flat = self._to_raw_returns(y_pred_tensor).flatten()
+                y_pred_raw_flat = y_pred_raw_flat[:min_elems]
+                if selected_indices is not None:
+                    y_pred_raw_flat = y_pred_raw_flat[selected_indices]
+
+                y_true_raw_np = y_true_raw_flat.detach().cpu().numpy()
+                y_pred_raw_np = y_pred_raw_flat.detach().cpu().numpy()
+                fallback_ev = safe_explained_variance(
+                    y_true_raw_np, y_pred_raw_np, weights_np
+                )
+                if math.isfinite(fallback_ev):
+                    explained_var = float(fallback_ev)
+                    fallback_used = True
+                    logger = getattr(self, "logger", None)
+                    if logger is not None:
+                        logger.record("train/value_explained_variance_fallback", 1.0)
+
+        if explained_var is None:
+            explained_var = float(np.nan_to_num(primary_ev))
+            if fallback_used is False:
+                logger = getattr(self, "logger", None)
+                if logger is not None and need_fallback:
+                    logger.record("train/value_explained_variance_fallback", 0.0)
+
+        return explained_var, y_true_eval, y_pred_eval
+
     def _summarize_recent_return_stats(
         self,
         sample_mean: float,
@@ -6332,50 +6444,30 @@ class DistributionalPPO(RecurrentPPO):
         )
 
         explained_var: Optional[float] = None
+        ev_true_flat: Optional[torch.Tensor] = None
+        ev_pred_flat: Optional[torch.Tensor] = None
         if y_true_tensor is not None and y_pred_tensor is not None:
-            if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
-                explained_var = 0.0
-            else:
-                y_true_flat = y_true_tensor.flatten()
-                y_pred_flat = y_pred_tensor.flatten()
-                weights_np: Optional[np.ndarray] = None
-                if mask_tensor_for_ev is not None:
-                    mask_flat = mask_tensor_for_ev.flatten()
-                    min_elems = min(
-                        mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0]
-                    )
-                    y_true_flat = y_true_flat[:min_elems]
-                    y_pred_flat = y_pred_flat[:min_elems]
-                    mask_flat = mask_flat[:min_elems]
-                    valid_mask = mask_flat > 0.0
-                    if not torch.all(valid_mask):
-                        y_true_flat = y_true_flat[valid_mask]
-                        y_pred_flat = y_pred_flat[valid_mask]
-                        mask_flat = mask_flat[valid_mask]
-                    if mask_flat.numel() > 0:
-                        weights_np = mask_flat.detach().cpu().numpy()
-                else:
-                    min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
-                    y_true_flat = y_true_flat[:min_elems]
-                    y_pred_flat = y_pred_flat[:min_elems]
+            explained_var, ev_true_flat, ev_pred_flat = self._compute_explained_variance_metric(
+                y_true_tensor,
+                y_pred_tensor,
+                mask_tensor=mask_tensor_for_ev,
+                y_true_tensor_raw=y_true_tensor_raw,
+            )
 
-                if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
-                    explained_var = 0.0
-                else:
-                    y_true_np = y_true_flat.detach().cpu().numpy()
-                    y_pred_np = y_pred_flat.detach().cpu().numpy()
-                    explained_var = np.nan_to_num(
-                        safe_explained_variance(y_true_np, y_pred_np, weights_np)
+            if (
+                ev_true_flat is not None
+                and ev_pred_flat is not None
+                and ev_true_flat.numel() > 0
+                and ev_pred_flat.numel() > 0
+            ):
+                with torch.no_grad():
+                    value_mse_value = float(
+                        F.mse_loss(
+                            ev_pred_flat.to(dtype=torch.float32),
+                            ev_true_flat.to(dtype=torch.float32),
+                            reduction="mean",
+                        ).item()
                     )
-
-                    with torch.no_grad():
-                        value_mse_value = float(
-                            F.mse_loss(
-                                y_pred_flat.to(dtype=torch.float32),
-                                y_true_flat.to(dtype=torch.float32),
-                                reduction="mean",
-                            ).item()
-                        )
 
         if (
             self._use_quantile_value
