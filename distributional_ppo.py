@@ -4804,6 +4804,7 @@ class DistributionalPPO(RecurrentPPO):
         approx_kl_divs: list[float] = []
         target_return_batches: list[torch.Tensor] = []
         mean_value_batches: list[torch.Tensor] = []
+        ev_mask_batches: list[torch.Tensor] = []
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
         kl_exceed_fraction_latest = 0.0
@@ -4925,7 +4926,14 @@ class DistributionalPPO(RecurrentPPO):
 
             for microbatch_group in minibatch_iterator:
                 microbatch_items = tuple(microbatch_group)
-                sample_counts = [int(data.advantages.shape[0]) for data in microbatch_items]
+                microbatch_masks = [getattr(data, "mask", None) for data in microbatch_items]
+                sample_counts = []
+                for data, mask_tensor in zip(microbatch_items, microbatch_masks):
+                    if mask_tensor is not None:
+                        count = int(torch.count_nonzero(mask_tensor).item())
+                    else:
+                        count = int(data.advantages.shape[0])
+                    sample_counts.append(count)
                 bucket_target_size = int(sum(sample_counts))
                 if bucket_target_size <= 0:
                     self.logger.record("warn/empty_microbatch_group", 1.0)
@@ -4952,7 +4960,9 @@ class DistributionalPPO(RecurrentPPO):
                 approx_kl_weighted_sum = 0.0
                 bucket_sample_count = 0
 
-                for rollout_data, sample_count in zip(microbatch_items, sample_counts):
+                for rollout_data, sample_count, mask_tensor in zip(
+                    microbatch_items, sample_counts, microbatch_masks
+                ):
                     _values, log_prob, entropy = self.policy.evaluate_actions(
                         rollout_data.observations,
                         rollout_data.actions,
@@ -4964,6 +4974,32 @@ class DistributionalPPO(RecurrentPPO):
                     advantages = rollout_data.advantages
                     if sample_count <= 0:
                         continue
+
+                    mask_values_for_ev: Optional[torch.Tensor]
+                    valid_indices: Optional[torch.Tensor]
+                    if mask_tensor is not None:
+                        mask_view = mask_tensor.reshape(-1)
+                        if mask_view.dtype == torch.bool:
+                            mask_bool = mask_view
+                        else:
+                            mask_bool = mask_view > 0.5
+                        mask_bool = mask_bool.to(device=advantages.device)
+                        valid_indices = mask_bool.nonzero(as_tuple=False).squeeze(1)
+                        sample_count = int(valid_indices.numel())
+                        if sample_count <= 0:
+                            continue
+                        mask_values_for_ev = mask_bool[valid_indices].to(dtype=torch.float32)
+                    else:
+                        valid_indices = None
+                        mask_values_for_ev = torch.ones(
+                            sample_count,
+                            device=self.device,
+                            dtype=torch.float32,
+                        )
+
+                    if valid_indices is not None:
+                        valid_indices = valid_indices.to(device=advantages.device)
+
                     bucket_sample_count += sample_count
                     weight = float(sample_count) / float(bucket_target_size)
 
@@ -4971,19 +5007,38 @@ class DistributionalPPO(RecurrentPPO):
                     target_returns_raw_clipped: Optional[torch.Tensor] = None
                     old_values_raw_tensor: Optional[torch.Tensor] = None
 
-                    with torch.no_grad():
-                        adv_mean_tensor = advantages.mean()
-                        adv_std_tensor = advantages.std(unbiased=False)
-                        adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
+                    advantages_flat = advantages.reshape(-1)
+                    if valid_indices is not None:
+                        advantages_selected_raw = advantages_flat[valid_indices]
+                        with torch.no_grad():
+                            adv_mean_tensor = advantages_selected_raw.mean()
+                            adv_std_tensor = advantages_selected_raw.std(unbiased=False)
+                            adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
+                        advantages_normalized_flat = advantages_flat.new_zeros(
+                            advantages_flat.shape
+                        )
+                        advantages_normalized_flat[valid_indices] = (
+                            (advantages_selected_raw - adv_mean_tensor)
+                            / adv_std_tensor_clamped
+                        )
+                        advantages = advantages_normalized_flat.view_as(advantages)
+                        advantages_selected = advantages_normalized_flat[valid_indices]
+                    else:
+                        with torch.no_grad():
+                            adv_mean_tensor = advantages.mean()
+                            adv_std_tensor = advantages.std(unbiased=False)
+                            adv_std_tensor_clamped = torch.clamp(adv_std_tensor, min=1e-8)
+                        advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
+                        advantages_selected = advantages.reshape(-1)
+
                     adv_mean = float(adv_mean_tensor.item())
                     adv_std = float(adv_std_tensor.item())
                     adv_mean_accum += adv_mean
                     adv_std_accum += adv_std
                     adv_batch_count += 1
 
-                    advantages = (advantages - adv_mean_tensor) / adv_std_tensor_clamped
                     with torch.no_grad():
-                        adv_z_values.append(advantages.detach().cpu())
+                        adv_z_values.append(advantages_selected.detach().cpu())
 
                     entropy_tensor = entropy
                     actor_states = self._extract_actor_states(rollout_data.lstm_states)
@@ -5013,10 +5068,20 @@ class DistributionalPPO(RecurrentPPO):
                             "Log-prob shape mismatch between rollout buffer and training step"
                         )
 
-                    log_ratio = log_prob - rollout_data.old_log_prob
+                    log_prob_flat = log_prob.reshape(-1)
+                    old_log_prob_flat = rollout_data.old_log_prob.reshape(-1)
+                    if valid_indices is not None:
+                        log_prob_selected = log_prob_flat[valid_indices]
+                        old_log_prob_selected = old_log_prob_flat[valid_indices]
+                    else:
+                        log_prob_selected = log_prob_flat
+                        old_log_prob_selected = old_log_prob_flat
+                    log_ratio = log_prob_selected - old_log_prob_selected
                     ratio = torch.exp(log_ratio)
-                    policy_loss_1 = advantages * ratio
-                    policy_loss_2 = advantages * torch.clamp(ratio, 1 - clip_range, 1 + clip_range)
+                    policy_loss_1 = advantages_selected * ratio
+                    policy_loss_2 = advantages_selected * torch.clamp(
+                        ratio, 1 - clip_range, 1 + clip_range
+                    )
                     policy_loss_ppo = -torch.min(policy_loss_1, policy_loss_2).mean()
 
                     with torch.no_grad():
@@ -5030,23 +5095,23 @@ class DistributionalPPO(RecurrentPPO):
                         clip_fraction_numer += float(clip_mask.sum().item())
                         clip_fraction_denom += int(clip_mask.numel())
 
-                        log_prob_detached = log_prob.detach()
+                        log_prob_detached = log_prob_selected.detach()
                         log_prob_sum += float(log_prob_detached.sum().item())
                         log_prob_count += int(log_prob_detached.numel())
 
                     if bc_coef <= 0.0:
-                        policy_loss_bc = advantages.new_zeros(())
+                        policy_loss_bc = log_prob_selected.new_zeros(())
                         policy_loss_bc_weighted = policy_loss_bc
                     else:
                         with torch.no_grad():
-                            weights = torch.exp(advantages / self.cql_beta)
+                            weights = torch.exp(advantages_selected / self.cql_beta)
                             weights = torch.clamp(weights, max=100.0)
-                        policy_loss_bc = (-log_prob * weights).mean()
+                        policy_loss_bc = (-log_prob_selected * weights).mean()
                         policy_loss_bc_weighted = policy_loss_bc * bc_coef
 
                     policy_loss = policy_loss_ppo + policy_loss_bc_weighted
                     if self.kl_beta > 0.0:
-                        kl_penalty_sample = (rollout_data.old_log_prob - log_prob).mean()
+                        kl_penalty_sample = (old_log_prob_selected - log_prob_selected).mean()
                         kl_penalty_component = self.kl_beta * kl_penalty_sample
                         policy_loss = policy_loss + kl_penalty_component
                         kl_penalty_component_total += float(kl_penalty_component.item())
@@ -5067,8 +5132,13 @@ class DistributionalPPO(RecurrentPPO):
                                 entropy_raw_tensor = entropy_raw_tensor.sum(dim=-1)
                             if torch.isfinite(entropy_raw_tensor).all():
                                 entropy_raw_detached = entropy_raw_tensor.to(dtype=torch.float32)
-                                entropy_raw_sum += float(entropy_raw_detached.sum().cpu().item())
-                                entropy_raw_count += int(entropy_raw_detached.numel())
+                                entropy_raw_flat = entropy_raw_detached.reshape(-1)
+                                if valid_indices is not None:
+                                    entropy_raw_selected = entropy_raw_flat[valid_indices]
+                                else:
+                                    entropy_raw_selected = entropy_raw_flat
+                                entropy_raw_sum += float(entropy_raw_selected.sum().cpu().item())
+                                entropy_raw_count += int(entropy_raw_selected.numel())
 
                         if (
                             isinstance(self.action_space, gym.spaces.Box)
@@ -5112,9 +5182,14 @@ class DistributionalPPO(RecurrentPPO):
 
                     if entropy_tensor.ndim > 1:
                         entropy_tensor = entropy_tensor.sum(dim=-1)
-                    entropy_loss = -torch.mean(entropy_tensor)
+                    entropy_flat = entropy_tensor.reshape(-1)
+                    if valid_indices is not None:
+                        entropy_selected = entropy_flat[valid_indices]
+                    else:
+                        entropy_selected = entropy_flat
+                    entropy_loss = -torch.mean(entropy_selected)
 
-                    entropy_detached = entropy_tensor.detach().to(dtype=torch.float32)
+                    entropy_detached = entropy_selected.detach().to(dtype=torch.float32)
                     policy_entropy_sum += float(entropy_detached.sum().cpu().item())
                     policy_entropy_count += int(entropy_detached.numel())
 
@@ -5164,7 +5239,7 @@ class DistributionalPPO(RecurrentPPO):
                             )
 
                         weight_before_raw = weight
-                        raw_weight = float(target_returns_raw.numel())
+                        raw_weight = float(sample_count)
 
                         if self.normalize_returns:
                             target_returns_norm_raw = (
@@ -5185,6 +5260,20 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_scaled,
                                     max=self._value_clip_limit_scaled,
                                 )
+
+                        target_returns_raw_flat = target_returns_raw.reshape(-1)
+                        target_returns_norm_flat = target_returns_norm.reshape(-1)
+                        target_returns_norm_raw_flat = target_returns_norm_raw.reshape(-1)
+                        if valid_indices is not None:
+                            target_returns_raw_selected = target_returns_raw_flat[valid_indices]
+                            target_returns_norm_selected = target_returns_norm_flat[valid_indices]
+                            target_returns_norm_raw_selected = target_returns_norm_raw_flat[valid_indices]
+                        else:
+                            target_returns_raw_selected = target_returns_raw_flat
+                            target_returns_norm_selected = target_returns_norm_flat
+                            target_returns_norm_raw_selected = target_returns_norm_raw_flat
+
+                        target_returns_norm_clipped_selected = target_returns_norm_selected
 
                         if clip_range_vf_value is not None:
                             clip_delta = float(clip_range_vf_value)
@@ -5213,12 +5302,18 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_raw_clipped = target_returns_raw
                             target_returns_norm_clipped = target_returns_norm
 
+                        target_returns_norm_clipped_flat = target_returns_norm_clipped.reshape(-1)
+                        if valid_indices is not None:
+                            target_returns_norm_clipped_selected = target_returns_norm_clipped_flat[valid_indices]
+                        else:
+                            target_returns_norm_clipped_selected = target_returns_norm_clipped_flat
+
                         if self._use_quantile_value:
                             raw_outlier_frac = 0.0
                             self._last_raw_outlier_frac = 0.0
                         else:
                             raw_below_frac, raw_above_frac = self._value_target_outlier_fractions(
-                                target_returns_norm_raw,
+                                target_returns_norm_raw_selected,
                                 float(self.policy.v_min),
                                 float(self.policy.v_max),
                             )
@@ -5276,14 +5371,32 @@ class DistributionalPPO(RecurrentPPO):
                                     target_distribution[same_indices] = 0.0
                                     target_distribution[same_indices, lower_bound[same_indices]] = 1.0
 
-                        target_return_batches.append(target_returns_raw.reshape(-1, 1).detach())
+                        target_return_batches.append(
+                            target_returns_raw_selected.reshape(-1, 1).detach()
+                        )
+                        ev_mask_batches.append(
+                            mask_values_for_ev.detach().reshape(-1, 1)
+                        )
 
-                        below_frac = float(
-                            (target_returns_norm < self.policy.v_min).float().mean().item()
+                        target_norm_for_stats = target_returns_norm_selected.to(
+                            dtype=torch.float32
                         )
-                        above_frac = float(
-                            (target_returns_norm > self.policy.v_max).float().mean().item()
-                        )
+                        if target_norm_for_stats.numel() > 0:
+                            below_frac = float(
+                                (target_norm_for_stats < self.policy.v_min)
+                                .float()
+                                .mean()
+                                .item()
+                            )
+                            above_frac = float(
+                                (target_norm_for_stats > self.policy.v_max)
+                                .float()
+                                .mean()
+                                .item()
+                            )
+                        else:
+                            below_frac = 0.0
+                            above_frac = 0.0
                         clamp_below_sum += below_frac * weight
                         clamp_above_sum += above_frac * weight
                         clamp_weight += weight
@@ -5311,12 +5424,26 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             quantiles_unscaled = quantiles_raw
 
-                        mean_value_batches.append(mean_values_unscaled.detach())
-                        quantile_batches_unscaled.append(quantiles_unscaled.detach())
-                        quantile_batches_norm.append(quantiles_fp32.detach())
+                        mean_values_unscaled_flat = mean_values_unscaled.view(-1)
+                        if valid_indices is not None:
+                            mean_values_selected = mean_values_unscaled_flat[valid_indices]
+                            quantiles_unscaled_selected = quantiles_unscaled[valid_indices]
+                            quantiles_norm_selected = quantiles_fp32[valid_indices]
+                        else:
+                            mean_values_selected = mean_values_unscaled_flat
+                            quantiles_unscaled_selected = quantiles_unscaled
+                            quantiles_norm_selected = quantiles_fp32
 
-                        mean_values_flat = mean_values_unscaled.view(-1)
-                        target_returns_flat = target_returns_raw.view(-1)
+                        mean_value_batches.append(
+                            mean_values_selected.reshape(-1, 1).detach()
+                        )
+                        quantile_batches_unscaled.append(
+                            quantiles_unscaled_selected.detach()
+                        )
+                        quantile_batches_norm.append(quantiles_norm_selected.detach())
+
+                        mean_values_flat = mean_values_selected
+                        target_returns_flat = target_returns_raw_selected
                         mse_tensor = F.mse_loss(
                             mean_values_flat,
                             target_returns_flat,
@@ -5324,11 +5451,19 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         bucket_value_mse_value += float(mse_tensor.item()) * weight
 
-                        predicted_cvar_norm = self._cvar_from_quantiles(quantiles_fp32)
+                        if valid_indices is not None:
+                            quantiles_for_cvar = quantiles_fp32[valid_indices]
+                        else:
+                            quantiles_for_cvar = quantiles_fp32
+                        predicted_cvar_norm = self._cvar_from_quantiles(quantiles_for_cvar)
                         cvar_raw = self._to_raw_returns(predicted_cvar_norm).mean()
 
+                        if valid_indices is not None:
+                            quantiles_for_loss = quantiles_fp32[valid_indices]
+                        else:
+                            quantiles_for_loss = quantiles_fp32
                         critic_loss_unclipped = self._quantile_huber_loss(
-                            quantiles_fp32, target_returns_norm
+                            quantiles_for_loss, target_returns_norm_selected
                         )
                         critic_loss = critic_loss_unclipped
                         if clip_range_vf_value is not None:
@@ -5361,15 +5496,25 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            if valid_indices is not None:
+                                quantiles_norm_clipped_for_loss = quantiles_norm_clipped[valid_indices]
+                            else:
+                                quantiles_norm_clipped_for_loss = quantiles_norm_clipped
                             critic_loss_clipped = self._quantile_huber_loss(
-                                quantiles_norm_clipped, target_returns_norm
+                                quantiles_norm_clipped_for_loss, target_returns_norm_clipped_selected
                             )
                             critic_loss = torch.max(critic_loss_unclipped, critic_loss_clipped)
                     else:
                         pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
                         log_predictions = torch.log(pred_probs_fp32)
+                        if valid_indices is not None:
+                            log_predictions_selected = log_predictions[valid_indices]
+                            target_distribution_selected = target_distribution[valid_indices]
+                        else:
+                            log_predictions_selected = log_predictions
+                            target_distribution_selected = target_distribution
                         critic_loss_unclipped = -(
-                            target_distribution * log_predictions
+                            target_distribution_selected * log_predictions_selected
                         ).sum(dim=1).mean()
                         critic_loss = critic_loss_unclipped / self._critic_ce_normalizer
 
@@ -5377,15 +5522,6 @@ class DistributionalPPO(RecurrentPPO):
 
                             mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
                             mean_values_unscaled = self._to_raw_returns(mean_values_norm)
-
-                            mean_values_flat = mean_values_unscaled.view(-1)
-                            target_returns_flat = target_returns_raw.view(-1)
-                            mse_tensor = F.mse_loss(
-                                mean_values_flat,
-                                target_returns_flat,
-                                reduction="mean",
-                            )
-                            bucket_value_mse_value += float(mse_tensor.item()) * weight
 
                             if (not self.normalize_returns) and (
                                 self._value_clip_limit_unscaled is not None
@@ -5395,10 +5531,29 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_unscaled,
                                     max=self._value_clip_limit_unscaled,
                                 )
-                            mean_value_batches.append(mean_values_unscaled.detach())
+                            mean_values_unscaled_flat = mean_values_unscaled.view(-1)
+                            if valid_indices is not None:
+                                mean_values_selected = mean_values_unscaled_flat[valid_indices]
+                            else:
+                                mean_values_selected = mean_values_unscaled_flat
+                            mean_values_flat = mean_values_selected
+                            target_returns_flat = target_returns_raw_selected
+                            mse_tensor = F.mse_loss(
+                                mean_values_flat,
+                                target_returns_flat,
+                                reduction="mean",
+                            )
+                            bucket_value_mse_value += float(mse_tensor.item()) * weight
+                            mean_value_batches.append(
+                                mean_values_selected.reshape(-1, 1).detach()
+                            )
 
+                        if valid_indices is not None:
+                            pred_probs_for_cvar = pred_probs_fp32[valid_indices]
+                        else:
+                            pred_probs_for_cvar = pred_probs_fp32
                         predicted_cvar = calculate_cvar(
-                            pred_probs_fp32, self.policy.atoms, self.cvar_alpha
+                            pred_probs_for_cvar, self.policy.atoms, self.cvar_alpha
                         )
                         cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
@@ -5406,8 +5561,14 @@ class DistributionalPPO(RecurrentPPO):
                             target_distribution_clipped = self._build_support_distribution(
                                 target_returns_norm_clipped, value_logits_fp32
                             )
+                            if valid_indices is not None:
+                                target_distribution_clipped_selected = target_distribution_clipped[valid_indices]
+                                log_predictions_clipped_selected = log_predictions[valid_indices]
+                            else:
+                                target_distribution_clipped_selected = target_distribution_clipped
+                                log_predictions_clipped_selected = log_predictions
                             critic_loss_clipped = -(
-                                target_distribution_clipped * log_predictions
+                                target_distribution_clipped_selected * log_predictions_clipped_selected
                             ).sum(dim=1).mean()
                             critic_loss_clipped = critic_loss_clipped / self._critic_ce_normalizer
                             critic_loss = torch.max(critic_loss, critic_loss_clipped)
@@ -5736,6 +5897,8 @@ class DistributionalPPO(RecurrentPPO):
             if value_logits_final is None:
                 raise RuntimeError("No value logits captured during training loop")
 
+        mask_tensor_for_ev: Optional[torch.Tensor] = None
+
         if len(target_return_batches) == 0 or len(mean_value_batches) == 0:
             rollout_returns = torch.as_tensor(
                 self.rollout_buffer.returns, device=self.device, dtype=torch.float32
@@ -5786,27 +5949,54 @@ class DistributionalPPO(RecurrentPPO):
         else:
             y_true_tensor = torch.cat([t.reshape(-1, 1) for t in target_return_batches], dim=0)
             y_pred_tensor = torch.cat([t.reshape(-1, 1) for t in mean_value_batches], dim=0)
+            if ev_mask_batches:
+                mask_tensor_for_ev = torch.cat(
+                    [mask.reshape(-1, 1) for mask in ev_mask_batches], dim=0
+                )
 
         if y_true_tensor.numel() == 0 or y_pred_tensor.numel() == 0:
             explained_var = 0.0
         else:
-            if y_true_tensor.shape != y_pred_tensor.shape:
-                min_elems = min(y_true_tensor.shape[0], y_pred_tensor.shape[0])
-                y_true_tensor = y_true_tensor[:min_elems]
-                y_pred_tensor = y_pred_tensor[:min_elems]
-
-            y_true_np = y_true_tensor.flatten().detach().cpu().numpy()
-            y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy()
-            explained_var = np.nan_to_num(safe_explained_variance(y_true_np, y_pred_np))
-
-            with torch.no_grad():
-                value_mse_value = float(
-                    F.mse_loss(
-                        y_pred_tensor.flatten().to(dtype=torch.float32),
-                        y_true_tensor.flatten().to(dtype=torch.float32),
-                        reduction="mean",
-                    ).item()
+            y_true_flat = y_true_tensor.flatten()
+            y_pred_flat = y_pred_tensor.flatten()
+            weights_np: Optional[np.ndarray] = None
+            if mask_tensor_for_ev is not None:
+                mask_flat = mask_tensor_for_ev.flatten()
+                min_elems = min(
+                    mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0]
                 )
+                y_true_flat = y_true_flat[:min_elems]
+                y_pred_flat = y_pred_flat[:min_elems]
+                mask_flat = mask_flat[:min_elems]
+                valid_mask = mask_flat > 0.0
+                if not torch.all(valid_mask):
+                    y_true_flat = y_true_flat[valid_mask]
+                    y_pred_flat = y_pred_flat[valid_mask]
+                    mask_flat = mask_flat[valid_mask]
+                if mask_flat.numel() > 0:
+                    weights_np = mask_flat.detach().cpu().numpy()
+            else:
+                min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
+                y_true_flat = y_true_flat[:min_elems]
+                y_pred_flat = y_pred_flat[:min_elems]
+
+            if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
+                explained_var = 0.0
+            else:
+                y_true_np = y_true_flat.detach().cpu().numpy()
+                y_pred_np = y_pred_flat.detach().cpu().numpy()
+                explained_var = np.nan_to_num(
+                    safe_explained_variance(y_true_np, y_pred_np, weights_np)
+                )
+
+                with torch.no_grad():
+                    value_mse_value = float(
+                        F.mse_loss(
+                            y_pred_flat.to(dtype=torch.float32),
+                            y_true_flat.to(dtype=torch.float32),
+                            reduction="mean",
+                        ).item()
+                    )
 
         if self._popart_controller is not None:
             try:
