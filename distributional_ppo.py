@@ -5256,7 +5256,7 @@ class DistributionalPPO(RecurrentPPO):
                             weight_sum = 0.0
                             count = 0
                     else:
-                        count = int(data.advantages.shape[0])
+                        count = int(data.advantages.numel())
                         weight_sum = float(count)
                     sample_counts.append(count)
                     sample_weight_sums.append(weight_sum)
