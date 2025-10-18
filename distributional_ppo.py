@@ -126,7 +126,7 @@ def safe_explained_variance(
     y_true64 = np.asarray(y_true, dtype=np.float64).reshape(-1)
     y_pred64 = np.asarray(y_pred, dtype=np.float64).reshape(-1)
     length = min(y_true64.size, y_pred64.size)
-    if length == 0:
+    if length <= 0:
         return float("nan")
 
     y_true64 = y_true64[:length]
@@ -149,12 +149,22 @@ def safe_explained_variance(
         sum_w = float(np.sum(weights64))
         if not math.isfinite(sum_w) or sum_w <= 0.0:
             return float("nan")
+        sum_w_sq = float(np.sum(weights64**2))
+        denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
+        if denom <= 0.0 or not math.isfinite(denom):
+            return float("nan")
         mean_y = float(np.sum(weights64 * y_true64) / sum_w)
-        var_y = float(np.sum(weights64 * (y_true64 - mean_y) ** 2) / sum_w)
-        if not math.isfinite(var_y) or var_y == 0.0:
+        var_y_num = float(np.sum(weights64 * (y_true64 - mean_y) ** 2))
+        if not math.isfinite(var_y_num):
+            return float("nan")
+        var_y = var_y_num / denom
+        if not math.isfinite(var_y) or var_y <= 0.0:
             return float("nan")
         residual = y_true64 - y_pred64
-        var_res = float(np.sum(weights64 * residual**2) / sum_w)
+        var_res_num = float(np.sum(weights64 * residual**2))
+        if not math.isfinite(var_res_num):
+            return float("nan")
+        var_res = var_res_num / denom
         return float(1.0 - var_res / var_y)
 
     finite_mask = np.isfinite(y_true64) & np.isfinite(y_pred64)
@@ -162,10 +172,15 @@ def safe_explained_variance(
         return float("nan")
     y_true64 = y_true64[finite_mask]
     y_pred64 = y_pred64[finite_mask]
-    var_y = np.var(y_true64)
-    if var_y == 0.0:
+    if y_true64.size <= 1:
         return float("nan")
-    return float(1.0 - np.var(y_true64 - y_pred64) / var_y)
+    var_y = float(np.var(y_true64, ddof=1))
+    if not math.isfinite(var_y) or var_y <= 0.0:
+        return float("nan")
+    var_res = float(np.var(y_true64 - y_pred64, ddof=1))
+    if not math.isfinite(var_res):
+        return float("nan")
+    return float(1.0 - var_res / var_y)
 
 
 def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> torch.Tensor:
