@@ -161,7 +161,10 @@ def safe_explained_variance(
         if not math.isfinite(var_y) or var_y <= 0.0:
             return float("nan")
         residual = y_true64 - y_pred64
-        var_res_num = float(np.sum(weights64 * residual**2))
+        residual_mean = float(np.sum(weights64 * residual) / sum_w)
+        if not math.isfinite(residual_mean):
+            return float("nan")
+        var_res_num = float(np.sum(weights64 * (residual - residual_mean) ** 2))
         if not math.isfinite(var_res_num):
             return float("nan")
         var_res = var_res_num / denom

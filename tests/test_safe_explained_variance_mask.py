@@ -142,7 +142,20 @@ def test_safe_explained_variance_weighted_unbiased() -> None:
     sum_w_sq = np.sum(weights**2)
     denom = sum_w - sum_w_sq / sum_w
     var_true = np.sum(weights * (y_true - mean_true) ** 2) / denom
-    var_res = np.sum(weights * (y_true - y_pred) ** 2) / denom
+    residual = y_true - y_pred
+    residual_mean = np.sum(weights * residual) / sum_w
+    var_res = np.sum(weights * (residual - residual_mean) ** 2) / denom
     expected = 1.0 - var_res / var_true
 
     assert ev == pytest.approx(expected)
+
+    # Regression test: constant offset should yield the same explained variance
+    # for masked weighted batches as the unweighted, truncated inputs.
+    y_true = np.array([1.0, 2.0, 0.0, 0.0], dtype=float)
+    y_pred = y_true - 1.0
+    weights = np.array([1.0, 1.0, 0.0, 0.0], dtype=float)
+
+    ev_weighted = safe_ev(y_true, y_pred, weights)
+    ev_truncated = safe_ev(y_true[:2], y_pred[:2])
+
+    assert ev_weighted == pytest.approx(ev_truncated)
