@@ -294,7 +294,7 @@ def test_config_params_override_optuna(monkeypatch: pytest.MonkeyPatch, tmp_path
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.98,
+                "gae_lambda": 0.97,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.7,
@@ -362,7 +362,7 @@ def test_invalid_batch_size_config_raises(monkeypatch: pytest.MonkeyPatch, tmp_p
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.98,
+                "gae_lambda": 0.97,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.7,
@@ -416,7 +416,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.98,
+                "gae_lambda": 0.97,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.7,
@@ -543,7 +543,7 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
         cfg.risk.cvar.limit
     )
     assert captured_algo_kwargs.get("cvar_winsor_pct") == pytest.approx(0.1)
-    assert captured_algo_kwargs.get("gae_lambda") == pytest.approx(0.98)
+    assert captured_algo_kwargs.get("gae_lambda") == pytest.approx(0.97)
 
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 
@@ -554,7 +554,7 @@ def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
             params={
                 "learning_rate": 3.0e-4,
                 "gamma": 0.99,
-                "gae_lambda": 0.98,
+                "gae_lambda": 0.97,
                 "clip_range": 0.15,
                 "ent_coef": 0.0001,
                 "vf_coef": 0.7,
