@@ -26,6 +26,12 @@ from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.save_util import load_from_zip_file
 
+from .winrate_stats import (
+    WinRateAccumulator,
+    WinRateStats,
+    extract_episode_win_payload,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -2780,6 +2786,16 @@ class DistributionalPPO(RecurrentPPO):
 
         kwargs_local = dict(kwargs)
 
+        winrate_confidence_candidate = kwargs_local.pop("winrate_confidence_level", 0.95)
+        try:
+            winrate_confidence_value = float(winrate_confidence_candidate)
+        except (TypeError, ValueError):
+            winrate_confidence_value = 0.95
+        if not math.isfinite(winrate_confidence_value) or not (0.0 < winrate_confidence_value < 1.0):
+            winrate_confidence_value = 0.95
+        self._winrate_confidence_level = winrate_confidence_value
+        self._last_rollout_win_stats: Optional[WinRateStats] = None
+
         popart_cfg_raw = kwargs_local.pop("value_scale_controller", None)
         popart_holdout_loader = kwargs_local.pop("value_scale_controller_holdout", None)
         if callable(popart_holdout_loader):
@@ -4313,6 +4329,9 @@ class DistributionalPPO(RecurrentPPO):
         clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_cap_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         base_reward_scale = self._resolve_value_scale_safe()
+        winrate_tracker = WinRateAccumulator(
+            confidence_level=float(getattr(self, "_winrate_confidence_level", 0.95))
+        )
 
         while n_steps < n_rollout_steps:
             raw_actions_tensor: Optional[torch.Tensor] = None
@@ -4482,6 +4501,9 @@ class DistributionalPPO(RecurrentPPO):
                         if math.isfinite(robust_value) and robust_value > 0.0:
                             if self._reward_robust_clip_fraction is None:
                                 self._reward_robust_clip_fraction = float(robust_value)
+                    win_flag, win_length = extract_episode_win_payload(info)
+                    if win_flag is not None and win_length is not None:
+                        winrate_tracker.add_episode(win_flag, win_length)
                 if (
                     self._reward_robust_clip_fraction is not None
                     and math.isfinite(self._reward_robust_clip_fraction)
@@ -4605,6 +4627,41 @@ class DistributionalPPO(RecurrentPPO):
             self._last_rollout_entropy_raw = entropy_raw_sum / float(entropy_raw_count)
         else:
             self._last_rollout_entropy_raw = self._last_rollout_entropy
+
+        winrate_stats = winrate_tracker.summary()
+        if winrate_stats is not None:
+            self._last_rollout_win_stats = winrate_stats
+            self.logger.record("rollout/win_rate", float(winrate_stats.win_rate))
+            self.logger.record(
+                "rollout/win_rate_wilson_low", float(winrate_stats.wilson_low)
+            )
+            self.logger.record(
+                "rollout/win_rate_wilson_high", float(winrate_stats.wilson_high)
+            )
+            self.logger.record(
+                "rollout/win_rate_cp_low", float(winrate_stats.clopper_pearson_low)
+            )
+            self.logger.record(
+                "rollout/win_rate_cp_high", float(winrate_stats.clopper_pearson_high)
+            )
+            self.logger.record(
+                "rollout/win_rate_total_episodes", float(winrate_stats.total_episodes)
+            )
+            self.logger.record(
+                "rollout/win_rate_total_wins", float(winrate_stats.total_wins)
+            )
+            self.logger.record(
+                "rollout/steps_to_win_mean", float(winrate_stats.steps_to_win_mean)
+            )
+            self.logger.record(
+                "rollout/steps_to_win_median", float(winrate_stats.steps_to_win_median)
+            )
+            self.logger.record(
+                "rollout/steps_to_win_min", float(winrate_stats.steps_to_win_min)
+            )
+            self.logger.record(
+                "rollout/steps_to_win_max", float(winrate_stats.steps_to_win_max)
+            )
 
         return True
 
