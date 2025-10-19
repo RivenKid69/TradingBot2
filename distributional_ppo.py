@@ -3126,6 +3126,8 @@ class DistributionalPPO(RecurrentPPO):
         self._vf_coef_target = vf_coef_target_value
         self._vf_coef_warmup = vf_coef_warmup_value
         self._vf_coef_warmup_updates = vf_coef_warmup_updates_value
+        self._vf_bad_explained_scale = vf_bad_explained_scale_value
+        self._vf_bad_explained_floor = vf_bad_explained_floor_value
         self._bad_explained_patience = bad_explained_patience_value
         self._bad_explained_counter = 0
         self._last_explained_variance: Optional[float] = None
@@ -3844,7 +3846,21 @@ class DistributionalPPO(RecurrentPPO):
         last_ev = self._last_explained_variance
         if last_ev is None:
             return base
-        return base
+        threshold = float(self._vf_bad_explained_floor)
+        if last_ev >= threshold:
+            return base
+
+        scale = max(float(self._vf_bad_explained_scale), 0.0)
+        if scale >= 1.0:
+            return base
+
+        scaled = base * scale
+        floor_value = float(self._vf_bad_explained_floor)
+        if floor_value > 0.0:
+            scaled = max(scaled, floor_value)
+
+        scaled = min(scaled, base)
+        return float(max(scaled, 0.0))
 
     def _compute_entropy_boost(self, nominal_ent_coef: float) -> float:
         if self._bad_explained_counter <= max(0, self._bad_explained_patience):
