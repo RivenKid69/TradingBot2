@@ -2811,7 +2811,7 @@ def objective(trial: optuna.Trial,
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
-    fallback_value_scale_max_rel_step = 0.35
+    fallback_value_scale_max_rel_step = 0.15
     if (
         value_scale_max_rel_step_cfg is None
         or not math.isfinite(value_scale_max_rel_step_cfg)
@@ -2835,7 +2835,7 @@ def objective(trial: optuna.Trial,
     params["value_scale_window_updates"] = (
         value_scale_window_updates_cfg
         if value_scale_window_updates_cfg is not None
-        else 0
+        else 16
     )
     params["value_scale_warmup_updates"] = (
         value_scale_warmup_updates_cfg
@@ -2845,7 +2845,11 @@ def objective(trial: optuna.Trial,
     params["value_scale_freeze_after"] = value_scale_freeze_after_cfg
     params["value_scale_freeze_after_updates"] = value_scale_freeze_after_updates_cfg
     params["value_scale_never_freeze"] = value_scale_never_freeze_cfg
-    params["value_scale_target_ema_beta"] = value_scale_target_scale_ema_beta_cfg
+    params["value_scale_target_ema_beta"] = (
+        value_scale_target_scale_ema_beta_cfg
+        if value_scale_target_scale_ema_beta_cfg is not None
+        else 0.9
+    )
     params["value_scale_max_change_pct"] = value_scale_max_change_pct_cfg
     params["value_scale_range_max_rel_step"] = value_scale_range_max_rel_step_cfg
     params["value_scale_stability_patience"] = value_scale_stability_patience_cfg

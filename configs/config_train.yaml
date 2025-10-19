@@ -132,14 +132,14 @@ model:
     v_range_ema_alpha: 0.005
     value_scale:
       ema_beta: 0.9
-      max_rel_step: 0.35
+      max_rel_step: 0.15
       std_floor: 0.01
-      window_updates: 8
+      window_updates: 16
       warmup_updates: 6
       freeze_after_updates: 7
       never_freeze: false
       max_change_pct: 0.06
-      target_scale_ema_beta: 0.75
+      target_scale_ema_beta: 0.9
       range_max_rel_step: 0.25
       freeze_after: null
       stability:
