@@ -755,12 +755,22 @@ class PopArtController:
             and self._within_tolerance(delta_std, baseline_std_ref, abs_tol=1e-5, rel_tol=1e-6)
         ):
             if self._ev_reference is None or ev_after + 1e-9 >= self._ev_reference:
+                shadow_mean = self._shadow_mean if self._shadow_mean is not None else candidate_mean
+                shadow_std = self._shadow_std if self._shadow_std is not None else candidate_std
+                self._log("scale/ret_mean_before_mode_switch", float(ret_mean))
+                self._log("scale/ret_std_before_mode_switch", float(ret_std))
+                self._log("scale/popart_ret_mean_before_mode_switch", float(shadow_mean))
+                self._log("scale/popart_ret_std_before_mode_switch", float(shadow_std))
                 self.mode = "live"
                 self._log("popart/mode", "live")
                 self._log("popart/mode_live", 1.0)
                 self.apply_count = 0
                 self._ev_reference = None
                 self._pass_streak = 0
+                self._log("scale/ret_mean_after_mode_switch", float(candidate_mean))
+                self._log("scale/ret_std_after_mode_switch", float(candidate_std))
+                self._log("scale/popart_ret_mean_after_mode_switch", float(candidate_mean))
+                self._log("scale/popart_ret_std_after_mode_switch", float(candidate_std))
 
         return metrics
 
@@ -2301,11 +2311,26 @@ class DistributionalPPO(RecurrentPPO):
         mask_tensor: Optional[torch.Tensor] = None,
         y_true_tensor_raw: Optional[torch.Tensor] = None,
         variance_floor: float = 1e-8,
-    ) -> tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]:
-        """Return explained variance and flattened tensors used for evaluation."""
+        record_fallback: bool = True,
+    ) -> tuple[
+        Optional[float],
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+        dict[str, float],
+    ]:
+        """Return explained variance, flattened tensors, and diagnostic metrics."""
+
+        metrics: dict[str, float] = {
+            "n_samples": 0.0,
+            "corr": float("nan"),
+            "bias": float("nan"),
+            "bias_rel": float("nan"),
+            "std_true": float("nan"),
+            "std_pred": float("nan"),
+        }
 
         if y_true_tensor is None or y_pred_tensor is None:
-            return None, None, None
+            return None, None, None, metrics
 
         y_true_flat = y_true_tensor.flatten()
         y_pred_flat = y_pred_tensor.flatten()
@@ -2313,7 +2338,7 @@ class DistributionalPPO(RecurrentPPO):
         if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
             empty_true = y_true_flat.detach()
             empty_pred = y_pred_flat.detach()
-            return None, empty_true, empty_pred
+            return None, empty_true, empty_pred, metrics
 
         mask_flat: Optional[torch.Tensor]
         selected_indices: Optional[torch.Tensor] = None
@@ -2324,7 +2349,7 @@ class DistributionalPPO(RecurrentPPO):
             if min_elems == 0:
                 empty = y_true_flat.new_zeros(0)
                 empty_detached = empty.detach()
-                return None, empty_detached, empty_detached
+                return None, empty_detached, empty_detached, metrics
             y_true_flat = y_true_flat[:min_elems]
             y_pred_flat = y_pred_flat[:min_elems]
             mask_flat = mask_flat[:min_elems]
@@ -2337,21 +2362,21 @@ class DistributionalPPO(RecurrentPPO):
             else:
                 empty = y_true_flat.new_zeros(0)
                 empty_detached = empty.detach()
-                return None, empty_detached, empty_detached
+                return None, empty_detached, empty_detached, metrics
         else:
             mask_flat = None
             min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
             if min_elems == 0:
                 empty = y_true_flat.new_zeros(0)
                 empty_detached = empty.detach()
-                return None, empty_detached, empty_detached
+                return None, empty_detached, empty_detached, metrics
             y_true_flat = y_true_flat[:min_elems]
             y_pred_flat = y_pred_flat[:min_elems]
 
         y_true_eval = y_true_flat.detach()
         y_pred_eval = y_pred_flat.detach()
         if y_true_eval.numel() == 0 or y_pred_eval.numel() == 0:
-            return None, y_true_eval, y_pred_eval
+            return None, y_true_eval, y_pred_eval, metrics
 
         weights_np: Optional[np.ndarray] = None
         if mask_flat is not None and mask_flat.numel() > 0:
@@ -2360,6 +2385,9 @@ class DistributionalPPO(RecurrentPPO):
         y_true_np = y_true_eval.cpu().numpy()
         y_pred_np = y_pred_eval.cpu().numpy()
         primary_ev = safe_explained_variance(y_true_np, y_pred_np, weights_np)
+
+        eval_y_np = y_true_np
+        eval_pred_np = y_pred_np
 
         def _weighted_variance(values: np.ndarray, weights: Optional[np.ndarray]) -> float:
             values64 = np.asarray(values, dtype=np.float64).reshape(-1)
@@ -2441,20 +2469,119 @@ class DistributionalPPO(RecurrentPPO):
                 if math.isfinite(fallback_ev):
                     explained_var = float(fallback_ev)
                     fallback_used = True
-                    logger = getattr(self, "logger", None)
-                    if logger is not None:
-                        logger.record("train/value_explained_variance_fallback", 1.0)
+                    eval_y_np = y_true_raw_np
+                    eval_pred_np = y_pred_raw_np
+                    if record_fallback:
+                        logger = getattr(self, "logger", None)
+                        if logger is not None:
+                            logger.record("train/value_explained_variance_fallback", 1.0)
 
         if explained_var is None:
             if need_fallback:
-                logger = getattr(self, "logger", None)
-                if logger is not None and fallback_used is False:
-                    logger.record("train/value_explained_variance_fallback", 0.0)
-                return None, y_true_eval, y_pred_eval
+                if record_fallback:
+                    logger = getattr(self, "logger", None)
+                    if logger is not None and fallback_used is False:
+                        logger.record("train/value_explained_variance_fallback", 0.0)
+                return None, y_true_eval, y_pred_eval, metrics
 
             explained_var = float(primary_ev)
 
-        return float(explained_var), y_true_eval, y_pred_eval
+        eval_true64 = np.asarray(eval_y_np, dtype=np.float64).reshape(-1)
+        eval_pred64 = np.asarray(eval_pred_np, dtype=np.float64).reshape(-1)
+
+        def _compute_weighted_stats(
+            values_true: np.ndarray,
+            values_pred: np.ndarray,
+            weights: Optional[np.ndarray],
+        ) -> None:
+            nonlocal metrics
+
+            true_vals = np.asarray(values_true, dtype=np.float64).reshape(-1)
+            pred_vals = np.asarray(values_pred, dtype=np.float64).reshape(-1)
+            limit = min(true_vals.size, pred_vals.size)
+            if limit == 0:
+                metrics["n_samples"] = 0.0
+                return
+            true_vals = true_vals[:limit]
+            pred_vals = pred_vals[:limit]
+
+            if weights is None:
+                finite_mask = np.isfinite(true_vals) & np.isfinite(pred_vals)
+                if not np.any(finite_mask):
+                    metrics["n_samples"] = 0.0
+                    return
+                true_vals = true_vals[finite_mask]
+                pred_vals = pred_vals[finite_mask]
+                weight_vals: Optional[np.ndarray] = None
+            else:
+                weight_vals = np.asarray(weights, dtype=np.float64).reshape(-1)
+                weight_vals = weight_vals[:limit]
+                finite_mask = (
+                    np.isfinite(true_vals)
+                    & np.isfinite(pred_vals)
+                    & np.isfinite(weight_vals)
+                    & (weight_vals > 0.0)
+                )
+                if not np.any(finite_mask):
+                    metrics["n_samples"] = 0.0
+                    return
+                true_vals = true_vals[finite_mask]
+                pred_vals = pred_vals[finite_mask]
+                weight_vals = weight_vals[finite_mask]
+
+            sample_count = int(true_vals.size)
+            metrics["n_samples"] = float(sample_count)
+            if sample_count == 0:
+                return
+
+            if weight_vals is None:
+                mean_true = float(np.mean(true_vals))
+                mean_pred = float(np.mean(pred_vals))
+                diff = true_vals - pred_vals
+                bias_value = float(np.mean(diff))
+                var_true = float(np.var(true_vals))
+                var_pred = float(np.var(pred_vals))
+                if sample_count >= 2:
+                    corr_matrix = np.corrcoef(true_vals, pred_vals)
+                    corr_value = float(corr_matrix[0, 1])
+                else:
+                    corr_value = float("nan")
+            else:
+                sum_w = float(np.sum(weight_vals))
+                if not math.isfinite(sum_w) or sum_w <= 0.0:
+                    metrics["n_samples"] = 0.0
+                    return
+                mean_true = float(np.sum(weight_vals * true_vals) / sum_w)
+                mean_pred = float(np.sum(weight_vals * pred_vals) / sum_w)
+                diff_true = true_vals - mean_true
+                diff_pred = pred_vals - mean_pred
+                bias_value = float(np.sum(weight_vals * (true_vals - pred_vals)) / sum_w)
+                var_true = float(np.sum(weight_vals * diff_true * diff_true) / sum_w)
+                var_pred = float(np.sum(weight_vals * diff_pred * diff_pred) / sum_w)
+                cov_value = float(np.sum(weight_vals * diff_true * diff_pred) / sum_w)
+                if var_true > 0.0 and var_pred > 0.0:
+                    corr_value = cov_value / math.sqrt(var_true * var_pred)
+                else:
+                    corr_value = float("nan")
+
+            std_true = math.sqrt(var_true) if var_true >= 0.0 else float("nan")
+            std_pred = math.sqrt(var_pred) if var_pred >= 0.0 else float("nan")
+            abs_bias_rel = float("nan")
+            if math.isfinite(std_true) and std_true > 0.0 and math.isfinite(bias_value):
+                abs_bias_rel = abs(bias_value) / std_true
+
+            if math.isfinite(corr_value):
+                corr_value = max(min(corr_value, 1.0), -1.0)
+
+            metrics["corr"] = corr_value
+            metrics["bias"] = bias_value
+            metrics["bias_rel"] = abs_bias_rel
+            metrics["std_true"] = std_true
+            metrics["std_pred"] = std_pred
+
+        _compute_weighted_stats(eval_true64, eval_pred64, weights_np)
+
+        return float(explained_var), y_true_eval, y_pred_eval, metrics
 
     def _summarize_recent_return_stats(
         self,
@@ -6614,6 +6741,35 @@ class DistributionalPPO(RecurrentPPO):
         mask_tensor_for_ev: Optional[torch.Tensor] = None
         y_true_tensor_raw: Optional[torch.Tensor] = None
 
+        def _concat_batches(batches: Sequence[torch.Tensor]) -> Optional[torch.Tensor]:
+            filtered: list[torch.Tensor] = []
+            for tensor in batches:
+                if tensor is None or tensor.numel() == 0:
+                    continue
+                filtered.append(tensor.reshape(-1, 1))
+            if not filtered:
+                return None
+            return torch.cat(filtered, dim=0)
+
+        train_ev_value: Optional[float] = None
+        primary_true_tensor = _concat_batches(value_target_batches_norm)
+        primary_pred_tensor = _concat_batches(value_pred_batches_norm)
+        primary_raw_tensor = _concat_batches(value_target_batches_raw)
+        primary_mask_tensor = _concat_batches(value_weight_batches)
+        if primary_true_tensor is not None and primary_pred_tensor is not None:
+            (
+                train_ev_value,
+                _,
+                _,
+                _,
+            ) = self._compute_explained_variance_metric(
+                primary_true_tensor,
+                primary_pred_tensor,
+                mask_tensor=primary_mask_tensor,
+                y_true_tensor_raw=primary_raw_tensor,
+                record_fallback=False,
+            )
+
         (
             y_true_tensor,
             y_pred_tensor,
@@ -6633,8 +6789,14 @@ class DistributionalPPO(RecurrentPPO):
         explained_var: Optional[float] = None
         ev_true_flat: Optional[torch.Tensor] = None
         ev_pred_flat: Optional[torch.Tensor] = None
+        ev_metrics: dict[str, float] = {}
         if y_true_tensor is not None and y_pred_tensor is not None:
-            explained_var, ev_true_flat, ev_pred_flat = self._compute_explained_variance_metric(
+            (
+                explained_var,
+                ev_true_flat,
+                ev_pred_flat,
+                ev_metrics,
+            ) = self._compute_explained_variance_metric(
                 y_true_tensor,
                 y_pred_tensor,
                 mask_tensor=mask_tensor_for_ev,
@@ -6655,6 +6817,33 @@ class DistributionalPPO(RecurrentPPO):
                             reduction="mean",
                         ).item()
                     )
+
+        ev_n_samples = ev_metrics.get("n_samples") if ev_metrics else None
+        if ev_n_samples is not None and math.isfinite(ev_n_samples):
+            self.logger.record("train/ev/n_samples", float(ev_n_samples))
+
+        corr_value = ev_metrics.get("corr") if ev_metrics else None
+        if corr_value is not None and math.isfinite(corr_value):
+            self.logger.record("train/ev/corr", float(corr_value))
+
+        bias_value = ev_metrics.get("bias") if ev_metrics else None
+        if bias_value is not None and math.isfinite(bias_value):
+            self.logger.record("train/ev/bias", float(bias_value))
+
+        bias_rel = ev_metrics.get("bias_rel") if ev_metrics else None
+        if bias_rel is not None and math.isfinite(bias_rel):
+            self.logger.record("train/ev/bias_rel", float(bias_rel))
+
+        std_true = ev_metrics.get("std_true") if ev_metrics else None
+        if std_true is not None and math.isfinite(std_true):
+            self.logger.record("train/value/std_true", float(std_true))
+
+        std_pred = ev_metrics.get("std_pred") if ev_metrics else None
+        if std_pred is not None and math.isfinite(std_pred):
+            self.logger.record("train/value/std_pred", float(std_pred))
+
+        if train_ev_value is not None and math.isfinite(train_ev_value):
+            self.logger.record("train/ev/on_train_batch", float(train_ev_value))
 
         if (
             self._use_quantile_value

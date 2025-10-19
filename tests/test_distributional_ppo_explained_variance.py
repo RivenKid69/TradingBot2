@@ -2,6 +2,7 @@ import math
 from types import SimpleNamespace
 from typing import Any
 
+import numpy as np
 import pytest
 import torch
 
@@ -88,7 +89,7 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
     y_true_raw = torch.tensor([[0.5], [1.0], [1.5]], dtype=torch.float32)
     mask = torch.ones_like(y_true_norm)
 
-    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+    ev_value, y_true_eval, y_pred_eval, metrics = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
         mask_tensor=mask,
@@ -111,6 +112,9 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
     )
     assert expected_ev == pytest.approx(-3.0)
     assert ev_value == pytest.approx(expected_ev)
+    assert metrics["n_samples"] == pytest.approx(3.0)
+    expected_bias = float(np.mean((y_true_raw - y_pred_raw).numpy()))
+    assert metrics["bias"] == pytest.approx(expected_bias)
 
 
 def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
@@ -133,7 +137,7 @@ def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
     y_true_raw = torch.arange(4, dtype=torch.float32).view(-1, 1)
     mask = torch.ones_like(y_true_norm)
 
-    ev_value, _, _ = algo._compute_explained_variance_metric(
+    ev_value, _, _, _ = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
         mask_tensor=mask,
@@ -171,7 +175,7 @@ def test_explained_variance_metric_retains_primary_path_with_small_variance() ->
     y_pred_norm = torch.tensor([[0.25], [0.75]], dtype=torch.float32)
     mask = torch.tensor([[1.0e12], [1.0]], dtype=torch.float32)
 
-    ev_value, _, _ = algo._compute_explained_variance_metric(
+    ev_value, _, _, _ = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
         mask_tensor=mask,
@@ -195,7 +199,7 @@ def test_explained_variance_metric_returns_none_with_empty_mask() -> None:
     y_pred_norm = torch.tensor([[0.5], [1.5]], dtype=torch.float32)
     mask = torch.zeros_like(y_true_norm)
 
-    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+    ev_value, y_true_eval, y_pred_eval, _ = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
         mask_tensor=mask,
@@ -212,7 +216,7 @@ def test_explained_variance_metric_returns_none_with_empty_inputs() -> None:
     y_true_norm = torch.tensor([], dtype=torch.float32)
     y_pred_norm = torch.tensor([], dtype=torch.float32)
 
-    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+    ev_value, y_true_eval, y_pred_eval, _ = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
     )
@@ -229,7 +233,7 @@ def test_explained_variance_metric_returns_none_for_degenerate_variance() -> Non
     y_pred_norm = torch.zeros_like(y_true_norm)
     mask = torch.ones_like(y_true_norm)
 
-    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+    ev_value, y_true_eval, y_pred_eval, _ = algo._compute_explained_variance_metric(
         y_true_norm,
         y_pred_norm,
         mask_tensor=mask,
