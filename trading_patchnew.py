@@ -735,6 +735,16 @@ class TradingEnv(gym.Env):
         except Exception:
             pass
 
+        if math.isfinite(mark_price) and mark_price > 0.0:
+            try:
+                self.last_mtm_price = float(mark_price)
+            except Exception:
+                pass
+            try:
+                setattr(self._mediator, "last_mtm_price", float(mark_price))
+            except Exception:
+                pass
+
         peak_value = self._safe_float(getattr(state, "peak_value", net_worth))
         if peak_value is None or net_worth > peak_value:
             try:
