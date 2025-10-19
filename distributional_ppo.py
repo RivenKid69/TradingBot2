@@ -131,6 +131,59 @@ def unwrap_vec_normalize(env: VecEnv) -> Optional[VecNormalize]:
     return None
 
 
+def _compute_returns_with_time_limits(
+    rollout_buffer: RecurrentRolloutBuffer,
+    last_values: torch.Tensor,
+    dones: np.ndarray,
+    gamma: float,
+    gae_lambda: float,
+    time_limit_mask: np.ndarray,
+    time_limit_bootstrap: np.ndarray,
+) -> None:
+    """Compute GAE/returns with TimeLimit bootstrap support."""  # FIX
+
+    rewards = np.asarray(rollout_buffer.rewards, dtype=np.float32)
+    values = np.asarray(rollout_buffer.values, dtype=np.float32)
+    episode_starts = np.asarray(rollout_buffer.episode_starts, dtype=np.float32)
+
+    if rewards.ndim != 2 or values.ndim != 2:
+        raise ValueError("Rollout buffer must store rewards and values as 2D arrays")
+
+    buffer_size, n_envs = rewards.shape
+    advantages = np.zeros((buffer_size, n_envs), dtype=np.float32)
+
+    last_values_np = last_values.detach().cpu().numpy()
+    last_values_np = np.asarray(last_values_np, dtype=np.float32).reshape(n_envs)
+    dones_float = np.asarray(dones, dtype=np.float32).reshape(n_envs)
+
+    if time_limit_mask.shape != (buffer_size, n_envs):
+        raise ValueError("TimeLimit mask must match rollout buffer dimensions")
+    if time_limit_bootstrap.shape != (buffer_size, n_envs):
+        raise ValueError("TimeLimit bootstrap values must match rollout buffer dimensions")
+
+    last_gae_lam = np.zeros(n_envs, dtype=np.float32)
+
+    for step in reversed(range(buffer_size)):
+        if step == buffer_size - 1:
+            next_non_terminal = 1.0 - dones_float
+            next_values = last_values_np.copy()
+        else:
+            next_non_terminal = 1.0 - episode_starts[step + 1].astype(np.float32)
+            next_values = values[step + 1].astype(np.float32).copy()
+
+        mask = time_limit_mask[step]
+        if np.any(mask):
+            next_non_terminal = np.where(mask, 1.0, next_non_terminal)
+            next_values = np.where(mask, time_limit_bootstrap[step], next_values)
+
+        delta = rewards[step] + gamma * next_values * next_non_terminal - values[step]
+        last_gae_lam = delta + gamma * gae_lambda * next_non_terminal * last_gae_lam
+        advantages[step] = last_gae_lam
+
+    rollout_buffer.advantages = advantages.astype(np.float32, copy=False)
+    rollout_buffer.returns = (advantages + values).astype(np.float32, copy=False)
+
+
 def safe_explained_variance(
     y_true: np.ndarray, y_pred: np.ndarray, weights: Optional[np.ndarray] = None
 ) -> float:
@@ -359,7 +412,7 @@ class PopArtHoldoutBatch(NamedTuple):
     episode_starts: torch.Tensor
     """Binary indicator marking episode boundaries for recurrent critics."""
 
-    lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]]
+    lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
     """Initial recurrent state associated with ``observations`` if applicable."""
 
     mask: Optional[torch.Tensor] = None
@@ -410,7 +463,7 @@ class PopArtController:
         warmup_updates: int = 4,
         max_rel_step: float = 0.04,
         ev_floor: float = 0.3,
-        ret_std_band: tuple[float, float] = (0.5, 0.9),
+        ret_std_band: Tuple[float, float] = (0.5, 0.9),
         gate_patience: int = 2,
         holdout_loader: Optional[Callable[[], Optional[PopArtHoldoutBatch]]] = None,
         logger: Optional[Any] = None,
@@ -480,7 +533,7 @@ class PopArtController:
     @staticmethod
     def _weighted_mean_std(
         values: np.ndarray, weights: Optional[np.ndarray]
-    ) -> tuple[float, float]:
+    ) -> Tuple[float, float]:
         values64 = np.asarray(values, dtype=np.float64).reshape(-1)
         if values64.size == 0:
             return float("nan"), float("nan")
@@ -1291,8 +1344,9 @@ class DistributionalPPO(RecurrentPPO):
 
     @staticmethod
     def _clone_states_to_device(
-        states: Optional[RNNStates | tuple[torch.Tensor, ...]], device: torch.device
-    ) -> Optional[RNNStates | tuple[torch.Tensor, ...]]:
+        states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]],
+        device: torch.device,
+    ) -> Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]:
         if states is None:
             return None
 
@@ -1317,8 +1371,8 @@ class DistributionalPPO(RecurrentPPO):
 
     @staticmethod
     def _extract_actor_states(
-        states: Optional[RNNStates | tuple[torch.Tensor, ...]]
-    ) -> Optional[tuple[torch.Tensor, ...]]:
+        states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
+    ) -> Optional[Tuple[torch.Tensor, ...]]:
         if states is None:
             return None
 
@@ -1330,7 +1384,7 @@ class DistributionalPPO(RecurrentPPO):
     def _policy_value_outputs(
         self,
         obs: torch.Tensor,
-        lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]],
+        lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]],
         episode_starts: torch.Tensor,
     ) -> torch.Tensor:
         """Return critic head outputs for PopArt evaluation across value head types."""
@@ -1359,7 +1413,7 @@ class DistributionalPPO(RecurrentPPO):
     @staticmethod
     def _value_target_outlier_fractions(
         values: torch.Tensor, support_min: float, support_max: float
-    ) -> tuple[float, float]:
+    ) -> Tuple[float, float]:
         if values.numel() == 0:
             return 0.0, 0.0
 
@@ -1585,7 +1639,7 @@ class DistributionalPPO(RecurrentPPO):
 
     def _compute_empirical_cvar(
         self, raw_rewards: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Winsorise raw rewards and estimate empirical CVaR in fraction units."""
 
         if raw_rewards.numel() == 0:
@@ -2225,7 +2279,7 @@ class DistributionalPPO(RecurrentPPO):
 
     def _extract_rms_stats(
         self, rms: Optional[RunningMeanStd]
-    ) -> Optional[tuple[float, float, float]]:
+    ) -> Optional[Tuple[float, float, float]]:
         if rms is None:
             return None
         count = float(rms.count)
@@ -2269,7 +2323,7 @@ class DistributionalPPO(RecurrentPPO):
         reserve_preds_norm: Sequence[torch.Tensor],
         reserve_targets_raw: Sequence[torch.Tensor],
         reserve_weight_batches: Sequence[torch.Tensor],
-    ) -> tuple[
+    ) -> Tuple[
         Optional[torch.Tensor],
         Optional[torch.Tensor],
         Optional[torch.Tensor],
@@ -2997,7 +3051,7 @@ class DistributionalPPO(RecurrentPPO):
         optimizer_lr_max: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
-        self._last_lstm_states: Optional[RNNStates | tuple[torch.Tensor, ...]] = None
+        self._last_lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]] = None
         self._last_rollout_entropy: float = 0.0
         self._last_rollout_entropy_raw: float = 0.0
         self._update_calls: int = 0
@@ -3055,7 +3109,7 @@ class DistributionalPPO(RecurrentPPO):
         )
         self._popart_controller: Optional[PopArtController] = None
         self._popart_shadow_metrics: Optional[PopArtCandidateMetrics] = None
-        self._popart_last_stats: Optional[tuple[float, float]] = None
+        self._popart_last_stats: Optional[Tuple[float, float]] = None
         self._popart_config_logs: dict[str, Any] = {}
 
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
@@ -4566,10 +4620,97 @@ class DistributionalPPO(RecurrentPPO):
         reward_costs_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_cap_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
+        time_limit_mask = np.zeros((buffer_size, n_envs), dtype=bool)  # FIX
+        time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)  # FIX
         base_reward_scale = self._resolve_value_scale_safe()
         winrate_tracker = WinRateAccumulator(
             confidence_level=float(getattr(self, "_winrate_confidence_level", 0.95))
         )
+
+        def _select_value_states(env_index: int) -> Optional[Tuple[torch.Tensor, ...]]:
+            states = self._clone_states_to_device(self._last_lstm_states, self.device)
+            if states is None:
+                return None
+
+            def _slice_tensor(tensor: torch.Tensor) -> torch.Tensor:
+                if tensor.ndim >= 2:
+                    return tensor[:, env_index : env_index + 1, ...].detach().clone()
+                if tensor.ndim == 1:
+                    return tensor.unsqueeze(1).detach().clone()
+                return tensor.detach().clone()
+
+            if hasattr(states, "vf") and getattr(states, "vf", None) is not None:
+                return tuple(_slice_tensor(t) for t in states.vf)  # type: ignore[attr-defined]
+
+            if isinstance(states, tuple) and len(states) == 2 and all(
+                isinstance(item, (list, tuple)) for item in states
+            ):
+                vf_states = states[1]
+                return tuple(_slice_tensor(t) for t in vf_states if isinstance(t, torch.Tensor))
+
+            if isinstance(states, (list, tuple)):
+                return tuple(
+                    _slice_tensor(t) for t in states if isinstance(t, torch.Tensor)
+                )
+
+            return None
+
+        def _evaluate_time_limit_value(env_index: int, terminal_obs: Any) -> Optional[float]:
+            value_states = _select_value_states(env_index)
+            if not value_states:
+                return None
+
+            try:
+                obs_tensor = self.policy.obs_to_tensor(terminal_obs)[0]
+            except Exception:
+                return None
+
+            if isinstance(obs_tensor, torch.Tensor):
+                obs_tensor = obs_tensor.to(self.device)
+            else:
+                return None
+
+            batch_shape = obs_tensor.shape[0]
+            episode_starts_tensor = torch.zeros(
+                (batch_shape,), dtype=torch.float32, device=self.device
+            )
+
+            with torch.no_grad():
+                value_pred = self.policy.predict_values(
+                    obs_tensor, value_states, episode_starts_tensor
+                )
+
+            if value_pred is None:
+                return None
+
+            value_tensor = value_pred.reshape(-1)[:1]
+            if value_tensor.numel() == 0:
+                return None
+
+            if self.normalize_returns:
+                ret_std_tensor = value_tensor.new_tensor(self._ret_std_snapshot)
+                ret_mu_tensor = value_tensor.new_tensor(self._ret_mean_snapshot)
+                scalar_tensor = (value_tensor * ret_std_tensor + ret_mu_tensor) / self.value_target_scale
+            else:
+                scalar_tensor = value_tensor
+                if self._value_clip_limit_scaled is not None:
+                    scalar_tensor = torch.clamp(
+                        scalar_tensor,
+                        min=-self._value_clip_limit_scaled,
+                        max=self._value_clip_limit_scaled,
+                    )
+                scalar_raw = self._to_raw_returns(scalar_tensor)
+                if self._value_clip_limit_unscaled is not None:
+                    scalar_raw = torch.clamp(
+                        scalar_raw,
+                        min=-self._value_clip_limit_unscaled,
+                        max=self._value_clip_limit_unscaled,
+                    )
+                scalar_tensor = scalar_raw / base_reward_scale
+
+            return float(scalar_tensor.squeeze().detach().cpu().item())
+
+        dones = np.zeros(n_envs, dtype=bool)
 
         while n_steps < n_rollout_steps:
             raw_actions_tensor: Optional[torch.Tensor] = None
@@ -4781,6 +4922,21 @@ class DistributionalPPO(RecurrentPPO):
                 log_prob_raw=old_log_prob_raw_tensor,
             )
 
+            buffer_index = (rollout_buffer.pos - 1) % buffer_size
+            for env_idx, info in enumerate(infos):
+                if not isinstance(info, Mapping):
+                    continue
+                if not info.get("time_limit_truncated"):
+                    continue
+                terminal_obs = info.get("terminal_observation")
+                if terminal_obs is None:
+                    continue
+                bootstrap_value = _evaluate_time_limit_value(env_idx, terminal_obs)
+                if bootstrap_value is None or not np.isfinite(bootstrap_value):
+                    continue
+                time_limit_mask[buffer_index, env_idx] = True  # FIX
+                time_limit_bootstrap[buffer_index, env_idx] = float(bootstrap_value)  # FIX
+
             entropy_loss_total += float(-log_probs.mean().item())
             entropy_loss_count += 1
 
@@ -4852,7 +5008,15 @@ class DistributionalPPO(RecurrentPPO):
                 )
             last_scalar_values = last_scalar_raw / base_reward_scale
 
-        rollout_buffer.compute_returns_and_advantage(last_values=last_scalar_values, dones=dones)
+        _compute_returns_with_time_limits(
+            rollout_buffer=rollout_buffer,
+            last_values=last_scalar_values,
+            dones=dones,
+            gamma=float(self.gamma),
+            gae_lambda=float(self.gae_lambda),
+            time_limit_mask=time_limit_mask,
+            time_limit_bootstrap=time_limit_bootstrap,
+        )  # FIX
         callback.on_rollout_end()
 
         if entropy_loss_count > 0:

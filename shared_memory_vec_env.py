@@ -11,6 +11,7 @@ from gymnasium import spaces
 from gymnasium.spaces.utils import flatten, flatten_space, unflatten
 import atexit, signal
 from typing import Any
+import copy  # FIX: нужен для сохранения terminal_observation при TimeLimit
 try:
     from multiprocessing.context import BrokenBarrierError
 except Exception:  # Python 3.12: no BrokenBarrierError in multiprocessing
@@ -112,6 +113,23 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
                     action = actions_np[rank]
                 obs, reward, terminated, truncated, info = env.step(action)
                 done = terminated or truncated
+
+                if truncated:
+                    # FIX: сохраняем терминальное состояние для корректного бутстраппинга GAE
+                    info = dict(info or {})
+
+                    if isinstance(obs, np.ndarray):
+                        term_obs = obs.copy()
+                    elif isinstance(obs, dict):
+                        term_obs = {
+                            key: (value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value))
+                            for key, value in obs.items()
+                        }
+                    else:
+                        term_obs = copy.deepcopy(obs)
+
+                    info["terminal_observation"] = term_obs
+                    info["time_limit_truncated"] = True
 
                 if done:
                     obs, _ = env.reset() # Внутренний авто-сброс после завершения эпизода
