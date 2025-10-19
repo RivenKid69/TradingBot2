@@ -2811,7 +2811,7 @@ def objective(trial: optuna.Trial,
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
-    fallback_value_scale_max_rel_step = 0.35
+    fallback_value_scale_max_rel_step = 0.15
     if (
         value_scale_max_rel_step_cfg is None
         or not math.isfinite(value_scale_max_rel_step_cfg)
