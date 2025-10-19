@@ -266,7 +266,7 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
     model._pending_ret_std = None
     model._value_scale_ema_beta = 0.2
     model._value_scale_max_rel_step = 0.5
-    model._value_scale_std_floor = 1e-2
+    model._value_scale_std_floor = 3e-3
     model._value_scale_window_updates = 0
     model._value_scale_recent_stats = deque()
     model._value_scale_stats_initialized = True
@@ -374,7 +374,7 @@ def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     model._pending_ret_std = None
     model._value_scale_ema_beta = 0.2
     model._value_scale_max_rel_step = 0.5
-    model._value_scale_std_floor = 1e-2
+    model._value_scale_std_floor = 3e-3
     model._value_scale_window_updates = 0
     model._value_scale_recent_stats = deque()
     model._value_scale_stats_initialized = True

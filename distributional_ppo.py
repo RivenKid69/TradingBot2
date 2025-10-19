@@ -3397,7 +3397,7 @@ class DistributionalPPO(RecurrentPPO):
         if value_scale_max_rel_step is None:
             raise ValueError("'value_scale.max_rel_step' must be provided")
         if value_scale_std_floor is None:
-            value_scale_std_floor = kwargs_local.pop("value_scale_std_floor", 1e-2)
+            value_scale_std_floor = kwargs_local.pop("value_scale_std_floor", 3e-3)
         if value_scale_window_updates is None:
             value_scale_window_updates = kwargs_local.pop("value_scale_window_updates", 0)
         if value_scale_warmup_updates is None:

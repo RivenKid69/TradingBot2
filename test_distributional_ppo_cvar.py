@@ -314,7 +314,7 @@ def test_cvar_penalty_active_unit_consistency(normalize_returns: bool) -> None:
     if normalize_returns:
         model._ret_mean_snapshot = 0.012
         model._ret_std_snapshot = 0.05
-        model._value_scale_std_floor = 0.01
+        model._value_scale_std_floor = 0.003
     else:
         model._value_target_scale_robust = 0.25
         model.value_target_scale = 0.05
@@ -444,7 +444,7 @@ def test_value_scale_snapshot_prevents_mismatch() -> None:
     model._ret_std_snapshot = snapshot_std
     model._value_scale_ema_beta = 0.5
     model._value_scale_max_rel_step = 0.25
-    model._value_scale_std_floor = 1e-2
+    model._value_scale_std_floor = 3e-3
     model._value_scale_window_updates = 0
     model._value_scale_recent_stats = deque()
     model._value_scale_stats_initialized = True
