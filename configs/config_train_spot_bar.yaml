@@ -57,14 +57,21 @@ risk:
 model:
   algo: "ppo"
   params:
+    learning_rate: 1.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    vf_coef: 0.8
     turnover_penalty_coef: 0.0005
     reward_return_clip: 10.0
     turnover_norm_cap: 1.0
     reward_cap: 10.0
-    value_scale_update_enabled: false
-    value_target_scale_fixed: 0.12
-    clip_range_vf: 0.15
-    gae_lambda: 0.97
+    value_scale_update_enabled: true
+    value_target_scale_fixed: null
+    clip_range_vf: null
+    value_scale:
+      window_updates: 8
+      stability:
+        min_explained_variance: 0.05
     value_scale_controller:
       enabled: false
       mode: "shadow"

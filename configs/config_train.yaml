@@ -51,10 +51,11 @@ model:
   optimizer_lr_min: &default_min_lr 5.0e-6
   scheduler_min_lr: *default_min_lr
   params:
-    learning_rate: 3.0e-4              # ближе к рабочему дефолту PPO
+    learning_rate: 1.0e-4              # осторожно повышаем шаг обучения
     gamma: 0.99
-    gae_lambda: 0.97
+    gae_lambda: 0.95
     clip_range: 0.10                   # не душим обновления (0.1–0.2 норма)
+    clip_range_vf: null                # отключаем клиппинг ценности
     ent_coef: 0.001
     ent_coef_final: 0.001
     ent_coef_decay_steps: 400          # плавнее убывание (≈ первые 30% апдейтов)
@@ -62,7 +63,7 @@ model:
     ent_coef_plateau_window: 24
     ent_coef_plateau_tolerance: 0.002
     ent_coef_plateau_min_updates: 40
-    vf_coef: 0.7
+    vf_coef: 0.8
     # Явно отключаем «raw» лимит ценности (чтобы политика не подставляла ±max(|v_min|,|v_max|)):
     value_clip_limit: null
     vf_coef_warmup: 0
@@ -133,7 +134,7 @@ model:
       ema_beta: 0.9
       max_rel_step: 0.35
       std_floor: 0.01
-      window_updates: 14
+      window_updates: 8
       warmup_updates: 6
       freeze_after_updates: 7
       never_freeze: false
@@ -142,7 +143,7 @@ model:
       range_max_rel_step: 0.25
       freeze_after: null
       stability:
-        min_explained_variance: 0.2
+        min_explained_variance: 0.05
         max_abs_p95: 6.0
         patience: 2
     value_scale_controller:
