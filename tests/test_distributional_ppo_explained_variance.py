@@ -295,3 +295,24 @@ def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
     )
 
     assert eval_result.ev_after == pytest.approx(expected_ev)
+
+
+def test_vf_coef_scales_down_when_explained_variance_is_bad() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._vf_coef_target = 0.8
+    algo._vf_bad_explained_scale = 0.4
+    algo._vf_bad_explained_floor = 0.2
+
+    # Explained variance below the floor should trigger scaling.
+    algo._last_explained_variance = 0.1
+    reduced = algo._compute_vf_coef_value(update_index=0)
+    assert reduced == pytest.approx(0.32)
+
+    # Healthy variance should keep the base coefficient.
+    algo._last_explained_variance = 0.5
+    assert algo._compute_vf_coef_value(update_index=0) == pytest.approx(0.8)
+
+    # Scaling should not push the coefficient beneath the configured floor.
+    algo._vf_bad_explained_scale = 0.0
+    algo._last_explained_variance = -0.5
+    assert algo._compute_vf_coef_value(update_index=0) == pytest.approx(0.2)
