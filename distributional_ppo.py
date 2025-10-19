@@ -186,7 +186,12 @@ def safe_explained_variance(
         if not math.isfinite(var_res_num):
             return float("nan")
         var_res = var_res_num / denom
-        return float(1.0 - var_res / var_y)
+        if not math.isfinite(var_res) or var_res < 0.0:
+            return float("nan")
+        ratio = var_res / var_y
+        if not math.isfinite(ratio):
+            return float("nan")
+        return float(1.0 - ratio)
 
     finite_mask = np.isfinite(y_true64) & np.isfinite(y_pred64)
     if not np.any(finite_mask):
@@ -201,7 +206,10 @@ def safe_explained_variance(
     var_res = float(np.var(y_true64 - y_pred64, ddof=1))
     if not math.isfinite(var_res):
         return float("nan")
-    return float(1.0 - var_res / var_y)
+    ratio = var_res / var_y
+    if not math.isfinite(ratio):
+        return float("nan")
+    return float(1.0 - ratio)
 
 
 def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> torch.Tensor:

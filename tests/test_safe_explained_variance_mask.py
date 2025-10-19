@@ -161,6 +161,22 @@ def test_safe_explained_variance_weighted_unbiased() -> None:
     assert ev_weighted == pytest.approx(ev_truncated)
 
 
+def test_safe_explained_variance_skewed_weights_returns_nan() -> None:
+    module = _load_distributional_ppo_module()
+    safe_ev = module.safe_explained_variance
+
+    y_true = np.array([1.0, 1.0 + 1e-8, 1.0 - 1e-8], dtype=float)
+    y_pred = np.array([0.0, 1e154, -1e154], dtype=float)
+    # Heavily skewed mask weights place almost all mass on the first entry while
+    # leaving tiny but non-zero weights on the extreme residuals. This used to
+    # produce ``-inf`` due to overflow in the weighted ratio.
+    weights = np.array([1.0, 1e-15, 1e-15], dtype=float)
+
+    result = safe_ev(y_true, y_pred, weights)
+
+    assert np.isnan(result)
+
+
 def test_safe_explained_variance_short_mask_returns_nan() -> None:
     module = _load_distributional_ppo_module()
     safe_ev = module.safe_explained_variance
