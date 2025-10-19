@@ -2345,17 +2345,61 @@ class DistributionalPPO(RecurrentPPO):
         primary_ev = safe_explained_variance(y_true_np, y_pred_np, weights_np)
 
         def _weighted_variance(values: np.ndarray, weights: Optional[np.ndarray]) -> float:
+            values64 = np.asarray(values, dtype=np.float64).reshape(-1)
+            if values64.size == 0:
+                return float("nan")
+
             if weights is None:
-                return float(np.var(values))
-            sum_w = float(np.sum(weights))
+                finite_mask = np.isfinite(values64)
+                if not np.any(finite_mask):
+                    return float("nan")
+                values64 = values64[finite_mask]
+                if values64.size <= 1:
+                    return float("nan")
+                return float(np.var(values64, ddof=1))
+
+            weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+            length = min(values64.size, weights64.size)
+            if length == 0:
+                return float("nan")
+            values64 = values64[:length]
+            weights64 = weights64[:length]
+
+            finite_mask = (
+                np.isfinite(values64)
+                & np.isfinite(weights64)
+                & (weights64 > 0.0)
+            )
+            if not np.any(finite_mask):
+                return float("nan")
+            values64 = values64[finite_mask]
+            weights64 = weights64[finite_mask]
+
+            if values64.size == 0:
+                return float("nan")
+
+            sum_w = float(np.sum(weights64))
             if not math.isfinite(sum_w) or sum_w <= 0.0:
-                return 0.0
-            mean_w = float(np.sum(weights * values) / sum_w)
-            var_w = float(np.sum(weights * (values - mean_w) ** 2) / sum_w)
-            return var_w
+                return float("nan")
+
+            sum_w_sq = float(np.sum(weights64**2))
+            denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
+            if denom <= 0.0 or not math.isfinite(denom):
+                return float("nan")
+
+            mean_w = float(np.sum(weights64 * values64) / sum_w)
+            var_num = float(np.sum(weights64 * (values64 - mean_w) ** 2))
+            if not math.isfinite(var_num):
+                return float("nan")
+
+            return var_num / denom
 
         var_y = _weighted_variance(y_true_np, weights_np)
-        need_fallback = (not math.isfinite(primary_ev)) or (var_y <= variance_floor)
+        need_fallback = (
+            (not math.isfinite(primary_ev))
+            or (not math.isfinite(var_y))
+            or (var_y <= variance_floor)
+        )
 
         explained_var: Optional[float] = None
         fallback_used = False
