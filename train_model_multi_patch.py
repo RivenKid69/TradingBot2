@@ -21,6 +21,8 @@
 from __future__ import annotations
 
 import dataclasses
+import errno
+import importlib
 import os
 import glob
 import json
@@ -35,6 +37,7 @@ import sys
 import hashlib
 import random
 import threading
+import types
 from copy import deepcopy
 from functools import lru_cache
 from collections.abc import Mapping
@@ -53,6 +56,61 @@ from core_config import (
 
 
 logger = logging.getLogger(__name__)
+
+
+def _install_torch_intrinsic_stub() -> None:
+    """Install lightweight stubs for torch's optional quantization packages.
+
+    Certain environments (notably constrained WSL setups) fail to allocate
+    enough memory when Python attempts to scan ``torch.nn.intrinsic`` during
+    the import of PyTorch.  The training code does not rely on PyTorch's
+    quantization features, so we can provide empty placeholder modules to
+    satisfy the import without touching the real package hierarchy.
+    """
+
+    package_name = "torch.nn.intrinsic"
+    if package_name in sys.modules:
+        return
+
+    intrinsic_module = types.ModuleType(package_name)
+    intrinsic_module.__package__ = "torch.nn"
+    intrinsic_module.__path__ = []  # type: ignore[attr-defined]
+
+    for suffix in ("modules", "qat", "quantized"):
+        full_name = f"{package_name}.{suffix}"
+        if full_name in sys.modules:
+            child_module = sys.modules[full_name]
+        else:
+            child_module = types.ModuleType(full_name)
+            child_module.__package__ = package_name
+            child_module.__path__ = []  # type: ignore[attr-defined]
+            sys.modules[full_name] = child_module
+        setattr(intrinsic_module, suffix, child_module)
+
+    sys.modules[package_name] = intrinsic_module
+
+
+def _import_torch_with_intrinsic_stub() -> Any:
+    try:
+        import torch  # type: ignore[no-redef]
+        return torch
+    except OSError as exc:
+        if exc.errno == errno.ENOMEM and "torch/nn/intrinsic" in str(exc):
+            logger.warning(
+                "PyTorch import failed with ENOMEM while loading quantization "
+                "modules; installing lightweight stubs and retrying."
+            )
+            _install_torch_intrinsic_stub()
+            try:
+                return importlib.import_module("torch")
+            except OSError as retry_exc:
+                raise RuntimeError(
+                    "PyTorch import keeps failing because the environment "
+                    "cannot allocate memory for optional quantization "
+                    "modules. Consider installing a CPU-only PyTorch build "
+                    "or freeing system memory."
+                ) from retry_exc
+        raise
 
 
 def _cfg_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -514,7 +572,7 @@ except ImportError:  # pragma: no cover - test-time fallback stubs
 
     class EvalCallback(BaseCallback):  # pragma: no cover - placeholder
         pass
-import torch
+torch = _import_torch_with_intrinsic_stub()
 import optuna
 from optuna.samplers import TPESampler
 from optuna.pruners import HyperbandPruner
