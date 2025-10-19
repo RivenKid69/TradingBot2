@@ -619,11 +619,15 @@ class TradingEnv(gym.Env):
         if not hasattr(self._mediator, "calls"):
             self._mediator.calls = []
         self._maybe_configure_exec_timeframe()
+        self._episode_return = 0.0
+        self._episode_length = 0
 
     # ------------------------------------------------ helpers
     def _init_state(self) -> Tuple[np.ndarray, dict]:
         self.total_steps = 0
         self.no_trade_blocks = 0
+        self._episode_return = 0.0
+        self._episode_length = 0
         self.state = _EnvState(
             cash=self.initial_cash,
             units=0.0,
@@ -1185,6 +1189,7 @@ class TradingEnv(gym.Env):
         if self.decision_mode == DecisionTiming.INTRA_HOUR_WITH_LATENCY:
             row_idx = max(0, row_idx - self.latency_steps)
         row = self.df.iloc[row_idx]
+        self._episode_length += 1
         self._assert_feature_timestamps(row)
         self._update_bar_interval(row, row_idx)
 
@@ -1505,6 +1510,7 @@ class TradingEnv(gym.Env):
         if reward_price_curr > 0.0:
             self._last_reward_price = float(reward_price_curr)
         self._last_signal_position = self._signal_position_from_proto(proto, prev_signal_pos)
+        self._episode_return = float(self._episode_return + reward)
 
         info["delta_pnl"] = float(delta_pnl)
         info["equity"] = float(equity if math.isfinite(equity) else prev_equity)
@@ -1583,6 +1589,18 @@ class TradingEnv(gym.Env):
 
         if terminated or truncated:
             info["no_trade_stats"] = self.get_no_trade_stats()
+            equity_for_win = self._safe_float(info.get("equity"))
+            if equity_for_win is None:
+                equity_for_win = self._safe_float(getattr(self.state, "net_worth", None))
+            if equity_for_win is not None:
+                win_flag = bool(equity_for_win > float(self.initial_cash))
+            else:
+                win_flag = bool(self._episode_return > 0.0)
+            info["episode_stats"] = {
+                "reward": float(self._episode_return),
+                "length": int(self._episode_length),
+                "win": bool(win_flag),
+            }
         return obs, reward, terminated, truncated, info
 
     def get_no_trade_stats(self) -> dict:
