@@ -265,6 +265,118 @@ def safe_explained_variance(
     return float(1.0 - ratio)
 
 
+def _weighted_variance_np(values: np.ndarray, weights: Optional[np.ndarray]) -> float:
+    """Compute (un)weighted variance with Bessel's correction when possible."""  # FIX
+
+    values64 = np.asarray(values, dtype=np.float64).reshape(-1)
+    if values64.size == 0:
+        return float("nan")
+
+    if weights is None:
+        finite_mask = np.isfinite(values64)
+        if not np.any(finite_mask):
+            return float("nan")
+        values64 = values64[finite_mask]
+        if values64.size <= 1:
+            return float("nan")
+        return float(np.var(values64, ddof=1))
+
+    weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+    length = min(values64.size, weights64.size)
+    if length == 0:
+        return float("nan")
+    values64 = values64[:length]
+    weights64 = weights64[:length]
+
+    finite_mask = (
+        np.isfinite(values64)
+        & np.isfinite(weights64)
+        & (weights64 > 0.0)
+    )
+    if not np.any(finite_mask):
+        return float("nan")
+    values64 = values64[finite_mask]
+    weights64 = weights64[finite_mask]
+
+    if values64.size == 0:
+        return float("nan")
+
+    sum_w = float(np.sum(weights64))
+    if not math.isfinite(sum_w) or sum_w <= 0.0:
+        return float("nan")
+
+    sum_w_sq = float(np.sum(weights64**2))
+    denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
+    if denom <= 0.0 or not math.isfinite(denom):
+        return float("nan")
+
+    mean_w = float(np.sum(weights64 * values64) / sum_w)
+    var_num = float(np.sum(weights64 * (values64 - mean_w) ** 2))
+    if not math.isfinite(var_num):
+        return float("nan")
+
+    return var_num / denom
+
+
+def compute_grouped_explained_variance(
+    y_true: Sequence[float],
+    y_pred: Sequence[float],
+    group_keys: Sequence[str],
+    *,
+    weights: Optional[Sequence[float]] = None,
+    variance_floor: float = 1e-8,
+) -> tuple[dict[str, float], Optional[float]]:
+    """Compute explained variance per group and the mean across groups."""  # FIX
+
+    true_vals = np.asarray(y_true, dtype=np.float64).reshape(-1)
+    pred_vals = np.asarray(y_pred, dtype=np.float64).reshape(-1)
+    groups = [str(key) for key in group_keys]
+    if weights is not None:
+        weight_vals = np.asarray(weights, dtype=np.float64).reshape(-1)
+        limit = min(true_vals.size, pred_vals.size, weight_vals.size, len(groups))
+    else:
+        weight_vals = None
+        limit = min(true_vals.size, pred_vals.size, len(groups))
+
+    if limit == 0:
+        return {}, None
+
+    true_vals = true_vals[:limit]
+    pred_vals = pred_vals[:limit]
+    groups = groups[:limit]
+    if weight_vals is not None:
+        weight_vals = weight_vals[:limit]
+
+    grouped_indices: dict[str, list[int]] = {}
+    for idx, key in enumerate(groups):
+        if key.strip() == "":
+            key = f"group_{idx}"
+        grouped_indices.setdefault(key, []).append(idx)
+
+    ev_grouped: dict[str, float] = {}
+    for key, indices in grouped_indices.items():
+        idx_array = np.asarray(indices, dtype=np.int64)
+        true_group = true_vals[idx_array]
+        pred_group = pred_vals[idx_array]
+        weights_group = weight_vals[idx_array] if weight_vals is not None else None
+        var_true = _weighted_variance_np(true_group, weights_group)
+        if not math.isfinite(var_true) or var_true <= variance_floor:
+            ev_grouped[key] = float("nan")
+            continue
+        err_group = true_group - pred_group
+        var_err = _weighted_variance_np(err_group, weights_group)
+        if not math.isfinite(var_err):
+            ev_grouped[key] = float("nan")
+            continue
+        ev_grouped[key] = float(1.0 - (var_err / var_true))
+
+    finite_values = [val for val in ev_grouped.values() if math.isfinite(val)]
+    if not finite_values:
+        return ev_grouped, None
+
+    return ev_grouped, float(np.mean(finite_values))
+
+
 def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> torch.Tensor:
     """Vectorized Conditional Value at Risk for batched categorical distributions."""
 
@@ -398,6 +510,7 @@ class RawRecurrentRolloutBufferSamples(NamedTuple):
     lstm_states: RNNStates
     episode_starts: torch.Tensor
     mask: torch.Tensor
+    sample_indices: torch.Tensor  # FIX
 
 
 class PopArtHoldoutBatch(NamedTuple):
@@ -1069,6 +1182,7 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
         super().reset()
         self.actions_raw = np.zeros_like(self.actions, dtype=self.actions.dtype)
         self.old_log_prob_raw = np.zeros_like(self.log_probs, dtype=self.log_probs.dtype)
+        self.seq_start_indices: list[int] = []  # FIX
 
     @staticmethod
     def _to_numpy(value: Any) -> np.ndarray:
@@ -1200,6 +1314,21 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
         episode_starts_np = self.pad_and_flatten(self.episode_starts[batch_inds])
         mask_np = self.pad_and_flatten(np.ones_like(self.returns[batch_inds]))
         old_log_prob_raw_np = self.pad_and_flatten(self.old_log_prob_raw[batch_inds])
+        batch_inds_np = np.asarray(batch_inds, dtype=np.int64)  # FIX
+        seq_start_indices_np = np.asarray(self.seq_start_indices, dtype=np.int64)  # FIX
+        seq_ends_np = np.concatenate(
+            (seq_start_indices_np[1:], np.array([batch_inds_np.shape[0]], dtype=np.int64))
+        )  # FIX
+        seq_lengths_np = seq_ends_np - seq_start_indices_np  # FIX
+        flat_indices_np = np.full((seq_start_indices_np.shape[0], max_length), -1, dtype=np.int64)  # FIX
+        for seq_idx, (start, length) in enumerate(zip(seq_start_indices_np, seq_lengths_np)):  # FIX
+            if length <= 0:  # FIX
+                continue  # FIX
+            flat_indices_np[seq_idx, :length] = batch_inds_np[start : start + length]  # FIX
+        flat_indices_np = flat_indices_np.reshape(-1)  # FIX
+        valid_mask = mask_np.reshape(-1) > 0  # FIX
+        flat_indices_np = np.where(valid_mask, flat_indices_np, -1).astype(np.int64, copy=False)  # FIX
+        sample_indices = torch.as_tensor(flat_indices_np, device=self.device, dtype=torch.long)  # FIX
 
         observations = _to_tensor(observations_np, convert_floats=True)
         actions = _to_tensor(actions_np, convert_floats=True)
@@ -1224,6 +1353,7 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
             mask=mask,
             actions_raw=actions_raw,
             old_log_prob_raw=old_log_prob_raw,
+            sample_indices=sample_indices,
         )
 
 
@@ -1386,6 +1516,75 @@ class DistributionalPPO(RecurrentPPO):
             return tuple(states.pi)
 
         return tuple(states)
+
+    def _ev_group_key_from_info(self, env_index: int, info: Any) -> Optional[str]:  # FIX
+        symbol: Optional[str] = None
+        env_identifier: Optional[str] = None
+        if isinstance(info, Mapping):
+            for key in ("env_id", "environment", "source_env", "vec_env_id"):
+                candidate = info.get(key)
+                if candidate is None:
+                    continue
+                text = str(candidate).strip()
+                if text:
+                    env_identifier = text
+                    break
+            for key in ("symbol", "instrument", "pair", "market_symbol"):
+                candidate = info.get(key)
+                if candidate is None:
+                    continue
+                text = str(candidate).strip()
+                if text:
+                    symbol = text.upper()
+                    break
+        parts: list[str] = []
+        if env_identifier:
+            parts.append(env_identifier)
+        else:
+            parts.append(f"env{env_index}")
+        if symbol:
+            parts.append(symbol)
+        key = "::".join(parts)
+        return key or None
+
+    def _resolve_ev_group_keys_from_flat(self, flat_indices: np.ndarray) -> list[str]:  # FIX
+        keys_array = getattr(self, "_last_rollout_ev_keys", None)
+        if keys_array is None:
+            return [f"env{int(idx)}" for idx in flat_indices if int(idx) >= 0]
+        keys_flat = np.asarray(keys_array, dtype=object).reshape(-1)
+        total = int(keys_flat.size)
+        resolved: list[str] = []
+        for raw_idx in flat_indices:
+            idx = int(raw_idx)
+            if idx < 0 or idx >= total:
+                return []
+            candidate = keys_flat[idx]
+            if candidate is None or str(candidate).strip() == "":
+                candidate = f"env{idx}"
+            resolved.append(str(candidate))
+        return resolved
+
+    def _extract_group_keys_for_indices(
+        self,
+        rollout_data: RawRecurrentRolloutBufferSamples,
+        index_tensor: Optional[torch.Tensor],
+    ) -> list[str]:  # FIX
+        sample_indices_tensor = getattr(rollout_data, "sample_indices", None)
+        if sample_indices_tensor is None:
+            return []
+        indices_np = sample_indices_tensor.detach().cpu().numpy().astype(np.int64, copy=False)
+        if index_tensor is not None:
+            index_np = index_tensor.detach().cpu().numpy().astype(np.int64, copy=False)
+            if index_np.size == 0:
+                return []
+            if np.any((index_np < 0) | (index_np >= indices_np.size)):
+                return []
+            indices_np = indices_np[index_np]
+        mask = indices_np >= 0
+        indices_np = indices_np[mask]
+        if indices_np.size == 0:
+            return []
+        return self._resolve_ev_group_keys_from_flat(indices_np)
 
     def _policy_value_outputs(
         self,
@@ -2325,15 +2524,18 @@ class DistributionalPPO(RecurrentPPO):
         pred_batches_norm: Sequence[torch.Tensor],
         target_batches_raw: Sequence[torch.Tensor],
         weight_batches: Sequence[torch.Tensor],
+        target_group_keys: Sequence[Sequence[str]],  # FIX
         reserve_targets_norm: Sequence[torch.Tensor],
         reserve_preds_norm: Sequence[torch.Tensor],
         reserve_targets_raw: Sequence[torch.Tensor],
         reserve_weight_batches: Sequence[torch.Tensor],
+        reserve_group_keys: Sequence[Sequence[str]],  # FIX
     ) -> Tuple[
         Optional[torch.Tensor],
         Optional[torch.Tensor],
         Optional[torch.Tensor],
         Optional[torch.Tensor],
+        Optional[list[str]],
     ]:
         """Select explained-variance tensors from primary or reserve caches."""
 
@@ -2347,21 +2549,31 @@ class DistributionalPPO(RecurrentPPO):
                 return None
             return torch.cat(filtered, dim=0)
 
+        def _concat_keys(groups: Sequence[Sequence[str]]) -> Optional[list[str]]:  # FIX
+            combined: list[str] = []  # FIX
+            for batch_keys in groups:  # FIX
+                if not batch_keys:  # FIX
+                    continue  # FIX
+                combined.extend(str(item) for item in batch_keys)  # FIX
+            return combined or None  # FIX
+
         y_true_tensor = _concat(target_batches_norm)
         y_pred_tensor = _concat(pred_batches_norm)
         if y_true_tensor is not None and y_pred_tensor is not None:
             y_true_tensor_raw = _concat(target_batches_raw)
             mask_tensor = _concat(weight_batches)
-            return y_true_tensor, y_pred_tensor, y_true_tensor_raw, mask_tensor
+            group_keys = _concat_keys(target_group_keys)  # FIX
+            return y_true_tensor, y_pred_tensor, y_true_tensor_raw, mask_tensor, group_keys
 
         reserve_true_tensor = _concat(reserve_targets_norm)
         reserve_pred_tensor = _concat(reserve_preds_norm)
         if reserve_true_tensor is not None and reserve_pred_tensor is not None:
             reserve_true_raw = _concat(reserve_targets_raw)
             reserve_mask = _concat(reserve_weight_batches)
-            return reserve_true_tensor, reserve_pred_tensor, reserve_true_raw, reserve_mask
+            reserve_keys = _concat_keys(reserve_group_keys)  # FIX
+            return reserve_true_tensor, reserve_pred_tensor, reserve_true_raw, reserve_mask, reserve_keys
 
-        return None, None, None, None
+        return None, None, None, None, None
 
     def _compute_explained_variance_metric(
         self,
@@ -2372,15 +2584,16 @@ class DistributionalPPO(RecurrentPPO):
         y_true_tensor_raw: Optional[torch.Tensor] = None,
         variance_floor: float = 1e-8,
         record_fallback: bool = True,
+        group_keys: Optional[Sequence[str]] = None,
     ) -> tuple[
         Optional[float],
         Optional[torch.Tensor],
         Optional[torch.Tensor],
-        dict[str, float],
+        dict[str, Any],
     ]:
         """Return explained variance, flattened tensors, and diagnostic metrics."""
 
-        metrics: dict[str, float] = {
+        metrics: dict[str, Any] = {
             "n_samples": 0.0,
             "corr": float("nan"),
             "bias": float("nan"),
@@ -2449,64 +2662,20 @@ class DistributionalPPO(RecurrentPPO):
         eval_y_np = y_true_np
         eval_pred_np = y_pred_np
 
-        def _weighted_variance(values: np.ndarray, weights: Optional[np.ndarray]) -> float:
-            values64 = np.asarray(values, dtype=np.float64).reshape(-1)
-            if values64.size == 0:
-                return float("nan")
-
-            if weights is None:
-                finite_mask = np.isfinite(values64)
-                if not np.any(finite_mask):
-                    return float("nan")
-                values64 = values64[finite_mask]
-                if values64.size <= 1:
-                    return float("nan")
-                return float(np.var(values64, ddof=1))
-
-            weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
-            length = min(values64.size, weights64.size)
-            if length == 0:
-                return float("nan")
-            values64 = values64[:length]
-            weights64 = weights64[:length]
-
-            finite_mask = (
-                np.isfinite(values64)
-                & np.isfinite(weights64)
-                & (weights64 > 0.0)
-            )
-            if not np.any(finite_mask):
-                return float("nan")
-            values64 = values64[finite_mask]
-            weights64 = weights64[finite_mask]
-
-            if values64.size == 0:
-                return float("nan")
-
-            sum_w = float(np.sum(weights64))
-            if not math.isfinite(sum_w) or sum_w <= 0.0:
-                return float("nan")
-
-            sum_w_sq = float(np.sum(weights64**2))
-            denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
-            if denom <= 0.0 or not math.isfinite(denom):
-                return float("nan")
-
-            mean_w = float(np.sum(weights64 * values64) / sum_w)
-            var_num = float(np.sum(weights64 * (values64 - mean_w) ** 2))
-            if not math.isfinite(var_num):
-                return float("nan")
-
-            return var_num / denom
-
-        var_y = _weighted_variance(y_true_np, weights_np)
+        var_y = _weighted_variance_np(y_true_np, weights_np)
         need_fallback = (
             (not math.isfinite(primary_ev))
             or (not math.isfinite(var_y))
             or (var_y <= variance_floor)
         )
 
-        explained_var: Optional[float] = None
+        primary_ev_value: Optional[float]
+        if math.isfinite(primary_ev):  # FIX
+            primary_ev_value = float(primary_ev)  # FIX
+        else:  # FIX
+            primary_ev_value = None  # FIX
+
+        explained_var: Optional[float] = None if need_fallback else primary_ev_value
         fallback_used = False
 
         if need_fallback and y_true_tensor_raw is not None:
@@ -2544,7 +2713,10 @@ class DistributionalPPO(RecurrentPPO):
                         logger.record("train/value_explained_variance_fallback", 0.0)
                 return None, y_true_eval, y_pred_eval, metrics
 
-            explained_var = float(primary_ev)
+            if primary_ev_value is not None:  # FIX
+                explained_var = primary_ev_value  # FIX
+            else:  # FIX
+                return None, y_true_eval, y_pred_eval, metrics  # FIX
 
         eval_true64 = np.asarray(eval_y_np, dtype=np.float64).reshape(-1)
         eval_pred64 = np.asarray(eval_pred_np, dtype=np.float64).reshape(-1)
@@ -2640,6 +2812,37 @@ class DistributionalPPO(RecurrentPPO):
             metrics["std_pred"] = std_pred
 
         _compute_weighted_stats(eval_true64, eval_pred64, weights_np)
+
+        group_dict: dict[str, float] = {}
+        grouped_mean: Optional[float] = None
+        if group_keys is not None:
+            group_list = [str(item) for item in group_keys]
+            effective_len = min(eval_true64.size, eval_pred64.size, len(group_list))
+            weights_for_group: Optional[np.ndarray]
+            if weights_np is not None:
+                weights_flat = np.asarray(weights_np, dtype=np.float64).reshape(-1)
+                effective_len = min(effective_len, weights_flat.size)
+                weights_for_group = weights_flat[:effective_len]
+            else:
+                weights_for_group = None
+            if effective_len > 0:
+                group_true = eval_true64[:effective_len]
+                group_pred = eval_pred64[:effective_len]
+                group_seq = group_list[:effective_len]
+                group_dict, grouped_mean = compute_grouped_explained_variance(
+                    group_true,
+                    group_pred,
+                    group_seq,
+                    weights=weights_for_group,
+                    variance_floor=variance_floor,
+                )
+
+        metrics["ev_grouped"] = group_dict
+        if grouped_mean is not None and math.isfinite(grouped_mean):
+            metrics["ev_mean"] = float(grouped_mean)
+            explained_var = float(grouped_mean)
+        else:
+            metrics["ev_mean"] = float(explained_var) if explained_var is not None else float("nan")
 
         return float(explained_var), y_true_eval, y_pred_eval, metrics
 
@@ -4626,6 +4829,8 @@ class DistributionalPPO(RecurrentPPO):
         reward_costs_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_bound_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
         clip_cap_buffer = np.full((buffer_size, n_envs), np.nan, dtype=np.float32)
+        ev_group_key_buffer = np.empty((buffer_size, n_envs), dtype=object)  # FIX
+        last_group_keys: list[Optional[str]] = [None] * n_envs  # FIX
         time_limit_mask = np.zeros((buffer_size, n_envs), dtype=bool)  # FIX
         time_limit_bootstrap = np.zeros((buffer_size, n_envs), dtype=np.float32)  # FIX
         base_reward_scale = self._resolve_value_scale_safe()
@@ -4842,6 +5047,11 @@ class DistributionalPPO(RecurrentPPO):
             clip_bound_step = np.full(n_envs, np.nan, dtype=np.float32)
             clip_hard_cap_step = np.full(n_envs, np.nan, dtype=np.float32)
             for env_idx, info in enumerate(infos):
+                group_key_candidate = self._ev_group_key_from_info(env_idx, info)  # FIX
+                if not group_key_candidate:  # FIX
+                    group_key_candidate = last_group_keys[env_idx] or f"env{env_idx}"  # FIX
+                last_group_keys[env_idx] = group_key_candidate  # FIX
+                ev_group_key_buffer[step_pos, env_idx] = group_key_candidate  # FIX
                 if env_idx < scaled_rewards.size:
                     safe_fallback = float(scaled_rewards[env_idx]) * base_reward_scale
                 else:
@@ -4983,6 +5193,7 @@ class DistributionalPPO(RecurrentPPO):
         self._last_rollout_reward_costs = reward_costs_buffer.copy()
         self._last_rollout_clip_bounds = clip_bound_buffer.copy()
         self._last_rollout_clip_hard_caps = clip_cap_buffer.copy()
+        self._last_rollout_ev_keys = ev_group_key_buffer.copy()  # FIX
 
         self._last_rollout_clip_bounds_min = None
         self._last_rollout_clip_bounds_median = None
@@ -5468,16 +5679,20 @@ class DistributionalPPO(RecurrentPPO):
         value_target_batches_raw: list[torch.Tensor] = []
         value_pred_batches_norm: list[torch.Tensor] = []
         value_weight_batches: list[torch.Tensor] = []
+        value_group_key_batches: list[list[str]] = []  # FIX
         value_ev_reserve_target_norm: list[torch.Tensor] = []
         value_ev_reserve_target_raw: list[torch.Tensor] = []
         value_ev_reserve_pred_norm: list[torch.Tensor] = []
         value_ev_reserve_weight: list[torch.Tensor] = []
+        value_ev_reserve_group_keys: list[list[str]] = []  # FIX
+        ev_group_key_len_mismatch_logged = False  # FIX
 
         def _reserve_ev_samples(
             rollout_data,
             valid_indices: Optional[torch.Tensor],
             mask_values: Optional[torch.Tensor],
         ) -> None:
+            nonlocal ev_group_key_len_mismatch_logged  # FIX
             was_training_inner = self.policy.training  # FIX
             self.policy.eval()  # FIX
             try:
@@ -5716,6 +5931,17 @@ class DistributionalPPO(RecurrentPPO):
                     value_ev_reserve_target_norm.append(target_norm_col.detach())
                     value_ev_reserve_target_raw.append(target_raw_col.detach())
                     value_ev_reserve_pred_norm.append(value_pred_col.detach())
+                    reserve_group_keys = self._extract_group_keys_for_indices(  # FIX
+                        rollout_data,
+                        index_tensor,
+                    )
+                    if reserve_group_keys and len(reserve_group_keys) != int(target_norm_col.shape[0]):  # FIX
+                        if not ev_group_key_len_mismatch_logged:  # FIX
+                            if self.logger is not None:  # FIX
+                                self.logger.record("warn/ev_group_keys_len_mismatch", 1.0)  # FIX
+                            ev_group_key_len_mismatch_logged = True  # FIX
+                        reserve_group_keys = []  # FIX
+                    value_ev_reserve_group_keys.append(reserve_group_keys)  # FIX
                     if (
                         weights_tensor is not None
                         and weights_tensor.numel() > 0
@@ -5903,6 +6129,7 @@ class DistributionalPPO(RecurrentPPO):
                 for rollout_data, sample_count, mask_tensor, sample_weight in zip(
                     microbatch_items, sample_counts, microbatch_masks, sample_weight_sums
                 ):
+                    group_keys_local: list[str] = []  # FIX
                     _values, log_prob, entropy = self.policy.evaluate_actions(
                         rollout_data.observations,
                         rollout_data.actions,
@@ -5946,6 +6173,11 @@ class DistributionalPPO(RecurrentPPO):
 
                     if valid_indices is not None:
                         valid_indices = valid_indices.to(device=advantages.device)
+
+                    group_keys_local = self._extract_group_keys_for_indices(  # FIX
+                        rollout_data,
+                        valid_indices,
+                    )
 
                     bucket_sample_count += sample_count
                     bucket_sample_weight += sample_weight
@@ -6333,6 +6565,14 @@ class DistributionalPPO(RecurrentPPO):
                         value_weight_batches.append(
                             mask_values_for_ev.detach().reshape(-1, 1)
                         )
+                        expected_group_len = int(target_returns_norm_clipped_selected.reshape(-1).shape[0])  # FIX
+                        if group_keys_local and len(group_keys_local) != expected_group_len:  # FIX
+                            if not ev_group_key_len_mismatch_logged:  # FIX
+                                if self.logger is not None:  # FIX
+                                    self.logger.record("warn/ev_group_keys_len_mismatch", 1.0)  # FIX
+                                ev_group_key_len_mismatch_logged = True  # FIX
+                            group_keys_local = []  # FIX
+                        value_group_key_batches.append(list(group_keys_local))  # FIX
 
                         target_norm_for_stats = target_returns_norm_clipped_selected.to(
                             dtype=torch.float32
@@ -6938,11 +7178,20 @@ class DistributionalPPO(RecurrentPPO):
                 return None
             return torch.cat(filtered, dim=0)
 
+        def _concat_keys(keys_batches: Sequence[Sequence[str]]) -> Optional[list[str]]:  # FIX
+            combined: list[str] = []  # FIX
+            for batch_keys in keys_batches:  # FIX
+                if not batch_keys:  # FIX
+                    continue  # FIX
+                combined.extend(str(item) for item in batch_keys)  # FIX
+            return combined or None  # FIX
+
         train_ev_value: Optional[float] = None
         primary_true_tensor = _concat_batches(value_target_batches_norm)
         primary_pred_tensor = _concat_batches(value_pred_batches_norm)
         primary_raw_tensor = _concat_batches(value_target_batches_raw)
         primary_mask_tensor = _concat_batches(value_weight_batches)
+        primary_group_keys = _concat_keys(value_group_key_batches)  # FIX
         if primary_true_tensor is not None and primary_pred_tensor is not None:
             (
                 train_ev_value,
@@ -6955,6 +7204,7 @@ class DistributionalPPO(RecurrentPPO):
                 mask_tensor=primary_mask_tensor,
                 y_true_tensor_raw=primary_raw_tensor,
                 record_fallback=False,
+                group_keys=primary_group_keys,
             )
 
         (
@@ -6962,15 +7212,18 @@ class DistributionalPPO(RecurrentPPO):
             y_pred_tensor,
             y_true_tensor_raw,
             mask_tensor_for_ev,
+            ev_group_keys,
         ) = self._build_explained_variance_tensors(
             value_target_batches_norm,
             value_pred_batches_norm,
             value_target_batches_raw,
             value_weight_batches,
+            value_group_key_batches,
             value_ev_reserve_target_norm,
             value_ev_reserve_pred_norm,
             value_ev_reserve_target_raw,
             value_ev_reserve_weight,
+            value_ev_reserve_group_keys,
         )
 
         explained_var: Optional[float] = None
@@ -6988,6 +7241,7 @@ class DistributionalPPO(RecurrentPPO):
                 y_pred_tensor,
                 mask_tensor=mask_tensor_for_ev,
                 y_true_tensor_raw=y_true_tensor_raw,
+                group_keys=ev_group_keys,
             )
 
             if (
@@ -7004,6 +7258,8 @@ class DistributionalPPO(RecurrentPPO):
                             reduction="mean",
                         ).item()
                     )
+
+        self._last_ev_metrics = dict(ev_metrics)  # FIX
 
         ev_n_samples = ev_metrics.get("n_samples") if ev_metrics else None
         if ev_n_samples is not None and math.isfinite(ev_n_samples):
@@ -7028,6 +7284,10 @@ class DistributionalPPO(RecurrentPPO):
         std_pred = ev_metrics.get("std_pred") if ev_metrics else None
         if std_pred is not None and math.isfinite(std_pred):
             self.logger.record("train/value/std_pred", float(std_pred))
+
+        ev_mean_value = ev_metrics.get("ev_mean") if ev_metrics else None  # FIX
+        if ev_mean_value is not None and math.isfinite(ev_mean_value):  # FIX
+            self.logger.record("train/ev/mean_grouped", float(ev_mean_value))  # FIX
 
         if train_ev_value is not None and math.isfinite(train_ev_value):
             self.logger.record("train/ev/on_train_batch", float(train_ev_value))
