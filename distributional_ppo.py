@@ -794,12 +794,21 @@ class PopArtController:
             if model._use_quantile_value:
                 quantiles_norm = value_outputs.to(dtype=torch.float32)
                 baseline_norm = quantiles_norm.mean(dim=-1, keepdim=True)
-                candidate_norm = (quantiles_norm * (old_std / max(new_std, 1e-6)))
-                shift = (old_mean - new_mean) / max(new_std, 1e-6)
-                candidate_norm = candidate_norm + shift
                 baseline_raw = model._to_raw_returns(baseline_norm)
+                baseline_clip_tensor = model._to_raw_returns(quantiles_norm)
+
+                scale = old_std / max(new_std, 1e-6)
+                shift = (old_mean - new_mean) / max(new_std, 1e-6)
+                candidate_quantiles_norm = quantiles_norm * scale + shift
+                candidate_norm = candidate_quantiles_norm.mean(dim=-1, keepdim=True)
                 candidate_raw = candidate_norm * candidate_norm.new_tensor(new_std)
                 candidate_raw = candidate_raw + candidate_norm.new_tensor(new_mean)
+                candidate_clip_tensor = (
+                    candidate_quantiles_norm * candidate_quantiles_norm.new_tensor(new_std)
+                )
+                candidate_clip_tensor = candidate_clip_tensor + candidate_quantiles_norm.new_tensor(
+                    new_mean
+                )
             else:
                 baseline_norm = value_outputs.to(dtype=torch.float32)
                 if baseline_norm.ndim == 1:
@@ -810,6 +819,8 @@ class PopArtController:
                 candidate_norm = baseline_norm * scale + shift
                 candidate_raw = candidate_norm * candidate_norm.new_tensor(new_std)
                 candidate_raw = candidate_raw + candidate_norm.new_tensor(new_mean)
+                baseline_clip_tensor = baseline_raw
+                candidate_clip_tensor = candidate_raw
 
         target_raw = holdout.returns_raw.to(device=device, dtype=torch.float32)
         mask = holdout.mask
@@ -832,8 +843,12 @@ class PopArtController:
         else:
             clip_limit = getattr(model, "_value_clip_limit_unscaled", None)
         if clip_limit is not None and math.isfinite(float(clip_limit)):
-            clip_before = self._clip_fraction(baseline_raw, -float(clip_limit), float(clip_limit))
-            clip_after = self._clip_fraction(candidate_raw, -float(clip_limit), float(clip_limit))
+            clip_before = self._clip_fraction(
+                baseline_clip_tensor, -float(clip_limit), float(clip_limit)
+            )
+            clip_after = self._clip_fraction(
+                candidate_clip_tensor, -float(clip_limit), float(clip_limit)
+            )
 
         return PopArtHoldoutEvaluation(
             baseline_raw=baseline_raw.detach(),
