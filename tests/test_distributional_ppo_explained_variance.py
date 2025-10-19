@@ -1,5 +1,4 @@
 import math
-
 import pytest
 import torch
 
@@ -102,3 +101,55 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
         mask.numpy(),
     )
     assert ev_value == pytest.approx(expected_ev)
+
+
+def test_explained_variance_metric_returns_none_with_empty_mask() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    y_true_norm = torch.tensor([[1.0], [2.0]], dtype=torch.float32)
+    y_pred_norm = torch.tensor([[0.5], [1.5]], dtype=torch.float32)
+    mask = torch.zeros_like(y_true_norm)
+
+    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+        y_true_norm,
+        y_pred_norm,
+        mask_tensor=mask,
+    )
+
+    assert ev_value is None
+    assert y_true_eval.numel() == 0
+    assert y_pred_eval.numel() == 0
+
+
+def test_explained_variance_metric_returns_none_with_empty_inputs() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    y_true_norm = torch.tensor([], dtype=torch.float32)
+    y_pred_norm = torch.tensor([], dtype=torch.float32)
+
+    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+        y_true_norm,
+        y_pred_norm,
+    )
+
+    assert ev_value is None
+    assert y_true_eval.numel() == 0
+    assert y_pred_eval.numel() == 0
+
+
+def test_explained_variance_metric_returns_none_for_degenerate_variance() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    y_true_norm = torch.ones((4, 1), dtype=torch.float32)
+    y_pred_norm = torch.zeros_like(y_true_norm)
+    mask = torch.ones_like(y_true_norm)
+
+    ev_value, y_true_eval, y_pred_eval = algo._compute_explained_variance_metric(
+        y_true_norm,
+        y_pred_norm,
+        mask_tensor=mask,
+    )
+
+    assert ev_value is None
+    assert y_true_eval.numel() == 4
+    assert y_pred_eval.numel() == 4

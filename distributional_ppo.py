@@ -2274,7 +2274,9 @@ class DistributionalPPO(RecurrentPPO):
         y_pred_flat = y_pred_tensor.flatten()
 
         if y_true_flat.numel() == 0 or y_pred_flat.numel() == 0:
-            return 0.0, y_true_flat.detach(), y_pred_flat.detach()
+            empty_true = y_true_flat.detach()
+            empty_pred = y_pred_flat.detach()
+            return None, empty_true, empty_pred
 
         mask_flat: Optional[torch.Tensor]
         selected_indices: Optional[torch.Tensor] = None
@@ -2284,7 +2286,8 @@ class DistributionalPPO(RecurrentPPO):
             min_elems = min(mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0])
             if min_elems == 0:
                 empty = y_true_flat.new_zeros(0)
-                return 0.0, empty.detach(), empty.detach()
+                empty_detached = empty.detach()
+                return None, empty_detached, empty_detached
             y_true_flat = y_true_flat[:min_elems]
             y_pred_flat = y_pred_flat[:min_elems]
             mask_flat = mask_flat[:min_elems]
@@ -2296,20 +2299,22 @@ class DistributionalPPO(RecurrentPPO):
                 mask_flat = mask_flat[selected_indices]
             else:
                 empty = y_true_flat.new_zeros(0)
-                return 0.0, empty.detach(), empty.detach()
+                empty_detached = empty.detach()
+                return None, empty_detached, empty_detached
         else:
             mask_flat = None
             min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
             if min_elems == 0:
                 empty = y_true_flat.new_zeros(0)
-                return 0.0, empty.detach(), empty.detach()
+                empty_detached = empty.detach()
+                return None, empty_detached, empty_detached
             y_true_flat = y_true_flat[:min_elems]
             y_pred_flat = y_pred_flat[:min_elems]
 
         y_true_eval = y_true_flat.detach()
         y_pred_eval = y_pred_flat.detach()
         if y_true_eval.numel() == 0 or y_pred_eval.numel() == 0:
-            return 0.0, y_true_eval, y_pred_eval
+            return None, y_true_eval, y_pred_eval
 
         weights_np: Optional[np.ndarray] = None
         if mask_flat is not None and mask_flat.numel() > 0:
@@ -2360,13 +2365,15 @@ class DistributionalPPO(RecurrentPPO):
                         logger.record("train/value_explained_variance_fallback", 1.0)
 
         if explained_var is None:
-            explained_var = float(np.nan_to_num(primary_ev))
-            if fallback_used is False:
+            if need_fallback:
                 logger = getattr(self, "logger", None)
-                if logger is not None and need_fallback:
+                if logger is not None and fallback_used is False:
                     logger.record("train/value_explained_variance_fallback", 0.0)
+                return None, y_true_eval, y_pred_eval
 
-        return explained_var, y_true_eval, y_pred_eval
+            explained_var = float(primary_ev)
+
+        return float(explained_var), y_true_eval, y_pred_eval
 
     def _summarize_recent_return_stats(
         self,
