@@ -1417,6 +1417,11 @@ class TradingEnv(gym.Env):
             self._mediator.calls.append(proto)
         obs, reward, terminated, truncated, info = result
         info = dict(info or {})
+        # FIX: сохраняем раздельные флаги завершения эпизода для корректной обработки TimeLimit
+        info["terminated"] = bool(terminated)
+        info["truncated"] = bool(truncated)
+        if truncated:
+            info.setdefault("time_limit_truncated", True)
         self._attach_bar_interval_info(info)
 
         trades_payload = info.get("trades") or []
