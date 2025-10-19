@@ -42,7 +42,7 @@ from copy import deepcopy
 from functools import lru_cache
 from collections.abc import Mapping
 import logging
-from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence
+from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence  # FIX
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
@@ -3791,6 +3791,46 @@ def objective(trial: optuna.Trial,
             progress_bar=True,
             tb_log_name=f"trial_{trial.number:03d}" if tb_log_path is not None else "run"
         )
+        ev_metrics = getattr(model, "_last_ev_metrics", None)  # FIX
+        if isinstance(ev_metrics, Mapping):  # FIX
+            ev_mean_value = ev_metrics.get("ev_mean")  # FIX
+            if ev_mean_value is not None and math.isfinite(ev_mean_value):  # FIX
+                print(f"[EV] Mean explained variance across groups: {ev_mean_value:.4f}")  # FIX
+                model_logger = getattr(model, "logger", None)  # FIX
+                if model_logger is not None:  # FIX
+                    model_logger.record("train/ev_mean_grouped_final", float(ev_mean_value))  # FIX
+            grouped_metrics = ev_metrics.get("ev_grouped") if ev_metrics else None  # FIX
+            if isinstance(grouped_metrics, Mapping) and grouped_metrics:  # FIX
+                finite_items: list[tuple[str, float]] = []  # FIX
+                for key, value in grouped_metrics.items():  # FIX
+                    try:  # FIX
+                        numeric = float(value)  # FIX
+                    except (TypeError, ValueError):  # FIX
+                        continue  # FIX
+                    if not math.isfinite(numeric):  # FIX
+                        continue  # FIX
+                    finite_items.append((str(key), numeric))  # FIX
+                if finite_items:  # FIX
+                    finite_items.sort(key=lambda item: item[1])  # FIX
+                    diag_limit = 5  # FIX
+                    worst_items = finite_items[:diag_limit]  # FIX
+                    best_items = finite_items[-diag_limit:][::-1]  # FIX
+                    if worst_items:  # FIX
+                        print("[EV] Worst groups:")  # FIX
+                        for name, value in worst_items:  # FIX
+                            print(f"    {name}: {value:.4f}")  # FIX
+                            model_logger = getattr(model, "logger", None)  # FIX
+                            if model_logger is not None:  # FIX
+                                safe_name = name.replace("/", "_").replace(" ", "_")  # FIX
+                                model_logger.record(f"train/ev_grouped/worst/{safe_name}", float(value))  # FIX
+                    if best_items:  # FIX
+                        print("[EV] Best groups:")  # FIX
+                        for name, value in best_items:  # FIX
+                            print(f"    {name}: {value:.4f}")  # FIX
+                            model_logger = getattr(model, "logger", None)  # FIX
+                            if model_logger is not None:  # FIX
+                                safe_name = name.replace("/", "_").replace(" ", "_")  # FIX
+                                model_logger.record(f"train/ev_grouped/best/{safe_name}", float(value))  # FIX
     finally:
         try:
             env_tr.training = False
