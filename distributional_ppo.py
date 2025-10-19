@@ -6174,6 +6174,8 @@ class DistributionalPPO(RecurrentPPO):
                     if valid_indices is not None:
                         valid_indices = valid_indices.to(device=advantages.device)
 
+                    _reserve_ev_samples(rollout_data, valid_indices, mask_values_for_ev)
+
                     group_keys_local = self._extract_group_keys_for_indices(  # FIX
                         rollout_data,
                         valid_indices,
@@ -7187,11 +7189,34 @@ class DistributionalPPO(RecurrentPPO):
             return combined or None  # FIX
 
         train_ev_value: Optional[float] = None
-        primary_true_tensor = _concat_batches(value_target_batches_norm)
-        primary_pred_tensor = _concat_batches(value_pred_batches_norm)
-        primary_raw_tensor = _concat_batches(value_target_batches_raw)
-        primary_mask_tensor = _concat_batches(value_weight_batches)
-        primary_group_keys = _concat_keys(value_group_key_batches)  # FIX
+        ev_primary_targets = value_target_batches_norm
+        ev_primary_preds = value_pred_batches_norm
+        ev_primary_raw = value_target_batches_raw
+        ev_primary_weights = value_weight_batches
+        ev_primary_group_keys = value_group_key_batches
+        ev_reserve_targets = value_ev_reserve_target_norm
+        ev_reserve_preds = value_ev_reserve_pred_norm
+        ev_reserve_raw = value_ev_reserve_target_raw
+        ev_reserve_weights = value_ev_reserve_weight
+        ev_reserve_group_keys = value_ev_reserve_group_keys
+
+        if value_ev_reserve_pred_norm:
+            ev_primary_targets = value_ev_reserve_target_norm
+            ev_primary_preds = value_ev_reserve_pred_norm
+            ev_primary_raw = value_ev_reserve_target_raw
+            ev_primary_weights = value_ev_reserve_weight
+            ev_primary_group_keys = value_ev_reserve_group_keys
+            ev_reserve_targets = []
+            ev_reserve_preds = []
+            ev_reserve_raw = []
+            ev_reserve_weights = []
+            ev_reserve_group_keys = []
+
+        primary_true_tensor = _concat_batches(ev_primary_targets)
+        primary_pred_tensor = _concat_batches(ev_primary_preds)
+        primary_raw_tensor = _concat_batches(ev_primary_raw)
+        primary_mask_tensor = _concat_batches(ev_primary_weights)
+        primary_group_keys = _concat_keys(ev_primary_group_keys)  # FIX
         if primary_true_tensor is not None and primary_pred_tensor is not None:
             (
                 train_ev_value,
@@ -7214,16 +7239,16 @@ class DistributionalPPO(RecurrentPPO):
             mask_tensor_for_ev,
             ev_group_keys,
         ) = self._build_explained_variance_tensors(
-            value_target_batches_norm,
-            value_pred_batches_norm,
-            value_target_batches_raw,
-            value_weight_batches,
-            value_group_key_batches,
-            value_ev_reserve_target_norm,
-            value_ev_reserve_pred_norm,
-            value_ev_reserve_target_raw,
-            value_ev_reserve_weight,
-            value_ev_reserve_group_keys,
+            ev_primary_targets,
+            ev_primary_preds,
+            ev_primary_raw,
+            ev_primary_weights,
+            ev_primary_group_keys,
+            ev_reserve_targets,
+            ev_reserve_preds,
+            ev_reserve_raw,
+            ev_reserve_weights,
+            ev_reserve_group_keys,
         )
 
         explained_var: Optional[float] = None
