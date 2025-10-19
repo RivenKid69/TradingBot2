@@ -240,6 +240,40 @@ def test_explained_variance_metric_returns_none_for_degenerate_variance() -> Non
     assert y_pred_eval.numel() == 4
 
 
+def test_explained_variance_logging_marks_availability_when_metric_present() -> None:
+    class _DummyLogger:
+        def __init__(self) -> None:
+            self.records: dict[str, list[float]] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records.setdefault(key, []).append(float(value))
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.logger = _DummyLogger()
+
+    algo._record_explained_variance_logs(0.25)
+
+    assert algo.logger.records["train/explained_variance_available"] == [1.0]
+    assert algo.logger.records["train/explained_variance"] == [0.25]
+
+
+def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
+    class _DummyLogger:
+        def __init__(self) -> None:
+            self.records: dict[str, list[float]] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records.setdefault(key, []).append(float(value))
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.logger = _DummyLogger()
+
+    algo._record_explained_variance_logs(None)
+
+    assert algo.logger.records["train/explained_variance_available"] == [0.0]
+    assert "train/explained_variance" not in algo.logger.records
+
+
 def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
     controller = PopArtController(enabled=True)
 
