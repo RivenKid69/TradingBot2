@@ -138,15 +138,20 @@ def safe_explained_variance(
 
     y_true64 = np.asarray(y_true, dtype=np.float64).reshape(-1)
     y_pred64 = np.asarray(y_pred, dtype=np.float64).reshape(-1)
-    length = min(y_true64.size, y_pred64.size)
+    weights64: Optional[np.ndarray]
+    if weights is not None:
+        weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+        length = min(y_true64.size, y_pred64.size, weights64.size)
+    else:
+        weights64 = None
+        length = min(y_true64.size, y_pred64.size)
     if length <= 0:
         return float("nan")
 
     y_true64 = y_true64[:length]
     y_pred64 = y_pred64[:length]
 
-    if weights is not None:
-        weights64 = np.asarray(weights, dtype=np.float64).reshape(-1)
+    if weights64 is not None:
         weights64 = weights64[:length]
         finite_mask = (
             np.isfinite(y_true64)

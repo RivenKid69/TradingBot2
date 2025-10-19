@@ -159,3 +159,16 @@ def test_safe_explained_variance_weighted_unbiased() -> None:
     ev_truncated = safe_ev(y_true[:2], y_pred[:2])
 
     assert ev_weighted == pytest.approx(ev_truncated)
+
+
+def test_safe_explained_variance_short_mask_returns_nan() -> None:
+    module = _load_distributional_ppo_module()
+    safe_ev = module.safe_explained_variance
+
+    y_true = np.array([1.0, 1.0, 2.0], dtype=float)
+    y_pred = np.array([1.0, 1.0, 2.0], dtype=float)
+    weights = np.array([1.0, 0.0], dtype=float)
+
+    result = safe_ev(y_true, y_pred, weights)
+
+    assert np.isnan(result)
