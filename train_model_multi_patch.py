@@ -2830,7 +2830,7 @@ def objective(trial: optuna.Trial,
         value_scale_max_rel_step_cfg = fallback_value_scale_max_rel_step
     params["value_scale_max_rel_step"] = float(value_scale_max_rel_step_cfg)
     params["value_scale_std_floor"] = (
-        value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 1e-2
+        value_scale_std_floor_cfg if value_scale_std_floor_cfg is not None else 3e-3
     )
     params["value_scale_window_updates"] = (
         value_scale_window_updates_cfg

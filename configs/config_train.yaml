@@ -133,7 +133,7 @@ model:
     value_scale:
       ema_beta: 0.9
       max_rel_step: 0.15
-      std_floor: 0.01
+      std_floor: 0.003
       window_updates: 16
       warmup_updates: 6
       freeze_after_updates: 7
