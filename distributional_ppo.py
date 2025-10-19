@@ -1959,6 +1959,15 @@ class DistributionalPPO(RecurrentPPO):
         fallback = float(fallback_weight)
         return fallback, fallback, True
 
+    def _record_explained_variance_logs(self, explained_var: Optional[float]) -> None:
+        """Record availability of the explained variance metric alongside its value."""
+
+        if explained_var is not None:
+            self.logger.record("train/explained_variance_available", 1.0)
+            self.logger.record("train/explained_variance", explained_var)
+        else:
+            self.logger.record("train/explained_variance_available", 0.0)
+
     def _record_cvar_logs(
         self,
         *,
@@ -6880,10 +6889,7 @@ class DistributionalPPO(RecurrentPPO):
         if last_scheduler_lr is not None:
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
-        if explained_var is not None:
-            self.logger.record("train/explained_variance", explained_var)
-        else:
-            self.logger.record("train/explained_variance_available", 0.0)
+        self._record_explained_variance_logs(explained_var)
         if not (0.5 <= float(ret_std_value) <= 0.9):
             self._ret_std_warn_streak += 1
         else:
