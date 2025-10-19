@@ -26,11 +26,18 @@ from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.save_util import load_from_zip_file
 
-from .winrate_stats import (
-    WinRateAccumulator,
-    WinRateStats,
-    extract_episode_win_payload,
-)
+try:  # pragma: no cover - import shim for script vs package usage
+    from winrate_stats import (
+        WinRateAccumulator,
+        WinRateStats,
+        extract_episode_win_payload,
+    )
+except ImportError:  # pragma: no cover - fallback when imported as package module
+    from .winrate_stats import (  # type: ignore[import-not-found]
+        WinRateAccumulator,
+        WinRateStats,
+        extract_episode_win_payload,
+    )
 
 
 logger = logging.getLogger(__name__)
