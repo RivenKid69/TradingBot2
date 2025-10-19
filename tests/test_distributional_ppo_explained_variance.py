@@ -103,6 +103,44 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
     assert ev_value == pytest.approx(expected_ev)
 
 
+def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
+    class _DummyLogger:
+        def __init__(self) -> None:
+            self.records: dict[str, list[float]] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records.setdefault(key, []).append(value)
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.normalize_returns = False
+    algo.value_target_scale = 1.0
+    algo._value_target_scale_effective = 1.0
+    algo.logger = _DummyLogger()
+
+    # Normalised targets are clipped to a constant, but raw returns preserve variance.
+    y_true_norm = torch.zeros((4, 1), dtype=torch.float32)
+    y_pred_norm = torch.zeros_like(y_true_norm)
+    y_true_raw = torch.arange(4, dtype=torch.float32).view(-1, 1)
+    mask = torch.ones_like(y_true_norm)
+
+    ev_value, _, _ = algo._compute_explained_variance_metric(
+        y_true_norm,
+        y_pred_norm,
+        mask_tensor=mask,
+        y_true_tensor_raw=y_true_raw,
+    )
+
+    assert ev_value is not None
+    assert math.isfinite(ev_value)
+    expected_ev = safe_explained_variance(
+        y_true_raw.numpy(),
+        y_pred_norm.numpy(),
+        mask.numpy(),
+    )
+    assert ev_value == pytest.approx(expected_ev)
+    assert algo.logger.records["train/value_explained_variance_fallback"] == [1.0]
+
+
 def test_explained_variance_metric_returns_none_with_empty_mask() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
