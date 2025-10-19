@@ -5196,7 +5196,7 @@ class DistributionalPPO(RecurrentPPO):
                             )
 
                 target_norm_col = target_returns_norm_clipped.reshape(-1, 1)
-                target_raw_col = target_returns_raw_clipped.reshape(-1, 1)
+                target_raw_col = target_returns_raw.reshape(-1, 1)
 
                 weights_tensor: Optional[torch.Tensor] = None
                 index_tensor: Optional[torch.Tensor] = None
@@ -5849,13 +5849,11 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm_clipped = target_returns_norm
 
                         target_returns_norm_clipped_flat = target_returns_norm_clipped.reshape(-1)
-                        target_returns_raw_clipped_flat = target_returns_raw_clipped.reshape(-1)
                         if valid_indices is not None:
                             target_returns_norm_clipped_selected = target_returns_norm_clipped_flat[valid_indices]
-                            target_returns_raw_for_ev_selected = target_returns_raw_clipped_flat[valid_indices]
                         else:
                             target_returns_norm_clipped_selected = target_returns_norm_clipped_flat
-                            target_returns_raw_for_ev_selected = target_returns_raw_clipped_flat
+                        target_returns_raw_for_ev_selected = target_returns_raw_selected
 
                         if self._use_quantile_value:
                             raw_outlier_frac = 0.0
