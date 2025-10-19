@@ -1,10 +1,18 @@
 import math
+from types import SimpleNamespace
+from typing import Any
+
 import pytest
 import torch
 
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
-from distributional_ppo import DistributionalPPO, safe_explained_variance
+from distributional_ppo import (
+    DistributionalPPO,
+    PopArtController,
+    PopArtHoldoutBatch,
+    safe_explained_variance,
+)
 
 
 def test_ev_builder_returns_none_when_no_batches() -> None:
@@ -191,3 +199,64 @@ def test_explained_variance_metric_returns_none_for_degenerate_variance() -> Non
     assert ev_value is None
     assert y_true_eval.numel() == 4
     assert y_pred_eval.numel() == 4
+
+
+def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
+    controller = PopArtController(enabled=True)
+
+    quantiles = torch.tensor([[0.0, 1.0], [1.0, 3.0]], dtype=torch.float32)
+    holdout = PopArtHoldoutBatch(
+        observations=torch.zeros((2, 1), dtype=torch.float32),
+        returns_raw=torch.tensor([[2.0], [4.0]], dtype=torch.float32),
+        episode_starts=torch.zeros((2, 1), dtype=torch.float32),
+        lstm_states=None,
+        mask=torch.ones((2, 1), dtype=torch.float32),
+    )
+
+    old_mean = 0.5
+    old_std = 2.0
+    new_mean = 1.0
+    new_std = 3.0
+
+    class _DummyModel:
+        def __init__(self, quantiles_tensor: torch.Tensor) -> None:
+            self.policy = SimpleNamespace(device=torch.device("cpu"), recurrent_initial_state=None)
+            self._use_quantile_value = True
+            self.normalize_returns = True
+            self._ret_mean_snapshot = old_mean
+            self._ret_std_snapshot = old_std
+            self._quantiles = quantiles_tensor
+
+        def _policy_value_outputs(self, *_: Any, **__: Any) -> torch.Tensor:  # type: ignore[override]
+            return self._quantiles
+
+        def _to_raw_returns(self, tensor: torch.Tensor) -> torch.Tensor:
+            return tensor * self._ret_std_snapshot + self._ret_mean_snapshot
+
+    model = _DummyModel(quantiles)
+
+    eval_result = controller._evaluate_holdout(
+        model=model,
+        holdout=holdout,
+        old_mean=old_mean,
+        old_std=old_std,
+        new_mean=new_mean,
+        new_std=new_std,
+    )
+
+    scale = old_std / max(new_std, 1e-6)
+    shift = (old_mean - new_mean) / max(new_std, 1e-6)
+    candidate_quantiles_norm = quantiles * scale + shift
+    candidate_norm_mean = candidate_quantiles_norm.mean(dim=-1, keepdim=True)
+    candidate_raw_mean = candidate_norm_mean * new_std + new_mean
+
+    assert eval_result.candidate_raw.shape == torch.Size([2, 1])
+    assert torch.allclose(eval_result.candidate_raw, candidate_raw_mean)
+
+    expected_ev = safe_explained_variance(
+        holdout.returns_raw.numpy().reshape(-1),
+        candidate_raw_mean.numpy().reshape(-1),
+        holdout.mask.numpy().reshape(-1),
+    )
+
+    assert eval_result.ev_after == pytest.approx(expected_ev)
