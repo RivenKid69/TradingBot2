@@ -77,14 +77,14 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.normalize_returns = True
-    algo._ret_mean_snapshot = 0.0
-    algo._ret_std_snapshot = 1.0
+    algo._ret_mean_snapshot = 0.75
+    algo._ret_std_snapshot = 1.5
     algo.value_target_scale = 1.0
     algo._value_target_scale_effective = 1.0
     algo.logger = _DummyLogger()
 
     y_true_norm = torch.tensor([[1.0], [1.0], [1.0]], dtype=torch.float32)
-    y_pred_norm = torch.tensor([[1.0], [1.0], [1.0]], dtype=torch.float32)
+    y_pred_norm = torch.tensor([[0.0], [1.0], [2.0]], dtype=torch.float32)
     y_true_raw = torch.tensor([[0.5], [1.0], [1.5]], dtype=torch.float32)
     mask = torch.ones_like(y_true_norm)
 
@@ -102,12 +102,14 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
     assert y_pred_eval.shape == torch.Size([3])
     assert algo.logger.records["train/value_explained_variance_fallback"] == [1.0]
 
-    # Raw fallback should mirror variance of unclipped targets.
+    # Raw fallback should evaluate the metric in the same units as production code.
+    y_pred_raw = algo._to_raw_returns(y_pred_norm)
     expected_ev = safe_explained_variance(
         y_true_raw.numpy(),
-        y_pred_norm.numpy(),
+        y_pred_raw.detach().cpu().numpy(),
         mask.numpy(),
     )
+    assert expected_ev == pytest.approx(-3.0)
     assert ev_value == pytest.approx(expected_ev)
 
 
@@ -121,13 +123,13 @@ def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.normalize_returns = False
-    algo.value_target_scale = 1.0
-    algo._value_target_scale_effective = 1.0
+    algo.value_target_scale = 1.5
+    algo._value_target_scale_effective = 0.75
     algo.logger = _DummyLogger()
 
     # Normalised targets are clipped to a constant, but raw returns preserve variance.
     y_true_norm = torch.zeros((4, 1), dtype=torch.float32)
-    y_pred_norm = torch.zeros_like(y_true_norm)
+    y_pred_norm = torch.tensor([[0.0], [0.5], [1.0], [1.5]], dtype=torch.float32)
     y_true_raw = torch.arange(4, dtype=torch.float32).view(-1, 1)
     mask = torch.ones_like(y_true_norm)
 
@@ -140,11 +142,13 @@ def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
 
     assert ev_value is not None
     assert math.isfinite(ev_value)
+    y_pred_raw = algo._to_raw_returns(y_pred_norm)
     expected_ev = safe_explained_variance(
         y_true_raw.numpy(),
-        y_pred_norm.numpy(),
+        y_pred_raw.detach().cpu().numpy(),
         mask.numpy(),
     )
+    assert expected_ev == pytest.approx(1.0)
     assert ev_value == pytest.approx(expected_ev)
     assert algo.logger.records["train/value_explained_variance_fallback"] == [1.0]
 
