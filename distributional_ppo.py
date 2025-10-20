@@ -325,8 +325,8 @@ def compute_grouped_explained_variance(
     *,
     weights: Optional[Sequence[float]] = None,
     variance_floor: float = 1e-8,
-) -> tuple[dict[str, float], Optional[float]]:
-    """Compute explained variance per group and the mean across groups."""  # FIX
+) -> tuple[dict[str, float], dict[str, Optional[float]]]:
+    """Compute explained variance per group with aggregated summaries."""  # FIX
 
     true_vals = np.asarray(y_true, dtype=np.float64).reshape(-1)
     pred_vals = np.asarray(y_pred, dtype=np.float64).reshape(-1)
@@ -338,8 +338,14 @@ def compute_grouped_explained_variance(
         weight_vals = None
         limit = min(true_vals.size, pred_vals.size, len(groups))
 
+    empty_summary: dict[str, Optional[float]] = {
+        "mean_unweighted": None,
+        "mean_weighted": None,
+        "median": None,
+    }
+
     if limit == 0:
-        return {}, None
+        return {}, empty_summary
 
     true_vals = true_vals[:limit]
     pred_vals = pred_vals[:limit]
@@ -354,11 +360,37 @@ def compute_grouped_explained_variance(
         grouped_indices.setdefault(key, []).append(idx)
 
     ev_grouped: dict[str, float] = {}
+    valid_counts: dict[str, int] = {}
     for key, indices in grouped_indices.items():
         idx_array = np.asarray(indices, dtype=np.int64)
         true_group = true_vals[idx_array]
         pred_group = pred_vals[idx_array]
-        weights_group = weight_vals[idx_array] if weight_vals is not None else None
+        if weight_vals is None:
+            weights_group = None
+            finite_mask = np.isfinite(true_group) & np.isfinite(pred_group)
+        else:
+            weights_group = weight_vals[idx_array]
+            finite_mask = (
+                np.isfinite(true_group)
+                & np.isfinite(pred_group)
+                & np.isfinite(weights_group)
+                & (weights_group > 0.0)
+            )
+
+        if not np.any(finite_mask):
+            ev_grouped[key] = float("nan")
+            continue
+
+        true_group = true_group[finite_mask]
+        pred_group = pred_group[finite_mask]
+        if weights_group is not None:
+            weights_group = weights_group[finite_mask]
+
+        sample_count = int(true_group.size)
+        if sample_count <= 1:
+            ev_grouped[key] = float("nan")
+            continue
+
         var_true = _weighted_variance_np(true_group, weights_group)
         if not math.isfinite(var_true) or var_true <= variance_floor:
             ev_grouped[key] = float("nan")
@@ -368,13 +400,31 @@ def compute_grouped_explained_variance(
         if not math.isfinite(var_err):
             ev_grouped[key] = float("nan")
             continue
-        ev_grouped[key] = float(1.0 - (var_err / var_true))
+        ev_value = float(1.0 - (var_err / var_true))
+        ev_grouped[key] = ev_value
+        valid_counts[key] = sample_count
 
-    finite_values = [val for val in ev_grouped.values() if math.isfinite(val)]
-    if not finite_values:
-        return ev_grouped, None
+    finite_items = [
+        (group, value)
+        for group, value in ev_grouped.items()
+        if math.isfinite(value) and group in valid_counts
+    ]
+    summary = dict(empty_summary)
+    if not finite_items:
+        return ev_grouped, summary
 
-    return ev_grouped, float(np.mean(finite_values))
+    values = np.asarray([value for _, value in finite_items], dtype=np.float64)
+    counts = np.asarray([valid_counts[group] for group, _ in finite_items], dtype=np.float64)
+
+    if values.size > 0:
+        summary["mean_unweighted"] = float(np.mean(values))
+        summary["median"] = float(np.median(values))
+
+    total_count = float(np.sum(counts))
+    if total_count > 0.0 and np.all(np.isfinite(counts)):
+        summary["mean_weighted"] = float(np.sum(values * counts) / total_count)
+
+    return ev_grouped, summary
 
 
 def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> torch.Tensor:
@@ -2228,14 +2278,37 @@ class DistributionalPPO(RecurrentPPO):
         fallback = float(fallback_weight)
         return fallback, fallback, True
 
-    def _record_explained_variance_logs(self, explained_var: Optional[float]) -> None:
-        """Record availability of the explained variance metric alongside its value."""
+    def _record_explained_variance_logs(
+        self,
+        explained_var: Optional[float],
+        *,
+        grouped_mean_unweighted: Optional[float] = None,
+        grouped_mean_weighted: Optional[float] = None,
+        grouped_median: Optional[float] = None,
+    ) -> None:
+        """Record availability of the explained variance metric and grouped aggregates."""
 
-        if explained_var is not None:
+        if explained_var is not None and math.isfinite(explained_var):
+            value = float(explained_var)
             self.logger.record("train/explained_variance_available", 1.0)
-            self.logger.record("train/explained_variance", explained_var)
+            self.logger.record("train/explained_variance", value)
+            self.logger.record("train/ev/global", value)
         else:
             self.logger.record("train/explained_variance_available", 0.0)
+
+        if grouped_mean_unweighted is not None and math.isfinite(grouped_mean_unweighted):
+            value = float(grouped_mean_unweighted)
+            self.logger.record("train/ev/mean_grouped_unweighted", value)
+            # Preserve legacy metric name for backwards compatibility.  # FIX
+            self.logger.record("train/ev/mean_grouped", value)  # FIX
+
+        if grouped_mean_weighted is not None and math.isfinite(grouped_mean_weighted):
+            self.logger.record(
+                "train/ev/mean_grouped_weighted", float(grouped_mean_weighted)
+            )
+
+        if grouped_median is not None and math.isfinite(grouped_median):
+            self.logger.record("train/ev/median_grouped", float(grouped_median))
 
     def _record_cvar_logs(
         self,
@@ -2814,7 +2887,11 @@ class DistributionalPPO(RecurrentPPO):
         _compute_weighted_stats(eval_true64, eval_pred64, weights_np)
 
         group_dict: dict[str, float] = {}
-        grouped_mean: Optional[float] = None
+        group_summary: dict[str, Optional[float]] = {
+            "mean_unweighted": None,
+            "mean_weighted": None,
+            "median": None,
+        }
         if group_keys is not None:
             group_list = [str(item) for item in group_keys]
             effective_len = min(eval_true64.size, eval_pred64.size, len(group_list))
@@ -2829,7 +2906,7 @@ class DistributionalPPO(RecurrentPPO):
                 group_true = eval_true64[:effective_len]
                 group_pred = eval_pred64[:effective_len]
                 group_seq = group_list[:effective_len]
-                group_dict, grouped_mean = compute_grouped_explained_variance(
+                group_dict, group_summary = compute_grouped_explained_variance(
                     group_true,
                     group_pred,
                     group_seq,
@@ -2838,11 +2915,28 @@ class DistributionalPPO(RecurrentPPO):
                 )
 
         metrics["ev_grouped"] = group_dict
-        if grouped_mean is not None and math.isfinite(grouped_mean):
-            metrics["ev_mean"] = float(grouped_mean)
-            explained_var = float(grouped_mean)
+        metrics["ev_mean_unweighted"] = (
+            float(group_summary.get("mean_unweighted"))
+            if group_summary.get("mean_unweighted") is not None
+            and math.isfinite(float(group_summary.get("mean_unweighted")))
+            else float("nan")
+        )
+        metrics["ev_mean_weighted"] = (
+            float(group_summary.get("mean_weighted"))
+            if group_summary.get("mean_weighted") is not None
+            and math.isfinite(float(group_summary.get("mean_weighted")))
+            else float("nan")
+        )
+        metrics["ev_median"] = (
+            float(group_summary.get("median"))
+            if group_summary.get("median") is not None
+            and math.isfinite(float(group_summary.get("median")))
+            else float("nan")
+        )
+        if explained_var is not None and math.isfinite(explained_var):
+            metrics["ev_global"] = float(explained_var)
         else:
-            metrics["ev_mean"] = float(explained_var) if explained_var is not None else float("nan")
+            metrics["ev_global"] = float("nan")
 
         return float(explained_var), y_true_eval, y_pred_eval, metrics
 
@@ -7310,9 +7404,23 @@ class DistributionalPPO(RecurrentPPO):
         if std_pred is not None and math.isfinite(std_pred):
             self.logger.record("train/value/std_pred", float(std_pred))
 
-        ev_mean_value = ev_metrics.get("ev_mean") if ev_metrics else None  # FIX
-        if ev_mean_value is not None and math.isfinite(ev_mean_value):  # FIX
-            self.logger.record("train/ev/mean_grouped", float(ev_mean_value))  # FIX
+        ev_mean_unweighted: Optional[float] = None
+        if ev_metrics:
+            candidate = ev_metrics.get("ev_mean_unweighted")
+            if candidate is not None and math.isfinite(candidate):
+                ev_mean_unweighted = float(candidate)
+
+        ev_mean_weighted: Optional[float] = None
+        if ev_metrics:
+            candidate_weighted = ev_metrics.get("ev_mean_weighted")
+            if candidate_weighted is not None and math.isfinite(candidate_weighted):
+                ev_mean_weighted = float(candidate_weighted)
+
+        ev_median_value: Optional[float] = None
+        if ev_metrics:
+            candidate_median = ev_metrics.get("ev_median")
+            if candidate_median is not None and math.isfinite(candidate_median):
+                ev_median_value = float(candidate_median)
 
         if train_ev_value is not None and math.isfinite(train_ev_value):
             self.logger.record("train/ev/on_train_batch", float(train_ev_value))
@@ -7550,7 +7658,12 @@ class DistributionalPPO(RecurrentPPO):
         if last_scheduler_lr is not None:
             self.logger.record("train/scheduler_lr", last_scheduler_lr)
         self.logger.record("train/loss", total_loss_value)
-        self._record_explained_variance_logs(explained_var)
+        self._record_explained_variance_logs(
+            explained_var,
+            grouped_mean_unweighted=ev_mean_unweighted,
+            grouped_mean_weighted=ev_mean_weighted,
+            grouped_median=ev_median_value,
+        )
         if not (0.5 <= float(ret_std_value) <= 0.9):
             self._ret_std_warn_streak += 1
         else:
