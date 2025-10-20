@@ -452,51 +452,11 @@ class _PopArtHoldoutLoaderWrapper:
 def _build_popart_holdout_loader(
     controller_cfg: Any,
 ) -> Optional[Callable[[], Optional["PopArtHoldoutBatch"]]]:
-    try:
-        from distributional_ppo import PopArtHoldoutBatch  # Local import to avoid cycles
-    except Exception:  # pragma: no cover - safeguard if training module unavailable
-        PopArtHoldoutBatch = None
-
-    if PopArtHoldoutBatch is None:
-        return None
-
-    enabled = bool(_cfg_get(controller_cfg, "enabled", False))
-    if not enabled:
-        return None
-
-    replay_path = _cfg_get(controller_cfg, "replay_path", "artifacts/popart_holdout.npz")
-    if replay_path is None:
-        return None
-
-    try:
-        path = Path(str(replay_path))
-    except Exception:
-        return None
-
-    batch_size_raw = _cfg_get(controller_cfg, "replay_batch_size", 2048)
-    try:
-        batch_size = max(int(batch_size_raw), 1)
-    except Exception:
-        batch_size = 2048
-    seed_raw = _cfg_get(controller_cfg, "replay_seed", 17)
-    try:
-        replay_seed = int(seed_raw)
-    except Exception:
-        replay_seed = 17
-    min_samples_raw = _cfg_get(controller_cfg, "min_samples", 4096)
-    try:
-        min_samples = int(min_samples_raw)
-    except Exception:
-        min_samples = 4096
-
-    loader = _PopArtHoldoutLoaderWrapper(
-        path=path,
-        batch_size=batch_size,
-        seed=replay_seed,
-        min_samples=min_samples,
-        batch_cls=PopArtHoldoutBatch,
-    )
-    return loader
+    if bool(_cfg_get(controller_cfg, "enabled", False)):
+        logger.warning(
+            "PopArt holdout loader requested but PopArt support is disabled; skipping materialisation."
+        )
+    return None
 
 
 def _ensure_model_popart_holdout_loader(
@@ -505,47 +465,9 @@ def _ensure_model_popart_holdout_loader(
     controller_cfg: Any,
 ) -> None:
     """Ensure the DistributionalPPO instance uses the prepared PopArt loader."""
-
-    enabled = bool(_cfg_get(controller_cfg, "enabled", False))
-    if not enabled:
-        return
-
-    existing_loader = getattr(model, "_popart_holdout_loader", None)
-    if loader is None:
-        loader = existing_loader or _build_popart_holdout_loader(controller_cfg)
-        if loader is None:
-            return
-
-    def _materialize(target_loader: Callable[[], Optional["PopArtHoldoutBatch"]]) -> None:
-        ensure_fn = getattr(target_loader, "ensure_materialized", None)
-        if not callable(ensure_fn):
-            bound = getattr(target_loader, "__self__", None)
-            ensure_fn = getattr(bound, "ensure_materialized", None)
-        if callable(ensure_fn):
-            try:
-                ensure_fn()
-            except Exception as exc:
-                logger.warning("PopArt: holdout materialization failed: %s", exc)
-
-    if existing_loader is not loader:
-        try:
-            setattr(model, "_popart_holdout_loader", loader)
-        except Exception:
-            logger.warning("Failed to assign PopArt holdout loader to model", exc_info=True)
-            return
-
-    _materialize(loader)
-
-    initialise = getattr(model, "_initialise_popart_controller", None)
-    if not callable(initialise):
-        return
-
-    try:
-        initialise(controller_cfg)
-    except Exception:
+    if bool(_cfg_get(controller_cfg, "enabled", False)):
         logger.warning(
-            "Failed to re-initialise PopArt controller with assigned holdout loader",
-            exc_info=True,
+            "PopArt controller configuration detected but the feature is disabled; nothing to attach."
         )
 
 try:
@@ -3354,14 +3276,6 @@ def objective(trial: optuna.Trial,
     # and prevents the training crash observed when Optuna launches trials.
     env_tr.norm_reward = False
 
-    if popart_holdout_loader is not None:
-        attach_env = getattr(popart_holdout_loader, "attach_env", None)
-        if callable(attach_env):
-            attach_env(env_tr)
-        ensure_ready = getattr(popart_holdout_loader, "ensure_materialized", None)
-        if callable(ensure_ready):
-            ensure_ready()
-
     env_tr.save(str(train_stats_path))
     save_sidecar_metadata(str(train_stats_path), extra={"kind": "vecnorm_stats", "phase": "train"})
 
@@ -3701,21 +3615,6 @@ def objective(trial: optuna.Trial,
         popart_holdout_loader,
         value_scale_controller_cfg,
     )
-
-    controller_enabled = False
-    if isinstance(value_scale_controller_cfg, Mapping):
-        controller_enabled = bool(value_scale_controller_cfg.get("enabled", False))
-    elif value_scale_controller_cfg is not None:
-        getter = getattr(value_scale_controller_cfg, "get", None)
-        if callable(getter):
-            try:
-                controller_enabled = bool(getter("enabled", False))
-            except TypeError:
-                controller_enabled = bool(getter("enabled"))
-        elif hasattr(value_scale_controller_cfg, "enabled"):
-            controller_enabled = bool(getattr(value_scale_controller_cfg, "enabled"))
-    if controller_enabled:
-        assert getattr(model, "_popart_controller", None) is not None, "PopArt not initialised"
 
     kl_penalty_beta_logged = getattr(
         model,
