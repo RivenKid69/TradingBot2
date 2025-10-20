@@ -110,6 +110,7 @@ from no_trade import (
     _in_daily_window,
     _in_funding_buffer,
     _in_custom_window,
+    NO_TRADE_FEATURES_DISABLED,
 )
 from no_trade_config import (
     NoTradeConfig,
@@ -376,6 +377,12 @@ class _ScheduleNoTradeChecker:
     """Evaluate maintenance-based no-trade windows for individual bars."""
 
     def __init__(self, cfg: NoTradeConfig | None) -> None:
+        if NO_TRADE_FEATURES_DISABLED:
+            self._enabled = False
+            self._daily_windows: list[tuple[int, int]] = []
+            self._funding_buffer_min = 0
+            self._custom_windows: list[dict[str, int]] = []
+            return
         self._enabled = False
         self._daily_windows: list[tuple[int, int]] = []
         self._funding_buffer_min = 0
@@ -4886,6 +4893,8 @@ class _Worker:
         *,
         stage_cfg: PipelineStageConfig | None = None,
     ) -> tuple[PipelineResult, str | None]:
+        if NO_TRADE_FEATURES_DISABLED:
+            return PipelineResult(action="pass", stage=Stage.WINDOWS), None
         try:
             monitoring.inc_stage(Stage.WINDOWS)
         except Exception:

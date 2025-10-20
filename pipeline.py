@@ -16,6 +16,7 @@ from no_trade import (
     _in_daily_window,
     _in_funding_buffer,
     _in_custom_window,
+    NO_TRADE_FEATURES_DISABLED,
 )
 from no_trade_config import NoTradeConfig
 from services.monitoring import inc_stage, inc_reason
@@ -241,6 +242,8 @@ def apply_no_trade_windows(
     """
 
     inc_stage(Stage.WINDOWS)
+    if NO_TRADE_FEATURES_DISABLED:
+        return PipelineResult(action="pass", stage=Stage.WINDOWS)
     if stage_cfg is not None and not stage_cfg.enabled:
         return PipelineResult(action="pass", stage=Stage.WINDOWS)
 

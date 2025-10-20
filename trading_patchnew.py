@@ -73,6 +73,7 @@ from no_trade import (
     _in_daily_window,
     _in_funding_buffer,
     _in_custom_window,
+    NO_TRADE_FEATURES_DISABLED,
 )
 
 logger = logging.getLogger(__name__)
@@ -267,7 +268,12 @@ class TradingEnv(gym.Env):
         if raw_policy not in {"block", "ignore"}:
             raw_policy = "block"
         self._no_trade_policy = raw_policy
-        self._no_trade_enabled = bool(kwargs.get("no_trade_enabled", False))
+        requested_no_trade = bool(kwargs.get("no_trade_enabled", False))
+        if requested_no_trade and NO_TRADE_FEATURES_DISABLED:
+            logger.info(
+                "No-trade mask globally disabled; ignoring no_trade_enabled flag and mask configuration"
+            )
+        self._no_trade_enabled = requested_no_trade and not NO_TRADE_FEATURES_DISABLED
         self.decision_mode = decision_mode
         # action scheduled for next bar when using delayed decisions
         self._pending_action: ActionProto | None = None

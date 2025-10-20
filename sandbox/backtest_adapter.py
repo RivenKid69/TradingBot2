@@ -10,6 +10,8 @@ import pandas as pd
 import clock
 from utils_time import bar_close_ms, is_bar_closed
 
+from no_trade import NO_TRADE_FEATURES_DISABLED
+
 from core_contracts import SignalPolicy, PolicyCtx
 from core_models import Order, Side
 if TYPE_CHECKING:  # pragma: no cover - typing helper
@@ -217,7 +219,10 @@ class BacktestAdapter:
         self._sim_has_spread_getter = callable(getter) or callable(fallback_getter)
         self._dyn = DynSpreadConfig.from_dict(dynamic_spread_config or {})
         self._guards = GuardsConfig.from_dict(guards_config or {})
-        self._no_trade = NoTradeConfig.from_dict(no_trade_config or {})
+        if NO_TRADE_FEATURES_DISABLED:
+            self._no_trade = NoTradeConfig.from_dict({})
+        else:
+            self._no_trade = NoTradeConfig.from_dict(no_trade_config or {})
         self._timing = TimingConfig.from_dict(timing_config or {})
 
         # спецификации биржи
@@ -235,7 +240,10 @@ class BacktestAdapter:
         self._last_signal_ts: Dict[str, int] = {}
 
         # распарсенные ежедневные окна (минуты от начала суток, UTC)
-        self._daily_windows_min: List[tuple] = self._parse_daily_windows(self._no_trade.daily_utc or [])
+        if NO_TRADE_FEATURES_DISABLED:
+            self._daily_windows_min = []
+        else:
+            self._daily_windows_min = self._parse_daily_windows(self._no_trade.daily_utc or [])
 
     # --------------------- helpers: spread, liquidity ---------------------
 
@@ -548,7 +556,7 @@ class BacktestAdapter:
         return out
 
     def _in_daily_window(self, ts_ms: int) -> bool:
-        if not self._daily_windows_min:
+        if NO_TRADE_FEATURES_DISABLED or not self._daily_windows_min:
             return False
         mins = int((ts_ms // 60000) % 1440)
         for smin, emin in self._daily_windows_min:
@@ -557,6 +565,9 @@ class BacktestAdapter:
         return False
 
     def _in_funding_buffer(self, ts_ms: int) -> bool:
+        if NO_TRADE_FEATURES_DISABLED:
+            return False
+
         buf_min = int(self._no_trade.funding_buffer_min or 0)
         if buf_min <= 0:
             return False
@@ -568,6 +579,9 @@ class BacktestAdapter:
         return False
 
     def _in_custom_window(self, ts_ms: int) -> bool:
+        if NO_TRADE_FEATURES_DISABLED:
+            return False
+
         for w in (self._no_trade.custom_ms or []):
             try:
                 s = int(w["start_ts_ms"])
@@ -588,6 +602,9 @@ class BacktestAdapter:
         return False
 
     def _no_trade_block(self, ts_ms: int) -> bool:
+        if NO_TRADE_FEATURES_DISABLED:
+            return False
+
         return self._in_daily_window(ts_ms) or self._in_funding_buffer(ts_ms) or self._in_custom_window(ts_ms)
 
     # --------------------- main loop ---------------------
