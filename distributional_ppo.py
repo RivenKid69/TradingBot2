@@ -1458,7 +1458,7 @@ class DistributionalPPO(RecurrentPPO):
             if serialized_cfg:
                 pending_cfg = copy.deepcopy(serialized_cfg)
                 self._popart_cfg_pending = pending_cfg
-        if pending_cfg:
+        if pending_cfg or not getattr(self, "_popart_disabled_logged", False):
             self._ensure_internal_logger()
             self._initialise_popart_controller(pending_cfg)
             self._popart_cfg_pending = {}
@@ -2032,97 +2032,71 @@ class DistributionalPPO(RecurrentPPO):
                 )
 
     def _initialise_popart_controller(self, cfg: Any) -> None:
-        enabled = bool(_cfg_get(cfg, "enabled", False))
+        requested_enabled = bool(
+            _cfg_get(
+                cfg,
+                "enabled",
+                getattr(self, "_popart_requested_enabled", False),
+            )
+        )
 
-        def _coerce_mode(raw: Any) -> Literal["shadow", "live"]:
-            if isinstance(raw, str):
-                cleaned = raw.strip().lower()
-                if cleaned in {"shadow", "live"}:
-                    return cast(Literal["shadow", "live"], cleaned)
-            return "shadow"
-
-        mode_value = _coerce_mode(_cfg_get(cfg, "mode", "shadow"))
+        replay_path_value = _cfg_get(
+            cfg,
+            "replay_path",
+            getattr(self, "_popart_last_replay_path", ""),
+        )
+        replay_path_str = "" if replay_path_value is None else str(replay_path_value)
 
         def _coerce_float(value: Any, *, default: float = 0.0) -> float:
             try:
-                if isinstance(value, (int, float)):
-                    return float(value)
-                return float(value)  # type: ignore[arg-type]
+                return float(value)
             except Exception:
                 return default
 
-        def _coerce_int(value: Any, *, default: int = 0) -> int:
-            try:
-                return int(value)
-            except Exception:
-                return default
-
-        replay_path_value = _cfg_get(cfg, "replay_path")
-        replay_path_str = "" if replay_path_value is None else str(replay_path_value)
-        replay_seed_raw = _cfg_get(cfg, "replay_seed", 0)
-        replay_batch_size_raw = _cfg_get(cfg, "replay_batch_size", 0)
-        replay_seed_value = _coerce_float(replay_seed_raw)
-        replay_batch_size_value = _coerce_float(replay_batch_size_raw)
-
-        if not enabled:
-            self._popart_controller = None
-            disabled_mode = "shadow"
-            config_logs: dict[str, Any] = {
-                "config/popart/enabled": 0.0,
-                "config/popart/mode": disabled_mode,
-                "config/popart/mode_live": 0.0,
-                "config/popart/replay_path": replay_path_str,
-                "config/popart/replay_seed": replay_seed_value,
-                "config/popart/replay_batch_size": replay_batch_size_value,
-            }
-            self._popart_config_logs = config_logs
-            self._replay_popart_config_logs()
-            return
-
-        ema_beta = float(_cfg_get(cfg, "ema_beta", 0.99))
-        min_samples = _coerce_int(_cfg_get(cfg, "min_samples", 4096), default=4096)
-        warmup_updates = _coerce_int(_cfg_get(cfg, "warmup_updates", 4), default=4)
-        max_rel_step = float(_cfg_get(cfg, "max_rel_step", 0.04))
-        ev_floor = float(_cfg_get(cfg, "ev_floor", 0.3))
-        gate_patience = _coerce_int(_cfg_get(cfg, "gate_patience", 2), default=2)
-        band_raw = _cfg_get(cfg, "ret_std_band", (0.01, 2.0))
-        if isinstance(band_raw, (list, tuple)) and len(band_raw) >= 2:
-            ret_std_band = (float(band_raw[0]), float(band_raw[1]))
-        else:
-            ret_std_band = (0.01, 2.0)
-
-        controller = PopArtController(
-            enabled=enabled,
-            mode=mode_value,
-            ema_beta=ema_beta,
-            min_samples=min_samples,
-            warmup_updates=warmup_updates,
-            max_rel_step=max_rel_step,
-            ev_floor=ev_floor,
-            ret_std_band=ret_std_band,
-            gate_patience=gate_patience,
-            holdout_loader=self._popart_holdout_loader,
-            logger=self.logger,
+        replay_seed_value = _coerce_float(
+            _cfg_get(
+                cfg,
+                "replay_seed",
+                getattr(self, "_popart_last_replay_seed", 0.0),
+            )
         )
-        self._popart_controller = controller
-        config_logs = {
-            "config/popart/enabled": float(controller.enabled),
-            "config/popart/mode": controller.mode,
-            "config/popart/mode_live": 1.0 if controller.mode == "live" else 0.0,
-            "config/popart/ema_beta": float(controller.ema_beta),
-            "config/popart/min_samples": float(controller.min_samples),
-            "config/popart/warmup_updates": float(controller.warmup_updates),
-            "config/popart/max_rel_step": float(controller.max_rel_step),
-            "config/popart/ev_floor": float(controller.ev_floor),
-            "config/popart/ret_std_band_low": float(ret_std_band[0]),
-            "config/popart/ret_std_band_high": float(ret_std_band[1]),
-            "config/popart/gate_patience": float(controller.gate_patience),
+        replay_batch_size_value = _coerce_float(
+            _cfg_get(
+                cfg,
+                "replay_batch_size",
+                getattr(self, "_popart_last_replay_batch_size", 0.0),
+            )
+        )
+
+        if requested_enabled and not getattr(self, "_popart_disabled_logged", False):
+            logger_obj = getattr(self, "logger", None)
+            warn = getattr(logger_obj, "warning", None) if logger_obj is not None else None
+            message = (
+                "PopArt value scale controller is disabled and the provided configuration will be ignored."
+            )
+            if callable(warn):
+                warn(message)
+            else:  # pragma: no cover - fallback for early initialisation
+                logger.warning(message)
+
+        self._popart_controller = None
+        config_logs: dict[str, Any] = {
+            "config/popart/enabled": 0.0,
+            "config/popart/mode": "shadow",
+            "config/popart/mode_live": 0.0,
             "config/popart/replay_path": replay_path_str,
             "config/popart/replay_seed": replay_seed_value,
             "config/popart/replay_batch_size": replay_batch_size_value,
+            "config/popart/requested_enabled": 1.0 if requested_enabled else 0.0,
         }
         self._popart_config_logs = config_logs
         self._replay_popart_config_logs()
+        self._popart_disabled_logged = True
+        self._popart_cfg_serialized = None
+        self._popart_cfg_pending = {}
+        self._popart_last_replay_path = replay_path_str
+        self._popart_last_replay_seed = replay_seed_value
+        self._popart_last_replay_batch_size = replay_batch_size_value
 
     @staticmethod
     def _coerce_value_target_scale(value_target_scale: Union[str, float, None]) -> float:
@@ -3401,10 +3375,6 @@ class DistributionalPPO(RecurrentPPO):
 
         popart_cfg_raw = kwargs_local.pop("value_scale_controller", None)
         popart_holdout_loader = kwargs_local.pop("value_scale_controller_holdout", None)
-        if callable(popart_holdout_loader):
-            self._popart_holdout_loader: Optional[Callable[[], Optional[PopArtHoldoutBatch]]] = popart_holdout_loader
-        else:
-            self._popart_holdout_loader = None
         popart_cfg_map: dict[str, Any] = {}
         if isinstance(popart_cfg_raw, Mapping):
             popart_cfg_map = dict(popart_cfg_raw)
@@ -3425,19 +3395,30 @@ class DistributionalPPO(RecurrentPPO):
             ):
                 if hasattr(popart_cfg_raw, key):
                     popart_cfg_map[key] = getattr(popart_cfg_raw, key)
-        popart_cfg_serialized = (
-            _serialize_popart_config(popart_cfg_map) if popart_cfg_map else {}
-        )
-        self._popart_cfg_serialized: Optional[dict[str, Any]] = (
-            copy.deepcopy(popart_cfg_serialized) if popart_cfg_serialized else None
-        )
-        self._popart_cfg_pending: dict[str, Any] = (
-            copy.deepcopy(popart_cfg_serialized) if popart_cfg_serialized else {}
-        )
+        self._popart_holdout_loader = None
+        if callable(popart_holdout_loader):
+            logger.warning(
+                "PopArt holdout loaders are no longer supported and will be ignored."
+            )
+        self._popart_requested_enabled = bool(popart_cfg_map.get("enabled", False))
+        if self._popart_requested_enabled:
+            logger.warning(
+                "PopArt value scale controller has been globally disabled; ignoring provided configuration."
+            )
+        self._popart_cfg_serialized: Optional[dict[str, Any]] = None
+        self._popart_cfg_pending: dict[str, Any] = {}
         self._popart_controller: Optional[PopArtController] = None
         self._popart_shadow_metrics: Optional[PopArtCandidateMetrics] = None
         self._popart_last_stats: Optional[Tuple[float, float]] = None
-        self._popart_config_logs: dict[str, Any] = {}
+        self._popart_config_logs: dict[str, Any] = {
+            "config/popart/enabled": 0.0,
+            "config/popart/mode": "shadow",
+            "config/popart/mode_live": 0.0,
+        }
+        self._popart_disabled_logged = False
+        self._popart_last_replay_path = ""
+        self._popart_last_replay_seed = 0.0
+        self._popart_last_replay_batch_size = 0.0
 
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
         if clip_range_vf_candidate is None:
@@ -3973,7 +3954,9 @@ class DistributionalPPO(RecurrentPPO):
 
         self._ensure_internal_logger()
 
-        if getattr(self, "_popart_controller", None) is None and self._popart_cfg_pending:
+        if getattr(self, "_popart_controller", None) is None and (
+            self._popart_cfg_pending or not getattr(self, "_popart_disabled_logged", False)
+        ):
             self._initialise_popart_controller(self._popart_cfg_pending)
         self._popart_cfg_pending = {}
 
@@ -7976,10 +7959,9 @@ class DistributionalPPO(RecurrentPPO):
             **kwargs,
         )
         if isinstance(model, DistributionalPPO):
-            cfg_serialized = getattr(model, "_popart_cfg_serialized", None)
-            if cfg_serialized and getattr(model, "_popart_controller", None) is None:
-                model._initialise_popart_controller(copy.deepcopy(cfg_serialized))
-                model._popart_cfg_pending = {}
+            if not getattr(model, "_popart_disabled_logged", False):
+                model._ensure_internal_logger()
+                model._initialise_popart_controller({})
             model._ensure_score_action_space()
         return model
 

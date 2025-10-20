@@ -145,7 +145,7 @@ if "stable_baselines3.common.monitor" not in sys.modules:
     monitor_module.Monitor = _MonitorStub
     sys.modules["stable_baselines3.common.monitor"] = monitor_module
 
-from distributional_ppo import DistributionalPPO, PopArtHoldoutEvaluation
+from distributional_ppo import DistributionalPPO
 from train_model_multi_patch import (
     _build_popart_holdout_loader,
     _ensure_model_popart_holdout_loader,
@@ -160,91 +160,43 @@ class _CaptureLogger:
         self.records[key] = value
 
 
-def test_popart_controller_initialises_with_existing_holdout(tmp_path: Path) -> None:
-    holdout_path = tmp_path / "popart_holdout.npz"
-    obs = np.zeros((32, 3), dtype=np.float32)
-    returns = np.linspace(-0.01, 0.01, 32, dtype=np.float32).reshape(-1, 1)
-    episode_starts = np.zeros((32,), dtype=np.float32)
-    np.savez(holdout_path, obs=obs, returns=returns, episode_starts=episode_starts)
-
-    cfg = {
-        "enabled": True,
-        "mode": "shadow",
-        "ema_beta": 0.99,
-        "min_samples": 16,
-        "warmup_updates": 0,
-        "max_rel_step": 1.0,
-        "ev_floor": 0.2,
-        "ret_std_band": [0.0, 2.0],
-        "gate_patience": 1,
-        "replay_path": str(holdout_path),
-        "replay_seed": 7,
-        "replay_batch_size": 16,
-    }
+def test_popart_holdout_loader_returns_none_even_when_enabled(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("WARNING")
+    cfg = {"enabled": True, "replay_path": "artifacts/popart_holdout.npz"}
 
     loader = _build_popart_holdout_loader(cfg)
-    assert loader is not None
 
-    batch = loader()
-    assert batch is not None
-    assert getattr(loader, "fallback_generated", False) is False
-
-    algo = DistributionalPPO.__new__(DistributionalPPO)
-    logger = _CaptureLogger()
-    algo.logger = logger
-    algo._popart_holdout_loader = loader
-
-    algo._initialise_popart_controller(cfg)
-
-    controller = algo._popart_controller
-    assert controller is not None
-
-    def _fake_holdout_eval(
-        self,
-        *,
-        model,
-        holdout,
-        old_mean: float,
-        old_std: float,
-        new_mean: float,
-        new_std: float,
-    ) -> PopArtHoldoutEvaluation:
-        sample_count = holdout.returns_raw.shape[0]
-        zeros = torch.zeros(sample_count, 1)
-        return PopArtHoldoutEvaluation(
-            baseline_raw=zeros,
-            candidate_raw=zeros,
-            target_raw=zeros,
-            mask=None,
-            ev_before=0.6,
-            ev_after=0.7,
-            clip_fraction_before=0.0,
-            clip_fraction_after=0.0,
-        )
-
-    controller._evaluate_holdout = types.MethodType(_fake_holdout_eval, controller)
-
-    metrics = controller.evaluate_shadow(
-        model=algo,
-        returns_raw=torch.ones(16, dtype=torch.float32),
-        ret_mean=0.0,
-        ret_std=1.0,
-    )
-
-    assert metrics is not None
-    assert metrics.blocked_reason != "no_holdout"
-    assert "shadow_popart/pass" in logger.records
-    assert getattr(loader, "fallback_generated", False) is False
+    assert loader is None
+    assert any("PopArt holdout loader requested" in rec.message for rec in caplog.records)
 
 
-def test_popart_namespace_config_replay_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
-    class _PolicyStub:
+def test_ensure_model_popart_holdout_loader_is_noop(caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level("WARNING")
+
+    class _AlgoStub:
         def __init__(self) -> None:
-            self.uses_quantile_value_head = False
-            self.quantile_huber_kappa = 1.0
-            self.device = torch.device("cpu")
+            self.calls: list[Any] = []
+            self.logger = types.SimpleNamespace()
 
-        def named_parameters(self):  # pragma: no cover - simple stub returning empty iterable
+        def _initialise_popart_controller(self, cfg: Any) -> None:  # pragma: no cover - should not run
+            self.calls.append(cfg)
+
+    algo = _AlgoStub()
+    cfg = {"enabled": True}
+
+    _ensure_model_popart_holdout_loader(algo, None, cfg)
+
+    assert not hasattr(algo, "_popart_holdout_loader")
+    assert algo.calls == []
+    assert any("PopArt controller configuration" in rec.message for rec in caplog.records)
+
+
+def test_distributionalppo_initialises_with_popart_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _PolicyStub:
+        uses_quantile_value_head = False
+        quantile_huber_kappa = 1.0
+
+        def named_parameters(self):  # pragma: no cover - empty iterable
             return []
 
     def _fake_super_init(self, *args: Any, **kwargs: Any) -> None:
@@ -281,85 +233,44 @@ def test_popart_namespace_config_replay_metadata(monkeypatch: pytest.MonkeyPatch
         lambda self, **kwargs: None,
     )
 
-    replay_path = "/tmp/replay_metadata.npz"
-    config_namespace = types.SimpleNamespace(
-        enabled=True,
-        mode="shadow",
-        ema_beta=0.9,
-        min_samples=8,
-        warmup_updates=1,
-        max_rel_step=0.5,
-        ev_floor=0.1,
-        ret_std_band=(0.0, 1.0),
-        gate_patience=2,
-        replay_path=replay_path,
-        replay_seed=123,
-        replay_batch_size=42,
-    )
+    def _fake_setup_model(self) -> None:
+        pending_cfg: dict[str, Any] = getattr(self, "_popart_cfg_pending", {}) or {}
+        if pending_cfg or not getattr(self, "_popart_disabled_logged", False):
+            self._initialise_popart_controller(pending_cfg)
+        self._popart_cfg_pending = {}
+
+    monkeypatch.setattr(DistributionalPPO, "_setup_model", _fake_setup_model)
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.logger = _CaptureLogger()
     algo._logger = algo.logger
 
+    cfg = {
+        "enabled": True,
+        "mode": "live",
+        "replay_path": "artifacts/popart_holdout.npz",
+        "replay_seed": 11,
+        "replay_batch_size": 64,
+    }
+
     DistributionalPPO.__init__(
         algo,
         policy=_PolicyStub(),
         env=object(),
-        value_scale_controller=config_namespace,
+        value_scale_controller=cfg,
         value_scale_max_rel_step=0.1,
     )
 
-    assert algo.logger.records.get("config/popart/replay_path") == replay_path
-    assert algo.logger.records.get("config/popart/replay_seed") == pytest.approx(123.0)
-    assert algo.logger.records.get("config/popart/replay_batch_size") == pytest.approx(42.0)
+    assert algo.logger.records.get("config/popart/enabled") == pytest.approx(0.0)
+    assert algo.logger.records.get("config/popart/requested_enabled") == pytest.approx(1.0)
+    assert algo.logger.records.get("config/popart/replay_path") == ""
+    assert algo.logger.records.get("config/popart/replay_seed") == pytest.approx(0.0)
+    assert algo.logger.records.get("config/popart/replay_batch_size") == pytest.approx(0.0)
+    assert getattr(algo, "_popart_controller", None) is None
+    assert getattr(algo, "_popart_cfg_serialized", None) is None
 
 
-def test_ensure_model_popart_holdout_loader_assigns_and_reinitialises() -> None:
-    class _LoggerStub:
-        def __init__(self) -> None:
-            self.records: list[tuple[str, float]] = []
-
-        def record(self, key: str, value: float, **_: object) -> None:  # pragma: no cover - simple stub
-            self.records.append((key, float(value)))
-
-    class _LoaderStub:
-        def __init__(self) -> None:
-            self.materialise_calls = 0
-
-        def ensure_materialized(self) -> None:
-            self.materialise_calls += 1
-
-        def __call__(self) -> Optional[Any]:  # pragma: no cover - callable interface for parity with real loader
-            return None
-
-    class _AlgoStub:
-        def __init__(self) -> None:
-            self.calls: list[Any] = []
-            self.logger = _LoggerStub()
-
-        def _initialise_popart_controller(self, cfg: Any) -> None:
-            self.calls.append(cfg)
-            self.logger.record("popart/reinitialised", float(len(self.calls)))
-
-    loader = _LoaderStub()
-    algo = _AlgoStub()
-    cfg = {"enabled": True, "mode": "shadow"}
-
-    _ensure_model_popart_holdout_loader(algo, loader, cfg)
-
-    assert getattr(algo, "_popart_holdout_loader") is loader
-    assert algo.calls == [cfg]
-    assert loader.materialise_calls == 1
-    assert algo.logger.records == [("popart/reinitialised", 1.0)]
-
-    _ensure_model_popart_holdout_loader(algo, loader, cfg)
-
-    assert algo.calls == [cfg, cfg]
-    assert loader.materialise_calls == 2
-    assert algo.logger.records[-1] == ("popart/reinitialised", 2.0)
-
-
-def test_popart_config_persists_through_save_and_load(
+def test_popart_save_load_retains_disabled_state(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     saved_payload: dict[str, Any] = {}
@@ -368,7 +279,7 @@ def test_popart_config_persists_through_save_and_load(
         uses_quantile_value_head = False
         quantile_huber_kappa = 1.0
 
-        def named_parameters(self):  # pragma: no cover - stub returns empty iterable
+        def named_parameters(self):  # pragma: no cover - empty iterable
             return []
 
     def _fake_super_init(self, *args: Any, **kwargs: Any) -> None:
@@ -399,18 +310,6 @@ def test_popart_config_persists_through_save_and_load(
         raising=False,
     )
 
-    def _fake_setup_model(self) -> None:
-        pending_cfg: dict[str, Any] = getattr(self, "_popart_cfg_pending", {}) or {}
-        if not pending_cfg:
-            serialized_cfg = getattr(self, "_popart_cfg_serialized", None)
-            if serialized_cfg:
-                pending_cfg = copy.deepcopy(serialized_cfg)
-                self._popart_cfg_pending = pending_cfg
-        if pending_cfg:
-            self._initialise_popart_controller(pending_cfg)
-            self._popart_cfg_pending = {}
-
-    monkeypatch.setattr(DistributionalPPO, "_setup_model", _fake_setup_model)
     monkeypatch.setattr(DistributionalPPO, "_rebuild_scheduler_if_needed", lambda self: None)
     monkeypatch.setattr(DistributionalPPO, "_ensure_score_action_space", lambda self: None)
     monkeypatch.setattr(
@@ -424,9 +323,13 @@ def test_popart_config_persists_through_save_and_load(
         lambda self, **kwargs: None,
     )
 
-    from stable_baselines3.common import base_class as sb3_base_class
+    def _fake_setup_model(self) -> None:
+        pending_cfg: dict[str, Any] = getattr(self, "_popart_cfg_pending", {}) or {}
+        if pending_cfg or not getattr(self, "_popart_disabled_logged", False):
+            self._initialise_popart_controller(pending_cfg)
+        self._popart_cfg_pending = {}
 
-    monkeypatch.setattr(sb3_base_class, "_convert_space", lambda space: space, raising=False)
+    monkeypatch.setattr(DistributionalPPO, "_setup_model", _fake_setup_model)
 
     def _fake_save(self, path: Path, *args: Any, **kwargs: Any) -> None:
         data = {
@@ -437,9 +340,6 @@ def test_popart_config_persists_through_save_and_load(
             "verbose": getattr(self, "verbose", 0),
             "n_envs": getattr(self, "n_envs", 1),
         }
-        cfg_serialized = getattr(self, "_popart_cfg_serialized", None)
-        if cfg_serialized is not None:
-            data["_popart_cfg_serialized"] = copy.deepcopy(cfg_serialized)
         saved_payload["data"] = data
         saved_payload["params"] = {}
         saved_payload["pytorch_variables"] = None
@@ -533,7 +433,8 @@ def test_popart_config_persists_through_save_and_load(
         value_scale_max_rel_step=0.5,
     )
 
-    assert logger.records.get("config/popart/enabled") == pytest.approx(1.0)
+    assert logger.records.get("config/popart/enabled") == pytest.approx(0.0)
+    assert logger.records.get("config/popart/requested_enabled") == pytest.approx(1.0)
 
     save_path = tmp_path / "popart_model.zip"
     algo.save(save_path)
@@ -543,4 +444,5 @@ def test_popart_config_persists_through_save_and_load(
     assert isinstance(loaded, DistributionalPPO)
     loaded_logger = getattr(loaded, "logger", None)
     assert isinstance(loaded_logger, _CaptureLogger)
-    assert loaded_logger.records.get("config/popart/enabled") == pytest.approx(1.0)
+    assert loaded_logger.records.get("config/popart/enabled") == pytest.approx(0.0)
+    assert loaded_logger.records.get("config/popart/requested_enabled") == pytest.approx(0.0)

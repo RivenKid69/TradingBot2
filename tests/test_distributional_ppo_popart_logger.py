@@ -41,21 +41,13 @@ def test_popart_logger_rebound_after_setup_learn(monkeypatch: pytest.MonkeyPatch
     cfg = {
         "enabled": True,
         "mode": "live",
-        "ema_beta": 0.9,
-        "min_samples": 8,
-        "warmup_updates": 0,
-        "max_rel_step": 0.5,
-        "ev_floor": 0.2,
-        "ret_std_band": (0.1, 2.0),
-        "gate_patience": 1,
         "replay_path": "",
         "replay_seed": 123,
         "replay_batch_size": 16,
     }
 
     algo._initialise_popart_controller(cfg)
-    controller = algo._popart_controller
-    assert controller is not None
+    assert getattr(algo, "_popart_controller", None) is None
 
     def _fake_parent_setup_learn(
         self,
@@ -103,21 +95,7 @@ def test_popart_logger_rebound_after_setup_learn(monkeypatch: pytest.MonkeyPatch
 
     result = DistributionalPPO.learn(algo, total_timesteps=4)
     assert result is algo
-    assert controller._logger is new_logger
 
-    assert "config/popart/enabled" in new_logger.records
-    assert "config/popart/mode" in new_logger.records
-
-    controller._apply_categorical_transform = lambda *_, **__: None
-    controller._apply_quantile_transform = lambda *_, **__: None
-    controller._last_holdout_eval = None
-
-    controller.apply_live_update(
-        model=algo,
-        old_mean=0.0,
-        old_std=1.0,
-        new_mean=0.0,
-        new_std=1.0,
-    )
-
-    assert new_logger.records.get("popart/apply_count") == pytest.approx(1.0)
+    assert new_logger.records.get("config/popart/enabled") == pytest.approx(0.0)
+    assert new_logger.records.get("config/popart/mode") == "shadow"
+    assert new_logger.records.get("config/popart/requested_enabled") == pytest.approx(1.0)
