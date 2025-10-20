@@ -233,6 +233,7 @@ risk:
 
 # See ../docs/no_trade.md for details
 no_trade:
+  enabled: false
   funding_buffer_min: 0
   daily_utc: []
   custom_ms: []

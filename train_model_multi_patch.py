@@ -167,6 +167,7 @@ class _PopArtHoldoutLoaderWrapper:
         seed: int,
         min_samples: int,
         batch_cls: Any,
+        use_dataset_mask: bool = False,
     ) -> None:
         self._path = path
         self._batch_size = max(int(batch_size), 1)
@@ -180,6 +181,7 @@ class _PopArtHoldoutLoaderWrapper:
         self._fallback_attempted = False
         self.fallback_generated = False
         self._target_samples = max(self._min_samples, self._batch_size, 2048)
+        self._use_dataset_mask = bool(use_dataset_mask)
 
     # ------------------------------------------------------------------
     # Public API used by the training pipeline
@@ -261,15 +263,20 @@ class _PopArtHoldoutLoaderWrapper:
             starts_np = np.asarray(starts, dtype=np.float32).reshape(count)
         starts_tensor = torch.as_tensor(starts_np[indices], dtype=torch.float32)
 
-        mask_arr = payload.get("mask")
-        if mask_arr is None:
-            mask_arr = payload.get("weights")
-        if mask_arr is None:
-            mask_tensor: Optional[torch.Tensor] = None
-        else:
-            mask_tensor = torch.as_tensor(
-                np.asarray(mask_arr, dtype=np.float32).reshape(-1)[indices],
-                dtype=torch.float32,
+        mask_tensor: Optional[torch.Tensor] = None
+        if self._use_dataset_mask:
+            mask_arr = payload.get("mask")
+            if mask_arr is None:
+                mask_arr = payload.get("weights")
+            if mask_arr is not None:
+                mask_tensor = torch.as_tensor(
+                    np.asarray(mask_arr, dtype=np.float32).reshape(-1)[indices],
+                    dtype=torch.float32,
+                )
+        elif "mask" in payload.files or "weights" in payload.files:
+            self._logger.debug(
+                "Dataset mask present in %s but ignored because dataset masking is disabled",
+                self._path,
             )
 
         batch = self._batch_cls(
@@ -319,13 +326,14 @@ class _PopArtHoldoutLoaderWrapper:
         )
 
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        np.savez_compressed(
-            str(self._path),
-            obs=data["obs"],
-            returns=data["returns"],
-            episode_starts=data["episode_starts"],
-            mask=data.get("mask"),
-        )
+        save_payload = {
+            "obs": data["obs"],
+            "returns": data["returns"],
+            "episode_starts": data["episode_starts"],
+        }
+        if self._use_dataset_mask and data.get("mask") is not None:
+            save_payload["mask"] = data["mask"]
+        np.savez_compressed(str(self._path), **save_payload)
         with self._lock:
             self._cache.pop("batch", None)
             self.fallback_generated = True
