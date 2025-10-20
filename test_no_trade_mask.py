@@ -20,6 +20,8 @@ class _Mediator:
         return np.zeros(1), 0.0, False, False, {}
     def reset(self):
         return np.zeros(1, dtype=np.float32), {}
+    def _build_observation(self, row, state, mark_price):
+        return np.zeros(1, dtype=np.float32)
 mediator_stub.Mediator = _Mediator
 sys.modules["mediator"] = mediator_stub
 
@@ -42,7 +44,7 @@ def _make_df(ts_minutes):
 
 def test_funding_buffer_blocks_orders():
     df = _make_df([360, 410, 470])  # minutes since midnight
-    env = TradingEnv(df, no_trade={"funding_buffer_min": 30})
+    env = TradingEnv(df, no_trade={"funding_buffer_min": 30}, no_trade_enabled=True)
     env.reset()
     act = ActionProto(ActionType.MARKET, 1.0)
     for i in range(len(df)):
@@ -58,6 +60,7 @@ def test_custom_window_blocks_orders():
     env = TradingEnv(
         df,
         no_trade={"custom_ms": [{"start_ts_ms": 19 * 60_000, "end_ts_ms": 21 * 60_000}]},
+        no_trade_enabled=True,
     )
     env.reset()
     act = ActionProto(ActionType.MARKET, 1.0)
@@ -68,3 +71,13 @@ def test_custom_window_blocks_orders():
     calls = env._mediator.calls
     assert calls[1].action_type == ActionType.HOLD
     assert env.no_trade_blocks == 1
+
+
+def test_mask_disabled_by_default():
+    df = _make_df([0, 10, 20])
+    env = TradingEnv(df)
+    env.reset()
+
+    assert not env._no_trade_enabled
+    assert env._no_trade_cfg is None
+    assert not bool(env._no_trade_mask.any())
