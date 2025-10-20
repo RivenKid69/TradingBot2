@@ -62,7 +62,12 @@ model:
     turnover_norm_cap: 1.0
     reward_cap: 10.0
     value_scale_update_enabled: false
+
+    clip_range_vf: 0.75
+    normalize_returns: false
+
     clip_range_vf: 0.7
+
     gae_lambda: 0.95
     value_scale_controller:
       enabled: false

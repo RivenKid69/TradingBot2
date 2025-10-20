@@ -2096,6 +2096,10 @@ def objective(trial: optuna.Trial,
         _get_model_param_value(cfg, "value_target_scale_fixed"),
         "value_target_scale_fixed",
     )
+    normalize_returns_cfg = _coerce_optional_bool(
+        _get_model_param_value(cfg, "normalize_returns"),
+        "normalize_returns",
+    )
     value_scale_controller_cfg = _get_model_param_value(cfg, "value_scale_controller")
     popart_holdout_loader = _build_popart_holdout_loader(value_scale_controller_cfg)
     ent_coef_cfg = _coerce_optional_float(
@@ -2806,6 +2810,9 @@ def objective(trial: optuna.Trial,
         else True
     )
     params["value_target_scale_fixed"] = value_target_scale_fixed_cfg
+    params["normalize_returns"] = (
+        bool(normalize_returns_cfg) if normalize_returns_cfg is not None else True
+    )
     params["value_scale_controller"] = value_scale_controller_cfg
 
     params["value_scale_ema_beta"] = (
@@ -3626,8 +3633,15 @@ def objective(trial: optuna.Trial,
         value_scale=value_scale_kwargs,
         value_scale_controller=params.get("value_scale_controller"),
         value_scale_controller_holdout=popart_holdout_loader,
+
+        clip_range_vf=params["clip_range_vf"],
         value_scale_update_enabled=params["value_scale_update_enabled"],
         value_target_scale_fixed=params["value_target_scale_fixed"],
+        normalize_returns=params["normalize_returns"],
+
+        value_scale_update_enabled=params["value_scale_update_enabled"],
+        value_target_scale_fixed=params["value_target_scale_fixed"],
+
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
