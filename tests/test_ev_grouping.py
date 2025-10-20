@@ -34,7 +34,7 @@ def test_compute_grouped_explained_variance_mean_matches_average() -> None:  # F
     y_pred = np.array([0.9, 2.1, -0.5, -1.0], dtype=np.float32)
     group_keys = ["BTCUSDT", "BTCUSDT", "ETHUSDT", "ETHUSDT"]
 
-    grouped, mean_value = compute_grouped_explained_variance(
+    grouped, summary = compute_grouped_explained_variance(
         y_true,
         y_pred,
         group_keys,
@@ -44,5 +44,35 @@ def test_compute_grouped_explained_variance_mean_matches_average() -> None:  # F
     assert math.isfinite(grouped["BTCUSDT"]) and math.isfinite(grouped["ETHUSDT"])  # FIX-TEST
     assert not math.isclose(grouped["BTCUSDT"], grouped["ETHUSDT"])  # FIX-TEST
     expected_mean = float(np.mean([grouped["BTCUSDT"], grouped["ETHUSDT"]]))
-    assert mean_value is not None
-    assert math.isclose(mean_value, expected_mean, rel_tol=1e-9, abs_tol=1e-9)  # FIX-TEST
+    assert summary["mean_unweighted"] is not None
+    assert math.isclose(
+        summary["mean_unweighted"], expected_mean, rel_tol=1e-9, abs_tol=1e-9
+    )  # FIX-TEST
+
+
+def test_compute_grouped_explained_variance_weighted_and_median() -> None:
+    y_true = np.array([1.0, 2.0, 3.0, 4.0, -1.0, -2.0, 0.5], dtype=np.float32)
+    y_pred = np.array([0.9, 2.1, 2.5, 4.5, -0.5, -1.5, 0.1], dtype=np.float32)
+    group_keys = ["A", "A", "A", "B", "B", "C", "C"]
+
+    grouped, summary = compute_grouped_explained_variance(
+        y_true,
+        y_pred,
+        group_keys,
+    )
+
+    assert grouped
+    finite_values = [value for value in grouped.values() if math.isfinite(value)]
+    assert len(finite_values) == 3
+
+    manual_counts = {"A": 3, "B": 2, "C": 2}
+    weighted_mean = sum(grouped[key] * manual_counts[key] for key in manual_counts) / sum(
+        manual_counts.values()
+    )
+    assert summary["mean_weighted"] is not None
+    assert math.isclose(summary["mean_weighted"], weighted_mean, rel_tol=1e-9)
+
+    assert summary["median"] is not None
+    assert math.isclose(
+        summary["median"], float(np.median(finite_values)), rel_tol=1e-9, abs_tol=1e-9
+    )

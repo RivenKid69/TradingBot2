@@ -1,5 +1,4 @@
 import math
-from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -19,14 +18,24 @@ from distributional_ppo import (
 def test_ev_builder_returns_none_when_no_batches() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
-    y_true, y_pred, y_true_raw, weights = algo._build_explained_variance_tensors(
-        [], [], [], [], [], [], [], []
+    y_true, y_pred, y_true_raw, weights, group_keys = algo._build_explained_variance_tensors(
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
     )
 
     assert y_true is None
     assert y_pred is None
     assert y_true_raw is None
     assert weights is None
+    assert group_keys is None
 
 
 def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
@@ -37,7 +46,10 @@ def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
     reserve_raw = torch.tensor([[1.0], [1.1], [1.2]], dtype=torch.float32)
     reserve_weights = torch.tensor([[1.0], [0.5], [1.0]], dtype=torch.float32)
 
-    y_true, y_pred, y_true_raw, weights = algo._build_explained_variance_tensors(
+    reserve_keys = [["g0", "g1", "g2"]]
+
+    y_true, y_pred, y_true_raw, weights, group_keys = algo._build_explained_variance_tensors(
+        [],
         [],
         [],
         [],
@@ -46,6 +58,7 @@ def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
         [reserve_pred],
         [reserve_raw],
         [reserve_weights],
+        reserve_keys,
     )
 
     assert y_true is not None and y_pred is not None
@@ -58,6 +71,9 @@ def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
 
     assert weights is not None
     assert torch.equal(weights, reserve_weights)
+
+    assert group_keys is not None
+    assert group_keys == reserve_keys[0]
 
     ev = safe_explained_variance(
         y_true.detach().cpu().numpy(),
@@ -255,10 +271,14 @@ def test_explained_variance_logging_marks_availability_when_metric_present() -> 
     algo = DistributionalPPO.__new__(DistributionalPPO)
     algo.logger = _DummyLogger()
 
-    algo._record_explained_variance_logs(0.25)
+    algo._record_explained_variance_logs(0.25, grouped_mean_unweighted=0.1, grouped_median=0.2)
 
     assert algo.logger.records["train/explained_variance_available"] == [1.0]
     assert algo.logger.records["train/explained_variance"] == [0.25]
+    assert algo.logger.records["train/ev/global"] == [0.25]
+    assert algo.logger.records["train/ev/mean_grouped_unweighted"] == [0.1]
+    assert algo.logger.records["train/ev/mean_grouped"] == [0.1]
+    assert algo.logger.records["train/ev/median_grouped"] == [0.2]
 
 
 def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
@@ -276,6 +296,7 @@ def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
 
     assert algo.logger.records["train/explained_variance_available"] == [0.0]
     assert "train/explained_variance" not in algo.logger.records
+    assert "train/ev/global" not in algo.logger.records
 
 
 def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
@@ -295,9 +316,21 @@ def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
     new_mean = 1.0
     new_std = 3.0
 
+    class _DummyPolicy:
+        def __init__(self) -> None:
+            self.device = torch.device("cpu")
+            self.recurrent_initial_state = None
+            self.training = False
+
+        def eval(self) -> None:
+            self.training = False
+
+        def train(self) -> None:
+            self.training = True
+
     class _DummyModel:
         def __init__(self, quantiles_tensor: torch.Tensor) -> None:
-            self.policy = SimpleNamespace(device=torch.device("cpu"), recurrent_initial_state=None)
+            self.policy = _DummyPolicy()
             self._use_quantile_value = True
             self.normalize_returns = True
             self._ret_mean_snapshot = old_mean
