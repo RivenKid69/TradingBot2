@@ -3633,10 +3633,15 @@ def objective(trial: optuna.Trial,
         value_scale=value_scale_kwargs,
         value_scale_controller=params.get("value_scale_controller"),
         value_scale_controller_holdout=popart_holdout_loader,
+
         clip_range_vf=params["clip_range_vf"],
         value_scale_update_enabled=params["value_scale_update_enabled"],
         value_target_scale_fixed=params["value_target_scale_fixed"],
         normalize_returns=params["normalize_returns"],
+
+        value_scale_update_enabled=params["value_scale_update_enabled"],
+        value_target_scale_fixed=params["value_target_scale_fixed"],
+
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
@@ -3681,6 +3686,7 @@ def objective(trial: optuna.Trial,
         ppo_clip_range=params["clip_range"],
         clip_range_warmup=params["clip_range_warmup"],
         clip_range_warmup_updates=int(params["clip_range_warmup_updates"]),
+        clip_range_vf=params["clip_range_vf"],
         critic_grad_warmup_updates=int(params["critic_grad_warmup_updates"]),
         max_grad_norm=params["max_grad_norm"],
         target_kl=params.get("target_kl", 0.08),
