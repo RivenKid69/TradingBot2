@@ -431,8 +431,8 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
                 "cvar_weight": 0.0,
                 "cvar_cap": 0.5,
                 "num_atoms": 5,
-                "v_min": -1.0,
-                "v_max": 1.0,
+                "v_min": -10.0,
+                "v_max": 10.0,
                 "hidden_dim": 32,
                 "trade_frequency_penalty": 0.0,
                 "turnover_penalty_coef": 0.0,
@@ -544,6 +544,11 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
     )
     assert captured_algo_kwargs.get("cvar_winsor_pct") == pytest.approx(0.1)
     assert captured_algo_kwargs.get("gae_lambda") == pytest.approx(0.97)
+
+    arch_params = captured_policy_kwargs.get("arch_params")
+    assert isinstance(arch_params, dict), "arch_params should be propagated to the policy"
+    assert arch_params.get("v_min") == pytest.approx(cfg.model.params["v_min"])
+    assert arch_params.get("v_max") == pytest.approx(cfg.model.params["v_max"])
 
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 
