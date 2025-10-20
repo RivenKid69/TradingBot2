@@ -709,7 +709,15 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 episode_starts.device,
             )
 
-        episode_starts = episode_starts.to(target_device)
+        # ``episode_starts`` приходит из окружения как булевы маркеры начала эпизода,
+        # однако реализация ``sb3`` ожидает тензор с плавающей точкой, чтобы выполнять
+        # арифметические операции (см. ``RecurrentActorCriticPolicy._process_sequence``).
+        #
+        # В Python 3.12 / PyTorch 2.x операция ``1.0 - bool_tensor`` вызывает
+        # ``RuntimeError`` («Subtraction ... with a bool tensor is not supported»).
+        # Поэтому здесь мы явно приводим тензор к float32 перед передачей дальше,
+        # сохраняя совместимость по устройству.
+        episode_starts = episode_starts.to(device=target_device, dtype=torch.float32)
 
         if isinstance(recurrent_module, nn.GRU):
             if not lstm_states:
