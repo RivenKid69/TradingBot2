@@ -746,7 +746,7 @@ class _Worker:
         self._last_bar_snapshot: Dict[str, Any] = {}
         self._dynamic_guard: DynamicNoTradeGuard | None = None
         dyn_cfg: DynamicGuardConfig | None = None
-        if self._no_trade_cfg is not None:
+        if not NO_TRADE_FEATURES_DISABLED and self._no_trade_cfg is not None:
             structured = getattr(self._no_trade_cfg, "dynamic", None)
             if structured is not None:
                 dyn_enabled = getattr(structured, "enabled", None)
@@ -5732,9 +5732,13 @@ class _Worker:
 
         dyn_stage_cfg = self._pipeline_cfg.get("dynamic_guard") if self._pipeline_cfg else None
         dyn_stage_enabled = dyn_stage_cfg is None or dyn_stage_cfg.enabled
+
+        if not NO_TRADE_FEATURES_DISABLED and self._dynamic_guard is not None:
+
         if NO_TRADE_FEATURES_DISABLED or self._dynamic_guard is None:
             pass
         else:
+
             fp_snapshot = None
             metrics_getter = getattr(self._fp, "get_market_metrics", None)
             if callable(metrics_getter):
