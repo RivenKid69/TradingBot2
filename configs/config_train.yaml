@@ -63,7 +63,7 @@ model:
     ent_coef_plateau_window: 24
     ent_coef_plateau_tolerance: 0.002
     ent_coef_plateau_min_updates: 40
-    vf_coef: 0.8
+    vf_coef: 1.8
     # Явно отключаем «raw» лимит ценности (чтобы политика не подставляла ±max(|v_min|,|v_max|)):
     value_clip_limit: null
     vf_coef_warmup: 0
