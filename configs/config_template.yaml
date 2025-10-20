@@ -69,6 +69,22 @@ model:
       atr_window: 14
       hard_cap_pct: 2.0
       multiplier: 4.0
+    value_scale:
+      ema_beta: 0.9
+      max_rel_step: 0.5
+      std_floor: 0.003
+      window_updates: 16
+      warmup_updates: 6
+      freeze_after_updates: null
+      never_freeze: true
+      max_change_pct: 0.06
+      target_scale_ema_beta: 0.9
+      range_max_rel_step: 0.5
+      freeze_after: null
+      stability:
+        min_explained_variance: 0.0
+        max_abs_p95: 6.0
+        patience: 2
     value_scale_controller:
       enabled: false
       mode: "shadow"

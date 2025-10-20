@@ -2632,7 +2632,7 @@ def objective(trial: optuna.Trial,
         value_scale_range_max_rel_step_cfg is None
         and not value_scale_range_max_rel_step_provided
     ):
-        value_scale_range_max_rel_step_cfg = 0.15
+        value_scale_range_max_rel_step_cfg = 0.5
         stability_raw = _get_model_param_value(cfg, "value_scale_stability")
         if isinstance(stability_raw, Mapping):
             stability_dict = {}
@@ -2824,7 +2824,7 @@ def objective(trial: optuna.Trial,
     params["value_scale_ema_beta"] = (
         value_scale_ema_beta_cfg if value_scale_ema_beta_cfg is not None else 0.2
     )
-    fallback_value_scale_max_rel_step = 0.15
+    fallback_value_scale_max_rel_step = 0.5
     if (
         value_scale_max_rel_step_cfg is None
         or not math.isfinite(value_scale_max_rel_step_cfg)
