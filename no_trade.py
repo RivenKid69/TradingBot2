@@ -16,6 +16,14 @@ import pandas as pd
 from no_trade_config import NoTradeConfig, NoTradeState, get_no_trade_config
 
 
+# Global toggle disabling all no-trade mask effects across the platform.
+# The mask historically filtered training data which caused EV to drop to
+# zero after a few iterations.  Keeping this flag hard-coded to ``True``
+# guarantees that every caller receives an all-clear mask and downstream
+# logic never blocks rows or trading decisions again.
+NO_TRADE_FEATURES_DISABLED: bool = True
+
+
 LOGGER = logging.getLogger(__name__)
 DEFAULT_MAINTENANCE_MAX_AGE_SEC = 24 * 3600
 
@@ -1445,6 +1453,9 @@ def estimate_block_ratio(
 ) -> float:
     """Estimate share of rows blocked by schedule and dynamic guard."""
 
+    if NO_TRADE_FEATURES_DISABLED:
+        return 0.0
+
     if df.empty:
         return 0.0
 
@@ -1470,6 +1481,14 @@ def compute_no_trade_mask(
       True  — строка попадает в «запрещённое» окно (no_trade), её надо исключить из обучения;
       False — строку можно использовать в train/val.
     """
+    if NO_TRADE_FEATURES_DISABLED:
+        mask = pd.Series(False, index=df.index, name="no_trade_block", dtype="bool")
+        mask.attrs["reasons"] = pd.DataFrame(index=df.index)
+        mask.attrs["reason_labels"] = {}
+        mask.attrs["meta"] = {"disabled": True}
+        mask.attrs["state"] = {}
+        return mask
+
     cfg = config or get_no_trade_config(sandbox_yaml_path)
 
     mask, reasons, meta, state_payload, reason_labels = _compute_no_trade_components(
