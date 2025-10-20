@@ -14,14 +14,20 @@ import numpy as np
 import pandas as pd
 
 from no_trade_config import NoTradeConfig, NoTradeState, get_no_trade_config
+from runtime_flags import get_bool as _get_runtime_bool
 
 
 # Global toggle disabling all no-trade mask effects across the platform.
-# The mask historically filtered training data which caused EV to drop to
-# zero after a few iterations.  Keeping this flag hard-coded to ``True``
-# guarantees that every caller receives an all-clear mask and downstream
-# logic never blocks rows or trading decisions again.
-NO_TRADE_FEATURES_DISABLED: bool = True
+# Historically the mask filtered training data so aggressively that EV
+# collapsed to zero after a few iterations, so the flag was hard-coded to
+# ``True``.  The underlying issue has since been fixed, therefore we allow the
+# feature to be enabled again while still providing an escape hatch via the
+# ``NO_TRADE_FEATURES_DISABLED`` environment variable.
+
+
+NO_TRADE_FEATURES_DISABLED: bool = _get_runtime_bool(
+    "NO_TRADE_FEATURES_DISABLED", False
+)
 
 
 LOGGER = logging.getLogger(__name__)
