@@ -3034,6 +3034,13 @@ class DistributionalPPO(RecurrentPPO):
             self.running_v_max = clip
             self.v_range_initialized = False
 
+        if not hasattr(self, "_value_norm_clip_min") or not hasattr(
+            self, "_value_norm_clip_max"
+        ):
+            clip_default = float(getattr(self, "ret_clip", 1.0))
+            self._value_norm_clip_min = -clip_default
+            self._value_norm_clip_max = clip_default
+
         base_scale = float(self.value_target_scale)
         base_scale_safe = base_scale if abs(base_scale) > 1e-8 else 1.0
         returns_tensor = torch.as_tensor(
@@ -3181,6 +3188,11 @@ class DistributionalPPO(RecurrentPPO):
 
                     update_applied = True
                     self._value_scale_update_count += 1
+                    if (
+                        not getattr(self, "_value_scale_never_freeze", False)
+                        and self._value_scale_update_count >= warmup_limit
+                    ):
+                        self._value_scale_frozen = True
 
                     self.ret_rms.mean[...] = float(new_mean)
                     self.ret_rms.var[...] = float(new_std * new_std)
@@ -3224,6 +3236,11 @@ class DistributionalPPO(RecurrentPPO):
 
                 update_applied = True
                 self._value_scale_update_count += 1
+                if (
+                    not getattr(self, "_value_scale_never_freeze", False)
+                    and self._value_scale_update_count >= warmup_limit
+                ):
+                    self._value_scale_frozen = True
 
             self._pending_ret_mean = None
             self._pending_ret_std = None
@@ -3267,7 +3284,9 @@ class DistributionalPPO(RecurrentPPO):
         tol_rel = 1e-6 * max(1.0, abs(prev_scale_effective))
         tolerance = max(tol_abs, tol_rel)
         updates_enabled = bool(getattr(self, "_value_scale_updates_enabled", True))
-        updates_locked = (not updates_enabled) or (self._value_target_scale_fixed is not None)
+        updates_locked = (not updates_enabled) or (
+            getattr(self, "_value_target_scale_fixed", None) is not None
+        )
         if updates_locked:
             if update_applied:
                 raise RuntimeError(
@@ -3687,6 +3706,8 @@ class DistributionalPPO(RecurrentPPO):
             raise ValueError("'ret_clip' must be a positive finite value")
         self.normalize_returns = normalize_returns_value
         self.ret_clip = ret_clip_value
+        self._value_norm_clip_min = -self.ret_clip
+        self._value_norm_clip_max = self.ret_clip
         self.ret_rms = RunningMeanStd(shape=())
         self._ret_mean_value = 0.0
         self._ret_std_value = 1.0
@@ -5577,6 +5598,8 @@ class DistributionalPPO(RecurrentPPO):
         ret_std_value = float(self._ret_std_snapshot)
         pending_mean_value = ret_mu_value
         pending_std_value = ret_std_value
+        clip_norm_min = -float(self.ret_clip)
+        clip_norm_max = float(self.ret_clip)
 
         if self.normalize_returns:
             pending_rms = self._pending_rms
@@ -5631,8 +5654,41 @@ class DistributionalPPO(RecurrentPPO):
             if self._value_clip_limit_unscaled is not None:
                 self._value_clip_limit_scaled = None
 
+            returns_norm_unclipped = torch.empty_like(returns_raw_tensor)
+            if returns_raw_tensor.numel() > 0:
+                denom_norm = ret_std_value if ret_std_value > 0.0 else self._value_scale_std_floor
+                returns_norm_unclipped = (returns_raw_tensor - ret_mu_value) / denom_norm
+
             target_v_min = -float(self.ret_clip)
             target_v_max = float(self.ret_clip)
+            if returns_norm_unclipped.numel() > 0:
+                finite_mask = torch.isfinite(returns_norm_unclipped)
+                if torch.any(finite_mask):
+                    finite_norm = returns_norm_unclipped[finite_mask]
+                    quantile_bounds = torch.tensor(
+                        [0.02, 0.98],
+                        device=finite_norm.device,
+                        dtype=finite_norm.dtype,
+                    )
+                    v_low, v_high = torch.quantile(finite_norm, quantile_bounds)
+                    raw_min = float(torch.min(finite_norm).item())
+                    raw_max = float(torch.max(finite_norm).item())
+                    candidate_min = float(min(v_low.item(), raw_min))
+                    candidate_max = float(max(v_high.item(), raw_max))
+                    if (
+                        math.isfinite(candidate_min)
+                        and math.isfinite(candidate_max)
+                        and candidate_max > candidate_min
+                    ):
+                        center = 0.5 * (candidate_max + candidate_min)
+                        half_range = 0.5 * (candidate_max - candidate_min)
+                        min_half_range = float(self.ret_clip)
+                        half_range = max(half_range, min_half_range)
+                        padding = max(1e-6, half_range * 0.05)
+                        half_range += padding
+                        target_v_min = center - half_range
+                        target_v_max = center + half_range
+
             updated_v_min = float(self.running_v_min)
             updated_v_max = float(self.running_v_max)
             if not getattr(self, "_value_scale_frozen", False):
@@ -5640,6 +5696,8 @@ class DistributionalPPO(RecurrentPPO):
                     target_v_min, target_v_max
                 )
 
+            clip_norm_min = float(updated_v_min)
+            clip_norm_max = float(updated_v_max)
             running_v_min_unscaled = updated_v_min * ret_std_value + ret_mu_value
             running_v_max_unscaled = updated_v_max * ret_std_value + ret_mu_value
         else:
@@ -5721,6 +5779,9 @@ class DistributionalPPO(RecurrentPPO):
             running_v_max_unscaled = (
                 updated_v_max / self._value_target_scale_effective
             )
+
+        self._value_norm_clip_min = float(clip_norm_min)
+        self._value_norm_clip_max = float(clip_norm_max)
 
         ret_mu_tensor = torch.as_tensor(ret_mu_value, device=self.device, dtype=torch.float32)
         ret_std_tensor = torch.as_tensor(ret_std_value, device=self.device, dtype=torch.float32)
@@ -5869,7 +5930,9 @@ class DistributionalPPO(RecurrentPPO):
                     if self.normalize_returns:
                         target_returns_norm = (
                             (target_returns_raw - ret_mu_tensor) / ret_std_tensor
-                        ).clamp(-self.ret_clip, self.ret_clip)
+                        ).clamp(
+                            self._value_norm_clip_min, self._value_norm_clip_max
+                        )
                     else:
                         target_returns_norm = (
                             (target_returns_raw / float(base_scale_safe))
@@ -5899,7 +5962,9 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm_clipped = (
                                 (target_returns_raw_clipped - ret_mu_tensor)
                                 / ret_std_tensor
-                            ).clamp(-self.ret_clip, self.ret_clip)
+                            ).clamp(
+                                self._value_norm_clip_min, self._value_norm_clip_max
+                            )
                         else:
                             target_returns_norm_clipped = (
                                 (target_returns_raw_clipped / float(base_scale_safe))
@@ -5953,7 +6018,9 @@ class DistributionalPPO(RecurrentPPO):
                                 quantiles_norm_for_pred = (
                                     (quantiles_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
-                                ).clamp(-self.ret_clip, self.ret_clip)
+                                ).clamp(
+                                    self._value_norm_clip_min, self._value_norm_clip_max
+                                )
                             else:
                                 quantiles_norm_for_pred = (
                                     (quantiles_raw_clipped / float(base_scale_safe))
@@ -5995,7 +6062,9 @@ class DistributionalPPO(RecurrentPPO):
                                 value_pred = (
                                     (value_pred_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
-                                ).clamp(-self.ret_clip, self.ret_clip)
+                                ).clamp(
+                                    self._value_norm_clip_min, self._value_norm_clip_max
+                                )
                             else:
                                 value_pred = (
                                     (value_pred_raw_clipped / float(base_scale_safe))
@@ -6009,7 +6078,9 @@ class DistributionalPPO(RecurrentPPO):
                                     )
 
                     if self.normalize_returns:
-                        value_pred = value_pred.clamp(-self.ret_clip, self.ret_clip)
+                        value_pred = value_pred.clamp(
+                            self._value_norm_clip_min, self._value_norm_clip_max
+                        )
                     elif self._value_clip_limit_scaled is not None:
                         value_pred = torch.clamp(
                             value_pred,
@@ -6531,7 +6602,7 @@ class DistributionalPPO(RecurrentPPO):
                                 target_returns_raw - ret_mu_tensor
                             ) / ret_std_tensor
                             target_returns_norm = target_returns_norm_raw.clamp(
-                                -self.ret_clip, self.ret_clip
+                                self._value_norm_clip_min, self._value_norm_clip_max
                             )
                         else:
                             target_returns_norm_raw = (
@@ -6571,7 +6642,9 @@ class DistributionalPPO(RecurrentPPO):
                                 target_returns_norm_clipped = (
                                     (target_returns_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
-                                ).clamp(-self.ret_clip, self.ret_clip)
+                                ).clamp(
+                                    self._value_norm_clip_min, self._value_norm_clip_max
+                                )
                             else:
                                 target_returns_norm_clipped = (
                                     (target_returns_raw_clipped / float(base_scale_safe))
@@ -6782,7 +6855,9 @@ class DistributionalPPO(RecurrentPPO):
                                 quantiles_norm_clipped = (
                                     (quantiles_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
-                                ).clamp(-self.ret_clip, self.ret_clip)
+                                ).clamp(
+                                    self._value_norm_clip_min, self._value_norm_clip_max
+                                )
                             else:
                                 quantiles_norm_clipped = (
                                     (quantiles_raw_clipped / float(base_scale_safe))
@@ -6807,7 +6882,7 @@ class DistributionalPPO(RecurrentPPO):
                         value_pred_norm_for_ev = quantiles_for_ev.mean(dim=1, keepdim=True)
                         if self.normalize_returns:
                             value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(
-                                -self.ret_clip, self.ret_clip
+                                self._value_norm_clip_min, self._value_norm_clip_max
                             )
                         elif self._value_clip_limit_scaled is not None:
                             value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(
@@ -6862,7 +6937,10 @@ class DistributionalPPO(RecurrentPPO):
                                     mean_values_norm_clipped = (
                                         (mean_values_unscaled_clipped - ret_mu_tensor)
                                         / ret_std_tensor
-                                    ).clamp(-self.ret_clip, self.ret_clip)
+                                    ).clamp(
+                                        self._value_norm_clip_min,
+                                        self._value_norm_clip_max,
+                                    )
                                 else:
                                     mean_values_norm_clipped = (
                                         (mean_values_unscaled_clipped / float(base_scale_safe))
@@ -6904,7 +6982,7 @@ class DistributionalPPO(RecurrentPPO):
                             )
                             if self.normalize_returns:
                                 value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(
-                                    -self.ret_clip, self.ret_clip
+                                    self._value_norm_clip_min, self._value_norm_clip_max
                                 )
                             elif self._value_clip_limit_scaled is not None:
                                 value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(

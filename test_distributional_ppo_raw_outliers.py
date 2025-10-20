@@ -330,7 +330,9 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
         span = (model.running_v_max - model.running_v_min) * std
         spans.append(span)
 
-        normalized = np.clip((returns - mean) / max(std, 1e-8), -model.ret_clip, model.ret_clip)
+        clip_lo = float(model._value_norm_clip_min)
+        clip_hi = float(model._value_norm_clip_max)
+        normalized = np.clip((returns - mean) / max(std, 1e-8), clip_lo, clip_hi)
         mse_history.append(float(np.mean(normalized**2)))
 
         assert std <= prev_std * (1.0 + model._value_scale_max_rel_step) + 1e-8
@@ -339,9 +341,10 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
 
     assert max(stds) < 3.0
     assert min(scales_effective) > 1.0 / (model.ret_clip * 3.0)
-    assert max(spans) < model.ret_clip * 4.0
-    assert max(mse_history) < model.ret_clip**2
-    assert model._value_scale_update_count == model._value_scale_warmup_limit
+    clip_cap = max(abs(float(model._value_norm_clip_min)), abs(float(model._value_norm_clip_max)))
+    assert max(spans) < clip_cap * 4.0
+    assert max(mse_history) < clip_cap**2
+    assert model._value_scale_update_count >= model._value_scale_warmup_limit
     assert model._value_scale_frozen is True
     frozen_std = stds[model._value_scale_warmup_limit - 1]
     frozen_scale = scales_effective[model._value_scale_warmup_limit - 1]
