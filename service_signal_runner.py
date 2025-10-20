@@ -110,6 +110,7 @@ from no_trade import (
     _in_daily_window,
     _in_funding_buffer,
     _in_custom_window,
+    NO_TRADE_FEATURES_DISABLED,
 )
 from no_trade_config import (
     NoTradeConfig,
@@ -376,6 +377,12 @@ class _ScheduleNoTradeChecker:
     """Evaluate maintenance-based no-trade windows for individual bars."""
 
     def __init__(self, cfg: NoTradeConfig | None) -> None:
+        if NO_TRADE_FEATURES_DISABLED:
+            self._enabled = False
+            self._daily_windows: list[tuple[int, int]] = []
+            self._funding_buffer_min = 0
+            self._custom_windows: list[dict[str, int]] = []
+            return
         self._enabled = False
         self._daily_windows: list[tuple[int, int]] = []
         self._funding_buffer_min = 0
@@ -739,7 +746,7 @@ class _Worker:
         self._last_bar_snapshot: Dict[str, Any] = {}
         self._dynamic_guard: DynamicNoTradeGuard | None = None
         dyn_cfg: DynamicGuardConfig | None = None
-        if self._no_trade_cfg is not None:
+        if not NO_TRADE_FEATURES_DISABLED and self._no_trade_cfg is not None:
             structured = getattr(self._no_trade_cfg, "dynamic", None)
             if structured is not None:
                 dyn_enabled = getattr(structured, "enabled", None)
@@ -4886,6 +4893,8 @@ class _Worker:
         *,
         stage_cfg: PipelineStageConfig | None = None,
     ) -> tuple[PipelineResult, str | None]:
+        if NO_TRADE_FEATURES_DISABLED:
+            return PipelineResult(action="pass", stage=Stage.WINDOWS), None
         try:
             monitoring.inc_stage(Stage.WINDOWS)
         except Exception:
@@ -5721,7 +5730,7 @@ class _Worker:
 
         dyn_stage_cfg = self._pipeline_cfg.get("dynamic_guard") if self._pipeline_cfg else None
         dyn_stage_enabled = dyn_stage_cfg is None or dyn_stage_cfg.enabled
-        if self._dynamic_guard is not None:
+        if not NO_TRADE_FEATURES_DISABLED and self._dynamic_guard is not None:
             fp_snapshot = None
             metrics_getter = getattr(self._fp, "get_market_metrics", None)
             if callable(metrics_getter):
