@@ -3708,12 +3708,33 @@ def objective(trial: optuna.Trial,
         )
         ev_metrics = getattr(model, "_last_ev_metrics", None)  # FIX
         if isinstance(ev_metrics, Mapping):  # FIX
-            ev_mean_value = ev_metrics.get("ev_mean")  # FIX
-            if ev_mean_value is not None and math.isfinite(ev_mean_value):  # FIX
-                print(f"[EV] Mean explained variance across groups: {ev_mean_value:.4f}")  # FIX
-                model_logger = getattr(model, "logger", None)  # FIX
+            model_logger = getattr(model, "logger", None)  # FIX
+            metric_specs: list[tuple[str, str, tuple[str, ...]]] = [  # FIX
+                (
+                    "ev_mean_unweighted",  # FIX
+                    "[EV] Mean explained variance across groups (unweighted)",  # FIX
+                    ("train/ev_mean_grouped_final", "train/ev_mean_unweighted_grouped_final"),  # FIX
+                ),
+                (
+                    "ev_mean_weighted",  # FIX
+                    "[EV] Mean explained variance across groups (weighted)",  # FIX
+                    ("train/ev_mean_weighted_grouped_final",),  # FIX
+                ),
+            ]
+            for metric_key, message, log_names in metric_specs:  # FIX
+                raw_value = ev_metrics.get(metric_key)  # FIX
+                if raw_value is None:  # FIX
+                    continue  # FIX
+                try:  # FIX
+                    metric_value = float(raw_value)  # FIX
+                except (TypeError, ValueError):  # FIX
+                    continue  # FIX
+                if not math.isfinite(metric_value):  # FIX
+                    continue  # FIX
+                print(f"{message}: {metric_value:.4f}")  # FIX
                 if model_logger is not None:  # FIX
-                    model_logger.record("train/ev_mean_grouped_final", float(ev_mean_value))  # FIX
+                    for log_name in log_names:  # FIX
+                        model_logger.record(log_name, metric_value)  # FIX
             grouped_metrics = ev_metrics.get("ev_grouped") if ev_metrics else None  # FIX
             if isinstance(grouped_metrics, Mapping) and grouped_metrics:  # FIX
                 finite_items: list[tuple[str, float]] = []  # FIX
