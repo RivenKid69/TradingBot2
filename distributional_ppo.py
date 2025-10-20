@@ -568,6 +568,18 @@ class RawRecurrentRolloutBufferSamples(NamedTuple):
     sample_indices: torch.Tensor  # FIX
 
 
+@dataclass(slots=True)
+class _ValuePredictionCacheEntry:
+    """Cached inputs required to recompute critic predictions post-update."""
+
+    observations: Any
+    lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
+    episode_starts: torch.Tensor
+    valid_indices: Optional[torch.Tensor]
+    base_scale: float
+    old_values_raw: Optional[torch.Tensor]
+
+
 class PopArtHoldoutBatch(NamedTuple):
     """Lightweight container with the minimal data required for PopArt evaluation."""
 
@@ -1561,6 +1573,64 @@ class DistributionalPPO(RecurrentPPO):
         return _clone_item(states)
 
     @staticmethod
+    def _clone_observations_to_device(obs: Any, device: torch.device) -> Any:
+        if isinstance(obs, torch.Tensor):
+            return obs.detach().to(device=device)
+        if isinstance(obs, Mapping):
+            return type(obs)((key, DistributionalPPO._clone_observations_to_device(value, device)) for key, value in obs.items())
+        if isinstance(obs, tuple):
+            return type(obs)(DistributionalPPO._clone_observations_to_device(item, device) for item in obs)
+        if isinstance(obs, list):
+            return type(obs)(DistributionalPPO._clone_observations_to_device(item, device) for item in obs)
+        to_fn = getattr(obs, "to", None)
+        if callable(to_fn):
+            try:
+                return to_fn(device=device)
+            except TypeError:
+                return to_fn(device)
+        return obs
+
+    @staticmethod
+    def _detach_observations_to_cpu(obs: Any) -> Any:
+        if isinstance(obs, torch.Tensor):
+            return obs.detach().cpu()
+        if isinstance(obs, Mapping):
+            return {key: DistributionalPPO._detach_observations_to_cpu(value) for key, value in obs.items()}
+        if isinstance(obs, tuple):
+            return type(obs)(DistributionalPPO._detach_observations_to_cpu(item) for item in obs)
+        if isinstance(obs, list):
+            return type(obs)(DistributionalPPO._detach_observations_to_cpu(item) for item in obs)
+        return obs
+
+    @staticmethod
+    def _detach_states_to_cpu(
+        states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
+    ) -> Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]:
+        if states is None:
+            return None
+        return DistributionalPPO._clone_states_to_device(states, torch.device("cpu"))
+
+    @staticmethod
+    def _detach_episode_starts_to_cpu(episode_starts: Any) -> torch.Tensor:
+        if isinstance(episode_starts, torch.Tensor):
+            tensor = episode_starts.detach()
+        else:
+            tensor = torch.as_tensor(episode_starts)
+        if tensor.dtype != torch.bool:
+            tensor = tensor.to(dtype=torch.bool)
+        return tensor.cpu()
+
+    @staticmethod
+    def _extract_critic_states(
+        states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
+    ) -> Optional[Tuple[torch.Tensor, ...]]:
+        if states is None:
+            return None
+        if hasattr(states, "vf"):
+            return tuple(states.vf)
+        return tuple(states)
+
+    @staticmethod
     def _extract_actor_states(
         states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
     ) -> Optional[Tuple[torch.Tensor, ...]]:
@@ -1571,6 +1641,181 @@ class DistributionalPPO(RecurrentPPO):
             return tuple(states.pi)
 
         return tuple(states)
+
+    def _build_value_prediction_cache_entry(
+        self,
+        rollout_data: RawRecurrentRolloutBufferSamples,
+        *,
+        valid_indices: Optional[torch.Tensor],
+        base_scale_safe: float,
+        old_values_raw_tensor: Optional[torch.Tensor],
+    ) -> _ValuePredictionCacheEntry:
+        observations_cpu = self._detach_observations_to_cpu(rollout_data.observations)
+        lstm_states_cpu = self._detach_states_to_cpu(rollout_data.lstm_states)
+        episode_starts_cpu = self._detach_episode_starts_to_cpu(rollout_data.episode_starts)
+        indices_cpu = valid_indices.clone().cpu() if valid_indices is not None else None
+        if indices_cpu is not None and indices_cpu.dtype != torch.long:
+            indices_cpu = indices_cpu.to(dtype=torch.long)
+        if old_values_raw_tensor is not None:
+            old_values_cpu = old_values_raw_tensor.detach().to(device="cpu", dtype=torch.float32)
+        else:
+            old_values_cpu = None
+        return _ValuePredictionCacheEntry(
+            observations=observations_cpu,
+            lstm_states=lstm_states_cpu,
+            episode_starts=episode_starts_cpu,
+            valid_indices=indices_cpu,
+            base_scale=float(base_scale_safe),
+            old_values_raw=old_values_cpu,
+        )
+
+    def _refresh_value_prediction_tensors(
+        self,
+        primary_cache: Sequence[_ValuePredictionCacheEntry],
+        primary_predictions: Sequence[torch.Tensor],
+        reserve_cache: Sequence[_ValuePredictionCacheEntry],
+        reserve_predictions: Sequence[torch.Tensor],
+        *,
+        clip_range_vf_value: Optional[float],
+        ret_mu_tensor: torch.Tensor,
+        ret_std_tensor: torch.Tensor,
+    ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+        if not primary_cache and not reserve_cache:
+            return list(primary_predictions), list(reserve_predictions)
+
+        was_training = self.policy.training
+        self.policy.eval()
+
+        def _prepare_episode_starts(tensor: torch.Tensor) -> torch.Tensor:
+            device_tensor = tensor.to(device=self.device)
+            if device_tensor.dtype != torch.bool:
+                device_tensor = device_tensor.to(dtype=torch.bool)
+            return device_tensor
+
+        def _prepare_states(
+            states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]
+        ) -> Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]]:
+            if states is None:
+                return None
+            return self._clone_states_to_device(states, self.device)
+
+        def _select_pred(entry: _ValuePredictionCacheEntry, value_tensor: torch.Tensor) -> torch.Tensor:
+            value_col = value_tensor.reshape(-1, 1)
+            if entry.valid_indices is not None and entry.valid_indices.numel() > 0:
+                indices = entry.valid_indices.to(device=value_col.device)
+                if indices.dtype != torch.long:
+                    indices = indices.to(dtype=torch.long)
+                value_col = value_col[indices]
+            return value_col.detach()
+
+        def _predict(entry: _ValuePredictionCacheEntry) -> torch.Tensor:
+            obs_device = self._clone_observations_to_device(entry.observations, self.device)
+            lstm_states_device = _prepare_states(entry.lstm_states)
+            episode_starts_device = _prepare_episode_starts(entry.episode_starts)
+
+            clip_delta = float(clip_range_vf_value) if clip_range_vf_value is not None else None
+            if self._use_quantile_value:
+                critic_states = self._extract_critic_states(lstm_states_device)
+                if critic_states is None:
+                    critic_states = tuple()
+                with torch.no_grad():
+                    quantiles = self.policy.value_quantiles(
+                        obs_device, critic_states, episode_starts_device
+                    )
+                quantiles_fp32 = quantiles.to(dtype=torch.float32)
+                if clip_delta is not None and entry.old_values_raw is not None:
+                    quantiles_raw = self._to_raw_returns(quantiles_fp32)
+                    old_values_raw = entry.old_values_raw.to(
+                        device=quantiles_raw.device, dtype=torch.float32
+                    )
+                    while old_values_raw.dim() < quantiles_raw.dim():
+                        old_values_raw = old_values_raw.unsqueeze(-1)
+                    delta_raw = quantiles_raw - old_values_raw
+                    quantiles_raw = old_values_raw + delta_raw.clamp(
+                        min=-clip_delta, max=clip_delta
+                    )
+                    if self.normalize_returns:
+                        ret_mu = ret_mu_tensor.to(device=quantiles_raw.device)
+                        ret_std = ret_std_tensor.to(device=quantiles_raw.device)
+                        quantiles_fp32 = ((quantiles_raw - ret_mu) / ret_std).clamp(
+                            self._value_norm_clip_min, self._value_norm_clip_max
+                        )
+                    else:
+                        scale_tensor = quantiles_raw.new_tensor(entry.base_scale)
+                        quantiles_fp32 = (
+                            (quantiles_raw / scale_tensor)
+                            * float(self._value_target_scale_effective)
+                        )
+                        if self._value_clip_limit_scaled is not None:
+                            quantiles_fp32 = torch.clamp(
+                                quantiles_fp32,
+                                min=-self._value_clip_limit_scaled,
+                                max=self._value_clip_limit_scaled,
+                            )
+                value_tensor = quantiles_fp32.mean(dim=1, keepdim=True)
+            else:
+                critic_states = self._extract_critic_states(lstm_states_device)
+                if critic_states is None:
+                    critic_states = tuple()
+                with torch.no_grad():
+                    value_tensor = self.policy.predict_values(
+                        obs_device, critic_states, episode_starts_device
+                    )
+                if clip_delta is not None and entry.old_values_raw is not None:
+                    value_raw = self._to_raw_returns(value_tensor)
+                    old_values_raw = entry.old_values_raw.to(
+                        device=value_raw.device, dtype=torch.float32
+                    )
+                    value_raw = torch.clamp(
+                        value_raw,
+                        min=old_values_raw - clip_delta,
+                        max=old_values_raw + clip_delta,
+                    )
+                    if self.normalize_returns:
+                        ret_mu = ret_mu_tensor.to(device=value_raw.device)
+                        ret_std = ret_std_tensor.to(device=value_raw.device)
+                        value_tensor = ((value_raw - ret_mu) / ret_std).clamp(
+                            self._value_norm_clip_min, self._value_norm_clip_max
+                        )
+                    else:
+                        scale_tensor = value_raw.new_tensor(entry.base_scale)
+                        value_tensor = (
+                            (value_raw / scale_tensor)
+                            * float(self._value_target_scale_effective)
+                        )
+                        if self._value_clip_limit_scaled is not None:
+                            value_tensor = torch.clamp(
+                                value_tensor,
+                                min=-self._value_clip_limit_scaled,
+                                max=self._value_clip_limit_scaled,
+                            )
+
+            if self.normalize_returns:
+                value_tensor = value_tensor.clamp(
+                    self._value_norm_clip_min, self._value_norm_clip_max
+                )
+            elif self._value_clip_limit_scaled is not None:
+                value_tensor = torch.clamp(
+                    value_tensor,
+                    min=-self._value_clip_limit_scaled,
+                    max=self._value_clip_limit_scaled,
+                )
+
+            return _select_pred(entry, value_tensor.to(dtype=torch.float32))
+
+        try:
+            with torch.no_grad():
+                refreshed_primary = [
+                    _predict(entry) for entry in primary_cache
+                ] if primary_cache else []
+                refreshed_reserve = [
+                    _predict(entry) for entry in reserve_cache
+                ] if reserve_cache else []
+        finally:
+            if was_training:
+                self.policy.train()
+
+        return refreshed_primary or list(primary_predictions), refreshed_reserve or list(reserve_predictions)
 
     def _ev_group_key_from_info(self, env_index: int, info: Any) -> Optional[str]:  # FIX
         symbol: Optional[str] = None
@@ -5828,6 +6073,8 @@ class DistributionalPPO(RecurrentPPO):
         value_ev_reserve_pred_norm: list[torch.Tensor] = []
         value_ev_reserve_weight: list[torch.Tensor] = []
         value_ev_reserve_group_keys: list[list[str]] = []  # FIX
+        value_eval_primary_cache: list[_ValuePredictionCacheEntry] = []
+        value_eval_reserve_cache: list[_ValuePredictionCacheEntry] = []
         ev_group_key_len_mismatch_logged = False  # FIX
 
         def _reserve_ev_samples(
@@ -6101,6 +6348,13 @@ class DistributionalPPO(RecurrentPPO):
                         and weights_tensor.shape[0] == target_norm_col.shape[0]
                     ):
                         value_ev_reserve_weight.append(weights_tensor.detach())
+                    cache_entry = self._build_value_prediction_cache_entry(
+                        rollout_data,
+                        valid_indices=index_tensor,
+                        base_scale_safe=base_scale_safe,
+                        old_values_raw_tensor=old_values_raw_tensor if clip_old_values_available else None,
+                    )
+                    value_eval_reserve_cache.append(cache_entry)
             finally:
                 if was_training_inner:
                     self.policy.train()  # FIX: вернуть исходный режим
@@ -6873,6 +7127,13 @@ class DistributionalPPO(RecurrentPPO):
                                 max=self._value_clip_limit_scaled,
                             )
                         value_pred_batches_norm.append(value_pred_norm_for_ev.detach())
+                        cache_entry = self._build_value_prediction_cache_entry(
+                            rollout_data,
+                            valid_indices=valid_indices,
+                            base_scale_safe=base_scale_safe,
+                            old_values_raw_tensor=old_values_raw_tensor,
+                        )
+                        value_eval_primary_cache.append(cache_entry)
                     else:
                         pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
                         log_predictions = torch.log(pred_probs_fp32)
@@ -6973,6 +7234,13 @@ class DistributionalPPO(RecurrentPPO):
                                     max=self._value_clip_limit_scaled,
                                 )
                             value_pred_batches_norm.append(value_pred_norm_for_ev.detach())
+                            cache_entry = self._build_value_prediction_cache_entry(
+                                rollout_data,
+                                valid_indices=valid_indices,
+                                base_scale_safe=base_scale_safe,
+                                old_values_raw_tensor=old_values_raw_tensor,
+                            )
+                            value_eval_primary_cache.append(cache_entry)
 
                         if valid_indices is not None:
                             pred_probs_for_cvar = pred_probs_fp32[valid_indices]
@@ -7347,6 +7615,22 @@ class DistributionalPPO(RecurrentPPO):
                     continue  # FIX
                 combined.extend(str(item) for item in batch_keys)  # FIX
             return combined or None  # FIX
+
+        if value_eval_primary_cache or value_eval_reserve_cache:
+            (
+                value_pred_batches_norm,
+                value_ev_reserve_pred_norm,
+            ) = self._refresh_value_prediction_tensors(
+                value_eval_primary_cache,
+                value_pred_batches_norm,
+                value_eval_reserve_cache,
+                value_ev_reserve_pred_norm,
+                clip_range_vf_value=clip_range_vf_value,
+                ret_mu_tensor=ret_mu_tensor,
+                ret_std_tensor=ret_std_tensor,
+            )
+            value_eval_primary_cache.clear()
+            value_eval_reserve_cache.clear()
 
         train_ev_value: Optional[float] = None
         ev_primary_targets = value_target_batches_norm
