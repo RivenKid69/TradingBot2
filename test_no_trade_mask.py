@@ -42,7 +42,7 @@ def _make_df(ts_minutes):
         }
     )
 
-def test_funding_buffer_blocks_orders():
+def test_funding_buffer_mask_disabled():
     df = _make_df([360, 410, 470])  # minutes since midnight
     env = TradingEnv(df, no_trade={"funding_buffer_min": 30}, no_trade_enabled=True)
     env.reset()
@@ -50,12 +50,12 @@ def test_funding_buffer_blocks_orders():
     for i in range(len(df)):
         env.state.step_idx = i
         env.step(act)
-    calls = env._mediator.calls
-    assert calls[1].action_type == ActionType.MARKET
-    assert calls[2].action_type == ActionType.HOLD
-    assert env.no_trade_blocks == 1
+    assert not env._no_trade_enabled
+    assert env.no_trade_blocks == 0
+    assert not bool(env._no_trade_mask.any())
 
-def test_custom_window_blocks_orders():
+
+def test_custom_window_mask_disabled():
     df = _make_df([0, 20, 40])
     env = TradingEnv(
         df,
@@ -68,9 +68,9 @@ def test_custom_window_blocks_orders():
     env.step(act)
     env.state.step_idx = 1
     env.step(act)
-    calls = env._mediator.calls
-    assert calls[1].action_type == ActionType.HOLD
-    assert env.no_trade_blocks == 1
+    assert not env._no_trade_enabled
+    assert env.no_trade_blocks == 0
+    assert not bool(env._no_trade_mask.any())
 
 
 def test_mask_disabled_by_default():
