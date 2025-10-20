@@ -10,5 +10,7 @@ def test_consumers_load_identical_configs():
     cfg = get_no_trade_config(path)
     assert nt_get(path) == cfg
 
-    env = TradingEnv(pd.DataFrame({"ts_ms": [0]}), sandbox_config=path)
+    env = TradingEnv(
+        pd.DataFrame({"ts_ms": [0]}), sandbox_config=path, no_trade_enabled=True
+    )
     assert env._no_trade_cfg == cfg

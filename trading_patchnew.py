@@ -267,7 +267,7 @@ class TradingEnv(gym.Env):
         if raw_policy not in {"block", "ignore"}:
             raw_policy = "block"
         self._no_trade_policy = raw_policy
-        self._no_trade_enabled = bool(kwargs.get("no_trade_enabled", True))
+        self._no_trade_enabled = bool(kwargs.get("no_trade_enabled", False))
         self.decision_mode = decision_mode
         # action scheduled for next bar when using delayed decisions
         self._pending_action: ActionProto | None = None
@@ -408,21 +408,26 @@ class TradingEnv(gym.Env):
 
         # --- precompute no-trade mask ---
         override = kwargs.get("no_trade")
-        if no_trade_cfg is not None:
-            cfg_nt = no_trade_cfg
-        elif override:
-            cfg_nt = NoTradeConfig(**override)
+        cfg_nt: NoTradeConfig | None = None
+        if self._no_trade_enabled:
+            if no_trade_cfg is not None:
+                cfg_nt = no_trade_cfg
+            elif override:
+                cfg_nt = NoTradeConfig(**override)
+            else:
+                sandbox_path = kwargs.get("sandbox_config", "configs/legacy_sandbox.yaml")
+                try:
+                    cfg_nt = get_no_trade_config(sandbox_path)
+                except FileNotFoundError:
+                    logger.warning(
+                        "Sandbox config %s not found; using default no-trade settings", sandbox_path
+                    )
+                    cfg_nt = NoTradeConfig()
         else:
-            sandbox_path = kwargs.get("sandbox_config", "configs/legacy_sandbox.yaml")
-            try:
-                cfg_nt = get_no_trade_config(sandbox_path)
-            except FileNotFoundError:
-                logger.warning(
-                    "Sandbox config %s not found; using default no-trade settings", sandbox_path
-                )
-                cfg_nt = NoTradeConfig()
+            if no_trade_cfg is not None:
+                cfg_nt = no_trade_cfg
         self._no_trade_cfg = cfg_nt
-        if "ts_ms" in self.df.columns and self._no_trade_enabled:
+        if "ts_ms" in self.df.columns and self._no_trade_enabled and cfg_nt is not None:
             ts = (
                 pd.to_numeric(self.df["ts_ms"], errors="coerce")
                 .astype("Int64")
