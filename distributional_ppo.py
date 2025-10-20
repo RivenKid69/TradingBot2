@@ -3422,10 +3422,11 @@ class DistributionalPPO(RecurrentPPO):
 
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
         if clip_range_vf_candidate is None:
-            clip_range_vf_candidate = DEFAULT_CLIP_RANGE_VF
-        clip_range_vf_value = float(clip_range_vf_candidate)
-        if not math.isfinite(clip_range_vf_value) or clip_range_vf_value <= 0.0:
-            raise ValueError("'clip_range_vf' must be a positive finite value when provided")
+            clip_range_vf_value: Optional[float] = None
+        else:
+            clip_range_vf_value = float(clip_range_vf_candidate)
+            if not math.isfinite(clip_range_vf_value) or clip_range_vf_value <= 0.0:
+                raise ValueError("'clip_range_vf' must be a positive finite value when provided")
         self.clip_range_vf = clip_range_vf_value
 
         value_scale_update_enabled_candidate = kwargs_local.pop(

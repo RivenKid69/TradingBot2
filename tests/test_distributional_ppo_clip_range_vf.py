@@ -1,3 +1,4 @@
+import math
 import types
 
 import pytest
@@ -6,7 +7,7 @@ import torch
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 import distributional_ppo as distributional_ppo_module
-from distributional_ppo import DEFAULT_CLIP_RANGE_VF, DistributionalPPO
+from distributional_ppo import DistributionalPPO
 
 
 class _CaptureLogger:
@@ -27,7 +28,7 @@ class _PolicyStub:
         return []
 
 
-def test_clip_range_vf_defaults_to_constant(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_clip_range_vf_none_disables_clipping(monkeypatch: pytest.MonkeyPatch) -> None:
     def _fake_super_init(self, *args, **kwargs):
         logger = getattr(self, "logger", _CaptureLogger())
         self.logger = logger
@@ -83,7 +84,7 @@ def test_clip_range_vf_defaults_to_constant(monkeypatch: pytest.MonkeyPatch) -> 
         },
     )
 
-    assert algo.clip_range_vf == pytest.approx(DEFAULT_CLIP_RANGE_VF)
+    assert algo.clip_range_vf is None
     clip_range_logs = [value for key, value in logger.records if key == "config/clip_range_vf"]
     assert clip_range_logs, "clip_range_vf should be logged"
-    assert clip_range_logs[-1] == pytest.approx(DEFAULT_CLIP_RANGE_VF)
+    assert math.isnan(clip_range_logs[-1])

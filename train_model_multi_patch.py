@@ -2092,8 +2092,6 @@ def objective(trial: optuna.Trial,
     clip_range_vf_cfg = _coerce_optional_float(
         _get_model_param_value(cfg, "clip_range_vf"), "clip_range_vf"
     )
-    if clip_range_vf_cfg is None:
-        clip_range_vf_cfg = DEFAULT_CLIP_RANGE_VF
     value_scale_update_enabled_cfg = _coerce_optional_bool(
         _get_model_param_value(cfg, "value_scale_update_enabled"),
         "value_scale_update_enabled",
