@@ -3640,14 +3640,9 @@ def objective(trial: optuna.Trial,
         value_scale_controller=params.get("value_scale_controller"),
         value_scale_controller_holdout=popart_holdout_loader,
 
-        clip_range_vf=params["clip_range_vf"],
         value_scale_update_enabled=params["value_scale_update_enabled"],
         value_target_scale_fixed=params["value_target_scale_fixed"],
         normalize_returns=params["normalize_returns"],
-
-        value_scale_update_enabled=params["value_scale_update_enabled"],
-        value_target_scale_fixed=params["value_target_scale_fixed"],
-
 
         bc_warmup_steps=params["bc_warmup_steps"],
         bc_decay_steps=params["bc_decay_steps"],
