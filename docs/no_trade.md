@@ -102,6 +102,8 @@ as `{}` during loading.
 `no_trade` windows can be applied to datasets either by **dropping** offending rows, **weighting** them with `train_weight=0`, or exporting a **mask** with the `--mask-only` flag.
 Use the `no-trade-mask` CLI (installed with this project) or pass `--no-trade-mode` to training scripts.
 
+> **Important:** Offline training artefacts no longer persist mask/weight columns by default.  Leave `no_trade_mode` unset (or explicitly set to `null`) when calling `service_train.py` so the exported `.npz`/parquet bundles omit `mask` and `weights`.  The training pipeline now assumes unit weights unless mask support is re-enabled explicitly, preventing stale zero-weight windows from disabling metrics like explained variance.  Likewise, the runtime configuration defaults to `env.no_trade.enabled: false`, so no-trade guards are opt-in.
+
 ```bash
 # remove rows
 no-trade-mask --data raw.csv --sandbox_config configs/legacy_sandbox.yaml --mode drop
