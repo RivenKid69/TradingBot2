@@ -761,6 +761,8 @@ class _Worker:
                 legacy = getattr(self._no_trade_cfg, "dynamic_guard", None)
                 if legacy is not None and getattr(legacy, "enable", False):
                     dyn_cfg = legacy
+        if NO_TRADE_FEATURES_DISABLED:
+            dyn_cfg = None
         if dyn_cfg is not None:
             self._dynamic_guard = DynamicNoTradeGuard(dyn_cfg)
         self._schedule_checker = _ScheduleNoTradeChecker(self._no_trade_cfg)
@@ -5730,7 +5732,13 @@ class _Worker:
 
         dyn_stage_cfg = self._pipeline_cfg.get("dynamic_guard") if self._pipeline_cfg else None
         dyn_stage_enabled = dyn_stage_cfg is None or dyn_stage_cfg.enabled
+
         if not NO_TRADE_FEATURES_DISABLED and self._dynamic_guard is not None:
+
+        if NO_TRADE_FEATURES_DISABLED or self._dynamic_guard is None:
+            pass
+        else:
+
             fp_snapshot = None
             metrics_getter = getattr(self._fp, "get_market_metrics", None)
             if callable(metrics_getter):

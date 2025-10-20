@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import clock
 import service_signal_runner
 from pipeline import Reason, Stage
+from no_trade_config import DynamicGuardConfig
 from service_signal_runner import _Worker
 
 
@@ -48,6 +49,7 @@ def _make_worker(
     execution_mode: str = "bar",
     throttle_cfg: types.SimpleNamespace | None = None,
     ws_timeframe_ms: int = 60_000,
+    no_trade_cfg: object | None = None,
 ) -> _Worker:
     fp = SimpleNamespace(timeframe_ms=ws_timeframe_ms, spread_ttl_ms=0)
     policy = SimpleNamespace(timeframe_ms=ws_timeframe_ms)
@@ -72,6 +74,7 @@ def _make_worker(
         bar_timeframe_ms=ws_timeframe_ms,
         throttle_cfg=throttle_cfg,
         execution_mode=execution_mode,
+        no_trade_cfg=no_trade_cfg,
     )
     return worker
 
@@ -203,3 +206,31 @@ def test_queue_expiry_logs_and_counts(monkeypatch) -> None:
     assert queue_expired_metric.label_calls[0] == ("BTCUSDT",)
     assert throttle_dropped_metric.count == 1
     assert throttle_dropped_metric.label_calls[0] == ("BTCUSDT", "QUEUE_EXPIRED")
+
+
+def test_dynamic_guard_not_created_when_features_disabled(monkeypatch) -> None:
+    dyn_cfg = DynamicGuardConfig(enable=True, spread_abs_bps=50.0)
+    structured_cfg = SimpleNamespace(enabled=True, guard=dyn_cfg)
+    no_trade_cfg = SimpleNamespace(dynamic=structured_cfg, dynamic_guard=dyn_cfg)
+
+    monkeypatch.setattr(
+        service_signal_runner, "NO_TRADE_FEATURES_DISABLED", True, raising=False
+    )
+
+    worker = _make_worker(monkeypatch, execution_mode="bar", no_trade_cfg=no_trade_cfg)
+
+    assert worker._dynamic_guard is None
+
+
+def test_dynamic_guard_created_when_features_enabled(monkeypatch) -> None:
+    dyn_cfg = DynamicGuardConfig(enable=True, spread_abs_bps=50.0)
+    structured_cfg = SimpleNamespace(enabled=True, guard=dyn_cfg)
+    no_trade_cfg = SimpleNamespace(dynamic=structured_cfg, dynamic_guard=dyn_cfg)
+
+    monkeypatch.setattr(
+        service_signal_runner, "NO_TRADE_FEATURES_DISABLED", False, raising=False
+    )
+
+    worker = _make_worker(monkeypatch, execution_mode="bar", no_trade_cfg=no_trade_cfg)
+
+    assert worker._dynamic_guard is not None
