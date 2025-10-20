@@ -578,6 +578,7 @@ class _ValuePredictionCacheEntry:
     valid_indices: Optional[torch.Tensor]
     base_scale: float
     old_values_raw: Optional[torch.Tensor]
+    mask_values: Optional[torch.Tensor]
 
 
 class PopArtHoldoutBatch(NamedTuple):
@@ -1649,6 +1650,7 @@ class DistributionalPPO(RecurrentPPO):
         valid_indices: Optional[torch.Tensor],
         base_scale_safe: float,
         old_values_raw_tensor: Optional[torch.Tensor],
+        mask_values: Optional[torch.Tensor],
     ) -> _ValuePredictionCacheEntry:
         observations_cpu = self._detach_observations_to_cpu(rollout_data.observations)
         lstm_states_cpu = self._detach_states_to_cpu(rollout_data.lstm_states)
@@ -1660,6 +1662,14 @@ class DistributionalPPO(RecurrentPPO):
             old_values_cpu = old_values_raw_tensor.detach().to(device="cpu", dtype=torch.float32)
         else:
             old_values_cpu = None
+        if mask_values is not None:
+            mask_cpu = (
+                mask_values.detach()
+                .reshape(-1, 1)
+                .to(device="cpu", dtype=torch.float32)
+            )
+        else:
+            mask_cpu = None
         return _ValuePredictionCacheEntry(
             observations=observations_cpu,
             lstm_states=lstm_states_cpu,
@@ -1667,6 +1677,7 @@ class DistributionalPPO(RecurrentPPO):
             valid_indices=indices_cpu,
             base_scale=float(base_scale_safe),
             old_values_raw=old_values_cpu,
+            mask_values=mask_cpu,
         )
 
     def _refresh_value_prediction_tensors(
@@ -1676,12 +1687,24 @@ class DistributionalPPO(RecurrentPPO):
         reserve_cache: Sequence[_ValuePredictionCacheEntry],
         reserve_predictions: Sequence[torch.Tensor],
         *,
+        primary_weights: Sequence[Optional[torch.Tensor]],
+        reserve_weights: Sequence[Optional[torch.Tensor]],
         clip_range_vf_value: Optional[float],
         ret_mu_tensor: torch.Tensor,
         ret_std_tensor: torch.Tensor,
-    ) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
+    ) -> tuple[
+        list[torch.Tensor],
+        list[torch.Tensor],
+        list[Optional[torch.Tensor]],
+        list[Optional[torch.Tensor]],
+    ]:
         if not primary_cache and not reserve_cache:
-            return list(primary_predictions), list(reserve_predictions)
+            return (
+                list(primary_predictions),
+                list(reserve_predictions),
+                list(primary_weights),
+                list(reserve_weights),
+            )
 
         was_training = self.policy.training
         self.policy.eval()
@@ -1706,7 +1729,25 @@ class DistributionalPPO(RecurrentPPO):
                 if indices.dtype != torch.long:
                     indices = indices.to(dtype=torch.long)
                 value_col = value_col[indices]
-            return value_col.detach()
+            return value_col.detach().to(device="cpu", dtype=torch.float32)
+
+        def _select_mask(
+            entry: _ValuePredictionCacheEntry,
+            existing_mask: Optional[torch.Tensor],
+            pred_tensor: torch.Tensor,
+        ) -> Optional[torch.Tensor]:
+            mask_source: Optional[torch.Tensor] = entry.mask_values
+            if mask_source is None and existing_mask is not None:
+                mask_source = existing_mask.detach()
+            if mask_source is None:
+                return None
+            mask_view = mask_source.reshape(-1, 1).to(dtype=torch.float32)
+            if mask_view.shape[0] != pred_tensor.shape[0]:
+                min_elems = min(mask_view.shape[0], pred_tensor.shape[0])
+                if min_elems == 0:
+                    return mask_view.new_zeros((0, 1))
+                mask_view = mask_view[:min_elems]
+            return mask_view.detach().to(device="cpu", dtype=torch.float32)
 
         def _predict(entry: _ValuePredictionCacheEntry) -> torch.Tensor:
             obs_device = self._clone_observations_to_device(entry.observations, self.device)
@@ -1805,17 +1846,31 @@ class DistributionalPPO(RecurrentPPO):
 
         try:
             with torch.no_grad():
-                refreshed_primary = [
-                    _predict(entry) for entry in primary_cache
-                ] if primary_cache else []
-                refreshed_reserve = [
-                    _predict(entry) for entry in reserve_cache
-                ] if reserve_cache else []
+                refreshed_primary_preds: list[torch.Tensor] = []
+                refreshed_primary_masks: list[Optional[torch.Tensor]] = []
+                for idx, entry in enumerate(primary_cache):
+                    pred_tensor = _predict(entry)
+                    refreshed_primary_preds.append(pred_tensor)
+                    existing_mask = primary_weights[idx] if idx < len(primary_weights) else None
+                    refreshed_primary_masks.append(_select_mask(entry, existing_mask, pred_tensor))
+
+                refreshed_reserve_preds: list[torch.Tensor] = []
+                refreshed_reserve_masks: list[Optional[torch.Tensor]] = []
+                for idx, entry in enumerate(reserve_cache):
+                    pred_tensor = _predict(entry)
+                    refreshed_reserve_preds.append(pred_tensor)
+                    existing_mask = reserve_weights[idx] if idx < len(reserve_weights) else None
+                    refreshed_reserve_masks.append(_select_mask(entry, existing_mask, pred_tensor))
         finally:
             if was_training:
                 self.policy.train()
 
-        return refreshed_primary or list(primary_predictions), refreshed_reserve or list(reserve_predictions)
+        return (
+            refreshed_primary_preds or list(primary_predictions),
+            refreshed_reserve_preds or list(reserve_predictions),
+            refreshed_primary_masks or list(primary_weights),
+            refreshed_reserve_masks or list(reserve_weights),
+        )
 
     def _ev_group_key_from_info(self, env_index: int, info: Any) -> Optional[str]:  # FIX
         symbol: Optional[str] = None
@@ -6328,9 +6383,15 @@ class DistributionalPPO(RecurrentPPO):
                     ):
                         return
 
-                    value_ev_reserve_target_norm.append(target_norm_col.detach())
-                    value_ev_reserve_target_raw.append(target_raw_col.detach())
-                    value_ev_reserve_pred_norm.append(value_pred_col.detach())
+                    value_ev_reserve_target_norm.append(
+                        target_norm_col.detach().to(device="cpu", dtype=torch.float32)
+                    )
+                    value_ev_reserve_target_raw.append(
+                        target_raw_col.detach().to(device="cpu", dtype=torch.float32)
+                    )
+                    value_ev_reserve_pred_norm.append(
+                        value_pred_col.detach().to(device="cpu", dtype=torch.float32)
+                    )
                     reserve_group_keys = self._extract_group_keys_for_indices(  # FIX
                         rollout_data,
                         index_tensor,
@@ -6347,12 +6408,17 @@ class DistributionalPPO(RecurrentPPO):
                         and weights_tensor.numel() > 0
                         and weights_tensor.shape[0] == target_norm_col.shape[0]
                     ):
-                        value_ev_reserve_weight.append(weights_tensor.detach())
+                        value_ev_reserve_weight.append(
+                            weights_tensor.detach()
+                            .reshape(-1, 1)
+                            .to(device="cpu", dtype=torch.float32)
+                        )
                     cache_entry = self._build_value_prediction_cache_entry(
                         rollout_data,
                         valid_indices=index_tensor,
                         base_scale_safe=base_scale_safe,
                         old_values_raw_tensor=old_values_raw_tensor if clip_old_values_available else None,
+                        mask_values=weights_tensor,
                     )
                     value_eval_reserve_cache.append(cache_entry)
             finally:
@@ -6968,13 +7034,19 @@ class DistributionalPPO(RecurrentPPO):
                                     target_distribution[same_indices, lower_bound[same_indices]] = 1.0
 
                         value_target_batches_norm.append(
-                            target_returns_norm_clipped_selected.reshape(-1, 1).detach()
+                            target_returns_norm_clipped_selected.reshape(-1, 1)
+                            .detach()
+                            .to(device="cpu", dtype=torch.float32)
                         )
                         value_target_batches_raw.append(
-                            target_returns_raw_for_ev_selected.reshape(-1, 1).detach()
+                            target_returns_raw_for_ev_selected.reshape(-1, 1)
+                            .detach()
+                            .to(device="cpu", dtype=torch.float32)
                         )
                         value_weight_batches.append(
-                            mask_values_for_ev.detach().reshape(-1, 1)
+                            mask_values_for_ev.detach()
+                            .reshape(-1, 1)
+                            .to(device="cpu", dtype=torch.float32)
                         )
                         expected_group_len = int(target_returns_norm_clipped_selected.reshape(-1).shape[0])  # FIX
                         if group_keys_local and len(group_keys_local) != expected_group_len:  # FIX
@@ -7126,12 +7198,15 @@ class DistributionalPPO(RecurrentPPO):
                                 min=-self._value_clip_limit_scaled,
                                 max=self._value_clip_limit_scaled,
                             )
-                        value_pred_batches_norm.append(value_pred_norm_for_ev.detach())
+                        value_pred_batches_norm.append(
+                            value_pred_norm_for_ev.detach().to(device="cpu", dtype=torch.float32)
+                        )
                         cache_entry = self._build_value_prediction_cache_entry(
                             rollout_data,
                             valid_indices=valid_indices,
                             base_scale_safe=base_scale_safe,
                             old_values_raw_tensor=old_values_raw_tensor,
+                            mask_values=mask_values_for_ev,
                         )
                         value_eval_primary_cache.append(cache_entry)
                     else:
@@ -7233,12 +7308,15 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_scaled,
                                     max=self._value_clip_limit_scaled,
                                 )
-                            value_pred_batches_norm.append(value_pred_norm_for_ev.detach())
+                            value_pred_batches_norm.append(
+                                value_pred_norm_for_ev.detach().to(device="cpu", dtype=torch.float32)
+                            )
                             cache_entry = self._build_value_prediction_cache_entry(
                                 rollout_data,
                                 valid_indices=valid_indices,
                                 base_scale_safe=base_scale_safe,
                                 old_values_raw_tensor=old_values_raw_tensor,
+                                mask_values=mask_values_for_ev,
                             )
                             value_eval_primary_cache.append(cache_entry)
 
@@ -7620,11 +7698,15 @@ class DistributionalPPO(RecurrentPPO):
             (
                 value_pred_batches_norm,
                 value_ev_reserve_pred_norm,
+                value_weight_batches,
+                value_ev_reserve_weight,
             ) = self._refresh_value_prediction_tensors(
                 value_eval_primary_cache,
                 value_pred_batches_norm,
                 value_eval_reserve_cache,
                 value_ev_reserve_pred_norm,
+                primary_weights=value_weight_batches,
+                reserve_weights=value_ev_reserve_weight,
                 clip_range_vf_value=clip_range_vf_value,
                 ret_mu_tensor=ret_mu_tensor,
                 ret_std_tensor=ret_std_tensor,
