@@ -26,6 +26,11 @@ from stable_baselines3.common.type_aliases import GymEnv
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.save_util import load_from_zip_file
 
+
+# Default clip range used for critic value clipping across the training stack.
+# Keep in sync with ``train_model_multi_patch.DEFAULT_CLIP_RANGE_VF``.
+DEFAULT_CLIP_RANGE_VF: float = 0.7
+
 try:  # pragma: no cover - import shim for script vs package usage
     from winrate_stats import (
         WinRateAccumulator,
@@ -3417,12 +3422,11 @@ class DistributionalPPO(RecurrentPPO):
 
         clip_range_vf_candidate = kwargs_local.pop("clip_range_vf", clip_range_vf)
         if clip_range_vf_candidate is None:
-            self.clip_range_vf: Optional[float] = None
-        else:
-            clip_range_vf_value = float(clip_range_vf_candidate)
-            if not math.isfinite(clip_range_vf_value) or clip_range_vf_value <= 0.0:
-                raise ValueError("'clip_range_vf' must be a positive finite value when provided")
-            self.clip_range_vf = clip_range_vf_value
+            clip_range_vf_candidate = DEFAULT_CLIP_RANGE_VF
+        clip_range_vf_value = float(clip_range_vf_candidate)
+        if not math.isfinite(clip_range_vf_value) or clip_range_vf_value <= 0.0:
+            raise ValueError("'clip_range_vf' must be a positive finite value when provided")
+        self.clip_range_vf = clip_range_vf_value
 
         value_scale_update_enabled_candidate = kwargs_local.pop(
             "value_scale_update_enabled", value_scale_update_enabled
