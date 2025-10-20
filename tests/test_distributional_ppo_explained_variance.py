@@ -208,12 +208,37 @@ def test_explained_variance_metric_retains_primary_path_with_small_variance() ->
     assert "train/value_explained_variance_fallback" not in algo.logger.records
 
 
-def test_explained_variance_metric_returns_none_with_empty_mask() -> None:
+def test_explained_variance_metric_falls_back_with_empty_mask() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
     y_true_norm = torch.tensor([[1.0], [2.0]], dtype=torch.float32)
     y_pred_norm = torch.tensor([[0.5], [1.5]], dtype=torch.float32)
     mask = torch.zeros_like(y_true_norm)
+
+    ev_value, y_true_eval, y_pred_eval, metrics = algo._compute_explained_variance_metric(
+        y_true_norm,
+        y_pred_norm,
+        mask_tensor=mask,
+    )
+
+    expected = safe_explained_variance(
+        y_true_norm.numpy().reshape(-1),
+        y_pred_norm.numpy().reshape(-1),
+        None,
+    )
+
+    assert ev_value == pytest.approx(expected)
+    assert y_true_eval.numel() == y_true_norm.numel()
+    assert y_pred_eval.numel() == y_pred_norm.numel()
+    assert metrics["n_samples"] == pytest.approx(float(y_true_norm.numel()))
+
+
+def test_explained_variance_metric_sanitizes_nan_mask() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    y_true_norm = torch.tensor([[1.0], [3.0], [2.0]], dtype=torch.float32)
+    y_pred_norm = torch.tensor([[0.5], [2.5], [1.5]], dtype=torch.float32)
+    mask = torch.tensor([[float("nan")], [0.5], [0.2]], dtype=torch.float32)
 
     ev_value, y_true_eval, y_pred_eval, _ = algo._compute_explained_variance_metric(
         y_true_norm,
@@ -221,9 +246,15 @@ def test_explained_variance_metric_returns_none_with_empty_mask() -> None:
         mask_tensor=mask,
     )
 
-    assert ev_value is None
-    assert y_true_eval.numel() == 0
-    assert y_pred_eval.numel() == 0
+    expected = safe_explained_variance(
+        np.array([3.0, 2.0], dtype=np.float32),
+        np.array([2.5, 1.5], dtype=np.float32),
+        np.array([0.5, 0.2], dtype=np.float32),
+    )
+
+    assert ev_value == pytest.approx(expected)
+    assert y_true_eval.numel() == 2
+    assert y_pred_eval.numel() == 2
 
 
 def test_explained_variance_metric_returns_none_with_empty_inputs() -> None:
