@@ -41,6 +41,20 @@ class _DummyMetric:
         return None
 
 
+class _DummyLogger:
+    def __init__(self) -> None:
+        self.infos: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+
+    def info(self, message: str, *args, **kwargs) -> None:  # pragma: no cover - logging helper
+        self.infos.append((message, args, kwargs))
+
+    def warning(self, *args, **kwargs) -> None:  # pragma: no cover - logging helper
+        return None
+
+    def error(self, *args, **kwargs) -> None:  # pragma: no cover - logging helper
+        return None
+
+
 def _make_monitoring_stub() -> SimpleNamespace:
     stub = SimpleNamespace()
     stub.inc_stage = lambda *args, **kwargs: None
@@ -169,6 +183,109 @@ def test_process_propagates_open_and_close(monkeypatch) -> None:
     assert ttl_calls == [(bar_close_ms, bar_close_ms + 1_000, timeframe_ms)]
     assert dedup_should_calls == [("BTCUSDT", bar_close_ms)]
     assert dedup_update_calls == [("BTCUSDT", bar_close_ms)]
+
+
+def test_process_skips_dynamic_guard_when_disabled(monkeypatch) -> None:
+    timeframe_ms = 60_000
+    bar_close_ms = 1_700_000_000_000
+
+    monitoring_stub = _make_monitoring_stub()
+    monkeypatch.setattr(service_signal_runner, "monitoring", monitoring_stub)
+    monkeypatch.setattr(service_signal_runner, "pipeline_stage_drop_count", _DummyMetric())
+    monkeypatch.setattr(service_signal_runner, "skipped_incomplete_bars", _DummyMetric())
+
+    def _check_ttl_stub(*, bar_close_ms: int, now_ms: int, timeframe_ms: int):
+        return True, bar_close_ms, None
+
+    monkeypatch.setattr(service_signal_runner, "check_ttl", _check_ttl_stub)
+    monkeypatch.setattr(service_signal_runner.signal_bus, "should_skip", lambda *a, **k: False)
+    monkeypatch.setattr(service_signal_runner.signal_bus, "update", lambda *a, **k: None)
+
+    def _closed_bar_guard_stub(bar, now_ms, enforce, lag_ms, *, stage_cfg=None):
+        return PipelineResult(action="pass", stage=Stage.CLOSED_BAR)
+
+    monkeypatch.setattr(service_signal_runner, "closed_bar_guard", _closed_bar_guard_stub)
+
+    def _policy_decide_stub(*args, **kwargs):
+        return PipelineResult(action="pass", stage=Stage.POLICY, decision=[])
+
+    monkeypatch.setattr(service_signal_runner, "policy_decide", _policy_decide_stub)
+
+    def _apply_risk_stub(ts_ms, symbol, guards, orders, *, stage_cfg=None):
+        return PipelineResult(action="pass", stage=Stage.RISK, decision=list(orders))
+
+    monkeypatch.setattr(service_signal_runner, "apply_risk", _apply_risk_stub)
+    monkeypatch.setattr(service_signal_runner, "NO_TRADE_FEATURES_DISABLED", True, raising=False)
+    monkeypatch.setattr(clock, "now_ms", lambda: bar_close_ms + 1_000)
+
+    class _StubFeaturePipe:
+        def __init__(self) -> None:
+            self.signal_quality: dict[str, object] = {}
+            self.timeframe_ms = timeframe_ms
+            self.spread_ttl_ms = 0
+
+        def update(self, bar: Bar, *, skip_metrics: bool | None = None) -> dict[str, float]:
+            return {"close": float(bar.close)}
+
+        def get_market_metrics(self, symbol: str):
+            return SimpleNamespace(window_ready=True, spread_bps=5.0)
+
+    class _StubPolicy:
+        def __init__(self) -> None:
+            self.timeframe_ms = timeframe_ms
+
+        def consume_signal_transitions(self):
+            return []
+
+    executor = SimpleNamespace(submit=lambda order: None, execute=lambda order: None)
+    logger = _DummyLogger()
+
+    worker = service_signal_runner._Worker(
+        _StubFeaturePipe(),
+        _StubPolicy(),
+        logger,
+        executor,
+        enforce_closed_bars=False,
+        ws_dedup_enabled=False,
+        ws_dedup_timeframe_ms=timeframe_ms,
+        bar_timeframe_ms=timeframe_ms,
+        monitoring=monitoring_stub,
+    )
+
+    worker._evaluate_no_trade_windows = lambda *a, **k: (
+        PipelineResult(action="pass", stage=Stage.WINDOWS),
+        None,
+    )
+
+    class _StubDynamicGuard:
+        def __init__(self) -> None:
+            self.update_calls: list[tuple[str, float | None]] = []
+            self.should_block_calls = 0
+
+        def update(self, symbol: str, bar: Bar, *, spread: float | None = None) -> None:
+            self.update_calls.append((symbol, spread))
+
+        def should_block(self, symbol: str) -> tuple[bool, str | None, dict[str, Any]]:
+            self.should_block_calls += 1
+            return True, "vol_extreme", {"ready": True}
+
+    guard = _StubDynamicGuard()
+    worker._dynamic_guard = guard
+
+    bar = Bar(
+        ts=bar_close_ms,
+        symbol="BTCUSDT",
+        open=Decimal("1"),
+        high=Decimal("1"),
+        low=Decimal("1"),
+        close=Decimal("1"),
+    )
+
+    worker.process(bar)
+
+    assert guard.update_calls == []
+    assert guard.should_block_calls == 0
+    assert all(not msg.startswith("DROP") for msg, _, _ in logger.infos)
 
 
 def test_publish_decision_respects_bar_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
