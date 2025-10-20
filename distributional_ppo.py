@@ -2969,7 +2969,7 @@ class DistributionalPPO(RecurrentPPO):
         selected_indices: Optional[torch.Tensor] = None
 
         if mask_tensor is not None:
-            mask_flat = mask_tensor.flatten()
+            mask_flat = mask_tensor.flatten().to(dtype=torch.float32)
             min_elems = min(mask_flat.shape[0], y_true_flat.shape[0], y_pred_flat.shape[0])
             if min_elems == 0:
                 empty = y_true_flat.new_zeros(0)
@@ -2978,16 +2978,25 @@ class DistributionalPPO(RecurrentPPO):
             y_true_flat = y_true_flat[:min_elems]
             y_pred_flat = y_pred_flat[:min_elems]
             mask_flat = mask_flat[:min_elems]
-            positive_mask = mask_flat > 0.0
-            if torch.any(positive_mask):
-                selected_indices = torch.nonzero(positive_mask, as_tuple=False).flatten()
-                y_true_flat = y_true_flat[selected_indices]
-                y_pred_flat = y_pred_flat[selected_indices]
-                mask_flat = mask_flat[selected_indices]
+            if mask_flat.numel() > 0:
+                finite_mask = torch.isfinite(mask_flat)
+                if not torch.all(finite_mask):
+                    mask_flat = mask_flat.clone()
+                    mask_flat[~finite_mask] = 0.0
+                if torch.any(mask_flat < 0.0):
+                    mask_flat = mask_flat.clamp_min_(0.0)
+                positive_mask = mask_flat > 0.0
+                if torch.any(positive_mask):
+                    selected_indices = torch.nonzero(positive_mask, as_tuple=False).flatten()
+                    y_true_flat = y_true_flat[selected_indices]
+                    y_pred_flat = y_pred_flat[selected_indices]
+                    mask_flat = mask_flat[selected_indices]
+                else:
+                    mask_flat = None
+                    selected_indices = None
             else:
-                empty = y_true_flat.new_zeros(0)
-                empty_detached = empty.detach()
-                return None, empty_detached, empty_detached, metrics
+                mask_flat = None
+                selected_indices = None
         else:
             mask_flat = None
             min_elems = min(y_true_flat.shape[0], y_pred_flat.shape[0])
