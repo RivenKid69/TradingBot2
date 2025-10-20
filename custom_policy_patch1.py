@@ -232,8 +232,8 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             self.quantile_huber_kappa = 1.0
 
         self.num_atoms = _coerce_arch_int(arch_params.get("num_atoms"), 51, "num_atoms")
-        self.v_min = _coerce_arch_float(arch_params.get("v_min"), -1.0, "v_min")
-        self.v_max = _coerce_arch_float(arch_params.get("v_max"), 1.0, "v_max")
+        self.v_min = _coerce_arch_float(arch_params.get("v_min"), -10.0, "v_min")
+        self.v_max = _coerce_arch_float(arch_params.get("v_max"), 10.0, "v_max")
         if self.num_atoms < 1:
             raise ValueError(
                 f"Invalid 'num_atoms' for distributional value head: {self.num_atoms} (must be >= 1)"
