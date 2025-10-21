@@ -3339,6 +3339,10 @@ class DistributionalPPO(RecurrentPPO):
             frozen = False
             self._value_scale_frozen = False
         freeze_after_limit = getattr(self, "_value_scale_freeze_after", None)
+        if freeze_after_limit is None:
+            freeze_after_limit = getattr(
+                self, "_value_scale_freeze_after_updates", None
+            )
         if (
             not frozen
             and not never_freeze
@@ -3471,11 +3475,6 @@ class DistributionalPPO(RecurrentPPO):
 
                     update_applied = True
                     self._value_scale_update_count += 1
-                    if (
-                        not getattr(self, "_value_scale_never_freeze", False)
-                        and self._value_scale_update_count >= warmup_limit
-                    ):
-                        self._value_scale_frozen = True
 
                     self.ret_rms.mean[...] = float(new_mean)
                     self.ret_rms.var[...] = float(new_std * new_std)
@@ -3519,11 +3518,6 @@ class DistributionalPPO(RecurrentPPO):
 
                 update_applied = True
                 self._value_scale_update_count += 1
-                if (
-                    not getattr(self, "_value_scale_never_freeze", False)
-                    and self._value_scale_update_count >= warmup_limit
-                ):
-                    self._value_scale_frozen = True
 
             self._pending_ret_mean = None
             self._pending_ret_std = None

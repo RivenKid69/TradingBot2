@@ -281,6 +281,8 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
     model._value_scale_warmup_buffer_limit = 65536
     model._value_scale_update_count = 0
     model._value_scale_frozen = False
+    model._value_scale_freeze_after = model._value_scale_warmup_limit
+    model._value_scale_never_freeze = False
     model._use_quantile_value = False
     model._last_raw_outlier_frac = 0.0
     model._value_target_raw_outlier_warn_threshold = 1.0
@@ -358,6 +360,82 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
 @pytest.mark.skipif(
     torch is None or torch_is_stub, reason="torch is required for tensor-based checks"
 )
+def test_value_scale_warmup_does_not_auto_freeze_without_threshold() -> None:
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    model.normalize_returns = True
+    model.ret_clip = 5.0
+    model.value_target_scale = 1.0
+    model.device = torch.device("cpu") if torch is not None and not torch_is_stub else None
+    model.ret_rms = RunningMeanStd(shape=())
+    model.ret_rms.mean[...] = 0.0
+    model.ret_rms.var[...] = 1.0
+    model.ret_rms.count = 1.0
+    model._ret_mean_value = 0.0
+    model._ret_std_value = 1.0
+    model._ret_mean_snapshot = 0.0
+    model._ret_std_snapshot = 1.0
+    model._pending_rms = None
+    model._pending_ret_mean = None
+    model._pending_ret_std = None
+    model._value_scale_ema_beta = 0.2
+    model._value_scale_max_rel_step = 0.5
+    model._value_scale_std_floor = 3e-3
+    model._value_scale_window_updates = 0
+    model._value_scale_recent_stats = deque()
+    model._value_scale_stats_initialized = True
+    model._value_scale_stats_mean = 0.0
+    model._value_scale_stats_second = 1.0
+    model._value_target_scale_effective = 1.0 / (model.ret_clip * model._ret_std_value)
+    model._value_target_scale_robust = 1.0
+    model._value_scale_warmup_limit = 3
+    model._value_scale_warmup_updates = 3
+    model._value_scale_min_samples = 256
+    model._value_scale_warmup_buffer = []
+    model._value_scale_warmup_buffer_limit = 65536
+    model._value_scale_update_count = 0
+    model._value_scale_frozen = False
+    model._value_scale_freeze_after = None
+    model._value_scale_never_freeze = False
+    model._use_quantile_value = False
+    model._last_raw_outlier_frac = 0.0
+    model._value_target_raw_outlier_warn_threshold = 1.0
+    model._value_scale_stable_counter = 0
+    model._value_scale_frame_stable = True
+    model._value_scale_stability_patience = 0
+    model._value_scale_requires_stability = False
+    model.running_v_min = -model.ret_clip
+    model.running_v_max = model.ret_clip
+    model.v_range_initialized = True
+    model.v_range_ema_alpha = 0.1
+    model.policy = types.SimpleNamespace(update_atoms=lambda *_args, **_kwargs: None)
+
+    class _Recorder:
+        def __init__(self) -> None:
+            self.records: dict[str, float] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records[key] = float(value)
+
+    model.logger = _Recorder()
+
+    base_returns = np.linspace(-1.0, 1.0, model._value_scale_min_samples, dtype=np.float32)
+    scales = [1.0, 1.05, 0.95, 1.1, 0.9]
+
+    for idx in range(model._value_scale_warmup_limit + 2):
+        scale = scales[idx % len(scales)]
+        returns = base_returns * scale
+        model._pending_rms = RunningMeanStd(shape=())
+        model._pending_rms.update(returns)
+        model.rollout_buffer = types.SimpleNamespace(returns=returns.copy())
+        model._finalize_return_stats()
+
+    assert model._value_scale_update_count > model._value_scale_warmup_limit
+    assert model._value_scale_frozen is False
+
+
+@pytest.mark.skipif(
+    torch is None or torch_is_stub, reason="torch is required for tensor-based checks"
+)
 def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     model = DistributionalPPO.__new__(DistributionalPPO)
     model.normalize_returns = False
@@ -392,6 +470,8 @@ def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     model._value_scale_warmup_buffer_limit = 65536
     model._value_scale_update_count = 0
     model._value_scale_frozen = False
+    model._value_scale_freeze_after = model._value_scale_warmup_limit
+    model._value_scale_never_freeze = False
     model._use_quantile_value = False
     model._last_raw_outlier_frac = 0.0
     model._value_target_raw_outlier_warn_threshold = 1.0
@@ -422,6 +502,9 @@ def test_non_normalized_value_scale_freeze_and_decode_path() -> None:
     for _ in range(model._value_scale_warmup_limit):
         model.rollout_buffer = types.SimpleNamespace(returns=base_returns.copy())
         model._finalize_return_stats()
+
+    model.rollout_buffer = types.SimpleNamespace(returns=base_returns.copy())
+    model._finalize_return_stats()
 
     assert model._value_scale_update_count == model._value_scale_warmup_limit
     assert model._value_scale_frozen is True
