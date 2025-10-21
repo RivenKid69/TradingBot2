@@ -312,6 +312,7 @@ class Mediator:
         self._context_row: Any | None = None
         self._context_row_idx: int | None = None
         self._context_timestamp: int | None = None
+        self._last_signal_position: float = 0.0
 
     def _check_rate_limit(self) -> bool:
         """Apply rate limiter using wall-clock milliseconds."""
@@ -350,6 +351,7 @@ class Mediator:
         self._context_row = None
         self._context_row_idx = None
         self._context_timestamp = None
+        self._last_signal_position = 0.0
 
     def set_market_context(self, *, row: Any | None = None, row_idx: int | None = None, timestamp: int | None = None) -> None:
         """Store per-step market context passed from the environment."""
@@ -924,8 +926,9 @@ class Mediator:
                 "quote_asset_volume",
             ]
             pos = 0
+            tail_reserve = 3 if obs.shape[0] >= 3 else min(obs.shape[0], 2)
             for name in col_order:
-                if pos >= max(0, obs.shape[0] - 2):
+                if pos >= max(0, obs.shape[0] - tail_reserve):
                     break
                 try:
                     if columns is not None and name not in columns:
@@ -947,9 +950,21 @@ class Mediator:
             obs[0] = self._coerce_finite(mark_price, default=0.0)
         units = self._coerce_finite(getattr(state, "units", 0.0), default=0.0)
         cash = self._coerce_finite(getattr(state, "cash", 0.0), default=0.0)
-        if obs.size >= 2:
+        signal_source = getattr(
+            self,
+            "_last_signal_position",
+            getattr(self.env, "_last_signal_position", 0.0),
+        )
+        signal_pos = self._coerce_finite(signal_source, default=0.0)
+        if obs.size >= 3:
+            obs[-3] = units
+            obs[-2] = cash
+            obs[-1] = signal_pos
+        elif obs.size == 2:
             obs[-2] = units
             obs[-1] = cash
+        elif obs.size == 1:
+            obs[-1] = self._coerce_finite(mark_price, default=0.0)
         return obs
 
     def step(self, proto: ActionProto):
@@ -1076,6 +1091,13 @@ class Mediator:
         info.setdefault("units", units)
         info.setdefault("net_worth", net_worth)
         info.setdefault("step_idx", current_idx)
+        info.setdefault(
+            "signal_pos",
+            self._coerce_finite(
+                getattr(self, "_last_signal_position", getattr(env, "_last_signal_position", 0.0)),
+                default=0.0,
+            ),
+        )
         info["trades"] = trades
         info["cancelled_ids"] = cancelled_ids
         info["new_order_ids"] = new_order_ids

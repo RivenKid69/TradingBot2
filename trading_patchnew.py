@@ -583,7 +583,7 @@ class TradingEnv(gym.Env):
         # --- end patch ---
 
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(N_FEATURES+2,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(N_FEATURES + 3,), dtype=np.float32
         )
 
         # Phase 09 regime machinery
@@ -664,6 +664,10 @@ class TradingEnv(gym.Env):
         self._reward_signal_only = bool(getattr(self, "_reward_signal_only_default", True))
         self._apply_signal_only_overrides()
         self._last_signal_position = 0.0
+        try:
+            setattr(self._mediator, "_last_signal_position", 0.0)
+        except Exception:
+            pass
         first_price = 0.0
         if len(self.df) > 0:
             first_price = float(self._resolve_reward_price(0))
@@ -731,12 +735,26 @@ class TradingEnv(gym.Env):
         row_idx: int,
         row: pd.Series,
         mark_price: float,
+        *,
+        next_signal_pos: float | None = None,
     ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
         """Return a mediator-like response without executing orders."""
 
         state = self.state
         if state is None:
             raise RuntimeError("Environment state is not initialized")
+
+        prev_signal = float(self._last_signal_position)
+        signal_pos = next_signal_pos
+        if signal_pos is None:
+            signal_pos = float(self._signal_position_from_proto(proto, prev_signal))
+        signal_pos = float(signal_pos)
+        # signal only — expose position to critic
+        self._last_signal_position = signal_pos
+        try:
+            setattr(self._mediator, "_last_signal_position", signal_pos)
+        except Exception:
+            pass
 
         cash = self._safe_float(getattr(state, "cash", 0.0)) or 0.0
         units = self._safe_float(getattr(state, "units", 0.0)) or 0.0
@@ -791,6 +809,7 @@ class TradingEnv(gym.Env):
             "net_worth": net_worth,
             "step_idx": current_idx,
         }
+        info["signal_pos"] = signal_pos
         terminated = bool(getattr(state, "is_bankrupt", False))
         return obs, 0.0, terminated, truncated, info
 
@@ -1371,24 +1390,46 @@ class TradingEnv(gym.Env):
         if mask_hit:
             self.no_trade_hits += 1
         blocked = mask_hit and self._no_trade_policy != "ignore"
+        prev_signal_pos_for_reward = float(self._last_signal_position)
+        agent_signal_pos = float(prev_signal_pos_for_reward)
+        agent_proto: ActionProto | None = None
         if blocked:
             self.no_trade_blocks += 1
             proto = ActionProto(ActionType.HOLD, 0.0)
             self._pending_action = None
             self._action_queue.clear()
         else:
+            agent_proto = self._to_proto(action)
+            agent_signal_pos = float(
+                self._signal_position_from_proto(agent_proto, prev_signal_pos_for_reward)
+            )
             if self.decision_mode == DecisionTiming.CLOSE_TO_OPEN:
                 proto = self._pending_action or ActionProto(ActionType.HOLD, 0.0)
-                self._pending_action = self._to_proto(action)
+                self._pending_action = agent_proto
             elif self.decision_mode == DecisionTiming.INTRA_HOUR_WITH_LATENCY:
                 proto = (
                     self._action_queue.popleft()
                     if self._action_queue
                     else ActionProto(ActionType.HOLD, 0.0)
                 )
-                self._action_queue.append(self._to_proto(action))
+                self._action_queue.append(agent_proto)
             else:
-                proto = self._to_proto(action)
+                proto = agent_proto
+
+        executed_signal_pos = float(
+            self._signal_position_from_proto(proto, prev_signal_pos_for_reward)
+        )
+        signal_for_observation = (
+            agent_signal_pos if self._reward_signal_only else executed_signal_pos
+        )
+        next_signal_pos = (
+            signal_for_observation if self._reward_signal_only else executed_signal_pos
+        )
+        try:
+            # signal only — expose position to critic
+            setattr(self._mediator, "_last_signal_position", float(signal_for_observation))
+        except Exception:
+            pass
 
         prev_net_worth = self._safe_float(getattr(self.state, "net_worth", 0.0))
         if prev_net_worth is None:
@@ -1421,7 +1462,13 @@ class TradingEnv(gym.Env):
                     or float(getattr(self, "_last_reward_price", 0.0))
                     or 0.0
                 )
-            result = self._signal_only_step(proto, row_idx, row, float(mark_for_obs))
+            result = self._signal_only_step(
+                proto,
+                row_idx,
+                row,
+                float(mark_for_obs),
+                next_signal_pos=signal_for_observation,
+            )
         else:
             result = self._mediator.step(proto)
         if hasattr(self._mediator, "calls") and len(self._mediator.calls) == pre_len:
@@ -1555,7 +1602,7 @@ class TradingEnv(gym.Env):
                 self.total_steps,
             )
 
-        prev_signal_pos = float(self._last_signal_position)
+        prev_signal_pos = float(prev_signal_pos_for_reward)
         reward_price_prev = (
             self._last_reward_price
             if self._last_reward_price > 0.0
@@ -1672,7 +1719,11 @@ class TradingEnv(gym.Env):
             self._reward_clip_atr_fraction_last = float(atr_fraction_logged)
         if reward_price_curr > 0.0:
             self._last_reward_price = float(reward_price_curr)
-        self._last_signal_position = self._signal_position_from_proto(proto, prev_signal_pos)
+        self._last_signal_position = float(next_signal_pos)
+        try:
+            setattr(self._mediator, "_last_signal_position", float(next_signal_pos))
+        except Exception:
+            pass
         self._episode_return = float(self._episode_return + reward)
 
         info["delta_pnl"] = float(delta_pnl)
@@ -1757,6 +1808,7 @@ class TradingEnv(gym.Env):
             0.0 if self._reward_signal_only else self.reward_robust_clip_fraction
         )
         info["signal_position_prev"] = float(prev_signal_pos)
+        info["signal_pos"] = float(next_signal_pos)
         info["ratio_raw"] = float(ratio_price)
         info["ratio_clipped"] = float(ratio_clipped)
         info["log_return"] = float(log_return_clipped)
