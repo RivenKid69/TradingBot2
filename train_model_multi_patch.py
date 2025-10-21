@@ -50,6 +50,22 @@ from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence  # FI
 from features_pipeline import FeaturePipeline
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# Hard-disable the blocking no-trade mask for PPO training by default.
+#
+# The mask aggressively forces HOLD actions once the agent begins exploiting,
+# which starves rollouts of meaningful returns and collapses explained
+# variance.  Historically this had to be toggled via the
+# ``NO_TRADE_FEATURES_DISABLED`` environment variable.  Setting the flag here
+# ensures Distributional PPO runs operate in the safe default without relying
+# on external configuration.  Power users can still opt back in by exporting
+# the variable before launching the script.
+# ---------------------------------------------------------------------------
+_NO_TRADE_DEFAULTED = False
+if "NO_TRADE_FEATURES_DISABLED" not in os.environ:
+    os.environ["NO_TRADE_FEATURES_DISABLED"] = "1"
+    _NO_TRADE_DEFAULTED = True
+
 from core_config import (
     load_config,
     ExecutionProfile,
@@ -60,6 +76,11 @@ from core_config import (
 
 
 logger = logging.getLogger(__name__)
+
+if _NO_TRADE_DEFAULTED:
+    logger.info(
+        "NO_TRADE_FEATURES_DISABLED not set – forcing mask shutdown for training safety"
+    )
 
 
 def _install_torch_intrinsic_stub() -> None:
