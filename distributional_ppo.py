@@ -6557,24 +6557,35 @@ class DistributionalPPO(RecurrentPPO):
                 microbatch_masks = [getattr(data, "mask", None) for data in microbatch_items]
                 sample_counts: list[int] = []
                 sample_weight_sums: list[float] = []
-                for data, mask_tensor in zip(microbatch_items, microbatch_masks):
+                for idx, data in enumerate(microbatch_items):
+                    mask_tensor = microbatch_masks[idx]
                     if mask_tensor is not None:
                         mask_view = mask_tensor.reshape(-1)
                         if mask_view.dtype == torch.bool:
                             positive_mask = mask_view
                             has_positive = bool(torch.any(positive_mask).item())
-                            mask_positive_values = mask_view[positive_mask].to(dtype=torch.float32)
+                            if has_positive:
+                                mask_positive_values = mask_view[positive_mask].to(
+                                    dtype=torch.float32
+                                )
+                                weight_sum = float(mask_positive_values.sum().item())
+                                count = int(math.ceil(weight_sum))
+                            else:
+                                microbatch_masks[idx] = None
+                                count = int(data.advantages.numel())
+                                weight_sum = float(count)
                         else:
                             mask_view_float = mask_view.to(dtype=torch.float32)
                             positive_mask = mask_view_float > 0
                             has_positive = bool(torch.any(positive_mask).item())
-                            mask_positive_values = mask_view_float[positive_mask]
-                        if has_positive:
-                            weight_sum = float(mask_positive_values.sum().item())
-                            count = int(math.ceil(weight_sum))
-                        else:
-                            weight_sum = 0.0
-                            count = 0
+                            if has_positive:
+                                mask_positive_values = mask_view_float[positive_mask]
+                                weight_sum = float(mask_positive_values.sum().item())
+                                count = int(math.ceil(weight_sum))
+                            else:
+                                microbatch_masks[idx] = None
+                                count = int(data.advantages.numel())
+                                weight_sum = float(count)
                     else:
                         count = int(data.advantages.numel())
                         weight_sum = float(count)
