@@ -26,7 +26,7 @@ from runtime_flags import get_bool as _get_runtime_bool
 
 
 NO_TRADE_FEATURES_DISABLED: bool = _get_runtime_bool(
-    "NO_TRADE_FEATURES_DISABLED", False
+    "NO_TRADE_FEATURES_DISABLED", True
 )
 
 
