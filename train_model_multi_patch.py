@@ -3443,12 +3443,21 @@ def objective(trial: optuna.Trial,
     params["kl_use_lr_decay_requested"] = bool(params.get("kl_use_lr_decay_requested", False))
 
     num_rollouts = math.ceil(total_timesteps / (params["n_steps"] * n_envs))
-    
+
     # Рассчитываем, на сколько мини-батчей делится каждый роллаут
     num_minibatches_per_rollout = total_batch_size // batch_size
-    
+
+    # Планировщик шагает по optimizer.step(), которых меньше при накоплении градиента.
+    gradient_accumulation_steps = max(1, batch_size // microbatch_size)
+    optimizer_steps_per_rollout = max(
+        1,
+        math.ceil(num_minibatches_per_rollout / gradient_accumulation_steps),
+    )
+
     # Итоговое количество шагов оптимизатора за все обучение
-    total_optimizer_steps = num_rollouts * params["n_epochs"] * num_minibatches_per_rollout
+    total_optimizer_steps = (
+        num_rollouts * params["n_epochs"] * optimizer_steps_per_rollout
+    )
 
     optimization_cfg = getattr(cfg, "optimization", None)
     scheduler_cfg = None
