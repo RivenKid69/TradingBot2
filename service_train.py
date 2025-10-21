@@ -25,8 +25,6 @@ import os
 import time
 import pandas as pd
 
-from no_trade import compute_no_trade_mask
-
 from services.utils_config import snapshot_config  # снапшот конфигурации
 from core_contracts import FeaturePipe
 from core_config import CommonRunConfig
@@ -55,9 +53,6 @@ class TrainConfig:
     model_name: str = "model"             # базовое имя сохранённой модели
     columns_keep: Optional[Sequence[str]] = None  # если нужно отфильтровать
     snapshot_config_path: Optional[str] = None    # путь к YAML конфигу запуска
-    no_trade_mode: Optional[str] = None           # "drop" | "weight" | None
-    no_trade_config_path: Optional[str] = None    # путь к sandbox.yaml
-    no_trade_ts_col: str = "ts_ms"               # колонка временной метки
 
 
 class ServiceTrain:
@@ -89,21 +84,6 @@ class ServiceTrain:
         df_raw = self._load_input()
 
         weights: Optional[pd.Series] = None
-        if self.cfg.no_trade_mode in {"drop", "weight"}:
-            mask_block = compute_no_trade_mask(
-                df_raw,
-                sandbox_yaml_path=self.cfg.no_trade_config_path
-                or self.cfg.snapshot_config_path
-                or "configs/legacy_sandbox.yaml",
-                ts_col=self.cfg.no_trade_ts_col,
-            )
-            if self.cfg.no_trade_mode == "drop":
-                df_raw = df_raw.loc[~mask_block].reset_index(drop=True)
-            else:
-                df_raw = df_raw.copy()
-                df_raw["train_weight"] = 1.0
-                df_raw.loc[mask_block, "train_weight"] = 0.0
-                weights = df_raw["train_weight"]
 
         # прогрев и обучение преобразований
         self.fp.warmup()
@@ -136,7 +116,7 @@ class ServiceTrain:
         model_path = os.path.join(self.cfg.artifacts_dir, f"{self.cfg.model_name}_{ts}.bin")
         saved_path = self.trainer.save(model_path)
 
-        effective = int(weights.sum()) if weights is not None else int(len(X))
+        effective = int(len(X))
 
         return {
             "dataset_X": X_path,
