@@ -3485,12 +3485,8 @@ def objective(trial: optuna.Trial,
     # Рассчитываем, на сколько мини-батчей делится каждый роллаут
     num_minibatches_per_rollout = total_batch_size // batch_size
 
-    # Планировщик шагает по optimizer.step(), которых меньше при накоплении градиента.
-    gradient_accumulation_steps = max(1, batch_size // microbatch_size)
-    optimizer_steps_per_rollout = max(
-        1,
-        math.ceil(num_minibatches_per_rollout / gradient_accumulation_steps),
-    )
+    # Планировщик шагает по каждому мини-батчу, чтобы one-cycle покрывал всё обучение.
+    optimizer_steps_per_rollout = max(1, num_minibatches_per_rollout)
 
     # Итоговое количество шагов оптимизатора за все обучение
     total_optimizer_steps = (
