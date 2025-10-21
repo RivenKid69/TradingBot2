@@ -749,12 +749,6 @@ class TradingEnv(gym.Env):
         if signal_pos is None:
             signal_pos = float(self._signal_position_from_proto(proto, prev_signal))
         signal_pos = float(signal_pos)
-        # signal only — expose position to critic
-        self._last_signal_position = signal_pos
-        try:
-            setattr(self._mediator, "_last_signal_position", signal_pos)
-        except Exception:
-            pass
 
         cash = self._safe_float(getattr(state, "cash", 0.0)) or 0.0
         units = self._safe_float(getattr(state, "units", 0.0)) or 0.0
@@ -809,7 +803,10 @@ class TradingEnv(gym.Env):
             "net_worth": net_worth,
             "step_idx": current_idx,
         }
-        info["signal_pos"] = signal_pos
+        info["signal_pos"] = float(
+            getattr(self._mediator, "_last_signal_position", prev_signal)
+        )
+        info["signal_pos_next"] = float(signal_pos)
         terminated = bool(getattr(state, "is_bankrupt", False))
         return obs, 0.0, terminated, truncated, info
 
@@ -1391,6 +1388,7 @@ class TradingEnv(gym.Env):
             self.no_trade_hits += 1
         blocked = mask_hit and self._no_trade_policy != "ignore"
         prev_signal_pos_for_reward = float(self._last_signal_position)
+        prev_signal_pos = float(prev_signal_pos_for_reward)
         agent_signal_pos = float(prev_signal_pos_for_reward)
         agent_proto: ActionProto | None = None
         if blocked:
@@ -1420,16 +1418,25 @@ class TradingEnv(gym.Env):
             self._signal_position_from_proto(proto, prev_signal_pos_for_reward)
         )
         signal_for_observation = (
-            agent_signal_pos if self._reward_signal_only else executed_signal_pos
+            prev_signal_pos_for_reward if self._reward_signal_only else executed_signal_pos
         )
         next_signal_pos = (
-            signal_for_observation if self._reward_signal_only else executed_signal_pos
+            agent_signal_pos if self._reward_signal_only else executed_signal_pos
         )
-        try:
-            # signal only — expose position to critic
-            setattr(self._mediator, "_last_signal_position", float(signal_for_observation))
-        except Exception:
-            pass
+        if self._reward_signal_only:
+            try:
+                setattr(
+                    self._mediator,
+                    "_last_signal_position",
+                    float(prev_signal_pos_for_reward),
+                )
+            except Exception:
+                pass
+        else:
+            try:
+                setattr(self._mediator, "_last_signal_position", float(signal_for_observation))
+            except Exception:
+                pass
 
         prev_net_worth = self._safe_float(getattr(self.state, "net_worth", 0.0))
         if prev_net_worth is None:
@@ -1467,7 +1474,7 @@ class TradingEnv(gym.Env):
                 row_idx,
                 row,
                 float(mark_for_obs),
-                next_signal_pos=signal_for_observation,
+                next_signal_pos=next_signal_pos,
             )
         else:
             result = self._mediator.step(proto)
@@ -1602,7 +1609,6 @@ class TradingEnv(gym.Env):
                 self.total_steps,
             )
 
-        prev_signal_pos = float(prev_signal_pos_for_reward)
         reward_price_prev = (
             self._last_reward_price
             if self._last_reward_price > 0.0
@@ -1807,8 +1813,19 @@ class TradingEnv(gym.Env):
         info["reward_robust_clip_fraction"] = float(
             0.0 if self._reward_signal_only else self.reward_robust_clip_fraction
         )
-        info["signal_position_prev"] = float(prev_signal_pos)
-        info["signal_pos"] = float(next_signal_pos)
+        if self._reward_signal_only:
+            self._last_signal_position = float(agent_signal_pos)
+            try:
+                setattr(self._mediator, "_last_signal_position", float(agent_signal_pos))
+            except Exception:
+                pass
+            info["signal_position_prev"] = float(prev_signal_pos)
+            info["signal_pos"] = float(prev_signal_pos)
+            info["signal_pos_next"] = float(agent_signal_pos)
+        else:
+            info["signal_position_prev"] = float(prev_signal_pos)
+            info["signal_pos"] = float(next_signal_pos)
+            info["signal_pos_next"] = float(next_signal_pos)
         info["ratio_raw"] = float(ratio_price)
         info["ratio_clipped"] = float(ratio_clipped)
         info["log_return"] = float(log_return_clipped)

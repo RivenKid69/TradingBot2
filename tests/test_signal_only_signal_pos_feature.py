@@ -44,9 +44,11 @@ def test_signal_only_observation_includes_signal_position() -> None:
     assert not first_term
     assert not first_trunc
     assert first_obs.shape == env.observation_space.shape
-    assert first_info["signal_pos"] == pytest.approx(0.75)
+    assert first_info["signal_position_prev"] == pytest.approx(0.0)
+    assert first_info["signal_pos"] == pytest.approx(0.0)
+    assert first_info["signal_pos_next"] == pytest.approx(0.75)
     first_tail = first_obs[-3:]
-    assert first_tail[-1] == pytest.approx(0.75), f"first_tail={first_tail}"
+    assert first_tail[-1] == pytest.approx(0.0), f"first_tail={first_tail}"
 
     step_obs, reward, terminated, truncated, step_info = env.step(
         ActionProto(ActionType.HOLD, volume_frac=0.0)
@@ -57,8 +59,9 @@ def test_signal_only_observation_includes_signal_position() -> None:
     assert not terminated
     assert not truncated
     assert step_obs.shape == env.observation_space.shape
+    assert step_info["signal_position_prev"] == pytest.approx(0.75)
     assert step_info["signal_pos"] == pytest.approx(0.75)
+    assert step_info["signal_pos_next"] == pytest.approx(0.75)
     tail = step_obs[-3:]
     assert tail[-1] == pytest.approx(0.75), f"tail={tail}"
-    assert step_info["signal_position_prev"] == pytest.approx(0.75)
     assert env._mediator._last_signal_position == pytest.approx(0.75)
