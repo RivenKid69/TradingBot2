@@ -131,6 +131,10 @@ returns `{"total_steps", "blocked_steps", "mask_hits", "policy", "enabled"}`.  W
 environment records mask hits without forcing HOLD actions, allowing a "soft" training mode while still surfacing diagnostics
 through `info["no_trade_triggered"]`.
 
+> **Note:** Reinforcement-learning runs (Distributional PPO) must train with `env.no_trade.policy: ignore` or with the mask
+> disabled.  Hard-blocking (`policy: block`) collapses explained variance and is automatically overridden to "ignore" during PPO
+> training.
+
 ```python
 from no_trade import compute_no_trade_mask
 from no_trade_config import get_no_trade_config

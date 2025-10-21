@@ -930,8 +930,25 @@ def _extract_env_runtime_overrides(
     if isinstance(no_trade_cfg, Mapping):
         if "enabled" in no_trade_cfg:
             runtime_kwargs["no_trade_enabled"] = bool(no_trade_cfg["enabled"])
+
+        policy_normalized: str | None = None
         if "policy" in no_trade_cfg and no_trade_cfg["policy"] is not None:
-            runtime_kwargs["no_trade_policy"] = str(no_trade_cfg["policy"])
+            policy_normalized = str(no_trade_cfg["policy"]).strip().lower() or None
+
+        no_trade_enabled = runtime_kwargs.get("no_trade_enabled", False)
+        if no_trade_enabled:
+            if policy_normalized is None or policy_normalized == "block":
+                runtime_kwargs["no_trade_policy"] = "ignore"
+                if policy_normalized == "block":
+                    logger.warning(
+                        "Distributional PPO training enforces env.no_trade.policy='ignore' when the mask is enabled; "
+                        "the configuration requested 'block'. Update the config to use a soft mode (e.g. 'ignore') to "
+                        "silence this warning."
+                    )
+            else:
+                runtime_kwargs["no_trade_policy"] = policy_normalized
+        elif policy_normalized is not None:
+            runtime_kwargs["no_trade_policy"] = policy_normalized
 
     for section in ("session", "liquidity", "spreads", "warmup"):
         payload = env_block.get(section)
