@@ -4393,7 +4393,9 @@ def main():
     print(f"\n===== Starting Unified HPO Process ({HPO_TRIALS} trials) =====")
 
     sampler = TPESampler(n_startup_trials=5, seed=42)
-    pruner = HyperbandPruner()
+    # ``objective`` only begins reporting metrics after 50k steps, so configure the
+    # pruner to wait until that point before considering early termination.
+    pruner = HyperbandPruner(min_resource=50_000)
     study = optuna.create_study(direction="maximize", sampler=sampler, pruner=pruner)
 
     # Запускаем оптимизацию на ПОЛНОМ, диверсифицированном наборе данных
