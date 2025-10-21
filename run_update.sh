@@ -14,6 +14,9 @@ if [[ -f "${ROOT_DIR}/venv/bin/activate" ]]; then
 fi
 
 # UTC enforced by cron (TZ=UTC)
+# Ensure no-trade features stay disabled unless explicitly enabled.
+export NO_TRADE_FEATURES_DISABLED="1"
+
 (
   flock -n 9 || exit 0
   python3 "${ROOT_DIR}/update_and_infer.py" >> "${LOG_DIR}/tradebot.log" 2>&1
