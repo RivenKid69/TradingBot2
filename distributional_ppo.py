@@ -6139,7 +6139,7 @@ class DistributionalPPO(RecurrentPPO):
             rollout_data,
             valid_indices: Optional[torch.Tensor],
             mask_values: Optional[torch.Tensor],
-        ) -> None:
+        ) -> bool:
             nonlocal ev_group_key_len_mismatch_logged  # FIX
             was_training_inner = self.policy.training  # FIX
             self.policy.eval()  # FIX
@@ -6272,7 +6272,7 @@ class DistributionalPPO(RecurrentPPO):
                     index_tensor: Optional[torch.Tensor] = None
                     if valid_indices is not None:
                         if valid_indices.numel() == 0:
-                            return
+                            return False
                         index_tensor = valid_indices.to(device=target_norm_col.device)
                         target_norm_col = target_norm_col[index_tensor]
                         target_raw_col = target_raw_col[index_tensor]
@@ -6282,7 +6282,7 @@ class DistributionalPPO(RecurrentPPO):
                         weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
 
                     if target_norm_col.numel() == 0 or target_raw_col.numel() == 0:
-                        return
+                        return False
 
                     if self._use_quantile_value:
                         value_quantiles = self.policy.last_value_quantiles
@@ -6290,7 +6290,7 @@ class DistributionalPPO(RecurrentPPO):
                             _refresh_value_cache()
                             value_quantiles = self.policy.last_value_quantiles
                             if value_quantiles is None:
-                                return
+                                return False
                         quantiles_fp32 = value_quantiles.to(dtype=torch.float32)
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
@@ -6329,7 +6329,7 @@ class DistributionalPPO(RecurrentPPO):
                             _refresh_value_cache()
                             value_logits = self.policy.last_value_logits
                             if value_logits is None:
-                                return
+                                return False
                         value_logits_fp32 = value_logits.to(dtype=torch.float32)
                         probs = torch.softmax(value_logits_fp32, dim=1).clamp(
                             min=1e-8, max=1.0
@@ -6384,7 +6384,7 @@ class DistributionalPPO(RecurrentPPO):
                         value_pred_col.numel() == 0
                         or value_pred_col.shape[0] != target_norm_col.shape[0]
                     ):
-                        return
+                        return False
 
                     value_ev_reserve_target_norm.append(
                         target_norm_col.detach().to(device="cpu", dtype=torch.float32)
@@ -6424,9 +6424,11 @@ class DistributionalPPO(RecurrentPPO):
                         mask_values=weights_tensor,
                     )
                     value_eval_reserve_cache.append(cache_entry)
+                    return True
             finally:
                 if was_training_inner:
                     self.policy.train()  # FIX: вернуть исходный режим
+            return False
         last_optimizer_lr: Optional[float] = None
         last_scheduler_lr: Optional[float] = None
         kl_exceed_fraction_latest = 0.0
@@ -6661,7 +6663,12 @@ class DistributionalPPO(RecurrentPPO):
                     if valid_indices is not None:
                         valid_indices = valid_indices.to(device=advantages.device)
 
-                    _reserve_ev_samples(rollout_data, valid_indices, mask_values_for_ev)
+                    if not _reserve_ev_samples(
+                        rollout_data, valid_indices, mask_values_for_ev
+                    ):
+                        if self.logger is not None:
+                            self.logger.record("warn/ev_reserve_skip", 1.0)
+                        continue
 
                     group_keys_local = self._extract_group_keys_for_indices(  # FIX
                         rollout_data,
