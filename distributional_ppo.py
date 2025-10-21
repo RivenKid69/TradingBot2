@@ -1906,7 +1906,26 @@ class DistributionalPPO(RecurrentPPO):
         keys_array = getattr(self, "_last_rollout_ev_keys", None)
         if keys_array is None:
             return [f"env{int(idx)}" for idx in flat_indices if int(idx) >= 0]
-        keys_flat = np.asarray(keys_array, dtype=object).reshape(-1)
+
+        rollout_buffer = getattr(self, "rollout_buffer", None)
+        buffer_size = int(getattr(rollout_buffer, "buffer_size", 0) or 0)
+        n_envs = int(getattr(rollout_buffer, "n_envs", 0) or 0)
+
+        keys_np = np.array(keys_array, dtype=object, copy=False)
+        keys_flat: np.ndarray
+        if keys_np.ndim >= 2:
+            if isinstance(rollout_buffer, RecurrentRolloutBuffer):
+                try:
+                    keys_flat = rollout_buffer.swap_and_flatten(keys_np)  # type: ignore[arg-type]
+                except Exception:
+                    keys_flat = keys_np.swapaxes(0, 1).reshape(-1)
+                else:
+                    keys_flat = keys_flat.reshape(-1)
+            else:
+                keys_flat = keys_np.swapaxes(0, 1).reshape(-1)
+        else:
+            keys_flat = keys_np.reshape(-1)
+
         total = int(keys_flat.size)
         resolved: list[str] = []
         for raw_idx in flat_indices:
@@ -1915,7 +1934,11 @@ class DistributionalPPO(RecurrentPPO):
                 return []
             candidate = keys_flat[idx]
             if candidate is None or str(candidate).strip() == "":
-                candidate = f"env{idx}"
+                if buffer_size > 0 and n_envs > 0 and total == buffer_size * n_envs:
+                    env_idx = idx // buffer_size
+                    candidate = f"env{env_idx}"
+                else:
+                    candidate = f"env{idx}"
             resolved.append(str(candidate))
         return resolved
 
