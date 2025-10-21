@@ -352,6 +352,7 @@ class Mediator:
         self._context_row_idx = None
         self._context_timestamp = None
         self._last_signal_position = 0.0
+        self._latest_log_ret_prev = 0.0
 
     def set_market_context(self, *, row: Any | None = None, row_idx: int | None = None, timestamp: int | None = None) -> None:
         """Store per-step market context passed from the environment."""
@@ -926,7 +927,8 @@ class Mediator:
                 "quote_asset_volume",
             ]
             pos = 0
-            tail_reserve = 3 if obs.shape[0] >= 3 else min(obs.shape[0], 2)
+            tail_slots = 4
+            tail_reserve = tail_slots if obs.shape[0] >= tail_slots else min(obs.shape[0], tail_slots)
             for name in col_order:
                 if pos >= max(0, obs.shape[0] - tail_reserve):
                     break
@@ -946,8 +948,9 @@ class Mediator:
                 obs[pos] = coerced
                 pos += 1
         # Always include mark price, units and cash in the tail slots if possible
+        mark_value = self._coerce_finite(mark_price, default=0.0)
         if obs.size:
-            obs[0] = self._coerce_finite(mark_price, default=0.0)
+            obs[0] = mark_value
         units = self._coerce_finite(getattr(state, "units", 0.0), default=0.0)
         cash = self._coerce_finite(getattr(state, "cash", 0.0), default=0.0)
         signal_source = getattr(
@@ -956,15 +959,62 @@ class Mediator:
             getattr(self.env, "_last_signal_position", 0.0),
         )
         signal_pos = self._coerce_finite(signal_source, default=0.0)
-        if obs.size >= 3:
-            obs[-3] = units
-            obs[-2] = cash
-            obs[-1] = signal_pos
-        elif obs.size == 2:
-            obs[-2] = units
-            obs[-1] = cash
-        elif obs.size == 1:
-            obs[-1] = self._coerce_finite(mark_price, default=0.0)
+        log_ret_prev = 0.0
+        env = self.env
+        df = getattr(env, "df", None)
+        row_idx: int | None = getattr(self, "_context_row_idx", None)
+        if row_idx is None and row is not None:
+            try:
+                row_idx = int(getattr(row, "name"))
+            except Exception:
+                row_idx = None
+        if row_idx is None:
+            try:
+                step_idx = getattr(state, "step_idx", None)
+                if step_idx is not None:
+                    row_idx = int(step_idx)
+            except Exception:
+                row_idx = None
+        if row_idx is not None:
+            if row_idx < 0:
+                row_idx = 0
+            if df is not None and row_idx >= len(df):
+                row_idx = len(df) - 1
+            resolve_reward_price = getattr(env, "_resolve_reward_price", None)
+            prev_price = self._coerce_finite(getattr(env, "_last_reward_price", 0.0), default=0.0)
+            curr_price: float | None = None
+            if callable(resolve_reward_price):
+                try:
+                    curr_price = float(resolve_reward_price(row_idx, row))
+                except Exception:
+                    curr_price = None
+            if curr_price is None or not math.isfinite(curr_price) or curr_price <= 0.0:
+                curr_price = mark_value if mark_value > 0.0 else None
+            if (prev_price is None or prev_price <= 0.0) and callable(resolve_reward_price):
+                prev_idx = max(row_idx - 1, 0)
+                prev_row = None
+                if df is not None and prev_idx < len(df):
+                    try:
+                        prev_row = df.iloc[prev_idx]
+                    except Exception:
+                        prev_row = None
+                try:
+                    prev_price_candidate = float(resolve_reward_price(prev_idx, prev_row))
+                except Exception:
+                    prev_price_candidate = None
+                if prev_price_candidate is not None and math.isfinite(prev_price_candidate) and prev_price_candidate > 0.0:
+                    prev_price = float(prev_price_candidate)
+            if curr_price is not None and math.isfinite(curr_price) and curr_price > 0.0 and prev_price > 0.0:
+                log_ret_prev = math.log(curr_price / prev_price)
+                mark_value = float(curr_price)
+                if obs.size:
+                    obs[0] = float(mark_value)
+        self._latest_log_ret_prev = float(log_ret_prev)
+
+        tail_values = (units, cash, signal_pos, float(log_ret_prev))
+        tail_count = min(len(tail_values), obs.size)
+        for offset in range(1, tail_count + 1):
+            obs[-offset] = float(tail_values[-offset])
         return obs
 
     def step(self, proto: ActionProto):
@@ -1104,6 +1154,11 @@ class Mediator:
         info["events"] = events
 
         obs = self._build_observation(row=row, state=state, mark_price=mark_price)
+
+        info.setdefault(
+            "log_ret_prev",
+            self._coerce_finite(getattr(self, "_latest_log_ret_prev", 0.0), default=0.0),
+        )
 
         terminated = is_bankrupt
         if info.get("risk_event") in {"BANKRUPT", "STOP_TRADE"}:

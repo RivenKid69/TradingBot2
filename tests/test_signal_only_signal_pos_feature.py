@@ -47,8 +47,10 @@ def test_signal_only_observation_includes_signal_position() -> None:
     assert first_info["signal_position_prev"] == pytest.approx(0.0)
     assert first_info["signal_pos"] == pytest.approx(0.0)
     assert first_info["signal_pos_next"] == pytest.approx(0.75)
-    first_tail = first_obs[-3:]
+    first_tail = first_obs[-4:]
+    assert first_tail[-2] == pytest.approx(0.0), f"first_tail={first_tail}"
     assert first_tail[-1] == pytest.approx(0.0), f"first_tail={first_tail}"
+    assert first_info["log_ret_prev"] == pytest.approx(0.0)
 
     step_obs, reward, terminated, truncated, step_info = env.step(
         ActionProto(ActionType.HOLD, volume_frac=0.0)
@@ -62,6 +64,9 @@ def test_signal_only_observation_includes_signal_position() -> None:
     assert step_info["signal_position_prev"] == pytest.approx(0.75)
     assert step_info["signal_pos"] == pytest.approx(0.75)
     assert step_info["signal_pos_next"] == pytest.approx(0.75)
-    tail = step_obs[-3:]
-    assert tail[-1] == pytest.approx(0.75), f"tail={tail}"
+    tail = step_obs[-4:]
+    assert tail[-2] == pytest.approx(0.75), f"tail={tail}"
+    expected_log_ret = math.log(df.loc[1, "close"] / df.loc[0, "close"])
+    assert tail[-1] == pytest.approx(expected_log_ret), f"tail={tail}"
+    assert step_info["log_ret_prev"] == pytest.approx(expected_log_ret)
     assert env._mediator._last_signal_position == pytest.approx(0.75)
