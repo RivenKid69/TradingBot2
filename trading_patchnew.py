@@ -270,20 +270,18 @@ class TradingEnv(gym.Env):
             raw_policy = "block"
         requested_no_trade = bool(kwargs.get("no_trade_enabled", False))
         mode_txt = str(kwargs.get("mode", "")).strip().lower()
-        if mode_txt == "train" and requested_no_trade:
-            if raw_policy == "block":
+        if mode_txt == "train":
+            if requested_no_trade:
                 logger.warning(
-                    "Training environment requested no-trade policy 'block'; overriding to 'ignore' and disabling "
-                    "the mask so reinforcement learning metrics remain responsive. Update the config to set "
-                    "env.no_trade.policy='ignore' explicitly."
+                    "Training environment requested no-trade mask; disabling it entirely so the agent's "
+                    "decisions are never overridden. Update the config to keep the mask off during learning."
                 )
-                raw_policy = "ignore"
             else:
                 logger.info(
-                    "Training environment requested no-trade mask; disabling it during learning to keep "
-                    "reinforcement learning metrics responsive."
+                    "Training environment running with no-trade mask disabled so agent actions always apply."
                 )
             requested_no_trade = False
+            raw_policy = "ignore"
         self._no_trade_policy = raw_policy
         if requested_no_trade and NO_TRADE_FEATURES_DISABLED:
             logger.info(
