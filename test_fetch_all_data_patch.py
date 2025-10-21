@@ -80,3 +80,27 @@ def test_load_all_data_converts_millisecond_timestamps(tmp_path, monkeypatch):
     expected_timestamps = [expected_start + offset for offset in (0, 3600, 7200)]
 
     assert list(loaded["timestamp"]) == expected_timestamps
+
+
+def test_load_all_data_drops_no_trade_mask_columns(tmp_path, monkeypatch):
+    symbol = "BNBUSDT"
+    df = _build_base_frame(symbol)
+    df["train_weight"] = [0.0, 0.0, 0.0]
+    df["no_trade_block"] = [True, False, True]
+    df["no_trade_reason"] = ["funding", "", "maintenance"]
+
+    candle_path = tmp_path / f"{symbol}.feather"
+    candle_path.write_text("dummy")
+
+    monkeypatch.setattr(fetch_all_data_patch, "FNG_PATH", os.fspath(tmp_path / "fear_greed.csv"))
+    monkeypatch.setattr(
+        fetch_all_data_patch.pd,
+        "read_feather",
+        lambda path, **kwargs: df.copy(),
+    )
+
+    all_dfs, _ = fetch_all_data_patch.load_all_data([os.fspath(candle_path)])
+    loaded = all_dfs[symbol]
+
+    assert "train_weight" not in loaded.columns
+    assert all(not col.startswith("no_trade_") for col in loaded.columns)
