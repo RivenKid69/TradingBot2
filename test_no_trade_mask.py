@@ -83,3 +83,18 @@ def test_mask_disabled_by_default():
     assert not env._no_trade_enabled
     assert env._no_trade_cfg is None
     assert not bool(env._no_trade_mask.any())
+
+
+def test_train_mode_overrides_block_policy():
+    df = _make_df([0, 10, 20])
+    env = TradingEnv(
+        df,
+        mode="train",
+        no_trade_enabled=True,
+        no_trade_policy="block",
+        no_trade={"funding_buffer_min": 30},
+    )
+    env.reset()
+
+    assert env._no_trade_enabled
+    assert env._no_trade_policy == "ignore"

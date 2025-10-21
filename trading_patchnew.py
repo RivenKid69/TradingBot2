@@ -264,11 +264,21 @@ class TradingEnv(gym.Env):
         self._publish = getattr(self._bus, "publish", lambda *a, **k: None)
         self.time = time_provider or RealTimeProvider()
 
-        raw_policy = str(kwargs.get("no_trade_policy", "block") or "block").strip().lower()
+        raw_policy_arg = kwargs.get("no_trade_policy", "block")
+        raw_policy = str(raw_policy_arg or "block").strip().lower()
         if raw_policy not in {"block", "ignore"}:
             raw_policy = "block"
-        self._no_trade_policy = raw_policy
         requested_no_trade = bool(kwargs.get("no_trade_enabled", False))
+        if requested_no_trade and raw_policy == "block":
+            mode_txt = str(kwargs.get("mode", "")).strip().lower()
+            if mode_txt == "train":
+                logger.warning(
+                    "Training environment requested no-trade policy 'block'; overriding to 'ignore' to keep "
+                    "reinforcement learning metrics responsive. Update the config to set env.no_trade.policy="
+                    "'ignore' explicitly."
+                )
+                raw_policy = "ignore"
+        self._no_trade_policy = raw_policy
         if requested_no_trade and NO_TRADE_FEATURES_DISABLED:
             logger.info(
                 "No-trade mask globally disabled; ignoring no_trade_enabled flag and mask configuration"
