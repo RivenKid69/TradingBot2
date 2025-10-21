@@ -146,6 +146,20 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
             df["fear_greed_value"] = df["fear_greed_value"].fillna(df[orig_fear_col])
         if orig_fear_col and orig_fear_col in df.columns:
             df = df.drop(columns=[orig_fear_col])
+        # Strip training-only artefacts that would zero-out weights during RL.
+        # ``apply_no_trade_mask`` may export the mask column or derived labels;
+        # keep the runtime dataset clean by dropping them eagerly.
+        artefact_columns = [
+            col
+            for col in ("train_weight",)
+            if col in df.columns
+        ]
+        artefact_columns.extend(
+            col for col in df.columns if col.startswith("no_trade_")
+        )
+        if artefact_columns:
+            df = df.drop(columns=sorted(set(artefact_columns)))
+
         # Maintain stable column order
         base_cols = [
             "timestamp","symbol","open","high","low","close","volume","quote_asset_volume",
