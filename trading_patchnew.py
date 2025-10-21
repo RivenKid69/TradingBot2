@@ -583,7 +583,7 @@ class TradingEnv(gym.Env):
         # --- end patch ---
 
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(N_FEATURES + 3,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(N_FEATURES + 4,), dtype=np.float32
         )
 
         # Phase 09 regime machinery
@@ -666,6 +666,7 @@ class TradingEnv(gym.Env):
         self._last_signal_position = 0.0
         try:
             setattr(self._mediator, "_last_signal_position", 0.0)
+            setattr(self._mediator, "_latest_log_ret_prev", 0.0)
         except Exception:
             pass
         first_price = 0.0
@@ -803,6 +804,9 @@ class TradingEnv(gym.Env):
             "net_worth": net_worth,
             "step_idx": current_idx,
         }
+        info["log_ret_prev"] = float(
+            getattr(self._mediator, "_latest_log_ret_prev", 0.0)
+        )
         info["signal_pos"] = float(
             getattr(self._mediator, "_last_signal_position", prev_signal)
         )
