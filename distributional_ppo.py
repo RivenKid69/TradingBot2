@@ -2219,7 +2219,17 @@ class DistributionalPPO(RecurrentPPO):
     ) -> torch.Tensor:
         kappa = max(float(self._quantile_huber_kappa), 1e-6)
         tau = self._quantile_levels_tensor(predicted_quantiles.device).view(1, -1)
-        delta = targets.unsqueeze(1) - predicted_quantiles
+        # ``targets`` is expected to be shaped ``[batch, 1]`` while
+        # ``predicted_quantiles`` has shape ``[batch, num_quantiles]``.
+        # Broadcasting already aligns these dimensions, so adding an
+        # extra singleton axis ends up broadcasting over the *batch*
+        # dimension as well (``[batch, batch, num_quantiles]``).  That
+        # couples every sample with every other sample, forcing the
+        # critic to predict the same distribution regardless of the
+        # observation and driving the explained variance to zero.  Keep
+        # the batch dimension intact to evaluate each sample against
+        # its own quantile estimates only.
+        delta = targets - predicted_quantiles
         abs_delta = delta.abs()
         huber = torch.where(
             abs_delta <= kappa,
