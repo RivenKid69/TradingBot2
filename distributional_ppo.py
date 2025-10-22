@@ -2232,7 +2232,17 @@ class DistributionalPPO(RecurrentPPO):
 
         if targets.ndim == 0:
             raise ValueError("Quantile critic targets must include a batch dimension")
-        targets = targets.view(-1, 1)
+
+        original_shape = tuple(targets.shape)
+        if targets.ndim > 1 and original_shape[0] != predicted_quantiles.shape[0]:
+            leading_dim = original_shape[0]
+            raise ValueError(
+                "Quantile critic targets include an extra leading dimension ("
+                f"size={leading_dim}); remove unsqueeze/keepdim operations so the "
+                "first dimension matches the batch size"
+            )
+
+        targets = targets.reshape(-1, 1)
         if targets.shape[1] != 1:
             raise ValueError(
                 "Quantile critic targets must collapse to shape [batch, 1], got "
@@ -7687,9 +7697,9 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             quantiles_for_loss = quantiles_fp32
                         quantiles_for_ev = quantiles_for_loss
-                        targets_norm_for_loss = target_returns_norm_selected.view(-1, 1)
+                        targets_norm_for_loss = target_returns_norm_selected.reshape(-1, 1)
                         targets_norm_clipped_for_loss = (
-                            target_returns_norm_clipped_selected.view(-1, 1)
+                            target_returns_norm_clipped_selected.reshape(-1, 1)
                         )
 
                         critic_loss_unclipped = self._quantile_huber_loss(
