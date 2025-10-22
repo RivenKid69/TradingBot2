@@ -3866,6 +3866,7 @@ class DistributionalPPO(RecurrentPPO):
         optimizer_lr_min: Optional[float] = None,
         scheduler_min_lr: Optional[float] = None,
         optimizer_lr_max: Optional[float] = None,
+        ev_reserve_apply_mask: bool = False,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]] = None
@@ -3989,6 +3990,11 @@ class DistributionalPPO(RecurrentPPO):
             self._value_target_scale_fixed = fixed_scale_value
 
         self._value_scale_updates_requested = bool(value_scale_update_enabled_value)
+
+        ev_reserve_apply_mask_candidate = kwargs_local.pop(
+            "ev_reserve_apply_mask", ev_reserve_apply_mask
+        )
+        self._ev_reserve_apply_mask = bool(ev_reserve_apply_mask_candidate)
 
         optimizer_lr_min_candidate = kwargs_local.pop("optimizer_lr_min", optimizer_lr_min)
         if optimizer_lr_min_candidate is None:
@@ -7115,8 +7121,14 @@ class DistributionalPPO(RecurrentPPO):
                         mask_values_for_ev = mask_values_local.to(device=self.device)
                         valid_indices = valid_indices_local.to(device=advantages.device)
                         sample_weight = float(mask_values_for_ev.sum().item())
+
+                        if self._ev_reserve_apply_mask:
+                            value_valid_indices = valid_indices
+                            value_mask_weights = mask_values_for_ev
+
                         value_valid_indices = valid_indices
                         value_mask_weights = mask_values_for_ev
+
                     else:
                         if sample_count <= 0 or sample_weight <= 0.0:
                             _reserve_ev_samples(rollout_data, None, None)
