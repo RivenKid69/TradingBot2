@@ -795,7 +795,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 vf_features, lstm_states.vf, episode_starts, self.lstm_critic
             )
         elif self.shared_lstm:
-            latent_vf = latent_pi.detach()
+            if self._critic_gradient_blocked:
+                latent_vf = latent_pi.detach()
+            else:
+                latent_vf = latent_pi
             new_vf_states = tuple(state.detach() for state in new_pi_states)
         else:
             latent_vf = self.critic(vf_features)
