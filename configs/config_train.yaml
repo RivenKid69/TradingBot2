@@ -152,6 +152,8 @@ model:
     value_scale_controller: {}
     clip_range_warmup: 0.18
     clip_range_warmup_updates: 16
+    # Количество апдейтов, в течение которых критик получает стоп-градиент (scale=0)
+    # на shared LSTM; после warmup масштаб восстанавливается до 1.0.
     critic_grad_warmup_updates: 0
     entropy_boost_factor: 1.5
 

@@ -4069,7 +4069,8 @@ class DistributionalPPO(RecurrentPPO):
         self._clip_range_current = self._clip_range_warmup
 
         self._critic_grad_warmup_updates = critic_grad_warmup_updates_value
-        self._critic_grad_blocked = critic_grad_warmup_updates_value > 0
+        self._critic_grad_block_scale = 0.0 if critic_grad_warmup_updates_value > 0 else 1.0
+        self._critic_grad_blocked = self._critic_grad_block_scale <= 0.0
         self._critic_grad_block_logged_state: Optional[bool] = None
 
         self._cvar_weight_target = float(self.cvar_weight)
@@ -4688,7 +4689,7 @@ class DistributionalPPO(RecurrentPPO):
 
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
-            policy_block_fn(self._critic_grad_blocked)
+            policy_block_fn(self._critic_grad_block_scale)
 
     @property
     def kl_exceed_stop_fraction(self) -> float:
@@ -4835,17 +4836,21 @@ class DistributionalPPO(RecurrentPPO):
 
     def _update_critic_gradient_block(self, update_index: int) -> None:
         should_block = update_index < self._critic_grad_warmup_updates
-        if should_block == self._critic_grad_blocked:
+        target_scale = 0.0 if should_block else 1.0
+        if math.isclose(target_scale, getattr(self, "_critic_grad_block_scale", 1.0)):
             return
 
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
-            policy_block_fn(should_block)
+            policy_block_fn(target_scale)
 
-        self._critic_grad_blocked = should_block
-        if self._critic_grad_block_logged_state != should_block:
-            self._critic_grad_block_logged_state = should_block
-            self.logger.record("debug/critic_grad_block_switch", float(should_block))
+        self._critic_grad_block_scale = target_scale
+        self._critic_grad_blocked = target_scale <= 0.0
+        if self._critic_grad_block_logged_state != self._critic_grad_blocked:
+            self._critic_grad_block_logged_state = self._critic_grad_blocked
+            self.logger.record(
+                "debug/critic_grad_block_switch", float(self._critic_grad_blocked)
+            )
 
     def _configure_gradient_accumulation(
         self,
@@ -5830,10 +5835,11 @@ class DistributionalPPO(RecurrentPPO):
         current_update = self._global_update_step
         # hard-kill any warmup coming from configs/CLI
         self._critic_grad_warmup_updates = 0
+        self._critic_grad_block_scale = 1.0
         self._critic_grad_blocked = False
         policy_block_fn = getattr(self.policy, "set_critic_gradient_blocked", None)
         if callable(policy_block_fn):
-            policy_block_fn(False)
+            policy_block_fn(self._critic_grad_block_scale)
         if self._critic_grad_block_logged_state is not False:
             self._critic_grad_block_logged_state = False
             self.logger.record("debug/critic_grad_block_switch", 0.0)
@@ -8471,6 +8477,9 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/vf_coef_effective", float(vf_coef_effective))
         self.logger.record("debug/cvar_penalty_scale", float(cvar_penalty_scale))
         self.logger.record("train/critic_gradient_blocked", float(self._critic_grad_blocked))
+        self.logger.record(
+            "train/critic_gradient_scale", float(self._critic_grad_block_scale)
+        )
         if (not self._use_quantile_value) and clamp_raw_weight > 0.0:
             self.logger.record(
                 "train/value_target_below_frac_raw",

@@ -265,6 +265,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._last_value_quantiles: Optional[torch.Tensor] = None
         self._last_raw_actions: Optional[torch.Tensor] = None
         self._critic_gradient_blocked: bool = False
+        self._critic_gradient_scale: float = 1.0
 
         # lr_schedule уже используется базовым классом во время вызова super().__init__.
         # Сохраняем ссылку заранее, чтобы можно было переинициализировать оптимизатор
@@ -780,11 +781,9 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             assert isinstance(features, tuple) and len(features) == 2
             pi_features, vf_features = features
 
-        if self._critic_gradient_blocked:
-            if isinstance(vf_features, torch.Tensor):
-                vf_features = vf_features.detach()
-            else:
-                vf_features = tuple(feat.detach() for feat in vf_features)
+        grad_scale = float(getattr(self, "_critic_gradient_scale", 1.0))
+        if grad_scale < 1.0:
+            vf_features = self._modulate_critic_gradient(vf_features, grad_scale)
 
         latent_pi, new_pi_states = self._process_sequence(
             pi_features, lstm_states.pi, episode_starts, self.lstm_actor
@@ -795,10 +794,14 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 vf_features, lstm_states.vf, episode_starts, self.lstm_critic
             )
         elif self.shared_lstm:
-            latent_vf = (
-                latent_pi.detach() if self._critic_gradient_blocked else latent_pi
-            )
-            new_vf_states = new_pi_states
+            latent_vf = self._modulate_critic_gradient(latent_pi, grad_scale)
+            if grad_scale >= 1.0:
+                new_vf_states = new_pi_states
+            else:
+                new_vf_states = tuple(
+                    self._modulate_critic_gradient(state, grad_scale)
+                    for state in new_pi_states
+                )
         else:
             latent_vf = self.critic(vf_features)
             new_vf_states = lstm_states.vf
@@ -865,8 +868,31 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             self._loss_head_weights_tensor = self._loss_head_weights_tensor.to(device=device)
         return self._loss_head_weights_tensor
 
-    def set_critic_gradient_blocked(self, blocked: bool) -> None:
-        self._critic_gradient_blocked = bool(blocked)
+    def _modulate_critic_gradient(
+        self, payload: torch.Tensor | Tuple[torch.Tensor, ...], scale: float
+    ) -> torch.Tensor | Tuple[torch.Tensor, ...]:
+        if isinstance(payload, tuple):
+            return tuple(self._modulate_critic_gradient(item, scale) for item in payload)
+        if not isinstance(payload, torch.Tensor):
+            raise TypeError(
+                "Critic gradient modulation expects a tensor or tuple of tensors"
+            )
+
+        clamped = float(min(max(scale, 0.0), 1.0))
+        if clamped >= 1.0:
+            return payload
+        if clamped <= 0.0:
+            return payload.detach()
+        return payload * clamped + payload.detach() * (1.0 - clamped)
+
+    def set_critic_gradient_blocked(self, blocked: bool | float) -> None:
+        if isinstance(blocked, bool):
+            scale = 0.0 if blocked else 1.0
+        else:
+            scale = float(blocked)
+        clamped = float(min(max(scale, 0.0), 1.0))
+        self._critic_gradient_scale = clamped
+        self._critic_gradient_blocked = clamped <= 0.0 + 1e-12
 
     def set_loss_head_weights(
         self, weights: Optional[Mapping[str, float] | Sequence[float]]
