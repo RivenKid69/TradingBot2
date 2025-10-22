@@ -7672,6 +7672,13 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             quantiles_for_loss = quantiles_fp32
                         quantiles_for_ev = quantiles_for_loss
+                        if target_returns_norm_selected.dim() == 1:
+                            target_returns_norm_selected = target_returns_norm_selected.unsqueeze(1)
+                        if target_returns_norm_clipped_selected.dim() == 1:
+                            target_returns_norm_clipped_selected = (
+                                target_returns_norm_clipped_selected.unsqueeze(1)
+                            )
+
                         critic_loss_unclipped = self._quantile_huber_loss(
                             quantiles_for_loss, target_returns_norm_selected
                         )
