@@ -7557,30 +7557,6 @@ class DistributionalPPO(RecurrentPPO):
                                     target_distribution[same_indices] = 0.0
                                     target_distribution[same_indices, lower_bound[same_indices]] = 1.0
 
-                        value_target_batches_norm.append(
-                            target_returns_norm_clipped_selected.reshape(-1, 1)
-                            .detach()
-                            .to(device="cpu", dtype=torch.float32)
-                        )
-                        value_target_batches_raw.append(
-                            target_returns_raw_for_ev_selected.reshape(-1, 1)
-                            .detach()
-                            .to(device="cpu", dtype=torch.float32)
-                        )
-                        value_weight_batches.append(
-                            mask_values_for_ev.detach()
-                            .reshape(-1, 1)
-                            .to(device="cpu", dtype=torch.float32)
-                        )
-                        expected_group_len = int(target_returns_norm_clipped_selected.reshape(-1).shape[0])  # FIX
-                        if group_keys_local and len(group_keys_local) != expected_group_len:  # FIX
-                            if not ev_group_key_len_mismatch_logged:  # FIX
-                                if self.logger is not None:  # FIX
-                                    self.logger.record("warn/ev_group_keys_len_mismatch", 1.0)  # FIX
-                                ev_group_key_len_mismatch_logged = True  # FIX
-                            group_keys_local = []  # FIX
-                        value_group_key_batches.append(list(group_keys_local))  # FIX
-
                         target_norm_for_stats = target_returns_norm_clipped_selected.to(
                             dtype=torch.float32
                         )
@@ -7603,6 +7579,30 @@ class DistributionalPPO(RecurrentPPO):
                         clamp_below_sum += below_frac * weight
                         clamp_above_sum += above_frac * weight
                         clamp_weight += weight
+
+                    value_target_batches_norm.append(
+                        target_returns_norm_clipped_selected.reshape(-1, 1)
+                        .detach()
+                        .to(device="cpu", dtype=torch.float32)
+                    )
+                    value_target_batches_raw.append(
+                        target_returns_raw_for_ev_selected.reshape(-1, 1)
+                        .detach()
+                        .to(device="cpu", dtype=torch.float32)
+                    )
+                    value_weight_batches.append(
+                        mask_values_for_ev.detach()
+                        .reshape(-1, 1)
+                        .to(device="cpu", dtype=torch.float32)
+                    )
+                    expected_group_len = int(target_returns_norm_clipped_selected.reshape(-1).shape[0])  # FIX
+                    if group_keys_local and len(group_keys_local) != expected_group_len:  # FIX
+                        if not ev_group_key_len_mismatch_logged:  # FIX
+                            if self.logger is not None:  # FIX
+                                self.logger.record("warn/ev_group_keys_len_mismatch", 1.0)  # FIX
+                            ev_group_key_len_mismatch_logged = True  # FIX
+                        group_keys_local = []  # FIX
+                    value_group_key_batches.append(list(group_keys_local))  # FIX
 
                     pred_norm_clip_bounds_train = norm_clip_bounds_train
                     if self._use_quantile_value:
