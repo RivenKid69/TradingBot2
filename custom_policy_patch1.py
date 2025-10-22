@@ -529,7 +529,21 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if lr_schedule is None:
             return
 
-        modules: list[nn.Module] = [self.mlp_extractor]
+        modules: list[nn.Module] = []
+
+        features_extractor = getattr(self, "features_extractor", None)
+        if isinstance(features_extractor, nn.Module):
+            modules.append(features_extractor)
+
+        if not getattr(self, "share_features_extractor", True):
+            vf_features_extractor = getattr(self, "vf_features_extractor", None)
+            if (
+                isinstance(vf_features_extractor, nn.Module)
+                and vf_features_extractor is not features_extractor
+            ):
+                modules.append(vf_features_extractor)
+
+        modules.append(self.mlp_extractor)
 
         lstm_actor = getattr(self, "lstm_actor", None)
         if lstm_actor is not None:
@@ -552,7 +566,11 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         if hasattr(self, "unconstrained_log_std"):
             params.append(self.unconstrained_log_std)
 
-        self.optimizer = self.optimizer_class(params, lr=lr_schedule(1), **self.optimizer_kwargs)
+        optimizer_kwargs = self.optimizer_kwargs or {}
+
+        # Recreate the optimizer so the new parameter set (including feature
+        # extractors) participates in training.
+        self.optimizer = self.optimizer_class(params, lr=lr_schedule(1), **optimizer_kwargs)
 
         if self.optimizer_scheduler_fn is not None:
             self.optimizer_scheduler = self.optimizer_scheduler_fn(self.optimizer)
