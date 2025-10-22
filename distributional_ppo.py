@@ -1444,6 +1444,75 @@ class DistributionalPPO(RecurrentPPO):
 
             self._logger = configure()
 
+    def _record_value_debug_stats(
+        self,
+        stage: str,
+        tensor: Optional[torch.Tensor],
+        *,
+        prefix: str = "debug/value_path",
+        clip_bounds: Optional[tuple[Optional[float], Optional[float]]] = None,
+    ) -> None:
+        """Emit summary statistics for tensors flowing through the value pipeline."""
+
+        logger_obj = getattr(self, "logger", None)
+        record = getattr(logger_obj, "record", None) if logger_obj is not None else None
+        if not callable(record):
+            return
+
+        base_key = f"{prefix}/{stage}" if prefix else stage
+        if tensor is None:
+            record(f"{base_key}_count", 0.0)
+            record(f"{base_key}_finite_frac", 0.0)
+            return
+
+        with torch.no_grad():
+            tensor_detached = tensor.detach()
+            if tensor_detached.numel() == 0:
+                record(f"{base_key}_count", 0.0)
+                record(f"{base_key}_finite_frac", 0.0)
+                return
+
+            flat = tensor_detached.to(device="cpu", dtype=torch.float32).reshape(-1)
+            total = flat.numel()
+            record(f"{base_key}_count", float(total))
+            if total == 0:
+                record(f"{base_key}_finite_frac", 0.0)
+                return
+
+            finite_mask = torch.isfinite(flat)
+            finite_total = int(finite_mask.sum().item())
+            record(
+                f"{base_key}_finite_frac",
+                float(finite_total) / float(total) if total > 0 else 0.0,
+            )
+            if finite_total == 0:
+                return
+
+            finite_vals = flat[finite_mask]
+            record(f"{base_key}_mean", float(finite_vals.mean().item()))
+            record(
+                f"{base_key}_std",
+                float(finite_vals.std(unbiased=False).item()) if finite_total > 0 else 0.0,
+            )
+            record(f"{base_key}_min", float(finite_vals.min().item()))
+            record(f"{base_key}_max", float(finite_vals.max().item()))
+
+            if clip_bounds is not None and finite_total > 0:
+                lower, upper = clip_bounds
+                tol = 1e-6
+                if lower is not None and math.isfinite(lower):
+                    lower_hits = float((finite_vals <= (lower + tol)).sum().item())
+                    record(
+                        f"{base_key}_at_lower_frac",
+                        lower_hits / float(finite_total),
+                    )
+                if upper is not None and math.isfinite(upper):
+                    upper_hits = float((finite_vals >= (upper - tol)).sum().item())
+                    record(
+                        f"{base_key}_at_upper_frac",
+                        upper_hits / float(finite_total),
+                    )
+
     def _replay_popart_config_logs(self) -> None:
         """Re-emit cached PopArt configuration metrics to the active logger."""
 
@@ -6174,6 +6243,10 @@ class DistributionalPPO(RecurrentPPO):
                     target_returns_raw, base_scale_safe = self._decode_returns_scale_only(
                         buffer_returns
                     )
+                    target_raw_pre_limit = target_returns_raw.detach()
+                    raw_limit_bounds: Optional[
+                        tuple[Optional[float], Optional[float]]
+                    ] = None
                     old_values_raw_tensor: Optional[torch.Tensor] = None
                     clip_old_values_available = False
                     if clip_range_vf_value is not None:
@@ -6233,28 +6306,62 @@ class DistributionalPPO(RecurrentPPO):
                     if (not self.normalize_returns) and (
                         self._value_clip_limit_unscaled is not None
                     ):
+                        limit_unscaled = float(self._value_clip_limit_unscaled)
+                        raw_limit_bounds = (-limit_unscaled, limit_unscaled)
                         target_returns_raw = torch.clamp(
                             target_returns_raw,
-                            min=-self._value_clip_limit_unscaled,
-                            max=self._value_clip_limit_unscaled,
+                            min=-limit_unscaled,
+                            max=limit_unscaled,
                         )
+                    target_raw_post_limit = target_returns_raw.detach()
+
+                    self._record_value_debug_stats(
+                        "ev_target_raw_pre_limit", target_raw_pre_limit
+                    )
+                    self._record_value_debug_stats(
+                        "ev_target_raw_post_limit",
+                        target_raw_post_limit,
+                        clip_bounds=raw_limit_bounds,
+                    )
+
                     if self.normalize_returns:
-                        target_returns_norm = (
-                            (target_returns_raw - ret_mu_tensor) / ret_std_tensor
-                        ).clamp(
+                        target_returns_norm_unclipped = (
+                            target_returns_raw - ret_mu_tensor
+                        ) / ret_std_tensor
+                        target_returns_norm = target_returns_norm_unclipped.clamp(
                             self._value_norm_clip_min, self._value_norm_clip_max
                         )
+                        norm_clip_bounds: Optional[
+                            tuple[Optional[float], Optional[float]]
+                        ] = (
+                            float(self._value_norm_clip_min),
+                            float(self._value_norm_clip_max),
+                        )
                     else:
-                        target_returns_norm = (
+                        target_returns_norm_unclipped = (
                             (target_returns_raw / float(base_scale_safe))
                             * self._value_target_scale_effective
                         )
                         if self._value_clip_limit_scaled is not None:
+                            limit_scaled = float(self._value_clip_limit_scaled)
                             target_returns_norm = torch.clamp(
-                                target_returns_norm,
-                                min=-self._value_clip_limit_scaled,
-                                max=self._value_clip_limit_scaled,
+                                target_returns_norm_unclipped,
+                                min=-limit_scaled,
+                                max=limit_scaled,
                             )
+                            norm_clip_bounds = (-limit_scaled, limit_scaled)
+                        else:
+                            target_returns_norm = target_returns_norm_unclipped
+                            norm_clip_bounds = None
+
+                    self._record_value_debug_stats(
+                        "ev_target_norm_pre_clip", target_returns_norm_unclipped
+                    )
+                    self._record_value_debug_stats(
+                        "ev_target_norm_post_clip",
+                        target_returns_norm,
+                        clip_bounds=norm_clip_bounds,
+                    )
 
                     target_returns_raw_clipped = target_returns_raw
                     target_returns_norm_clipped = target_returns_norm
@@ -6288,6 +6395,15 @@ class DistributionalPPO(RecurrentPPO):
                                     max=self._value_clip_limit_scaled,
                                 )
 
+                    self._record_value_debug_stats(
+                        "ev_target_raw_post_vf_clip", target_returns_raw_clipped
+                    )
+                    self._record_value_debug_stats(
+                        "ev_target_norm_post_vf_clip",
+                        target_returns_norm_clipped,
+                        clip_bounds=norm_clip_bounds,
+                    )
+
                     target_norm_col = target_returns_norm_clipped.reshape(-1, 1)
                     target_raw_col = target_returns_raw.reshape(-1, 1)
 
@@ -6307,6 +6423,7 @@ class DistributionalPPO(RecurrentPPO):
                     if target_norm_col.numel() == 0 or target_raw_col.numel() == 0:
                         return False
 
+                    pred_norm_clip_bounds = norm_clip_bounds
                     if self._use_quantile_value:
                         value_quantiles = self.policy.last_value_quantiles
                         if value_quantiles is None:
@@ -6315,15 +6432,28 @@ class DistributionalPPO(RecurrentPPO):
                             if value_quantiles is None:
                                 return False
                         quantiles_fp32 = value_quantiles.to(dtype=torch.float32)
+                        pred_norm_clip_bounds = norm_clip_bounds
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_norm_pre_clip",
+                            quantiles_fp32,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
+                        quantiles_raw_pre_clip = self._to_raw_returns(quantiles_fp32)
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_raw_pre_clip", quantiles_raw_pre_clip
+                        )
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
-                            quantiles_raw = self._to_raw_returns(quantiles_fp32)
                             old_values_raw_clipped = old_values_raw_tensor
-                            while old_values_raw_clipped.dim() < quantiles_raw.dim():
+                            while old_values_raw_clipped.dim() < quantiles_raw_pre_clip.dim():
                                 old_values_raw_clipped = old_values_raw_clipped.unsqueeze(-1)
-                            delta_raw = quantiles_raw - old_values_raw_clipped
+                            delta_raw = quantiles_raw_pre_clip - old_values_raw_clipped
                             quantiles_raw_clipped = old_values_raw_clipped + delta_raw.clamp(
                                 min=-clip_delta, max=clip_delta
+                            )
+                            self._record_value_debug_stats(
+                                "ev_pred_quantiles_raw_post_vf_clip",
+                                quantiles_raw_clipped,
                             )
                             if self.normalize_returns:
                                 quantiles_norm_for_pred = (
@@ -6343,9 +6473,32 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            self._record_value_debug_stats(
+                                "ev_pred_quantiles_norm_post_vf_clip",
+                                quantiles_norm_for_pred,
+                                clip_bounds=pred_norm_clip_bounds,
+                            )
                         else:
                             quantiles_norm_for_pred = quantiles_fp32
+
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_norm_post_clip",
+                            quantiles_norm_for_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
+                        quantiles_raw_post_clip = self._to_raw_returns(
+                            quantiles_norm_for_pred
+                        )
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_raw_post_clip", quantiles_raw_post_clip
+                        )
+
                         value_pred = quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_norm_pre_final_clip",
+                            value_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
                     else:
                         value_logits = self.policy.last_value_logits
                         if value_logits is None:
@@ -6358,16 +6511,27 @@ class DistributionalPPO(RecurrentPPO):
                             min=1e-8, max=1.0
                         )
                         value_pred = (probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_norm_pre_clip",
+                            value_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
+                        value_pred_raw_pre_clip = self._to_raw_returns(value_pred)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_raw_pre_clip", value_pred_raw_pre_clip
+                        )
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
-                            value_pred_raw = self._to_raw_returns(value_pred)
                             old_values_raw_aligned = old_values_raw_tensor
-                            while old_values_raw_aligned.dim() < value_pred_raw.dim():
+                            while old_values_raw_aligned.dim() < value_pred_raw_pre_clip.dim():
                                 old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
                             value_pred_raw_clipped = torch.clamp(
-                                value_pred_raw,
+                                value_pred_raw_pre_clip,
                                 min=old_values_raw_aligned - clip_delta,
                                 max=old_values_raw_aligned + clip_delta,
+                            )
+                            self._record_value_debug_stats(
+                                "ev_pred_mean_raw_post_vf_clip", value_pred_raw_clipped
                             )
                             if self.normalize_returns:
                                 value_pred = (
@@ -6387,6 +6551,11 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            self._record_value_debug_stats(
+                                "ev_pred_mean_norm_post_vf_clip",
+                                value_pred,
+                                clip_bounds=pred_norm_clip_bounds,
+                            )
 
                     if self.normalize_returns:
                         value_pred = value_pred.clamp(
@@ -6398,6 +6567,16 @@ class DistributionalPPO(RecurrentPPO):
                             min=-self._value_clip_limit_scaled,
                             max=self._value_clip_limit_scaled,
                         )
+
+                    self._record_value_debug_stats(
+                        "ev_pred_mean_norm_post_final_clip",
+                        value_pred,
+                        clip_bounds=pred_norm_clip_bounds,
+                    )
+                    value_pred_raw_final = self._to_raw_returns(value_pred)
+                    self._record_value_debug_stats(
+                        "ev_pred_mean_raw_post_final_clip", value_pred_raw_final
+                    )
 
                     value_pred_col = value_pred.reshape(-1, 1)
                     if index_tensor is not None:
@@ -6924,6 +7103,10 @@ class DistributionalPPO(RecurrentPPO):
                         target_returns_raw, base_scale_safe = self._decode_returns_scale_only(
                             buffer_returns
                         )
+                        target_raw_pre_limit = target_returns_raw.detach()
+                        raw_limit_bounds_train: Optional[
+                            tuple[Optional[float], Optional[float]]
+                        ] = None
                         old_values_tensor = rollout_data.old_values.to(
                             device=self.device, dtype=torch.float32
                         )
@@ -6935,11 +7118,23 @@ class DistributionalPPO(RecurrentPPO):
                         if (not self.normalize_returns) and (
                             self._value_clip_limit_unscaled is not None
                         ):
+                            limit_unscaled = float(self._value_clip_limit_unscaled)
+                            raw_limit_bounds_train = (-limit_unscaled, limit_unscaled)
                             target_returns_raw = torch.clamp(
                                 target_returns_raw,
-                                min=-self._value_clip_limit_unscaled,
-                                max=self._value_clip_limit_unscaled,
+                                min=-limit_unscaled,
+                                max=limit_unscaled,
                             )
+
+                        target_raw_post_limit = target_returns_raw.detach()
+                        self._record_value_debug_stats(
+                            "train_target_raw_pre_limit", target_raw_pre_limit
+                        )
+                        self._record_value_debug_stats(
+                            "train_target_raw_post_limit",
+                            target_raw_post_limit,
+                            clip_bounds=raw_limit_bounds_train,
+                        )
 
                         weight_before_raw = weight
                         raw_weight = float(sample_weight)
@@ -6951,18 +7146,37 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm = target_returns_norm_raw.clamp(
                                 self._value_norm_clip_min, self._value_norm_clip_max
                             )
+                            norm_clip_bounds_train: Optional[
+                                tuple[Optional[float], Optional[float]]
+                            ] = (
+                                float(self._value_norm_clip_min),
+                                float(self._value_norm_clip_max),
+                            )
                         else:
                             target_returns_norm_raw = (
                                 (target_returns_raw / float(base_scale_safe))
                                 * self._value_target_scale_effective
                             )
-                            target_returns_norm = target_returns_norm_raw
                             if self._value_clip_limit_scaled is not None:
+                                limit_scaled = float(self._value_clip_limit_scaled)
                                 target_returns_norm = torch.clamp(
-                                    target_returns_norm,
-                                    min=-self._value_clip_limit_scaled,
-                                    max=self._value_clip_limit_scaled,
+                                    target_returns_norm_raw,
+                                    min=-limit_scaled,
+                                    max=limit_scaled,
                                 )
+                                norm_clip_bounds_train = (-limit_scaled, limit_scaled)
+                            else:
+                                target_returns_norm = target_returns_norm_raw
+                                norm_clip_bounds_train = None
+
+                        self._record_value_debug_stats(
+                            "train_target_norm_pre_clip", target_returns_norm_raw
+                        )
+                        self._record_value_debug_stats(
+                            "train_target_norm_post_clip",
+                            target_returns_norm,
+                            clip_bounds=norm_clip_bounds_train,
+                        )
 
                         target_returns_raw_flat = target_returns_raw.reshape(-1)
                         target_returns_norm_flat = target_returns_norm.reshape(-1)
@@ -7006,6 +7220,15 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             target_returns_raw_clipped = target_returns_raw
                             target_returns_norm_clipped = target_returns_norm
+
+                        self._record_value_debug_stats(
+                            "train_target_raw_post_vf_clip", target_returns_raw_clipped
+                        )
+                        self._record_value_debug_stats(
+                            "train_target_norm_post_vf_clip",
+                            target_returns_norm_clipped,
+                            clip_bounds=norm_clip_bounds_train,
+                        )
 
                         target_returns_norm_clipped_flat = target_returns_norm_clipped.reshape(-1)
                         if valid_indices is not None:
@@ -7124,11 +7347,28 @@ class DistributionalPPO(RecurrentPPO):
                         clamp_above_sum += above_frac * weight
                         clamp_weight += weight
 
+                    pred_norm_clip_bounds_train = norm_clip_bounds_train
                     if self._use_quantile_value:
                         quantiles_fp32 = value_head_fp32
                         mean_values_norm = quantiles_fp32.mean(dim=1, keepdim=True)
                         mean_values_unscaled = self._to_raw_returns(mean_values_norm)
                         quantiles_raw = self._to_raw_returns(quantiles_fp32)
+                        self._record_value_debug_stats(
+                            "train_pred_quantiles_norm_pre_clip",
+                            quantiles_fp32,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        self._record_value_debug_stats(
+                            "train_pred_mean_norm_pre_clip",
+                            mean_values_norm,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        self._record_value_debug_stats(
+                            "train_pred_mean_raw_pre_clip", mean_values_unscaled
+                        )
+                        self._record_value_debug_stats(
+                            "train_pred_quantiles_raw_pre_clip", quantiles_raw
+                        )
                         clip_unscaled = (not self.normalize_returns) and (
                             self._value_clip_limit_unscaled is not None
                         )
@@ -7204,6 +7444,10 @@ class DistributionalPPO(RecurrentPPO):
                             quantiles_raw_clipped = old_values_raw_clipped + delta_raw.clamp(
                                 min=-clip_delta, max=clip_delta
                             )
+                            self._record_value_debug_stats(
+                                "train_pred_quantiles_raw_post_vf_clip",
+                                quantiles_raw_clipped,
+                            )
                             if self.normalize_returns:
                                 quantiles_norm_clipped = (
                                     (quantiles_raw_clipped - ret_mu_tensor)
@@ -7222,6 +7466,11 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            self._record_value_debug_stats(
+                                "train_pred_quantiles_norm_post_vf_clip",
+                                quantiles_norm_clipped,
+                                clip_bounds=pred_norm_clip_bounds_train,
+                            )
                             if valid_indices is not None:
                                 quantiles_norm_clipped_for_loss = quantiles_norm_clipped[valid_indices]
                             else:
@@ -7233,6 +7482,18 @@ class DistributionalPPO(RecurrentPPO):
                             critic_loss = torch.max(critic_loss_unclipped, critic_loss_clipped)
 
                         value_pred_norm_for_ev = quantiles_for_ev.mean(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "train_pred_mean_norm_pre_final_clip",
+                            value_pred_norm_for_ev,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        value_pred_raw_for_ev_pre_clip = self._to_raw_returns(
+                            value_pred_norm_for_ev
+                        )
+                        self._record_value_debug_stats(
+                            "train_pred_mean_raw_pre_final_clip",
+                            value_pred_raw_for_ev_pre_clip,
+                        )
                         if self.normalize_returns:
                             value_pred_norm_for_ev = value_pred_norm_for_ev.clamp(
                                 self._value_norm_clip_min, self._value_norm_clip_max
@@ -7242,6 +7503,18 @@ class DistributionalPPO(RecurrentPPO):
                                 min=-self._value_clip_limit_scaled,
                                 max=self._value_clip_limit_scaled,
                             )
+                        self._record_value_debug_stats(
+                            "train_pred_mean_norm_post_final_clip",
+                            value_pred_norm_for_ev,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        value_pred_raw_for_ev_post_clip = self._to_raw_returns(
+                            value_pred_norm_for_ev
+                        )
+                        self._record_value_debug_stats(
+                            "train_pred_mean_raw_post_final_clip",
+                            value_pred_raw_for_ev_post_clip,
+                        )
                         value_pred_batches_norm.append(
                             value_pred_norm_for_ev.detach().to(device="cpu", dtype=torch.float32)
                         )
@@ -7271,6 +7544,14 @@ class DistributionalPPO(RecurrentPPO):
 
                             mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
                             mean_values_unscaled = self._to_raw_returns(mean_values_norm)
+                            self._record_value_debug_stats(
+                                "train_pred_mean_norm_pre_clip",
+                                mean_values_norm,
+                                clip_bounds=pred_norm_clip_bounds_train,
+                            )
+                            self._record_value_debug_stats(
+                                "train_pred_mean_raw_pre_clip", mean_values_unscaled
+                            )
 
                             if (not self.normalize_returns) and (
                                 self._value_clip_limit_unscaled is not None
@@ -7318,6 +7599,19 @@ class DistributionalPPO(RecurrentPPO):
                             else:
                                 mean_values_norm_clipped = mean_values_norm
 
+                            self._record_value_debug_stats(
+                                "train_pred_mean_norm_post_vf_clip",
+                                mean_values_norm_clipped,
+                                clip_bounds=pred_norm_clip_bounds_train,
+                            )
+                            mean_values_unscaled_post_clip = self._to_raw_returns(
+                                mean_values_norm_clipped
+                            )
+                            self._record_value_debug_stats(
+                                "train_pred_mean_raw_post_vf_clip",
+                                mean_values_unscaled_post_clip,
+                            )
+
                             mean_values_norm_flat = mean_values_norm.view(-1)
                             mean_values_norm_clipped_flat = mean_values_norm_clipped.view(-1)
                             mean_values_unscaled_flat = mean_values_unscaled.view(-1)
@@ -7352,6 +7646,18 @@ class DistributionalPPO(RecurrentPPO):
                                     min=-self._value_clip_limit_scaled,
                                     max=self._value_clip_limit_scaled,
                                 )
+                            self._record_value_debug_stats(
+                                "train_pred_mean_norm_post_final_clip",
+                                value_pred_norm_for_ev,
+                                clip_bounds=pred_norm_clip_bounds_train,
+                            )
+                            value_pred_raw_norm_final = self._to_raw_returns(
+                                value_pred_norm_for_ev
+                            )
+                            self._record_value_debug_stats(
+                                "train_pred_mean_raw_post_final_clip",
+                                value_pred_raw_norm_final,
+                            )
                             value_pred_batches_norm.append(
                                 value_pred_norm_for_ev.detach().to(device="cpu", dtype=torch.float32)
                             )
