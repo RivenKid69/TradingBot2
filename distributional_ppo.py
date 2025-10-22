@@ -2230,14 +2230,11 @@ class DistributionalPPO(RecurrentPPO):
         # the batch dimension intact to evaluate each sample against
         # its own quantile estimates only.
 
-        if targets.ndim == 1:
-            targets = targets.unsqueeze(1)
-        elif targets.ndim > 2:
-            targets = targets.reshape(targets.shape[0], -1)
-
-        if targets.ndim != 2 or targets.shape[1] != 1:
+        targets = targets.reshape(-1, 1)
+        if targets.shape[0] != predicted_quantiles.shape[0]:
             raise ValueError(
-                f"Quantile critic targets must have shape [batch, 1], got {tuple(targets.shape)}"
+                "Quantile critic targets must align with predicted quantiles: "
+                f"batch sizes differ ({targets.shape[0]} vs {predicted_quantiles.shape[0]})"
             )
 
         delta = predicted_quantiles - targets
