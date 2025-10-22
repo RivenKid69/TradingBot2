@@ -64,6 +64,8 @@ model:
     value_scale_update_enabled: false
 
     clip_range_vf: null
+    vf_clip_warmup_updates: 0
+    vf_clip_threshold_ev: null
 
 
 
