@@ -161,3 +161,48 @@ def test_sync_symbol_rebuilds_truncated_csv(monkeypatch, tmp_path: Path):
     assert rows[1].split(",")[0] == str(0)
     assert rows[-1].split(",")[0] == str(9 * INTERVAL)
 
+
+def test_sync_symbol_rewrites_truncated_history(monkeypatch, tmp_path: Path):
+    symbol = "BNBUSDT"
+    now_ms = 12 * INTERVAL
+
+    monkeypatch.setattr(incremental_klines.clock, "now_ms", lambda: now_ms)
+    monkeypatch.setattr(incremental_klines, "OUT_DIR", str(tmp_path))
+
+    out_file = tmp_path / f"{symbol}.csv"
+    with out_file.open("w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(incremental_klines.HEADER)
+        for idx in range(10, 12):
+            row = _make_row(idx) + [symbol]
+            writer.writerow(row)
+
+    payload = [_make_row(i) for i in range(12)]
+    call_order: list[tuple[int, int]] = []
+
+    def fake_get(url, *, params, retries=3, backoff=0.5):  # noqa: ARG001
+        start = params["startTime"]
+        limit = params["limit"]
+        call_order.append((start, limit))
+        if start == 0 and limit == 1:
+            return DummyResponse([payload[0]])
+        assert start == 0
+        assert limit == 12
+        return DummyResponse(payload)
+
+    monkeypatch.setattr(incremental_klines, "_get_with_retry", fake_get)
+
+    appended = incremental_klines.sync_symbol(symbol, close_lag_ms=0)
+
+    assert appended == 12
+    rows = list(csv.reader(out_file.open("r", newline="")))
+    assert rows[0] == incremental_klines.HEADER
+    data_rows = rows[1:]
+    assert len(data_rows) == 12
+    for idx, row in enumerate(data_rows):
+        assert int(row[0]) == idx * INTERVAL
+        assert row[-1] == symbol
+    # ensure we performed the truncated rebuild path (earliest lookup + full sync)
+    assert call_order[0] == (0, 1)
+    assert call_order[1] == (0, 12)
+

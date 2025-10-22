@@ -101,7 +101,7 @@ def _rows_to_write(
             continue
         if close_time > max_close_ts:
             break
-        if not allow_existing and last_ts is not None and open_time <= last_ts:
+        if last_ts is not None and open_time <= last_ts and not allow_existing:
             continue
         values = list(map(str, row + [symbol.upper()]))
         rows.append((open_time, values))
@@ -178,6 +178,7 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
     max_open_time = max_close_ts - INTERVAL_MS
     rebuild_mode = False
     earliest_ts: Optional[int] = None
+    earliest_exchange_ts: Optional[int] = None
     if last_ts is None:
         cursor = 0
     else:
@@ -187,14 +188,17 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
     if cursor > max_open_time:
         if last_ts is None:
             return 0
+        truncated = False
         earliest_exchange_ts = _fetch_earliest_open_time(symbol)
-        if (
-            earliest_ts is not None
-            and earliest_exchange_ts is not None
-            and earliest_ts > earliest_exchange_ts
-        ):
+        if earliest_exchange_ts is not None:
+            if earliest_ts is None or earliest_ts > earliest_exchange_ts:
+                truncated = True
+        elif earliest_ts is None:
+            truncated = True
+
+        if truncated:
             rebuild_mode = True
-            cursor = earliest_exchange_ts
+            cursor = earliest_exchange_ts if earliest_exchange_ts is not None else 0
             last_ts = None
         else:
             return 0
