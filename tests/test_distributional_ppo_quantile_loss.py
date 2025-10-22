@@ -78,3 +78,43 @@ def test_quantile_huber_loss_unsqueeze_path_produces_distinct_gradients() -> Non
     assert not math.isclose(grad_first, grad_second, abs_tol=1e-6)
     assert grad_second > grad_first
 
+
+def test_quantile_huber_loss_optim_step_preserves_positive_ev() -> None:
+    torch = pytest.importorskip("torch")
+
+    from distributional_ppo import DistributionalPPO, safe_explained_variance
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._quantile_huber_kappa = 1.0
+
+    class _PolicyStub:
+        device = torch.device("cpu")
+
+        @property
+        def quantile_levels(self) -> torch.Tensor:  # pragma: no cover - deterministic tensor
+            return torch.tensor([0.1, 0.9], dtype=torch.float32)
+
+    algo.policy = _PolicyStub()
+
+    predicted = torch.nn.Parameter(torch.zeros((2, 2), dtype=torch.float32))
+    targets = torch.tensor([-1.0, 1.0], dtype=torch.float32).view(-1, 1)
+
+    optimizer = torch.optim.SGD([predicted], lr=0.2)
+    for _ in range(40):
+        optimizer.zero_grad(set_to_none=True)
+        loss = DistributionalPPO._quantile_huber_loss(algo, predicted, targets)
+        loss.backward()
+        optimizer.step()
+
+    with torch.no_grad():
+        predicted_means = predicted.mean(dim=1).cpu().numpy()
+        targets_np = targets.view(-1).cpu().numpy()
+
+    ev = safe_explained_variance(targets_np, predicted_means)
+
+    assert ev > 0.0
+    assert not math.isclose(
+        float(predicted_means[0]), float(predicted_means[1]), abs_tol=1e-3
+    )
+    assert predicted_means[0] < predicted_means[1]
+
