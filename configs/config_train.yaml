@@ -57,6 +57,8 @@ model:
     clip_range: 0.10                   # не душим обновления (0.1–0.2 норма)
 
     clip_range_vf: null                # отключаем клиппинг ценности, чтобы не занижать дисперсию
+    vf_clip_warmup_updates: 0          # при необходимости можно дать warmup до включения vf-клипа
+    vf_clip_threshold_ev: null         # или задать порог explained variance для активации клипа
 
     ent_coef: 0.001
     ent_coef_final: 0.001

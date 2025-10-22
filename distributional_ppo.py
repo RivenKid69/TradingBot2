@@ -1538,6 +1538,63 @@ class DistributionalPPO(RecurrentPPO):
                         upper_hits / float(finite_total),
                     )
 
+    def _log_vf_clip_dispersion(
+        self,
+        prefix: str,
+        *,
+        raw_pre: Optional[torch.Tensor] = None,
+        raw_post: Optional[torch.Tensor] = None,
+        norm_pre: Optional[torch.Tensor] = None,
+        norm_post: Optional[torch.Tensor] = None,
+    ) -> None:
+        """Emit dispersion metrics comparing tensors before and after VF clipping."""
+
+        logger_obj = getattr(self, "logger", None)
+        record = getattr(logger_obj, "record", None) if logger_obj is not None else None
+        if not callable(record):
+            return
+
+        def _std_value(tensor: Optional[torch.Tensor]) -> Optional[float]:
+            if tensor is None:
+                return None
+            with torch.no_grad():
+                detached = tensor.detach()
+                if detached.numel() == 0:
+                    return None
+                flat = detached.to(device="cpu", dtype=torch.float32).reshape(-1)
+                if flat.numel() == 0:
+                    return None
+                return float(flat.std(unbiased=False).item())
+
+        raw_pre_std = _std_value(raw_pre)
+        raw_post_std = _std_value(raw_post)
+        norm_pre_std = _std_value(norm_pre)
+        norm_post_std = _std_value(norm_post)
+
+        if raw_pre_std is not None and math.isfinite(raw_pre_std):
+            record(f"{prefix}/raw_std_pre", float(raw_pre_std))
+        if raw_post_std is not None and math.isfinite(raw_post_std):
+            record(f"{prefix}/raw_std_post", float(raw_post_std))
+        if (
+            raw_pre_std is not None
+            and raw_post_std is not None
+            and math.isfinite(raw_pre_std)
+            and math.isfinite(raw_post_std)
+        ):
+            record(f"{prefix}/raw_std_delta", float(raw_post_std - raw_pre_std))
+
+        if norm_pre_std is not None and math.isfinite(norm_pre_std):
+            record(f"{prefix}/norm_std_pre", float(norm_pre_std))
+        if norm_post_std is not None and math.isfinite(norm_post_std):
+            record(f"{prefix}/norm_std_post", float(norm_post_std))
+        if (
+            norm_pre_std is not None
+            and norm_post_std is not None
+            and math.isfinite(norm_pre_std)
+            and math.isfinite(norm_post_std)
+        ):
+            record(f"{prefix}/norm_std_delta", float(norm_post_std - norm_pre_std))
+
     def _replay_popart_config_logs(self) -> None:
         """Re-emit cached PopArt configuration metrics to the active logger."""
 
@@ -3730,6 +3787,8 @@ class DistributionalPPO(RecurrentPPO):
         clip_range_warmup: Optional[float] = None,
         clip_range_warmup_updates: int = 8,
         clip_range_vf: Optional[float] = None,
+        vf_clip_warmup_updates: int = 0,
+        vf_clip_threshold_ev: Optional[float] = None,
         critic_grad_warmup_updates: int = 0,
         cvar_activation_threshold: float = 0.25,
         cvar_activation_hysteresis: float = 0.05,
@@ -3850,6 +3909,28 @@ class DistributionalPPO(RecurrentPPO):
             if not math.isfinite(clip_range_vf_value) or clip_range_vf_value <= 0.0:
                 raise ValueError("'clip_range_vf' must be a positive finite value when provided")
         self.clip_range_vf = clip_range_vf_value
+
+        vf_clip_warmup_candidate = kwargs_local.pop(
+            "vf_clip_warmup_updates", vf_clip_warmup_updates
+        )
+        vf_clip_warmup_value = max(0, int(vf_clip_warmup_candidate or 0))
+        vf_clip_threshold_candidate = kwargs_local.pop(
+            "vf_clip_threshold_ev", vf_clip_threshold_ev
+        )
+        if vf_clip_threshold_candidate is None:
+            vf_clip_threshold_value = None
+        else:
+            vf_clip_threshold_value = float(vf_clip_threshold_candidate)
+            if not math.isfinite(vf_clip_threshold_value):
+                raise ValueError("'vf_clip_threshold_ev' must be finite when provided")
+            if vf_clip_threshold_value < -1.0 or vf_clip_threshold_value > 1.0:
+                raise ValueError(
+                    "'vf_clip_threshold_ev' must lie within [-1, 1] to match explained variance bounds"
+                )
+        self._vf_clip_warmup_updates = int(vf_clip_warmup_value)
+        self._vf_clip_threshold_ev = vf_clip_threshold_value
+        self._vf_clip_warmup_logged_complete = False
+        self._vf_clip_latest_ev: Optional[float] = None
 
         value_scale_update_enabled_candidate = kwargs_local.pop(
             "value_scale_update_enabled", value_scale_update_enabled
@@ -4391,6 +4472,11 @@ class DistributionalPPO(RecurrentPPO):
         clip_range_vf_log = (
             float(self.clip_range_vf) if self.clip_range_vf is not None else float("nan")
         )
+        vf_clip_threshold_log = (
+            float(self._vf_clip_threshold_ev)
+            if getattr(self, "_vf_clip_threshold_ev", None) is not None
+            else float("nan")
+        )
         self.logger.record(
             "config/value_scale_update_enabled_requested",
             float(self._value_scale_updates_requested),
@@ -4401,6 +4487,10 @@ class DistributionalPPO(RecurrentPPO):
         )
         self.logger.record("config/value_target_scale_fixed", value_scale_fixed_log)
         self.logger.record("config/clip_range_vf", clip_range_vf_log)
+        self.logger.record(
+            "config/vf_clip_warmup_updates", float(self._vf_clip_warmup_updates)
+        )
+        self.logger.record("config/vf_clip_threshold_ev", vf_clip_threshold_log)
         self.logger.record("config/gae_lambda", float(self.gae_lambda))
 
         # Early debug diagnostics ensure configuration mismatches are visible in logs.
@@ -5847,7 +5937,53 @@ class DistributionalPPO(RecurrentPPO):
         # self._update_critic_gradient_block(current_update)
         self._clip_range_current = self._compute_clip_range_value(current_update)
         clip_range = float(self._clip_range_current)
-        clip_range_vf_value = float(self.clip_range_vf) if self.clip_range_vf is not None else None
+        clip_range_vf_configured = (
+            float(self.clip_range_vf) if self.clip_range_vf is not None else None
+        )
+        warmup_limit = int(getattr(self, "_vf_clip_warmup_updates", 0))
+        threshold_ev_value = getattr(self, "_vf_clip_threshold_ev", None)
+        latest_ev_value = getattr(self, "_vf_clip_latest_ev", None)
+        updates_gate_active = current_update < warmup_limit
+        ev_gate_active = False
+        if threshold_ev_value is not None:
+            if latest_ev_value is None or not math.isfinite(latest_ev_value):
+                ev_gate_active = True
+            else:
+                ev_gate_active = latest_ev_value < float(threshold_ev_value)
+        vf_clip_warmup_active = updates_gate_active or ev_gate_active
+        clip_range_vf_value = None if vf_clip_warmup_active else clip_range_vf_configured
+
+        logger_obj = getattr(self, "logger", None)
+        record = getattr(logger_obj, "record", None) if logger_obj is not None else None
+        if callable(record):
+            record("train/vf_clip_warmup_active", 1.0 if vf_clip_warmup_active else 0.0)
+            record("train/vf_clip_updates_limit", float(warmup_limit))
+            remaining_updates = max(0, warmup_limit - current_update)
+            record("train/vf_clip_updates_remaining", float(remaining_updates))
+            record("train/vf_clip_ev_gate_active", 1.0 if ev_gate_active else 0.0)
+            threshold_log = (
+                float(threshold_ev_value)
+                if threshold_ev_value is not None
+                else float("nan")
+            )
+            record("train/vf_clip_threshold_ev", threshold_log)
+            if latest_ev_value is not None and math.isfinite(latest_ev_value):
+                record("train/vf_clip_last_ev", float(latest_ev_value))
+            record(
+                "train/vf_clip_effective",
+                float(clip_range_vf_value) if clip_range_vf_value is not None else 0.0,
+            )
+            record("train/vf_clip_active", 0.0 if clip_range_vf_value is None else 1.0)
+            if vf_clip_warmup_active:
+                record("train/vf_clip_warmup_blocked", 1.0)
+            else:
+                record("train/vf_clip_warmup_blocked", 0.0)
+                if not getattr(self, "_vf_clip_warmup_logged_complete", False):
+                    record("train/vf_clip_warmup_completed", 1.0)
+                    record(
+                        "train/vf_clip_warmup_completed_update", float(current_update)
+                    )
+                    self._vf_clip_warmup_logged_complete = True
         self._update_ent_coef(current_update)
         ent_coef_raw_value = float(self._ent_coef_last_raw)
         ent_coef_nominal_value = float(self._ent_coef_last_clamped)
@@ -6436,6 +6572,13 @@ class DistributionalPPO(RecurrentPPO):
                         target_returns_norm_clipped,
                         clip_bounds=norm_clip_bounds,
                     )
+                    self._log_vf_clip_dispersion(
+                        "train/ev_vf_clip/target",
+                        raw_pre=target_returns_raw,
+                        raw_post=target_returns_raw_clipped,
+                        norm_pre=target_returns_norm,
+                        norm_post=target_returns_norm_clipped,
+                    )
 
                     target_norm_col = target_returns_norm_clipped.reshape(-1, 1)
                     target_raw_col = target_returns_raw.reshape(-1, 1)
@@ -6477,6 +6620,7 @@ class DistributionalPPO(RecurrentPPO):
                             "ev_pred_quantiles_raw_pre_clip", quantiles_raw_pre_clip
                         )
                         value_pred = quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                        value_pred_norm_pre_clip = value_pred.clone()
                         self._record_value_debug_stats(
                             "ev_pred_mean_norm_pre_clip",
                             value_pred,
@@ -6486,6 +6630,8 @@ class DistributionalPPO(RecurrentPPO):
                         self._record_value_debug_stats(
                             "ev_pred_mean_raw_pre_clip", value_pred_raw_pre_clip
                         )
+                        value_pred_raw_post_vf = value_pred_raw_pre_clip
+                        value_pred_norm_post_vf = value_pred
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
                             old_values_raw_aligned = old_values_raw_tensor
@@ -6518,6 +6664,8 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            value_pred_norm_post_vf = value_pred
+                            value_pred_raw_post_vf = value_pred_raw_clipped
                             delta_norm = value_pred - quantiles_norm_for_pred.mean(dim=1, keepdim=True)
                             quantiles_norm_for_pred = quantiles_norm_for_pred + delta_norm
                             self._record_value_debug_stats(
@@ -6538,6 +6686,14 @@ class DistributionalPPO(RecurrentPPO):
                                 value_pred_raw_pre_clip,
                             )
                             quantiles_raw_post_clip = quantiles_raw_pre_clip
+
+                        self._log_vf_clip_dispersion(
+                            "train/ev_vf_clip/pred",
+                            raw_pre=value_pred_raw_pre_clip,
+                            raw_post=value_pred_raw_post_vf,
+                            norm_pre=value_pred_norm_pre_clip,
+                            norm_post=value_pred_norm_post_vf,
+                        )
 
                         self._record_value_debug_stats(
                             "ev_pred_quantiles_norm_post_clip",
@@ -6570,6 +6726,7 @@ class DistributionalPPO(RecurrentPPO):
                             min=1e-8, max=1.0
                         )
                         value_pred = (probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                        value_pred_norm_pre_clip = value_pred.clone()
                         self._record_value_debug_stats(
                             "ev_pred_mean_norm_pre_clip",
                             value_pred,
@@ -6579,6 +6736,8 @@ class DistributionalPPO(RecurrentPPO):
                         self._record_value_debug_stats(
                             "ev_pred_mean_raw_pre_clip", value_pred_raw_pre_clip
                         )
+                        value_pred_raw_post_vf = value_pred_raw_pre_clip
+                        value_pred_norm_post_vf = value_pred
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
                             old_values_raw_aligned = old_values_raw_tensor
@@ -6610,11 +6769,21 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            value_pred_norm_post_vf = value_pred
+                            value_pred_raw_post_vf = value_pred_raw_clipped
                             self._record_value_debug_stats(
                                 "ev_pred_mean_norm_post_vf_clip",
                                 value_pred,
                                 clip_bounds=pred_norm_clip_bounds,
                             )
+
+                        self._log_vf_clip_dispersion(
+                            "train/ev_vf_clip/pred",
+                            raw_pre=value_pred_raw_pre_clip,
+                            raw_post=value_pred_raw_post_vf,
+                            norm_pre=value_pred_norm_pre_clip,
+                            norm_post=value_pred_norm_post_vf,
+                        )
 
                     if self.normalize_returns:
                         value_pred = value_pred.clamp(
@@ -7288,6 +7457,13 @@ class DistributionalPPO(RecurrentPPO):
                             target_returns_norm_clipped,
                             clip_bounds=norm_clip_bounds_train,
                         )
+                        self._log_vf_clip_dispersion(
+                            "train/vf_clip/target",
+                            raw_pre=target_returns_raw,
+                            raw_post=target_returns_raw_clipped,
+                            norm_pre=target_returns_norm,
+                            norm_post=target_returns_norm_clipped,
+                        )
 
                         target_returns_norm_clipped_flat = target_returns_norm_clipped.reshape(-1)
                         if valid_indices is not None:
@@ -7491,6 +7667,7 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         critic_loss = critic_loss_unclipped
                         value_pred_norm_full = quantiles_fp32.mean(dim=1, keepdim=True)
+                        value_pred_norm_pre_clip = value_pred_norm_full.clone()
                         self._record_value_debug_stats(
                             "train_pred_mean_norm_pre_clip",
                             value_pred_norm_full,
@@ -7502,6 +7679,7 @@ class DistributionalPPO(RecurrentPPO):
                             value_pred_raw_full,
                         )
                         value_pred_norm_after_vf = value_pred_norm_full
+                        value_pred_raw_after_vf = value_pred_raw_full
                         if clip_range_vf_value is not None:
                             if old_values_raw_tensor is None:
                                 raise RuntimeError(
@@ -7539,6 +7717,7 @@ class DistributionalPPO(RecurrentPPO):
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            value_pred_raw_after_vf = value_pred_raw_clipped
                             delta_norm = value_pred_norm_after_vf - value_pred_norm_full
                             quantiles_norm_clipped = quantiles_fp32 + delta_norm
                             self._record_value_debug_stats(
@@ -7572,6 +7751,13 @@ class DistributionalPPO(RecurrentPPO):
                             "train_pred_mean_norm_post_vf_clip",
                             value_pred_norm_after_vf,
                             clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        self._log_vf_clip_dispersion(
+                            "train/vf_clip/pred",
+                            raw_pre=value_pred_raw_full,
+                            raw_post=value_pred_raw_after_vf,
+                            norm_pre=value_pred_norm_pre_clip,
+                            norm_post=value_pred_norm_after_vf,
                         )
 
                         value_pred_norm_for_ev = quantiles_for_ev.mean(dim=1, keepdim=True)
@@ -7636,6 +7822,7 @@ class DistributionalPPO(RecurrentPPO):
                         with torch.no_grad():
 
                             mean_values_norm = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                            mean_values_norm_pre_clip = mean_values_norm.clone()
                             mean_values_unscaled = self._to_raw_returns(mean_values_norm)
                             self._record_value_debug_stats(
                                 "train_pred_mean_norm_pre_clip",
@@ -7703,6 +7890,14 @@ class DistributionalPPO(RecurrentPPO):
                             self._record_value_debug_stats(
                                 "train_pred_mean_raw_post_vf_clip",
                                 mean_values_unscaled_post_clip,
+                            )
+
+                            self._log_vf_clip_dispersion(
+                                "train/vf_clip/pred",
+                                raw_pre=mean_values_unscaled,
+                                raw_post=mean_values_unscaled_post_clip,
+                                norm_pre=mean_values_norm_pre_clip,
+                                norm_post=mean_values_norm_clipped,
                             )
 
                             mean_values_norm_flat = mean_values_norm.view(-1)
@@ -8337,8 +8532,10 @@ class DistributionalPPO(RecurrentPPO):
             else:
                 self._bad_explained_counter = 0
             self._last_explained_variance = float(explained_var)
+            self._vf_clip_latest_ev = float(explained_var)
         else:
             self._last_explained_variance = None
+            self._vf_clip_latest_ev = None
 
         auto_thaw_patience = int(getattr(self, "_value_scale_auto_thaw_bad_ev", 0))
         if (
