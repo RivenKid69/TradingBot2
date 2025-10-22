@@ -83,6 +83,108 @@ if _NO_TRADE_DEFAULTED:
     )
 
 
+def _export_training_dataset(
+    dfs: Mapping[str, pd.DataFrame],
+    *,
+    role_column: str,
+    timestamp_column: str,
+    artifacts_dir: Path,
+    split_version: str | None,
+    inferred_test: bool,
+) -> Path:
+    """Materialise the combined training dataset and emit a JSON summary.
+
+    The training pipeline previously relied on ad-hoc debug snippets that
+    sampled just a handful of rows from the prepared dataframes.  Those
+    leftovers kept overwriting ``artifacts/training_dataset.parquet`` with the
+    same two train rows and a single validation row which, in turn, caused the
+    PPO buffer to recycle identical transitions.  Exporting the dataset in a
+    dedicated helper guarantees that *all* rows make it into the artifact and
+    that downstream metrics observe the true data distribution.
+    """
+
+    if not dfs:
+        raise ValueError("No dataframes supplied for training dataset export")
+
+    frames: list[pd.DataFrame] = []
+    for symbol, df in dfs.items():
+        if df is None or df.empty:
+            continue
+        cur = df.copy()
+        if "symbol" not in cur.columns:
+            cur["symbol"] = symbol
+        else:
+            cur["symbol"] = cur["symbol"].fillna(symbol).astype(str)
+        frames.append(cur)
+
+    if not frames:
+        raise ValueError("All provided dataframes are empty; nothing to export")
+
+    combined = pd.concat(frames, ignore_index=True)
+
+    if timestamp_column not in combined.columns:
+        raise KeyError(
+            f"Training dataset is missing required timestamp column '{timestamp_column}'"
+        )
+
+    ts_series = pd.to_numeric(combined[timestamp_column], errors="coerce")
+    combined = combined.loc[ts_series.notna()].copy()
+    combined[timestamp_column] = ts_series.dropna().astype("int64")
+
+    sort_keys = [timestamp_column]
+    if "symbol" in combined.columns:
+        sort_keys.append("symbol")
+    combined = combined.sort_values(sort_keys).reset_index(drop=True)
+
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    dataset_path = artifacts_dir / "training_dataset.parquet"
+    tmp_path = dataset_path.with_suffix(".tmp")
+    combined.to_parquet(tmp_path, index=False)
+    os.replace(tmp_path, dataset_path)
+
+    roles = combined.get(role_column)
+    if roles is None:
+        role_counts: Dict[str, int] = {}
+    else:
+        role_series = roles.astype(str).str.lower().fillna("none")
+        role_counts = {
+            key: int((role_series == key).sum())
+            for key in ("train", "val", "test", "none")
+        }
+        other = int(len(role_series) - sum(role_counts.values()))
+        if other > 0:
+            role_counts["other"] = other
+
+    coverage = {
+        "start_ts": int(combined[timestamp_column].min()),
+        "end_ts": int(combined[timestamp_column].max()),
+    }
+    symbols = sorted({str(s) for s in combined.get("symbol", pd.Series(dtype=str)).dropna().unique()})
+
+    summary = {
+        "rows": int(len(combined)),
+        "by_role": role_counts,
+        "symbols": symbols,
+        "coverage": coverage,
+        "split_version": split_version,
+        "inferred_test": bool(inferred_test),
+        "dataset_path": os.path.relpath(dataset_path, start=Path.cwd()),
+    }
+
+    summary_path = artifacts_dir / "training_summary.json"
+    tmp_summary = summary_path.with_suffix(".tmp")
+    with open(tmp_summary, "w", encoding="utf-8") as fh:
+        json.dump(summary, fh, ensure_ascii=False, indent=2)
+    os.replace(tmp_summary, summary_path)
+
+    print(
+        "Exported training dataset with "
+        f"{len(combined)} rows to {dataset_path} (summary: {summary_path})"
+    )
+
+    return dataset_path
+
+
 def _install_torch_intrinsic_stub() -> None:
     """Install lightweight stubs for torch's optional quantization packages.
 
@@ -4294,6 +4396,16 @@ def main():
     all_dfs_with_roles = pipe.transform_dict(dfs_with_roles, add_suffix="_z")
     print(f"Feature pipeline fitted and saved to {PREPROC_PATH}. Standardized columns *_z added.")
     print("To run inference over processed data, execute: python infer_signals.py")
+
+    artifacts_dir = Path(getattr(cfg, "artifacts_dir", "artifacts"))
+    _export_training_dataset(
+        all_dfs_with_roles,
+        role_column=role_column,
+        timestamp_column=timestamp_column,
+        artifacts_dir=artifacts_dir,
+        split_version=split_version,
+        inferred_test=inferred_test_any,
+    )
 
     # --- Гейт качества данных: строгая валидация OHLCV перед сплитом ---
     _validator = DataValidator()
