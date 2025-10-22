@@ -90,6 +90,7 @@ def _rows_to_write(
     symbol: str,
     last_ts: Optional[int],
     max_close_ts: int,
+    allow_existing: bool = False,
 ) -> list[tuple[int, list[str]]]:
     rows: list[tuple[int, list[str]]] = []
     for row in data:
@@ -100,11 +101,50 @@ def _rows_to_write(
             continue
         if close_time > max_close_ts:
             break
-        if last_ts is not None and open_time <= last_ts:
+        if not allow_existing and last_ts is not None and open_time <= last_ts:
             continue
         values = list(map(str, row + [symbol.upper()]))
         rows.append((open_time, values))
+    rows.sort(key=lambda item: item[0])
     return rows
+
+
+def _read_first_ts(path: str) -> Optional[int]:
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", newline="") as f:
+            r = csv.reader(f)
+            for row in r:
+                if not row:
+                    continue
+                try:
+                    return int(row[0])
+                except Exception:
+                    continue
+    except Exception:
+        return None
+    return None
+
+
+def _fetch_earliest_open_time(symbol: str) -> Optional[int]:
+    params = {
+        "symbol": symbol.upper(),
+        "interval": "1h",
+        "startTime": 0,
+        "limit": 1,
+    }
+    try:
+        response = _get_with_retry(BASE, params=params)
+    except Exception:
+        return None
+    data = response.json()
+    if not isinstance(data, list) or not data:
+        return None
+    try:
+        return int(data[0][0])
+    except Exception:
+        return None
 
 
 def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None) -> int:
@@ -136,15 +176,35 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
     if max_close_ts <= 0:
         return 0
     max_open_time = max_close_ts - INTERVAL_MS
+    rebuild_mode = False
+    earliest_ts: Optional[int] = None
     if last_ts is None:
         cursor = 0
     else:
         cursor = last_ts + INTERVAL_MS
+        earliest_ts = _read_first_ts(path)
+
     if cursor > max_open_time:
-        return 0
+        if last_ts is None:
+            return 0
+        earliest_exchange_ts = _fetch_earliest_open_time(symbol)
+        if (
+            earliest_ts is not None
+            and earliest_exchange_ts is not None
+            and earliest_ts > earliest_exchange_ts
+        ):
+            rebuild_mode = True
+            cursor = earliest_exchange_ts
+            last_ts = None
+        else:
+            return 0
 
     appended = 0
     header_pending = _header_needed(path)
+    if rebuild_mode:
+        header_pending = True
+
+    write_mode = "a"
 
     while cursor <= max_open_time:
         remaining = max_open_time - cursor
@@ -161,9 +221,17 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
         if not isinstance(data, list) or not data:
             break
 
-        rows = _rows_to_write(data, symbol=symbol, last_ts=last_ts, max_close_ts=max_close_ts)
+        rows = _rows_to_write(
+            data,
+            symbol=symbol,
+            last_ts=last_ts,
+            max_close_ts=max_close_ts,
+            allow_existing=rebuild_mode,
+        )
         if rows:
-            with open(path, "a", newline="") as f:
+            if rebuild_mode and header_pending:
+                write_mode = "w"
+            with open(path, write_mode, newline="") as f:
                 w = csv.writer(f)
                 if header_pending:
                     w.writerow(HEADER)
@@ -172,6 +240,7 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
                     w.writerow(values)
                     last_ts = open_time
                     appended += 1
+            write_mode = "a"
             cursor = last_ts + INTERVAL_MS if last_ts is not None else cursor + INTERVAL_MS
         else:
             last_open = int(data[-1][0])
