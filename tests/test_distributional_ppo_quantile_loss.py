@@ -5,7 +5,7 @@ import pytest
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 
-@pytest.mark.parametrize("target_shape", [(2,), (2, 1), (2, 1, 1)])
+@pytest.mark.parametrize("target_shape", [(2,), (2, 1), (2, 1, 1), (2, 1, 1, 1)])
 def test_quantile_huber_loss_preserves_batch_dimension(target_shape) -> None:
     torch = pytest.importorskip("torch")
 
