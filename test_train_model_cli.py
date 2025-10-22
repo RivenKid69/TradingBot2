@@ -553,6 +553,126 @@ def test_scheduler_disabled_uses_constant_lr(monkeypatch: pytest.MonkeyPatch, tm
     assert "optimizer_scheduler_fn" not in captured_policy_kwargs
 
 
+def test_vf_bad_explained_defaults_propagated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+):
+    cfg = types.SimpleNamespace(
+        model=types.SimpleNamespace(
+            params={
+                "learning_rate": 3.0e-4,
+                "gamma": 0.99,
+                "gae_lambda": 0.97,
+                "clip_range": 0.15,
+                "ent_coef": 0.0001,
+                "vf_coef": 1.8,
+                "max_grad_norm": 0.3,
+                "n_steps": 32,
+                "batch_size": 16,
+                "n_epochs": 1,
+                "v_range_ema_alpha": 0.005,
+                "cql_alpha": 0.0,
+                "cql_beta": 5.0,
+                "cvar_alpha": 0.05,
+                "cvar_weight": 0.0,
+                "cvar_cap": 0.5,
+                "num_atoms": 5,
+                "v_min": -10.0,
+                "v_max": 10.0,
+                "trade_frequency_penalty": 0.0,
+                "turnover_penalty_coef": 0.0,
+            }
+        ),
+        algo=types.SimpleNamespace(
+            actions={"long_only": True},
+            action_wrapper=types.SimpleNamespace(bins_vol=4),
+        ),
+        risk=types.SimpleNamespace(
+            cvar=types.SimpleNamespace(limit=-0.02, winsor_pct=0.1, ema_beta=0.9)
+        ),
+        optimization={"scheduler": {"enabled": False}},
+        execution=types.SimpleNamespace(mode="bar"),
+    )
+
+    trial = _DummyTrial()
+
+    class _StubTradingEnv:
+        def __init__(self, *_args, **_kwargs):
+            self.action_space = None
+
+    class _StubWatchdogVecEnv:
+        def __init__(self, env_fns):
+            self.env_fns = env_fns
+
+    class _StubVecMonitor:
+        def __init__(self, env):
+            self.env = env
+
+    class _StubDummyVecEnv:
+        def __init__(self, env_fns):
+            self.env_fns = env_fns
+
+    class _StubVecNormalize:
+        def __init__(self, env, **_kwargs):
+            self.env = env
+            self.training = True
+
+        def save(self, _path):
+            return None
+
+        @classmethod
+        def load(cls, _path, env):
+            inst = cls(env)
+            inst.training = False
+            return inst
+
+    captured_algo_kwargs: dict[str, object] = {}
+
+    class _StubAlgo:
+        def __init__(self, *_, **kwargs):
+            captured_algo_kwargs.clear()
+            captured_algo_kwargs.update(kwargs)
+            raise RuntimeError("halt before training")
+
+    monkeypatch.setattr(train_script, "TradingEnv", _StubTradingEnv)
+    monkeypatch.setattr(
+        train_script, "_wrap_action_space_if_needed", lambda env, **_: env
+    )
+    monkeypatch.setattr(train_script, "WatchdogVecEnv", _StubWatchdogVecEnv)
+    monkeypatch.setattr(train_script, "VecMonitor", _StubVecMonitor)
+    monkeypatch.setattr(train_script, "DummyVecEnv", _StubDummyVecEnv)
+    monkeypatch.setattr(train_script, "VecNormalize", _StubVecNormalize)
+    monkeypatch.setattr(train_script, "save_sidecar_metadata", lambda *_args, **_kw: None)
+    monkeypatch.setattr(train_script, "check_model_compat", lambda *_args, **_kw: None)
+    monkeypatch.setattr(train_script, "_get_distributional_ppo", lambda: _StubAlgo)
+    monkeypatch.setattr(train_script, "OneCycleLR", lambda *args, **kwargs: None)
+
+    df = pd.DataFrame({"price": [1.0], "ts_ms": [0]})
+
+    with pytest.raises(RuntimeError, match="halt before training"):
+        train_script.objective(
+            trial,
+            cfg,
+            total_timesteps=32,
+            train_data_by_token={"BTCUSDT": df},
+            train_obs_by_token={},
+            val_data_by_token={"BTCUSDT": df},
+            val_obs_by_token={},
+            test_data_by_token={},
+            test_obs_by_token={},
+            norm_stats={},
+            sim_config={},
+            timing_env_kwargs={},
+            env_runtime_overrides={},
+            leak_guard_kwargs={},
+            trials_dir=tmp_path,
+            tensorboard_log_dir=None,
+            n_envs_override=1,
+        )
+
+    assert captured_algo_kwargs["vf_bad_explained_scale"] == pytest.approx(1.0)
+    assert captured_algo_kwargs["vf_bad_explained_floor"] == pytest.approx(0.0)
+
+
 def test_n_envs_override_priority(monkeypatch: pytest.MonkeyPatch, tmp_path):
     cfg = types.SimpleNamespace(
         model=types.SimpleNamespace(
