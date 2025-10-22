@@ -6459,68 +6459,94 @@ class DistributionalPPO(RecurrentPPO):
                             if value_quantiles is None:
                                 return False
                         quantiles_fp32 = value_quantiles.to(dtype=torch.float32)
+                        quantiles_norm_for_pred = quantiles_fp32
                         pred_norm_clip_bounds = norm_clip_bounds
                         self._record_value_debug_stats(
                             "ev_pred_quantiles_norm_pre_clip",
                             quantiles_fp32,
                             clip_bounds=pred_norm_clip_bounds,
                         )
-                        quantiles_raw_pre_clip = self._to_raw_returns(quantiles_fp32)
+                        quantiles_raw_pre_clip = self._to_raw_returns(quantiles_norm_for_pred)
                         self._record_value_debug_stats(
                             "ev_pred_quantiles_raw_pre_clip", quantiles_raw_pre_clip
                         )
+                        value_pred = quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_norm_pre_clip",
+                            value_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
+                        value_pred_raw_pre_clip = self._to_raw_returns(value_pred)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_raw_pre_clip", value_pred_raw_pre_clip
+                        )
                         if clip_range_vf_value is not None and clip_old_values_available:
                             clip_delta = float(clip_range_vf_value)
-                            old_values_raw_clipped = old_values_raw_tensor
-                            while old_values_raw_clipped.dim() < quantiles_raw_pre_clip.dim():
-                                old_values_raw_clipped = old_values_raw_clipped.unsqueeze(-1)
-                            delta_raw = quantiles_raw_pre_clip - old_values_raw_clipped
-                            quantiles_raw_clipped = old_values_raw_clipped + delta_raw.clamp(
-                                min=-clip_delta, max=clip_delta
+                            old_values_raw_aligned = old_values_raw_tensor
+                            while old_values_raw_aligned.dim() < value_pred_raw_pre_clip.dim():
+                                old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
+                            value_pred_raw_clipped = torch.clamp(
+                                value_pred_raw_pre_clip,
+                                min=old_values_raw_aligned - clip_delta,
+                                max=old_values_raw_aligned + clip_delta,
                             )
                             self._record_value_debug_stats(
-                                "ev_pred_quantiles_raw_post_vf_clip",
-                                quantiles_raw_clipped,
+                                "ev_pred_mean_raw_post_vf_clip",
+                                value_pred_raw_clipped,
                             )
                             if self.normalize_returns:
-                                quantiles_norm_for_pred = (
-                                    (quantiles_raw_clipped - ret_mu_tensor)
+                                value_pred = (
+                                    (value_pred_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
                                 ).clamp(
                                     self._value_norm_clip_min, self._value_norm_clip_max
                                 )
                             else:
-                                quantiles_norm_for_pred = (
-                                    (quantiles_raw_clipped / float(base_scale_safe))
+                                value_pred = (
+                                    (value_pred_raw_clipped / float(base_scale_safe))
                                     * self._value_target_scale_effective
                                 )
                                 if self._value_clip_limit_scaled is not None:
-                                    quantiles_norm_for_pred = torch.clamp(
-                                        quantiles_norm_for_pred,
+                                    value_pred = torch.clamp(
+                                        value_pred,
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            delta_norm = value_pred - quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                            quantiles_norm_for_pred = quantiles_norm_for_pred + delta_norm
                             self._record_value_debug_stats(
                                 "ev_pred_quantiles_norm_post_vf_clip",
                                 quantiles_norm_for_pred,
                                 clip_bounds=pred_norm_clip_bounds,
                             )
+                            quantiles_raw_post_clip = self._to_raw_returns(
+                                quantiles_norm_for_pred
+                            )
+                            self._record_value_debug_stats(
+                                "ev_pred_quantiles_raw_post_vf_clip",
+                                quantiles_raw_post_clip,
+                            )
                         else:
-                            quantiles_norm_for_pred = quantiles_fp32
+                            self._record_value_debug_stats(
+                                "ev_pred_mean_raw_post_vf_clip",
+                                value_pred_raw_pre_clip,
+                            )
+                            quantiles_raw_post_clip = quantiles_raw_pre_clip
 
                         self._record_value_debug_stats(
                             "ev_pred_quantiles_norm_post_clip",
                             quantiles_norm_for_pred,
                             clip_bounds=pred_norm_clip_bounds,
                         )
-                        quantiles_raw_post_clip = self._to_raw_returns(
-                            quantiles_norm_for_pred
-                        )
                         self._record_value_debug_stats(
                             "ev_pred_quantiles_raw_post_clip", quantiles_raw_post_clip
                         )
 
-                        value_pred = quantiles_norm_for_pred.mean(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "ev_pred_mean_norm_post_vf_clip",
+                            value_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
                         self._record_value_debug_stats(
                             "ev_pred_mean_norm_pre_final_clip",
                             value_pred,
@@ -7273,6 +7299,7 @@ class DistributionalPPO(RecurrentPPO):
                                 float(self.policy.v_min),
                                 float(self.policy.v_max),
                             )
+
                             self.logger.record("train/value_target_below_frac_raw", raw_below_frac)
                             self.logger.record("train/value_target_above_frac_raw", raw_above_frac)
                             clamp_below_raw_sum += raw_below_frac * raw_weight
@@ -7457,6 +7484,18 @@ class DistributionalPPO(RecurrentPPO):
                             quantiles_for_loss, target_returns_norm_selected
                         )
                         critic_loss = critic_loss_unclipped
+                        value_pred_norm_full = quantiles_fp32.mean(dim=1, keepdim=True)
+                        self._record_value_debug_stats(
+                            "train_pred_mean_norm_pre_clip",
+                            value_pred_norm_full,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
+                        value_pred_raw_full = self._to_raw_returns(value_pred_norm_full)
+                        self._record_value_debug_stats(
+                            "train_pred_mean_raw_pre_clip",
+                            value_pred_raw_full,
+                        )
+                        value_pred_norm_after_vf = value_pred_norm_full
                         if clip_range_vf_value is not None:
                             if old_values_raw_tensor is None:
                                 raise RuntimeError(
@@ -7464,39 +7503,49 @@ class DistributionalPPO(RecurrentPPO):
                                     "(distributional_ppo.py::_train_step)"
                                 )
                             clip_delta = float(clip_range_vf_value)
-                            old_values_raw_clipped = old_values_raw_tensor
-                            while old_values_raw_clipped.dim() < quantiles_raw.dim():
-                                old_values_raw_clipped = old_values_raw_clipped.unsqueeze(-1)
-                            delta_raw = quantiles_raw - old_values_raw_clipped
-                            quantiles_raw_clipped = old_values_raw_clipped + delta_raw.clamp(
-                                min=-clip_delta, max=clip_delta
+                            old_values_raw_aligned = old_values_raw_tensor
+                            while old_values_raw_aligned.dim() < value_pred_raw_full.dim():
+                                old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
+                            value_pred_raw_clipped = torch.clamp(
+                                value_pred_raw_full,
+                                min=old_values_raw_aligned - clip_delta,
+                                max=old_values_raw_aligned + clip_delta,
                             )
                             self._record_value_debug_stats(
-                                "train_pred_quantiles_raw_post_vf_clip",
-                                quantiles_raw_clipped,
+                                "train_pred_mean_raw_post_vf_clip",
+                                value_pred_raw_clipped,
                             )
                             if self.normalize_returns:
-                                quantiles_norm_clipped = (
-                                    (quantiles_raw_clipped - ret_mu_tensor)
+                                value_pred_norm_after_vf = (
+                                    (value_pred_raw_clipped - ret_mu_tensor)
                                     / ret_std_tensor
                                 ).clamp(
                                     self._value_norm_clip_min, self._value_norm_clip_max
                                 )
                             else:
-                                quantiles_norm_clipped = (
-                                    (quantiles_raw_clipped / float(base_scale_safe))
+                                value_pred_norm_after_vf = (
+                                    (value_pred_raw_clipped / float(base_scale_safe))
                                     * self._value_target_scale_effective
                                 )
                                 if self._value_clip_limit_scaled is not None:
-                                    quantiles_norm_clipped = torch.clamp(
-                                        quantiles_norm_clipped,
+                                    value_pred_norm_after_vf = torch.clamp(
+                                        value_pred_norm_after_vf,
                                         min=-self._value_clip_limit_scaled,
                                         max=self._value_clip_limit_scaled,
                                     )
+                            delta_norm = value_pred_norm_after_vf - value_pred_norm_full
+                            quantiles_norm_clipped = quantiles_fp32 + delta_norm
                             self._record_value_debug_stats(
                                 "train_pred_quantiles_norm_post_vf_clip",
                                 quantiles_norm_clipped,
                                 clip_bounds=pred_norm_clip_bounds_train,
+                            )
+                            quantiles_raw_clipped = self._to_raw_returns(
+                                quantiles_norm_clipped
+                            )
+                            self._record_value_debug_stats(
+                                "train_pred_quantiles_raw_post_vf_clip",
+                                quantiles_raw_clipped,
                             )
                             if valid_indices is not None:
                                 quantiles_norm_clipped_for_loss = quantiles_norm_clipped[valid_indices]
@@ -7507,6 +7556,17 @@ class DistributionalPPO(RecurrentPPO):
                                 quantiles_norm_clipped_for_loss, target_returns_norm_clipped_selected
                             )
                             critic_loss = torch.max(critic_loss_unclipped, critic_loss_clipped)
+                        else:
+                            self._record_value_debug_stats(
+                                "train_pred_mean_raw_post_vf_clip",
+                                value_pred_raw_full,
+                            )
+
+                        self._record_value_debug_stats(
+                            "train_pred_mean_norm_post_vf_clip",
+                            value_pred_norm_after_vf,
+                            clip_bounds=pred_norm_clip_bounds_train,
+                        )
 
                         value_pred_norm_for_ev = quantiles_for_ev.mean(dim=1, keepdim=True)
                         self._record_value_debug_stats(

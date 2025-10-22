@@ -795,11 +795,10 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
                 vf_features, lstm_states.vf, episode_starts, self.lstm_critic
             )
         elif self.shared_lstm:
-            if self._critic_gradient_blocked:
-                latent_vf = latent_pi.detach()
-            else:
-                latent_vf = latent_pi
-            new_vf_states = tuple(state.detach() for state in new_pi_states)
+            latent_vf = (
+                latent_pi.detach() if self._critic_gradient_blocked else latent_pi
+            )
+            new_vf_states = new_pi_states
         else:
             latent_vf = self.critic(vf_features)
             new_vf_states = lstm_states.vf
@@ -1257,7 +1256,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             latent_vf, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_critic)
         elif self.shared_lstm:
             latent_pi, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_actor)
-            latent_vf = latent_pi.detach()
+            latent_vf = latent_pi
         else:
             latent_vf = self.critic(features)
 
@@ -1279,7 +1278,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             latent_vf, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_critic)
         elif self.shared_lstm:
             latent_pi, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_actor)
-            latent_vf = latent_pi.detach()
+            latent_vf = latent_pi
         else:
             latent_vf = self.critic(features)
 
