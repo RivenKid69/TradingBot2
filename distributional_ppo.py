@@ -1428,6 +1428,30 @@ class RawRecurrentRolloutBuffer(RecurrentRolloutBuffer):
 class DistributionalPPO(RecurrentPPO):
     """Distributional PPO with CVaR regularisation and entropy scheduling."""
 
+    _LOGGER_MIN_KEY_LENGTH = 80
+
+    @staticmethod
+    def _expand_logger_key_length(logger_obj: Any, *, min_max_length: int) -> None:
+        """Ensure human-readable loggers can display long metric keys without clashes."""
+
+        if logger_obj is None:
+            return
+
+        output_formats = getattr(logger_obj, "output_formats", None)
+        if not isinstance(output_formats, (list, tuple)):
+            return
+
+        for output in output_formats:
+            max_length = getattr(output, "max_length", None)
+            if not isinstance(max_length, int):  # pragma: no cover - guard for non-human formats
+                continue
+            if max_length >= min_max_length:
+                continue
+            try:
+                output.max_length = min_max_length
+            except Exception:  # pragma: no cover - defensive fallback
+                continue
+
     def _ensure_internal_logger(self) -> None:
         """Make sure ``self._logger`` exists before accessing :pyattr:`logger`.
 
@@ -1443,6 +1467,7 @@ class DistributionalPPO(RecurrentPPO):
             from stable_baselines3.common.logger import configure
 
             self._logger = configure()
+        self._expand_logger_key_length(self._logger, min_max_length=self._LOGGER_MIN_KEY_LENGTH)
 
     def _record_value_debug_stats(
         self,
@@ -1590,6 +1615,8 @@ class DistributionalPPO(RecurrentPPO):
         controller = getattr(self, "_popart_controller", None)
         if controller is not None:
             controller.set_logger(self.logger)
+
+        self._expand_logger_key_length(self.logger, min_max_length=self._LOGGER_MIN_KEY_LENGTH)
 
         self._replay_popart_config_logs()
 

@@ -3799,6 +3799,13 @@ def objective(trial: optuna.Trial,
         kl_absolute_stop_factor_default,
     )
     logger = getattr(model, "logger", None) or getattr(model, "_logger", None)
+    expand_logger = getattr(model, "_expand_logger_key_length", None)
+    min_key_length = getattr(model, "_LOGGER_MIN_KEY_LENGTH", None)
+    if callable(expand_logger) and isinstance(min_key_length, (int, float)):
+        try:
+            expand_logger(logger, min_max_length=int(min_key_length))
+        except Exception:
+            pass
     if logger is not None:
         logger.record("config/target_kl", float(target_kl_logged))
         logger.record(
