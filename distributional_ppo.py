@@ -2228,8 +2228,18 @@ class DistributionalPPO(RecurrentPPO):
         # critic to predict the same distribution regardless of the
         # observation and driving the explained variance to zero.  Keep
         # the batch dimension intact to evaluate each sample against
-        # its own quantile estimates only and subtract the targets
-        # directly from the predicted quantiles.
+        # its own quantile estimates only.
+
+        if targets.ndim == 1:
+            targets = targets.unsqueeze(1)
+        elif targets.ndim > 2:
+            targets = targets.reshape(targets.shape[0], -1)
+
+        if targets.ndim != 2 or targets.shape[1] != 1:
+            raise ValueError(
+                f"Quantile critic targets must have shape [batch, 1], got {tuple(targets.shape)}"
+            )
+
         delta = predicted_quantiles - targets
         abs_delta = delta.abs()
         huber = torch.where(
