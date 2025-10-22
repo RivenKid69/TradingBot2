@@ -7096,6 +7096,8 @@ class DistributionalPPO(RecurrentPPO):
 
                     mask_values_for_ev: Optional[torch.Tensor]
                     valid_indices: Optional[torch.Tensor]
+                    value_valid_indices: Optional[torch.Tensor] = None
+                    value_mask_weights: Optional[torch.Tensor] = None
                     if mask_tensor is not None:
                         mask_view = mask_tensor.reshape(-1).to(device=advantages.device)
                         if mask_view.dtype == torch.bool:
@@ -7108,7 +7110,7 @@ class DistributionalPPO(RecurrentPPO):
                         mask_values_local = mask_float[valid_indices_local].to(dtype=torch.float32)
                         weight_sum_local = float(mask_values_local.sum().item())
                         if valid_indices_local.numel() == 0 or weight_sum_local <= 0.0:
-                            _reserve_ev_samples(rollout_data, valid_indices_local, mask_values_local)
+                            _reserve_ev_samples(rollout_data, None, None)
                             continue
                         mask_values_for_ev = mask_values_local.to(device=self.device)
                         valid_indices = valid_indices_local.to(device=advantages.device)
@@ -7129,7 +7131,7 @@ class DistributionalPPO(RecurrentPPO):
                         valid_indices = valid_indices.to(device=advantages.device)
 
                     if not _reserve_ev_samples(
-                        rollout_data, valid_indices, mask_values_for_ev
+                        rollout_data, value_valid_indices, value_mask_weights
                     ):
                         if self.logger is not None:
                             self.logger.record("warn/ev_reserve_skip", 1.0)
@@ -7337,6 +7339,9 @@ class DistributionalPPO(RecurrentPPO):
                     entropy_detached = entropy_selected.detach().to(dtype=torch.float32)
                     policy_entropy_sum += float(entropy_detached.sum().cpu().item())
                     policy_entropy_count += int(entropy_detached.numel())
+
+                    group_keys_local = []
+                    valid_indices = value_valid_indices
 
                     if self._use_quantile_value:
                         value_quantiles = self.policy.last_value_quantiles
@@ -7604,10 +7609,16 @@ class DistributionalPPO(RecurrentPPO):
                         .detach()
                         .to(device="cpu", dtype=torch.float32)
                     )
+                    if value_mask_weights is not None:
+                        weight_tensor = value_mask_weights.detach().reshape(-1, 1)
+                    else:
+                        weight_tensor = torch.ones(
+                            target_returns_norm_clipped_selected.numel(),
+                            device=self.device,
+                            dtype=torch.float32,
+                        ).reshape(-1, 1)
                     value_weight_batches.append(
-                        mask_values_for_ev.detach()
-                        .reshape(-1, 1)
-                        .to(device="cpu", dtype=torch.float32)
+                        weight_tensor.to(device="cpu", dtype=torch.float32)
                     )
                     expected_group_len = int(target_returns_norm_clipped_selected.reshape(-1).shape[0])  # FIX
                     if group_keys_local and len(group_keys_local) != expected_group_len:  # FIX
@@ -7839,10 +7850,10 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         cache_entry = self._build_value_prediction_cache_entry(
                             rollout_data,
-                            valid_indices=valid_indices,
+                            valid_indices=value_valid_indices,
                             base_scale_safe=base_scale_safe,
                             old_values_raw_tensor=old_values_raw_tensor,
-                            mask_values=mask_values_for_ev,
+                            mask_values=value_mask_weights,
                         )
                         value_eval_primary_cache.append(cache_entry)
                     else:
@@ -7991,10 +8002,10 @@ class DistributionalPPO(RecurrentPPO):
                             )
                             cache_entry = self._build_value_prediction_cache_entry(
                                 rollout_data,
-                                valid_indices=valid_indices,
+                                valid_indices=value_valid_indices,
                                 base_scale_safe=base_scale_safe,
                                 old_values_raw_tensor=old_values_raw_tensor,
-                                mask_values=mask_values_for_ev,
+                                mask_values=value_mask_weights,
                             )
                             value_eval_primary_cache.append(cache_entry)
 
