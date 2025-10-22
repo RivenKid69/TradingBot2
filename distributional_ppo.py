@@ -2228,15 +2228,16 @@ class DistributionalPPO(RecurrentPPO):
         # critic to predict the same distribution regardless of the
         # observation and driving the explained variance to zero.  Keep
         # the batch dimension intact to evaluate each sample against
-        # its own quantile estimates only.
-        delta = targets - predicted_quantiles
+        # its own quantile estimates only and subtract the targets
+        # directly from the predicted quantiles.
+        delta = predicted_quantiles - targets
         abs_delta = delta.abs()
         huber = torch.where(
             abs_delta <= kappa,
             0.5 * delta.pow(2),
             kappa * (abs_delta - 0.5 * kappa),
         )
-        indicator = (delta.detach() < 0.0).float()
+        indicator = (delta.detach() > 0.0).float()
         loss = torch.abs(tau - indicator) * (huber / kappa)
         return loss.mean()
 
