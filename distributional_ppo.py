@@ -7115,6 +7115,8 @@ class DistributionalPPO(RecurrentPPO):
                         mask_values_for_ev = mask_values_local.to(device=self.device)
                         valid_indices = valid_indices_local.to(device=advantages.device)
                         sample_weight = float(mask_values_for_ev.sum().item())
+                        value_valid_indices = valid_indices
+                        value_mask_weights = mask_values_for_ev
                     else:
                         if sample_count <= 0 or sample_weight <= 0.0:
                             _reserve_ev_samples(rollout_data, None, None)
