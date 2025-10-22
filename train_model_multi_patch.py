@@ -2942,10 +2942,10 @@ def objective(trial: optuna.Trial,
         vf_coef_warmup_updates_cfg if _has_model_param(cfg, "vf_coef_warmup_updates") else 0
     )
     params["vf_bad_explained_scale"] = (
-        vf_bad_explained_scale_cfg if vf_bad_explained_scale_cfg is not None else 0.5
+        vf_bad_explained_scale_cfg if vf_bad_explained_scale_cfg is not None else 1.0
     )
     params["vf_bad_explained_floor"] = (
-        vf_bad_explained_floor_cfg if vf_bad_explained_floor_cfg is not None else 0.02
+        vf_bad_explained_floor_cfg if vf_bad_explained_floor_cfg is not None else 0.0
     )
     params["bad_explained_patience"] = (
         bad_explained_patience_cfg if bad_explained_patience_cfg is not None else 2
