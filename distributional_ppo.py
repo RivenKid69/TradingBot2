@@ -7126,9 +7126,6 @@ class DistributionalPPO(RecurrentPPO):
                             value_valid_indices = valid_indices
                             value_mask_weights = mask_values_for_ev
 
-                        value_valid_indices = valid_indices
-                        value_mask_weights = mask_values_for_ev
-
                     else:
                         if sample_count <= 0 or sample_weight <= 0.0:
                             _reserve_ev_samples(rollout_data, None, None)
