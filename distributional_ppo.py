@@ -7688,15 +7688,13 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             quantiles_for_loss = quantiles_fp32
                         quantiles_for_ev = quantiles_for_loss
-                        if target_returns_norm_selected.dim() == 1:
-                            target_returns_norm_selected = target_returns_norm_selected.unsqueeze(1)
-                        if target_returns_norm_clipped_selected.dim() == 1:
-                            target_returns_norm_clipped_selected = (
-                                target_returns_norm_clipped_selected.unsqueeze(1)
-                            )
+                        targets_norm_for_loss = target_returns_norm_selected.reshape(-1)
+                        targets_norm_clipped_for_loss = (
+                            target_returns_norm_clipped_selected.reshape(-1)
+                        )
 
                         critic_loss_unclipped = self._quantile_huber_loss(
-                            quantiles_for_loss, target_returns_norm_selected
+                            quantiles_for_loss, targets_norm_for_loss
                         )
                         critic_loss = critic_loss_unclipped
                         value_pred_norm_full = quantiles_fp32.mean(dim=1, keepdim=True)
@@ -7771,7 +7769,7 @@ class DistributionalPPO(RecurrentPPO):
                                 quantiles_norm_clipped_for_loss = quantiles_norm_clipped
                             quantiles_for_ev = quantiles_norm_clipped_for_loss
                             critic_loss_clipped = self._quantile_huber_loss(
-                                quantiles_norm_clipped_for_loss, target_returns_norm_clipped_selected
+                                quantiles_norm_clipped_for_loss, targets_norm_clipped_for_loss
                             )
                             critic_loss = torch.max(critic_loss_unclipped, critic_loss_clipped)
                         else:
