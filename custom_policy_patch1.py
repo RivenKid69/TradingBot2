@@ -63,16 +63,17 @@ class CustomMlpExtractor(nn.Module):
         self.latent_dim_pi = hidden_dim
         self.latent_dim_vf = hidden_dim
 
-        # Простая полносвязная сеть для проекции признаков
-        self.input_projection = nn.Sequential(
-            nn.Linear(feature_dim, hidden_dim),
-            nn.LayerNorm(hidden_dim),
-            activation()
-        )
+        # Простая полносвязная сеть для проекции признаков.
+        # Ранее здесь стоял LayerNorm, однако при нормализованных входах
+        # он полностью гасил вариацию латентного представления критика.
+        # Оставляем только линейный слой с обучаемым сдвигом и нелинейность,
+        # чтобы даже при нулевых входах модель могла порождать ненулевые латенты.
+        self.input_linear = nn.Linear(feature_dim, hidden_dim)
+        self.input_activation = activation()
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
         # Просто прогоняем признаки через MLP
-        return self.input_projection(features)
+        return self.input_activation(self.input_linear(features))
 
     def forward_actor(self, features: torch.Tensor) -> torch.Tensor:
         return features
