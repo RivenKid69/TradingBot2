@@ -46,3 +46,35 @@ def test_policy_value_outputs_accepts_recurrent_initial_state() -> None:
     assert isinstance(value_outputs, torch.Tensor)
     assert value_outputs.shape[0] == obs.shape[0]
     assert torch.isfinite(value_outputs).all()
+
+
+def test_policy_value_outputs_quantile_accepts_recurrent_initial_state() -> None:
+    obs_space = spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
+    action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
+
+    policy = CustomActorCriticPolicy(
+        observation_space=obs_space,
+        action_space=action_space,
+        lr_schedule=_constant_lr_schedule,
+        arch_params={"critic": {"distributional": True, "num_quantiles": 5}},
+    )
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.policy = policy
+
+    obs = torch.zeros((2,) + obs_space.shape, dtype=torch.float32, device=policy.device)
+    episode_starts = torch.zeros(obs.shape[0], dtype=torch.float32, device=policy.device)
+    initial_states = policy.recurrent_initial_state
+
+    assert isinstance(initial_states, RNNStates)
+
+    quantile_outputs = DistributionalPPO._policy_value_outputs(
+        algo,
+        obs,
+        initial_states,
+        episode_starts,
+    )
+
+    assert isinstance(quantile_outputs, torch.Tensor)
+    assert quantile_outputs.shape == (obs.shape[0], policy.num_quantiles)
+    assert torch.isfinite(quantile_outputs).all()
