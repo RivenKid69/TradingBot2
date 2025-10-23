@@ -53,11 +53,15 @@ class QuantileValueHead(nn.Module):
 
 class CustomMlpExtractor(nn.Module):
     """
-    Простой MLP-экстрактор для кодирования признаков одного временного шага.
-    Он заменяет сложную трансформер-подобную архитектуру, передавая
-    задачу обработки последовательности рекуррентной сети (GRU).
+    Простой MLP-экстрактор, который преобразует латенты RNN (GRU/LSTM)
+    в представление, удобное для акторной и критической голов.
+
+    В оригинальной архитектуре этот модуль пытался кодировать «сырые» признаки
+    одного временного шага. После перехода на рекуррентную память роль
+    агрегации последовательности выполняет `_process_sequence`, а сюда попадает
+    уже свернутое скрытое состояние фиксированной размерности.
     """
-    def __init__(self, feature_dim: int, hidden_dim: int, activation: Type[nn.Module]):
+    def __init__(self, rnn_latent_dim: int, hidden_dim: int, activation: Type[nn.Module]):
         super().__init__()
         # Определяем размерность для actor и critic
         self.latent_dim_pi = hidden_dim
@@ -68,7 +72,7 @@ class CustomMlpExtractor(nn.Module):
         # он полностью гасил вариацию латентного представления критика.
         # Оставляем только линейный слой с обучаемым сдвигом и нелинейность,
         # чтобы даже при нулевых входах модель могла порождать ненулевые латенты.
-        self.input_linear = nn.Linear(feature_dim, hidden_dim)
+        self.input_linear = nn.Linear(rnn_latent_dim, hidden_dim)
         self.input_activation = activation()
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
@@ -491,7 +495,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def _build_mlp_extractor(self) -> None:
         # Теперь создается простой MLP экстрактор
         self.mlp_extractor = CustomMlpExtractor(
-            feature_dim=self.features_dim, 
+            rnn_latent_dim=self.hidden_dim,
             hidden_dim=self.hidden_dim,
             activation=self.activation
         )
