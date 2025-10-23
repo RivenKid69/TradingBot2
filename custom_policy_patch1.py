@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from gymnasium import spaces
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Tuple, Type, Union
 
 from torch.optim import Optimizer
 
@@ -1319,7 +1319,7 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def value_quantiles(
         self,
         obs: torch.Tensor,
-        lstm_states: Tuple[torch.Tensor, ...],
+        lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]],
         episode_starts: torch.Tensor,
     ) -> torch.Tensor:
         if not self._use_quantile_value_head:
@@ -1327,10 +1327,26 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
 
         features = super(ActorCriticPolicy, self).extract_features(obs, self.vf_features_extractor)
 
+        if isinstance(lstm_states, RNNStates):
+            critic_states = lstm_states.vf
+            actor_states = lstm_states.pi
+        elif lstm_states is None:
+            initial_states = self.recurrent_initial_state
+            critic_states = initial_states.vf
+            actor_states = initial_states.pi
+        else:
+            coerced_states = self._coerce_lstm_states(lstm_states)
+            critic_states = coerced_states.vf
+            actor_states = coerced_states.pi
+
         if self.lstm_critic is not None:
-            latent_vf, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_critic)
+            latent_vf, _ = self._process_sequence(
+                features, critic_states, episode_starts, self.lstm_critic
+            )
         elif self.shared_lstm:
-            latent_pi, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_actor)
+            latent_pi, _ = self._process_sequence(
+                features, actor_states, episode_starts, self.lstm_actor
+            )
             latent_vf = latent_pi
         else:
             latent_vf = self.critic(features)
