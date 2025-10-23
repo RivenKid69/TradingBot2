@@ -156,6 +156,26 @@ def test_upgrade_quantile_value_state_dict_noop_when_already_quantile() -> None:
     assert upgraded is state
 
 
+def test_build_support_distribution_saturates_upper_bound() -> None:
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    num_atoms = 5
+    v_min = -1.0
+    v_max = 2.0
+    delta_z = (v_max - v_min) / float(num_atoms - 1)
+    policy = types.SimpleNamespace(v_min=v_min, v_max=v_max, delta_z=delta_z)
+    model.policy = policy  # type: ignore[assignment]
+
+    template = torch.zeros((2, num_atoms), dtype=torch.float32)
+    returns = torch.tensor([v_max, v_max + 5.0], dtype=torch.float32)
+
+    distribution = model._build_support_distribution(returns, template)
+
+    expected = torch.zeros_like(template)
+    expected[:, -1] = 1.0
+
+    assert torch.allclose(distribution, expected)
+
+
 def _make_cvar_model() -> DistributionalPPO:
     model = DistributionalPPO.__new__(DistributionalPPO)
     model.cvar_alpha = 0.05

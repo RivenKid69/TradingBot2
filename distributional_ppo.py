@@ -2184,6 +2184,7 @@ class DistributionalPPO(RecurrentPPO):
         upper_bound = torch.clamp(upper_bound, 0, num_atoms - 1)
 
         same_bounds = lower_bound == upper_bound
+        upper_bound_before_adjust = upper_bound.clone()
         adjust_mask = same_bounds & (lower_bound > 0)
         lower_bound = torch.where(adjust_mask, lower_bound - 1, lower_bound)
         lower_bound = torch.clamp(lower_bound, 0, num_atoms - 1)
@@ -2204,7 +2205,7 @@ class DistributionalPPO(RecurrentPPO):
             same_indices = same_bounds.nonzero(as_tuple=False).squeeze(1)
             if same_indices.numel() > 0:
                 target_distribution[same_indices] = 0.0
-                target_distribution[same_indices, lower_bound[same_indices]] = 1.0
+                target_distribution[same_indices, upper_bound_before_adjust[same_indices]] = 1.0
 
         return target_distribution
 
