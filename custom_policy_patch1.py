@@ -1292,15 +1292,23 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
     def predict_values(
         self,
         obs: torch.Tensor,
-        lstm_states: Tuple[torch.Tensor, ...],
+        lstm_states: RNNStates | Tuple[torch.Tensor, ...],
         episode_starts: torch.Tensor,
     ) -> torch.Tensor:
         features = super(ActorCriticPolicy, self).extract_features(obs, self.vf_features_extractor)
 
+        if isinstance(lstm_states, RNNStates):
+            critic_states = lstm_states.vf
+            actor_states = lstm_states.pi
+        else:
+            coerced_states = self._coerce_lstm_states(lstm_states)
+            critic_states = coerced_states.vf
+            actor_states = coerced_states.pi
+
         if self.lstm_critic is not None:
-            latent_vf, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_critic)
+            latent_vf, _ = self._process_sequence(features, critic_states, episode_starts, self.lstm_critic)
         elif self.shared_lstm:
-            latent_pi, _ = self._process_sequence(features, lstm_states, episode_starts, self.lstm_actor)
+            latent_pi, _ = self._process_sequence(features, actor_states, episode_starts, self.lstm_actor)
             latent_vf = latent_pi
         else:
             latent_vf = self.critic(features)
