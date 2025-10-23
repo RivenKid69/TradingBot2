@@ -76,10 +76,12 @@ class CustomMlpExtractor(nn.Module):
         return self.input_activation(self.input_linear(features))
 
     def forward_actor(self, features: torch.Tensor) -> torch.Tensor:
-        return features
+        # Актор использует общее латентное представление после проекции входа.
+        return self.forward(features)
 
     def forward_critic(self, features: torch.Tensor) -> torch.Tensor:
-        return features
+        # Критик использует то же проецированное представление, что и актор.
+        return self.forward(features)
 
 
 class _CategoricalAdapter:
