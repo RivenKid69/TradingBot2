@@ -61,7 +61,7 @@ model:
     reward_return_clip: 10.0
     turnover_norm_cap: 1.0
     reward_cap: 10.0
-    value_scale_update_enabled: false
+    value_scale_update_enabled: true
 
     clip_range_vf: null
     vf_clip_warmup_updates: 0
@@ -69,7 +69,7 @@ model:
 
 
 
-    normalize_returns: false
+    normalize_returns: true
 
 
     gae_lambda: 0.95
