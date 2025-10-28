@@ -2125,6 +2125,17 @@ class DistributionalPPO(RecurrentPPO):
             return []
         return self._resolve_ev_group_keys_from_flat(indices_np)
 
+    @staticmethod
+    def _merge_valid_indices(
+        primary: Optional[torch.Tensor],
+        override: Optional[torch.Tensor],
+    ) -> Optional[torch.Tensor]:
+        """Return ``override`` when provided, otherwise keep ``primary``."""
+
+        if override is not None:
+            return override
+        return primary
+
     def _policy_value_outputs(
         self,
         obs: torch.Tensor,
@@ -7381,7 +7392,9 @@ class DistributionalPPO(RecurrentPPO):
                     policy_entropy_count += int(entropy_detached.numel())
 
                     group_keys_local = []
-                    valid_indices = value_valid_indices
+                    valid_indices = self._merge_valid_indices(
+                        valid_indices, value_valid_indices
+                    )
 
                     if self._use_quantile_value:
                         value_quantiles = self.policy.last_value_quantiles
