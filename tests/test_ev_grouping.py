@@ -26,7 +26,7 @@ if "sb3_contrib" not in sys.modules:  # FIX-TEST
     type_aliases_mod.RNNStates = tuple  # type: ignore[attr-defined]  # FIX-TEST
     sys.modules["sb3_contrib.common.recurrent.type_aliases"] = type_aliases_mod  # FIX-TEST
 
-from distributional_ppo import compute_grouped_explained_variance
+from distributional_ppo import compute_grouped_explained_variance, safe_explained_variance
 
 
 def test_compute_grouped_explained_variance_mean_matches_average() -> None:  # FIX-TEST
@@ -75,4 +75,64 @@ def test_compute_grouped_explained_variance_weighted_and_median() -> None:
     assert summary["median"] is not None
     assert math.isclose(
         summary["median"], float(np.median(finite_values)), rel_tol=1e-9, abs_tol=1e-9
+    )
+
+
+def test_compute_grouped_explained_variance_respects_weight_mass() -> None:
+    y_true = np.array([
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+    ], dtype=np.float64)
+    y_pred = np.array([
+        -5.0,
+        -4.0,
+        -3.0,
+        -2.0,
+        0.1,
+        0.9,
+        2.1,
+        2.9,
+    ], dtype=np.float64)
+    group_keys = ["A"] * 4 + ["B"] * 4
+    weights = np.array([1e-6, 1e-6, 1e-6, 1e-6, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+
+    grouped, summary = compute_grouped_explained_variance(
+        y_true,
+        y_pred,
+        group_keys,
+        weights=weights,
+    )
+
+    assert grouped
+    assert math.isfinite(grouped["A"]) and math.isfinite(grouped["B"])
+
+    expected_weight_sums = {
+        "A": float(np.sum(weights[:4])),
+        "B": float(np.sum(weights[4:])),
+    }
+    expected_group_values = {
+        key: safe_explained_variance(
+            y_true[idxs],
+            y_pred[idxs],
+            weights[idxs],
+        )
+        for key, idxs in {"A": slice(0, 4), "B": slice(4, 8)}.items()
+    }
+    expected_weighted = (
+        expected_group_values["A"] * expected_weight_sums["A"]
+        + expected_group_values["B"] * expected_weight_sums["B"]
+    ) / (expected_weight_sums["A"] + expected_weight_sums["B"])
+
+    assert summary["mean_weighted"] is not None
+    assert math.isclose(
+        summary["mean_weighted"],
+        expected_weighted,
+        rel_tol=1e-9,
+        abs_tol=1e-9,
     )

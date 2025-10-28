@@ -365,7 +365,7 @@ def compute_grouped_explained_variance(
         grouped_indices.setdefault(key, []).append(idx)
 
     ev_grouped: dict[str, float] = {}
-    valid_counts: dict[str, int] = {}
+    valid_weights: dict[str, float] = {}
     for key, indices in grouped_indices.items():
         idx_array = np.asarray(indices, dtype=np.int64)
         true_group = true_vals[idx_array]
@@ -407,19 +407,27 @@ def compute_grouped_explained_variance(
             continue
         ev_value = float(1.0 - (var_err / var_true))
         ev_grouped[key] = ev_value
-        valid_counts[key] = sample_count
+        if weights_group is None:
+            effective_weight = float(sample_count)
+        else:
+            weight_sum = float(np.sum(weights_group))
+            if not math.isfinite(weight_sum) or weight_sum <= 0.0:
+                ev_grouped[key] = float("nan")
+                continue
+            effective_weight = weight_sum
+        valid_weights[key] = effective_weight
 
     finite_items = [
         (group, value)
         for group, value in ev_grouped.items()
-        if math.isfinite(value) and group in valid_counts
+        if math.isfinite(value) and group in valid_weights
     ]
     summary = dict(empty_summary)
     if not finite_items:
         return ev_grouped, summary
 
     values = np.asarray([value for _, value in finite_items], dtype=np.float64)
-    counts = np.asarray([valid_counts[group] for group, _ in finite_items], dtype=np.float64)
+    counts = np.asarray([valid_weights[group] for group, _ in finite_items], dtype=np.float64)
 
     if values.size > 0:
         summary["mean_unweighted"] = float(np.mean(values))
