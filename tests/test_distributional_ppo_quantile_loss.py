@@ -173,3 +173,21 @@ def test_quantile_huber_loss_single_step_yields_variance() -> None:
         predicted_means = predicted.mean(dim=1)
     assert torch.var(predicted_means).item() > 0.0
 
+
+def test_merge_valid_indices_preserves_primary_when_override_missing() -> None:
+    torch = pytest.importorskip("torch")
+
+    from distributional_ppo import DistributionalPPO
+
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    primary = torch.tensor([0, 2, 4], dtype=torch.long)
+    result = DistributionalPPO._merge_valid_indices(primary, None)
+
+    assert result is primary
+
+    override = torch.tensor([1, 3], dtype=torch.long)
+    result_override = DistributionalPPO._merge_valid_indices(primary, override)
+
+    assert result_override is override
+
