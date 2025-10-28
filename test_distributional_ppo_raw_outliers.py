@@ -357,6 +357,111 @@ def test_value_scale_handles_outlier_batch_with_smoothing() -> None:
         assert means[idx] == pytest.approx(frozen_mean)
 
 
+def test_value_scale_rms_accumulates_across_rollouts() -> None:
+    if torch is None or torch_is_stub:
+        pytest.skip("torch is required for return-scale warmup accumulation checks")
+
+    model = DistributionalPPO.__new__(DistributionalPPO)
+    model.normalize_returns = True
+    model.ret_clip = 5.0
+    model.value_target_scale = 1.0
+    model.device = torch.device("cpu") if torch is not None and not torch_is_stub else None
+    model.ret_rms = RunningMeanStd(shape=())
+    model.ret_rms.mean[...] = 0.0
+    base_std = 0.7
+    model.ret_rms.var[...] = base_std**2
+    model.ret_rms.count = 1.0
+    model._ret_mean_value = 0.0
+    model._ret_std_value = base_std
+    model._ret_mean_snapshot = 0.0
+    model._ret_std_snapshot = base_std
+    model._pending_rms = None
+    model._pending_ret_mean = None
+    model._pending_ret_std = None
+    model._value_scale_ema_beta = 0.2
+    model._value_scale_max_rel_step = 0.5
+    model._value_scale_std_floor = 3e-3
+    model._value_scale_window_updates = 0
+    model._value_scale_recent_stats = deque()
+    model._value_scale_stats_initialized = False
+    model._value_scale_stats_mean = 0.0
+    model._value_scale_stats_second = base_std**2
+    model._value_target_scale_effective = 1.0 / (model.ret_clip * base_std)
+    model._value_target_scale_robust = 1.0
+    model._value_target_scale_fixed = None
+    model._value_target_scale_smoothing_beta = 1.0
+    model._value_target_scale_max_change_pct = None
+    model._value_scale_warmup_limit = 3
+    model._value_scale_warmup_updates = 3
+    model._value_scale_min_samples = 256
+    model._value_scale_warmup_buffer = []
+    model._value_scale_warmup_buffer_limit = 65536
+    model._value_scale_update_count = 0
+    model._value_scale_prev_effective = model._value_target_scale_effective
+    model._value_scale_drift_counter = 0
+    model._value_scale_frozen = False
+    model._value_scale_freeze_after = None
+    model._value_scale_freeze_after_updates = None
+    model._value_scale_never_freeze = False
+    model._value_scale_updates_enabled = True
+    model._value_scale_range_max_rel_step = model._value_scale_max_rel_step
+    model._value_scale_requires_stability = False
+    model._value_scale_stability_patience = 0
+    model._value_scale_frame_stable = True
+    model._value_scale_stable_counter = 0
+    model._value_scale_latest_ret_abs_p95 = 0.0
+    model._value_scale_auto_thaw_bad_ev = 0
+    model._use_quantile_value = False
+    model.running_v_min = -model.ret_clip
+    model.running_v_max = model.ret_clip
+    model.v_range_initialized = True
+    model.v_range_ema_alpha = 0.1
+    model._value_norm_clip_min = -model.ret_clip
+    model._value_norm_clip_max = model.ret_clip
+    model._value_clip_limit_unscaled = None
+    model._value_clip_limit_scaled = None
+    model._value_scale_rms_accumulator = None
+    model.policy = types.SimpleNamespace(update_atoms=lambda *_args, **_kwargs: None)
+
+    class _Recorder:
+        def __init__(self) -> None:
+            self.records: dict[str, float] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records[key] = float(value)
+
+    model.logger = _Recorder()
+
+    rng = np.random.default_rng(12345)
+    batch_size = 64
+    batches = [
+        rng.normal(0.0, base_std, size=(batch_size, 1)).astype(np.float32)
+        for _ in range(5)
+    ]
+
+    agg_before: list[float] = []
+    agg_after: list[float] = []
+
+    for returns in batches:
+        accumulator_before = model._value_scale_rms_accumulator
+        agg_before.append(
+            float(accumulator_before.count) if accumulator_before is not None else 0.0
+        )
+        model.rollout_buffer = types.SimpleNamespace(returns=returns.copy())
+        model._activate_return_scale_snapshot()
+        model._finalize_return_stats()
+        accumulator_after = model._value_scale_rms_accumulator
+        assert accumulator_after is not None
+        agg_after.append(float(accumulator_after.count))
+
+    assert agg_before[:4] == pytest.approx([0.0, batch_size, batch_size * 2, batch_size * 3])
+    assert agg_after[:3] == pytest.approx([batch_size, batch_size * 2, batch_size * 3])
+    assert agg_before[4] == pytest.approx(0.0)
+    assert agg_after[3:] == pytest.approx([0.0, 0.0])
+    assert model._value_scale_update_count >= 2
+    assert "warn/ret_std_out_of_range" not in model.logger.records
+
+
 @pytest.mark.skipif(
     torch is None or torch_is_stub, reason="torch is required for tensor-based checks"
 )

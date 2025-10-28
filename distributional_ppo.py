@@ -3542,6 +3542,7 @@ class DistributionalPPO(RecurrentPPO):
             self.rollout_buffer.returns, device=self.device, dtype=torch.float32
         ).flatten()
         returns_raw_tensor = returns_tensor * float(base_scale_safe)
+        rollout_batch_size = int(returns_raw_tensor.numel())
 
         warmup_limit = int(getattr(self, "_value_scale_warmup_limit", 3))
         min_samples = int(getattr(self, "_value_scale_min_samples", 256))
@@ -3620,17 +3621,32 @@ class DistributionalPPO(RecurrentPPO):
                     if np.any(finite_mask):
                         pending_rms.update(pending_values[finite_mask])
 
+            if allow_updates:
+                buffer_np = np.asarray(self._value_scale_warmup_buffer, dtype=np.float64)
+                if buffer_np.size > 0:
+                    finite_buffer = buffer_np[np.isfinite(buffer_np)]
+                else:
+                    finite_buffer = np.empty(0, dtype=np.float64)
+                aggregator = RunningMeanStd(shape=())
+                if finite_buffer.size > 0:
+                    aggregator.update(finite_buffer)
+            else:
+                aggregator = None
+
+            rms_min_samples = float(min_samples)
+            if warmup_phase and rollout_batch_size > 0:
+                rms_min_samples = float(min(min_samples, rollout_batch_size))
             rms_ready = (
                 allow_updates
-                and pending_rms is not None
+                and aggregator is not None
                 and (
-                    pending_rms.count >= float(min_samples)
+                    float(aggregator.count) >= rms_min_samples
                     or not warmup_phase
                 )
             )
 
-            if allow_updates and sample_ready and rms_ready and pending_rms is not None:
-                sample_stats = self._extract_rms_stats(pending_rms)
+            if allow_updates and sample_ready and rms_ready and aggregator is not None:
+                sample_stats = self._extract_rms_stats(aggregator)
                 if sample_stats is not None:
                     sample_mean, sample_var, sample_weight = sample_stats
                     (
@@ -3692,6 +3708,8 @@ class DistributionalPPO(RecurrentPPO):
                     self.ret_rms.var[...] = float(new_std * new_std)
                     self.ret_rms.count = max(float(self.ret_rms.count), 1.0)
 
+                    aggregator = RunningMeanStd(shape=())
+
             if not update_applied:
                 self._ret_mean_snapshot = float(self._ret_mean_value)
                 self._ret_std_snapshot = max(
@@ -3701,6 +3719,7 @@ class DistributionalPPO(RecurrentPPO):
             self._pending_ret_mean = float(self._ret_mean_snapshot)
             self._pending_ret_std = float(self._ret_std_snapshot)
             self._pending_rms = None
+            self._value_scale_rms_accumulator = aggregator
         else:
             if allow_updates and sample_ready:
                 abs_buffer = np.abs(
@@ -4243,6 +4262,7 @@ class DistributionalPPO(RecurrentPPO):
         self._pending_rms: Optional[RunningMeanStd] = None
         self._pending_ret_mean: Optional[float] = None
         self._pending_ret_std: Optional[float] = None
+        self._value_scale_rms_accumulator: Optional[RunningMeanStd] = None
         value_scale_cfg = kwargs_local.pop("value_scale", None)
         value_scale_ema_beta = None
         value_scale_max_rel_step = None
