@@ -1,4 +1,6 @@
 import math
+import math
+from types import MethodType, SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -80,6 +82,158 @@ def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
 
 
 
+
+
+
+def test_ev_group_key_from_info_prefers_symbol_and_env_mapping() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    info_primary = {"env_id": " shard-0 ", "symbol": "btcusdt"}
+    info_fallback = {"environment": "prod", "instrument": "ethusd"}
+
+    assert algo._ev_group_key_from_info(7, info_primary) == "shard-0::BTCUSDT"
+    assert algo._ev_group_key_from_info(1, info_fallback) == "prod::ETHUSD"
+
+
+def test_ev_group_key_from_info_falls_back_to_env_index() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    assert algo._ev_group_key_from_info(3, object()) == "env3"
+    assert algo._ev_group_key_from_info(0, {"symbol": ""}) == "env0"
+
+
+def test_resolve_ev_group_keys_from_flat_uses_cached_keys_and_env_defaults() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.rollout_buffer = SimpleNamespace(buffer_size=2, n_envs=2)
+    algo._last_rollout_ev_keys = np.array(
+        [["vec0::BTC", None], ["", "vec1::SOL"]], dtype=object
+    )
+
+    indices = np.array([0, 1, 2, 3], dtype=np.int64)
+    result = algo._resolve_ev_group_keys_from_flat(indices)
+
+    assert result == ["vec0::BTC", "env0", "env1", "vec1::SOL"]
+
+
+def test_resolve_ev_group_keys_from_flat_handles_missing_cache() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._last_rollout_ev_keys = None
+
+    indices = np.array([0, -1, 3], dtype=np.int64)
+    result = algo._resolve_ev_group_keys_from_flat(indices)
+
+    assert result == ["env0", "env3"]
+
+
+def test_resolve_ev_group_keys_from_flat_rejects_out_of_bounds() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.rollout_buffer = SimpleNamespace(buffer_size=1, n_envs=1)
+    algo._last_rollout_ev_keys = np.array([["only"]], dtype=object)
+
+    assert algo._resolve_ev_group_keys_from_flat(np.array([2], dtype=np.int64)) == []
+
+
+def test_extract_group_keys_for_indices_filters_invalid_rows() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.rollout_buffer = SimpleNamespace(buffer_size=4, n_envs=1)
+    algo._last_rollout_ev_keys = np.array(["A", "B", "C", "D"], dtype=object)
+
+    rollout_data = SimpleNamespace(
+        sample_indices=torch.tensor([0, 3, -1, 1], dtype=torch.long)
+    )
+    subset = torch.tensor([0, 3], dtype=torch.long)
+
+    result = algo._extract_group_keys_for_indices(rollout_data, subset)
+
+    assert result == ["A", "B"]
+
+
+def test_extract_group_keys_for_indices_returns_empty_on_bad_indices() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.rollout_buffer = SimpleNamespace(buffer_size=2, n_envs=1)
+    algo._last_rollout_ev_keys = np.array(["X", "Y"], dtype=object)
+
+    rollout_data = SimpleNamespace(
+        sample_indices=torch.tensor([0, 1], dtype=torch.long)
+    )
+    subset = torch.tensor([0, 5], dtype=torch.long)
+
+    assert algo._extract_group_keys_for_indices(rollout_data, subset) == []
+
+
+class _CaptureLogger:
+    def __init__(self) -> None:
+        self.records: dict[str, list[float]] = {}
+
+    def record(self, key: str, value: float, **_: object) -> None:
+        self.records.setdefault(key, []).append(value)
+
+
+class _PolicyMinimal:
+    def __init__(self) -> None:
+        self.optimizer = object()
+
+    def set_training_mode(self, _: bool) -> None:
+        pass
+
+
+def _make_algo_for_ev_gate(
+    threshold: float,
+    latest_ev: float | None,
+) -> tuple[DistributionalPPO, _CaptureLogger]:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    logger = _CaptureLogger()
+    algo.logger = logger
+    algo._logger = logger
+    algo.policy = _PolicyMinimal()
+    algo.device = torch.device("cpu")
+    algo.lr_schedule = lambda _: 0.001
+    algo.clip_range = 0.2
+    algo.clip_range_vf = 0.5
+    algo.n_epochs = 0
+    algo.batch_size = 1
+    algo._grad_accumulation_steps = 1
+    algo._microbatch_size = 1
+    algo._critic_grad_block_logged_state = False
+    algo._critic_grad_block_scale = 1.0
+    algo._critic_grad_blocked = False
+    algo._global_update_step = 5
+    algo._vf_clip_warmup_updates = 2
+    algo._vf_clip_threshold_ev = threshold
+    algo._vf_clip_latest_ev = latest_ev
+    algo._vf_clip_warmup_logged_complete = False
+    algo._compute_clip_range_value = MethodType(lambda self, _: 0.15, algo)
+    algo._rebuild_scheduler_if_needed = MethodType(lambda self: None, algo)
+    algo._update_learning_rate = MethodType(lambda self, _optimizer: None, algo)
+    algo._refresh_kl_base_lrs = MethodType(lambda self: None, algo)
+    algo._ensure_score_action_space = MethodType(lambda self: None, algo)
+
+    def _stop(*_: Any, **__: Any) -> None:
+        raise RuntimeError("stop after vf_clip logging")
+
+    algo._update_ent_coef = MethodType(_stop, algo)
+    return algo, logger
+
+
+@pytest.mark.parametrize(
+    "latest_ev, expected_gate",
+    [(None, 1.0), (float("nan"), 1.0), (0.1, 1.0), (0.6, 0.0)],
+)
+def test_train_logs_ev_gate_based_on_latest_explained_variance(
+    latest_ev: float | None, expected_gate: float
+) -> None:
+    algo, logger = _make_algo_for_ev_gate(threshold=0.25, latest_ev=latest_ev)
+
+    with pytest.raises(RuntimeError, match="stop after vf_clip logging"):
+        algo.train()
+
+    records = logger.records
+    assert records["train/vf_clip_ev_gate_active"][0] == pytest.approx(expected_gate)
+    assert records["train/vf_clip_threshold_ev"][0] == pytest.approx(0.25)
+    if latest_ev is not None and math.isfinite(latest_ev):
+        assert records["train/vf_clip_last_ev"][0] == pytest.approx(latest_ev)
+    else:
+        assert "train/vf_clip_last_ev" not in records
 
 
 def test_explained_variance_reserve_path_applies_mask() -> None:
