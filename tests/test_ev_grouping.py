@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import pytest
 
 import sys
 import types
@@ -136,3 +137,38 @@ def test_compute_grouped_explained_variance_respects_weight_mass() -> None:
         rel_tol=1e-9,
         abs_tol=1e-9,
     )
+
+
+def test_compute_grouped_explained_variance_empty_inputs_returns_empty_summary() -> None:
+    grouped, summary = compute_grouped_explained_variance([], [], [])
+
+    assert grouped == {}
+    assert summary == {
+        "mean_unweighted": None,
+        "mean_weighted": None,
+        "median": None,
+    }
+
+
+@pytest.mark.parametrize(
+    "group_keys",
+    [
+        ["", " "],
+        ["", "asset", "  "],
+    ],
+)
+def test_compute_grouped_explained_variance_relabels_blank_keys(group_keys: list[str]) -> None:
+    y_true = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    y_pred = np.array([0.9, 2.1, 2.8], dtype=np.float64)
+
+    grouped, _ = compute_grouped_explained_variance(y_true, y_pred, group_keys)
+
+    assert grouped
+
+    trimmed = group_keys[: len(y_true)]
+    expected_keys = {
+        (f"group_{idx}" if str(key).strip() == "" else str(key))
+        for idx, key in enumerate(trimmed)
+    }
+
+    assert set(grouped) == expected_keys
