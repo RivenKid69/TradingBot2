@@ -6623,47 +6623,49 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             self.logger.record("warn/ev_reserve_missing_old_values", 1.0)
 
-                    def _refresh_value_cache() -> None:
-                        obs_value = rollout_data.observations
-                        if isinstance(obs_value, torch.Tensor):
-                            obs_device = obs_value.to(device=self.device)
-                        elif isinstance(obs_value, Mapping):
-                            obs_device = {
-                                key: tensor.to(device=self.device)
-                                for key, tensor in obs_value.items()
-                            }
-                        else:  # pragma: no cover - legacy/custom observation container
-                            obs_device = obs_value
-                            to_fn = getattr(obs_device, "to", None)
-                            if callable(to_fn):
-                                obs_device = to_fn(device=self.device)
+                    obs_value = rollout_data.observations
+                    if isinstance(obs_value, torch.Tensor):
+                        obs_device = obs_value.to(device=self.device)
+                    elif isinstance(obs_value, Mapping):
+                        obs_device = {
+                            key: tensor.to(device=self.device)
+                            for key, tensor in obs_value.items()
+                        }
+                    else:  # pragma: no cover - legacy/custom observation container
+                        obs_device = obs_value
+                        to_fn = getattr(obs_device, "to", None)
+                        if callable(to_fn):
+                            obs_device = to_fn(device=self.device)
 
-                        lstm_states_value = self._clone_states_to_device(
-                            rollout_data.lstm_states, self.device
-                        )
-                        episode_starts_tensor = rollout_data.episode_starts
-                        if not isinstance(episode_starts_tensor, torch.Tensor):
-                            episode_starts_tensor = torch.as_tensor(
-                                episode_starts_tensor,
-                                device=self.device,
-                                dtype=torch.bool,
-                            )
-                        else:
-                            episode_starts_tensor = episode_starts_tensor.to(device=self.device)
-                            if episode_starts_tensor.dtype != torch.bool:
-                                episode_starts_tensor = episode_starts_tensor.to(dtype=torch.bool)
-
-                        actor_states = self._extract_actor_states(lstm_states_value)
-                        dist_output = self.policy.get_distribution(
-                            obs_device,
-                            actor_states,
+                    lstm_states_value = self._clone_states_to_device(
+                        rollout_data.lstm_states, self.device
+                    )
+                    episode_starts_tensor = rollout_data.episode_starts
+                    if not isinstance(episode_starts_tensor, torch.Tensor):
+                        episode_starts_tensor = torch.as_tensor(
                             episode_starts_tensor,
+                            device=self.device,
+                            dtype=torch.bool,
                         )
-                        if isinstance(dist_output, tuple):  # pragma: no cover - legacy structure
-                            dist_output = dist_output[0]
-                        value_states = getattr(dist_output, "value_states", None)
-                        if value_states is not None:
-                            self.policy.last_value_state = value_states
+                    else:
+                        episode_starts_tensor = episode_starts_tensor.to(device=self.device)
+                        if episode_starts_tensor.dtype != torch.bool:
+                            episode_starts_tensor = episode_starts_tensor.to(dtype=torch.bool)
+
+                    actor_states = self._extract_actor_states(lstm_states_value)
+
+                    def _refresh_value_cache() -> None:
+                        with torch.no_grad():
+                            dist_output = self.policy.get_distribution(
+                                obs_device,
+                                actor_states,
+                                episode_starts_tensor,
+                            )
+                            if isinstance(dist_output, tuple):  # pragma: no cover - legacy structure
+                                dist_output = dist_output[0]
+                            value_states = getattr(dist_output, "value_states", None)
+                            if value_states is not None:
+                                self.policy.last_value_state = value_states
                     if (not self.normalize_returns) and (
                         self._value_clip_limit_unscaled is not None
                     ):
@@ -6792,14 +6794,17 @@ class DistributionalPPO(RecurrentPPO):
                         return False
 
                     pred_norm_clip_bounds = norm_clip_bounds
+                    _refresh_value_cache()
+
+                    with torch.no_grad():
+                        value_outputs = self._policy_value_outputs(
+                            obs_device, lstm_states_value, episode_starts_tensor
+                        )
+                    if value_outputs is None:
+                        return False
+
                     if self._use_quantile_value:
-                        value_quantiles = self.policy.last_value_quantiles
-                        if value_quantiles is None:
-                            _refresh_value_cache()
-                            value_quantiles = self.policy.last_value_quantiles
-                            if value_quantiles is None:
-                                return False
-                        quantiles_fp32 = value_quantiles.to(dtype=torch.float32)
+                        quantiles_fp32 = value_outputs.to(dtype=torch.float32)
                         quantiles_norm_for_pred = quantiles_fp32
                         pred_norm_clip_bounds = norm_clip_bounds
                         self._record_value_debug_stats(
@@ -6888,15 +6893,6 @@ class DistributionalPPO(RecurrentPPO):
                         )
 
                         self._record_value_debug_stats(
-                            "ev_pred_quantiles_norm_post_clip",
-                            quantiles_norm_for_pred,
-                            clip_bounds=pred_norm_clip_bounds,
-                        )
-                        self._record_value_debug_stats(
-                            "ev_pred_quantiles_raw_post_clip", quantiles_raw_post_clip
-                        )
-
-                        self._record_value_debug_stats(
                             "ev_pred_mean_norm_post_vf_clip",
                             value_pred,
                             clip_bounds=pred_norm_clip_bounds,
@@ -6907,17 +6903,32 @@ class DistributionalPPO(RecurrentPPO):
                             clip_bounds=pred_norm_clip_bounds,
                         )
                     else:
-                        value_logits = self.policy.last_value_logits
-                        if value_logits is None:
-                            _refresh_value_cache()
-                            value_logits = self.policy.last_value_logits
-                            if value_logits is None:
-                                return False
-                        value_logits_fp32 = value_logits.to(dtype=torch.float32)
-                        probs = torch.softmax(value_logits_fp32, dim=1).clamp(
-                            min=1e-8, max=1.0
-                        )
-                        value_pred = (probs * self.policy.atoms).sum(dim=1, keepdim=True)
+                        value_fp32 = value_outputs.to(dtype=torch.float32)
+                        value_pred: torch.Tensor
+                        policy_atoms = getattr(self.policy, "atoms", None)
+                        atoms_reference: Optional[torch.Tensor]
+                        if policy_atoms is not None:
+                            atoms_reference = torch.as_tensor(policy_atoms)
+                        else:
+                            atoms_reference = None
+                        if (
+                            atoms_reference is not None
+                            and value_fp32.ndim == 2
+                            and value_fp32.shape[1] == int(atoms_reference.numel())
+                        ):
+                            value_logits = value_fp32
+                            atoms_tensor = atoms_reference.to(
+                                device=value_logits.device,
+                                dtype=value_logits.dtype,
+                            )
+                            if atoms_tensor.ndim == 1:
+                                atoms_tensor = atoms_tensor.view(1, -1)
+                            probs = torch.softmax(value_logits, dim=1).clamp_(1e-8, 1.0)
+                            value_pred = (probs * atoms_tensor).sum(dim=1, keepdim=True)
+                        else:
+                            value_pred = value_fp32
+                            if value_pred.ndim == 1:
+                                value_pred = value_pred.view(-1, 1)
                         value_pred_norm_pre_clip = value_pred.clone()
                         self._record_value_debug_stats(
                             "ev_pred_mean_norm_pre_clip",
@@ -6977,6 +6988,23 @@ class DistributionalPPO(RecurrentPPO):
                             norm_post=value_pred_norm_post_vf,
                         )
 
+                    if index_tensor is not None:
+                        value_pred = value_pred[index_tensor]
+                        if self._use_quantile_value:
+                            quantiles_norm_for_pred = quantiles_norm_for_pred[index_tensor]
+                            quantiles_fp32 = quantiles_fp32[index_tensor]
+                            quantiles_raw_post_clip = quantiles_raw_post_clip[index_tensor]
+
+                    if self._use_quantile_value:
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_norm_post_clip",
+                            quantiles_norm_for_pred,
+                            clip_bounds=pred_norm_clip_bounds,
+                        )
+                        self._record_value_debug_stats(
+                            "ev_pred_quantiles_raw_post_clip", quantiles_raw_post_clip
+                        )
+
                     if self.normalize_returns:
                         value_pred = value_pred.clamp(
                             self._value_norm_clip_min, self._value_norm_clip_max
@@ -6999,8 +7027,6 @@ class DistributionalPPO(RecurrentPPO):
                     )
 
                     value_pred_col = value_pred.reshape(-1, 1)
-                    if index_tensor is not None:
-                        value_pred_col = value_pred_col[index_tensor]
 
                     if (
                         value_pred_col.numel() == 0
