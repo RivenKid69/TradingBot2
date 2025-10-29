@@ -2851,6 +2851,86 @@ class DistributionalPPO(RecurrentPPO):
         if grouped_median is not None and math.isfinite(grouped_median):
             self.logger.record("train/ev/median_grouped", float(grouped_median))
 
+    def _update_explained_variance_tracking(
+        self,
+        explained_var: Optional[float],
+    ) -> None:
+        """Update counters and stability state derived from explained variance."""
+
+        if explained_var is not None:
+            value = float(explained_var)
+            if value < 0.0:
+                self._bad_explained_counter += 1
+            else:
+                self._bad_explained_counter = 0
+            self._last_explained_variance = value
+            self._vf_clip_latest_ev = value
+        else:
+            self._last_explained_variance = None
+            self._vf_clip_latest_ev = None
+
+        auto_thaw_patience = int(getattr(self, "_value_scale_auto_thaw_bad_ev", 0))
+        if (
+            auto_thaw_patience > 0
+            and self._bad_explained_counter >= auto_thaw_patience
+            and getattr(self, "_value_scale_frozen", False)
+        ):
+            self._value_scale_frozen = False
+            logger = getattr(self, "logger", None)
+            record = getattr(logger, "record", None) if logger is not None else None
+            if callable(record):
+                record("train/value_scale_auto_thaw", float(self._bad_explained_counter))
+
+        last_ev_value = self._last_explained_variance
+        if last_ev_value is not None:
+            frame_stable = bool(
+                self._is_value_scale_frame_stable(
+                    self._value_scale_latest_ret_abs_p95, last_ev_value
+                )
+            )
+        else:
+            frame_stable = False
+
+        self._value_scale_frame_stable = frame_stable
+        if frame_stable:
+            self._value_scale_stable_counter += 1
+        else:
+            self._value_scale_stable_counter = 0
+
+        logger = getattr(self, "logger", None)
+        record = getattr(logger, "record", None) if logger is not None else None
+        if callable(record):
+            record("train/value_scale_frame_stable", float(frame_stable))
+            record(
+                "train/value_scale_stable_consec",
+                float(self._value_scale_stable_counter),
+            )
+            record(
+                "train/value_scale_ret_abs_p95",
+                float(self._value_scale_latest_ret_abs_p95),
+            )
+
+    def _update_explained_variance_warning_streak(
+        self,
+        explained_var: Optional[float],
+    ) -> None:
+        """Advance the low explained variance warning streak and emit telemetry."""
+
+        if explained_var is None:
+            return
+
+        value = float(explained_var)
+        if value <= 0.3:
+            self._explained_variance_warn_streak += 1
+        else:
+            self._explained_variance_warn_streak = 0
+
+        if self._explained_variance_warn_streak >= 3:
+            logger = getattr(self, "logger", None)
+            record = getattr(logger, "record", None) if logger is not None else None
+            if callable(record):
+                record("warn/explained_variance_low", value)
+
     def _record_cvar_logs(
         self,
         *,
@@ -8665,44 +8745,7 @@ class DistributionalPPO(RecurrentPPO):
 
         bc_ratio = abs(policy_loss_bc_weighted_value) / (abs(policy_loss_ppo_value) + 1e-8)
 
-        if explained_var is not None:
-            if explained_var < 0.0:
-                self._bad_explained_counter += 1
-            else:
-                self._bad_explained_counter = 0
-            self._last_explained_variance = float(explained_var)
-            self._vf_clip_latest_ev = float(explained_var)
-        else:
-            self._last_explained_variance = None
-            self._vf_clip_latest_ev = None
-
-        auto_thaw_patience = int(getattr(self, "_value_scale_auto_thaw_bad_ev", 0))
-        if (
-            auto_thaw_patience > 0
-            and self._bad_explained_counter >= auto_thaw_patience
-            and getattr(self, "_value_scale_frozen", False)
-        ):
-            self._value_scale_frozen = False
-            self.logger.record("train/value_scale_auto_thaw", float(self._bad_explained_counter))
-
-        if self._last_explained_variance is not None:
-            frame_stable = self._is_value_scale_frame_stable(
-                self._value_scale_latest_ret_abs_p95, self._last_explained_variance
-            )
-        else:
-            frame_stable = False
-        self._value_scale_frame_stable = frame_stable
-        if frame_stable:
-            self._value_scale_stable_counter += 1
-        else:
-            self._value_scale_stable_counter = 0
-        self.logger.record("train/value_scale_frame_stable", float(frame_stable))
-        self.logger.record(
-            "train/value_scale_stable_consec", float(self._value_scale_stable_counter)
-        )
-        self.logger.record(
-            "train/value_scale_ret_abs_p95", float(self._value_scale_latest_ret_abs_p95)
-        )
+        self._update_explained_variance_tracking(explained_var)
 
         self.logger.record("train/policy_loss", policy_loss_value)
         self.logger.record("train/policy_loss_ppo", policy_loss_ppo_value)
@@ -8884,13 +8927,7 @@ class DistributionalPPO(RecurrentPPO):
             self._ret_std_warn_streak = 0
         if self._ret_std_warn_streak >= 3:
             self.logger.record("warn/ret_std_out_of_range", float(ret_std_value))
-        if explained_var is not None:
-            if float(explained_var) <= 0.3:
-                self._explained_variance_warn_streak += 1
-            else:
-                self._explained_variance_warn_streak = 0
-            if self._explained_variance_warn_streak >= 3:
-                self.logger.record("warn/explained_variance_low", float(explained_var))
+        self._update_explained_variance_warning_streak(explained_var)
         self.logger.record("train/clip_range", float(self._clip_range_current))
         clip_range_for_log = float(self.clip_range(self._current_progress_remaining))
         self.logger.record("train/clip_range_schedule", clip_range_for_log)

@@ -635,6 +635,168 @@ def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
     assert "train/ev/global" not in algo.logger.records
 
 
+def test_update_explained_variance_tracking_handles_bad_and_good_values() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    logger = _CaptureLogger()
+    algo.logger = logger
+    algo._bad_explained_counter = 1
+    algo._value_scale_auto_thaw_bad_ev = 2
+    algo._value_scale_frozen = True
+    algo._value_scale_latest_ret_abs_p95 = 1.5
+    algo._value_scale_frame_stable = False
+    algo._value_scale_stable_counter = 0
+    algo._is_value_scale_frame_stable = MethodType(
+        lambda self, _p95, ev: ev >= 0.4,
+        algo,
+    )
+
+    algo._update_explained_variance_tracking(-0.2)
+
+    assert algo._bad_explained_counter == 2
+    assert algo._last_explained_variance == pytest.approx(-0.2)
+    assert algo._vf_clip_latest_ev == pytest.approx(-0.2)
+    assert not algo._value_scale_frozen
+    assert logger.records["train/value_scale_auto_thaw"] == [2.0]
+    assert logger.records["train/value_scale_frame_stable"][-1] == 0.0
+    assert algo._value_scale_stable_counter == 0
+
+    logger.records = {}
+    algo._value_scale_latest_ret_abs_p95 = 2.5
+
+    algo._update_explained_variance_tracking(0.6)
+
+    assert algo._bad_explained_counter == 0
+    assert algo._last_explained_variance == pytest.approx(0.6)
+    assert algo._vf_clip_latest_ev == pytest.approx(0.6)
+    assert algo._value_scale_frame_stable
+    assert algo._value_scale_stable_counter == 1
+    assert logger.records["train/value_scale_frame_stable"][-1] == 1.0
+    assert logger.records["train/value_scale_ret_abs_p95"][-1] == pytest.approx(2.5)
+
+
+def test_update_explained_variance_tracking_clears_state_when_metric_missing() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    logger = _CaptureLogger()
+    algo.logger = logger
+    algo._bad_explained_counter = 4
+    algo._last_explained_variance = 0.2
+    algo._vf_clip_latest_ev = 0.2
+    algo._value_scale_latest_ret_abs_p95 = 1.0
+    algo._value_scale_frame_stable = True
+    algo._value_scale_stable_counter = 5
+
+    algo._update_explained_variance_tracking(None)
+
+    assert algo._bad_explained_counter == 4
+    assert algo._last_explained_variance is None
+    assert algo._vf_clip_latest_ev is None
+    assert not algo._value_scale_frame_stable
+    assert algo._value_scale_stable_counter == 0
+    assert logger.records["train/value_scale_frame_stable"][-1] == 0.0
+    assert logger.records["train/value_scale_ret_abs_p95"][-1] == pytest.approx(1.0)
+
+
+def test_update_explained_variance_warning_streak_triggers_logging() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    logger = _CaptureLogger()
+    algo.logger = logger
+    algo._explained_variance_warn_streak = 0
+
+    algo._update_explained_variance_warning_streak(None)
+    assert algo._explained_variance_warn_streak == 0
+
+    algo._update_explained_variance_warning_streak(0.2)
+    algo._update_explained_variance_warning_streak(0.25)
+    algo._update_explained_variance_warning_streak(0.3)
+
+    assert algo._explained_variance_warn_streak == 3
+    assert logger.records["warn/explained_variance_low"] == [0.3]
+
+    algo._update_explained_variance_warning_streak(0.6)
+    assert algo._explained_variance_warn_streak == 0
+    assert logger.records["warn/explained_variance_low"] == [0.3]
+
+
+def test_compute_entropy_boost_scales_with_bad_explained_variance() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._bad_explained_patience = 1
+    algo._entropy_boost_factor = 2.0
+    algo._entropy_boost_cap = 3.0
+
+    algo._bad_explained_counter = 1
+    assert algo._compute_entropy_boost(0.5) == pytest.approx(0.5)
+
+    algo._bad_explained_counter = 3
+    assert algo._compute_entropy_boost(0.5) == pytest.approx(2.0)
+
+    algo._entropy_boost_cap = 1.25
+    algo._bad_explained_counter = 5
+    assert algo._compute_entropy_boost(0.5) == pytest.approx(1.25)
+
+
+def test_compute_cvar_weight_respects_prerequisites_and_ramps() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._cvar_ramp_progress = 5
+    algo._last_explained_variance = None
+    algo._value_scale_update_count = 0
+    algo._value_scale_warmup_updates = 3
+    algo._value_scale_requires_stability = False
+    algo._value_scale_frame_stable = False
+    algo._value_scale_stable_counter = 0
+    algo._value_scale_stability_patience = 2
+    algo._cvar_activation_threshold = 0.4
+    algo._cvar_activation_hysteresis = 0.05
+    algo._cvar_ramp_updates = 3
+    algo._cvar_weight_target = 0.6
+
+    assert algo._compute_cvar_weight() == pytest.approx(0.0)
+    assert algo._cvar_ramp_progress == 0
+
+    algo._last_explained_variance = 0.5
+    algo._value_scale_update_count = 1
+    assert algo._compute_cvar_weight() == pytest.approx(0.0)
+    assert algo._cvar_ramp_progress == 0
+
+    algo._value_scale_update_count = 5
+    algo._value_scale_requires_stability = True
+    algo._value_scale_frame_stable = False
+    assert algo._compute_cvar_weight() == pytest.approx(0.0)
+    assert algo._cvar_ramp_progress == 0
+
+    algo._value_scale_frame_stable = True
+    algo._value_scale_stable_counter = 1
+    assert algo._compute_cvar_weight() == pytest.approx(0.0)
+    assert algo._cvar_ramp_progress == 0
+
+    algo._value_scale_stable_counter = 2
+    algo._last_explained_variance = 0.3
+    assert algo._compute_cvar_weight() == pytest.approx(0.0)
+    assert algo._cvar_ramp_progress == 0
+
+    algo._last_explained_variance = 0.5
+    weight_step_1 = algo._compute_cvar_weight()
+    assert weight_step_1 == pytest.approx(0.6 / 3)
+    assert algo._cvar_ramp_progress == 1
+
+    weight_step_2 = algo._compute_cvar_weight()
+    assert weight_step_2 == pytest.approx(0.6 * 2 / 3)
+    assert algo._cvar_ramp_progress == 2
+
+    weight_step_3 = algo._compute_cvar_weight()
+    assert weight_step_3 == pytest.approx(0.6)
+    assert algo._cvar_ramp_progress == 3
+
+    weight_step_4 = algo._compute_cvar_weight()
+    assert weight_step_4 == pytest.approx(0.6)
+    assert algo._cvar_ramp_progress == 3
+
+    algo._cvar_ramp_updates = 0
+    algo._cvar_weight_target = 2.0
+    final_weight = algo._compute_cvar_weight()
+    assert final_weight == pytest.approx(1.0)
+    assert algo._cvar_ramp_progress == 0
+
+
 def test_quantile_holdout_uses_mean_for_explained_variance() -> None:
     controller = PopArtController(enabled=True)
 
