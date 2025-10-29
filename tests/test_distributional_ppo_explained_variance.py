@@ -81,6 +81,7 @@ def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
 
 
 
+
 def test_explained_variance_reserve_path_applies_mask() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
@@ -186,6 +187,7 @@ def test_explained_variance_reserve_path_applies_mask() -> None:
     assert unmasked_ev == pytest.approx(expected_unmasked_ev)
     assert unmasked_metrics["n_samples"] == pytest.approx(float(base_true.numel()))
     assert masked_ev != pytest.approx(unmasked_ev)
+
 
 def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
