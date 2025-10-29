@@ -79,6 +79,116 @@ def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
     assert resolved_mask is None
 
 
+
+
+
+def test_explained_variance_reserve_path_applies_mask() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    base_true = torch.tensor([[0.0], [1.0], [3.0]], dtype=torch.float32)
+    base_pred = torch.tensor([[0.5], [0.75], [2.5]], dtype=torch.float32)
+    base_raw = base_true.clone()
+    valid_indices = torch.tensor([1, 2], dtype=torch.long)
+    mask_values = torch.tensor([0.25, 0.75], dtype=torch.float32)
+
+    algo._ev_reserve_apply_mask = True
+    masked_indices, masked_weights = algo._resolve_ev_reserve_mask(
+        valid_indices,
+        mask_values,
+    )
+    assert masked_indices is not None
+    assert masked_weights is not None
+
+    reserve_true_masked = [base_true[masked_indices]]
+    reserve_pred_masked = [base_pred[masked_indices]]
+    reserve_raw_masked = [base_raw[masked_indices]]
+    reserve_weight_masked = [masked_weights.reshape(-1, 1)]
+    reserve_group_keys_masked = [["idx=1", "idx=2"]]
+
+    (
+        y_true_masked,
+        y_pred_masked,
+        y_raw_masked,
+        weights_masked,
+        _,
+    ) = algo._build_explained_variance_tensors(
+        [],
+        [],
+        [],
+        [],
+        [],
+        reserve_true_masked,
+        reserve_pred_masked,
+        reserve_raw_masked,
+        reserve_weight_masked,
+        reserve_group_keys_masked,
+    )
+
+    masked_ev, _, _, masked_metrics = algo._compute_explained_variance_metric(
+        y_true_masked,
+        y_pred_masked,
+        mask_tensor=weights_masked,
+        y_true_tensor_raw=y_raw_masked,
+    )
+
+    expected_masked_ev = safe_explained_variance(
+        base_true[masked_indices].numpy().reshape(-1),
+        base_pred[masked_indices].numpy().reshape(-1),
+        mask_values.numpy(),
+    )
+    assert masked_ev == pytest.approx(expected_masked_ev)
+    assert masked_metrics["n_samples"] == pytest.approx(float(mask_values.numel()))
+
+    algo._ev_reserve_apply_mask = False
+    unmasked_indices, unmasked_weights = algo._resolve_ev_reserve_mask(
+        valid_indices,
+        mask_values,
+    )
+    assert unmasked_indices is None
+    assert unmasked_weights is None
+
+    reserve_true_unmasked = [base_true]
+    reserve_pred_unmasked = [base_pred]
+    reserve_raw_unmasked = [base_raw]
+    reserve_weight_unmasked: list[torch.Tensor] = []
+    reserve_group_keys_unmasked = [["idx=0", "idx=1", "idx=2"]]
+
+    (
+        y_true_unmasked,
+        y_pred_unmasked,
+        y_raw_unmasked,
+        weights_unmasked,
+        _,
+    ) = algo._build_explained_variance_tensors(
+        [],
+        [],
+        [],
+        [],
+        [],
+        reserve_true_unmasked,
+        reserve_pred_unmasked,
+        reserve_raw_unmasked,
+        reserve_weight_unmasked,
+        reserve_group_keys_unmasked,
+    )
+
+    unmasked_ev, _, _, unmasked_metrics = algo._compute_explained_variance_metric(
+        y_true_unmasked,
+        y_pred_unmasked,
+        mask_tensor=weights_unmasked,
+        y_true_tensor_raw=y_raw_unmasked,
+    )
+
+    expected_unmasked_ev = safe_explained_variance(
+        base_true.numpy().reshape(-1),
+        base_pred.numpy().reshape(-1),
+        None,
+    )
+    assert unmasked_ev == pytest.approx(expected_unmasked_ev)
+    assert unmasked_metrics["n_samples"] == pytest.approx(float(base_true.numel()))
+    assert masked_ev != pytest.approx(unmasked_ev)
+
+
 def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
