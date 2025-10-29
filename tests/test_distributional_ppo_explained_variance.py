@@ -38,6 +38,47 @@ def test_ev_builder_returns_none_when_no_batches() -> None:
     assert group_keys is None
 
 
+def test_resolve_ev_reserve_mask_respects_flag() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    valid_indices = torch.tensor([0, 2], dtype=torch.long)
+    mask_values = torch.tensor([0.5, 1.0], dtype=torch.float32)
+
+    algo._ev_reserve_apply_mask = True
+    resolved_indices, resolved_mask = algo._resolve_ev_reserve_mask(
+        valid_indices,
+        mask_values,
+    )
+
+    assert resolved_indices is valid_indices
+    assert resolved_mask is mask_values
+
+    algo._ev_reserve_apply_mask = False
+    resolved_indices, resolved_mask = algo._resolve_ev_reserve_mask(
+        valid_indices,
+        mask_values,
+    )
+
+    assert resolved_indices is None
+    assert resolved_mask is None
+
+
+def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo._ev_reserve_apply_mask = True
+
+    empty_indices = torch.zeros(0, dtype=torch.long)
+    empty_mask = torch.zeros(0, dtype=torch.float32)
+
+    resolved_indices, resolved_mask = algo._resolve_ev_reserve_mask(
+        empty_indices,
+        empty_mask,
+    )
+
+    assert resolved_indices is None
+    assert resolved_mask is None
+
+
 def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
