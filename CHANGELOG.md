@@ -32,3 +32,8 @@
   `LatencyImpl.load_latency_multipliers` have been replaced by
   `dump_multipliers` and `load_multipliers`. The old names continue to work but
   emit `DeprecationWarning`. See the migration guide for details.
+
+### Fixed
+- Ensured the explained-variance reserve path preserves training masks by
+  default so no-trade windows and other zero-weight samples no longer depress
+  EV metrics.

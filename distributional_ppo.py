@@ -2136,6 +2136,37 @@ class DistributionalPPO(RecurrentPPO):
             return override
         return primary
 
+    def _resolve_ev_reserve_mask(
+        self,
+        valid_indices: Optional[torch.Tensor],
+        mask_values: Optional[torch.Tensor],
+    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+        """Determine which EV reserve mask tensors should be forwarded.
+
+        The reserve/hold-out evaluation path replays samples captured during
+        training. When a training mask (for example, a no-trade window) filters
+        rows out of the loss we also want to keep those rows out of the EV
+        metric by default.  This helper centralises that policy so tests can
+        assert it and so older checkpoints that explicitly disable masking keep
+        the previous behaviour.
+        """
+
+        if not getattr(self, "_ev_reserve_apply_mask", True):
+            return None, None
+
+        resolved_indices = valid_indices
+        if resolved_indices is not None and resolved_indices.numel() == 0:
+            resolved_indices = None
+
+        resolved_mask = mask_values
+        if resolved_mask is not None and resolved_mask.numel() == 0:
+            resolved_mask = None
+
+        if resolved_indices is None and resolved_mask is None:
+            return None, None
+
+        return resolved_indices, resolved_mask
+
     def _policy_value_outputs(
         self,
         obs: torch.Tensor,
@@ -3905,7 +3936,7 @@ class DistributionalPPO(RecurrentPPO):
         optimizer_lr_min: Optional[float] = None,
         scheduler_min_lr: Optional[float] = None,
         optimizer_lr_max: Optional[float] = None,
-        ev_reserve_apply_mask: bool = False,
+        ev_reserve_apply_mask: bool = True,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]] = None
@@ -7162,9 +7193,13 @@ class DistributionalPPO(RecurrentPPO):
                         valid_indices = valid_indices_local.to(device=advantages.device)
                         sample_weight = float(mask_values_for_ev.sum().item())
 
-                        if self._ev_reserve_apply_mask:
-                            value_valid_indices = valid_indices
-                            value_mask_weights = mask_values_for_ev
+                        (
+                            value_valid_indices,
+                            value_mask_weights,
+                        ) = self._resolve_ev_reserve_mask(
+                            valid_indices,
+                            mask_values_for_ev,
+                        )
 
                     else:
                         if sample_count <= 0 or sample_weight <= 0.0:
