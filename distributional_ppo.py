@@ -3905,7 +3905,7 @@ class DistributionalPPO(RecurrentPPO):
         optimizer_lr_min: Optional[float] = None,
         scheduler_min_lr: Optional[float] = None,
         optimizer_lr_max: Optional[float] = None,
-        ev_reserve_apply_mask: bool = False,
+        ev_reserve_apply_mask: bool = True,
         **kwargs: Any,
     ) -> None:
         self._last_lstm_states: Optional[Union[RNNStates, Tuple[torch.Tensor, ...]]] = None
