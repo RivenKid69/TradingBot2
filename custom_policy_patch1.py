@@ -53,31 +53,33 @@ class QuantileValueHead(nn.Module):
 
 class CustomMlpExtractor(nn.Module):
     """
-    Простой MLP-экстрактор, который преобразует латенты RNN (GRU/LSTM)
-    в представление, удобное для акторной и критической голов.
-
-    В оригинальной архитектуре этот модуль пытался кодировать «сырые» признаки
-    одного временного шага. После перехода на рекуррентную память роль
-    агрегации последовательности выполняет `_process_sequence`, а сюда попадает
-    уже свернутое скрытое состояние фиксированной размерности.
+    Преобразует латенты RNN (GRU/LSTM) в общее представление для акторной и
+    критической голов. Добавленный остаточный линейный путь защищает от
+    «залипания» нелинейности (например, ReLU на отрицательных входах) и
+    гарантирует, что критик продолжит получать вариативный сигнал.
     """
+
     def __init__(self, rnn_latent_dim: int, hidden_dim: int, activation: Type[nn.Module]):
         super().__init__()
         # Определяем размерность для actor и critic
         self.latent_dim_pi = hidden_dim
         self.latent_dim_vf = hidden_dim
 
-        # Простая полносвязная сеть для проекции признаков.
-        # Ранее здесь стоял LayerNorm, однако при нормализованных входах
-        # он полностью гасил вариацию латентного представления критика.
-        # Оставляем только линейный слой с обучаемым сдвигом и нелинейность,
-        # чтобы даже при нулевых входах модель могла порождать ненулевые латенты.
+        # Основная нелинейная проекция латентов.
         self.input_linear = nn.Linear(rnn_latent_dim, hidden_dim)
+        self.hidden_linear = nn.Linear(hidden_dim, hidden_dim)
         self.input_activation = activation()
+        self.hidden_activation = activation()
+
+        # Остаточный линейный путь без bias, который обеспечивает передачу
+        # признаков даже когда нелинейность полностью «выключается».
+        self.skip_linear = nn.Linear(rnn_latent_dim, hidden_dim, bias=False)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
-        # Просто прогоняем признаки через MLP
-        return self.input_activation(self.input_linear(features))
+        projected = self.input_activation(self.input_linear(features))
+        projected = self.hidden_activation(self.hidden_linear(projected))
+        residual = self.skip_linear(features)
+        return projected + residual
 
     def forward_actor(self, features: torch.Tensor) -> torch.Tensor:
         # Актор использует общее латентное представление после проекции входа.
@@ -179,15 +181,26 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
         self._loss_head_weights_tensor: Optional[torch.Tensor] = None
         self._score_clip_eps: float = 5e-3  # используется только как fallback при logit() вне train-path
 
-        act_str = arch_params.get('activation', 'relu').lower()
-        if act_str == 'relu':
-            self.activation = nn.ReLU
-        elif act_str == 'tanh':
-            self.activation = nn.Tanh
-        elif act_str == 'leakyrelu':
-            self.activation = nn.LeakyReLU
-        else:
-            self.activation = nn.ReLU
+        act_str = arch_params.get('activation', 'silu').lower()
+        activation_map: Dict[str, Type[nn.Module]] = {
+            'relu': nn.ReLU,
+            'tanh': nn.Tanh,
+            'leakyrelu': nn.LeakyReLU,
+            'leaky_relu': nn.LeakyReLU,
+            'elu': nn.ELU,
+            'gelu': nn.GELU,
+            'silu': nn.SiLU,
+        }
+        try:
+            self.activation = activation_map[act_str]
+        except KeyError as err:
+            canonical_options = sorted({
+                'leakyrelu' if key.startswith('leaky') else key for key in activation_map
+            })
+            raise ValueError(
+                f"Unsupported activation '{act_str}' for CustomActorCriticPolicy."
+                f" Supported options: {canonical_options}"
+            ) from err
 
         # Параметры n_res_blocks, n_attn_blocks, attn_heads больше не нужны
         
