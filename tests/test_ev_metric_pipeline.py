@@ -253,6 +253,109 @@ def test_build_explained_variance_tensors_handles_all_empty_batches() -> None:
     assert result == (None, None, None, None, None)
 
 
+def test_prioritize_ev_batches_prefers_primary_when_available() -> None:
+    primary_targets = [torch.tensor([1.0])]
+    primary_preds = [torch.tensor([0.9])]
+    primary_raw = [torch.tensor([10.0])]
+    primary_weights = [torch.tensor([1.0])]
+    primary_group_keys = [["train"]]
+
+    reserve_targets = [torch.tensor([2.0])]
+    reserve_preds = [torch.tensor([1.8])]
+    reserve_raw = [torch.tensor([20.0])]
+    reserve_weights = [torch.tensor([0.5])]
+    reserve_group_keys = [["holdout"]]
+
+    result = MODULE.DistributionalPPO._prioritize_ev_batches(
+        primary_targets,
+        primary_preds,
+        primary_raw,
+        primary_weights,
+        primary_group_keys,
+        reserve_targets,
+        reserve_preds,
+        reserve_raw,
+        reserve_weights,
+        reserve_group_keys,
+    )
+
+    (
+        selected_primary_targets,
+        selected_primary_preds,
+        selected_primary_raw,
+        selected_primary_weights,
+        selected_primary_group_keys,
+        selected_reserve_targets,
+        selected_reserve_preds,
+        selected_reserve_raw,
+        selected_reserve_weights,
+        selected_reserve_group_keys,
+    ) = result
+
+    assert selected_primary_targets is primary_targets
+    assert selected_primary_preds is primary_preds
+    assert selected_primary_raw is primary_raw
+    assert selected_primary_weights is primary_weights
+    assert selected_primary_group_keys is primary_group_keys
+    assert selected_reserve_targets is reserve_targets
+    assert selected_reserve_preds is reserve_preds
+    assert selected_reserve_raw is reserve_raw
+    assert selected_reserve_weights is reserve_weights
+    assert selected_reserve_group_keys is reserve_group_keys
+
+
+def test_prioritize_ev_batches_falls_back_when_primary_empty() -> None:
+    empty_tensor = torch.tensor([])
+    primary_targets = [empty_tensor]
+    primary_preds = [empty_tensor]
+    primary_raw = [empty_tensor]
+    primary_weights = [empty_tensor]
+    primary_group_keys: list[list[str]] = [[]]
+
+    reserve_targets = [torch.tensor([3.0])]
+    reserve_preds = [torch.tensor([2.5])]
+    reserve_raw = [torch.tensor([30.0])]
+    reserve_weights = [torch.tensor([0.25])]
+    reserve_group_keys = [["reserve"]]
+
+    result = MODULE.DistributionalPPO._prioritize_ev_batches(
+        primary_targets,
+        primary_preds,
+        primary_raw,
+        primary_weights,
+        primary_group_keys,
+        reserve_targets,
+        reserve_preds,
+        reserve_raw,
+        reserve_weights,
+        reserve_group_keys,
+    )
+
+    (
+        selected_primary_targets,
+        selected_primary_preds,
+        selected_primary_raw,
+        selected_primary_weights,
+        selected_primary_group_keys,
+        selected_reserve_targets,
+        selected_reserve_preds,
+        selected_reserve_raw,
+        selected_reserve_weights,
+        selected_reserve_group_keys,
+    ) = result
+
+    assert selected_primary_targets is reserve_targets
+    assert selected_primary_preds is reserve_preds
+    assert selected_primary_raw is reserve_raw
+    assert selected_primary_weights is reserve_weights
+    assert selected_primary_group_keys is reserve_group_keys
+    assert selected_reserve_targets == []
+    assert selected_reserve_preds == []
+    assert selected_reserve_raw == []
+    assert selected_reserve_weights == []
+    assert selected_reserve_group_keys == []
+
+
 def test_compute_explained_variance_metric_basic_path() -> None:
     y_true = torch.tensor([1.0, 2.0, 3.0])
     y_pred = torch.tensor([0.9, 2.1, 2.7])
