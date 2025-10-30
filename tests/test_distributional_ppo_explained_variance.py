@@ -234,6 +234,36 @@ def test_extract_group_keys_for_indices_returns_empty_on_bad_indices() -> None:
     assert algo._extract_group_keys_for_indices(rollout_data, subset) == []
 
 
+def test_resolve_group_keys_for_training_batch_prefers_value_indices() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.rollout_buffer = SimpleNamespace(buffer_size=3, n_envs=1)
+    algo._last_rollout_ev_keys = np.array(["A", "B", "C"], dtype=object)
+
+    rollout_data = SimpleNamespace(
+        sample_indices=torch.tensor([0, 1, 2], dtype=torch.long)
+    )
+    policy_indices = torch.tensor([0, 2], dtype=torch.long)
+    value_indices = torch.tensor([1], dtype=torch.long)
+
+    group_keys, merged_indices = algo._resolve_group_keys_for_training_batch(
+        rollout_data,
+        policy_indices,
+        value_indices,
+    )
+
+    assert merged_indices is value_indices
+    assert group_keys == ["B"]
+
+    group_keys_policy, merged_policy_indices = algo._resolve_group_keys_for_training_batch(
+        rollout_data,
+        policy_indices,
+        None,
+    )
+
+    assert merged_policy_indices is policy_indices
+    assert group_keys_policy == ["A", "C"]
+
+
 class _CaptureLogger:
     def __init__(self) -> None:
         self.records: dict[str, list[float]] = {}
