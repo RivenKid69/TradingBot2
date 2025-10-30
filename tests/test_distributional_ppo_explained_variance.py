@@ -389,6 +389,63 @@ def test_ev_builder_uses_reserve_pairs_without_length_mismatch() -> None:
     assert math.isfinite(ev)
 
 
+def test_ev_builder_with_mixed_masks_falls_back_to_unweighted() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    primary_true_batches = [
+        torch.tensor([[0.0], [1.0]], dtype=torch.float32),
+        torch.tensor([[2.0]], dtype=torch.float32),
+    ]
+    primary_pred_batches = [
+        torch.tensor([[0.5], [0.75]], dtype=torch.float32),
+        torch.tensor([[1.5]], dtype=torch.float32),
+    ]
+    primary_raw_batches = [batch.clone() for batch in primary_true_batches]
+    primary_weight_batches = [
+        torch.tensor([[0.25], [0.75]], dtype=torch.float32),
+        torch.zeros((0, 1), dtype=torch.float32),
+    ]
+    primary_group_keys = [["g0", "g1"], ["g2"]]
+
+    (
+        y_true,
+        y_pred,
+        y_raw,
+        weights,
+        _,
+    ) = algo._build_explained_variance_tensors(
+        primary_true_batches,
+        primary_pred_batches,
+        primary_raw_batches,
+        primary_weight_batches,
+        primary_group_keys,
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
+
+    assert y_true is not None and y_pred is not None and y_raw is not None
+    assert weights is None
+
+    ev_value, _, _, metrics = algo._compute_explained_variance_metric(
+        y_true,
+        y_pred,
+        mask_tensor=weights,
+        y_true_tensor_raw=y_raw,
+    )
+
+    expected_ev = safe_explained_variance(
+        torch.cat(primary_true_batches).numpy().reshape(-1),
+        torch.cat(primary_pred_batches).numpy().reshape(-1),
+        None,
+    )
+
+    assert ev_value == pytest.approx(expected_ev)
+    assert metrics["n_samples"] == pytest.approx(float(sum(t.numel() for t in primary_true_batches)))
+
+
 def test_explained_variance_fallback_uses_raw_targets() -> None:
     class _DummyLogger:
         def __init__(self) -> None:
