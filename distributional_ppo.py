@@ -3331,6 +3331,74 @@ class DistributionalPPO(RecurrentPPO):
 
         return True
 
+    @staticmethod
+    def _has_nonempty_batches(batches: Sequence[torch.Tensor]) -> bool:
+        for tensor in batches:
+            if tensor is None:
+                continue
+            if tensor.numel() > 0:
+                return True
+        return False
+
+    @classmethod
+    def _prioritize_ev_batches(
+        cls,
+        primary_targets: Sequence[torch.Tensor],
+        primary_preds: Sequence[torch.Tensor],
+        primary_raw: Sequence[torch.Tensor],
+        primary_weights: Sequence[torch.Tensor],
+        primary_group_keys: Sequence[Sequence[str]],
+        reserve_targets: Sequence[torch.Tensor],
+        reserve_preds: Sequence[torch.Tensor],
+        reserve_raw: Sequence[torch.Tensor],
+        reserve_weights: Sequence[torch.Tensor],
+        reserve_group_keys: Sequence[Sequence[str]],
+    ) -> tuple[
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[Sequence[str]],
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[torch.Tensor],
+        Sequence[Sequence[str]],
+    ]:
+        primary_has_samples = cls._has_nonempty_batches(primary_targets) and cls._has_nonempty_batches(
+            primary_preds
+        )
+        reserve_has_samples = cls._has_nonempty_batches(reserve_targets) and cls._has_nonempty_batches(
+            reserve_preds
+        )
+
+        if reserve_has_samples and not primary_has_samples:
+            return (
+                reserve_targets,
+                reserve_preds,
+                reserve_raw,
+                reserve_weights,
+                reserve_group_keys,
+                [],
+                [],
+                [],
+                [],
+                [],
+            )
+
+        return (
+            primary_targets,
+            primary_preds,
+            primary_raw,
+            primary_weights,
+            primary_group_keys,
+            reserve_targets,
+            reserve_preds,
+            reserve_raw,
+            reserve_weights,
+            reserve_group_keys,
+        )
+
     def _build_explained_variance_tensors(
         self,
         target_batches_norm: Sequence[torch.Tensor],
@@ -8765,17 +8833,29 @@ class DistributionalPPO(RecurrentPPO):
         ev_reserve_weights = value_ev_reserve_weight
         ev_reserve_group_keys = value_ev_reserve_group_keys
 
-        if value_ev_reserve_pred_norm:
-            ev_primary_targets = value_ev_reserve_target_norm
-            ev_primary_preds = value_ev_reserve_pred_norm
-            ev_primary_raw = value_ev_reserve_target_raw
-            ev_primary_weights = value_ev_reserve_weight
-            ev_primary_group_keys = value_ev_reserve_group_keys
-            ev_reserve_targets = []
-            ev_reserve_preds = []
-            ev_reserve_raw = []
-            ev_reserve_weights = []
-            ev_reserve_group_keys = []
+        (
+            ev_primary_targets,
+            ev_primary_preds,
+            ev_primary_raw,
+            ev_primary_weights,
+            ev_primary_group_keys,
+            ev_reserve_targets,
+            ev_reserve_preds,
+            ev_reserve_raw,
+            ev_reserve_weights,
+            ev_reserve_group_keys,
+        ) = self._prioritize_ev_batches(
+            ev_primary_targets,
+            ev_primary_preds,
+            ev_primary_raw,
+            ev_primary_weights,
+            ev_primary_group_keys,
+            ev_reserve_targets,
+            ev_reserve_preds,
+            ev_reserve_raw,
+            ev_reserve_weights,
+            ev_reserve_group_keys,
+        )
 
         primary_true_tensor = _concat_batches(ev_primary_targets)
         primary_pred_tensor = _concat_batches(ev_primary_preds)
