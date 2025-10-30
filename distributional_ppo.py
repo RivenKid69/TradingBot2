@@ -3251,11 +3251,21 @@ class DistributionalPPO(RecurrentPPO):
                 combined.extend(str(item) for item in batch_keys)  # FIX
             return combined or None  # FIX
 
+        def _ensure_mask_alignment(
+            mask: Optional[torch.Tensor], target: Optional[torch.Tensor]
+        ) -> Optional[torch.Tensor]:
+            if mask is None or target is None:
+                return mask
+            if mask.shape[0] != target.shape[0]:
+                return None
+            return mask
+
         y_true_tensor = _concat(target_batches_norm)
         y_pred_tensor = _concat(pred_batches_norm)
         if y_true_tensor is not None and y_pred_tensor is not None:
             y_true_tensor_raw = _concat(target_batches_raw)
             mask_tensor = _concat(weight_batches)
+            mask_tensor = _ensure_mask_alignment(mask_tensor, y_true_tensor)
             group_keys = _concat_keys(target_group_keys)  # FIX
             return y_true_tensor, y_pred_tensor, y_true_tensor_raw, mask_tensor, group_keys
 
@@ -3264,6 +3274,7 @@ class DistributionalPPO(RecurrentPPO):
         if reserve_true_tensor is not None and reserve_pred_tensor is not None:
             reserve_true_raw = _concat(reserve_targets_raw)
             reserve_mask = _concat(reserve_weight_batches)
+            reserve_mask = _ensure_mask_alignment(reserve_mask, reserve_true_tensor)
             reserve_keys = _concat_keys(reserve_group_keys)  # FIX
             return reserve_true_tensor, reserve_pred_tensor, reserve_true_raw, reserve_mask, reserve_keys
 
@@ -7054,16 +7065,24 @@ class DistributionalPPO(RecurrentPPO):
                             ev_group_key_len_mismatch_logged = True  # FIX
                         reserve_group_keys = []  # FIX
                     value_ev_reserve_group_keys.append(reserve_group_keys)  # FIX
-                    if (
-                        weights_tensor is not None
-                        and weights_tensor.numel() > 0
-                        and weights_tensor.shape[0] == target_norm_col.shape[0]
-                    ):
-                        value_ev_reserve_weight.append(
-                            weights_tensor.detach()
-                            .reshape(-1, 1)
-                            .to(device="cpu", dtype=torch.float32)
-                        )
+                    reserve_weight: Optional[torch.Tensor] = None
+                    if weights_tensor is not None and weights_tensor.numel() > 0:
+                        if weights_tensor.shape[0] == target_norm_col.shape[0]:
+                            reserve_weight = (
+                                weights_tensor.detach()
+                                .reshape(-1, 1)
+                                .to(device="cpu", dtype=torch.float32)
+                            )
+                        else:
+                            reserve_weight = None
+                    if reserve_weight is None:
+                        reserve_weight = torch.ones(
+                            target_norm_col.shape[0],
+                            1,
+                            device=self.device,
+                            dtype=torch.float32,
+                        ).to(device="cpu", dtype=torch.float32)
+                    value_ev_reserve_weight.append(reserve_weight)
                     cache_entry = self._build_value_prediction_cache_entry(
                         rollout_data,
                         valid_indices=index_tensor,
