@@ -2168,6 +2168,49 @@ class DistributionalPPO(RecurrentPPO):
         return resolved_indices, resolved_mask
 
     @staticmethod
+    def _flatten_rollout_mask(mask_value: Any) -> Optional[torch.Tensor]:
+        if mask_value is None:
+            return None
+        if isinstance(mask_value, torch.Tensor):
+            return mask_value.reshape(-1)
+        try:
+            tensor_value = torch.as_tensor(mask_value)
+        except Exception:  # pragma: no cover - defensive fallback
+            return None
+        return tensor_value.reshape(-1)
+
+    def _should_skip_ev_reserve_batch(
+        self,
+        rollout_data: Any,
+        valid_indices: Optional[torch.Tensor],
+        mask_values: Optional[torch.Tensor],
+    ) -> bool:
+        """Return ``True`` when EV reserve capture should be skipped."""
+
+        if valid_indices is not None or mask_values is not None:
+            return False
+
+        mask_tensor = self._flatten_rollout_mask(getattr(rollout_data, "mask", None))
+        if mask_tensor is None:
+            return False
+
+        if mask_tensor.numel() == 0:
+            has_positive = False
+        elif mask_tensor.dtype == torch.bool:
+            has_positive = bool(mask_tensor.any().item())
+        else:
+            positive_mask = mask_tensor.to(dtype=torch.float32) > 0
+            has_positive = bool(positive_mask.any().item())
+
+        if has_positive:
+            return False
+
+        if self.logger is not None:
+            self.logger.record("warn/ev_reserve_all_masked", 1.0)
+
+        return True
+
+    @staticmethod
     def _filter_ev_reserve_rows(
         rollout_data: Any,
         target_norm_col: torch.Tensor,
@@ -6665,6 +6708,12 @@ class DistributionalPPO(RecurrentPPO):
             mask_values: Optional[torch.Tensor],
         ) -> bool:
             nonlocal ev_group_key_len_mismatch_logged  # FIX
+            if self._should_skip_ev_reserve_batch(
+                rollout_data,
+                valid_indices,
+                mask_values,
+            ):
+                return False
             was_training_inner = self.policy.training  # FIX
             self.policy.eval()  # FIX
             try:
@@ -7385,7 +7434,7 @@ class DistributionalPPO(RecurrentPPO):
                         mask_values_local = mask_float[valid_indices_local].to(dtype=torch.float32)
                         weight_sum_local = float(mask_values_local.sum().item())
                         if valid_indices_local.numel() == 0 or weight_sum_local <= 0.0:
-                            _reserve_ev_samples(rollout_data, None, None)
+                            self._should_skip_ev_reserve_batch(rollout_data, None, None)
                             continue
                         mask_values_for_ev = mask_values_local.to(device=self.device)
                         valid_indices = valid_indices_local.to(device=advantages.device)
@@ -7401,7 +7450,7 @@ class DistributionalPPO(RecurrentPPO):
 
                     else:
                         if sample_count <= 0 or sample_weight <= 0.0:
-                            _reserve_ev_samples(rollout_data, None, None)
+                            self._should_skip_ev_reserve_batch(rollout_data, None, None)
                             continue
                         valid_indices = None
                         mask_values_for_ev = torch.ones(
