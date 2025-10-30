@@ -2167,6 +2167,66 @@ class DistributionalPPO(RecurrentPPO):
 
         return resolved_indices, resolved_mask
 
+    @staticmethod
+    def _filter_ev_reserve_rows(
+        rollout_data: Any,
+        target_norm_col: torch.Tensor,
+        target_raw_col: torch.Tensor,
+        weights_tensor: Optional[torch.Tensor],
+        index_tensor: Optional[torch.Tensor],
+    ) -> Tuple[
+        torch.Tensor,
+        torch.Tensor,
+        Optional[torch.Tensor],
+        Optional[torch.Tensor],
+    ]:
+        """Remove padded rollout rows that slipped through mask resolution.
+
+        When the EV mask is disabled we still want to drop the sequencer's
+        padding rows to avoid introducing zero targets into the explained
+        variance calculation.  The rollout buffer exposes ``sample_indices``
+        with ``-1`` sentinels for padded elements; reuse that signal to trim
+        the tensors before they are appended to the reserve dataset.
+        """
+
+        if index_tensor is not None:
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        sample_indices_tensor = getattr(rollout_data, "sample_indices", None)
+        if not isinstance(sample_indices_tensor, torch.Tensor):
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        sample_indices_flat = sample_indices_tensor.reshape(-1)
+        if sample_indices_flat.numel() == 0:
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        if sample_indices_flat.shape[0] != target_norm_col.shape[0]:
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        valid_mask = sample_indices_flat >= 0
+        if bool(valid_mask.all()):
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        valid_rows = valid_mask.nonzero(as_tuple=False).squeeze(1)
+        if valid_rows.numel() == 0:
+            index_tensor = valid_rows.to(device=target_norm_col.device, dtype=torch.long)
+            empty_shape = (0, 1)
+            target_norm_col = target_norm_col.new_zeros(empty_shape)
+            target_raw_col = target_raw_col.new_zeros(empty_shape)
+            if weights_tensor is not None and weights_tensor.numel() > 0:
+                weights_tensor = weights_tensor.new_zeros(empty_shape)
+            else:
+                weights_tensor = None
+            return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
+        index_tensor = valid_rows.to(device=target_norm_col.device, dtype=torch.long)
+        target_norm_col = target_norm_col.index_select(0, index_tensor)
+        target_raw_col = target_raw_col.index_select(0, index_tensor)
+        if weights_tensor is not None and weights_tensor.numel() > 0:
+            weights_tensor = weights_tensor.index_select(0, index_tensor)
+
+        return target_norm_col, target_raw_col, weights_tensor, index_tensor
+
     def _policy_value_outputs(
         self,
         obs: torch.Tensor,
@@ -6800,6 +6860,19 @@ class DistributionalPPO(RecurrentPPO):
                             weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
                     elif mask_values is not None and mask_values.numel() > 0:
                         weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
+
+                    (
+                        target_norm_col,
+                        target_raw_col,
+                        weights_tensor,
+                        index_tensor,
+                    ) = self._filter_ev_reserve_rows(
+                        rollout_data,
+                        target_norm_col,
+                        target_raw_col,
+                        weights_tensor,
+                        index_tensor,
+                    )
 
                     if target_norm_col.numel() == 0 or target_raw_col.numel() == 0:
                         return False
