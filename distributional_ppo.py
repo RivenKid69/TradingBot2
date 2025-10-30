@@ -2151,9 +2151,6 @@ class DistributionalPPO(RecurrentPPO):
         the previous behaviour.
         """
 
-        if not getattr(self, "_ev_reserve_apply_mask", True):
-            return None, None
-
         resolved_indices = valid_indices
         if resolved_indices is not None and resolved_indices.numel() == 0:
             resolved_indices = None
@@ -2161,6 +2158,13 @@ class DistributionalPPO(RecurrentPPO):
         resolved_mask = mask_values
         if resolved_mask is not None and resolved_mask.numel() == 0:
             resolved_mask = None
+
+        if not getattr(self, "_ev_reserve_apply_mask", True):
+            # Legacy checkpoints disable the EV reserve mask so explained variance
+            # matches historical behaviour.  We still want to respect the valid
+            # row indices coming from the rollout buffer to avoid re-introducing
+            # padded rows, but the mask weights themselves should be ignored.
+            return resolved_indices, None
 
         if resolved_indices is None and resolved_mask is None:
             return None, None
