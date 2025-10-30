@@ -81,6 +81,41 @@ def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
     assert resolved_mask is None
 
 
+def test_should_skip_ev_reserve_batch_all_masked_logs_warning() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    class _Logger:
+        def __init__(self) -> None:
+            self.records: dict[str, list[float]] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records.setdefault(key, []).append(value)
+
+    algo.logger = _Logger()
+
+    rollout = SimpleNamespace(mask=torch.zeros((4, 2), dtype=torch.float32))
+
+    assert algo._should_skip_ev_reserve_batch(rollout, None, None) is True
+    assert algo.logger.records["warn/ev_reserve_all_masked"] == [1.0]
+
+
+def test_should_skip_ev_reserve_batch_allows_positive_mask() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+
+    class _Logger:
+        def __init__(self) -> None:
+            self.records: dict[str, list[float]] = {}
+
+        def record(self, key: str, value: float) -> None:
+            self.records.setdefault(key, []).append(value)
+
+    algo.logger = _Logger()
+    rollout = SimpleNamespace(mask=torch.tensor([[0.0], [1.0]], dtype=torch.float32))
+
+    assert algo._should_skip_ev_reserve_batch(rollout, None, None) is False
+    assert "warn/ev_reserve_all_masked" not in algo.logger.records
+
+
 def test_filter_ev_reserve_rows_uses_sample_indices_padding() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 1, -1, -1], dtype=torch.long))
