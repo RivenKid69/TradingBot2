@@ -2136,6 +2136,22 @@ class DistributionalPPO(RecurrentPPO):
             return override
         return primary
 
+    def _resolve_group_keys_for_training_batch(
+        self,
+        rollout_data: RawRecurrentRolloutBufferSamples,
+        policy_valid_indices: Optional[torch.Tensor],
+        value_valid_indices: Optional[torch.Tensor],
+    ) -> tuple[list[str], Optional[torch.Tensor]]:
+        """Select the effective mask for EV logging and extract group keys."""
+
+        effective_indices = self._merge_valid_indices(
+            policy_valid_indices, value_valid_indices
+        )
+        group_keys = self._extract_group_keys_for_indices(
+            rollout_data, effective_indices
+        )
+        return group_keys, effective_indices
+
     def _resolve_ev_reserve_mask(
         self,
         valid_indices: Optional[torch.Tensor],
@@ -7470,11 +7486,6 @@ class DistributionalPPO(RecurrentPPO):
                             self.logger.record("warn/ev_reserve_skip", 1.0)
                         continue
 
-                    group_keys_local = self._extract_group_keys_for_indices(  # FIX
-                        rollout_data,
-                        valid_indices,
-                    )
-
                     bucket_sample_count += sample_count
                     bucket_sample_weight += sample_weight
                     weight = (
@@ -7673,9 +7684,13 @@ class DistributionalPPO(RecurrentPPO):
                     policy_entropy_sum += float(entropy_detached.sum().cpu().item())
                     policy_entropy_count += int(entropy_detached.numel())
 
-                    group_keys_local = []
-                    valid_indices = self._merge_valid_indices(
-                        valid_indices, value_valid_indices
+                    (
+                        group_keys_local,
+                        valid_indices,
+                    ) = self._resolve_group_keys_for_training_batch(
+                        rollout_data,
+                        valid_indices,
+                        value_valid_indices,
                     )
 
                     if self._use_quantile_value:
