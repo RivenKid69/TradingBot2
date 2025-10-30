@@ -61,7 +61,7 @@ def test_resolve_ev_reserve_mask_respects_flag() -> None:
         mask_values,
     )
 
-    assert resolved_indices is None
+    assert resolved_indices is valid_indices
     assert resolved_mask is None
 
 
