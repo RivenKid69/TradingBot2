@@ -81,8 +81,46 @@ def test_resolve_ev_reserve_mask_drops_empty_tensors() -> None:
     assert resolved_mask is None
 
 
+def test_filter_ev_reserve_rows_uses_sample_indices_padding() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 1, -1, -1], dtype=torch.long))
+    target_norm = torch.tensor([[1.0], [2.0], [0.0], [0.0]], dtype=torch.float32)
+    target_raw = target_norm.clone()
+
+    filtered_norm, filtered_raw, filtered_weights, filtered_indices = algo._filter_ev_reserve_rows(
+        rollout_data,
+        target_norm,
+        target_raw,
+        None,
+        None,
+    )
+
+    assert filtered_norm.shape == (2, 1)
+    assert filtered_raw.shape == (2, 1)
+    assert filtered_weights is None
+    assert torch.equal(filtered_indices, torch.tensor([0, 1], dtype=torch.long))
+    assert torch.allclose(filtered_norm.squeeze(), torch.tensor([1.0, 2.0]))
 
 
+def test_filter_ev_reserve_rows_leaves_rows_when_indices_match() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    rollout_data = SimpleNamespace(sample_indices=torch.tensor([0, 1, 2], dtype=torch.long))
+    target_norm = torch.tensor([[0.3], [0.4], [0.5]], dtype=torch.float32)
+    target_raw = target_norm.clone()
+    weights = torch.ones(3, 1, dtype=torch.float32)
+
+    filtered_norm, filtered_raw, filtered_weights, filtered_indices = algo._filter_ev_reserve_rows(
+        rollout_data,
+        target_norm,
+        target_raw,
+        weights,
+        None,
+    )
+
+    assert filtered_indices is None
+    assert filtered_weights is weights
+    assert torch.allclose(filtered_norm, target_norm)
+    assert torch.allclose(filtered_raw, target_raw)
 
 
 def test_ev_group_key_from_info_prefers_symbol_and_env_mapping() -> None:
