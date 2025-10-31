@@ -158,6 +158,67 @@ def test_filter_ev_reserve_rows_leaves_rows_when_indices_match() -> None:
     assert torch.allclose(filtered_raw, target_raw)
 
 
+def test_reserve_batch_preserves_mask_weights_after_indexing() -> None:
+    algo = DistributionalPPO.__new__(DistributionalPPO)
+    algo.device = torch.device("cpu")
+
+    target_norm = torch.tensor([[1.0], [2.0], [3.0]], dtype=torch.float32)
+    target_raw = target_norm.clone()
+    valid_indices = torch.tensor([0, 2], dtype=torch.long)
+    mask_values = torch.tensor([0.25, 0.5, 0.75], dtype=torch.float32)
+
+    index_tensor = valid_indices.to(device=target_norm.device)
+    target_norm_selected = target_norm[index_tensor]
+    target_raw_selected = target_raw[index_tensor]
+
+    weights_tensor = algo._ev_reserve_mask_to_weights(mask_values, index_tensor)
+    assert weights_tensor is not None
+    assert torch.allclose(weights_tensor.reshape(-1), mask_values[valid_indices])
+
+    rollout_stub = SimpleNamespace(sample_indices=torch.tensor([0, 1, 2], dtype=torch.long))
+    (
+        filtered_norm,
+        filtered_raw,
+        filtered_weights,
+        filtered_indices,
+    ) = algo._filter_ev_reserve_rows(
+        rollout_stub,
+        target_norm_selected,
+        target_raw_selected,
+        weights_tensor,
+        index_tensor,
+    )
+
+    assert filtered_indices is index_tensor
+    assert filtered_weights is not None
+    assert torch.allclose(filtered_norm, target_norm_selected)
+    assert torch.allclose(filtered_raw, target_raw_selected)
+    assert torch.allclose(filtered_weights.reshape(-1), mask_values[valid_indices])
+
+    reserve_weight = (
+        filtered_weights.detach().reshape(-1, 1).to(device="cpu", dtype=torch.float32)
+    )
+    assert torch.allclose(reserve_weight.reshape(-1), mask_values[valid_indices])
+
+    cache_entry = algo._build_value_prediction_cache_entry(
+        SimpleNamespace(
+            observations=target_norm_selected,
+            lstm_states=None,
+            episode_starts=torch.zeros(target_norm_selected.shape[0], dtype=torch.bool),
+        ),
+        valid_indices=filtered_indices,
+        base_scale_safe=1.0,
+        old_values_raw_tensor=None,
+        mask_values=filtered_weights,
+    )
+
+    assert cache_entry.mask_values is not None
+    assert torch.allclose(
+        cache_entry.mask_values.reshape(-1),
+        mask_values[valid_indices],
+    )
+
+
 def test_ev_group_key_from_info_prefers_symbol_and_env_mapping() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
 
