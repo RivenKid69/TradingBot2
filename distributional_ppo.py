@@ -2286,6 +2286,24 @@ class DistributionalPPO(RecurrentPPO):
 
         return target_norm_col, target_raw_col, weights_tensor, index_tensor
 
+    def _ev_reserve_mask_to_weights(
+        self,
+        mask_values: Optional[torch.Tensor],
+        index_tensor: Optional[torch.Tensor],
+    ) -> Optional[torch.Tensor]:
+        """Convert EV reserve mask values to a column tensor aligned with indices."""
+
+        if mask_values is None or mask_values.numel() == 0:
+            return None
+
+        target_device = (
+            index_tensor.device if index_tensor is not None else torch.device(self.device)
+        )
+        mask_tensor = mask_values.to(device=target_device).reshape(-1, 1)
+        if index_tensor is not None:
+            mask_tensor = mask_tensor.index_select(0, index_tensor)
+        return mask_tensor
+
     def _policy_value_outputs(
         self,
         obs: torch.Tensor,
@@ -6981,7 +6999,6 @@ class DistributionalPPO(RecurrentPPO):
                     target_norm_col = target_returns_norm_clipped.reshape(-1, 1)
                     target_raw_col = target_returns_raw.reshape(-1, 1)
 
-                    weights_tensor: Optional[torch.Tensor] = None
                     index_tensor: Optional[torch.Tensor] = None
                     if valid_indices is not None:
                         if valid_indices.numel() == 0:
@@ -6989,10 +7006,10 @@ class DistributionalPPO(RecurrentPPO):
                         index_tensor = valid_indices.to(device=target_norm_col.device)
                         target_norm_col = target_norm_col[index_tensor]
                         target_raw_col = target_raw_col[index_tensor]
-                        if mask_values is not None and mask_values.numel() > 0:
-                            weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
-                    elif mask_values is not None and mask_values.numel() > 0:
-                        weights_tensor = mask_values.to(device=self.device).reshape(-1, 1)
+                    weights_tensor: Optional[torch.Tensor] = self._ev_reserve_mask_to_weights(
+                        mask_values,
+                        index_tensor,
+                    )
 
                     (
                         target_norm_col,
