@@ -2658,13 +2658,22 @@ class DistributionalPPO(RecurrentPPO):
         return rewards_winsor, cvar_empirical, reward_p50, reward_p95, returns_abs_p95
 
     def _compute_cvar_violation(self, cvar_empirical: float) -> float:
-        """Return positive CVaR violation in fraction-per-bar units."""
+        """Return CVaR constraint violation (positive when CVaR exceeds limit).
+
+        NOTE: Despite the function name, this actually returns the HEADROOM
+        (limit - empirical). This is INVERTED semantics. A positive value means
+        NO violation (CVaR is below limit). Returns 0 when CVaR exceeds limit.
+
+        TODO: Rename to _compute_cvar_headroom for clarity.
+        """
 
         limit = float(self._get_cvar_limit_raw())
-        violation = limit - float(cvar_empirical)
-        if not math.isfinite(violation) or violation <= 0.0:
+        # SEMANTIC WARNING: This calculates headroom, not violation
+        # headroom = limit - empirical (positive when CVaR is below limit = good)
+        headroom = limit - float(cvar_empirical)
+        if not math.isfinite(headroom) or headroom <= 0.0:
             return 0.0
-        return float(violation)
+        return float(headroom)
 
     def _record_quantile_summary(
         self,
@@ -3104,23 +3113,21 @@ class DistributionalPPO(RecurrentPPO):
     ) -> None:
         """Emit CVaR telemetry in both raw fraction and normalised units."""
 
+        # CVaR metrics in raw (fraction-per-bar) units
         self.logger.record("train/cvar_raw", float(cvar_raw_value))
-        self.logger.record("train/cvar_raw_in_fraction", float(cvar_raw_value))
         self.logger.record("train/cvar_unit", float(cvar_unit_value))
         self.logger.record("train/cvar_loss", float(cvar_loss_raw_value))
-        self.logger.record("train/cvar_loss_in_fraction", float(cvar_loss_raw_value))
         self.logger.record("train/cvar_loss_unit", float(cvar_loss_unit_value))
         self.logger.record("train/cvar_term", float(cvar_term_unit_value))
-        self.logger.record("train/cvar_term_in_fraction", float(cvar_term_raw_value))
+        self.logger.record("train/cvar_term_raw", float(cvar_term_raw_value))
         self.logger.record("train/cvar_empirical", float(cvar_empirical_value))
-        self.logger.record("train/cvar_empirical_in_fraction", float(cvar_empirical_value))
         self.logger.record("train/cvar_empirical_unit", float(cvar_empirical_unit_value))
         self.logger.record("train/cvar_empirical_ema", float(cvar_empirical_ema_value))
         self.logger.record("train/cvar_gap", float(cvar_gap_raw_value))
-        self.logger.record("train/cvar_gap_in_fraction", float(cvar_gap_raw_value))
         self.logger.record("train/cvar_gap_unit", float(cvar_gap_unit_value))
+        # NOTE: cvar_violation has INVERTED semantics (measures headroom, not violation)
+        # Positive values mean CVaR is BELOW limit (good). See lines 6545-6558 for details.
         self.logger.record("train/cvar_violation", float(cvar_violation_raw_value))
-        self.logger.record("train/cvar_violation_in_fraction", float(cvar_violation_raw_value))
         self.logger.record("train/cvar_violation_unit", float(cvar_violation_unit_value))
         self.logger.record("train/cvar_violation_ema", float(cvar_violation_ema_value))
         self.logger.record("train/cvar_gap_pos", float(cvar_violation_unit_value))
@@ -3603,6 +3610,10 @@ class DistributionalPPO(RecurrentPPO):
         explained_var: Optional[float] = None if need_fallback else primary_ev_value
         fallback_used = False
 
+        # DATA LEAKAGE WARNING: Fallback uses raw values which may include training data
+        # when this function is called for combined primary+reserve sets. This can
+        # produce optimistically biased EV estimates. Consider disabling fallback for
+        # reserve-only EV calculations to maintain strict train/test separation.
         if need_fallback and y_true_tensor_raw is not None:
             y_true_raw_flat = y_true_tensor_raw.flatten()
             y_pred_raw_flat = self._to_raw_returns(y_pred_tensor).flatten()
@@ -3645,6 +3656,8 @@ class DistributionalPPO(RecurrentPPO):
                         logger = getattr(self, "logger", None)
                         if logger is not None:
                             logger.record("train/value_explained_variance_fallback", 1.0)
+                            # Log warning about potential data leakage in fallback path
+                            logger.record("warn/ev_fallback_data_leakage_risk", 1.0)
 
         if explained_var is None:
             if need_fallback:
@@ -6532,11 +6545,21 @@ class DistributionalPPO(RecurrentPPO):
         current_cvar_weight_scaled = float(current_cvar_weight_raw)
         self._current_cvar_weight = float(current_cvar_weight_scaled)
         cvar_penalty_active_value = 1.0 if penalty_active else 0.0
-        cvar_violation_raw = float(cvar_gap_value)      # может быть < 0
-        cvar_violation = float(cvar_gap_pos_value_raw)  # всегда >= 0 (клиповано)
+
+        # SEMANTIC CORRECTION: cvar_gap > 0 means CVaR is BELOW limit (good, no violation)
+        # cvar_gap < 0 means CVaR is ABOVE limit (bad, actual violation)
+        # The legacy variable names "cvar_violation" are INVERTED - they measure headroom, not violations
+        cvar_headroom_raw = float(cvar_gap_value)      # can be < 0 (actual violation when negative)
+        cvar_headroom_clipped = float(cvar_gap_pos_value_raw)  # always >= 0 (clipped at 0)
+
+        # Legacy aliases for backward compatibility (semantically inverted!)
+        cvar_violation_raw = cvar_headroom_raw  # WARNING: Despite name, this is headroom not violation
+        cvar_violation = cvar_headroom_clipped  # WARNING: Despite name, this is headroom not violation
+
         self.cvar_lambda = float(self._cvar_lambda)
         # --- CVaR debug block: не дублируем train/*, оставляем debug/*
-        self.logger.record("debug/cvar_violation", float(cvar_violation))
+        self.logger.record("debug/cvar_headroom", float(cvar_headroom_clipped))  # Semantically correct name
+        self.logger.record("debug/cvar_violation", float(cvar_violation))  # Legacy (inverted semantics)
         beta = float(self.cvar_ema_beta)
         if self._cvar_empirical_ema is None:
             self._cvar_empirical_ema = float(cvar_empirical_value)
@@ -7695,12 +7718,25 @@ class DistributionalPPO(RecurrentPPO):
 
                     with torch.no_grad():
                         ratio_detached = ratio.detach()
-                        clip_mask = ratio_detached.sub(1.0).abs() > clip_range
-                        clipped = clip_mask.float().mean()
+                        # Ensure ratio is finite before computing clip fraction
+                        finite_mask = torch.isfinite(ratio_detached)
+                        if torch.any(finite_mask):
+                            ratio_finite = torch.where(finite_mask, ratio_detached, torch.ones_like(ratio_detached))
+                            clip_mask = ratio_finite.sub(1.0).abs() > clip_range
+                            clipped = clip_mask.float().mean()
+                        else:
+                            clipped = torch.zeros((), device=ratio_detached.device)
+                            clip_mask = torch.zeros_like(ratio_detached, dtype=torch.bool)
                         self.logger.record("train/clip_fraction_batch", float(clipped.item()))
-                        ratio_sum += float(ratio_detached.sum().item())
-                        ratio_sq_sum += float((ratio_detached.square()).sum().item())
-                        ratio_count += int(ratio_detached.numel())
+                        # Only accumulate finite ratio values for mean/variance calculation
+                        if torch.any(finite_mask):
+                            ratio_finite_vals = ratio_detached[finite_mask]
+                            ratio_sum += float(ratio_finite_vals.sum().item())
+                            ratio_sq_sum += float((ratio_finite_vals.square()).sum().item())
+                            ratio_count += int(ratio_finite_vals.numel())
+                        else:
+                            # If all values are non-finite, log warning
+                            self.logger.record("warn/ratio_all_nonfinite", 1.0)
                         clip_fraction_numer += float(clip_mask.sum().item())
                         clip_fraction_denom += int(clip_mask.numel())
 
@@ -7784,7 +7820,10 @@ class DistributionalPPO(RecurrentPPO):
                                 dist, raw_actions
                             ).reshape(-1)
                             old_log_prob_raw = rollout_data.old_log_prob_raw.reshape(-1)
-                            approx_kl_raw_tensor = old_log_prob_raw - log_prob_raw_new
+                            # FIX: Use correct KL divergence formula (was: old - new, which is just -log_ratio)
+                            # Correct formula: KL(old||new) ≈ (ratio - 1) - log(ratio) = (exp(log_ratio) - 1) - log_ratio
+                            log_ratio_raw = log_prob_raw_new - old_log_prob_raw
+                            approx_kl_raw_tensor = (torch.exp(log_ratio_raw) - 1.0) - log_ratio_raw
                             if torch.isfinite(approx_kl_raw_tensor).all() and approx_kl_raw_tensor.numel() > 0:
                                 kl_raw_sum += float(approx_kl_raw_tensor.sum().item())
                                 kl_raw_count += int(approx_kl_raw_tensor.numel())
@@ -9245,10 +9284,16 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/clip_range_schedule", clip_range_for_log)
         if ratio_count > 0:
             ratio_mean = ratio_sum / float(ratio_count)
-            ratio_var = max(ratio_sq_sum / float(ratio_count) - ratio_mean**2, 0.0)
-            ratio_std = math.sqrt(ratio_var)
+            # FIX: Use Bessel's correction (n-1) for unbiased sample variance estimate
+            if ratio_count > 1:
+                # Variance formula: E[X²] - E[X]² corrected for sample variance
+                ratio_var = max((ratio_sq_sum - ratio_count * ratio_mean**2) / (float(ratio_count) - 1.0), 0.0)
+            else:
+                ratio_var = 0.0
+            ratio_std = math.sqrt(ratio_var) if math.isfinite(ratio_var) else 0.0
             self.logger.record("train/ratio_mean", float(ratio_mean))
             self.logger.record("train/ratio_std", float(ratio_std))
+            self.logger.record("train/ratio_var", float(ratio_var))
         if log_prob_count > 0:
             self.logger.record("train/log_prob_mean", float(log_prob_sum / float(log_prob_count)))
         if adv_batch_count > 0:
