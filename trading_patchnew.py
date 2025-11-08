@@ -167,8 +167,13 @@ def _dynamic_spread_bps(vol_factor: float, liquidity: float, cfg: DynSpreadCfg) 
         Clamped spread in basis points.
     """
     ratio = 0.0
-    if getattr(cfg, "liq_ref", 0) > 0 and liquidity == liquidity:  # NaN check
-        ratio = max(0.0, (float(cfg.liq_ref) - float(liquidity)) / float(cfg.liq_ref))
+    # Use minimum threshold to prevent division by very small numbers
+    liq_ref = getattr(cfg, "liq_ref", 0)
+    if liq_ref > 1e-9 and math.isfinite(liquidity):  # NaN check and minimum threshold
+        if liquidity == liquidity:  # Additional NaN check
+            ratio_raw = (float(liq_ref) - float(liquidity)) / float(liq_ref)
+            # Clip to prevent extreme values
+            ratio = float(np.clip(ratio_raw, 0.0, 10.0))
     spread_bps = (
         float(cfg.base_bps)
         + float(cfg.alpha_vol) * float(vol_factor) * 10000.0
@@ -299,9 +304,14 @@ class TradingEnv(gym.Env):
             self.df = self._leak_guard.attach_decision_time(self.df, ts_col="ts_ms")
         if "close_orig" in self.df.columns:
             self._close_actual = self.df["close_orig"].copy()
-        elif "close" in self.df.columns:
+        elif "close" in self.df.columns and "_close_shifted" not in self.df.columns:
+            # Apply shift only once to prevent data leakage from double shifting
             self._close_actual = self.df["close"].copy()
             self.df["close"] = self.df["close"].shift(1)
+            self.df["_close_shifted"] = True  # Mark as shifted
+        elif "close" in self.df.columns:
+            # Already shifted, use as is
+            self._close_actual = self.df["close"].copy()
         else:
             self._close_actual = pd.Series(dtype="float64")
 
@@ -661,6 +671,7 @@ class TradingEnv(gym.Env):
     def _init_state(self) -> Tuple[np.ndarray, dict]:
         self.total_steps = 0
         self.no_trade_blocks = 0
+        self.no_trade_hits = 0  # Reset to prevent leakage between episodes
         self._episode_return = 0.0
         self._episode_length = 0
         self.state = _EnvState(
@@ -674,6 +685,18 @@ class TradingEnv(gym.Env):
             max_position_risk_on=1.0,
         )
         self._turnover_total = 0.0
+
+        # Clear diagnostic heaps to prevent state leakage between episodes
+        if hasattr(self, '_diag_metric_heaps'):
+            for heap in self._diag_metric_heaps.values():
+                heap.clear()
+
+        # Clear action queue to prevent state leakage
+        if hasattr(self, '_pending_action'):
+            self._pending_action = None
+        if hasattr(self, '_action_queue'):
+            self._action_queue.clear()
+
         self._signal_long_only = bool(getattr(self, "_signal_long_only_default", False))
         self._reward_signal_only = bool(getattr(self, "_reward_signal_only_default", True))
         self._apply_signal_only_overrides()
@@ -1589,8 +1612,10 @@ class TradingEnv(gym.Env):
             equity = max(prev_equity, self._equity_floor_norm)
 
         turnover_norm = 0.0
-        if prev_equity > 0.0 and not self._reward_signal_only:
-            turnover_norm = step_turnover_notional / prev_equity
+        # Use REAL equity without floor for correct turnover calculation
+        # But cap turnover_norm to avoid explosion when equity is very small
+        if prev_equity_safe > 0.0 and not self._reward_signal_only:
+            turnover_norm = step_turnover_notional / prev_equity_safe
         if not math.isfinite(turnover_norm) or turnover_norm < 0.0:
             turnover_norm = 0.0
         turnover_norm = float(np.clip(turnover_norm, 0.0, self.turnover_norm_cap))
@@ -1640,7 +1665,17 @@ class TradingEnv(gym.Env):
         ):
             reward_raw_fraction = 0.0
         else:
-            reward_raw_fraction = math.log(reward_price_curr / reward_price_prev) * prev_signal_pos
+            # Protect against overflow/underflow in log calculation
+            with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+                ratio = reward_price_curr / reward_price_prev
+
+            # Clip ratio BEFORE log to avoid extreme values
+            if not math.isfinite(ratio) or ratio <= 0.0:
+                reward_raw_fraction = 0.0
+            else:
+                # Limit ratio to prevent log explosion (e.g., ±10 std)
+                ratio_clipped = np.clip(ratio, 1e-10, 1e10)
+                reward_raw_fraction = math.log(ratio_clipped) * prev_signal_pos
 
         atr_fraction = self._safe_float(row.get("_reward_clip_atr_fraction", 0.0))
         if atr_fraction is None or not math.isfinite(atr_fraction) or atr_fraction < 0.0:
@@ -1668,12 +1703,8 @@ class TradingEnv(gym.Env):
                 else float(min(clip_for_clamp, robust_clip_fraction))
             )
 
-        if clip_for_clamp is None:
-            reward_used_fraction = float(reward_raw_fraction)
-        else:
-            reward_used_fraction = float(np.clip(reward_raw_fraction, -clip_for_clamp, clip_for_clamp))
-
-        reward_used_fraction_before_costs = float(reward_used_fraction)
+        # Don't clip yet - will clip AFTER subtracting costs
+        reward_used_fraction_before_costs = float(reward_raw_fraction)
 
         equity_floor_log = float(self._equity_floor_log)
 
@@ -1714,18 +1745,23 @@ class TradingEnv(gym.Env):
             if not math.isfinite(turnover_penalty_fraction_raw):
                 turnover_penalty_fraction_raw = 0.0
 
+            # Calculate costs
             reward_costs_fraction = float(
                 max(0.0, fees_fraction_raw + turnover_penalty_fraction_raw)
             )
-            reward_used_fraction = float(
-                reward_used_fraction_before_costs - reward_costs_fraction
-            )
 
-            reward_unclipped = float(reward_raw_fraction)
+            # Subtract costs BEFORE clipping (correct order)
+            reward_before_clip = float(reward_used_fraction_before_costs - reward_costs_fraction)
+
+            # Now apply clip ONCE, after costs
             if clip_for_clamp is None:
-                reward = float(reward_used_fraction)
+                reward = float(reward_before_clip)
             else:
-                reward = float(np.clip(reward_used_fraction, -clip_for_clamp, clip_for_clamp))
+                reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
+
+            # For logging
+            reward_used_fraction = reward
+            reward_unclipped = float(reward_raw_fraction - reward_costs_fraction)
             reward = self._assert_finite("reward", reward)
 
             ratio_price = reward_price_curr / reward_price_prev if reward_price_prev > 0.0 else 1.0
