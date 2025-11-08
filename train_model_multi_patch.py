@@ -4385,8 +4385,64 @@ def main():
 
     all_dfs_dict, all_obs_dict = load_all_data(all_feather_files, synthetic_fraction=0, seed=42)
 
+    # === АВТОМАТИЧЕСКОЕ ОПРЕДЕЛЕНИЕ ДИАПАЗОНА ДАННЫХ ===
+    print(f"\n{'='*80}")
+    print("АНАЛИЗ ЗАГРУЖЕННЫХ ДАННЫХ")
+    print(f"{'='*80}")
+
+    timestamp_column = getattr(cfg.data, "timestamp_column", "timestamp")
+
+    # Собираем статистику по каждому символу
+    data_stats = {}
+    global_min_ts = None
+    global_max_ts = None
+
+    for symbol, df in all_dfs_dict.items():
+        if timestamp_column not in df.columns:
+            raise KeyError(f"Символ {symbol}: отсутствует колонка '{timestamp_column}'")
+
+        ts = pd.to_numeric(df[timestamp_column], errors="coerce").dropna()
+        if ts.empty:
+            logger.warning(f"Символ {symbol}: нет валидных timestamp!")
+            continue
+
+        min_ts = int(ts.min())
+        max_ts = int(ts.max())
+
+        data_stats[symbol] = {
+            "rows": len(df),
+            "min_ts": min_ts,
+            "max_ts": max_ts,
+            "min_date": pd.to_datetime(min_ts, unit='s', utc=True).strftime("%Y-%m-%d %H:%M:%S"),
+            "max_date": pd.to_datetime(max_ts, unit='s', utc=True).strftime("%Y-%m-%d %H:%M:%S"),
+            "days": (max_ts - min_ts) / 86400
+        }
+
+        if global_min_ts is None or min_ts < global_min_ts:
+            global_min_ts = min_ts
+        if global_max_ts is None or max_ts > global_max_ts:
+            global_max_ts = max_ts
+
+    if not data_stats:
+        raise ValueError("Нет валидных данных для обучения!")
+
+    # Выводим статистику
+    total_rows = sum(s["rows"] for s in data_stats.values())
+    print(f"\nЗагружено символов: {len(data_stats)}")
+    print(f"Всего строк: {total_rows}")
+    print(f"\nДиапазон данных по символам:")
+    for symbol, stats in sorted(data_stats.items()):
+        print(f"  {symbol:12s}: {stats['rows']:6d} строк | "
+              f"{stats['min_date']} → {stats['max_date']} ({stats['days']:.1f} дней)")
+
+    print(f"\n{'─'*80}")
+    print(f"ОБЩИЙ ДИАПАЗОН ДАННЫХ:")
+    print(f"  От: {pd.to_datetime(global_min_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_min_ts})")
+    print(f"  До: {pd.to_datetime(global_max_ts, unit='s', utc=True).strftime('%Y-%m-%d %H:%M:%S')} (ts: {global_max_ts})")
+    print(f"  Период: {(global_max_ts - global_min_ts) / 86400:.1f} дней")
+    print(f"{'─'*80}\n")
+
     # Validate that we have sufficient training data
-    total_rows = sum(len(df) for df in all_dfs_dict.values())
     if total_rows < 100:
         logger.warning(
             f"\n{'='*80}\n"
@@ -4406,6 +4462,80 @@ def main():
             f"Dataset is small ({total_rows} rows total). "
             f"Consider using at least 1000+ rows per symbol for robust training."
         )
+
+    # === АВТОМАТИЧЕСКАЯ НАСТРОЙКА SPLIT ===
+    # Проверяем конфигурацию split
+    train_start_cfg = getattr(cfg.data, "train_start_ts", None) or getattr(cfg.data, "start_ts", None)
+    train_end_cfg = getattr(cfg.data, "train_end_ts", None) or getattr(cfg.data, "end_ts", None)
+    val_start_cfg = getattr(cfg.data, "val_start_ts", None)
+    val_end_cfg = getattr(cfg.data, "val_end_ts", None)
+    test_start_cfg = getattr(cfg.data, "test_start_ts", None)
+    test_end_cfg = getattr(cfg.data, "test_end_ts", None)
+
+    # Проверяем соответствие конфига реальным данным
+    config_valid = True
+    config_issues = []
+
+    if train_start_cfg and train_start_cfg < global_min_ts:
+        config_issues.append(f"train_start_ts ({train_start_cfg}) раньше доступных данных ({global_min_ts})")
+        config_valid = False
+    if train_end_cfg and train_end_cfg > global_max_ts:
+        config_issues.append(f"train_end_ts ({train_end_cfg}) позже доступных данных ({global_max_ts})")
+        config_valid = False
+    if val_start_cfg and val_start_cfg > global_max_ts:
+        config_issues.append(f"val_start_ts ({val_start_cfg}) позже доступных данных ({global_max_ts})")
+        config_valid = False
+    if val_end_cfg and val_end_cfg > global_max_ts:
+        config_issues.append(f"val_end_ts ({val_end_cfg}) позже доступных данных ({global_max_ts})")
+        config_valid = False
+
+    # Если конфигурация невалидна или не задана, создаем автоматический split
+    if not config_valid or not val_start_cfg:
+        print(f"{'='*80}")
+        print("АВТОМАТИЧЕСКАЯ НАСТРОЙКА TRAIN/VAL/TEST SPLIT")
+        print(f"{'='*80}")
+
+        if config_issues:
+            print("\n⚠️  Обнаружены проблемы с конфигурацией:")
+            for issue in config_issues:
+                print(f"   • {issue}")
+        elif not val_start_cfg:
+            print("\n💡 Валидационный split не задан в конфиге")
+
+        print("\nИспользую автоматический split: 70% train / 15% val / 15% test\n")
+
+        # Вычисляем границы
+        total_duration = global_max_ts - global_min_ts
+        train_duration = int(total_duration * 0.70)
+        val_duration = int(total_duration * 0.15)
+
+        auto_train_start = global_min_ts
+        auto_train_end = global_min_ts + train_duration
+        auto_val_start = auto_train_end + 1
+        auto_val_end = auto_val_start + val_duration
+        auto_test_start = auto_val_end + 1
+        auto_test_end = global_max_ts
+
+        # Переопределяем конфиг
+        cfg.data.train_start_ts = auto_train_start
+        cfg.data.train_end_ts = auto_train_end
+        cfg.data.val_start_ts = auto_val_start
+        cfg.data.val_end_ts = auto_val_end
+        cfg.data.test_start_ts = auto_test_start
+        cfg.data.test_end_ts = auto_test_end
+
+        print(f"TRAIN: {pd.to_datetime(auto_train_start, unit='s', utc=True).strftime('%Y-%m-%d')} → "
+              f"{pd.to_datetime(auto_train_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+              f"({(auto_train_end - auto_train_start) / 86400:.1f} дней, 70%)")
+        print(f"VAL:   {pd.to_datetime(auto_val_start, unit='s', utc=True).strftime('%Y-%m-%d')} → "
+              f"{pd.to_datetime(auto_val_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+              f"({(auto_val_end - auto_val_start) / 86400:.1f} дней, 15%)")
+        print(f"TEST:  {pd.to_datetime(auto_test_start, unit='s', utc=True).strftime('%Y-%m-%d')} → "
+              f"{pd.to_datetime(auto_test_end, unit='s', utc=True).strftime('%Y-%m-%d')} "
+              f"({(auto_test_end - auto_test_start) / 86400:.1f} дней, 15%)")
+        print(f"{'='*80}\n")
+    else:
+        print(f"✅ Используется конфигурация split из config файла\n")
 
     split_version, time_splits = _load_time_splits(cfg.data)
     if split_version:
@@ -4551,22 +4681,80 @@ def main():
             f"Warning: {total_unused} rows across {len(unused_rows)} symbols were not assigned to train/val/test and will be ignored."
         )
 
-    print("Time-based split summary:")
+    # === ДЕТАЛЬНОЕ ЛОГИРОВАНИЕ SPLIT ===
+    print(f"\n{'='*80}")
+    print("РЕЗУЛЬТАТЫ РАЗДЕЛЕНИЯ ДАННЫХ (TRAIN/VAL/TEST SPLIT)")
+    print(f"{'='*80}\n")
+
+    # Собираем статистику
+    split_stats = {}
     for phase, mapping in (
         ("train", train_data_by_token),
         ("val", val_data_by_token),
         ("test", test_data_by_token),
     ):
         intervals = time_splits.get(phase, [])
-        interval_desc = ", ".join(_format_interval(it) for it in intervals) if intervals else "(inferred remainder)"
         total_rows = sum(len(df) for df in mapping.values())
         observed_start, observed_end = _phase_bounds(mapping, timestamp_column)
-        print(
-            f"  {phase}: {len(mapping)} symbols, {total_rows} rows, intervals={interval_desc}, "
-            f"observed=[{_fmt_ts(observed_start)} .. {_fmt_ts(observed_end)}]"
-        )
+        split_stats[phase] = {
+            "symbols": len(mapping),
+            "rows": total_rows,
+            "intervals": intervals,
+            "start": observed_start,
+            "end": observed_end,
+            "mapping": mapping
+        }
+
+    # Вычисляем общее количество для процентов
+    total_assigned_rows = sum(s["rows"] for s in split_stats.values())
+
+    # Выводим наглядную таблицу
+    print("РАСПРЕДЕЛЕНИЕ ПО ФАЗАМ:")
+    print(f"{'─'*80}")
+    for phase in ["train", "val", "test"]:
+        stats = split_stats[phase]
+        rows = stats["rows"]
+        pct = (rows / total_assigned_rows * 100) if total_assigned_rows > 0 else 0
+
+        phase_label = {
+            "train": "TRAIN  ",
+            "val": "VAL    ",
+            "test": "TEST   "
+        }[phase]
+
+        interval_desc = ", ".join(_format_interval(it) for it in stats["intervals"]) if stats["intervals"] else "(inferred)"
+
+        print(f"{phase_label}: {rows:6d} строк ({pct:5.1f}%) | {stats['symbols']} символов")
+        if stats["start"] and stats["end"]:
+            print(f"         {_fmt_ts(stats['start'])} → {_fmt_ts(stats['end'])}")
+        print()
+
+    print(f"{'─'*80}")
+    print(f"ИТОГО:   {total_assigned_rows:6d} строк (100.0%)")
+    print(f"{'='*80}\n")
+
+    # Детальная статистика по каждому символу
+    print("РАСПРЕДЕЛЕНИЕ ПО СИМВОЛАМ:")
+    print(f"{'─'*80}")
+    print(f"{'Символ':12s} | {'Train':>8s} | {'Val':>8s} | {'Test':>8s} | {'Всего':>8s}")
+    print(f"{'─'*80}")
+
+    all_symbols = set()
+    for stats in split_stats.values():
+        all_symbols.update(stats["mapping"].keys())
+
+    for symbol in sorted(all_symbols):
+        train_rows = len(split_stats["train"]["mapping"].get(symbol, []))
+        val_rows = len(split_stats["val"]["mapping"].get(symbol, []))
+        test_rows = len(split_stats["test"]["mapping"].get(symbol, []))
+        total = train_rows + val_rows + test_rows
+
+        print(f"{symbol:12s} | {train_rows:8d} | {val_rows:8d} | {test_rows:8d} | {total:8d}")
+
+    print(f"{'─'*80}\n")
+
     if inferred_test_any and not time_splits.get("test"):
-        print("  Note: test split inferred from remaining rows (no explicit interval provided).")
+        print("💡 Test split был автоматически создан из оставшихся строк\n")
 
     print("Calculating per-asset normalization stats from the training set...")
     norm_stats = {}
