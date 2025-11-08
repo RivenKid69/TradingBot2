@@ -143,7 +143,7 @@ def _fetch_calendar(inv, d_from: date, d_to: date, countries: List[str], importa
                 _log(f"! investpy.economic_calendar: попытки исчерпаны: {e!r}")
                 return None
             sleep_s = backoff * attempt
-            _log(f"~ retry {attempt}/{retries-1} after error: {e!r}; sleeping {sleep_s:.1f}s")
+            _log(f"~ retry {attempt}/{retries} after error: {e!r}; sleeping {sleep_s:.1f}s")
             time.sleep(sleep_s)
     return None
 

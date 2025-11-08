@@ -457,7 +457,9 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     device = probs.device
     dtype = torch.float32
 
-    sorted_atoms, sort_indices = torch.sort(atoms.to(dtype=dtype, device=device))
+    # Ensure atoms is 1D to prevent indexing errors
+    atoms_flat = atoms.flatten().to(dtype=dtype, device=device)
+    sorted_atoms, sort_indices = torch.sort(atoms_flat)
     expanded_indices = sort_indices.view(1, -1).expand(batch_size, -1)
     sorted_probs = torch.gather(probs.to(dtype=dtype), 1, expanded_indices)
     cumulative_probs = torch.cumsum(sorted_probs, dim=1)
