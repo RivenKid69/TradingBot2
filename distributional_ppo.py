@@ -329,7 +329,7 @@ def compute_grouped_explained_variance(
     group_keys: Sequence[str],
     *,
     weights: Optional[Sequence[float]] = None,
-    variance_floor: float = 1e-8,
+    variance_floor: float = 1e-6,
 ) -> tuple[dict[str, float], dict[str, Optional[float]]]:
     """Compute explained variance per group with aggregated summaries."""  # FIX
 
@@ -1939,7 +1939,8 @@ class DistributionalPPO(RecurrentPPO):
                     if self.normalize_returns:
                         ret_mu = ret_mu_tensor.to(device=quantiles_raw.device)
                         ret_std = ret_std_tensor.to(device=quantiles_raw.device)
-                        quantiles_fp32 = ((quantiles_raw - ret_mu) / ret_std).clamp(
+                        ret_std_safe = torch.clamp(ret_std, min=1e-6)
+                        quantiles_fp32 = ((quantiles_raw - ret_mu) / ret_std_safe).clamp(
                             self._value_norm_clip_min, self._value_norm_clip_max
                         )
                     else:
@@ -1976,7 +1977,8 @@ class DistributionalPPO(RecurrentPPO):
                     if self.normalize_returns:
                         ret_mu = ret_mu_tensor.to(device=value_raw.device)
                         ret_std = ret_std_tensor.to(device=value_raw.device)
-                        value_tensor = ((value_raw - ret_mu) / ret_std).clamp(
+                        ret_std_safe = torch.clamp(ret_std, min=1e-6)
+                        value_tensor = ((value_raw - ret_mu) / ret_std_safe).clamp(
                             self._value_norm_clip_min, self._value_norm_clip_max
                         )
                     else:
@@ -2873,13 +2875,15 @@ class DistributionalPPO(RecurrentPPO):
 
         eff = float(getattr(self, "_value_target_scale_effective", self.value_target_scale))
         base = float(self.value_target_scale)
-        eff = eff if abs(eff) > 1e-8 else 1.0
-        base = base if abs(base) > 1e-8 else 1.0
+        # Use higher minimum to prevent excessive scaling
+        eff = eff if abs(eff) > 1e-6 else 1.0
+        base = base if abs(base) > 1e-6 else 1.0
         return (x / eff) * base
 
     def _resolve_value_scale_safe(self) -> float:
         base_scale = float(self.value_target_scale)
-        return base_scale if abs(base_scale) > 1e-8 else 1.0
+        # Use higher minimum to prevent excessive scaling
+        return base_scale if abs(base_scale) > 1e-6 else 1.0
 
     def _decode_returns_scale_only(
         self, returns_tensor: torch.Tensor
@@ -3599,20 +3603,36 @@ class DistributionalPPO(RecurrentPPO):
 
         if need_fallback and y_true_tensor_raw is not None:
             y_true_raw_flat = y_true_tensor_raw.flatten()
-            y_true_raw_flat = y_true_raw_flat[:min_elems]
+            y_pred_raw_flat = self._to_raw_returns(y_pred_tensor).flatten()
+
+            # Apply the same trimming that was applied to y_true_flat and y_pred_flat
+            raw_min_elems = min(y_true_raw_flat.shape[0], y_pred_raw_flat.shape[0], min_elems)
+            y_true_raw_flat = y_true_raw_flat[:raw_min_elems]
+            y_pred_raw_flat = y_pred_raw_flat[:raw_min_elems]
+
+            # Now apply selected_indices (which were computed from the trimmed tensors)
             if selected_indices is not None:
-                y_true_raw_flat = y_true_raw_flat[selected_indices]
+                indices_safe = selected_indices[selected_indices < raw_min_elems]
+                if indices_safe.numel() > 0:
+                    y_true_raw_flat = y_true_raw_flat[indices_safe]
+                    y_pred_raw_flat = y_pred_raw_flat[indices_safe]
+                else:
+                    y_true_raw_flat = y_true_raw_flat.new_zeros(0)
+                    y_pred_raw_flat = y_pred_raw_flat.new_zeros(0)
 
             if y_true_raw_flat.numel() > 0:
-                y_pred_raw_flat = self._to_raw_returns(y_pred_tensor).flatten()
-                y_pred_raw_flat = y_pred_raw_flat[:min_elems]
-                if selected_indices is not None:
-                    y_pred_raw_flat = y_pred_raw_flat[selected_indices]
+
+                # Update weights_np to match the potentially filtered indices
+                fallback_weights_np = weights_np
+                if selected_indices is not None and weights_np is not None:
+                    indices_safe = selected_indices[selected_indices < raw_min_elems]
+                    if indices_safe.numel() > 0 and weights_np.size > 0:
+                        fallback_weights_np = weights_np[:min(weights_np.size, indices_safe.numel())]
 
                 y_true_raw_np = y_true_raw_flat.detach().cpu().numpy()
                 y_pred_raw_np = y_pred_raw_flat.detach().cpu().numpy()
                 fallback_ev = safe_explained_variance(
-                    y_true_raw_np, y_pred_raw_np, weights_np
+                    y_true_raw_np, y_pred_raw_np, fallback_weights_np
                 )
                 if math.isfinite(fallback_ev):
                     explained_var = float(fallback_ev)
@@ -3826,7 +3846,10 @@ class DistributionalPPO(RecurrentPPO):
             sum((entry[1] + entry[0] * entry[0]) * entry[2] for entry in target_buffer)
             / total_weight
         )
-        var_weighted = max(second_weighted - mean_weighted * mean_weighted, 0.0)
+        # Use numerically stable variance computation with protection against catastrophic cancellation
+        var_from_second = second_weighted - mean_weighted * mean_weighted
+        # Add small epsilon to prevent issues when values are very close
+        var_weighted = max(var_from_second, 1e-10)
         return mean_weighted, var_weighted, total_weight, target_buffer
 
     def _apply_return_stats_ema(
@@ -3850,7 +3873,9 @@ class DistributionalPPO(RecurrentPPO):
             base_initialized = bool(self._value_scale_stats_initialized)
 
         if sample_weight <= 0.0:
-            var_existing = max(base_second - base_mean * base_mean, 0.0)
+            # Use numerically stable variance computation with protection
+            var_from_second = base_second - base_mean * base_mean
+            var_existing = max(var_from_second, 1e-10)
             return base_mean, var_existing, base_second, base_initialized
 
         if not base_initialized:
@@ -4038,6 +4063,8 @@ class DistributionalPPO(RecurrentPPO):
                         self.ret_clip * self._value_scale_std_floor,
                     )
                     target_scale = float(1.0 / denom)
+                    # Prevent excessive scaling that can destabilize training
+                    target_scale = min(target_scale, 1000.0)
                     prev_scale = float(self._value_target_scale_effective)
                     self._value_target_scale_effective = self._smooth_value_target_scale(
                         prev_scale, target_scale
@@ -6604,6 +6631,8 @@ class DistributionalPPO(RecurrentPPO):
                 self.ret_clip * self._value_scale_std_floor,
             )
             target_scale = float(1.0 / denom)
+            # Prevent excessive scaling that can destabilize training
+            target_scale = min(target_scale, 1000.0)
             if self._value_scale_updates_enabled:
                 self._value_target_scale_effective = target_scale
             if self._value_clip_limit_unscaled is not None:
@@ -6962,9 +6991,10 @@ class DistributionalPPO(RecurrentPPO):
                             max=old_values_aligned + clip_delta,
                         )
                         if self.normalize_returns:
+                            ret_std_safe = torch.clamp(ret_std_tensor, min=1e-6)
                             target_returns_norm_clipped = (
                                 (target_returns_raw_clipped - ret_mu_tensor)
-                                / ret_std_tensor
+                                / ret_std_safe
                             ).clamp(
                                 self._value_norm_clip_min, self._value_norm_clip_max
                             )
@@ -7078,9 +7108,10 @@ class DistributionalPPO(RecurrentPPO):
                                 value_pred_raw_clipped,
                             )
                             if self.normalize_returns:
+                                ret_std_safe = torch.clamp(ret_std_tensor, min=1e-6)
                                 value_pred = (
                                     (value_pred_raw_clipped - ret_mu_tensor)
-                                    / ret_std_tensor
+                                    / ret_std_safe
                                 ).clamp(
                                     self._value_norm_clip_min, self._value_norm_clip_max
                                 )
