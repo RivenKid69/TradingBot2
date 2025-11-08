@@ -3616,7 +3616,9 @@ class DistributionalPPO(RecurrentPPO):
         # reserve-only EV calculations to maintain strict train/test separation.
         if need_fallback and y_true_tensor_raw is not None:
             y_true_raw_flat = y_true_tensor_raw.flatten()
-            y_pred_raw_flat = self._to_raw_returns(y_pred_tensor).flatten()
+            # Use already processed predictions for consistency and efficiency
+            y_pred_flat_full = y_pred_tensor.flatten()
+            y_pred_raw_flat = self._to_raw_returns(y_pred_flat_full)
 
             # Apply the same trimming that was applied to y_true_flat and y_pred_flat
             raw_min_elems = min(y_true_raw_flat.shape[0], y_pred_raw_flat.shape[0], min_elems)
@@ -3624,24 +3626,38 @@ class DistributionalPPO(RecurrentPPO):
             y_pred_raw_flat = y_pred_raw_flat[:raw_min_elems]
 
             # Now apply selected_indices (which were computed from the trimmed tensors)
+            # and correctly filter weights to match
+            fallback_weights_np = weights_np
             if selected_indices is not None:
                 indices_safe = selected_indices[selected_indices < raw_min_elems]
                 if indices_safe.numel() > 0:
                     y_true_raw_flat = y_true_raw_flat[indices_safe]
                     y_pred_raw_flat = y_pred_raw_flat[indices_safe]
+                    # CRITICAL FIX: Properly filter weights to match the filtered data
+                    # weights_np already corresponds to selected_indices from the main path
+                    # We need to filter it to match indices_safe subset
+                    if weights_np is not None and weights_np.size > 0:
+                        # Find which positions in selected_indices are kept in indices_safe
+                        # Since indices_safe = selected_indices[selected_indices < raw_min_elems],
+                        # we need the first len(indices_safe) weights IF all kept indices are sequential
+                        # Otherwise we need proper masking
+                        num_kept = indices_safe.numel()
+                        num_total = selected_indices.numel()
+                        if num_kept == num_total:
+                            # All indices kept, use all weights
+                            fallback_weights_np = weights_np
+                        elif num_kept < num_total:
+                            # Some indices were filtered out
+                            # The correct approach: weights_np[i] corresponds to selected_indices[i]
+                            # We need weights for indices where selected_indices[i] < raw_min_elems
+                            keep_mask_np = (selected_indices < raw_min_elems).cpu().numpy()
+                            fallback_weights_np = weights_np[keep_mask_np]
                 else:
                     y_true_raw_flat = y_true_raw_flat.new_zeros(0)
                     y_pred_raw_flat = y_pred_raw_flat.new_zeros(0)
+                    fallback_weights_np = None
 
             if y_true_raw_flat.numel() > 0:
-
-                # Update weights_np to match the potentially filtered indices
-                fallback_weights_np = weights_np
-                if selected_indices is not None and weights_np is not None:
-                    indices_safe = selected_indices[selected_indices < raw_min_elems]
-                    if indices_safe.numel() > 0 and weights_np.size > 0:
-                        fallback_weights_np = weights_np[:min(weights_np.size, indices_safe.numel())]
-
                 y_true_raw_np = y_true_raw_flat.detach().cpu().numpy()
                 y_pred_raw_np = y_pred_raw_flat.detach().cpu().numpy()
                 fallback_ev = safe_explained_variance(
@@ -3660,17 +3676,12 @@ class DistributionalPPO(RecurrentPPO):
                             logger.record("warn/ev_fallback_data_leakage_risk", 1.0)
 
         if explained_var is None:
-            if need_fallback:
-                if record_fallback:
-                    logger = getattr(self, "logger", None)
-                    if logger is not None and fallback_used is False:
-                        logger.record("train/value_explained_variance_fallback", 0.0)
-                return None, y_true_eval, y_pred_eval, metrics
-
-            if primary_ev_value is not None:  # FIX
-                explained_var = primary_ev_value  # FIX
-            else:  # FIX
-                return None, y_true_eval, y_pred_eval, metrics  # FIX
+            # This can only happen if need_fallback=True and fallback failed
+            if record_fallback:
+                logger = getattr(self, "logger", None)
+                if logger is not None and fallback_used is False:
+                    logger.record("train/value_explained_variance_fallback", 0.0)
+            return None, y_true_eval, y_pred_eval, metrics
 
         eval_true64 = np.asarray(eval_y_np, dtype=np.float64).reshape(-1)
         eval_pred64 = np.asarray(eval_pred_np, dtype=np.float64).reshape(-1)
