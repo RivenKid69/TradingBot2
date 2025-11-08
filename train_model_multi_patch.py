@@ -4413,6 +4413,90 @@ def main():
     timestamp_column = getattr(cfg.data, "timestamp_column", "timestamp")
     role_column = getattr(cfg.data, "role_column", "wf_role")
 
+    # Analyze actual data coverage BEFORE applying splits
+    print("\n" + "="*80)
+    print("DATA COVERAGE ANALYSIS")
+    print("="*80)
+
+    all_timestamps = []
+    for symbol, df in all_dfs_dict.items():
+        if timestamp_column not in df.columns:
+            logger.warning(f"Symbol {symbol} missing timestamp column, skipping")
+            continue
+        ts = pd.to_numeric(df[timestamp_column], errors="coerce").dropna()
+        if len(ts) > 0:
+            all_timestamps.extend(ts.values)
+            min_ts, max_ts = int(ts.min()), int(ts.max())
+            print(f"  {symbol:12s}: {len(df):6d} rows | "
+                  f"{_fmt_ts(min_ts)} → {_fmt_ts(max_ts)}")
+
+    if not all_timestamps:
+        raise ValueError("No valid timestamps found in any loaded data")
+
+    data_min_ts = int(min(all_timestamps))
+    data_max_ts = int(max(all_timestamps))
+    total_data_rows = sum(len(df) for df in all_dfs_dict.values())
+
+    print(f"\n  Overall data range:")
+    print(f"    Start: {_fmt_ts(data_min_ts)}")
+    print(f"    End:   {_fmt_ts(data_max_ts)}")
+    print(f"    Duration: {(data_max_ts - data_min_ts) / 86400:.1f} days")
+    print(f"    Total rows: {total_data_rows}")
+
+    # Check if configured splits actually cover the data
+    print(f"\n  Configured splits from config:")
+    for phase in ("train", "val", "test"):
+        intervals = time_splits.get(phase, [])
+        if intervals:
+            for start, end in intervals:
+                print(f"    {phase:5s}: {_format_interval((start, end))}")
+        else:
+            print(f"    {phase:5s}: (not configured)")
+
+    # Check for coverage issues
+    train_intervals = time_splits.get("train", [])
+    val_intervals = time_splits.get("val", [])
+
+    def intervals_cover_data(intervals, data_min, data_max):
+        """Check if any interval overlaps with data range"""
+        if not intervals:
+            return False
+        for start, end in intervals:
+            interval_start = start if start is not None else data_min
+            interval_end = end if end is not None else data_max
+            # Check for overlap
+            if interval_start <= data_max and interval_end >= data_min:
+                return True
+        return False
+
+    train_covered = intervals_cover_data(train_intervals, data_min_ts, data_max_ts)
+    val_covered = intervals_cover_data(val_intervals, data_min_ts, data_max_ts)
+
+    if not train_covered or not val_covered:
+        print(f"\n  ⚠️  WARNING: Configured time splits DO NOT cover your data!")
+        print(f"  ⚠️  Your data: {_fmt_ts(data_min_ts)} → {_fmt_ts(data_max_ts)}")
+        print(f"  ⚠️  Most/all rows would be ignored!")
+        print(f"\n  💡 AUTOMATIC FIX: Creating optimal split based on YOUR data...")
+
+        # Automatic split: 70% train, 15% val, 15% test
+        data_duration = data_max_ts - data_min_ts
+        train_end = data_min_ts + int(data_duration * 0.70)
+        val_end = data_min_ts + int(data_duration * 0.85)
+
+        time_splits = {
+            "train": [(data_min_ts, train_end)],
+            "val": [(train_end + 1, val_end)],
+            "test": [(val_end + 1, data_max_ts)],
+        }
+
+        print(f"\n  ✅ AUTO-GENERATED SPLITS (70% train, 15% val, 15% test):")
+        print(f"    train: {_format_interval(time_splits['train'][0])}")
+        print(f"    val:   {_format_interval(time_splits['val'][0])}")
+        print(f"    test:  {_format_interval(time_splits['test'][0])}")
+        print(f"\n  💡 To use custom splits, update config with YOUR data timestamps!")
+
+    print("="*80 + "\n")
+
     dfs_with_roles: dict[str, pd.DataFrame] = {}
     inferred_test_any = False
     for symbol, df in all_dfs_dict.items():
@@ -4545,28 +4629,91 @@ def main():
         for sym, df in all_dfs_with_roles.items()
         if (df[role_column].astype(str) == "none").any()
     }
-    if unused_rows:
-        total_unused = sum(unused_rows.values())
-        print(
-            f"Warning: {total_unused} rows across {len(unused_rows)} symbols were not assigned to train/val/test and will be ignored."
-        )
 
-    print("Time-based split summary:")
+    # Enhanced split summary with detailed statistics
+    print("\n" + "="*80)
+    print("FINAL TRAIN/VAL/TEST SPLIT SUMMARY")
+    print("="*80)
+
+    total_train = sum(len(df) for df in train_data_by_token.values())
+    total_val = sum(len(df) for df in val_data_by_token.values())
+    total_test = sum(len(df) for df in test_data_by_token.values())
+    total_unused = sum(unused_rows.values()) if unused_rows else 0
+    grand_total = total_train + total_val + total_test + total_unused
+
+    print(f"\nOverall split distribution:")
+    print(f"  {'Phase':<10s} {'Rows':>8s}  {'Percentage':>10s}  {'Symbols':>8s}")
+    print(f"  {'-'*10} {'-'*8}  {'-'*10}  {'-'*8}")
+
+    for phase_name, phase_total, phase_data in [
+        ("TRAIN", total_train, train_data_by_token),
+        ("VAL", total_val, val_data_by_token),
+        ("TEST", total_test, test_data_by_token),
+    ]:
+        pct = (phase_total / grand_total * 100) if grand_total > 0 else 0
+        n_symbols = len(phase_data)
+        status = "✅" if phase_total > 0 else "❌"
+        print(f"  {status} {phase_name:<8s} {phase_total:8d}  {pct:9.1f}%  {n_symbols:8d}")
+
+    if total_unused > 0:
+        pct = (total_unused / grand_total * 100) if grand_total > 0 else 0
+        print(f"  ⚠️  {'UNUSED':<8s} {total_unused:8d}  {pct:9.1f}%  {len(unused_rows):8d}")
+
+    print(f"  {'-'*10} {'-'*8}  {'-'*10}  {'-'*8}")
+    print(f"  {'TOTAL':<10s} {grand_total:8d}  {100.0:9.1f}%")
+
+    print(f"\nDetailed breakdown by phase:")
     for phase, mapping in (
-        ("train", train_data_by_token),
-        ("val", val_data_by_token),
-        ("test", test_data_by_token),
+        ("TRAIN", train_data_by_token),
+        ("VAL", val_data_by_token),
+        ("TEST", test_data_by_token),
     ):
-        intervals = time_splits.get(phase, [])
-        interval_desc = ", ".join(_format_interval(it) for it in intervals) if intervals else "(inferred remainder)"
+        intervals = time_splits.get(phase.lower(), [])
+        interval_desc = ", ".join(_format_interval(it) for it in intervals) if intervals else "(inferred)"
         total_rows = sum(len(df) for df in mapping.values())
         observed_start, observed_end = _phase_bounds(mapping, timestamp_column)
-        print(
-            f"  {phase}: {len(mapping)} symbols, {total_rows} rows, intervals={interval_desc}, "
-            f"observed=[{_fmt_ts(observed_start)} .. {_fmt_ts(observed_end)}]"
-        )
+
+        print(f"\n  {phase}:")
+        print(f"    Configured intervals: {interval_desc}")
+        print(f"    Actual data range: {_fmt_ts(observed_start)} → {_fmt_ts(observed_end)}")
+        print(f"    Total rows: {total_rows:,}")
+        print(f"    Symbols covered: {len(mapping)}")
+
+        if mapping:
+            print(f"    Per-symbol breakdown:")
+            for sym in sorted(mapping.keys()):
+                sym_rows = len(mapping[sym])
+                print(f"      {sym:12s}: {sym_rows:6,} rows")
+
+    if unused_rows:
+        print(f"\n  ⚠️  WARNING: {total_unused:,} rows were NOT assigned to any phase!")
+        print(f"  ⚠️  These rows fall outside all configured time intervals.")
+        print(f"  ⚠️  Affected symbols:")
+        for sym, count in sorted(unused_rows.items()):
+            print(f"      {sym:12s}: {count:6,} unused rows")
+        print(f"\n  💡 Consider adjusting time intervals in config to cover ALL your data.")
+
     if inferred_test_any and not time_splits.get("test"):
-        print("  Note: test split inferred from remaining rows (no explicit interval provided).")
+        print(f"\n  ℹ️  Note: TEST split was auto-inferred from remaining rows")
+        print(f"  ℹ️  (no explicit test interval was configured)")
+
+    # Critical validation
+    if total_train < 50:
+        print(f"\n  ❌ CRITICAL: Only {total_train} training rows! Need at least 50.")
+        print(f"  ❌ This WILL cause value function collapse.")
+    elif total_train < 200:
+        print(f"\n  ⚠️  WARNING: Only {total_train} training rows (recommended: 1000+)")
+    else:
+        print(f"\n  ✅ Training data size looks good: {total_train:,} rows")
+
+    if total_val == 0:
+        print(f"  ❌ CRITICAL: No validation data! Cannot evaluate model.")
+    elif total_val < 20:
+        print(f"  ⚠️  WARNING: Very small validation set ({total_val} rows)")
+    else:
+        print(f"  ✅ Validation data size looks good: {total_val:,} rows")
+
+    print("="*80 + "\n")
 
     print("Calculating per-asset normalization stats from the training set...")
     norm_stats = {}
