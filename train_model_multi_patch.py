@@ -4354,14 +4354,58 @@ def main():
     os.makedirs(trials_dir, exist_ok=True)
 
     print("Loading all pre-processed data...")
+    print(f"Looking for feather files in: {processed_data_dir}")
     all_feather_files = glob.glob(os.path.join(processed_data_dir, "*.feather"))
     if not all_feather_files:
-        raise FileNotFoundError(
-            f"No .feather files found in {processed_data_dir}. "
-            f"Run prepare_advanced_data.py (Fear&Greed), prepare_events.py (macro events), "
-            f"incremental_klines.py (1h candles), then prepare_and_run.py (merge/export).",
+        error_msg = (
+            f"\n{'='*80}\n"
+            f"ERROR: No training data found!\n"
+            f"{'='*80}\n\n"
+            f"No .feather files found in: {processed_data_dir}\n\n"
+            f"The training pipeline requires preprocessed market data in feather format.\n\n"
+            f"OPTION 1 - Prepare Real Market Data:\n"
+            f"  1. Run: python prepare_advanced_data.py    # Fetch Fear & Greed index\n"
+            f"  2. Run: python prepare_events.py           # Fetch economic events\n"
+            f"  3. Run: python incremental_klines.py       # Fetch 1h OHLCV candles\n"
+            f"  4. Run: python prepare_and_run.py          # Merge and export to feather\n\n"
+            f"OPTION 2 - Generate Demo Data for Testing:\n"
+            f"  Run: python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT\n\n"
+            f"After preparing data, you should see files like:\n"
+            f"  {processed_data_dir}/BTCUSDT.feather\n"
+            f"  {processed_data_dir}/ETHUSDT.feather\n\n"
+            f"Then re-run training.\n"
+            f"{'='*80}\n"
         )
+        raise FileNotFoundError(error_msg)
+
+    print(f"Found {len(all_feather_files)} feather files:")
+    for fpath in sorted(all_feather_files):
+        print(f"  - {os.path.basename(fpath)}")
+    print()
+
     all_dfs_dict, all_obs_dict = load_all_data(all_feather_files, synthetic_fraction=0, seed=42)
+
+    # Validate that we have sufficient training data
+    total_rows = sum(len(df) for df in all_dfs_dict.values())
+    if total_rows < 100:
+        logger.warning(
+            f"\n{'='*80}\n"
+            f"WARNING: Very small dataset detected!\n"
+            f"{'='*80}\n"
+            f"Total rows across all symbols: {total_rows}\n\n"
+            f"The training dataset is extremely small (< 100 rows).\n"
+            f"This will cause:\n"
+            f"  - Value function collapse (insufficient variance)\n"
+            f"  - Explained variance metrics staying near zero\n"
+            f"  - Poor model convergence\n\n"
+            f"Recommended minimum: 1000+ rows per symbol (40+ days of hourly data)\n"
+            f"{'='*80}\n"
+        )
+    elif total_rows < 500:
+        logger.warning(
+            f"Dataset is small ({total_rows} rows total). "
+            f"Consider using at least 1000+ rows per symbol for robust training."
+        )
 
     split_version, time_splits = _load_time_splits(cfg.data)
     if split_version:
@@ -4424,6 +4468,47 @@ def main():
         split_version=split_version,
         inferred_test=inferred_test_any,
     )
+
+    # Validate exported dataset size immediately after export
+    summary_path = artifacts_dir / "training_summary.json"
+    if summary_path.exists():
+        with open(summary_path) as f:
+            summary = json.load(f)
+        train_rows = summary.get("by_role", {}).get("train", 0)
+        total_rows = summary.get("rows", 0)
+
+        if train_rows < 50:
+            raise ValueError(
+                f"\n{'='*80}\n"
+                f"CRITICAL ERROR: Insufficient training data!\n"
+                f"{'='*80}\n\n"
+                f"Training rows: {train_rows} (total: {total_rows})\n\n"
+                f"The exported dataset has too few training examples.\n"
+                f"This will cause:\n"
+                f"  - Value function collapse (critic always predicts same return)\n"
+                f"  - Zero variance in all value-head statistics\n"
+                f"  - Explained variance metrics staying near zero\n"
+                f"  - PPO replay buffer recycling identical transitions\n\n"
+                f"REQUIRED: At least 50 training rows\n"
+                f"RECOMMENDED: 1000+ training rows per symbol\n\n"
+                f"Current dataset summary:\n"
+                f"  Training:   {train_rows} rows\n"
+                f"  Validation: {summary.get('by_role', {}).get('val', 0)} rows\n"
+                f"  Test:       {summary.get('by_role', {}).get('test', 0)} rows\n"
+                f"  Symbols:    {', '.join(summary.get('symbols', []))}\n\n"
+                f"ACTION: Prepare more data using prepare_demo_data.py or fetch real market data.\n"
+                f"{'='*80}\n"
+            )
+        elif train_rows < 200:
+            logger.warning(
+                f"\n{'='*80}\n"
+                f"WARNING: Small training dataset!\n"
+                f"{'='*80}\n"
+                f"Training rows: {train_rows}\n\n"
+                f"This dataset may be too small for robust training.\n"
+                f"Consider increasing to 1000+ rows per symbol.\n"
+                f"{'='*80}\n"
+            )
 
     # --- Гейт качества данных: строгая валидация OHLCV перед сплитом ---
     _validator = DataValidator()
