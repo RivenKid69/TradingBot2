@@ -795,6 +795,7 @@ class AdversarialCallback(BaseCallback):
         liquidity_seasonality_path: str | None = None,
     ):
         super().__init__()
+        self.model = None  # Explicitly initialize to prevent AttributeError
         self.eval_env = eval_env
         self.eval_freq = eval_freq
         self.regimes = regimes
@@ -1419,6 +1420,7 @@ class NanGuardCallback(BaseCallback):
     """
     def __init__(self, threshold: float = float("inf"), verbose: int = 0):
         super().__init__(verbose)
+        self.model = None  # Explicitly initialize to prevent AttributeError
         self.threshold = threshold       # Можно задать лимит «слишком большой» loss
 
     def _on_rollout_end(self) -> None:
@@ -1453,6 +1455,7 @@ class SortinoPruningCallback(BaseCallback):
         verbose: int = 0,
     ):
         super().__init__(verbose)
+        self.model = None  # Explicitly initialize to prevent AttributeError
         self.trial = trial
         self.eval_env = eval_env
         self.n_eval_episodes = n_eval_episodes
@@ -1541,6 +1544,7 @@ class ObjectiveScorePruningCallback(BaseCallback):
         verbose: int = 0,
     ):
         super().__init__(verbose)
+        self.model = None  # Explicitly initialize to prevent AttributeError
         self.trial = trial
         self.eval_env = eval_env
         self.eval_freq = eval_freq
@@ -1641,6 +1645,10 @@ class ObjectiveScorePruningCallback(BaseCallback):
 class OptimizerLrLoggingCallback(BaseCallback):
     """Логирует фактические значения learning rate оптимизатора и шедулера."""
 
+    def __init__(self, verbose: int = 0):
+        super().__init__(verbose)
+        self.model = None  # Explicitly initialize to prevent AttributeError
+
     def _on_step(self) -> bool:
         if self.logger is None:
             return True
@@ -1739,14 +1747,17 @@ def sortino_ratio(
         return np.mean(returns - risk_free_rate) / std * ann
 
     downside_std = np.sqrt(np.mean(downside**2))
+
+    # Check for NaN or Inf that could result from numerical issues
+    if not np.isfinite(downside_std):
+        return 0.0
+
     # Если выборка практически стационарна, возвращаем 0, чтобы не завышать метрику.
     if downside_std < 1e-9:
         return 0.0
 
-    safe_downside_std = max(downside_std, 1e-9)
-    # Эта проверка становится избыточной, если downside_std используется только один раз,
-    # но оставим для безопасности.
-    return np.mean(returns - risk_free_rate) / safe_downside_std * ann
+    # downside_std is guaranteed to be finite and >= 1e-9 here
+    return np.mean(returns - risk_free_rate) / downside_std * ann
 
 # --- ИЗМЕНЕНИЕ: Старая Python-функция удалена, так как заменена на Cython-версию ---
 
