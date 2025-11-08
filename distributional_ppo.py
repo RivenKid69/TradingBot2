@@ -226,8 +226,11 @@ def safe_explained_variance(
         if not math.isfinite(sum_w) or sum_w <= 0.0:
             return float("nan")
         sum_w_sq = float(np.sum(weights64**2))
-        denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
-        if denom <= 0.0 or not math.isfinite(denom):
+        # CRITICAL FIX: Add epsilon to prevent near-zero denominator numerical instability
+        # When all weights are nearly equal, denom can become very small causing underflow
+        denom_raw = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
+        denom = max(denom_raw, 1e-12)  # Epsilon safeguard
+        if denom_raw <= 0.0 or not math.isfinite(denom_raw):
             return float("nan")
         mean_y = float(np.sum(weights64 * y_true64) / sum_w)
         var_y_num = float(np.sum(weights64 * (y_true64 - mean_y) ** 2))
@@ -310,9 +313,21 @@ def _weighted_variance_np(values: np.ndarray, weights: Optional[np.ndarray]) -> 
     if not math.isfinite(sum_w) or sum_w <= 0.0:
         return float("nan")
 
-    sum_w_sq = float(np.sum(weights64**2))
-    denom = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
-    if denom <= 0.0 or not math.isfinite(denom):
+    # CRITICAL FIX: Check for overflow in weight squaring before computing sum_w_sq
+    # If weights contain very large values (> 1e154), squaring causes overflow to infinity
+    max_weight = float(np.max(np.abs(weights64)))
+    if max_weight > 1e100:  # Conservative threshold to prevent overflow
+        # Normalize weights to prevent overflow, then scale variance accordingly
+        scale = 1e50 / max_weight
+        weights64_scaled = weights64 * scale
+        sum_w_sq = float(np.sum(weights64_scaled**2)) / (scale * scale)
+    else:
+        sum_w_sq = float(np.sum(weights64**2))
+
+    # CRITICAL FIX: Add epsilon to prevent near-zero denominator numerical instability
+    denom_raw = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
+    denom = max(denom_raw, 1e-12)  # Epsilon safeguard
+    if denom_raw <= 0.0 or not math.isfinite(denom_raw):
         return float("nan")
 
     mean_w = float(np.sum(weights64 * values64) / sum_w)
