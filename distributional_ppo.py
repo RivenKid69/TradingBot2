@@ -2475,7 +2475,7 @@ class DistributionalPPO(RecurrentPPO):
             0.5 * delta.pow(2),
             kappa * (abs_delta - 0.5 * kappa),
         )
-        indicator = (delta.detach() > 0.0).float()
+        indicator = (delta.detach() < 0.0).float()
         loss = torch.abs(tau - indicator) * (huber / kappa)
         return loss.mean()
 
@@ -2587,11 +2587,11 @@ class DistributionalPPO(RecurrentPPO):
         else:
             full_mass_contribution = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
 
-        # Partial interval using trapezoidal integration
+        # Partial interval using piecewise constant approximation (consistent with large alpha branch)
         # Interval: [alpha_idx/N, alpha]
-        # Values: value_at_start (at alpha_idx/N), value_at_alpha (at alpha)
+        # Use value q_i (the quantile at alpha_idx) for the entire partial interval
         partial_mass = alpha - interval_start
-        partial_contribution = (value_at_start + value_at_alpha) / 2.0 * partial_mass
+        partial_contribution = q_i * partial_mass
 
         # Total expectation over [0, alpha]
         expectation = full_mass_contribution + partial_contribution
@@ -2774,17 +2774,17 @@ class DistributionalPPO(RecurrentPPO):
         return rewards_winsor, cvar_empirical, reward_p50, reward_p95, returns_abs_p95
 
     def _compute_cvar_headroom(self, cvar_empirical: float) -> float:
-        """Return CVaR headroom (positive when CVaR is below limit, clipped at 0).
+        """Return CVaR violation gap (positive means VIOLATION).
 
         Computes limit - empirical and clips to [0, inf). A positive value indicates
-        the CVaR is below the limit (good, no violation). Returns 0 when CVaR
-        exceeds or equals the limit (violation).
+        CVaR is below the limit (BAD, VIOLATION of constraint CVaR >= limit).
+        Returns 0 when CVaR exceeds or equals the limit (constraint satisfied).
 
         Args:
             cvar_empirical: The empirical CVaR value to check against the limit.
 
         Returns:
-            Headroom value >= 0. Higher values mean more safety margin.
+            Violation gap >= 0. Positive values indicate constraint violation magnitude.
         """
 
         limit = float(self._get_cvar_limit_raw())
@@ -7889,7 +7889,9 @@ class DistributionalPPO(RecurrentPPO):
                         policy_loss_bc_weighted = policy_loss_bc
                     else:
                         with torch.no_grad():
-                            weights = torch.exp(advantages_selected / self.cql_beta)
+                            # Clamp exp argument BEFORE computing exp to prevent overflow (exp(x) overflows at x > ~88)
+                            exp_arg = torch.clamp(advantages_selected / self.cql_beta, max=20.0)
+                            weights = torch.exp(exp_arg)
                             weights = torch.clamp(weights, max=100.0)
                         policy_loss_bc = (-log_prob_selected * weights).mean()
                         policy_loss_bc_weighted = policy_loss_bc * bc_coef
