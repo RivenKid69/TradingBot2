@@ -3237,8 +3237,8 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/cvar_empirical_ema", float(cvar_empirical_ema_value))
         self.logger.record("train/cvar_gap", float(cvar_gap_raw_value))
         self.logger.record("train/cvar_gap_unit", float(cvar_gap_unit_value))
-        # NOTE: cvar_violation has INVERTED semantics (measures headroom, not violation)
-        # Positive values mean CVaR is BELOW limit (good). See lines 6545-6558 for details.
+        # NOTE: cvar_violation measures gap = limit - CVaR (positive means violation for lower bound CVaR ≥ limit)
+        # Positive values mean CVaR is BELOW limit (VIOLATION). See lines 6674-6678 for details.
         self.logger.record("train/cvar_violation", float(cvar_violation_raw_value))
         self.logger.record("train/cvar_violation_unit", float(cvar_violation_unit_value))
         self.logger.record("train/cvar_violation_ema", float(cvar_violation_ema_value))
@@ -6671,20 +6671,20 @@ class DistributionalPPO(RecurrentPPO):
         self._current_cvar_weight = float(current_cvar_weight_scaled)
         cvar_penalty_active_value = 1.0 if penalty_active else 0.0
 
-        # SEMANTIC CORRECTION: cvar_gap > 0 means CVaR is BELOW limit (good, no violation)
-        # cvar_gap < 0 means CVaR is ABOVE limit (bad, actual violation)
-        # The legacy variable names "cvar_violation" are INVERTED - they measure headroom, not violations
-        cvar_headroom_raw = float(cvar_gap_value)      # can be < 0 (actual violation when negative)
-        cvar_headroom_clipped = float(cvar_gap_pos_value_raw)  # always >= 0 (clipped at 0)
+        # SEMANTIC CORRECTION: cvar_gap > 0 means CVaR is BELOW limit (BAD, VIOLATION of lower bound CVaR ≥ limit)
+        # cvar_gap < 0 means CVaR is ABOVE limit (GOOD, constraint satisfied)
+        # Note: gap can be negative (no violation) or positive (violation)
+        cvar_gap_raw = float(cvar_gap_value)           # > 0 means violation, < 0 means constraint satisfied
+        cvar_violation_clipped = float(cvar_gap_pos_value_raw)  # max(0, gap): always >= 0, only positive when violated
 
-        # Legacy aliases for backward compatibility (semantically inverted!)
-        cvar_violation_raw = cvar_headroom_raw  # WARNING: Despite name, this is headroom not violation
-        cvar_violation = cvar_headroom_clipped  # WARNING: Despite name, this is headroom not violation
+        # Variables for logging and tracking
+        cvar_violation_raw = cvar_gap_raw       # Raw gap: positive means violation
+        cvar_violation = cvar_violation_clipped  # Clipped violation: max(0, gap)
 
         self.cvar_lambda = float(self._cvar_lambda)
         # --- CVaR debug block: не дублируем train/*, оставляем debug/*
-        self.logger.record("debug/cvar_headroom", float(cvar_headroom_clipped))  # Semantically correct name
-        self.logger.record("debug/cvar_violation", float(cvar_violation))  # Legacy (inverted semantics)
+        self.logger.record("debug/cvar_gap_clipped", float(cvar_violation_clipped))  # Clipped gap (violation measure)
+        self.logger.record("debug/cvar_violation", float(cvar_violation))  # Same as gap_clipped
         beta = float(self.cvar_ema_beta)
         if self._cvar_empirical_ema is None:
             self._cvar_empirical_ema = float(cvar_empirical_value)
