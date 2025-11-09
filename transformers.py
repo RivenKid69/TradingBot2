@@ -109,6 +109,7 @@ class FeatureSpec:
       - yang_zhang_windows: окна для волатильности Yang-Zhang (в минутах)
       - taker_buy_ratio_windows: окна для скользящего среднего taker_buy_ratio (в минутах)
       - taker_buy_ratio_momentum: окна для моментума taker_buy_ratio (в минутах)
+      - cvd_windows: окна для кумулятивной дельты объема (в минутах)
     """
 
     lookbacks_prices: List[int]
@@ -116,6 +117,7 @@ class FeatureSpec:
     yang_zhang_windows: Optional[List[int]] = None
     taker_buy_ratio_windows: Optional[List[int]] = None
     taker_buy_ratio_momentum: Optional[List[int]] = None
+    cvd_windows: Optional[List[int]] = None
 
     def __post_init__(self) -> None:
         if (
@@ -158,6 +160,16 @@ class FeatureSpec:
         else:
             self.taker_buy_ratio_momentum = []
 
+        # Инициализация окон Cumulative Volume Delta: 24ч, 168ч (7д) в минутах
+        if self.cvd_windows is None:
+            self.cvd_windows = [24 * 60, 168 * 60]  # 1440, 10080 минут
+        elif isinstance(self.cvd_windows, list):
+            self.cvd_windows = [
+                int(abs(x)) for x in self.cvd_windows if int(abs(x)) > 0
+            ]
+        else:
+            self.cvd_windows = []
+
 
 class OnlineFeatureTransformer:
     """
@@ -183,6 +195,8 @@ class OnlineFeatureTransformer:
                 all_windows.extend(self.spec.taker_buy_ratio_windows)
             if self.spec.taker_buy_ratio_momentum:
                 all_windows.extend(self.spec.taker_buy_ratio_momentum)
+            if self.spec.cvd_windows:
+                all_windows.extend(self.spec.cvd_windows)
             maxlen = max(all_windows) if all_windows else 100
 
             st = {
@@ -194,6 +208,8 @@ class OnlineFeatureTransformer:
                 "ohlc_bars": deque(maxlen=maxlen),  # type: deque[Dict[str, float]]
                 # Для Taker Buy Ratio нужны значения ratio
                 "taker_buy_ratios": deque(maxlen=maxlen),  # type: deque[float]
+                # Для Cumulative Volume Delta нужны дельты объема
+                "volume_deltas": deque(maxlen=maxlen),  # type: deque[float]
             }
             self._state[symbol] = st
         return st
@@ -257,6 +273,15 @@ class OnlineFeatureTransformer:
         if volume is not None and taker_buy_base is not None and volume > 0:
             taker_buy_ratio = float(taker_buy_base) / float(volume)
             st["taker_buy_ratios"].append(taker_buy_ratio)
+
+        # Вычисляем и сохраняем Volume Delta для CVD
+        # CVD формула: buy_volume - sell_volume
+        # где buy_volume = taker_buy_base, sell_volume = volume - taker_buy_base
+        if volume is not None and taker_buy_base is not None:
+            buy_volume = float(taker_buy_base)
+            sell_volume = float(volume) - buy_volume
+            volume_delta = buy_volume - sell_volume
+            st["volume_deltas"].append(volume_delta)
 
         feats: Dict[str, Any] = {
             "ts_ms": int(ts_ms),
@@ -337,6 +362,20 @@ class OnlineFeatureTransformer:
 
             # Z-score нормализация будет применена автоматически в FeaturePipeline
 
+        # Рассчитываем Cumulative Volume Delta (CVD) для каждого окна
+        if st["volume_deltas"] and self.spec.cvd_windows:
+            delta_list = list(st["volume_deltas"])
+
+            for window in self.spec.cvd_windows:
+                window_hours = window // 60
+                if len(delta_list) >= window:
+                    # CVD = кумулятивная сумма volume_delta за окно
+                    window_data = delta_list[-window:]
+                    cvd = sum(window_data)
+                    feats[f"cvd_{window_hours}h"] = float(cvd)
+                else:
+                    feats[f"cvd_{window_hours}h"] = float("nan")
+
         return feats
 
 
@@ -382,6 +421,8 @@ def apply_offline_features(
             base_cols += [f"taker_buy_ratio_sma_{w // 60}h" for w in spec.taker_buy_ratio_windows]
         if spec.taker_buy_ratio_momentum:
             base_cols += [f"taker_buy_ratio_momentum_{w // 60}h" for w in spec.taker_buy_ratio_momentum]
+        if spec.cvd_windows:
+            base_cols += [f"cvd_{w // 60}h" for w in spec.cvd_windows]
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()

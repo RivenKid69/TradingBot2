@@ -31,6 +31,7 @@ def main():
     p.add_argument("--taker-buy-ratio-momentum", default="60,360,720", help="Окна Taker Buy Ratio momentum в минутах (по умолчанию 1ч,6ч,12ч)")
     p.add_argument("--volume-col", default=None, help="Имя колонки volume для Taker Buy Ratio (опционально)")
     p.add_argument("--taker-buy-base-col", default=None, help="Имя колонки taker_buy_base для Taker Buy Ratio (опционально)")
+    p.add_argument("--cvd-windows", default="1440,10080", help="Окна Cumulative Volume Delta в минутах (по умолчанию 24ч,168ч)")
     args = p.parse_args()
 
     df = _read_any(args.in_path)
@@ -41,6 +42,7 @@ def main():
     yang_zhang_wins = [int(s.strip()) for s in str(args.yang_zhang_windows).split(",") if s.strip()]
     taker_buy_ratio_wins = [int(s.strip()) for s in str(args.taker_buy_ratio_windows).split(",") if s.strip()]
     taker_buy_ratio_mom = [int(s.strip()) for s in str(args.taker_buy_ratio_momentum).split(",") if s.strip()]
+    cvd_wins = [int(s.strip()) for s in str(args.cvd_windows).split(",") if s.strip()]
 
     spec = FeatureSpec(
         lookbacks_prices=lookbacks,
@@ -48,6 +50,7 @@ def main():
         yang_zhang_windows=yang_zhang_wins,
         taker_buy_ratio_windows=taker_buy_ratio_wins,
         taker_buy_ratio_momentum=taker_buy_ratio_mom,
+        cvd_windows=cvd_wins,
     )
 
     # Определяем, есть ли OHLC колонки в данных
