@@ -335,11 +335,28 @@ class FeaturePipe:
         state = self._get_symbol_state(symbol)
         self._update_market_metrics(symbol, state, close_value, ts_ms, bar)
 
+        # Извлекаем OHLC данные из бара
+        open_price = None
+        high_price = None
+        low_price = None
+        try:
+            if bar.open is not None:
+                open_price = float(bar.open)
+            if bar.high is not None:
+                high_price = float(bar.high)
+            if bar.low is not None:
+                low_price = float(bar.low)
+        except (TypeError, ValueError, InvalidOperation):
+            pass
+
         if not self._read_only:
             feats = self._tr.update(
                 symbol=symbol,
                 ts_ms=ts_ms,
                 close=close_value,
+                open_price=open_price,
+                high=high_price,
+                low=low_price,
             )
         else:
             state_backup = copy.deepcopy(self._tr._state)
@@ -347,6 +364,9 @@ class FeaturePipe:
                 symbol=symbol,
                 ts_ms=ts_ms,
                 close=close_value,
+                open_price=open_price,
+                high=high_price,
+                low=low_price,
             )
             self._tr._state = state_backup
 
