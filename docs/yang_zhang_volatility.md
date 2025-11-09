@@ -116,6 +116,20 @@ python make_features.py \
   --yang-zhang-windows "1440,10080,43200"
 ```
 
+### Подготовка данных для обучения (make_prices_from_klines.py)
+
+**ВАЖНО:** Для работы Yang-Zhang волатильности при обучении необходимо включить OHLC колонки:
+
+```bash
+python make_prices_from_klines.py \
+  --in-klines data/klines.parquet \
+  --symbol BTCUSDT \
+  --out data/prices.parquet \
+  --include-ohlc  # Обязательный флаг для Yang-Zhang!
+```
+
+Без флага `--include-ohlc` будут созданы только колонки `ts_ms`, `symbol`, `price`, и Yang-Zhang волатильность будет иметь значения NaN при обучении.
+
 ## Выходные признаки
 
 Для каждого окна создается признак с именем `yang_zhang_{hours}h`:

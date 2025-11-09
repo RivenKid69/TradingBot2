@@ -20,6 +20,7 @@ def main():
     p.add_argument("--symbol", required=True, help="Символ, например BTCUSDT")
     p.add_argument("--price-col", choices=["close", "hl2", "ohlc4"], default="close", help="Какую цену считать ценой для меток")
     p.add_argument("--out", default="data/prices.parquet", help="Куда сохранить prices.parquet")
+    p.add_argument("--include-ohlc", action="store_true", help="Включить OHLC колонки для Yang-Zhang волатильности")
     args = p.parse_args()
 
     d = _read_any(args.in_klines)
@@ -43,7 +44,18 @@ def main():
             + pd.to_numeric(d["close"], errors="coerce")
         ) / 4.0
 
-    out = d[["ts_ms", "symbol", "price"]].dropna().sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
+    # Определяем колонки для сохранения
+    output_columns = ["ts_ms", "symbol", "price"]
+
+    # Включаем OHLC колонки если запрошено и они есть в данных
+    if args.include_ohlc:
+        for col in ["open", "high", "low", "close"]:
+            if col in d.columns:
+                d[col] = pd.to_numeric(d[col], errors="coerce")
+                if col not in output_columns:
+                    output_columns.append(col)
+
+    out = d[output_columns].dropna().sort_values(["symbol", "ts_ms"]).reset_index(drop=True)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     if args.out.lower().endswith(".parquet"):
         out.to_parquet(args.out, index=False)
