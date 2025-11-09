@@ -2587,11 +2587,12 @@ class DistributionalPPO(RecurrentPPO):
         else:
             full_mass_contribution = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
 
-        # Partial interval using piecewise constant approximation (consistent with large alpha branch)
+        # Partial interval using linear interpolation
         # Interval: [alpha_idx/N, alpha]
-        # Use value q_i (the quantile at alpha_idx) for the entire partial interval
+        # Average of interpolated values at start and end of interval
         partial_mass = alpha - interval_start
-        partial_contribution = q_i * partial_mass
+        avg_value = (value_at_start + value_at_alpha) / 2.0
+        partial_contribution = avg_value * partial_mass
 
         # Total expectation over [0, alpha]
         expectation = full_mass_contribution + partial_contribution
