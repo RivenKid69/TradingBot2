@@ -349,6 +349,17 @@ class FeaturePipe:
         except (TypeError, ValueError, InvalidOperation):
             pass
 
+        # Извлекаем volume и taker_buy_base данные из бара
+        volume = None
+        taker_buy_base = None
+        try:
+            if bar.volume_base is not None:
+                volume = float(bar.volume_base)
+            if bar.taker_buy_base is not None:
+                taker_buy_base = float(bar.taker_buy_base)
+        except (TypeError, ValueError, InvalidOperation):
+            pass
+
         if not self._read_only:
             feats = self._tr.update(
                 symbol=symbol,
@@ -357,6 +368,8 @@ class FeaturePipe:
                 open_price=open_price,
                 high=high_price,
                 low=low_price,
+                volume=volume,
+                taker_buy_base=taker_buy_base,
             )
         else:
             state_backup = copy.deepcopy(self._tr._state)
@@ -367,6 +380,8 @@ class FeaturePipe:
                 open_price=open_price,
                 high=high_price,
                 low=low_price,
+                volume=volume,
+                taker_buy_base=taker_buy_base,
             )
             self._tr._state = state_backup
 
@@ -762,12 +777,17 @@ class FeaturePipe:
         """Apply offline feature computation to ``df``.
 
         The dataframe must contain ``ts_ms`` and ``symbol`` columns together
-        with ``price_col``. Optionally includes OHLC columns for Yang-Zhang volatility.
+        with ``price_col``. Optionally includes OHLC columns for Yang-Zhang volatility
+        and volume/taker_buy_base for Taker Buy Ratio.
         """
         # Check if OHLC columns exist in the dataframe
         open_col = "open" if "open" in df.columns else None
         high_col = "high" if "high" in df.columns else None
         low_col = "low" if "low" in df.columns else None
+
+        # Check if volume and taker_buy_base columns exist in the dataframe
+        volume_col = "volume" if "volume" in df.columns else None
+        taker_buy_base_col = "taker_buy_base" if "taker_buy_base" in df.columns else None
 
         return apply_offline_features(
             df,
@@ -778,6 +798,8 @@ class FeaturePipe:
             open_col=open_col,
             high_col=high_col,
             low_col=low_col,
+            volume_col=volume_col,
+            taker_buy_base_col=taker_buy_base_col,
         )
 
     def make_targets(self, df: pd.DataFrame) -> Optional[pd.Series]:

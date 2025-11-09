@@ -149,6 +149,7 @@ class Bar:
     volume_quote: Optional[Decimal] = None  # объём в котировочной валюте (например USDT)
     trades: Optional[int] = None
     vwap: Optional[Decimal] = None
+    taker_buy_base: Optional[Decimal] = None  # объём покупок taker в базовом активе
     is_final: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
@@ -167,6 +168,7 @@ class Bar:
             volume_quote=to_decimal_opt(d.get("volume_quote")),
             trades=int(d["trades"]) if d.get("trades") is not None else None,
             vwap=to_decimal_opt(d.get("vwap")),
+            taker_buy_base=to_decimal_opt(d.get("taker_buy_base")),
             is_final=bool(d.get("is_final", True)),
         )
 

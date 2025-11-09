@@ -27,6 +27,10 @@ def main():
     p.add_argument("--open-col", default=None, help="Имя колонки open для Yang-Zhang (опционально)")
     p.add_argument("--high-col", default=None, help="Имя колонки high для Yang-Zhang (опционально)")
     p.add_argument("--low-col", default=None, help="Имя колонки low для Yang-Zhang (опционально)")
+    p.add_argument("--taker-buy-ratio-windows", default="360,720,1440", help="Окна Taker Buy Ratio SMA в минутах (по умолчанию 6ч,12ч,24ч)")
+    p.add_argument("--taker-buy-ratio-momentum", default="60,360,720", help="Окна Taker Buy Ratio momentum в минутах (по умолчанию 1ч,6ч,12ч)")
+    p.add_argument("--volume-col", default=None, help="Имя колонки volume для Taker Buy Ratio (опционально)")
+    p.add_argument("--taker-buy-base-col", default=None, help="Имя колонки taker_buy_base для Taker Buy Ratio (опционально)")
     args = p.parse_args()
 
     df = _read_any(args.in_path)
@@ -35,16 +39,25 @@ def main():
 
     lookbacks = [int(s.strip()) for s in str(args.lookbacks).split(",") if s.strip()]
     yang_zhang_wins = [int(s.strip()) for s in str(args.yang_zhang_windows).split(",") if s.strip()]
+    taker_buy_ratio_wins = [int(s.strip()) for s in str(args.taker_buy_ratio_windows).split(",") if s.strip()]
+    taker_buy_ratio_mom = [int(s.strip()) for s in str(args.taker_buy_ratio_momentum).split(",") if s.strip()]
+
     spec = FeatureSpec(
         lookbacks_prices=lookbacks,
         rsi_period=int(args.rsi_period),
-        yang_zhang_windows=yang_zhang_wins
+        yang_zhang_windows=yang_zhang_wins,
+        taker_buy_ratio_windows=taker_buy_ratio_wins,
+        taker_buy_ratio_momentum=taker_buy_ratio_mom,
     )
 
     # Определяем, есть ли OHLC колонки в данных
     open_col = args.open_col if args.open_col and args.open_col in df.columns else None
     high_col = args.high_col if args.high_col and args.high_col in df.columns else None
     low_col = args.low_col if args.low_col and args.low_col in df.columns else None
+
+    # Определяем, есть ли volume и taker_buy_base колонки в данных
+    volume_col = args.volume_col if args.volume_col and args.volume_col in df.columns else None
+    taker_buy_base_col = args.taker_buy_base_col if args.taker_buy_base_col and args.taker_buy_base_col in df.columns else None
 
     feats = apply_offline_features(
         df,
@@ -55,6 +68,8 @@ def main():
         open_col=open_col,
         high_col=high_col,
         low_col=low_col,
+        volume_col=volume_col,
+        taker_buy_base_col=taker_buy_base_col,
     )
 
     os.makedirs(os.path.dirname(args.out_path) or ".", exist_ok=True)
