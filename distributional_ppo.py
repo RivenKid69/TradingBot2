@@ -2484,20 +2484,114 @@ class DistributionalPPO(RecurrentPPO):
         # TODO(quantile-critic): When migrating to non-uniform quantile levels
         # (e.g. IQN), replace the uniform ``mass`` assumption with explicit
         # integration over the τ intervals.
-        k_float = alpha * num_quantiles
-        full_mass = int(min(num_quantiles, math.floor(k_float)))
-        frac = float(k_float - full_mass)
+
+        # Quantile centers: τ_i = (i + 0.5) / N for i = 0, 1, ..., N-1
+        # For small alpha, we need interpolation to account for quantiles being
+        # interval centers, not boundaries. This fixes systematic bias.
+
         device = predicted_quantiles.device
         dtype = predicted_quantiles.dtype
-        tail_sum = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
-        if full_mass > 0:
-            tail_sum = predicted_quantiles[:, :full_mass].sum(dim=1)
-        partial = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
-        if frac > 1e-8 and full_mass < num_quantiles:
-            partial = predicted_quantiles[:, full_mass] * frac
-        expectation = mass * (tail_sum + partial)
-        tail_mass = max(alpha, mass * (full_mass + frac))
-        return expectation / tail_mass
+
+        # Find the quantile index that brackets alpha
+        # tau_centers[i] = (i + 0.5) / num_quantiles
+        # We want to find i such that tau_centers[i-1] < alpha <= tau_centers[i]
+        # This means: (i - 0.5) / N < alpha <= (i + 0.5) / N
+        # Solving for i: alpha * N - 0.5 < i <= alpha * N + 0.5
+        # So i = ceil(alpha * N - 0.5) = floor(alpha * N + 0.5)
+
+        alpha_idx_float = alpha * num_quantiles - 0.5
+
+        if alpha_idx_float < 0.0:
+            # alpha is smaller than the first quantile center
+            # Use linear extrapolation from first two quantiles
+            if num_quantiles >= 2:
+                q0 = predicted_quantiles[:, 0]
+                q1 = predicted_quantiles[:, 1]
+                # Extrapolate to alpha using linear fit through first two quantile centers
+                # tau_0 = 0.5/N, tau_1 = 1.5/N
+                # Value at alpha: q0 + (q1 - q0) * (alpha - tau_0) / (tau_1 - tau_0)
+                tau_0 = 0.5 / num_quantiles
+                tau_1 = 1.5 / num_quantiles
+                slope = (q1 - q0) / (tau_1 - tau_0)
+                boundary_value = q0 + slope * (alpha - tau_0)
+                # CVaR is the average from 0 to alpha
+                # Approximate as trapezoid: (value_at_0 + boundary_value) / 2
+                # value_at_0 ≈ q0 - slope * tau_0
+                value_at_0 = q0 - slope * tau_0
+                return (value_at_0 + boundary_value) / 2.0
+            else:
+                # Only one quantile, use it as CVaR
+                return predicted_quantiles[:, 0]
+
+        # Standard case: alpha falls within or after quantile range
+        alpha_idx = int(math.floor(alpha_idx_float))
+
+        if alpha_idx >= num_quantiles - 1:
+            # alpha is beyond the last quantile center
+            # Use all quantiles
+            k_float = alpha * num_quantiles
+            full_mass = int(min(num_quantiles, math.floor(k_float)))
+            frac = float(k_float - full_mass)
+            tail_sum = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
+            if full_mass > 0:
+                tail_sum = predicted_quantiles[:, :full_mass].sum(dim=1)
+            partial = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
+            if frac > 1e-8 and full_mass < num_quantiles:
+                partial = predicted_quantiles[:, full_mass] * frac
+            expectation = mass * (tail_sum + partial)
+            tail_mass = max(alpha, mass * (full_mass + frac))
+            return expectation / tail_mass
+
+        # Interpolate to find values at interval boundaries
+        # alpha falls in interval [alpha_idx/N, (alpha_idx+1)/N)
+        # We need to integrate from alpha_idx/N to alpha
+
+        tau_i = (alpha_idx + 0.5) / num_quantiles  # center of interval alpha_idx
+        tau_i_next = (alpha_idx + 1.5) / num_quantiles  # center of interval alpha_idx+1
+
+        q_i = predicted_quantiles[:, alpha_idx]
+        q_i_next = predicted_quantiles[:, alpha_idx + 1]
+
+        # Value at alpha (right boundary of partial interval)
+        weight = (alpha - tau_i) / (tau_i_next - tau_i)
+        value_at_alpha = q_i * (1.0 - weight) + q_i_next * weight
+
+        # Value at alpha_idx/N (left boundary of partial interval)
+        # This is the boundary between intervals alpha_idx-1 and alpha_idx
+        interval_start = alpha_idx / num_quantiles
+        if alpha_idx == 0:
+            # Extrapolate to tau=0
+            slope = (q_i_next - q_i) / (tau_i_next - tau_i)
+            value_at_start = q_i - slope * tau_i
+        else:
+            # Interpolate between q_{alpha_idx-1} and q_i
+            q_i_prev = predicted_quantiles[:, alpha_idx - 1]
+            tau_i_prev = (alpha_idx - 0.5) / num_quantiles
+            weight_start = (interval_start - tau_i_prev) / (tau_i - tau_i_prev)
+            value_at_start = q_i_prev * (1.0 - weight_start) + q_i * weight_start
+
+        # Now compute CVaR as the average from 0 to alpha
+        # 1. Full intervals from 0 to alpha_idx-1 (each with mass 1/N and value q_j)
+        # 2. Partial interval from alpha_idx/N to alpha
+
+        # Sum of full intervals (0 to alpha_idx-1, not including alpha_idx)
+        if alpha_idx > 0:
+            tail_sum = predicted_quantiles[:, :alpha_idx].sum(dim=1)
+            full_mass_contribution = mass * tail_sum
+        else:
+            full_mass_contribution = predicted_quantiles.new_zeros(predicted_quantiles.shape[0], dtype=dtype, device=device)
+
+        # Partial interval using trapezoidal integration
+        # Interval: [alpha_idx/N, alpha]
+        # Values: value_at_start (at alpha_idx/N), value_at_alpha (at alpha)
+        partial_mass = alpha - interval_start
+        partial_contribution = (value_at_start + value_at_alpha) / 2.0 * partial_mass
+
+        # Total expectation over [0, alpha]
+        expectation = full_mass_contribution + partial_contribution
+
+        # Normalize by alpha to get CVaR
+        return expectation / alpha
 
     def _enforce_optimizer_lr_bounds(
         self,
