@@ -282,6 +282,7 @@ def prepare() -> list[str]:
         rsi_period=14,
         yang_zhang_windows=[24 * 60, 168 * 60, 720 * 60],  # 24ч, 168ч, 720ч в минутах
         parkinson_windows=[24 * 60, 168 * 60],  # 24ч, 168ч в минутах для Parkinson
+        garch_windows=[500, 720, 1440],  # 500 мин (~8.3ч), 12ч, 24ч для GARCH(1,1)
         taker_buy_ratio_windows=[6 * 60, 12 * 60, 24 * 60],  # 6ч, 12ч, 24ч в минутах
         taker_buy_ratio_momentum=[60, 6 * 60, 12 * 60],  # 1ч, 6ч, 12ч в минутах
         cvd_windows=[24 * 60, 168 * 60],  # 24ч (1440 мин), 168ч (10080 мин) для CVD
@@ -355,7 +356,7 @@ def prepare() -> list[str]:
             # Объединяем по индексу (порядок должен совпадать)
             df = pd.concat([df, features_to_merge], axis=1)
 
-            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_168h")
+            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_168h, garch_500m, garch_12h, garch_24h")
         except Exception as e:
             print(f"  ⚠ {sym}: Failed to create technical features: {e}")
             # Продолжаем без технических признаков, если что-то пошло не так
