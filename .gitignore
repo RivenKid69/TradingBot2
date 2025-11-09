@@ -79,4 +79,5 @@ logs/
 tensorboard/
 tensorboard_logs/
 data/processed/
+data/train/
 data/fear_greed.csv
