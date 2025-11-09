@@ -9395,7 +9395,12 @@ class DistributionalPPO(RecurrentPPO):
                     float(kl_penalty_component_total) / float(kl_penalty_component_count),
                 )
 
-        if y_true_tensor.numel() > 0 and y_pred_tensor.numel() > 0:
+        if (
+            y_true_tensor is not None
+            and y_pred_tensor is not None
+            and y_true_tensor.numel() > 0
+            and y_pred_tensor.numel() > 0
+        ):
             y_true_np = y_true_tensor.flatten().detach().cpu().numpy().astype(np.float64)
             y_pred_np = y_pred_tensor.flatten().detach().cpu().numpy().astype(np.float64)
             self.logger.record("train/value_pred_mean", float(np.mean(y_pred_np)))
