@@ -24,6 +24,13 @@ import math
 import numpy as np
 
 from core_models import ExecReport, TradeLogRow, Side, OrderType, Liquidity, ExecStatus
+
+# Import obs_builder for observation vector construction
+try:
+    from obs_builder import build_observation_vector
+    _HAVE_OBS_BUILDER = True
+except ImportError:
+    _HAVE_OBS_BUILDER = False
 from core_events import EventType, OrderEvent, FillEvent
 from compat_shims import sim_report_dict_to_core_exec_reports
 import event_bus as eb
@@ -905,7 +912,269 @@ class Mediator:
             return float(default)
         return numeric
 
+    @staticmethod
+    def _get_safe_float(row: Any, col: str, default: float = 0.0) -> float:
+        """Safely extract float value from row with fallback."""
+        if row is None:
+            return default
+        try:
+            val = row.get(col) if hasattr(row, "get") else getattr(row, col, None)
+            if val is None:
+                return default
+            result = float(val)
+            if not math.isfinite(result):
+                return default
+            return result
+        except (TypeError, ValueError, KeyError, AttributeError):
+            return default
+
+    def _extract_market_data(self, row: Any, state: Any, mark_price: float, prev_price: float) -> Dict[str, float]:
+        """Extract basic market data from row."""
+        price = self._coerce_finite(mark_price, default=0.0)
+        prev = self._coerce_finite(prev_price, default=price)
+
+        # Volume normalization
+        volume = self._get_safe_float(row, "volume", 1.0)
+        quote_volume = self._get_safe_float(row, "quote_asset_volume", 1.0)
+
+        log_volume_norm = 0.0
+        if quote_volume > 0:
+            log_volume_norm = float(np.tanh(np.log1p(quote_volume / 1e6)))
+
+        rel_volume = 0.0
+        if volume > 0:
+            rel_volume = float(np.tanh(np.log1p(volume / 100.0)))
+
+        return {
+            "price": price,
+            "prev_price": prev,
+            "log_volume_norm": log_volume_norm,
+            "rel_volume": rel_volume,
+        }
+
+    def _extract_technical_indicators(self, row: Any, sim: Any, row_idx: int) -> Dict[str, float]:
+        """Extract technical indicators from row or simulator."""
+        # Try to get from row first (from prepare_and_run.py features)
+        ma5 = self._get_safe_float(row, "sma_5", float('nan'))
+        ma20 = self._get_safe_float(row, "sma_15", float('nan'))  # map sma_15 to ma20 slot
+        rsi14 = self._get_safe_float(row, "rsi", 50.0)
+
+        # For MACD and other indicators, try from simulator if available
+        macd = 0.0
+        macd_signal = 0.0
+        momentum = 0.0
+        atr = 0.0
+        cci = 0.0
+        obv = 0.0
+        bb_lower = float('nan')
+        bb_upper = float('nan')
+
+        # Try to get from MarketSimulator if available
+        if sim is not None and hasattr(sim, "get_macd"):
+            try:
+                if hasattr(sim, "get_macd"):
+                    macd = float(sim.get_macd(row_idx))
+                if hasattr(sim, "get_macd_signal"):
+                    macd_signal = float(sim.get_macd_signal(row_idx))
+                if hasattr(sim, "get_momentum"):
+                    momentum = float(sim.get_momentum(row_idx))
+                if hasattr(sim, "get_atr"):
+                    atr = float(sim.get_atr(row_idx))
+                if hasattr(sim, "get_cci"):
+                    cci = float(sim.get_cci(row_idx))
+                if hasattr(sim, "get_obv"):
+                    obv = float(sim.get_obv(row_idx))
+                if hasattr(sim, "get_bb_lower"):
+                    bb_lower = float(sim.get_bb_lower(row_idx))
+                if hasattr(sim, "get_bb_upper"):
+                    bb_upper = float(sim.get_bb_upper(row_idx))
+            except Exception:
+                pass
+
+        return {
+            "ma5": ma5,
+            "ma20": ma20,
+            "rsi14": rsi14,
+            "macd": macd,
+            "macd_signal": macd_signal,
+            "momentum": momentum,
+            "atr": atr,
+            "cci": cci,
+            "obv": obv,
+            "bb_lower": bb_lower,
+            "bb_upper": bb_upper,
+        }
+
+    def _extract_norm_cols(self, row: Any) -> np.ndarray:
+        """Extract normalized columns for external features (cvd, garch, yang_zhang, etc.)."""
+        norm_cols = np.zeros(8, dtype=np.float32)
+
+        # Map technical indicators from prepare_and_run.py to norm_cols
+        norm_cols[0] = self._get_safe_float(row, "cvd_24h", 0.0)
+        norm_cols[1] = self._get_safe_float(row, "cvd_168h", 0.0)
+        norm_cols[2] = self._get_safe_float(row, "yang_zhang_24h", 0.0)
+        norm_cols[3] = self._get_safe_float(row, "yang_zhang_168h", 0.0)
+        norm_cols[4] = self._get_safe_float(row, "garch_12h", 0.0)
+        norm_cols[5] = self._get_safe_float(row, "garch_24h", 0.0)
+        norm_cols[6] = self._get_safe_float(row, "ret_15m", 0.0)
+        norm_cols[7] = self._get_safe_float(row, "ret_60m", 0.0)
+
+        # Normalize to reasonable range for neural network
+        norm_cols = np.tanh(norm_cols)
+
+        return norm_cols
+
     def _build_observation(self, *, row: Any | None, state: Any, mark_price: float) -> np.ndarray:
+        """Build observation vector using obs_builder infrastructure with technical indicators."""
+        obs_shape = getattr(getattr(self.env, "observation_space", None), "shape", None)
+        if not obs_shape:
+            return np.zeros(0, dtype=np.float32)
+
+        # If obs_builder is not available, fall back to legacy implementation
+        if not _HAVE_OBS_BUILDER:
+            return self._build_observation_legacy(row=row, state=state, mark_price=mark_price)
+
+        # Initialize observation array
+        obs = np.zeros(obs_shape, dtype=np.float32)
+
+        # Get environment and dataframe
+        env = self.env
+        df = getattr(env, "df", None)
+
+        # Determine row index
+        row_idx: int | None = getattr(self, "_context_row_idx", None)
+        if row_idx is None and row is not None:
+            try:
+                row_idx = int(getattr(row, "name"))
+            except Exception:
+                row_idx = None
+        if row_idx is None:
+            try:
+                step_idx = getattr(state, "step_idx", None)
+                if step_idx is not None:
+                    row_idx = int(step_idx)
+            except Exception:
+                row_idx = 0
+
+        if row_idx is not None:
+            if row_idx < 0:
+                row_idx = 0
+            if df is not None and row_idx >= len(df):
+                row_idx = len(df) - 1
+
+        # Calculate previous price and current price
+        resolve_reward_price = getattr(env, "_resolve_reward_price", None)
+        prev_price_val = self._coerce_finite(getattr(env, "_last_reward_price", 0.0), default=0.0)
+        curr_price = mark_price
+
+        if callable(resolve_reward_price):
+            try:
+                curr_price = float(resolve_reward_price(row_idx, row))
+            except Exception:
+                pass
+
+        if not math.isfinite(curr_price) or curr_price <= 0.0:
+            curr_price = mark_price if mark_price > 0.0 else 1.0
+
+        if (prev_price_val is None or prev_price_val <= 0.0) and callable(resolve_reward_price):
+            prev_idx = max(row_idx - 1, 0) if row_idx is not None else 0
+            prev_row = None
+            if df is not None and prev_idx < len(df):
+                try:
+                    prev_row = df.iloc[prev_idx]
+                except Exception:
+                    pass
+            try:
+                prev_price_candidate = float(resolve_reward_price(prev_idx, prev_row))
+                if math.isfinite(prev_price_candidate) and prev_price_candidate > 0.0:
+                    prev_price_val = float(prev_price_candidate)
+            except Exception:
+                pass
+
+        if prev_price_val <= 0.0:
+            prev_price_val = curr_price
+
+        # Extract market data
+        market_data = self._extract_market_data(row, state, curr_price, prev_price_val)
+
+        # Extract technical indicators
+        sim = getattr(env, "sim", None)
+        indicators = self._extract_technical_indicators(row, sim, row_idx or 0)
+
+        # Extract normalized columns (cvd, garch, yang_zhang, etc.)
+        norm_cols_values = self._extract_norm_cols(row)
+
+        # Get state values
+        units = self._coerce_finite(getattr(state, "units", 0.0), default=0.0)
+        cash = self._coerce_finite(getattr(state, "cash", 0.0), default=0.0)
+
+        # Get microstructure metrics from state if available
+        last_vol_imbalance = self._coerce_finite(getattr(state, "last_vol_imbalance", 0.0), default=0.0)
+        last_trade_intensity = self._coerce_finite(getattr(state, "last_trade_intensity", 0.0), default=0.0)
+        last_realized_spread = self._coerce_finite(getattr(state, "last_realized_spread", 0.0), default=0.0)
+        last_agent_fill_ratio = self._coerce_finite(getattr(state, "last_agent_fill_ratio", 0.0), default=0.0)
+
+        # Fear & Greed
+        fear_greed_value = self._get_safe_float(row, "fear_greed_value", 50.0)
+        has_fear_greed = abs(fear_greed_value - 50.0) > 0.1  # Check if we have real FG data
+
+        # Event metadata
+        is_high_importance = self._get_safe_float(row, "is_high_importance", 0.0)
+        time_since_event = self._get_safe_float(row, "time_since_event", 0.0)
+
+        # Risk-off flag (simplified: based on fear & greed)
+        risk_off_flag = fear_greed_value < 25.0
+
+        # Token metadata (single token by default)
+        token_id = getattr(state, "token_index", 0)
+        max_num_tokens = 1
+        num_tokens = 1
+
+        # Call obs_builder to construct observation vector
+        try:
+            build_observation_vector(
+                float(market_data["price"]),
+                float(market_data["prev_price"]),
+                float(market_data["log_volume_norm"]),
+                float(market_data["rel_volume"]),
+                float(indicators["ma5"]),
+                float(indicators["ma20"]),
+                float(indicators["rsi14"]),
+                float(indicators["macd"]),
+                float(indicators["macd_signal"]),
+                float(indicators["momentum"]),
+                float(indicators["atr"]),
+                float(indicators["cci"]),
+                float(indicators["obv"]),
+                float(indicators["bb_lower"]),
+                float(indicators["bb_upper"]),
+                float(is_high_importance),
+                float(time_since_event),
+                float(fear_greed_value),
+                bool(has_fear_greed),
+                bool(risk_off_flag),
+                float(cash),
+                float(units),
+                float(last_vol_imbalance),
+                float(last_trade_intensity),
+                float(last_realized_spread),
+                float(last_agent_fill_ratio),
+                int(token_id),
+                int(max_num_tokens),
+                int(num_tokens),
+                norm_cols_values,
+                obs,
+            )
+        except Exception as e:
+            # If obs_builder fails, fall back to legacy
+            import logging
+            logging.getLogger(__name__).warning(f"obs_builder failed: {e}, falling back to legacy")
+            return self._build_observation_legacy(row=row, state=state, mark_price=mark_price)
+
+        return obs
+
+    def _build_observation_legacy(self, *, row: Any | None, state: Any, mark_price: float) -> np.ndarray:
+        """Legacy observation builder (fallback when obs_builder is not available)."""
         obs_shape = getattr(getattr(self.env, "observation_space", None), "shape", None)
         if not obs_shape:
             return np.zeros(0, dtype=np.float32)
