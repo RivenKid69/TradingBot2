@@ -100,6 +100,58 @@ def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -
         return None
 
 
+def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
+    """
+    Рассчитывает волатильность диапазона Паркинсона (Parkinson Range Volatility) для последних n баров.
+
+    Формула:
+    σ_Parkinson = sqrt[(1/(4n·log(2))) · Σ(log(H_i/L_i))²]
+
+    Оценщик Паркинсона в 7,4 раза более эффективен, чем оценщик close-to-close,
+    так как использует информацию о дневном диапазоне (High-Low).
+
+    Args:
+        ohlc_bars: список словарей с ключами 'high' и 'low'
+        n: размер окна
+
+    Returns:
+        Волатильность Паркинсона или None если недостаточно данных
+    """
+    if not ohlc_bars or len(ohlc_bars) < n or n < 2:
+        return None
+
+    # Берем последние n баров
+    bars = list(ohlc_bars)[-n:]
+
+    try:
+        sum_sq = 0.0
+        valid_bars = 0
+
+        for bar in bars:
+            high = bar.get("high", 0.0)
+            low = bar.get("low", 0.0)
+
+            # Проверяем валидность данных
+            if high > 0 and low > 0 and high >= low:
+                # log(H_i/L_i)²
+                log_hl = math.log(high / low)
+                sum_sq += log_hl ** 2
+                valid_bars += 1
+
+        # Нужно минимум 2 валидных бара
+        if valid_bars < 2:
+            return None
+
+        # σ² = (1/(4n·ln(2))) · Σ(ln(H_i/L_i))²
+        parkinson_var = sum_sq / (4 * valid_bars * math.log(2))
+
+        # Возвращаем стандартное отклонение
+        return math.sqrt(parkinson_var)
+
+    except (ValueError, ZeroDivisionError, ArithmeticError):
+        return None
+
+
 @dataclass
 class FeatureSpec:
     """
@@ -107,6 +159,7 @@ class FeatureSpec:
       - lookbacks_prices: окна для SMA и лог-ретёрнов (в минутах для 1m входа)
       - rsi_period: период RSI по Вайльдеру (EMA-уподоблённое сглаживание)
       - yang_zhang_windows: окна для волатильности Yang-Zhang (в минутах)
+      - parkinson_windows: окна для волатильности Паркинсона (в минутах)
       - taker_buy_ratio_windows: окна для скользящего среднего taker_buy_ratio (в минутах)
       - taker_buy_ratio_momentum: окна для моментума taker_buy_ratio (в минутах)
       - cvd_windows: окна для кумулятивной дельты объема (в минутах)
@@ -115,6 +168,7 @@ class FeatureSpec:
     lookbacks_prices: List[int]
     rsi_period: int = 14
     yang_zhang_windows: Optional[List[int]] = None
+    parkinson_windows: Optional[List[int]] = None
     taker_buy_ratio_windows: Optional[List[int]] = None
     taker_buy_ratio_momentum: Optional[List[int]] = None
     cvd_windows: Optional[List[int]] = None
@@ -139,6 +193,16 @@ class FeatureSpec:
             ]
         else:
             self.yang_zhang_windows = []
+
+        # Инициализация окон Parkinson: 24ч, 168ч (7д) в минутах
+        if self.parkinson_windows is None:
+            self.parkinson_windows = [24 * 60, 168 * 60]  # 1440, 10080 минут
+        elif isinstance(self.parkinson_windows, list):
+            self.parkinson_windows = [
+                int(abs(x)) for x in self.parkinson_windows if int(abs(x)) > 0
+            ]
+        else:
+            self.parkinson_windows = []
 
         # Инициализация окон Taker Buy Ratio скользящего среднего: 6ч, 12ч, 24ч в минутах
         if self.taker_buy_ratio_windows is None:
@@ -178,6 +242,7 @@ class OnlineFeatureTransformer:
       - SMA и ретёрны из окна цен (1 точка в минуту)
       - RSI по Вайльдеру: скользящие avg_gain/avg_loss с периодом p
       - Yang-Zhang волатильность: комплексная OHLC-волатильность
+      - Parkinson волатильность: волатильность диапазона High-Low
     """
 
     def __init__(self, spec: FeatureSpec) -> None:
@@ -191,6 +256,8 @@ class OnlineFeatureTransformer:
             all_windows = self.spec.lookbacks_prices + [self.spec.rsi_period + 1]
             if self.spec.yang_zhang_windows:
                 all_windows.extend(self.spec.yang_zhang_windows)
+            if self.spec.parkinson_windows:
+                all_windows.extend(self.spec.parkinson_windows)
             if self.spec.taker_buy_ratio_windows:
                 all_windows.extend(self.spec.taker_buy_ratio_windows)
             if self.spec.taker_buy_ratio_momentum:
@@ -327,6 +394,20 @@ class OnlineFeatureTransformer:
                     window_hours = window // 60
                     feats[f"yang_zhang_{window_hours}h"] = float("nan")
 
+        # Рассчитываем Parkinson волатильность для каждого окна
+        if self.spec.parkinson_windows and st["ohlc_bars"]:
+            ohlc_list = list(st["ohlc_bars"])
+            for window in self.spec.parkinson_windows:
+                window_hours = window // 60  # конвертируем минуты в часы
+                if len(ohlc_list) >= window:
+                    pk_vol = calculate_parkinson_volatility(ohlc_list, window)
+                    if pk_vol is not None:
+                        feats[f"parkinson_{window_hours}h"] = float(pk_vol)
+                    else:
+                        feats[f"parkinson_{window_hours}h"] = float("nan")
+                else:
+                    feats[f"parkinson_{window_hours}h"] = float("nan")
+
         # Рассчитываем Taker Buy Ratio и его производные
         if st["taker_buy_ratios"]:
             ratio_list = list(st["taker_buy_ratios"])
@@ -395,7 +476,7 @@ def apply_offline_features(
     """
     Оффлайн-расчёт фич с точным соответствием онлайновому трансформеру.
     На входе ожидается таблица 1m-просэмплированных цен (price) и опционально OHLC, volume, taker_buy_base.
-    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi, yang_zhang_*h, taker_buy_ratio*.
+    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi, yang_zhang_*h, parkinson_*h, taker_buy_ratio*.
 
     Args:
         df: DataFrame с данными
@@ -415,6 +496,8 @@ def apply_offline_features(
         base_cols += [f"ret_{x}m" for x in spec.lookbacks_prices]
         if spec.yang_zhang_windows:
             base_cols += [f"yang_zhang_{w // 60}h" for w in spec.yang_zhang_windows]
+        if spec.parkinson_windows:
+            base_cols += [f"parkinson_{w // 60}h" for w in spec.parkinson_windows]
         if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
             base_cols.append("taker_buy_ratio")
         if spec.taker_buy_ratio_windows:
