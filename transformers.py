@@ -9,16 +9,109 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 
+def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
+    """
+    Рассчитывает волатильность Yang-Zhang для последних n баров.
+
+    Формула:
+    σ²_YZ = σ²_o + k·σ²_c + (1-k)·σ²_rs
+    где:
+    - σ²_o = ночная волатильность = (1/(n-1)) Σ(log(O_i/C_{i-1}) - μ_o)²
+    - σ²_c = волатильность open-close = (1/(n-1)) Σ(log(C_i/O_i) - μ_c)²
+    - σ²_rs = Роджерс-Сатчелл = (1/n) Σ[log(H_i/C_i)·log(H_i/O_i) + log(L_i/C_i)·log(L_i/O_i)]
+    - k = 0.34 (эмпирически оптимальный вес)
+
+    Args:
+        ohlc_bars: список словарей с ключами 'open', 'high', 'low', 'close'
+        n: размер окна
+
+    Returns:
+        Волатильность Yang-Zhang или None если недостаточно данных
+    """
+    if not ohlc_bars or len(ohlc_bars) < n or n < 2:
+        return None
+
+    # Берем последние n баров
+    bars = list(ohlc_bars)[-n:]
+
+    try:
+        # k - эмпирически оптимальный вес
+        k = 0.34
+
+        # Расчет ночной волатильности σ²_o
+        overnight_returns = []
+        for i in range(1, len(bars)):
+            prev_close = bars[i - 1].get("close", 0.0)
+            curr_open = bars[i].get("open", 0.0)
+            if prev_close > 0 and curr_open > 0:
+                overnight_returns.append(math.log(curr_open / prev_close))
+
+        if len(overnight_returns) < 2:
+            return None
+
+        mean_overnight = sum(overnight_returns) / len(overnight_returns)
+        sigma_o_sq = sum((r - mean_overnight) ** 2 for r in overnight_returns) / (len(overnight_returns) - 1)
+
+        # Расчет open-close волатильности σ²_c
+        oc_returns = []
+        for bar in bars:
+            open_price = bar.get("open", 0.0)
+            close_price = bar.get("close", 0.0)
+            if open_price > 0 and close_price > 0:
+                oc_returns.append(math.log(close_price / open_price))
+
+        if len(oc_returns) < 2:
+            return None
+
+        mean_oc = sum(oc_returns) / len(oc_returns)
+        sigma_c_sq = sum((r - mean_oc) ** 2 for r in oc_returns) / (len(oc_returns) - 1)
+
+        # Расчет Rogers-Satchell волатильности σ²_rs
+        rs_sum = 0.0
+        rs_count = 0
+        for bar in bars:
+            high = bar.get("high", 0.0)
+            low = bar.get("low", 0.0)
+            open_price = bar.get("open", 0.0)
+            close_price = bar.get("close", 0.0)
+
+            if high > 0 and low > 0 and open_price > 0 and close_price > 0:
+                # log(H/C) * log(H/O) + log(L/C) * log(L/O)
+                term1 = math.log(high / close_price) * math.log(high / open_price)
+                term2 = math.log(low / close_price) * math.log(low / open_price)
+                rs_sum += term1 + term2
+                rs_count += 1
+
+        if rs_count == 0:
+            return None
+
+        sigma_rs_sq = rs_sum / rs_count
+
+        # Комбинированная Yang-Zhang волатильность
+        sigma_yz_sq = sigma_o_sq + k * sigma_c_sq + (1 - k) * sigma_rs_sq
+
+        # Возвращаем стандартное отклонение (квадратный корень из дисперсии)
+        if sigma_yz_sq < 0:
+            return None
+
+        return math.sqrt(sigma_yz_sq)
+
+    except (ValueError, ZeroDivisionError, ArithmeticError):
+        return None
+
+
 @dataclass
 class FeatureSpec:
     """
     Единая спецификация фич:
       - lookbacks_prices: окна для SMA и лог-ретёрнов (в минутах для 1m входа)
       - rsi_period: период RSI по Вайльдеру (EMA-уподоблённое сглаживание)
+      - yang_zhang_windows: окна для волатильности Yang-Zhang (в минутах)
     """
 
     lookbacks_prices: List[int]
     rsi_period: int = 14
+    yang_zhang_windows: Optional[List[int]] = None
 
     def __post_init__(self) -> None:
         if (
@@ -31,6 +124,16 @@ class FeatureSpec:
         ]
         self.rsi_period = int(self.rsi_period)
 
+        # Инициализация окон Yang-Zhang: 24ч, 168ч (7д), 720ч (30д) в минутах
+        if self.yang_zhang_windows is None:
+            self.yang_zhang_windows = [24 * 60, 168 * 60, 720 * 60]  # 1440, 10080, 43200 минут
+        elif isinstance(self.yang_zhang_windows, list):
+            self.yang_zhang_windows = [
+                int(abs(x)) for x in self.yang_zhang_windows if int(abs(x)) > 0
+            ]
+        else:
+            self.yang_zhang_windows = []
+
 
 class OnlineFeatureTransformer:
     """
@@ -38,6 +141,7 @@ class OnlineFeatureTransformer:
     Полностью соответствует онлайновой логике (как раньше в FeaturePipe):
       - SMA и ретёрны из окна цен (1 точка в минуту)
       - RSI по Вайльдеру: скользящие avg_gain/avg_loss с периодом p
+      - Yang-Zhang волатильность: комплексная OHLC-волатильность
     """
 
     def __init__(self, spec: FeatureSpec) -> None:
@@ -47,17 +151,44 @@ class OnlineFeatureTransformer:
     def _ensure_state(self, symbol: str) -> Dict[str, Any]:
         st = self._state.get(symbol)
         if st is None:
-            maxlen = max(self.spec.lookbacks_prices + [self.spec.rsi_period + 1])
+            # Определяем максимальную длину окна для всех фич
+            all_windows = self.spec.lookbacks_prices + [self.spec.rsi_period + 1]
+            if self.spec.yang_zhang_windows:
+                all_windows.extend(self.spec.yang_zhang_windows)
+            maxlen = max(all_windows) if all_windows else 100
+
             st = {
                 "prices": deque(maxlen=maxlen),  # type: deque[float]
                 "avg_gain": None,  # type: Optional[float]
                 "avg_loss": None,  # type: Optional[float]
                 "last_close": None,  # type: Optional[float]
+                # Для Yang-Zhang волатильности нужны OHLC
+                "ohlc_bars": deque(maxlen=maxlen),  # type: deque[Dict[str, float]]
             }
             self._state[symbol] = st
         return st
 
-    def update(self, *, symbol: str, ts_ms: int, close: float) -> Dict[str, Any]:
+    def update(
+        self,
+        *,
+        symbol: str,
+        ts_ms: int,
+        close: float,
+        open_price: Optional[float] = None,
+        high: Optional[float] = None,
+        low: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Обновляет состояние трансформера новым баром и возвращает признаки.
+
+        Args:
+            symbol: символ торгового инструмента
+            ts_ms: временная метка в миллисекундах
+            close: цена закрытия
+            open_price: цена открытия (опционально для Yang-Zhang)
+            high: максимальная цена (опционально для Yang-Zhang)
+            low: минимальная цена (опционально для Yang-Zhang)
+        """
         sym = str(symbol).upper()
         price = float(close)
         st = self._ensure_state(sym)
@@ -77,6 +208,16 @@ class OnlineFeatureTransformer:
         st["last_close"] = price
 
         st["prices"].append(price)
+
+        # Сохраняем OHLC данные для Yang-Zhang
+        if open_price is not None and high is not None and low is not None:
+            ohlc_bar = {
+                "open": float(open_price),
+                "high": float(high),
+                "low": float(low),
+                "close": float(close),
+            }
+            st["ohlc_bars"].append(ohlc_bar)
 
         feats: Dict[str, Any] = {
             "ts_ms": int(ts_ms),
@@ -105,6 +246,23 @@ class OnlineFeatureTransformer:
         else:
             feats["rsi"] = float("nan")
 
+        # Рассчитываем Yang-Zhang волатильность для каждого окна
+        if self.spec.yang_zhang_windows and st["ohlc_bars"]:
+            ohlc_list = list(st["ohlc_bars"])
+            for window in self.spec.yang_zhang_windows:
+                if len(ohlc_list) >= window:
+                    yz_vol = calculate_yang_zhang_volatility(ohlc_list, window)
+                    if yz_vol is not None:
+                        # Имя признака: yang_zhang_{окно_в_часах}h
+                        window_hours = window // 60  # конвертируем минуты в часы
+                        feats[f"yang_zhang_{window_hours}h"] = float(yz_vol)
+                    else:
+                        window_hours = window // 60
+                        feats[f"yang_zhang_{window_hours}h"] = float("nan")
+                else:
+                    window_hours = window // 60
+                    feats[f"yang_zhang_{window_hours}h"] = float("nan")
+
         return feats
 
 
@@ -115,18 +273,32 @@ def apply_offline_features(
     ts_col: str = "ts_ms",
     symbol_col: str = "symbol",
     price_col: str = "price",
+    open_col: Optional[str] = None,
+    high_col: Optional[str] = None,
+    low_col: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Оффлайн-расчёт фич с точным соответствием онлайновому трансформеру.
-    На входе ожидается таблица 1m-просэмплированных цен (price).
-    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi.
+    На входе ожидается таблица 1m-просэмплированных цен (price) и опционально OHLC.
+    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi, yang_zhang_*h.
+
+    Args:
+        df: DataFrame с данными
+        spec: спецификация признаков
+        ts_col: имя колонки временной метки
+        symbol_col: имя колонки символа
+        price_col: имя колонки цены (обычно close)
+        open_col: имя колонки open (опционально)
+        high_col: имя колонки high (опционально)
+        low_col: имя колонки low (опционально)
     """
     if df is None or df.empty:
-        return pd.DataFrame(
-            columns=[ts_col, symbol_col, "ref_price", "rsi"]
-            + [f"sma_{x}" for x in spec.lookbacks_prices]
-            + [f"ret_{x}m" for x in spec.lookbacks_prices]
-        )
+        base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
+        base_cols += [f"sma_{x}" for x in spec.lookbacks_prices]
+        base_cols += [f"ret_{x}m" for x in spec.lookbacks_prices]
+        if spec.yang_zhang_windows:
+            base_cols += [f"yang_zhang_{w // 60}h" for w in spec.yang_zhang_windows]
+        return pd.DataFrame(columns=base_cols)
 
     d = df.copy()
     if symbol_col not in d.columns or ts_col not in d.columns:
@@ -134,7 +306,15 @@ def apply_offline_features(
     if price_col not in d.columns:
         raise ValueError(f"Вход должен содержать колонку цены '{price_col}'")
 
-    d = d[[ts_col, symbol_col, price_col]].dropna().copy()
+    # Определяем какие колонки нужно сохранить
+    cols_to_keep = [ts_col, symbol_col, price_col]
+    has_ohlc = False
+    if open_col and high_col and low_col:
+        if open_col in d.columns and high_col in d.columns and low_col in d.columns:
+            cols_to_keep.extend([open_col, high_col, low_col])
+            has_ohlc = True
+
+    d = d[cols_to_keep].dropna().copy()
     d[ts_col] = d[ts_col].astype("int64")
     d[symbol_col] = d[symbol_col].astype(str)
 
@@ -153,7 +333,19 @@ def apply_offline_features(
             current_symbol = sym
             transformer = OnlineFeatureTransformer(spec)
 
-        feats = transformer.update(symbol=sym, ts_ms=ts, close=px)
+        # Передаем OHLC если доступны
+        if has_ohlc:
+            feats = transformer.update(
+                symbol=sym,
+                ts_ms=ts,
+                close=px,
+                open_price=float(row[open_col]),
+                high=float(row[high_col]),
+                low=float(row[low_col]),
+            )
+        else:
+            feats = transformer.update(symbol=sym, ts_ms=ts, close=px)
+
         out_rows.append(feats)
 
     out = pd.DataFrame(out_rows)
