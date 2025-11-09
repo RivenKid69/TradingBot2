@@ -52,6 +52,8 @@ features:
   rsi_period: 14
   # Yang-Zhang volatility windows (in minutes): 24h, 7d, 30d
   yang_zhang_windows: [1440, 10080, 43200]
+  # Parkinson volatility windows (in minutes): 24h, 7d
+  parkinson_windows: [1440, 10080]
 
 out_csv: "logs/signals.csv"
 min_signal_gap_s: 300
