@@ -5,6 +5,7 @@ prepare_and_run.py
 Merge raw 1h candles from data/candles/ with Fear & Greed (data/fear_greed.csv)
 and write per-symbol Feather files to data/processed/ expected by training.
 Also enforces column schema and avoids renaming 'volume'.
+Creates technical features (CVD, taker buy ratio, etc.) using apply_offline_features.
 """
 import os
 import glob
@@ -13,6 +14,8 @@ import argparse
 
 import numpy as np
 import pandas as pd
+
+from transformers import FeatureSpec, apply_offline_features
 
 RAW_DIR = os.path.join("data","candles")  # дефолт; ниже добавим data/klines в список по умолчанию
 FNG = os.path.join("data","fear_greed.csv")
@@ -273,6 +276,16 @@ def prepare() -> list[str]:
         df_norm["symbol"] = sym
         by_sym.setdefault(sym, []).append(df_norm)
 
+    # Создаем спецификацию признаков для всех технических индикаторов
+    feature_spec = FeatureSpec(
+        lookbacks_prices=[5, 15, 60],  # окна для SMA и returns
+        rsi_period=14,
+        yang_zhang_windows=[24 * 60, 168 * 60, 720 * 60],  # 24ч, 168ч, 720ч в минутах
+        taker_buy_ratio_windows=[6 * 60, 12 * 60, 24 * 60],  # 6ч, 12ч, 24ч в минутах
+        taker_buy_ratio_momentum=[60, 6 * 60, 12 * 60],  # 1ч, 6ч, 12ч в минутах
+        cvd_windows=[24 * 60, 168 * 60],  # 24ч (1440 мин), 168ч (10080 мин) для CVD
+    )
+
     for sym, parts in by_sym.items():
         df = pd.concat(parts, ignore_index=True).sort_values("timestamp")
         df = df.drop_duplicates(subset=["timestamp"], keep="last").reset_index(drop=True)
@@ -306,6 +319,45 @@ def prepare() -> list[str]:
             drop_cols = [c for c in ["timestamp_dt", "event_ts_dt", "event_ts", "importance_level"] if c in dfs.columns]
             dfs = dfs.drop(columns=drop_cols)
             df = dfs
+
+        # Создаем технические признаки (cvd_24h, cvd_168h, taker_buy_ratio_*, yang_zhang_*, etc.)
+        # Конвертируем timestamp в ts_ms для apply_offline_features (требуется миллисекунды)
+        df_for_features = df.copy()
+        df_for_features["ts_ms"] = df_for_features["timestamp"] * 1000
+        df_for_features["symbol"] = sym
+
+        # Переименуем колонки для совместимости с apply_offline_features
+        # apply_offline_features ожидает: price, open, high, low, volume, taker_buy_base
+        df_for_features["price"] = df_for_features["close"]
+
+        try:
+            features_df = apply_offline_features(
+                df_for_features,
+                spec=feature_spec,
+                ts_col="ts_ms",
+                symbol_col="symbol",
+                price_col="price",
+                open_col="open",
+                high_col="high",
+                low_col="low",
+                volume_col="volume",
+                taker_buy_base_col="taker_buy_base_asset_volume",
+            )
+
+            # Объединяем исходные данные с новыми признаками
+            # features_df содержит: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi,
+            # yang_zhang_*h, taker_buy_ratio*, cvd_*h
+
+            # Удаляем вспомогательные колонки, которые дублируются
+            features_to_merge = features_df.drop(columns=["ts_ms", "symbol", "ref_price"], errors="ignore")
+
+            # Объединяем по индексу (порядок должен совпадать)
+            df = pd.concat([df, features_to_merge], axis=1)
+
+            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_168h")
+        except Exception as e:
+            print(f"  ⚠ {sym}: Failed to create technical features: {e}")
+            # Продолжаем без технических признаков, если что-то пошло не так
 
         out = os.path.join(OUT_DIR, f"{sym}.feather")
         prefix = [
