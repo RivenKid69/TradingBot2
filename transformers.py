@@ -107,11 +107,15 @@ class FeatureSpec:
       - lookbacks_prices: окна для SMA и лог-ретёрнов (в минутах для 1m входа)
       - rsi_period: период RSI по Вайльдеру (EMA-уподоблённое сглаживание)
       - yang_zhang_windows: окна для волатильности Yang-Zhang (в минутах)
+      - taker_buy_ratio_windows: окна для скользящего среднего taker_buy_ratio (в минутах)
+      - taker_buy_ratio_momentum: окна для моментума taker_buy_ratio (в минутах)
     """
 
     lookbacks_prices: List[int]
     rsi_period: int = 14
     yang_zhang_windows: Optional[List[int]] = None
+    taker_buy_ratio_windows: Optional[List[int]] = None
+    taker_buy_ratio_momentum: Optional[List[int]] = None
 
     def __post_init__(self) -> None:
         if (
@@ -134,6 +138,26 @@ class FeatureSpec:
         else:
             self.yang_zhang_windows = []
 
+        # Инициализация окон Taker Buy Ratio скользящего среднего: 6ч, 12ч, 24ч в минутах
+        if self.taker_buy_ratio_windows is None:
+            self.taker_buy_ratio_windows = [6 * 60, 12 * 60, 24 * 60]  # 360, 720, 1440 минут
+        elif isinstance(self.taker_buy_ratio_windows, list):
+            self.taker_buy_ratio_windows = [
+                int(abs(x)) for x in self.taker_buy_ratio_windows if int(abs(x)) > 0
+            ]
+        else:
+            self.taker_buy_ratio_windows = []
+
+        # Инициализация окон моментума Taker Buy Ratio: 1ч, 6ч, 12ч в минутах
+        if self.taker_buy_ratio_momentum is None:
+            self.taker_buy_ratio_momentum = [60, 6 * 60, 12 * 60]  # 60, 360, 720 минут
+        elif isinstance(self.taker_buy_ratio_momentum, list):
+            self.taker_buy_ratio_momentum = [
+                int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0
+            ]
+        else:
+            self.taker_buy_ratio_momentum = []
+
 
 class OnlineFeatureTransformer:
     """
@@ -155,6 +179,10 @@ class OnlineFeatureTransformer:
             all_windows = self.spec.lookbacks_prices + [self.spec.rsi_period + 1]
             if self.spec.yang_zhang_windows:
                 all_windows.extend(self.spec.yang_zhang_windows)
+            if self.spec.taker_buy_ratio_windows:
+                all_windows.extend(self.spec.taker_buy_ratio_windows)
+            if self.spec.taker_buy_ratio_momentum:
+                all_windows.extend(self.spec.taker_buy_ratio_momentum)
             maxlen = max(all_windows) if all_windows else 100
 
             st = {
@@ -164,6 +192,8 @@ class OnlineFeatureTransformer:
                 "last_close": None,  # type: Optional[float]
                 # Для Yang-Zhang волатильности нужны OHLC
                 "ohlc_bars": deque(maxlen=maxlen),  # type: deque[Dict[str, float]]
+                # Для Taker Buy Ratio нужны значения ratio
+                "taker_buy_ratios": deque(maxlen=maxlen),  # type: deque[float]
             }
             self._state[symbol] = st
         return st
@@ -177,6 +207,8 @@ class OnlineFeatureTransformer:
         open_price: Optional[float] = None,
         high: Optional[float] = None,
         low: Optional[float] = None,
+        volume: Optional[float] = None,
+        taker_buy_base: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Обновляет состояние трансформера новым баром и возвращает признаки.
@@ -188,6 +220,8 @@ class OnlineFeatureTransformer:
             open_price: цена открытия (опционально для Yang-Zhang)
             high: максимальная цена (опционально для Yang-Zhang)
             low: минимальная цена (опционально для Yang-Zhang)
+            volume: объем торгов (опционально для Taker Buy Ratio)
+            taker_buy_base: объем покупок taker (опционально для Taker Buy Ratio)
         """
         sym = str(symbol).upper()
         price = float(close)
@@ -218,6 +252,11 @@ class OnlineFeatureTransformer:
                 "close": float(close),
             }
             st["ohlc_bars"].append(ohlc_bar)
+
+        # Вычисляем и сохраняем Taker Buy Ratio
+        if volume is not None and taker_buy_base is not None and volume > 0:
+            taker_buy_ratio = float(taker_buy_base) / float(volume)
+            st["taker_buy_ratios"].append(taker_buy_ratio)
 
         feats: Dict[str, Any] = {
             "ts_ms": int(ts_ms),
@@ -263,6 +302,41 @@ class OnlineFeatureTransformer:
                     window_hours = window // 60
                     feats[f"yang_zhang_{window_hours}h"] = float("nan")
 
+        # Рассчитываем Taker Buy Ratio и его производные
+        if st["taker_buy_ratios"]:
+            ratio_list = list(st["taker_buy_ratios"])
+
+            # Добавляем текущее значение taker_buy_ratio
+            if ratio_list:
+                feats["taker_buy_ratio"] = float(ratio_list[-1])
+            else:
+                feats["taker_buy_ratio"] = float("nan")
+
+            # Рассчитываем скользящее среднее для каждого окна
+            if self.spec.taker_buy_ratio_windows:
+                for window in self.spec.taker_buy_ratio_windows:
+                    window_hours = window // 60
+                    if len(ratio_list) >= window:
+                        window_data = ratio_list[-window:]
+                        sma = sum(window_data) / float(len(window_data))
+                        feats[f"taker_buy_ratio_sma_{window_hours}h"] = float(sma)
+                    else:
+                        feats[f"taker_buy_ratio_sma_{window_hours}h"] = float("nan")
+
+            # Рассчитываем моментум (изменение за последние N периодов)
+            if self.spec.taker_buy_ratio_momentum:
+                for window in self.spec.taker_buy_ratio_momentum:
+                    window_hours = window // 60
+                    if len(ratio_list) >= window + 1:
+                        current = ratio_list[-1]
+                        past = ratio_list[-(window + 1)]
+                        momentum = current - past
+                        feats[f"taker_buy_ratio_momentum_{window_hours}h"] = float(momentum)
+                    else:
+                        feats[f"taker_buy_ratio_momentum_{window_hours}h"] = float("nan")
+
+            # Z-score нормализация будет применена автоматически в FeaturePipeline
+
         return feats
 
 
@@ -276,11 +350,13 @@ def apply_offline_features(
     open_col: Optional[str] = None,
     high_col: Optional[str] = None,
     low_col: Optional[str] = None,
+    volume_col: Optional[str] = None,
+    taker_buy_base_col: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Оффлайн-расчёт фич с точным соответствием онлайновому трансформеру.
-    На входе ожидается таблица 1m-просэмплированных цен (price) и опционально OHLC.
-    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi, yang_zhang_*h.
+    На входе ожидается таблица 1m-просэмплированных цен (price) и опционально OHLC, volume, taker_buy_base.
+    На выходе: ts_ms, symbol, ref_price, sma_*, ret_*m, rsi, yang_zhang_*h, taker_buy_ratio*.
 
     Args:
         df: DataFrame с данными
@@ -291,6 +367,8 @@ def apply_offline_features(
         open_col: имя колонки open (опционально)
         high_col: имя колонки high (опционально)
         low_col: имя колонки low (опционально)
+        volume_col: имя колонки volume (опционально для Taker Buy Ratio)
+        taker_buy_base_col: имя колонки taker_buy_base (опционально для Taker Buy Ratio)
     """
     if df is None or df.empty:
         base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
@@ -298,6 +376,12 @@ def apply_offline_features(
         base_cols += [f"ret_{x}m" for x in spec.lookbacks_prices]
         if spec.yang_zhang_windows:
             base_cols += [f"yang_zhang_{w // 60}h" for w in spec.yang_zhang_windows]
+        if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
+            base_cols.append("taker_buy_ratio")
+        if spec.taker_buy_ratio_windows:
+            base_cols += [f"taker_buy_ratio_sma_{w // 60}h" for w in spec.taker_buy_ratio_windows]
+        if spec.taker_buy_ratio_momentum:
+            base_cols += [f"taker_buy_ratio_momentum_{w // 60}h" for w in spec.taker_buy_ratio_momentum]
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()
@@ -313,6 +397,12 @@ def apply_offline_features(
         if open_col in d.columns and high_col in d.columns and low_col in d.columns:
             cols_to_keep.extend([open_col, high_col, low_col])
             has_ohlc = True
+
+    has_volume_data = False
+    if volume_col and taker_buy_base_col:
+        if volume_col in d.columns and taker_buy_base_col in d.columns:
+            cols_to_keep.extend([volume_col, taker_buy_base_col])
+            has_volume_data = True
 
     d = d[cols_to_keep].dropna().copy()
     d[ts_col] = d[ts_col].astype("int64")
@@ -333,18 +423,23 @@ def apply_offline_features(
             current_symbol = sym
             transformer = OnlineFeatureTransformer(spec)
 
-        # Передаем OHLC если доступны
+        # Передаем OHLC и volume данные если доступны
+        update_kwargs = {
+            "symbol": sym,
+            "ts_ms": ts,
+            "close": px,
+        }
+
         if has_ohlc:
-            feats = transformer.update(
-                symbol=sym,
-                ts_ms=ts,
-                close=px,
-                open_price=float(row[open_col]),
-                high=float(row[high_col]),
-                low=float(row[low_col]),
-            )
-        else:
-            feats = transformer.update(symbol=sym, ts_ms=ts, close=px)
+            update_kwargs["open_price"] = float(row[open_col])
+            update_kwargs["high"] = float(row[high_col])
+            update_kwargs["low"] = float(row[low_col])
+
+        if has_volume_data:
+            update_kwargs["volume"] = float(row[volume_col])
+            update_kwargs["taker_buy_base"] = float(row[taker_buy_base_col])
+
+        feats = transformer.update(**update_kwargs)
 
         out_rows.append(feats)
 

@@ -21,6 +21,7 @@ def main():
     p.add_argument("--price-col", choices=["close", "hl2", "ohlc4"], default="close", help="Какую цену считать ценой для меток")
     p.add_argument("--out", default="data/prices.parquet", help="Куда сохранить prices.parquet")
     p.add_argument("--include-ohlc", action="store_true", help="Включить OHLC колонки для Yang-Zhang волатильности")
+    p.add_argument("--include-volume", action="store_true", help="Включить volume и taker_buy_base для Taker Buy Ratio")
     args = p.parse_args()
 
     d = _read_any(args.in_klines)
@@ -50,6 +51,14 @@ def main():
     # Включаем OHLC колонки если запрошено и они есть в данных
     if args.include_ohlc:
         for col in ["open", "high", "low", "close"]:
+            if col in d.columns:
+                d[col] = pd.to_numeric(d[col], errors="coerce")
+                if col not in output_columns:
+                    output_columns.append(col)
+
+    # Включаем volume и taker_buy_base если запрошено и они есть в данных
+    if args.include_volume:
+        for col in ["volume", "taker_buy_base"]:
             if col in d.columns:
                 d[col] = pd.to_numeric(d[col], errors="coerce")
                 if col not in output_columns:
