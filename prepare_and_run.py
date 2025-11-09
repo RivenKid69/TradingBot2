@@ -281,6 +281,7 @@ def prepare() -> list[str]:
         lookbacks_prices=[5, 15, 60],  # окна для SMA и returns
         rsi_period=14,
         yang_zhang_windows=[24 * 60, 168 * 60, 720 * 60],  # 24ч, 168ч, 720ч в минутах
+        parkinson_windows=[24 * 60, 168 * 60],  # 24ч, 168ч в минутах для Parkinson
         taker_buy_ratio_windows=[6 * 60, 12 * 60, 24 * 60],  # 6ч, 12ч, 24ч в минутах
         taker_buy_ratio_momentum=[60, 6 * 60, 12 * 60],  # 1ч, 6ч, 12ч в минутах
         cvd_windows=[24 * 60, 168 * 60],  # 24ч (1440 мин), 168ч (10080 мин) для CVD
