@@ -98,8 +98,8 @@ components:
     target: impl_offline_data:OfflineCSVBarSource
     params:
       paths:
-        - "data/processed/*.feather"
-      timeframe: "1m"
+        - "data/train/*.feather"
+      timeframe: "1h"
   executor:
     target: impl_sim_executor:SimExecutor
     params:
