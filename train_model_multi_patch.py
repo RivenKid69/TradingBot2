@@ -4057,8 +4057,12 @@ def objective(trial: optuna.Trial,
                     model.logger.record(f"evaluation/{regime}_steps_per_year", float(steps_per_year))
                 model.logger.record(f"evaluation/{regime}_ann_factor", float(ann_sqrt))
 
+            # Always set market regime explicitly to avoid state leakage from previous iteration
             if regime != 'normal':
                 final_eval_env.env_method("set_market_regime", regime=regime, duration=regime_duration)
+            else:
+                # Explicitly reset to normal regime
+                final_eval_env.env_method("set_market_regime", regime='normal', duration=0)
 
             _rewards, equity_curves = evaluate_policy_custom_cython(model, final_eval_env, num_episodes=1)
             symbol_equity_curves.extend(equity_curves)

@@ -280,7 +280,11 @@ cdef class TradingEnv:
         ratio = 1.0
         if self.prev_net_worth > 1e-9:
             ratio = self.state.net_worth / self.prev_net_worth
-        if ratio < 1e-4:
+
+        # Protect against NaN/Inf before clipping and log
+        if not isfinite(ratio) or ratio <= 0.0:
+            ratio = 1.0  # No change in net worth
+        elif ratio < 1e-4:
             ratio = 1e-4
         elif ratio > 10.0:
             ratio = 10.0

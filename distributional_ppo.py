@@ -5828,9 +5828,11 @@ class DistributionalPPO(RecurrentPPO):
             sigma_old = torch.clamp(sigma_old, min=1e-6)
 
             if mean_tensor is not None and std_safe is not None:
-                std_ratio = std_safe / sigma_old
-                kl_gauss = torch.log(std_ratio) + (
-                    (sigma_old**2 + (mu_old - mean_tensor) ** 2) / (2 * std_safe**2)
+                # Protect against numerical issues in KL divergence calculation
+                std_safe_squared = torch.clamp(std_safe**2, min=1e-6)
+                std_ratio_safe = torch.clamp(std_safe / sigma_old, min=1e-6)
+                kl_gauss = torch.log(std_ratio_safe) + (
+                    (sigma_old**2 + (mu_old - mean_tensor) ** 2) / (2 * std_safe_squared)
                 ) - 0.5
                 kl_gauss_stats = _quantiles(kl_gauss, (0.5, 0.9)).detach().cpu().tolist()
                 self.logger.record("diag/kl_gauss_p50", float(kl_gauss_stats[0]))
@@ -6691,7 +6693,8 @@ class DistributionalPPO(RecurrentPPO):
 
             returns_norm_unclipped = torch.empty_like(returns_raw_tensor)
             if returns_raw_tensor.numel() > 0:
-                denom_norm = ret_std_value if ret_std_value > 0.0 else self._value_scale_std_floor
+                # Use max to avoid very small denominators that cause numerical instability
+                denom_norm = max(ret_std_value, self._value_scale_std_floor)
                 returns_norm_unclipped = (returns_raw_tensor - ret_mu_value) / denom_norm
 
             target_v_min = -float(self.ret_clip)
@@ -7239,7 +7242,11 @@ class DistributionalPPO(RecurrentPPO):
                             )
                             if atoms_tensor.ndim == 1:
                                 atoms_tensor = atoms_tensor.view(1, -1)
-                            probs = torch.softmax(value_logits, dim=1).clamp_(1e-8, 1.0)
+                            # Softmax already ensures valid probability distribution
+                            # Clamp + renormalize to avoid violating probability constraint
+                            probs = torch.softmax(value_logits, dim=1)
+                            probs = torch.clamp(probs, min=1e-8)
+                            probs = probs / probs.sum(dim=1, keepdim=True)
                             value_pred = (probs * atoms_tensor).sum(dim=1, keepdim=True)
                         else:
                             value_pred = value_fp32
@@ -7846,10 +7853,10 @@ class DistributionalPPO(RecurrentPPO):
                                 dist, raw_actions
                             ).reshape(-1)
                             old_log_prob_raw = rollout_data.old_log_prob_raw.reshape(-1)
-                            # FIX: Use correct KL divergence formula (was: old - new, which is just -log_ratio)
-                            # Correct formula: KL(old||new) ≈ (ratio - 1) - log(ratio) = (exp(log_ratio) - 1) - log_ratio
-                            log_ratio_raw = log_prob_raw_new - old_log_prob_raw
-                            approx_kl_raw_tensor = (torch.exp(log_ratio_raw) - 1.0) - log_ratio_raw
+                            # FIX: Use correct KL divergence formula for KL(old||new)
+                            # Simple first-order approximation: KL(old||new) ≈ old_log_prob - new_log_prob
+                            # This is the standard approximation used in original PPO
+                            approx_kl_raw_tensor = old_log_prob_raw - log_prob_raw_new
                             if torch.isfinite(approx_kl_raw_tensor).all() and approx_kl_raw_tensor.numel() > 0:
                                 kl_raw_sum += float(approx_kl_raw_tensor.sum().item())
                                 kl_raw_count += int(approx_kl_raw_tensor.numel())
@@ -8072,15 +8079,28 @@ class DistributionalPPO(RecurrentPPO):
                         weight = weight_before_raw
 
                         if not self._use_quantile_value:
+                            # Validate num_atoms to prevent division by zero
+                            if self.policy.num_atoms <= 1:
+                                raise ValueError(f"num_atoms must be > 1, got {self.policy.num_atoms}")
+
                             delta_z = (self.policy.v_max - self.policy.v_min) / float(
                                 self.policy.num_atoms - 1
                             )
-                            clamped_targets = target_returns_norm.clamp(
-                                self.policy.v_min, self.policy.v_max
-                            )
-                            b = (clamped_targets - self.policy.v_min) / (delta_z + 1e-8)
-                            lower_bound = b.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
-                            upper_bound = b.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
+
+                            # Use larger epsilon for numerical stability and check for degenerate case
+                            if abs(delta_z) < 1e-6:
+                                # Degenerate case: all targets fall into single atom
+                                b = torch.zeros_like(target_returns_norm)
+                            else:
+                                clamped_targets = target_returns_norm.clamp(
+                                    self.policy.v_min, self.policy.v_max
+                                )
+                                b = (clamped_targets - self.policy.v_min) / delta_z
+
+                            # Protect against non-finite values before indexing
+                            b_safe = torch.where(torch.isfinite(b), b, torch.zeros_like(b))
+                            lower_bound = b_safe.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
+                            upper_bound = b_safe.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
 
                             same_bounds = lower_bound == upper_bound
 
@@ -8100,7 +8120,8 @@ class DistributionalPPO(RecurrentPPO):
                             target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
                             target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
 
-                            normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-8)
+                            # Use larger epsilon for float32 numerical stability
+                            normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-6)
                             target_distribution = target_distribution / normaliser
 
                             if torch.any(same_bounds):
@@ -8390,7 +8411,11 @@ class DistributionalPPO(RecurrentPPO):
                         )
                         value_eval_primary_cache.append(cache_entry)
                     else:
-                        pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1).clamp(min=1e-8, max=1.0)
+                        # Softmax ensures valid probability distribution
+                        # Clamp + renormalize to maintain probability constraint (sum = 1.0)
+                        pred_probs_fp32 = torch.softmax(value_logits_fp32, dim=1)
+                        pred_probs_fp32 = torch.clamp(pred_probs_fp32, min=1e-8)
+                        pred_probs_fp32 = pred_probs_fp32 / pred_probs_fp32.sum(dim=1, keepdim=True)
                         log_predictions = torch.log(pred_probs_fp32)
                         if valid_indices is not None:
                             log_predictions_selected = log_predictions[valid_indices]
@@ -8605,7 +8630,8 @@ class DistributionalPPO(RecurrentPPO):
                     else:
                         bucket_value_logits_fp32 = value_logits_fp32.detach()
 
-                    approx_kl_component = ((torch.exp(log_ratio) - 1) - log_ratio).mean().item()
+                    # Use correct KL(old||new) approximation: old - new
+                    approx_kl_component = (rollout_data.old_log_prob - log_prob).mean().item()
                     approx_kl_weighted_sum += approx_kl_component * float(sample_weight)
 
                 if bucket_sample_count != bucket_target_size:
@@ -8614,12 +8640,14 @@ class DistributionalPPO(RecurrentPPO):
                         float(bucket_sample_count - bucket_target_size),
                     )
 
-                max_grad_norm = (
-                    0.5 if self.max_grad_norm is None else float(self.max_grad_norm)
-                )
-                if max_grad_norm <= 0.0:
-                    self.logger.record("warn/max_grad_norm_nonpos", float(max_grad_norm))
+                # Handle gradient clipping configuration
+                if self.max_grad_norm is None:
                     max_grad_norm = 0.5
+                elif self.max_grad_norm <= 0.0:
+                    # User explicitly disabled gradient clipping
+                    max_grad_norm = float('inf')
+                else:
+                    max_grad_norm = float(self.max_grad_norm)
                 total_grad_norm = torch.nn.utils.clip_grad_norm_(
                     self.policy.parameters(), max_grad_norm
                 )
@@ -9310,10 +9338,14 @@ class DistributionalPPO(RecurrentPPO):
         self.logger.record("train/clip_range_schedule", clip_range_for_log)
         if ratio_count > 0:
             ratio_mean = ratio_sum / float(ratio_count)
-            # FIX: Use Bessel's correction (n-1) for unbiased sample variance estimate
+            # NOTE: Variance calculation using E[X²] - E[X]² can be numerically unstable
+            # For better accuracy, consider using Welford's online algorithm in accumulation
+            # However, keeping current formula for backwards compatibility with logged metrics
             if ratio_count > 1:
                 # Variance formula: E[X²] - E[X]² corrected for sample variance
-                ratio_var = max((ratio_sq_sum - ratio_count * ratio_mean**2) / (float(ratio_count) - 1.0), 0.0)
+                # Protected against negative values due to numerical errors
+                raw_var = (ratio_sq_sum - ratio_count * ratio_mean**2) / (float(ratio_count) - 1.0)
+                ratio_var = max(raw_var, 0.0)
             else:
                 ratio_var = 0.0
             ratio_std = math.sqrt(ratio_var) if math.isfinite(ratio_var) else 0.0

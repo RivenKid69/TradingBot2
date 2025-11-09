@@ -114,10 +114,12 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
                 obs, reward, terminated, truncated, info = env.step(action)
                 done = terminated or truncated
 
-                if truncated:
-                    # FIX: сохраняем терминальное состояние для корректного бутстраппинга GAE
+                # Save terminal observation BEFORE reset for correct GAE bootstrapping
+                # This is needed for both terminated and truncated cases
+                if done:
                     info = dict(info or {})
 
+                    # Save terminal observation before resetting
                     if isinstance(obs, np.ndarray):
                         term_obs = obs.copy()
                     elif isinstance(obs, dict):
@@ -129,10 +131,12 @@ def worker(rank, num_envs, env_fn_wrapper, actions_shm, obs_shm, rewards_shm, do
                         term_obs = copy.deepcopy(obs)
 
                     info["terminal_observation"] = term_obs
-                    info["time_limit_truncated"] = True
 
-                if done:
-                    obs, _ = env.reset() # Внутренний авто-сброс после завершения эпизода
+                    if truncated:
+                        info["time_limit_truncated"] = True
+
+                    # Reset environment after saving terminal observation
+                    obs, _ = env.reset()
 
                 info_queue.put((rank, info))
                 obs_np[rank] = obs
