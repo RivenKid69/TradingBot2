@@ -203,7 +203,14 @@ def load_hourly_seasonality(
                 expected_hash,
                 digest,
             )
-        data = json.loads(raw.decode("utf-8"))
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except json.JSONDecodeError:
+            # Return None for invalid/empty JSON files instead of crashing
+            seasonality_logger.warning(
+                "Invalid JSON in seasonality file %s; returning None", path
+            )
+            return None
         if not isinstance(data, dict):
             return None
         # Allow new structure {"SYMBOL": {"latency": [...]}}
