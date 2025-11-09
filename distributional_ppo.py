@@ -497,7 +497,7 @@ def calculate_cvar(probs: torch.Tensor, atoms: torch.Tensor, alpha: float) -> to
     weight_on_var = (alpha_tensor.squeeze(1) - prev_cum).clamp(min=0.0)
     var_values = sorted_atoms[var_indices.squeeze(1)]
 
-    cvar = (tail_expectation + weight_on_var * var_values) / (alpha_float + 1e-8)
+    cvar = (tail_expectation + weight_on_var * var_values) / alpha_float
     return cvar
 
 
