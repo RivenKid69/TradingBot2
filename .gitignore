@@ -77,3 +77,6 @@ Thumbs.db
 artifacts/
 logs/
 tensorboard/
+tensorboard_logs/
+data/processed/
+data/fear_greed.csv

@@ -2326,7 +2326,11 @@ class DistributionalPPO(RecurrentPPO):
         )
         mask_tensor = mask_values.to(device=target_device).reshape(-1, 1)
         if index_tensor is not None:
-            mask_tensor = mask_tensor.index_select(0, index_tensor)
+            # FIX: Clamp indices to valid range to avoid IndexError
+            safe_indices = torch.clamp(index_tensor, 0, max(0, mask_tensor.size(0) - 1))
+            if mask_tensor.size(0) == 0:
+                return None  # Cannot select from empty mask
+            mask_tensor = mask_tensor.index_select(0, safe_indices)
         return mask_tensor
 
     def _policy_value_outputs(

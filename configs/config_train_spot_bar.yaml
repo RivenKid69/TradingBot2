@@ -65,7 +65,7 @@ model:
 
     clip_range_vf: null
     vf_clip_warmup_updates: 0
-    vf_clip_threshold_ev: null
+    vf_clip_threshold_ev: 9999.0
 
 
 
@@ -98,7 +98,7 @@ components:
     target: impl_offline_data:OfflineCSVBarSource
     params:
       paths:
-        - "data/train/*.csv"
+        - "data/processed/*.feather"
       timeframe: "1m"
   executor:
     target: impl_sim_executor:SimExecutor
