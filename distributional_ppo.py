@@ -2552,29 +2552,9 @@ class DistributionalPPO(RecurrentPPO):
         # alpha falls in interval [alpha_idx/N, (alpha_idx+1)/N)
         # We need to integrate from alpha_idx/N to alpha
 
-        tau_i = (alpha_idx + 0.5) / num_quantiles  # center of interval alpha_idx
-        tau_i_next = (alpha_idx + 1.5) / num_quantiles  # center of interval alpha_idx+1
-
+        # Get the quantile value at alpha_idx for piecewise constant approximation
         q_i = predicted_quantiles[:, alpha_idx]
-        q_i_next = predicted_quantiles[:, alpha_idx + 1]
-
-        # Value at alpha (right boundary of partial interval)
-        weight = (alpha - tau_i) / (tau_i_next - tau_i)
-        value_at_alpha = q_i * (1.0 - weight) + q_i_next * weight
-
-        # Value at alpha_idx/N (left boundary of partial interval)
-        # This is the boundary between intervals alpha_idx-1 and alpha_idx
         interval_start = alpha_idx / num_quantiles
-        if alpha_idx == 0:
-            # Extrapolate to tau=0
-            slope = (q_i_next - q_i) / (tau_i_next - tau_i)
-            value_at_start = q_i - slope * tau_i
-        else:
-            # Interpolate between q_{alpha_idx-1} and q_i
-            q_i_prev = predicted_quantiles[:, alpha_idx - 1]
-            tau_i_prev = (alpha_idx - 0.5) / num_quantiles
-            weight_start = (interval_start - tau_i_prev) / (tau_i - tau_i_prev)
-            value_at_start = q_i_prev * (1.0 - weight_start) + q_i * weight_start
 
         # Now compute CVaR as the average from 0 to alpha
         # 1. Full intervals from 0 to alpha_idx-1 (each with mass 1/N and value q_j)
