@@ -225,7 +225,13 @@ def safe_explained_variance(
         sum_w = float(np.sum(weights64))
         if not math.isfinite(sum_w) or sum_w <= 0.0:
             return float("nan")
+        # Protect against overflow when squaring large weights
+        max_abs_weight = float(np.max(np.abs(weights64)))
+        if max_abs_weight > 1e50:
+            return float("nan")
         sum_w_sq = float(np.sum(weights64**2))
+        if not math.isfinite(sum_w_sq):
+            return float("nan")
         # CRITICAL FIX: Add epsilon to prevent near-zero denominator numerical instability
         # When all weights are nearly equal, denom can become very small causing underflow
         denom_raw = sum_w - (sum_w_sq / sum_w if sum_w_sq > 0.0 else 0.0)
@@ -2475,8 +2481,8 @@ class DistributionalPPO(RecurrentPPO):
 
     def _cvar_from_quantiles(self, predicted_quantiles: torch.Tensor) -> torch.Tensor:
         alpha = float(self.cvar_alpha)
-        if alpha <= 0.0:
-            raise ValueError("CVaR alpha must be positive for quantile critic")
+        if alpha <= 0.0 or alpha > 1.0:
+            raise ValueError("CVaR alpha must be in range (0, 1] for quantile critic")
         num_quantiles = predicted_quantiles.shape[1]
         if num_quantiles == 0:
             return predicted_quantiles.new_zeros(predicted_quantiles.shape[0])
@@ -6652,7 +6658,8 @@ class DistributionalPPO(RecurrentPPO):
         self._cvar_lambda = self._bounded_dual_update(
             float(self._cvar_lambda), float(self.cvar_lambda_lr), cvar_gap_unit_value
         )
-        cvar_violation_unit_tensor = torch.clamp(cvar_gap_unit_tensor.detach(), min=0.0)
+        # Remove .detach() to allow gradients to flow through constraint term
+        cvar_violation_unit_tensor = torch.clamp(cvar_gap_unit_tensor, min=0.0)
         cvar_violation_unit_value = float(cvar_violation_unit_tensor.item())
         cvar_gap_pos_value_raw = self._compute_cvar_headroom(cvar_empirical_value)
         if not self.cvar_use_penalty:
@@ -6908,12 +6915,13 @@ class DistributionalPPO(RecurrentPPO):
                     v_min, v_max
                 )
 
+            # Convert from scaled space back to raw returns space: (value / eff) * base
             running_v_min_unscaled = (
                 updated_v_min / self._value_target_scale_effective
-            )
+            ) * base_scale_safe
             running_v_max_unscaled = (
                 updated_v_max / self._value_target_scale_effective
-            )
+            ) * base_scale_safe
 
         self._value_norm_clip_min = float(clip_norm_min)
         self._value_norm_clip_max = float(clip_norm_max)
@@ -7839,6 +7847,8 @@ class DistributionalPPO(RecurrentPPO):
                         log_prob_selected = log_prob_flat
                         old_log_prob_selected = old_log_prob_flat
                     log_ratio = log_prob_selected - old_log_prob_selected
+                    # Clamp log_ratio to prevent overflow in exp (exp(20) ≈ 5e8, exp(88) overflows)
+                    log_ratio = torch.clamp(log_ratio, min=-20.0, max=20.0)
                     ratio = torch.exp(log_ratio)
                     policy_loss_1 = advantages_selected * ratio
                     policy_loss_2 = advantages_selected * torch.clamp(
@@ -8673,15 +8683,56 @@ class DistributionalPPO(RecurrentPPO):
                         cvar_raw = self._to_raw_returns(predicted_cvar).mean()
 
                         if clip_range_vf_value is not None:
+                            # Recompute clipped predictions WITH gradients for PPO value clipping
+                            # (The no_grad block above only computes statistics)
+                            mean_values_norm_for_clip = (pred_probs_fp32 * self.policy.atoms).sum(dim=1, keepdim=True)
+                            mean_values_unscaled_for_clip = self._to_raw_returns(mean_values_norm_for_clip)
+
+                            clip_delta = float(clip_range_vf_value)
+                            old_values_raw_aligned = old_values_raw_tensor
+                            while old_values_raw_aligned.dim() < mean_values_unscaled_for_clip.dim():
+                                old_values_raw_aligned = old_values_raw_aligned.unsqueeze(-1)
+
+                            mean_values_unscaled_clipped_for_loss = torch.clamp(
+                                mean_values_unscaled_for_clip,
+                                min=old_values_raw_aligned - clip_delta,
+                                max=old_values_raw_aligned + clip_delta,
+                            )
+
+                            if self.normalize_returns:
+                                mean_values_norm_clipped_for_loss = (
+                                    (mean_values_unscaled_clipped_for_loss - ret_mu_tensor) / ret_std_tensor
+                                ).clamp(self._value_norm_clip_min, self._value_norm_clip_max)
+                            else:
+                                mean_values_norm_clipped_for_loss = (
+                                    (mean_values_unscaled_clipped_for_loss / float(base_scale_safe))
+                                    * self._value_target_scale_effective
+                                )
+                                if self._value_clip_limit_scaled is not None:
+                                    mean_values_norm_clipped_for_loss = torch.clamp(
+                                        mean_values_norm_clipped_for_loss,
+                                        min=-self._value_clip_limit_scaled,
+                                        max=self._value_clip_limit_scaled,
+                                    )
+
+                            # Build clipped prediction distribution from clipped mean values
+                            pred_distribution_clipped = self._build_support_distribution(
+                                mean_values_norm_clipped_for_loss, value_logits_fp32
+                            )
+                            log_predictions_clipped = torch.log(pred_distribution_clipped.clamp(min=1e-8))
+
+                            # Build clipped target distribution
                             target_distribution_clipped = self._build_support_distribution(
                                 target_returns_norm_clipped, value_logits_fp32
                             )
+
                             if valid_indices is not None:
                                 target_distribution_clipped_selected = target_distribution_clipped[valid_indices]
-                                log_predictions_clipped_selected = log_predictions[valid_indices]
+                                log_predictions_clipped_selected = log_predictions_clipped[valid_indices]
                             else:
                                 target_distribution_clipped_selected = target_distribution_clipped
-                                log_predictions_clipped_selected = log_predictions
+                                log_predictions_clipped_selected = log_predictions_clipped
+
                             critic_loss_clipped = -(
                                 target_distribution_clipped_selected * log_predictions_clipped_selected
                             ).sum(dim=1).mean()
