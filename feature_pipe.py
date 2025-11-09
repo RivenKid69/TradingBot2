@@ -762,8 +762,12 @@ class FeaturePipe:
         """Apply offline feature computation to ``df``.
 
         The dataframe must contain ``ts_ms`` and ``symbol`` columns together
-        with ``price_col``.
+        with ``price_col``. Optionally includes OHLC columns for Yang-Zhang volatility.
         """
+        # Check if OHLC columns exist in the dataframe
+        open_col = "open" if "open" in df.columns else None
+        high_col = "high" if "high" in df.columns else None
+        low_col = "low" if "low" in df.columns else None
 
         return apply_offline_features(
             df,
@@ -771,6 +775,9 @@ class FeaturePipe:
             ts_col="ts_ms",
             symbol_col="symbol",
             price_col=self.price_col,
+            open_col=open_col,
+            high_col=high_col,
+            low_col=low_col,
         )
 
     def make_targets(self, df: pd.DataFrame) -> Optional[pd.Series]:
