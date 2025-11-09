@@ -9,3 +9,4 @@ torch>=2.0.0 ; platform_system!="Windows"  # если нужен PyTorch для 
 stable-baselines3>=2.0.0,<3.0.0
 fastapi>=0.110.0
 uvicorn>=0.27.0
+arch>=5.0.0  # для GARCH(1,1) условной волатильности
