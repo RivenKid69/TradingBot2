@@ -5,8 +5,11 @@ import math
 from collections import deque
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+import warnings
 
 import pandas as pd
+import numpy as np
+from arch import arch_model
 
 
 def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
@@ -152,6 +155,88 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
         return None
 
 
+def calculate_garch_volatility(prices: List[float], n: int) -> Optional[float]:
+    """
+    Рассчитывает условную волатильность GARCH(1,1) на основе логарифмических доходностей.
+
+    Модель GARCH(1,1):
+    r_t = μ + ε_t
+    ε_t = σ_t * z_t, где z_t ~ N(0,1)
+    σ²_t = ω + α*ε²_{t-1} + β*σ²_{t-1}
+
+    Функция подгоняет модель GARCH(1,1) на скользящем окне из последних n наблюдений
+    и возвращает прогноз условной волатильности на один шаг вперед σ_{t+1}.
+
+    Args:
+        prices: список цен
+        n: размер скользящего окна (рекомендуется 500+ наблюдений)
+
+    Returns:
+        Прогноз условной волатильности σ_{t+1} или None если недостаточно данных
+        или подгонка модели не удалась
+    """
+    if not prices or len(prices) < n or n < 50:  # минимум 50 наблюдений для стабильной оценки
+        return None
+
+    try:
+        # Берем последние n цен
+        price_window = np.array(prices[-n:], dtype=float)
+
+        # Проверяем валидность данных
+        if np.any(price_window <= 0) or np.any(~np.isfinite(price_window)):
+            return None
+
+        # Вычисляем логарифмические доходности
+        log_returns = np.log(price_window[1:] / price_window[:-1])
+
+        # Проверяем, что есть вариация в данных
+        if np.std(log_returns) < 1e-10:
+            return None
+
+        # Конвертируем в процентные доходности для лучшей численной стабильности
+        returns_pct = log_returns * 100
+
+        # Подавляем предупреждения от arch (они могут быть шумными)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            # Создаем и подгоняем модель GARCH(1,1)
+            # rescale=False чтобы сохранить исходный масштаб данных
+            model = arch_model(
+                returns_pct,
+                vol='Garch',
+                p=1,  # GARCH порядок
+                q=1,  # ARCH порядок
+                dist='normal',  # нормальное распределение
+                rescale=False
+            )
+
+            # Подгоняем модель с максимальной итерацией
+            result = model.fit(
+                update_freq=0,  # не выводим итерационный процесс
+                disp='off',  # отключаем вывод
+                show_warning=False,  # отключаем предупреждения
+                options={'maxiter': 1000}
+            )
+
+            # Получаем прогноз условной волатильности на 1 шаг вперед
+            # forecast возвращает дисперсию, нам нужно стандартное отклонение
+            forecast = result.forecast(horizon=1, reindex=False)
+            forecast_variance = forecast.variance.values[-1, 0]
+
+            if not np.isfinite(forecast_variance) or forecast_variance <= 0:
+                return None
+
+            # Конвертируем обратно из процентного масштаба
+            forecast_volatility = np.sqrt(forecast_variance) / 100
+
+            return float(forecast_volatility)
+
+    except (ValueError, RuntimeError, np.linalg.LinAlgError, Exception):
+        # Модель GARCH может не сходиться в некоторых случаях
+        return None
+
+
 @dataclass
 class FeatureSpec:
     """
@@ -160,6 +245,7 @@ class FeatureSpec:
       - rsi_period: период RSI по Вайльдеру (EMA-уподоблённое сглаживание)
       - yang_zhang_windows: окна для волатильности Yang-Zhang (в минутах)
       - parkinson_windows: окна для волатильности Паркинсона (в минутах)
+      - garch_windows: окна для условной волатильности GARCH(1,1) (в минутах, рекомендуется 500+)
       - taker_buy_ratio_windows: окна для скользящего среднего taker_buy_ratio (в минутах)
       - taker_buy_ratio_momentum: окна для моментума taker_buy_ratio (в минутах)
       - cvd_windows: окна для кумулятивной дельты объема (в минутах)
@@ -169,6 +255,7 @@ class FeatureSpec:
     rsi_period: int = 14
     yang_zhang_windows: Optional[List[int]] = None
     parkinson_windows: Optional[List[int]] = None
+    garch_windows: Optional[List[int]] = None
     taker_buy_ratio_windows: Optional[List[int]] = None
     taker_buy_ratio_momentum: Optional[List[int]] = None
     cvd_windows: Optional[List[int]] = None
@@ -234,6 +321,16 @@ class FeatureSpec:
         else:
             self.cvd_windows = []
 
+        # Инициализация окон GARCH: 500 минут (~8.3ч), 720 минут (12ч), 1440 минут (24ч)
+        if self.garch_windows is None:
+            self.garch_windows = [500, 720, 1440]  # 500, 720, 1440 минут
+        elif isinstance(self.garch_windows, list):
+            self.garch_windows = [
+                int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0
+            ]
+        else:
+            self.garch_windows = []
+
 
 class OnlineFeatureTransformer:
     """
@@ -258,6 +355,8 @@ class OnlineFeatureTransformer:
                 all_windows.extend(self.spec.yang_zhang_windows)
             if self.spec.parkinson_windows:
                 all_windows.extend(self.spec.parkinson_windows)
+            if self.spec.garch_windows:
+                all_windows.extend(self.spec.garch_windows)
             if self.spec.taker_buy_ratio_windows:
                 all_windows.extend(self.spec.taker_buy_ratio_windows)
             if self.spec.taker_buy_ratio_momentum:
@@ -408,6 +507,32 @@ class OnlineFeatureTransformer:
                 else:
                     feats[f"parkinson_{window_hours}h"] = float("nan")
 
+        # Рассчитываем условную волатильность GARCH(1,1) для каждого окна
+        if self.spec.garch_windows:
+            price_list = list(st["prices"])
+            for window in self.spec.garch_windows:
+                if len(price_list) >= window:
+                    garch_vol = calculate_garch_volatility(price_list, window)
+                    if garch_vol is not None:
+                        # Имя признака: garch_{окно_в_минутах}m или garch_{окно_в_часах}h для больших окон
+                        if window >= 60 and window % 60 == 0:
+                            window_hours = window // 60
+                            feats[f"garch_{window_hours}h"] = float(garch_vol)
+                        else:
+                            feats[f"garch_{window}m"] = float(garch_vol)
+                    else:
+                        if window >= 60 and window % 60 == 0:
+                            window_hours = window // 60
+                            feats[f"garch_{window_hours}h"] = float("nan")
+                        else:
+                            feats[f"garch_{window}m"] = float("nan")
+                else:
+                    if window >= 60 and window % 60 == 0:
+                        window_hours = window // 60
+                        feats[f"garch_{window_hours}h"] = float("nan")
+                    else:
+                        feats[f"garch_{window}m"] = float("nan")
+
         # Рассчитываем Taker Buy Ratio и его производные
         if st["taker_buy_ratios"]:
             ratio_list = list(st["taker_buy_ratios"])
@@ -498,6 +623,12 @@ def apply_offline_features(
             base_cols += [f"yang_zhang_{w // 60}h" for w in spec.yang_zhang_windows]
         if spec.parkinson_windows:
             base_cols += [f"parkinson_{w // 60}h" for w in spec.parkinson_windows]
+        if spec.garch_windows:
+            for w in spec.garch_windows:
+                if w >= 60 and w % 60 == 0:
+                    base_cols.append(f"garch_{w // 60}h")
+                else:
+                    base_cols.append(f"garch_{w}m")
         if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
             base_cols.append("taker_buy_ratio")
         if spec.taker_buy_ratio_windows:
