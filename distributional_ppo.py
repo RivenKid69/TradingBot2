@@ -2404,7 +2404,8 @@ class DistributionalPPO(RecurrentPPO):
         target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
         target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
 
-        normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-8)
+        # Use larger epsilon for float32 numerical stability
+        normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-6)
         target_distribution = target_distribution / normaliser
 
         if torch.any(same_bounds):
@@ -2672,19 +2673,21 @@ class DistributionalPPO(RecurrentPPO):
 
         return rewards_winsor, cvar_empirical, reward_p50, reward_p95, returns_abs_p95
 
-    def _compute_cvar_violation(self, cvar_empirical: float) -> float:
-        """Return CVaR constraint violation (positive when CVaR exceeds limit).
+    def _compute_cvar_headroom(self, cvar_empirical: float) -> float:
+        """Return CVaR headroom (positive when CVaR is below limit, clipped at 0).
 
-        NOTE: Despite the function name, this actually returns the HEADROOM
-        (limit - empirical). This is INVERTED semantics. A positive value means
-        NO violation (CVaR is below limit). Returns 0 when CVaR exceeds limit.
+        Computes limit - empirical and clips to [0, inf). A positive value indicates
+        the CVaR is below the limit (good, no violation). Returns 0 when CVaR
+        exceeds or equals the limit (violation).
 
-        TODO: Rename to _compute_cvar_headroom for clarity.
+        Args:
+            cvar_empirical: The empirical CVaR value to check against the limit.
+
+        Returns:
+            Headroom value >= 0. Higher values mean more safety margin.
         """
 
         limit = float(self._get_cvar_limit_raw())
-        # SEMANTIC WARNING: This calculates headroom, not violation
-        # headroom = limit - empirical (positive when CVaR is below limit = good)
         headroom = limit - float(cvar_empirical)
         if not math.isfinite(headroom) or headroom <= 0.0:
             return 0.0
@@ -6557,7 +6560,7 @@ class DistributionalPPO(RecurrentPPO):
         )
         cvar_violation_unit_tensor = torch.clamp(cvar_gap_unit_tensor.detach(), min=0.0)
         cvar_violation_unit_value = float(cvar_violation_unit_tensor.item())
-        cvar_gap_pos_value_raw = self._compute_cvar_violation(cvar_empirical_value)
+        cvar_gap_pos_value_raw = self._compute_cvar_headroom(cvar_empirical_value)
         if not self.cvar_use_penalty:
             current_cvar_weight_nominal = 0.0
             current_cvar_weight_raw = 0.0
@@ -8102,21 +8105,19 @@ class DistributionalPPO(RecurrentPPO):
                             lower_bound = b_safe.floor().long().clamp(min=0, max=self.policy.num_atoms - 1)
                             upper_bound = b_safe.ceil().long().clamp(min=0, max=self.policy.num_atoms - 1)
 
+                            # Apply consistent adjustment logic to avoid degenerate same_bounds cases
+                            # This matches the methodology in _build_support_distribution()
                             same_bounds = lower_bound == upper_bound
+                            upper_bound_before_adjust = upper_bound.clone()
+                            adjust_mask = same_bounds & (lower_bound > 0)
+                            lower_bound = torch.where(adjust_mask, lower_bound - 1, lower_bound)
+                            lower_bound = torch.clamp(lower_bound, 0, self.policy.num_atoms - 1)
+                            upper_bound = torch.clamp(lower_bound + 1, 0, self.policy.num_atoms - 1)
 
                             target_distribution.zero_()
                             lower_prob = (upper_bound.to(torch.float32) - b).clamp(min=0.0)
                             upper_prob = (b - lower_bound.to(torch.float32)).clamp(min=0.0)
-                            lower_prob = torch.where(
-                                same_bounds,
-                                torch.ones_like(lower_prob),
-                                lower_prob,
-                            )
-                            upper_prob = torch.where(
-                                same_bounds,
-                                torch.zeros_like(upper_prob),
-                                upper_prob,
-                            )
+
                             target_distribution.scatter_add_(1, lower_bound.view(-1, 1), lower_prob.view(-1, 1))
                             target_distribution.scatter_add_(1, upper_bound.view(-1, 1), upper_prob.view(-1, 1))
 
@@ -8124,11 +8125,12 @@ class DistributionalPPO(RecurrentPPO):
                             normaliser = target_distribution.sum(dim=1, keepdim=True).clamp_min(1e-6)
                             target_distribution = target_distribution / normaliser
 
+                            # Fix up the same_bounds cases using the original upper_bound positions
                             if torch.any(same_bounds):
                                 same_indices = same_bounds.nonzero(as_tuple=False).squeeze(1)
                                 if same_indices.numel() > 0:
                                     target_distribution[same_indices] = 0.0
-                                    target_distribution[same_indices, lower_bound[same_indices]] = 1.0
+                                    target_distribution[same_indices, upper_bound_before_adjust[same_indices]] = 1.0
 
                         target_norm_for_stats = target_returns_norm_clipped_selected.to(
                             dtype=torch.float32
