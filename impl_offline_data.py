@@ -41,6 +41,7 @@ class OfflineCSVConfig:
     bid_col: Optional[str] = None
     ask_col: Optional[str] = None
     n_trades_col: Optional[str] = None
+    taker_buy_base_col: Optional[str] = None
     vendor: Optional[str] = "offline"
     sort_by_ts: bool = True
     enforce_closed_bars: bool = True
@@ -59,6 +60,10 @@ class OfflineCSVBarSource(MarketDataSource):
             data_degradation = getattr(cfg, "data_degradation", None)
         self._degradation = data_degradation or DataDegradationConfig.default()
         self._rng = random.Random(self._degradation.seed)
+
+        # Auto-detect taker_buy_base column if not specified
+        if not self.cfg.taker_buy_base_col:
+            self._auto_detect_taker_buy_base_col()
 
     def stream_bars(self, symbols: Sequence[str], interval_ms: int) -> Iterator[Bar]:
         interval_ms_cfg = timeframe_to_ms(self.cfg.timeframe)
@@ -96,6 +101,8 @@ class OfflineCSVBarSource(MarketDataSource):
         ]
         if self.cfg.n_trades_col:
             cols.append(self.cfg.n_trades_col)
+        if self.cfg.taker_buy_base_col:
+            cols.append(self.cfg.taker_buy_base_col)
 
         for path in sorted(files):
             df = pd.read_csv(path, usecols=lambda c: c in cols)
@@ -151,6 +158,11 @@ class OfflineCSVBarSource(MarketDataSource):
                         if not self.cfg.n_trades_col
                         else int(r[self.cfg.n_trades_col])
                     ),
+                    taker_buy_base=(
+                        None
+                        if not self.cfg.taker_buy_base_col
+                        else Decimal(str(r[self.cfg.taker_buy_base_col]))
+                    ),
                     is_final=is_final,
                 )
                 if not is_final:
@@ -183,6 +195,48 @@ class OfflineCSVBarSource(MarketDataSource):
             )
         else:
             logger.info("OfflineCSVBarSource degradation: no bars processed")
+
+    def _auto_detect_taker_buy_base_col(self) -> None:
+        """Auto-detect taker_buy_base column name from available columns."""
+        # Try to read first file to detect column names
+        files: List[str] = []
+        for p in self.cfg.paths:
+            files.extend(glob.glob(p))
+        files = [f for f in files if os.path.isfile(f)]
+        if not files:
+            return  # No files to check
+
+        try:
+            # Read first few rows to detect columns
+            first_file = files[0]
+            sample_df = pd.read_csv(first_file, nrows=1)
+            available_cols = set(sample_df.columns)
+
+            # List of possible column names for taker_buy_base
+            taker_buy_base_candidates = [
+                "taker_buy_base_asset_volume",
+                "taker_buy_base",
+                "takerbuybaseassetvolume",
+                "takerbuybase",
+                "v_buy",
+                "vbuy",
+                "tb_base",
+            ]
+
+            # Find first matching column
+            for candidate in taker_buy_base_candidates:
+                if candidate in available_cols:
+                    self.cfg.taker_buy_base_col = candidate
+                    logger.info(
+                        "Auto-detected taker_buy_base column: %s",
+                        candidate
+                    )
+                    return
+        except Exception as e:
+            logger.debug(
+                "Failed to auto-detect taker_buy_base column: %s",
+                e
+            )
 
     def stream_ticks(self, symbols: Sequence[str]) -> Iterator[Tick]:
         return iter([])
