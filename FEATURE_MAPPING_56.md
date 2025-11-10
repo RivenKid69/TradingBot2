@@ -12,17 +12,17 @@
 ```
 prepare_and_run.py → DataFrame (24 технических признака)
     ↓
-mediator.py:_extract_norm_cols() → 16 признаков в norm_cols
+mediator.py:_extract_norm_cols() → 21 признак в norm_cols (было 16, +5)
 mediator.py:_extract_technical_indicators() → 11 признаков в indicators
     ↓
-obs_builder.pyx:build_observation_vector() → 51 признак в observation vector
+obs_builder.pyx:build_observation_vector() → 56 признаков в observation vector (было 51, +5)
     ↓
-PPO модель (observation_space.shape = (51,))
+PPO модель (observation_space.shape = (56,))
 ```
 
 ---
 
-## ДЕТАЛЬНЫЙ МАППИНГ ВСЕХ 51 ПРИЗНАКОВ
+## ДЕТАЛЬНЫЙ МАППИНГ ВСЕХ 56 ПРИЗНАКОВ
 
 ### **BAR LEVEL** (индексы 0-2, всего 3)
 
@@ -158,7 +158,7 @@ PPO модель (observation_space.shape = (51,))
 4. ~~taker_buy_ratio_momentum_6h~~ → **ИСПРАВЛЕНО** → индекс 51
 5. ~~taker_buy_ratio_momentum_12h~~ → **ИСПРАВЛЕНО** → индекс 52
 
-Теперь **все 24 технических признака используются** (19 через norm_cols + 3 через indicators + 2 производных)
+Теперь **все 24 технических признака используются** (21 через norm_cols + 3 через indicators)
 
 ---
 

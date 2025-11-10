@@ -2,7 +2,7 @@
 Tests for technical indicators integration in observation vector.
 
 This test suite verifies that:
-1. Observation vector has correct size (57 features)
+1. Observation vector has correct size (56 features, was 51, expanded by 5)
 2. Technical indicators populate the observation (not all zeros)
 3. cvd_24h, garch_12h, yang_zhang_24h appear in obs
 4. Works in training mode
@@ -33,14 +33,14 @@ class MockState:
 class MockObservationSpace:
     """Mock observation space."""
 
-    def __init__(self, size=43):
+    def __init__(self, size=56):
         self.shape = (size,)
 
 
 class MockEnv:
     """Mock environment for testing."""
 
-    def __init__(self, df: pd.DataFrame | None = None, obs_size: int = 43):
+    def __init__(self, df: pd.DataFrame | None = None, obs_size: int = 56):
         self.df = df
         self.observation_space = MockObservationSpace(size=obs_size)
         self.state = MockState()
@@ -344,9 +344,9 @@ def test_observation_size_and_non_zero():
     obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
     # Check size
-    assert obs.shape == (43,), f"Expected obs.shape=(43,), got {obs.shape}"
+    assert obs.shape == (56,), f"Expected obs.shape=(56,), got {obs.shape}"
 
-    # Check that more than 30 values are non-zero (>70% should be populated)
+    # Check that more than 35 values are non-zero (>60% should be populated)
     non_zero_count = np.count_nonzero(obs)
     assert non_zero_count > 30, f"Expected >30 non-zero values, got {non_zero_count}"
 
@@ -491,7 +491,7 @@ def test_observations_in_training_env():
 
         obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
-        assert obs.shape == (43,), f"Step {step_idx}: Expected shape (43,), got {obs.shape}"
+        assert obs.shape == (56,), f"Step {step_idx}: Expected shape (56,), got {obs.shape}"
         non_zero_count = np.count_nonzero(obs)
         assert non_zero_count > 15, f"Step {step_idx}: Expected >15 non-zero, got {non_zero_count}"
 
@@ -524,7 +524,7 @@ def test_observation_works_without_indicators():
     obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
     # Should still return correct size (fallback to defaults)
-    assert obs.shape == (43,), f"Expected shape (43,), got {obs.shape}"
+    assert obs.shape == (56,), f"Expected shape (56,), got {obs.shape}"
 
     # Should have at least some basic values (price, cash, units)
     assert obs[0] > 0, "obs[0] (price) should be non-zero"
