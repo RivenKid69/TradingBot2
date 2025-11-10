@@ -3,7 +3,7 @@ DEFAULT_TANH_CLIP = 0.999
 OBS_EPS = 1e-8
 # Default maximum sizes
 MAX_NUM_TOKENS = 1  # Changed from 16 to match mediator and lob_state_cython
-EXT_NORM_DIM = 16  # Expanded from 8 to 16 to include all technical features
+EXT_NORM_DIM = 21  # Expanded from 16 to 21 to include all technical features (including taker_buy_ratio derivatives)
 
 # Initialize feature layout (to be populated by make_layout)
 FEATURES_LAYOUT = []
