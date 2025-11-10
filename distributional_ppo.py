@@ -8270,8 +8270,10 @@ class DistributionalPPO(RecurrentPPO):
                         clamp_above_sum += above_frac * weight
                         clamp_weight += weight
 
+                    # CRITICAL FIX: EV must use TRUE TD-returns, not VF-clipped targets
+                    # VF clipping is only for critic loss, not for EV metric
                     value_target_batches_norm.append(
-                        target_returns_norm_clipped_selected.reshape(-1, 1)
+                        target_returns_norm_selected.reshape(-1, 1)
                         .detach()
                         .to(device="cpu", dtype=torch.float32)
                     )
@@ -8379,10 +8381,9 @@ class DistributionalPPO(RecurrentPPO):
                         else:
                             quantiles_for_loss = quantiles_fp32
                         quantiles_for_ev = quantiles_for_loss
+                        # CRITICAL: PPO value clipping clips PREDICTIONS, not targets!
+                        # Both unclipped and clipped losses must use the SAME targets.
                         targets_norm_for_loss = target_returns_norm_selected.reshape(-1, 1)
-                        targets_norm_clipped_for_loss = (
-                            target_returns_norm_clipped_selected.reshape(-1, 1)
-                        )
 
                         critic_loss_unclipped = self._quantile_huber_loss(
                             quantiles_for_loss, targets_norm_for_loss
@@ -8459,8 +8460,9 @@ class DistributionalPPO(RecurrentPPO):
                             else:
                                 quantiles_norm_clipped_for_loss = quantiles_norm_clipped
                             quantiles_for_ev = quantiles_norm_clipped_for_loss
+                            # CRITICAL FIX: Use SAME targets for clipped loss (PPO clips predictions, not targets)
                             critic_loss_clipped = self._quantile_huber_loss(
-                                quantiles_norm_clipped_for_loss, targets_norm_clipped_for_loss
+                                quantiles_norm_clipped_for_loss, targets_norm_for_loss
                             )
                             critic_loss = torch.max(critic_loss_unclipped, critic_loss_clipped)
                         else:
@@ -8732,20 +8734,20 @@ class DistributionalPPO(RecurrentPPO):
                             )
                             log_predictions_clipped = torch.log(pred_distribution_clipped.clamp(min=1e-8))
 
-                            # Build clipped target distribution
-                            target_distribution_clipped = self._build_support_distribution(
-                                target_returns_norm_clipped, value_logits_fp32
-                            )
+                            # CRITICAL FIX: PPO value clipping clips PREDICTIONS, not targets!
+                            # Use the SAME unclipped target distribution for both unclipped and clipped losses.
+                            # target_distribution was already computed from target_returns_norm (unclipped)
+                            # and selected via valid_indices as target_distribution_selected.
+                            # Reuse target_distribution_selected instead of building from clipped targets.
 
                             if valid_indices is not None:
-                                target_distribution_clipped_selected = target_distribution_clipped[valid_indices]
                                 log_predictions_clipped_selected = log_predictions_clipped[valid_indices]
                             else:
-                                target_distribution_clipped_selected = target_distribution_clipped
                                 log_predictions_clipped_selected = log_predictions_clipped
 
+                            # Reuse unclipped target_distribution_selected (already computed above)
                             critic_loss_clipped = -(
-                                target_distribution_clipped_selected * log_predictions_clipped_selected
+                                target_distribution_selected * log_predictions_clipped_selected
                             ).sum(dim=1).mean()
                             critic_loss_clipped = critic_loss_clipped / self._critic_ce_normalizer
                             critic_loss = torch.max(critic_loss, critic_loss_clipped)
