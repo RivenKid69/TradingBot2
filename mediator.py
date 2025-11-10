@@ -1007,7 +1007,7 @@ class Mediator:
 
     def _extract_norm_cols(self, row: Any) -> np.ndarray:
         """Extract normalized columns for external features (cvd, garch, yang_zhang, etc.)."""
-        norm_cols = np.zeros(16, dtype=np.float32)
+        norm_cols = np.zeros(21, dtype=np.float32)
 
         # Map technical indicators from prepare_and_run.py to norm_cols
         # Original 8 features
@@ -1030,9 +1030,15 @@ class Mediator:
         norm_cols[14] = self._get_safe_float(row, "taker_buy_ratio", 0.0)
         norm_cols[15] = self._get_safe_float(row, "taker_buy_ratio_sma_24h", 0.0)
 
-        # Normalize to reasonable range for neural network
-        norm_cols = np.tanh(norm_cols)
+        # Additional 5 features for complete taker_buy_ratio coverage (51 -> 56)
+        norm_cols[16] = self._get_safe_float(row, "taker_buy_ratio_sma_6h", 0.0)
+        norm_cols[17] = self._get_safe_float(row, "taker_buy_ratio_sma_12h", 0.0)
+        norm_cols[18] = self._get_safe_float(row, "taker_buy_ratio_momentum_1h", 0.0)
+        norm_cols[19] = self._get_safe_float(row, "taker_buy_ratio_momentum_6h", 0.0)
+        norm_cols[20] = self._get_safe_float(row, "taker_buy_ratio_momentum_12h", 0.0)
 
+        # NOTE: Normalization (tanh, clip) is applied in obs_builder.pyx
+        # to avoid double normalization
         return norm_cols
 
     def _build_observation(self, *, row: Any | None, state: Any, mark_price: float) -> np.ndarray:

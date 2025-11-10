@@ -209,7 +209,8 @@ cdef void build_observation_vector_c(
 
     # --- External normalised columns --------------------------------------
     for i in range(norm_cols_values.shape[0]):
-        feature_val = _clipf(norm_cols_values[i], -3.0, 3.0)
+        # Apply tanh normalization first, then clip to safe range
+        feature_val = _clipf(tanh(norm_cols_values[i]), -3.0, 3.0)
         out_features[feature_idx] = feature_val
         feature_idx += 1
 
