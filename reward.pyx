@@ -121,19 +121,10 @@ cdef double compute_reward_view(
     cdef double participation = 0.0
     cdef double impact_exp = 0.0
 
-    if use_legacy_log_reward:
-        if use_potential_shaping:
-            phi_t = potential_phi(
-                net_worth,
-                peak_value,
-                units,
-                atr,
-                risk_aversion_variance,
-                risk_aversion_drawdown,
-                potential_shaping_coef,
-            )
-            reward += potential_shaping(gamma, last_potential, phi_t)
-    elif use_potential_shaping:
+    # FIX CRITICAL BUG: Apply potential shaping regardless of reward mode
+    # Previously, potential shaping was only applied when use_legacy_log_reward=True,
+    # causing it to be ignored in the new reward mode even when enabled
+    if use_potential_shaping:
         phi_t = potential_phi(
             net_worth,
             peak_value,
@@ -143,6 +134,7 @@ cdef double compute_reward_view(
             risk_aversion_drawdown,
             potential_shaping_coef,
         )
+        reward += potential_shaping(gamma, last_potential, phi_t)
 
     reward -= trade_frequency_penalty_fn(trade_frequency_penalty, trades_count) / reward_scale
 
