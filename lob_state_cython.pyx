@@ -1155,18 +1155,23 @@ cdef inline tuple _compute_reward_cython(
     int trades_this_step, float trade_frequency_penalty,
     double executed_notional, double turnover_penalty_coef
 ):
-    # Вознаграждение с базовым сигналом безразмерного ΔPnL и опциональным наследуемым логарифмическим компонентом.
+    # FIX: Исправлен двойной учет reward! Было: reward = delta/scale + log(ratio) - удвоение!
+    # Теперь корректно: либо log return, либо relative PnL, но не оба одновременно
     cdef double net_worth_delta = net_worth - prev_net_worth
     cdef double reward_scale = fabs(prev_net_worth)
     if reward_scale < 1e-9:
         reward_scale = 1.0
-    cdef double reward = net_worth_delta / reward_scale
+    cdef double reward
     cdef double current_potential = 0.0
     cdef double clipped_ratio, risk_penalty, dd_penalty
 
     if use_legacy_log_reward:
         clipped_ratio = fmax(0.1, fmin(net_worth / (prev_net_worth + 1e-9), 10.0))
-        reward += log(clipped_ratio)
+        reward = log(clipped_ratio)
+    else:
+        reward = net_worth_delta / reward_scale
+
+    if use_legacy_log_reward:
 
         if use_potential_shaping:
             risk_penalty = 0.0

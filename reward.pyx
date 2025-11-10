@@ -108,7 +108,13 @@ cdef double compute_reward_view(
     cdef double reward_scale = fabs(prev_net_worth)
     if reward_scale < 1e-9:
         reward_scale = 1.0
-    cdef double reward = net_worth_delta / reward_scale
+    # FIX: Устранен двойной учет reward! Было: reward = delta/scale + log_return (удвоение!)
+    # Теперь: используется либо log_return, либо delta/scale, но НЕ оба одновременно
+    cdef double reward
+    if use_legacy_log_reward:
+        reward = log_return(net_worth, prev_net_worth)
+    else:
+        reward = net_worth_delta / reward_scale
     cdef double phi_t = 0.0
     cdef double base_cost_bps = 0.0
     cdef double total_cost_bps = 0.0
@@ -116,7 +122,6 @@ cdef double compute_reward_view(
     cdef double impact_exp = 0.0
 
     if use_legacy_log_reward:
-        reward += log_return(net_worth, prev_net_worth)
         if use_potential_shaping:
             phi_t = potential_phi(
                 net_worth,
