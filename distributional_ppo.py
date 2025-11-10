@@ -6267,9 +6267,13 @@ class DistributionalPPO(RecurrentPPO):
                 costs_value: float = float("nan")
                 hard_cap_value: float = float("nan")
                 if isinstance(info, Mapping):
-                    candidate = info.get("reward_used_fraction")
+                    # CRITICAL FIX: Use raw_fraction FIRST for CVaR statistics
+                    # reward_raw_fraction is WITHOUT clipping (log return * position)
+                    # reward_used_fraction is AFTER clipping, which distorts tail distribution
+                    # CVaR measures tail risk and MUST use unclipped rewards
+                    candidate = info.get("reward_raw_fraction")
                     if candidate is None:
-                        candidate = info.get("reward_raw_fraction")
+                        candidate = info.get("reward_used_fraction")
                     if candidate is not None:
                         try:
                             raw_value = float(candidate)
