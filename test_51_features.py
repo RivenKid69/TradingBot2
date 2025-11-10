@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-Test to verify that all 51 features are properly integrated into the observation space.
+Test to verify that all 56 features are properly integrated into the observation space.
+Updated from 51 to 56 features (added 5 taker_buy_ratio derivatives).
 """
 import numpy as np
 from feature_config import N_FEATURES, make_layout
@@ -10,13 +11,13 @@ print("=" * 80)
 print("Test 1: Check N_FEATURES")
 print("=" * 80)
 
-make_layout({'max_num_tokens': 1, 'ext_norm_dim': 16})
+make_layout({'max_num_tokens': 1, 'ext_norm_dim': 21})
 print(f"✓ N_FEATURES = {N_FEATURES}")
 
-if N_FEATURES == 51:
-    print("✓ PASS: N_FEATURES is 51 as expected")
+if N_FEATURES == 56:
+    print("✓ PASS: N_FEATURES is 56 as expected (was 51, added 5 features)")
 else:
-    print(f"✗ FAIL: N_FEATURES is {N_FEATURES}, expected 51")
+    print(f"✗ FAIL: N_FEATURES is {N_FEATURES}, expected 56")
     exit(1)
 
 # Test 2: Check feature layout
@@ -35,10 +36,10 @@ for block in FEATURES_LAYOUT:
 
 print(f"\nTotal features: {total}")
 
-if total == 51:
-    print("✓ PASS: Feature layout sum is 51")
+if total == 56:
+    print("✓ PASS: Feature layout sum is 56 (was 51, added 5 features)")
 else:
-    print(f"✗ FAIL: Feature layout sum is {total}, expected 51")
+    print(f"✗ FAIL: Feature layout sum is {total}, expected 56")
     exit(1)
 
 # Test 3: Check observation builder
@@ -50,11 +51,11 @@ try:
     from obs_builder import build_observation_vector
 
     # Create test observation array
-    obs = np.zeros(51, dtype=np.float32)
-    norm_cols = np.zeros(16, dtype=np.float32)
+    obs = np.zeros(56, dtype=np.float32)
+    norm_cols = np.zeros(21, dtype=np.float32)
 
     # Fill with test data
-    for i in range(16):
+    for i in range(21):
         norm_cols[i] = float(i) * 0.1
 
     # Call obs_builder
@@ -93,14 +94,14 @@ try:
     )
 
     # Check that norm_cols values are present in observation
-    # They should be at positions 32-47 (after Fear & Greed at 30-31)
+    # They should be at positions 32-52 (after Fear & Greed at 30-31)
     norm_cols_start = 32
 
     print(f"\nChecking norm_cols integration:")
-    print(f"  norm_cols positions: {norm_cols_start} to {norm_cols_start + 15}")
+    print(f"  norm_cols positions: {norm_cols_start} to {norm_cols_start + 20}")
 
     all_filled = True
-    for i in range(16):
+    for i in range(21):
         obs_value = obs[norm_cols_start + i]
         # Values should be transformed by tanh and clipped
         expected_range = (-3.0, 3.0)
@@ -112,7 +113,7 @@ try:
             print(f"  ✓ Position {norm_cols_start + i} = {obs_value:.4f} (from norm_cols[{i}] = {norm_cols[i]:.4f})")
 
     if all_filled:
-        print("\n✓ PASS: All 16 norm_cols values are integrated into observation")
+        print("\n✓ PASS: All 21 norm_cols values are integrated into observation (was 16, added 5)")
     else:
         print("\n✗ FAIL: Some norm_cols values are missing")
         exit(1)
@@ -124,7 +125,7 @@ try:
     print(f"  Non-zero values: {non_zero_count}")
     print(f"  Min: {obs.min():.4f}, Max: {obs.max():.4f}")
 
-    print("\n✓ PASS: Observation builder works correctly with 51 features")
+    print("\n✓ PASS: Observation builder works correctly with 56 features (was 51, added 5)")
 
 except Exception as e:
     print(f"\n✗ FAIL: Error during obs_builder test: {e}")
@@ -132,9 +133,9 @@ except Exception as e:
     traceback.print_exc()
     exit(1)
 
-# Test 4: List all 51 features
+# Test 4: List all 56 features
 print("\n" + "=" * 80)
-print("Test 4: Complete list of all 51 features")
+print("Test 4: Complete list of all 56 features (was 51, added 5)")
 print("=" * 80)
 
 feature_list = [
@@ -148,7 +149,7 @@ feature_list = [
     "25-26: Bollinger (bb_position, bb_width)",
     "27-29: Event metadata (is_high_importance, time_since_event, risk_off_flag)",
     "30-31: Fear & Greed (value, indicator)",
-    "32-47: External/norm_cols (16 features):",
+    "32-52: External/norm_cols (21 features, was 16, added 5):",
     "  32: cvd_24h",
     "  33: cvd_168h",
     "  34: yang_zhang_24h",
@@ -157,21 +158,26 @@ feature_list = [
     "  37: garch_24h",
     "  38: ret_15m",
     "  39: ret_60m",
-    "  40: ret_5m (NEW)",
-    "  41: sma_60 (NEW)",
-    "  42: yang_zhang_720h (NEW)",
-    "  43: parkinson_24h (NEW)",
-    "  44: parkinson_168h (NEW)",
-    "  45: garch_500m (NEW)",
-    "  46: taker_buy_ratio (NEW)",
-    "  47: taker_buy_ratio_sma_24h (NEW)",
-    "48-49: Token metadata (num_tokens_norm, token_id_norm)",
-    "50: Token one-hot (1 slot for max_num_tokens=1)",
+    "  40: ret_5m",
+    "  41: sma_60",
+    "  42: yang_zhang_720h",
+    "  43: parkinson_24h",
+    "  44: parkinson_168h",
+    "  45: garch_500m",
+    "  46: taker_buy_ratio",
+    "  47: taker_buy_ratio_sma_24h",
+    "  48: taker_buy_ratio_sma_6h (ADDED)",
+    "  49: taker_buy_ratio_sma_12h (ADDED)",
+    "  50: taker_buy_ratio_momentum_1h (ADDED)",
+    "  51: taker_buy_ratio_momentum_6h (ADDED)",
+    "  52: taker_buy_ratio_momentum_12h (ADDED)",
+    "53-54: Token metadata (num_tokens_norm, token_id_norm)",
+    "55: Token one-hot (1 slot for max_num_tokens=1)",
 ]
 
 for feature in feature_list:
     print(f"  {feature}")
 
 print("\n" + "=" * 80)
-print("✓ ALL TESTS PASSED: 51 features are properly integrated!")
+print("✓ ALL TESTS PASSED: 56 features are properly integrated!")
 print("=" * 80)
