@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document describes the complete structure of the observation vector (57 features) used by the trading agent. The observation vector is constructed by `obs_builder.build_observation_vector()` and populated with technical indicators from `prepare_and_run.py` and market microstructure data.
+This document describes the complete structure of the observation vector (43 features) used by the trading agent. The observation vector is constructed by `obs_builder.build_observation_vector()` and populated with technical indicators from `prepare_and_run.py` and market microstructure data.
 
-**Total Features**: 57 (with max_num_tokens=1)
+**Total Features**: 43 (with max_num_tokens=1 and norm_cols=8)
 
 ## Feature Layout
 
@@ -122,9 +122,7 @@ With `max_num_tokens=1` (default), this adds 1 feature:
 |----------|---------|-------------|
 | 42 | Token 0 | One-hot encoding (1.0 for current token, 0.0 otherwise) |
 
-**Total with max_num_tokens=1**: 43 base features + 1 token = **44 features**
-
-However, the observation space is typically configured as **57 features** to allow for future expansion or different token configurations.
+**Total with max_num_tokens=1**: 32 (base) + 8 (norm_cols) + 2 (token_meta) + 1 (token_onehot) = **43 features**
 
 ## Data Flow
 
@@ -190,14 +188,33 @@ RL Agent (DistributionalPPO)
 - `_extract_norm_cols(row)`: Extract cvd, garch, yang_zhang into norm_cols array
 - `_coerce_finite(value, default)`: Ensure finite float values
 
+## Critical Size Changes (January 2025)
+
+**Previous Setup (INCORRECT):**
+- `observation_space = (N_FEATURES + 4,)` where N_FEATURES was incorrectly calculated as 53
+- `observation_space.shape = (57,)`
+- `obs_builder` filled only 43 positions → **14 positions were zeros!**
+
+**Current Setup (CORRECTED):**
+- `observation_space = (N_FEATURES,)` where N_FEATURES correctly calculated as 43
+- `observation_space.shape = (43,)`
+- `obs_builder` fills all 43 positions → **All features populated!**
+
+**Changes Made:**
+1. Updated `lob_state_cython.pyx:_compute_n_features()` to use `norm_cols=np.zeros(8)` instead of `np.zeros(0)`
+2. Updated `feature_config.py` MAX_NUM_TOKENS from 16 to 1
+3. Updated `feature_config.py` metadata size from 2 to 5
+4. Added token_meta block (2 features) to feature_config.py
+5. Removed `+4` from `observation_space` in trading_patchnew.py
+
 ## Testing
 
 Comprehensive tests are available in `tests/test_technical_indicators_in_obs.py`:
 
-1. **test_observation_size_and_non_zero()**: Verifies size and non-zero content
+1. **test_observation_size_and_non_zero()**: Verifies size=43 and non-zero content (>30/43)
 2. **test_technical_indicators_present()**: Checks indicators are in correct positions
 3. **test_cvd_garch_yangzhang_in_obs()**: Verifies specific indicators appear
-4. **test_observations_in_training_env()**: Tests training scenario
+4. **test_observations_in_training_env()**: Tests training scenario with obs_size=43
 5. **test_observation_works_without_indicators()**: Tests fallback mode
 
 ## Fallback Behavior
@@ -255,8 +272,18 @@ To add new indicators:
 3. Update this documentation
 4. Add tests in `test_technical_indicators_in_obs.py`
 
+## Recompilation Required
+
+After updating `lob_state_cython.pyx`, you MUST recompile:
+
+```bash
+python setup.py build_ext --inplace
+```
+
+This will update `lob_state_cython.N_FEATURES` to return 43 instead of 35.
+
 ---
 
-**Last Updated**: 2025-01-09
+**Last Updated**: 2025-01-10 (Size corrected from 57 to 43)
 **Authors**: Technical Indicators Integration Task
-**Related Files**: `mediator.py`, `obs_builder.pyx`, `prepare_and_run.py`, `feature_config.py`
+**Related Files**: `mediator.py`, `obs_builder.pyx`, `prepare_and_run.py`, `feature_config.py`, `lob_state_cython.pyx`, `trading_patchnew.py`

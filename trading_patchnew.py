@@ -607,7 +607,7 @@ class TradingEnv(gym.Env):
         # --- end patch ---
 
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(N_FEATURES + 4,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(N_FEATURES,), dtype=np.float32
         )
 
         # Phase 09 regime machinery
