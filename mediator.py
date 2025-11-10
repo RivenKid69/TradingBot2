@@ -1007,9 +1007,10 @@ class Mediator:
 
     def _extract_norm_cols(self, row: Any) -> np.ndarray:
         """Extract normalized columns for external features (cvd, garch, yang_zhang, etc.)."""
-        norm_cols = np.zeros(8, dtype=np.float32)
+        norm_cols = np.zeros(16, dtype=np.float32)
 
         # Map technical indicators from prepare_and_run.py to norm_cols
+        # Original 8 features
         norm_cols[0] = self._get_safe_float(row, "cvd_24h", 0.0)
         norm_cols[1] = self._get_safe_float(row, "cvd_168h", 0.0)
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_24h", 0.0)
@@ -1018,6 +1019,16 @@ class Mediator:
         norm_cols[5] = self._get_safe_float(row, "garch_24h", 0.0)
         norm_cols[6] = self._get_safe_float(row, "ret_15m", 0.0)
         norm_cols[7] = self._get_safe_float(row, "ret_60m", 0.0)
+
+        # Additional 8 features for complete coverage (43 -> 51)
+        norm_cols[8] = self._get_safe_float(row, "ret_5m", 0.0)
+        norm_cols[9] = self._get_safe_float(row, "sma_60", 0.0)
+        norm_cols[10] = self._get_safe_float(row, "yang_zhang_720h", 0.0)
+        norm_cols[11] = self._get_safe_float(row, "parkinson_24h", 0.0)
+        norm_cols[12] = self._get_safe_float(row, "parkinson_168h", 0.0)
+        norm_cols[13] = self._get_safe_float(row, "garch_500m", 0.0)
+        norm_cols[14] = self._get_safe_float(row, "taker_buy_ratio", 0.0)
+        norm_cols[15] = self._get_safe_float(row, "taker_buy_ratio_sma_24h", 0.0)
 
         # Normalize to reasonable range for neural network
         norm_cols = np.tanh(norm_cols)
