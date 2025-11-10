@@ -2,7 +2,7 @@
 DEFAULT_TANH_CLIP = 0.999
 OBS_EPS = 1e-8
 # Default maximum sizes
-MAX_NUM_TOKENS = 16
+MAX_NUM_TOKENS = 1  # Changed from 16 to match mediator and lob_state_cython
 EXT_NORM_DIM = 8
 
 # Initialize feature layout (to be populated by make_layout)
@@ -69,8 +69,9 @@ def make_layout(obs_params=None):
         "bias": 0.0,
         "source": "agent"
     })
-    # Metadata block (event importance, time since event, optional fear/greed)
-    meta_size = 3 if include_fear else 2
+    # Metadata block (is_high_importance, time_since_event, risk_off_flag, fear_greed_value, fear_greed_indicator)
+    # Always 5 features to match obs_builder implementation
+    meta_size = 5
     layout.append({
         "name": "metadata",
         "size": meta_size,
@@ -91,16 +92,28 @@ def make_layout(obs_params=None):
             "bias": 0.0,
             "source": "external"
         })
+    # Token metadata block (num_tokens_norm, token_id_norm)
+    if max_tokens > 0:
+        layout.append({
+            "name": "token_meta",
+            "size": 2,
+            "dtype": "float32",
+            "clip": None,
+            "scale": 1.0,
+            "bias": 0.0,
+            "source": "token_meta"
+        })
     # Token one-hot block
-    layout.append({
-        "name": "token",
-        "size": max_tokens,
-        "dtype": "float32",
-        "clip": None,
-        "scale": 1.0,
-        "bias": 0.0,
-        "source": "token"
-    })
+    if max_tokens > 0:
+        layout.append({
+            "name": "token",
+            "size": max_tokens,
+            "dtype": "float32",
+            "clip": None,
+            "scale": 1.0,
+            "bias": 0.0,
+            "source": "token"
+        })
     FEATURES_LAYOUT = layout
     # Compute total feature vector length
     N_FEATURES = sum(block["size"] for block in layout)

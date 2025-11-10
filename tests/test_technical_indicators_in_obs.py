@@ -33,14 +33,14 @@ class MockState:
 class MockObservationSpace:
     """Mock observation space."""
 
-    def __init__(self, size=57):
+    def __init__(self, size=43):
         self.shape = (size,)
 
 
 class MockEnv:
     """Mock environment for testing."""
 
-    def __init__(self, df: pd.DataFrame | None = None, obs_size: int = 57):
+    def __init__(self, df: pd.DataFrame | None = None, obs_size: int = 43):
         self.df = df
         self.observation_space = MockObservationSpace(size=obs_size)
         self.state = MockState()
@@ -334,7 +334,7 @@ def test_observation_size_and_non_zero():
         }
     )
 
-    env = MockEnv(df=df, obs_size=57)
+    env = MockEnv(df=df, obs_size=43)
     mediator = MockMediator(env)
 
     row = df.iloc[100]
@@ -344,11 +344,11 @@ def test_observation_size_and_non_zero():
     obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
     # Check size
-    assert obs.shape == (57,), f"Expected obs.shape=(57,), got {obs.shape}"
+    assert obs.shape == (43,), f"Expected obs.shape=(43,), got {obs.shape}"
 
-    # Check that more than 20 values are non-zero (>50% should be populated)
+    # Check that more than 30 values are non-zero (>70% should be populated)
     non_zero_count = np.count_nonzero(obs)
-    assert non_zero_count > 20, f"Expected >20 non-zero values, got {non_zero_count}"
+    assert non_zero_count > 30, f"Expected >30 non-zero values, got {non_zero_count}"
 
     print(f"✓ Test 1 passed: obs.shape={obs.shape}, non_zero_count={non_zero_count}")
 
@@ -380,7 +380,7 @@ def test_technical_indicators_present():
         }
     )
 
-    env = MockEnv(df=df, obs_size=57)
+    env = MockEnv(df=df, obs_size=43)
     mediator = MockMediator(env)
 
     row = df.iloc[0]
@@ -429,7 +429,7 @@ def test_cvd_garch_yangzhang_in_obs():
         }
     )
 
-    env = MockEnv(df=df, obs_size=57)
+    env = MockEnv(df=df, obs_size=43)
     mediator = MockMediator(env)
 
     row = df.iloc[0]
@@ -479,7 +479,7 @@ def test_observations_in_training_env():
         }
     )
 
-    env = MockEnv(df=df, obs_size=57)
+    env = MockEnv(df=df, obs_size=43)
     mediator = MockMediator(env)
 
     # Test multiple steps
@@ -491,7 +491,7 @@ def test_observations_in_training_env():
 
         obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
-        assert obs.shape == (57,), f"Step {step_idx}: Expected shape (57,), got {obs.shape}"
+        assert obs.shape == (43,), f"Step {step_idx}: Expected shape (43,), got {obs.shape}"
         non_zero_count = np.count_nonzero(obs)
         assert non_zero_count > 15, f"Step {step_idx}: Expected >15 non-zero, got {non_zero_count}"
 
@@ -514,7 +514,7 @@ def test_observation_works_without_indicators():
         }
     )
 
-    env = MockEnv(df=df, obs_size=57)
+    env = MockEnv(df=df, obs_size=43)
     mediator = MockMediator(env)
 
     row = df.iloc[0]
@@ -524,7 +524,7 @@ def test_observation_works_without_indicators():
     obs = mediator._build_observation(row=row, state=state, mark_price=mark_price)
 
     # Should still return correct size (fallback to defaults)
-    assert obs.shape == (57,), f"Expected shape (57,), got {obs.shape}"
+    assert obs.shape == (43,), f"Expected shape (43,), got {obs.shape}"
 
     # Should have at least some basic values (price, cash, units)
     assert obs[0] > 0, "obs[0] (price) should be non-zero"

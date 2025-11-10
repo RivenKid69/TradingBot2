@@ -54,7 +54,7 @@ def _compute_n_features() -> int:
     """Вспомогательная функция для подсчёта длины вектора признаков."""
     cdef int max_tokens = 1      # максимальное число токенов (подгоните при необходимости)
     cdef int num_tokens = 1
-    norm_cols = np.zeros(0, dtype=np.float32)
+    norm_cols = np.zeros(8, dtype=np.float32)  # 8 external columns: cvd_24h, cvd_168h, yang_zhang_24h, yang_zhang_168h, garch_12h, garch_24h, ret_15m, ret_60m
     # выделяем буфер заведомо большей длины
     buf = np.empty(256, dtype=np.float32)
     buf.fill(np.nan)
