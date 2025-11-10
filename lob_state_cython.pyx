@@ -1171,20 +1171,21 @@ cdef inline tuple _compute_reward_cython(
     else:
         reward = net_worth_delta / reward_scale
 
-    if use_legacy_log_reward:
+    # FIX CRITICAL BUG: Apply potential shaping regardless of reward mode
+    # Previously, potential shaping was only applied when use_legacy_log_reward=True,
+    # causing it to be ignored in the new reward mode even when enabled
+    if use_potential_shaping:
+        risk_penalty = 0.0
+        dd_penalty = 0.0
 
-        if use_potential_shaping:
-            risk_penalty = 0.0
-            dd_penalty = 0.0
+        if net_worth > 1e-9 and units != 0 and atr > 0:
+            risk_penalty = -risk_aversion_variance * abs(units) * atr / (abs(net_worth) + 1e-9)
 
-            if net_worth > 1e-9 and units != 0 and atr > 0:
-                risk_penalty = -risk_aversion_variance * abs(units) * atr / (abs(net_worth) + 1e-9)
+        if peak_value > 1e-9:
+            dd_penalty = -risk_aversion_drawdown * (peak_value - net_worth) / peak_value
 
-            if peak_value > 1e-9:
-                dd_penalty = -risk_aversion_drawdown * (peak_value - net_worth) / peak_value
-
-            current_potential = potential_shaping_coef * tanh(risk_penalty + dd_penalty)
-            reward += gamma * current_potential - last_potential
+        current_potential = potential_shaping_coef * tanh(risk_penalty + dd_penalty)
+        reward += gamma * current_potential - last_potential
 
     reward -= (trades_this_step * trade_frequency_penalty) / reward_scale
 
