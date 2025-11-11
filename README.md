@@ -367,7 +367,7 @@ python train_model_multi_patch.py --config configs/config_train.yaml --slippage.
   отрицательное — агрессивнее в сторону фила.
 - `execution_params.ttl_steps` — время жизни лимитного ордера в шагах
   симуляции. Когда счётчик достигает нуля, заявка автоматически отменяется.
-  Нуль отключает автосписание. (Тесты для этой функциональности должны быть реализованы в `tests/test_limit_order_ttl.py`)
+  Нуль отключает автосписание. (Тесты реализованы в `test_limit_order_ttl.py`)
 - `execution_params.tif` — режим исполнения (`GTC`, `IOC`, `FOK`). Для `IOC`
   незаполненный остаток снимается немедленно, для `FOK` ордер либо
   исполняется полностью, либо отменяется.
@@ -388,7 +388,7 @@ python train_model_multi_patch.py --config configs/config_train.yaml --slippage.
   fills с нарушением квантования (`ActionProto.ttl_steps` и журнал
   симуляции согласованы).
 - Параметры `limit_offset_bps` и `tif` отражаются в отчётах исполнения.
-  (Тесты `tests/test_execution_profiles.py` должны быть реализованы для полной валидации)
+  (Тесты реализованы в `test_execution_profiles.py`)
 - Для крупного ордера превышение `notional_threshold` переводит исполнение
   в режим `large_order_algo`, а статистика POV‑алгоритма фиксирует долю
   участия и интервал дочерних ордеров в `risk.jsonl`.
@@ -641,17 +641,15 @@ total = _recompute_total(trades, bid=102.0, ask=103.0, mtm_price=None)
 # total == 1.0 (realized_pnl + unrealized_pnl)
 ```
 
-Регрессионный тест для проверки PnL отчётов должен быть реализован
-в файле `tests/test_pnl_report_check.py`. Тест должен запускать
-симулятор и сравнивать отчёт с пересчитанным результатом.
+Регрессионный тест для проверки PnL отчётов реализован
+в файле `test_pnl_report_check.py`. Тест запускает
+симулятор и сравнивает отчёт с пересчитанным результатом.
 
-Запуск теста после реализации:
+Запуск теста:
 
 ```bash
-pytest tests/test_pnl_report_check.py
+pytest test_pnl_report_check.py
 ```
-
-**Статус**: Тест ожидает реализации.
 
 ## Проверка реалистичности симуляции
 
