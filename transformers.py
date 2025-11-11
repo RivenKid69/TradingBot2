@@ -286,6 +286,11 @@ class FeatureSpec:
       - taker_buy_ratio_windows: окна для скользящего среднего taker_buy_ratio (в минутах)
       - taker_buy_ratio_momentum: окна для моментума taker_buy_ratio (в минутах)
       - cvd_windows: окна для кумулятивной дельты объема (в минутах)
+      - bar_duration_minutes: длительность одного бара в минутах (1 для 1m, 240 для 4h)
+
+    После __post_init__:
+      - lookbacks_prices и другие окна конвертируются в БАРЫ для корректной работы
+      - Исходные значения в минутах сохраняются в _*_minutes полях для именования признаков
     """
 
     lookbacks_prices: List[int]
@@ -296,6 +301,16 @@ class FeatureSpec:
     taker_buy_ratio_windows: Optional[List[int]] = None
     taker_buy_ratio_momentum: Optional[List[int]] = None
     cvd_windows: Optional[List[int]] = None
+    bar_duration_minutes: int = 1
+
+    # Исходные значения в минутах (для именования признаков после конвертации в бары)
+    _lookbacks_prices_minutes: Optional[List[int]] = None
+    _yang_zhang_windows_minutes: Optional[List[int]] = None
+    _parkinson_windows_minutes: Optional[List[int]] = None
+    _garch_windows_minutes: Optional[List[int]] = None
+    _taker_buy_ratio_windows_minutes: Optional[List[int]] = None
+    _taker_buy_ratio_momentum_minutes: Optional[List[int]] = None
+    _cvd_windows_minutes: Optional[List[int]] = None
 
     def __post_init__(self) -> None:
         if (
@@ -312,6 +327,16 @@ class FeatureSpec:
         self.lookbacks_prices = [
             int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
         ]
+
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._lookbacks_prices_minutes = list(self.lookbacks_prices)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        # Для 4h интервала (bar_duration_minutes=240): 240 минут = 1 бар
+        self.lookbacks_prices = [
+            max(1, x // self.bar_duration_minutes) for x in self.lookbacks_prices
+        ]
+
         self.rsi_period = int(self.rsi_period)
 
         # Инициализация окон Yang-Zhang для 4h интервала: 48ч, 7д, 30д в минутах
@@ -327,6 +352,14 @@ class FeatureSpec:
         else:
             self.yang_zhang_windows = []
 
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._yang_zhang_windows_minutes = list(self.yang_zhang_windows)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.yang_zhang_windows = [
+            max(1, x // self.bar_duration_minutes) for x in self.yang_zhang_windows
+        ]
+
         # Инициализация окон Parkinson для 4h интервала: 48ч, 7д в минутах
         # 48h = 12 баров = 2880 минут
         # 7d = 42 бара = 10080 минут
@@ -338,6 +371,14 @@ class FeatureSpec:
             ]
         else:
             self.parkinson_windows = []
+
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._parkinson_windows_minutes = list(self.parkinson_windows)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.parkinson_windows = [
+            max(1, x // self.bar_duration_minutes) for x in self.parkinson_windows
+        ]
 
         # Инициализация окон Taker Buy Ratio скользящего среднего для 4h интервала: 8ч, 16ч, 24ч в минутах
         # 8h = 2 бара = 480 минут
@@ -352,6 +393,14 @@ class FeatureSpec:
         else:
             self.taker_buy_ratio_windows = []
 
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._taker_buy_ratio_windows_minutes = list(self.taker_buy_ratio_windows)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.taker_buy_ratio_windows = [
+            max(1, x // self.bar_duration_minutes) for x in self.taker_buy_ratio_windows
+        ]
+
         # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч в минутах
         # 4h = 1 бар = 240 минут
         # 8h = 2 бара = 480 минут
@@ -365,6 +414,14 @@ class FeatureSpec:
         else:
             self.taker_buy_ratio_momentum = []
 
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._taker_buy_ratio_momentum_minutes = list(self.taker_buy_ratio_momentum)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.taker_buy_ratio_momentum = [
+            max(1, x // self.bar_duration_minutes) for x in self.taker_buy_ratio_momentum
+        ]
+
         # Инициализация окон Cumulative Volume Delta: 24ч, 7д в минутах (без изменений)
         if self.cvd_windows is None:
             self.cvd_windows = [24 * 60, 7 * 24 * 60]  # 1440, 10080 минут
@@ -374,6 +431,14 @@ class FeatureSpec:
             ]
         else:
             self.cvd_windows = []
+
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._cvd_windows_minutes = list(self.cvd_windows)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.cvd_windows = [
+            max(1, x // self.bar_duration_minutes) for x in self.cvd_windows
+        ]
 
         # Инициализация окон GARCH для 4h интервала: 7д, 14д, 30д в минутах
         # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 212)!
@@ -388,6 +453,14 @@ class FeatureSpec:
             ]
         else:
             self.garch_windows = []
+
+        # CRITICAL FIX #1: Сохраняем исходные значения в минутах для именования признаков
+        self._garch_windows_minutes = list(self.garch_windows)
+
+        # CRITICAL FIX #1: Конвертируем окна из минут в бары
+        self.garch_windows = [
+            max(1, x // self.bar_duration_minutes) for x in self.garch_windows
+        ]
 
 
 class OnlineFeatureTransformer:
@@ -408,6 +481,8 @@ class OnlineFeatureTransformer:
         st = self._state.get(symbol)
         if st is None:
             # Определяем максимальную длину окна для всех фич
+            # CRITICAL FIX #2: Все окна уже конвертированы из минут в бары в FeatureSpec.__post_init__
+            # Поэтому maxlen теперь корректно устанавливается в барах, а не в минутах
             all_windows = self.spec.lookbacks_prices + [self.spec.rsi_period + 1]
             if self.spec.yang_zhang_windows:
                 all_windows.extend(self.spec.yang_zhang_windows)
@@ -516,14 +591,17 @@ class OnlineFeatureTransformer:
         }
 
         seq = list(st["prices"])
-        for lb in self.spec.lookbacks_prices:
+        # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+        for i, lb in enumerate(self.spec.lookbacks_prices):
             if len(seq) >= lb:
                 window = seq[-lb:]
                 sma = sum(window) / float(lb)
-                feats[f"sma_{lb}"] = float(sma)
+                # Используем исходное значение в минутах для имени
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                feats[f"sma_{lb_minutes}"] = float(sma)
                 first = float(window[0])
                 # Создаем имя для returns с поддержкой дней, часов и минут
-                ret_name = f"ret_{_format_window_name(lb)}"
+                ret_name = f"ret_{_format_window_name(lb_minutes)}"
                 feats[ret_name] = (
                     float(math.log(price / first)) if first > 0 else 0.0
                 )
@@ -541,9 +619,11 @@ class OnlineFeatureTransformer:
         # Рассчитываем Yang-Zhang волатильность для каждого окна
         if self.spec.yang_zhang_windows and st["ohlc_bars"]:
             ohlc_list = list(st["ohlc_bars"])
-            for window in self.spec.yang_zhang_windows:
+            # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+            for i, window in enumerate(self.spec.yang_zhang_windows):
                 # Создаем имя признака с поддержкой дней, часов и минут
-                window_name = _format_window_name(window)
+                window_minutes = self.spec._yang_zhang_windows_minutes[i]
+                window_name = _format_window_name(window_minutes)
                 feature_name = f"yang_zhang_{window_name}"
 
                 if len(ohlc_list) >= window:
@@ -558,9 +638,11 @@ class OnlineFeatureTransformer:
         # Рассчитываем Parkinson волатильность для каждого окна
         if self.spec.parkinson_windows and st["ohlc_bars"]:
             ohlc_list = list(st["ohlc_bars"])
-            for window in self.spec.parkinson_windows:
+            # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+            for i, window in enumerate(self.spec.parkinson_windows):
                 # Создаем имя признака с поддержкой дней, часов и минут
-                window_name = _format_window_name(window)
+                window_minutes = self.spec._parkinson_windows_minutes[i]
+                window_name = _format_window_name(window_minutes)
                 feature_name = f"parkinson_{window_name}"
 
                 if len(ohlc_list) >= window:
@@ -575,9 +657,11 @@ class OnlineFeatureTransformer:
         # Рассчитываем условную волатильность GARCH(1,1) для каждого окна
         if self.spec.garch_windows:
             price_list = list(st["prices"])
-            for window in self.spec.garch_windows:
+            # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+            for i, window in enumerate(self.spec.garch_windows):
                 # Создаем имя признака с поддержкой дней, часов и минут
-                window_name = _format_window_name(window)
+                window_minutes = self.spec._garch_windows_minutes[i]
+                window_name = _format_window_name(window_minutes)
                 feature_name = f"garch_{window_name}"
 
                 if len(price_list) >= window:
@@ -601,9 +685,11 @@ class OnlineFeatureTransformer:
 
             # Рассчитываем скользящее среднее для каждого окна
             if self.spec.taker_buy_ratio_windows:
-                for window in self.spec.taker_buy_ratio_windows:
+                # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+                for i, window in enumerate(self.spec.taker_buy_ratio_windows):
                     # Создаем имя признака с поддержкой дней, часов и минут
-                    window_name = _format_window_name(window)
+                    window_minutes = self.spec._taker_buy_ratio_windows_minutes[i]
+                    window_name = _format_window_name(window_minutes)
                     feature_name = f"taker_buy_ratio_sma_{window_name}"
 
                     if len(ratio_list) >= window:
@@ -615,9 +701,11 @@ class OnlineFeatureTransformer:
 
             # Рассчитываем моментум (изменение за последние N периодов)
             if self.spec.taker_buy_ratio_momentum:
-                for window in self.spec.taker_buy_ratio_momentum:
+                # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+                for i, window in enumerate(self.spec.taker_buy_ratio_momentum):
                     # Создаем имя признака с поддержкой дней, часов и минут
-                    window_name = _format_window_name(window)
+                    window_minutes = self.spec._taker_buy_ratio_momentum_minutes[i]
+                    window_name = _format_window_name(window_minutes)
                     feature_name = f"taker_buy_ratio_momentum_{window_name}"
 
                     if len(ratio_list) >= window + 1:
@@ -634,9 +722,11 @@ class OnlineFeatureTransformer:
         if st["volume_deltas"] and self.spec.cvd_windows:
             delta_list = list(st["volume_deltas"])
 
-            for window in self.spec.cvd_windows:
+            # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+            for i, window in enumerate(self.spec.cvd_windows):
                 # Создаем имя признака с поддержкой дней, часов и минут
-                window_name = _format_window_name(window)
+                window_minutes = self.spec._cvd_windows_minutes[i]
+                window_name = _format_window_name(window_minutes)
                 feature_name = f"cvd_{window_name}"
 
                 if len(delta_list) >= window:

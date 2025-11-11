@@ -21,79 +21,91 @@ class TestCritical1_DefaultParameters(unittest.TestCase):
 
     def test_default_lookbacks_prices_for_4h(self):
         """Проверяет что дефолтные lookbacks_prices подходят для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[])  # Пустой список → используются дефолты
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)
 
         # Для 4h интервала (1 бар = 240 минут):
-        # Ожидаем: 240, 720, 1440, 12000 минут = 1, 3, 6, 50 баров
-        expected = [240, 720, 1440, 12000]
-        self.assertEqual(spec.lookbacks_prices, expected,
-            f"Дефолтные lookbacks_prices должны быть {expected} для 4h, "
+        # Исходные значения: 240, 720, 1440, 12000 минут
+        # После конвертации: 1, 3, 6, 50 баров
+        expected_bars = [1, 3, 6, 50]
+        self.assertEqual(spec.lookbacks_prices, expected_bars,
+            f"Дефолтные lookbacks_prices должны быть {expected_bars} баров для 4h, "
             f"но получили {spec.lookbacks_prices}"
+        )
+
+        # Проверяем что исходные значения в минутах сохранены
+        expected_minutes = [240, 720, 1440, 12000]
+        self.assertEqual(spec._lookbacks_prices_minutes, expected_minutes,
+            f"Исходные lookbacks_prices должны быть {expected_minutes} минут для 4h, "
+            f"но получили {spec._lookbacks_prices_minutes}"
         )
 
     def test_default_garch_windows_for_4h(self):
         """Проверяет что дефолтные GARCH окна достаточно велики для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала (1 бар = 240 минут):
-        # Ожидаем: 10080, 20160, 43200 минут = 42, 84, 180 баров
+        # Исходные: 10080, 20160, 43200 минут
+        # После конвертации: 42, 84, 180 баров
         # КРИТИЧНО: все окна должны быть >= 50 баров (минимум для GARCH)
-        expected = [10080, 20160, 43200]
-        self.assertEqual(spec.garch_windows, expected,
-            f"Дефолтные garch_windows должны быть {expected} для 4h, "
+        expected_bars = [42, 84, 180]
+        self.assertEqual(spec.garch_windows, expected_bars,
+            f"Дефолтные garch_windows должны быть {expected_bars} баров для 4h, "
             f"но получили {spec.garch_windows}"
         )
 
-        # Проверяем что все окна >= 50 баров (50 * 240 = 12000 минут)
-        bar_duration_minutes = 240
-        for window_minutes in spec.garch_windows:
-            bars = window_minutes / bar_duration_minutes
+        # Проверяем что все окна >= 50 баров
+        for bars in spec.garch_windows:
             self.assertGreaterEqual(bars, 50,
-                f"GARCH окно {window_minutes} минут = {bars} баров, "
-                f"но требуется минимум 50 баров!"
+                f"GARCH окно {bars} баров, но требуется минимум 50 баров!"
             )
 
     def test_default_yang_zhang_windows_for_4h(self):
         """Проверяет что дефолтные Yang-Zhang окна правильные для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала: 2880, 10080, 43200 минут = 12, 42, 180 баров
-        expected = [2880, 10080, 43200]
+        expected = [12, 42, 180]
         self.assertEqual(spec.yang_zhang_windows, expected,
-            f"Дефолтные yang_zhang_windows должны быть {expected} для 4h, "
+            f"Дефолтные yang_zhang_windows должны быть {expected} баров для 4h, "
             f"но получили {spec.yang_zhang_windows}"
         )
 
     def test_default_parkinson_windows_for_4h(self):
         """Проверяет что дефолтные Parkinson окна правильные для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала: 2880, 10080 минут = 12, 42 бара
-        expected = [2880, 10080]
+        expected = [12, 42]
         self.assertEqual(spec.parkinson_windows, expected,
-            f"Дефолтные parkinson_windows должны быть {expected} для 4h, "
+            f"Дефолтные parkinson_windows должны быть {expected} баров для 4h, "
             f"но получили {spec.parkinson_windows}"
         )
 
     def test_default_taker_buy_ratio_windows_for_4h(self):
         """Проверяет что дефолтные Taker Buy Ratio SMA окна правильные для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала: 480, 960, 1440 минут = 2, 4, 6 баров
-        expected = [480, 960, 1440]
+        expected = [2, 4, 6]
         self.assertEqual(spec.taker_buy_ratio_windows, expected,
-            f"Дефолтные taker_buy_ratio_windows должны быть {expected} для 4h, "
+            f"Дефолтные taker_buy_ratio_windows должны быть {expected} баров для 4h, "
             f"но получили {spec.taker_buy_ratio_windows}"
         )
 
     def test_default_taker_buy_ratio_momentum_for_4h(self):
         """Проверяет что дефолтные Taker Buy Ratio Momentum окна правильные для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала: 240, 480, 720 минут = 1, 2, 3 бара
-        expected = [240, 480, 720]
+        expected = [1, 2, 3]
         self.assertEqual(spec.taker_buy_ratio_momentum, expected,
-            f"Дефолтные taker_buy_ratio_momentum должны быть {expected} для 4h, "
+            f"Дефолтные taker_buy_ratio_momentum должны быть {expected} баров для 4h, "
             f"но получили {spec.taker_buy_ratio_momentum}"
         )
 
@@ -103,7 +115,8 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
 
     def test_generated_feature_names_for_4h(self):
         """Проверяет что transformers.py генерирует правильные имена для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[240, 720, 1440, 12000])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240, 720, 1440, 12000], bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Генерируем тестовые признаки
@@ -119,7 +132,8 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
         )
 
         # Проверяем имена returns для 4h интервала
-        expected_return_names = ["ret_4h", "ret_12h", "ret_24h", "ret_50"]
+        # CRITICAL FIX #3: Исправлено имя ret_50 → ret_200h (12000 минут = 200 часов)
+        expected_return_names = ["ret_4h", "ret_12h", "ret_24h", "ret_200h"]
         for name in expected_return_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
@@ -208,7 +222,8 @@ class TestMinor2_TakerBuyRatioClamping(unittest.TestCase):
 
     def test_taker_buy_ratio_clamped_to_0_1(self):
         """Проверяет что taker_buy_ratio ограничен диапазоном [0.0, 1.0]."""
-        spec = FeatureSpec(lookbacks_prices=[240])
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Случай 1: Нормальное значение (taker_buy_base = 60, volume = 100) → 0.6
@@ -241,7 +256,8 @@ class TestIntegrationEnd2End(unittest.TestCase):
 
     def test_full_pipeline_with_4h_defaults(self):
         """Проверяет полный пайплайн с дефолтными параметрами для 4h интервала."""
-        spec = FeatureSpec(lookbacks_prices=[])  # Используем дефолты
+        # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
+        spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)  # Используем дефолты
         transformer = OnlineFeatureTransformer(spec)
 
         # Генерируем достаточно данных для GARCH (минимум 50 баров для 7d окна)
@@ -261,9 +277,11 @@ class TestIntegrationEnd2End(unittest.TestCase):
             )
 
         # Проверяем что все ожидаемые признаки присутствуют
+        # CRITICAL FIX #3: Исправлены имена согласно дефолтным значениям lookbacks_prices=[240,720,1440,12000]
+        # 12000 минут = 200 часов, форматируется как "200h"
         expected_features = [
-            "ret_4h", "ret_12h", "ret_24h", "ret_50",
-            "sma_240", "sma_720", "sma_1440", "sma_50",
+            "ret_4h", "ret_12h", "ret_24h", "ret_200h",
+            "sma_240", "sma_720", "sma_1440", "sma_12000",
             "garch_7d", "garch_14d", "garch_30d",
             "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
             "parkinson_48h", "parkinson_7d",
