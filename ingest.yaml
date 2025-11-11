@@ -1,15 +1,16 @@
 # configs/ingest.yaml
+# Конфигурация для загрузки данных за 3 года (2022-2025) по BTC и ETH
 symbols: ["BTCUSDT", "ETHUSDT"]
 market: "futures"       # "spot" или "futures"
 intervals:
-  - "1m"
+  - "1m"                # Базовый интервал для загрузки
 aggregate_to:
   - "5m"
   - "15m"
   - "1h"
 period:
-  start: "2024-01-01"
-  end: "2024-12-31"
+  start: "2022-01-01"   # За 3 года
+  end: "2025-01-01"
 
 paths:
   klines_dir: "data/klines"
