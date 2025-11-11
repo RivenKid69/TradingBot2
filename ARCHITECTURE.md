@@ -273,7 +273,8 @@ from_config(cfg_run, trainer=trainer, train_cfg=cfg)
 часов недели (0 = понедельник 00:00 UTC). Генерация коэффициентов
 происходит скриптом `scripts/build_hourly_seasonality.py`, который
 рассчитывает средние значения по историческим данным и сохраняет их в
-`data/latency/liquidity_latency_seasonality.json`.
+`data/latency/liquidity_latency_seasonality.json` (симлинк на
+`configs/liquidity_latency_seasonality.json`).
 
 Функции `load_seasonality` и `load_hourly_seasonality` из `utils_time.py`
 читают JSON, проверяют контрольную сумму и ограничивают коэффициенты.

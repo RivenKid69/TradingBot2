@@ -188,8 +188,8 @@
 - /home/user/TradingBot2/data/symbols.json - Symbol list
 - /home/user/TradingBot2/data/universe/symbols.json - Universe definitions
 - /home/user/TradingBot2/data/fees/fees_by_symbol.json - Fee structure
-- /home/user/TradingBot2/data/latency/liquidity_latency_no_seasonality.json - Latency data
-- /home/user/TradingBot2/data/latency/liquidity_latency_seasonality.json - Latency seasonality
+- /home/user/TradingBot2/data/latency/liquidity_latency_no_seasonality.json - Latency data (no seasonality)
+- /home/user/TradingBot2/data/latency/liquidity_latency_seasonality.json - Latency seasonality (symlink to configs/liquidity_latency_seasonality.json)
 - /home/user/TradingBot2/data/impact_benchmark.json - Impact benchmarks
 - /home/user/TradingBot2/data/hist_trades.csv - Historical trades
 - /home/user/TradingBot2/data/sim_trades.csv - Simulated trades
