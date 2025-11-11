@@ -69,9 +69,8 @@ from compat_shims import sim_report_dict_to_core_exec_reports
 from core_models import as_dict
 from order_shims import actionproto_to_order, legacy_decision_to_order, OrderContext
 
-# ExecutionSimulator и ExecReport — опциональны; при отсутствии работаем напрямую с LOB.
-# ExecutionSimulator и SimStepReport (как внутренний тип отчёта) — опциональны;
-# при отсутствии работаем напрямую с LOB. Импортируем SimStepReport как ExecReport
+# ExecutionSimulator и SimStepReport (как внутренний тип отчёта, импортируемый как ExecReport)
+# опциональны; при отсутствии работаем напрямую с LOB
 try:
     from execution_sim import SimStepReport as ExecReport, ExecutionSimulator  # type: ignore
     _HAVE_EXEC_SIM = True
@@ -956,7 +955,8 @@ class Mediator:
         """Extract technical indicators from row or simulator."""
         # Try to get from row first (from prepare_and_run.py features)
         ma5 = self._get_safe_float(row, "sma_5", float('nan'))
-        ma20 = self._get_safe_float(row, "sma_15", float('nan'))  # map sma_15 to ma20 slot
+        # NOTE: Using sma_15 (15-period) in the ma20 slot for compatibility with feature layout
+        ma20 = self._get_safe_float(row, "sma_15", float('nan'))
         rsi14 = self._get_safe_float(row, "rsi", 50.0)
 
         # For MACD and other indicators, try from simulator if available
@@ -1037,8 +1037,9 @@ class Mediator:
         norm_cols[19] = self._get_safe_float(row, "taker_buy_ratio_momentum_6h", 0.0)
         norm_cols[20] = self._get_safe_float(row, "taker_buy_ratio_momentum_12h", 0.0)
 
-        # NOTE: Normalization (tanh, clip) is applied in obs_builder.pyx
-        # to avoid double normalization
+        # NOTE: Normalization (tanh, clip) is applied in obs_builder.pyx when available.
+        # In legacy fallback mode (when obs_builder is not available), normalization
+        # is applied in the fallback path to ensure consistent behavior.
         return norm_cols
 
     def _build_observation(self, *, row: Any | None, state: Any, mark_price: float) -> np.ndarray:

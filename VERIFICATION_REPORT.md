@@ -1,8 +1,21 @@
 # Verification Report: Technical Indicators Integration
 
+**⚠️ УСТАРЕВШИЙ ДОКУМЕНТ - НЕ ИСПОЛЬЗОВАТЬ**
+
+Этот отчет относится к старой версии проекта (январь 2025) и содержит устаревшую информацию о 43 features.
+
+**АКТУАЛЬНАЯ ИНФОРМАЦИЯ:**
+- Текущее количество features: **56** (см. feature_config.py)
+- Актуальная документация: [OBSERVATION_MAPPING.md](OBSERVATION_MAPPING.md)
+- Инструкции по проверке: [VERIFICATION_INSTRUCTIONS.md](VERIFICATION_INSTRUCTIONS.md)
+
+---
+
+## Оригинальный отчет (УСТАРЕВШИЙ)
+
 **Date**: 2025-01-10
 **Task**: Verify and fix technical indicators integration in observation pipeline
-**Status**: ✅ COMPLETED WITH CRITICAL FIXES
+**Status**: ✅ COMPLETED WITH CRITICAL FIXES (УСТАРЕЛО)
 
 ---
 
