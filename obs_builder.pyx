@@ -65,11 +65,9 @@ cdef void build_observation_vector_c(
     cdef double total_worth
     cdef double ret_1h
     cdef double vol_proxy
-    cdef double mid_ret
-    cdef double vol_intensity
-    cdef double ofi_proxy
-    cdef double qimb
-    cdef double micro_dev
+    cdef double price_momentum
+    cdef double bb_squeeze
+    cdef double trend_strength
     cdef double bb_width
     cdef bint ma5_valid
     cdef bint ma20_valid
@@ -152,19 +150,26 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = last_agent_fill_ratio
     feature_idx += 1
 
-    # --- Microstructure proxies --------------------------------------------
-    mid_ret = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
-    vol_intensity = tanh(rel_volume)
-    ofi_proxy = mid_ret * vol_intensity
-    out_features[feature_idx] = <float>ofi_proxy
+    # --- Technical indicators for 4h timeframe (replaces microstructure) ---
+    # Microstructure features (ofi_proxy, qimb, micro_dev) are not applicable for 4h timeframe
+    # as they require high-frequency order flow data. Replaced with candlestick-based indicators.
+
+    # 1. Price momentum (replaces ofi_proxy) - captures trend direction and strength
+    # Uses normalized momentum indicator to measure price movement strength
+    cdef double price_momentum = tanh(momentum / (price_d * 0.01 + 1e-8))
+    out_features[feature_idx] = <float>price_momentum
     feature_idx += 1
 
-    qimb = tanh(last_vol_imbalance)
-    out_features[feature_idx] = <float>qimb
+    # 2. Bollinger Bands squeeze (replaces qimb) - measures volatility regime
+    # High value = high volatility (wide bands), low value = low volatility (squeeze)
+    cdef double bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
+    out_features[feature_idx] = <float>bb_squeeze
     feature_idx += 1
 
-    micro_dev = 0.5 * last_realized_spread * qimb
-    out_features[feature_idx] = <float>micro_dev
+    # 3. Trend strength via MACD divergence (replaces micro_dev) - measures trend strength
+    # Positive = bullish trend, negative = bearish trend, magnitude = strength
+    cdef double trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
+    out_features[feature_idx] = <float>trend_strength
     feature_idx += 1
 
     # --- Bollinger band context -------------------------------------------
