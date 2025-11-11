@@ -223,7 +223,7 @@ class TradingEnv(gym.Env):
             mapping.get(regime, MarketRegime.NORMAL),
             self.state.step_idx if self.state else 0,
             duration,
-        8)
+        )
     metadata = {"render.modes": []}
 
 

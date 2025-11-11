@@ -19,7 +19,7 @@ python verify_observation_integration.py
 ✅ ALL CHECKS PASSED!
 
 Technical indicators are correctly integrated into observations.
-The model will receive all 57 features including:
+The model will receive all 56 features including:
   • Market data (price, volumes)
   • Moving averages (sma_5, sma_15)
   • Technical indicators (RSI, MACD, etc.)
@@ -34,7 +34,7 @@ The model will receive all 57 features including:
 ```
 ⚠️  ISSUES FOUND:
   1. obs_builder not compiled/available - using LEGACY mode
-  2. Too few non-zero features: 12/57
+  2. Too few non-zero features: 12/56
 ```
 
 ## Решение Проблем
@@ -90,7 +90,7 @@ env = TradingEnv(df=df)
 obs, info = env.reset()
 
 print(f"Observation shape: {obs.shape}")
-# Должно быть: (57,)
+# Должно быть: (56,)
 
 print(f"Non-zero count: {np.count_nonzero(obs)}")
 # Должно быть: > 40
@@ -129,11 +129,11 @@ else:
 Перед началом обучения убедитесь что:
 
 - [ ] `verify_observation_integration.py` проходит без ошибок
-- [ ] Observation shape = (57,)
+- [ ] Observation shape = (56,)
 - [ ] Non-zero count > 40
 - [ ] `_HAVE_OBS_BUILDER = True`
 - [ ] Все технические индикаторы присутствуют в feather файлах
-- [ ] Тесты проходят: `python tests/test_technical_indicators_in_obs.py`
+- [ ] Тесты проходят: `python test_technical_indicators_in_obs.py`
 
 ## Что Проверить в Логах Обучения
 
@@ -141,7 +141,7 @@ else:
 
 ```python
 # Должно быть в начале обучения:
-INFO - Environment created with observation_space: Box(57,)
+INFO - Environment created with observation_space: Box(56,)
 INFO - obs_builder available: True
 
 # НЕ должно быть:
@@ -187,7 +187,7 @@ df = pd.DataFrame({
 env = TradingEnv(df=df)
 obs, _ = env.reset()
 
-if obs.shape == (57,) and np.count_nonzero(obs) > 20:
+if obs.shape == (56,) and np.count_nonzero(obs) > 20:
     print(f"✓ Environment OK: {obs.shape}, {np.count_nonzero(obs)} non-zero")
     print("\n✅ ALL SYSTEMS GO! Ready for training.")
 else:
@@ -208,5 +208,5 @@ EOF
 ## Ссылки
 
 - [OBSERVATION_MAPPING.md](OBSERVATION_MAPPING.md) - Полное описание observation vector
-- [tests/test_technical_indicators_in_obs.py](tests/test_technical_indicators_in_obs.py) - Unit тесты
+- [test_technical_indicators_in_obs.py](test_technical_indicators_in_obs.py) - Unit тесты
 - [mediator.py](mediator.py) - Реализация `_build_observation()`

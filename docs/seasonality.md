@@ -151,7 +151,7 @@ override file shares the same structure as
 Overrides can be supplied via constructor arguments
 (`liquidity_seasonality_override`, `spread_seasonality_override` or
 `seasonality_override`) or by specifying paths in config files
-(`liquidity_seasonality_override_path`, `latency.seasonality_override_path`).
+(`liquidity_seasonality_override_path`, `seasonality_override_path`).
 Precedence is as follows:
 
 1. Arrays passed directly to constructors.
@@ -255,7 +255,7 @@ When deploying new multipliers:
 
 1. Compute and record the SHA256 hash of `liquidity_latency_seasonality.json`.
 2. Store the hash in configuration fields such as `liquidity_seasonality_hash`
-   and `latency.seasonality_hash`.
+   and `seasonality_hash`.
 3. At runtime, the loader logs the hash and warns if it differs from the
    expected value.
 

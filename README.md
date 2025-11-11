@@ -631,7 +631,7 @@ python compare_slippage_curve.py hist.csv sim.csv --tolerance 5
 по логу трейдов и указанным ценам. Пример пересчёта:
 
 ```python
-from tests.test_pnl_report_check import _recompute_total
+from test_pnl_report_check import _recompute_total
 
 trades = [
     {"side": "BUY", "price": 101.0, "qty": 1.0},
