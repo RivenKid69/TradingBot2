@@ -24,7 +24,8 @@ recorded data window does not extend beyond each split's end timestamp.
    contains the actual window used during the refresh.
 2. Execute `pytest tests/test_offline_split_windows.py` to confirm the
    regenerated metadata and offline configuration stay within the declared
-   split boundaries.
+   split boundaries. **Note**: This test should be implemented to validate
+   that artefact windows do not extend beyond split boundaries.
 3. If the check fails, adjust the artefact input window or split definition so
    the `data_window.actual.end` value never exceeds the split's `end`
    timestamp before submitting your changes.

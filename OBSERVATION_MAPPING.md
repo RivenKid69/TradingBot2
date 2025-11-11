@@ -2,9 +2,11 @@
 
 ## Overview
 
-This document describes the complete structure of the observation vector (43 features) used by the trading agent. The observation vector is constructed by `obs_builder.build_observation_vector()` and populated with technical indicators from `prepare_and_run.py` and market microstructure data.
+This document describes the complete structure of the observation vector (56 features) used by the trading agent. The observation vector is constructed by `obs_builder.build_observation_vector()` and populated with technical indicators from `prepare_and_run.py` and market microstructure data.
 
-**Total Features**: 43 (with max_num_tokens=1 and norm_cols=8)
+**Total Features**: 56 (with max_num_tokens=1 and EXT_NORM_DIM=21)
+
+**Note**: This document is being updated to reflect the current implementation. The actual feature count is calculated dynamically in `feature_config.py` based on block sizes.
 
 ## Feature Layout
 
@@ -90,10 +92,13 @@ This document describes the complete structure of the observation vector (43 fea
 | 30 | `fear_greed_value` | `df['fear_greed_value'] / 100` | Fear & Greed Index (0-100 normalized) |
 | 31 | `fear_greed_indicator` | Computed | 1.0 if F&G data available, 0.0 otherwise |
 
-### Positions 32-39: External Normalized Columns (8 features)
+### Positions 32-52: External Normalized Columns (21 features - EXT_NORM_DIM)
 
 **These positions contain advanced technical indicators from `prepare_and_run.py`**:
 
+**Note**: The actual EXT_NORM_DIM is 21 (expanded from 8 to include additional technical features such as taker_buy_ratio derivatives and other indicators). The exact mapping of all 21 features should be documented based on the current implementation in `feature_config.py`.
+
+Confirmed features include:
 | Position | Feature | Source | Description |
 |----------|---------|--------|-------------|
 | 32 | `cvd_24h` | `df['cvd_24h']` | Cumulative Volume Delta (24-hour) |
@@ -104,25 +109,29 @@ This document describes the complete structure of the observation vector (43 fea
 | 37 | `garch_24h` | `df['garch_24h']` | GARCH(1,1) conditional volatility (24h) |
 | 38 | `ret_15m` | `df['ret_15m']` | 15-minute return |
 | 39 | `ret_60m` | `df['ret_60m']` | 60-minute return |
+| 40-52 | Additional features | To be documented | Taker buy ratio derivatives and other technical features |
 
-**Note**: All values in positions 32-39 are normalized using `tanh()` to keep them in the range [-1, 1].
+**Note**: All values in positions 32-52 are normalized using `tanh()` to keep them in the range [-1, 1].
 
-### Positions 40-41: Token Metadata (2 features)
+### Positions 53-54: Token Metadata (2 features)
 
 | Position | Feature | Formula | Description |
 |----------|---------|--------|-------------|
-| 40 | `num_tokens_norm` | `num_tokens / max_num_tokens` | Number of tokens normalized |
-| 41 | `token_id_norm` | `token_id / max_num_tokens` | Token ID normalized |
+| 53 | `num_tokens_norm` | `num_tokens / max_num_tokens` | Number of tokens normalized |
+| 54 | `token_id_norm` | `token_id / max_num_tokens` | Token ID normalized |
 
-### Positions 42+: One-Hot Token Encoding (variable size)
+### Position 55: One-Hot Token Encoding (variable size)
 
 With `max_num_tokens=1` (default), this adds 1 feature:
 
 | Position | Feature | Description |
 |----------|---------|-------------|
-| 42 | Token 0 | One-hot encoding (1.0 for current token, 0.0 otherwise) |
+| 55 | Token 0 | One-hot encoding (1.0 for current token, 0.0 otherwise) |
 
-**Total with max_num_tokens=1**: 32 (base) + 8 (norm_cols) + 2 (token_meta) + 1 (token_onehot) = **43 features**
+**Total with max_num_tokens=1**:
+- Bar (3) + Derived (2) + Indicators (13) + Microstructure (3) + Agent (6) + Metadata (5) + External/EXT_NORM_DIM (21) + Token metadata (2) + Token one-hot (1) = **56 features**
+
+**Calculation**: 3 + 2 + 13 + 3 + 6 + 5 + 21 + 2 + 1 = **56 features**
 
 ## Data Flow
 
@@ -153,7 +162,7 @@ mediator.py
     ↓
     Calls obs_builder.build_observation_vector()
     ↓
-    Returns observation vector (57 features)
+    Returns observation vector (56 features)
     ↓
 RL Agent (DistributionalPPO)
 ```
@@ -190,32 +199,35 @@ RL Agent (DistributionalPPO)
 
 ## Critical Size Changes (January 2025)
 
-**Previous Setup (INCORRECT):**
+**Previous Setup (OUTDATED):**
 - `observation_space = (N_FEATURES + 4,)` where N_FEATURES was incorrectly calculated as 53
 - `observation_space.shape = (57,)`
 - `obs_builder` filled only 43 positions → **14 positions were zeros!**
 
-**Current Setup (CORRECTED):**
-- `observation_space = (N_FEATURES,)` where N_FEATURES correctly calculated as 43
-- `observation_space.shape = (43,)`
-- `obs_builder` fills all 43 positions → **All features populated!**
+**Current Setup (CORRECTED - November 2025):**
+- `observation_space = (N_FEATURES,)` where N_FEATURES correctly calculated as **56**
+- `observation_space.shape = (56,)`
+- `obs_builder` fills all 56 positions → **All features populated!**
 
 **Changes Made:**
-1. Updated `lob_state_cython.pyx:_compute_n_features()` to use `norm_cols=np.zeros(8)` instead of `np.zeros(0)`
+1. Updated `lob_state_cython.pyx:_compute_n_features()` to use `norm_cols=np.zeros(21)` (expanded from 8 to 21)
 2. Updated `feature_config.py` MAX_NUM_TOKENS from 16 to 1
 3. Updated `feature_config.py` metadata size from 2 to 5
 4. Added token_meta block (2 features) to feature_config.py
 5. Removed `+4` from `observation_space` in trading_patchnew.py
+6. Expanded EXT_NORM_DIM from 16 to 21 to include taker_buy_ratio derivatives and other features
 
 ## Testing
 
-Comprehensive tests are available in `tests/test_technical_indicators_in_obs.py`:
+Comprehensive tests should verify the observation vector structure:
 
-1. **test_observation_size_and_non_zero()**: Verifies size=43 and non-zero content (>30/43)
+1. **test_observation_size_and_non_zero()**: Verifies size=56 and non-zero content
 2. **test_technical_indicators_present()**: Checks indicators are in correct positions
 3. **test_cvd_garch_yangzhang_in_obs()**: Verifies specific indicators appear
-4. **test_observations_in_training_env()**: Tests training scenario with obs_size=43
+4. **test_observations_in_training_env()**: Tests training scenario with obs_size=56
 5. **test_observation_works_without_indicators()**: Tests fallback mode
+
+**Note**: Verify that `tests/test_technical_indicators_in_obs.py` exists and is updated to reflect N_FEATURES=56.
 
 ## Fallback Behavior
 
@@ -227,7 +239,7 @@ If technical indicators are missing from the dataframe:
 - CVD/GARCH/Yang-Zhang: Default to 0.0 (neutral)
 - Fear & Greed: Defaults to 50.0 (neutral)
 
-The observation vector is always constructed with the correct size (57), but may contain more zeros if indicators are unavailable.
+The observation vector is always constructed with the correct size (56), but may contain more zeros if indicators are unavailable.
 
 ## Usage Examples
 
@@ -240,9 +252,9 @@ from train_model_multi_patch import create_envs
 # Environment automatically loads data with technical indicators
 env = TradingEnv(df=df_with_indicators, ...)
 
-# Observation is automatically constructed with all 57 features
+# Observation is automatically constructed with all 56 features
 obs, info = env.reset()
-assert obs.shape == (57,)
+assert obs.shape == (56,)
 ```
 
 ### In Production
@@ -258,7 +270,7 @@ obs = mediator._build_observation(row=current_row, state=state, mark_price=curre
 
 ## Key Design Decisions
 
-1. **Why norm_cols[8]?**: Allows 8 external indicators (cvd, garch, yang_zhang, returns) without hardcoding positions
+1. **Why EXT_NORM_DIM=21?**: Allows 21 external indicators (cvd, garch, yang_zhang, returns, taker_buy_ratio derivatives, etc.) without hardcoding positions. This was expanded from 8 to accommodate more technical features.
 2. **Why tanh normalization?**: Keeps values in [-1, 1] range, suitable for neural networks
 3. **Why fallback to legacy?**: Ensures backward compatibility if obs_builder is not compiled
 4. **Why separate ma5_valid/ma20_valid?**: Allows model to distinguish between "zero MA" and "MA not available"
@@ -280,10 +292,10 @@ After updating `lob_state_cython.pyx`, you MUST recompile:
 python setup.py build_ext --inplace
 ```
 
-This will update `lob_state_cython.N_FEATURES` to return 43 instead of 35.
+This will update `lob_state_cython.N_FEATURES` to return 56.
 
 ---
 
-**Last Updated**: 2025-01-10 (Size corrected from 57 to 43)
+**Last Updated**: 2025-11-11 (Size corrected from 43 to 56, EXT_NORM_DIM expanded from 8 to 21)
 **Authors**: Technical Indicators Integration Task
 **Related Files**: `mediator.py`, `obs_builder.pyx`, `prepare_and_run.py`, `feature_config.py`, `lob_state_cython.pyx`, `trading_patchnew.py`
