@@ -28,7 +28,7 @@ def main():
     p.add_argument("--high-col", default=None, help="Имя колонки high для Yang-Zhang (опционально)")
     p.add_argument("--low-col", default=None, help="Имя колонки low для Yang-Zhang (опционально)")
     p.add_argument("--taker-buy-ratio-windows", default="480,960,1440", help="Окна Taker Buy Ratio SMA в минутах для 4h (по умолчанию 480,960,1440 = 8h,16h,24h)")
-    p.add_argument("--taker-buy-ratio-momentum", default="240,480,720,1440", help="Окна Taker Buy Ratio momentum в минутах для 4h (по умолчанию 240,480,720,1440 = 4h,8h,12h,24h)")
+    p.add_argument("--taker-buy-ratio-momentum", default="240,480,720", help="Окна Taker Buy Ratio momentum в минутах для 4h (по умолчанию 240,480,720 = 4h,8h,12h)")
     p.add_argument("--volume-col", default=None, help="Имя колонки volume для Taker Buy Ratio (опционально)")
     p.add_argument("--taker-buy-base-col", default=None, help="Имя колонки taker_buy_base для Taker Buy Ratio (опционально)")
     p.add_argument("--cvd-windows", default="1440,10080", help="Окна Cumulative Volume Delta в минутах для 4h (по умолчанию 1440,10080 = 24h,7d)")
