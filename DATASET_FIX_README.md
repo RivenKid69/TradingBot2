@@ -31,9 +31,7 @@ The value function was collapsing because the training dataset only contained **
 ```python
 # Lines 4356-4408
 - Checks if feather files exist before attempting to load
-- Provides clear error message with two options:
-  OPTION 1: Prepare real market data
-  OPTION 2: Generate demo data for testing
+- Provides clear error message with instructions to prepare real market data
 - Validates dataset size after loading (warns if < 100 rows)
 ```
 
@@ -46,44 +44,9 @@ The value function was collapsing because the training dataset only contained **
 - Explains exactly what will happen with insufficient data
 ```
 
-### 2. Demo Data Generator (prepare_demo_data.py)
-
-Created a new script to generate synthetic demo data for testing:
-
-```bash
-# Generate 2000 hours (~83 days) of synthetic data
-python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT
-
-# Custom configuration
-python prepare_demo_data.py \
-    --rows 5000 \
-    --symbols BTCUSDT,ETHUSDT,BNBUSDT \
-    --start-date 2023-01-01 \
-    --out-dir data/processed
-```
-
-Features:
-- Generates realistic OHLCV price walks with proper volatility
-- Creates Fear & Greed index with mean reversion
-- Produces proper feather files compatible with training pipeline
-- Configurable number of rows, symbols, and date range
-
 ## How to Fix Your Environment
 
-### Option 1: Generate Demo Data (Quick Testing)
-
-```bash
-# Generate demo data
-python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT
-
-# Verify files were created
-ls -lh data/processed/*.feather
-
-# Run training
-python train_model_multi_patch.py --config configs/config_train.yaml
-```
-
-### Option 2: Prepare Real Market Data (Production)
+### Prepare Real Market Data
 
 ```bash
 # 1. Fetch Fear & Greed index
@@ -177,11 +140,7 @@ print('✅ Dataset size is sufficient')
    - Added initial data size validation (lines 4388-4408)
    - Added post-export size validation (lines 4472-4511)
 
-2. **prepare_demo_data.py** (NEW)
-   - Synthetic data generator for testing
-   - Generates realistic OHLCV and Fear & Greed data
-
-3. **DATASET_FIX_README.md** (NEW)
+2. **DATASET_FIX_README.md** (NEW)
    - Complete documentation of the issue and fix
 
 ## Testing
@@ -194,13 +153,8 @@ rm -rf data/processed/*.feather  # Remove any existing data
 python train_model_multi_patch.py --config configs/config_train.yaml
 # Expected: Clear error message with instructions
 
-# Test 2: Generate minimal data (should warn)
-python prepare_demo_data.py --rows 100 --symbols BTCUSDT
-python train_model_multi_patch.py --config configs/config_train.yaml
-# Expected: WARNING about small dataset, but training proceeds
-
-# Test 3: Generate sufficient data (should work)
-python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT
+# Test 2: Prepare real market data and train
+# Follow the "Prepare Real Market Data" steps above
 python train_model_multi_patch.py --config configs/config_train.yaml
 # Expected: Normal training with proper convergence
 ```
@@ -218,6 +172,5 @@ To prevent this issue from recurring:
 
 ✅ **Root cause identified:** No feather files in data/processed/
 ✅ **Validation added:** Three-layer validation prevents training with bad data
-✅ **Demo data generator created:** Quick testing without real market data
-✅ **Documentation complete:** Clear instructions for both demo and production data
+✅ **Documentation complete:** Clear instructions for production data preparation
 ✅ **Future-proof:** Multiple checkpoints prevent the issue from recurring
