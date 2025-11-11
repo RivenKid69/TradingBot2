@@ -156,18 +156,22 @@ cdef void build_observation_vector_c(
 
     # 1. Price momentum (replaces ofi_proxy) - captures trend direction and strength
     # Uses normalized momentum indicator to measure price movement strength
+    # Normalized by 1% of price (price_d * 0.01) for sensitivity to typical intraday moves
     cdef double price_momentum = tanh(momentum / (price_d * 0.01 + 1e-8))
     out_features[feature_idx] = <float>price_momentum
     feature_idx += 1
 
     # 2. Bollinger Bands squeeze (replaces qimb) - measures volatility regime
     # High value = high volatility (wide bands), low value = low volatility (squeeze)
+    # Normalized by full price (price_d) not 1% because bb_width is typically 1-5% of price
+    # This ensures the normalized value is in a reasonable range for tanh
     cdef double bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
     out_features[feature_idx] = <float>bb_squeeze
     feature_idx += 1
 
     # 3. Trend strength via MACD divergence (replaces micro_dev) - measures trend strength
     # Positive = bullish trend, negative = bearish trend, magnitude = strength
+    # Normalized by 1% of price (price_d * 0.01) similar to price_momentum for consistency
     cdef double trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
     out_features[feature_idx] = <float>trend_strength
     feature_idx += 1

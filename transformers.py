@@ -175,11 +175,14 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
                 sum_sq += log_hl ** 2
                 valid_bars += 1
 
-        # Нужно минимум 2 валидных бара
-        if valid_bars < 2:
+        # Требуем минимум 2 валидных бара и минимум 80% от запрошенного окна
+        # Это обеспечивает статистическую надежность оценки
+        min_required = max(2, int(0.8 * n))
+        if valid_bars < min_required:
             return None
 
         # σ² = (1/(4n·ln(2))) · Σ(ln(H_i/L_i))²
+        # Используем valid_bars (количество реально использованных данных) для корректной оценки
         parkinson_var = sum_sq / (4 * valid_bars * math.log(2))
 
         # Возвращаем стандартное отклонение
@@ -299,15 +302,24 @@ class FeatureSpec:
             not isinstance(self.lookbacks_prices, list)
             or len(self.lookbacks_prices) == 0
         ):
-            self.lookbacks_prices = [5, 15, 60]
+            # Для 4h интервала: 4h, 12h, 24h, 50 баров (200h)
+            # 1 бар 4h = 240 минут
+            # 4h = 1 бар = 240 минут
+            # 12h = 3 бара = 720 минут
+            # 24h = 6 баров = 1440 минут
+            # 50 баров = 200h = 12000 минут (для sma_50)
+            self.lookbacks_prices = [240, 720, 1440, 12000]
         self.lookbacks_prices = [
             int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
         ]
         self.rsi_period = int(self.rsi_period)
 
-        # Инициализация окон Yang-Zhang: 24ч, 168ч (7д), 720ч (30д) в минутах
+        # Инициализация окон Yang-Zhang для 4h интервала: 48ч, 7д, 30д в минутах
+        # 48h = 12 баров = 2880 минут
+        # 7d = 42 бара = 10080 минут
+        # 30d = 180 баров = 43200 минут
         if self.yang_zhang_windows is None:
-            self.yang_zhang_windows = [24 * 60, 168 * 60, 720 * 60]  # 1440, 10080, 43200 минут
+            self.yang_zhang_windows = [48 * 60, 7 * 24 * 60, 30 * 24 * 60]  # 2880, 10080, 43200 минут
         elif isinstance(self.yang_zhang_windows, list):
             self.yang_zhang_windows = [
                 int(abs(x)) for x in self.yang_zhang_windows if int(abs(x)) > 0
@@ -315,9 +327,11 @@ class FeatureSpec:
         else:
             self.yang_zhang_windows = []
 
-        # Инициализация окон Parkinson: 24ч, 168ч (7д) в минутах
+        # Инициализация окон Parkinson для 4h интервала: 48ч, 7д в минутах
+        # 48h = 12 баров = 2880 минут
+        # 7d = 42 бара = 10080 минут
         if self.parkinson_windows is None:
-            self.parkinson_windows = [24 * 60, 168 * 60]  # 1440, 10080 минут
+            self.parkinson_windows = [48 * 60, 7 * 24 * 60]  # 2880, 10080 минут
         elif isinstance(self.parkinson_windows, list):
             self.parkinson_windows = [
                 int(abs(x)) for x in self.parkinson_windows if int(abs(x)) > 0
@@ -325,9 +339,12 @@ class FeatureSpec:
         else:
             self.parkinson_windows = []
 
-        # Инициализация окон Taker Buy Ratio скользящего среднего: 6ч, 12ч, 24ч в минутах
+        # Инициализация окон Taker Buy Ratio скользящего среднего для 4h интервала: 8ч, 16ч, 24ч в минутах
+        # 8h = 2 бара = 480 минут
+        # 16h = 4 бара = 960 минут
+        # 24h = 6 баров = 1440 минут
         if self.taker_buy_ratio_windows is None:
-            self.taker_buy_ratio_windows = [6 * 60, 12 * 60, 24 * 60]  # 360, 720, 1440 минут
+            self.taker_buy_ratio_windows = [8 * 60, 16 * 60, 24 * 60]  # 480, 960, 1440 минут
         elif isinstance(self.taker_buy_ratio_windows, list):
             self.taker_buy_ratio_windows = [
                 int(abs(x)) for x in self.taker_buy_ratio_windows if int(abs(x)) > 0
@@ -335,9 +352,12 @@ class FeatureSpec:
         else:
             self.taker_buy_ratio_windows = []
 
-        # Инициализация окон моментума Taker Buy Ratio: 1ч, 6ч, 12ч в минутах
+        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч в минутах
+        # 4h = 1 бар = 240 минут
+        # 8h = 2 бара = 480 минут
+        # 12h = 3 бара = 720 минут
         if self.taker_buy_ratio_momentum is None:
-            self.taker_buy_ratio_momentum = [60, 6 * 60, 12 * 60]  # 60, 360, 720 минут
+            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]  # 240, 480, 720 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
             self.taker_buy_ratio_momentum = [
                 int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0
@@ -345,9 +365,9 @@ class FeatureSpec:
         else:
             self.taker_buy_ratio_momentum = []
 
-        # Инициализация окон Cumulative Volume Delta: 24ч, 168ч (7д) в минутах
+        # Инициализация окон Cumulative Volume Delta: 24ч, 7д в минутах (без изменений)
         if self.cvd_windows is None:
-            self.cvd_windows = [24 * 60, 168 * 60]  # 1440, 10080 минут
+            self.cvd_windows = [24 * 60, 7 * 24 * 60]  # 1440, 10080 минут
         elif isinstance(self.cvd_windows, list):
             self.cvd_windows = [
                 int(abs(x)) for x in self.cvd_windows if int(abs(x)) > 0
@@ -355,9 +375,13 @@ class FeatureSpec:
         else:
             self.cvd_windows = []
 
-        # Инициализация окон GARCH: 500 минут (~8.3ч), 720 минут (12ч), 1440 минут (24ч)
+        # Инициализация окон GARCH для 4h интервала: 7д, 14д, 30д в минутах
+        # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 212)!
+        # 7d = 42 бара = 10080 минут
+        # 14d = 84 бара = 20160 минут
+        # 30d = 180 баров = 43200 минут
         if self.garch_windows is None:
-            self.garch_windows = [500, 720, 1440]  # 500, 720, 1440 минут
+            self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]  # 10080, 20160, 43200 минут
         elif isinstance(self.garch_windows, list):
             self.garch_windows = [
                 int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0
@@ -471,7 +495,9 @@ class OnlineFeatureTransformer:
 
         # Вычисляем и сохраняем Taker Buy Ratio
         if volume is not None and taker_buy_base is not None and volume > 0:
-            taker_buy_ratio = float(taker_buy_base) / float(volume)
+            # Добавляем clamping на случай аномальных данных (taker_buy_base > volume)
+            # Нормальный диапазон: [0.0, 1.0]
+            taker_buy_ratio = min(1.0, max(0.0, float(taker_buy_base) / float(volume)))
             st["taker_buy_ratios"].append(taker_buy_ratio)
 
         # Вычисляем и сохраняем Volume Delta для CVD
