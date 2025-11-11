@@ -4119,6 +4119,95 @@ def objective(trial: optuna.Trial,
 
     return objective_score
 
+
+def _log_features_statistics_per_symbol(
+    dfs_dict: dict[str, pd.DataFrame],
+    role_column: str = "role"
+) -> None:
+    """
+    Логирование детальной статистики признаков для каждого символа.
+
+    Выводит информацию о:
+    - Общем количестве признаков для каждого символа
+    - Количестве признаков с реальными данными
+    - Проценте заполненности для каждого признака
+    """
+    logger.info("=" * 80)
+    logger.info("СТАТИСТИКА ПРИЗНАКОВ ДЛЯ ОБУЧЕНИЯ ПО СИМВОЛАМ")
+    logger.info("=" * 80)
+
+    for symbol, df in dfs_dict.items():
+        # Фильтруем только тренировочные данные
+        train_df = df[df[role_column] == "train"] if role_column in df.columns else df
+
+        if len(train_df) == 0:
+            logger.warning(f"Символ {symbol}: нет тренировочных данных")
+            continue
+
+        logger.info(f"\nСимвол: {symbol}")
+        logger.info("-" * 80)
+
+        # Исключаем служебные колонки
+        service_cols = {role_column, "timestamp", "token_id", "symbol", "date", "time"}
+        feature_cols = [col for col in train_df.columns if col not in service_cols]
+
+        total_features = len(feature_cols)
+        total_samples = len(train_df)
+
+        logger.info(f"  Общее количество признаков: {total_features}")
+        logger.info(f"  Общее количество образцов (train): {total_samples}")
+
+        # Подсчет статистики
+        features_stats = []
+        fully_filled = 0
+        partially_filled = 0
+        empty_features = 0
+
+        for col in feature_cols:
+            non_nan_count = train_df[col].notna().sum()
+            fill_percentage = (non_nan_count / total_samples * 100) if total_samples > 0 else 0
+
+            features_stats.append({
+                'feature': col,
+                'non_nan_count': non_nan_count,
+                'fill_percentage': fill_percentage
+            })
+
+            if fill_percentage == 100.0:
+                fully_filled += 1
+            elif fill_percentage > 0:
+                partially_filled += 1
+            else:
+                empty_features += 1
+
+        # Сортировка по проценту заполненности
+        features_stats.sort(key=lambda x: x['fill_percentage'], reverse=True)
+
+        # Сводная статистика
+        logger.info("  СВОДКА:")
+        logger.info(f"    Признаков с 100% данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)")
+        logger.info(f"    Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)")
+        logger.info(f"    Признаков без данных: {empty_features} ({empty_features/total_features*100:.1f}%)")
+
+        # Показываем топ-10 наиболее заполненных и топ-10 наименее заполненных признаков
+        logger.info("  ТОП-10 наиболее заполненных признаков:")
+        for stat in features_stats[:10]:
+            logger.info(
+                f"    {stat['feature']:45s} | "
+                f"{stat['non_nan_count']:6d}/{total_samples:6d} ({stat['fill_percentage']:6.2f}%)"
+            )
+
+        if len(features_stats) > 10:
+            logger.info("  ТОП-10 наименее заполненных признаков:")
+            for stat in features_stats[-10:]:
+                logger.info(
+                    f"    {stat['feature']:45s} | "
+                    f"{stat['non_nan_count']:6d}/{total_samples:6d} ({stat['fill_percentage']:6.2f}%)"
+                )
+
+    logger.info("=" * 80)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/config_train.yaml", help="Path to YAML config")
@@ -4590,6 +4679,9 @@ def main():
     all_dfs_with_roles = pipe.transform_dict(dfs_with_roles, add_suffix="_z")
     print(f"Feature pipeline fitted and saved to {PREPROC_PATH}. Standardized columns *_z added.")
     print("To run inference over processed data, execute: python infer_signals.py")
+
+    # Логирование статистики признаков для каждого символа
+    _log_features_statistics_per_symbol(all_dfs_with_roles, role_column)
 
     artifacts_dir = Path(getattr(cfg, "artifacts_dir", "artifacts"))
     _export_training_dataset(

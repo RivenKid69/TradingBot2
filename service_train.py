@@ -23,12 +23,15 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Sequence, Protocol
 import os
 import time
+import logging
 import pandas as pd
 
 from services.utils_config import snapshot_config  # снапшот конфигурации
 from core_contracts import FeaturePipe
 from core_config import CommonRunConfig
 import di_registry
+
+logger = logging.getLogger(__name__)
 
 
 class Trainer(Protocol):
@@ -75,6 +78,69 @@ class ServiceTrain:
             raise ValueError(f"Unsupported input_format: {self.cfg.input_format}")
         return df
 
+    def _log_feature_statistics(self, X: pd.DataFrame) -> None:
+        """
+        Подробное логирование статистики признаков перед обучением.
+
+        Выводит информацию о:
+        - Общем количестве признаков
+        - Количестве признаков с реальными данными
+        - Процент заполненности для каждого признака
+        """
+        logger.info("=" * 80)
+        logger.info("СТАТИСТИКА ПРИЗНАКОВ ПЕРЕД ОБУЧЕНИЕМ")
+        logger.info("=" * 80)
+
+        total_features = len(X.columns)
+        total_samples = len(X)
+
+        logger.info(f"Общее количество признаков: {total_features}")
+        logger.info(f"Общее количество образцов: {total_samples}")
+        logger.info("-" * 80)
+
+        # Подсчет статистики по каждому признаку
+        features_stats = []
+        fully_filled = 0
+        partially_filled = 0
+        empty_features = 0
+
+        for col in X.columns:
+            non_nan_count = X[col].notna().sum()
+            fill_percentage = (non_nan_count / total_samples * 100) if total_samples > 0 else 0
+
+            features_stats.append({
+                'feature': col,
+                'non_nan_count': non_nan_count,
+                'fill_percentage': fill_percentage
+            })
+
+            if fill_percentage == 100.0:
+                fully_filled += 1
+            elif fill_percentage > 0:
+                partially_filled += 1
+            else:
+                empty_features += 1
+
+        # Сортировка по проценту заполненности (по убыванию)
+        features_stats.sort(key=lambda x: x['fill_percentage'], reverse=True)
+
+        # Сводная статистика
+        logger.info("СВОДКА:")
+        logger.info(f"  Признаков с 100% реальными данными: {fully_filled} ({fully_filled/total_features*100:.1f}%)")
+        logger.info(f"  Признаков с частичными данными: {partially_filled} ({partially_filled/total_features*100:.1f}%)")
+        logger.info(f"  Признаков без данных (только NaN): {empty_features} ({empty_features/total_features*100:.1f}%)")
+        logger.info("-" * 80)
+
+        # Детальная информация по каждому признаку
+        logger.info("ДЕТАЛЬНАЯ СТАТИСТИКА ПО ПРИЗНАКАМ:")
+        for stat in features_stats:
+            logger.info(
+                f"  {stat['feature']:50s} | "
+                f"Заполнено: {stat['non_nan_count']:6d}/{total_samples:6d} ({stat['fill_percentage']:6.2f}%)"
+            )
+
+        logger.info("=" * 80)
+
     def run(self) -> Dict[str, Any]:
         os.makedirs(self.cfg.artifacts_dir, exist_ok=True)
         if self.cfg.snapshot_config_path:
@@ -101,6 +167,9 @@ class ServiceTrain:
         if self.cfg.columns_keep:
             cols = [c for c in self.cfg.columns_keep if c in X.columns]
             X = X[cols]
+
+        # Логирование информации о признаках перед обучением
+        self._log_feature_statistics(X)
 
         # сохранение датасета
         ts = int(time.time())
