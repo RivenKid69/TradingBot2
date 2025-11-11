@@ -58,8 +58,16 @@ If the market trades 10 000 notional per second, a 50 000 order submits 20% of
 
 ## Determinism and calibration
 
-Child-order schedules are deterministic for a given market stream and configuration. The unit tests
-`tests/test_execution_determinism.py` and `tests/test_executor_threshold.py` lock in this behaviour.
+Child-order schedules are deterministic for a given market stream and configuration. Unit tests
+should be implemented in `tests/test_execution_determinism.py` and `tests/test_executor_threshold.py`
+to lock in this behaviour and verify:
+
+- Deterministic slicing produces identical child orders for the same inputs
+- Notional threshold correctly triggers large order algorithms
+- POV and TWAP parameters are respected
+
+**Status**: Tests awaiting implementation.
+
 Parameters like `participation` should be calibrated on historical data (e.g. impact vs participation
 curves) to produce realistic trajectories.
 
