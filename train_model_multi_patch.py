@@ -4367,13 +4367,11 @@ def main():
             f"{'='*80}\n\n"
             f"No .feather files found in: {processed_data_dir}\n\n"
             f"The training pipeline requires preprocessed market data in feather format.\n\n"
-            f"OPTION 1 - Prepare Real Market Data:\n"
+            f"Prepare Real Market Data:\n"
             f"  1. Run: python prepare_advanced_data.py    # Fetch Fear & Greed index\n"
             f"  2. Run: python prepare_events.py           # Fetch economic events\n"
             f"  3. Run: python incremental_klines.py       # Fetch 1h OHLCV candles\n"
             f"  4. Run: python prepare_and_run.py          # Merge and export to feather\n\n"
-            f"OPTION 2 - Generate Demo Data for Testing:\n"
-            f"  Run: python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT\n\n"
             f"After preparing data, you should see files like:\n"
             f"  {processed_data_dir}/BTCUSDT.feather\n"
             f"  {processed_data_dir}/ETHUSDT.feather\n\n"
@@ -4630,7 +4628,7 @@ def main():
                 f"  Validation: {summary.get('by_role', {}).get('val', 0)} rows\n"
                 f"  Test:       {summary.get('by_role', {}).get('test', 0)} rows\n"
                 f"  Symbols:    {', '.join(summary.get('symbols', []))}\n\n"
-                f"ACTION: Prepare more data using prepare_demo_data.py or fetch real market data.\n"
+                f"ACTION: Fetch more real market data using the data preparation pipeline.\n"
                 f"{'='*80}\n"
             )
         elif train_rows < 200:
