@@ -92,8 +92,8 @@ YANG_ZHANG_WINDOWS = [12, 42, 180]
 
 YANG_ZHANG_NAMES = {
     12: "yang_zhang_48h",  # или yang_zhang_2d
-    42: "yang_zhang_168h",  # или yang_zhang_7d
-    180: "yang_zhang_720h",  # или yang_zhang_30d
+    42: "yang_zhang_7d",   # или yang_zhang_168h
+    180: "yang_zhang_30d",  # или yang_zhang_720h
 }
 
 
@@ -109,7 +109,7 @@ PARKINSON_WINDOWS = [12, 42]
 
 PARKINSON_NAMES = {
     12: "parkinson_48h",  # или parkinson_2d
-    42: "parkinson_168h",  # или parkinson_7d
+    42: "parkinson_7d",   # или parkinson_168h
 }
 
 
@@ -188,7 +188,7 @@ CVD_WINDOWS = [6, 42]
 
 CVD_NAMES = {
     6: "cvd_24h",
-    42: "cvd_168h",  # или cvd_7d
+    42: "cvd_7d",  # или cvd_168h
 }
 
 
