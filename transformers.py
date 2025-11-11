@@ -12,6 +12,40 @@ import numpy as np
 from arch import arch_model
 
 
+def _format_window_name(window_minutes: int) -> str:
+    """
+    Форматирует имя окна в зависимости от величины для 4h интервала.
+
+    Логика:
+    - Для GARCH (длинные окна >= 7 дней): используем дни (7d, 14d, 30d)
+    - Для остальных признаков: используем часы (4h, 12h, 24h, 48h, 168h, 720h)
+    - Для очень коротких окон: используем минуты
+
+    Args:
+        window_minutes: Размер окна в минутах
+
+    Returns:
+        Строка формата "Xd" (дни для длинных окон), "Xh" (часы) или "Xm" (минуты)
+
+    Examples:
+        >>> _format_window_name(10080)  # 7 дней (GARCH)
+        '7d'
+        >>> _format_window_name(1440)   # 24 часа (не GARCH)
+        '24h'
+        >>> _format_window_name(240)    # 4 часа
+        '4h'
+        >>> _format_window_name(42)     # 42 минуты
+        '42m'
+    """
+    # Для длинных окон >= 7 дней (10080 минут) используем дни (для GARCH)
+    if window_minutes >= 10080 and window_minutes % 1440 == 0:  # >= 7 дней и кратно дню
+        return f"{window_minutes // 1440}d"
+    elif window_minutes >= 60 and window_minutes % 60 == 0:     # часы
+        return f"{window_minutes // 60}h"
+    else:                                                        # минуты
+        return f"{window_minutes}m"
+
+
 def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
     """
     Рассчитывает волатильность Yang-Zhang для последних n баров.
@@ -462,7 +496,9 @@ class OnlineFeatureTransformer:
                 sma = sum(window) / float(lb)
                 feats[f"sma_{lb}"] = float(sma)
                 first = float(window[0])
-                feats[f"ret_{lb}m"] = (
+                # Создаем имя для returns с поддержкой дней, часов и минут
+                ret_name = f"ret_{_format_window_name(lb)}"
+                feats[ret_name] = (
                     float(math.log(price / first)) if first > 0 else 0.0
                 )
 
@@ -480,58 +516,52 @@ class OnlineFeatureTransformer:
         if self.spec.yang_zhang_windows and st["ohlc_bars"]:
             ohlc_list = list(st["ohlc_bars"])
             for window in self.spec.yang_zhang_windows:
+                # Создаем имя признака с поддержкой дней, часов и минут
+                window_name = _format_window_name(window)
+                feature_name = f"yang_zhang_{window_name}"
+
                 if len(ohlc_list) >= window:
                     yz_vol = calculate_yang_zhang_volatility(ohlc_list, window)
                     if yz_vol is not None:
-                        # Имя признака: yang_zhang_{окно_в_часах}h
-                        window_hours = window // 60  # конвертируем минуты в часы
-                        feats[f"yang_zhang_{window_hours}h"] = float(yz_vol)
+                        feats[feature_name] = float(yz_vol)
                     else:
-                        window_hours = window // 60
-                        feats[f"yang_zhang_{window_hours}h"] = float("nan")
+                        feats[feature_name] = float("nan")
                 else:
-                    window_hours = window // 60
-                    feats[f"yang_zhang_{window_hours}h"] = float("nan")
+                    feats[feature_name] = float("nan")
 
         # Рассчитываем Parkinson волатильность для каждого окна
         if self.spec.parkinson_windows and st["ohlc_bars"]:
             ohlc_list = list(st["ohlc_bars"])
             for window in self.spec.parkinson_windows:
-                window_hours = window // 60  # конвертируем минуты в часы
+                # Создаем имя признака с поддержкой дней, часов и минут
+                window_name = _format_window_name(window)
+                feature_name = f"parkinson_{window_name}"
+
                 if len(ohlc_list) >= window:
                     pk_vol = calculate_parkinson_volatility(ohlc_list, window)
                     if pk_vol is not None:
-                        feats[f"parkinson_{window_hours}h"] = float(pk_vol)
+                        feats[feature_name] = float(pk_vol)
                     else:
-                        feats[f"parkinson_{window_hours}h"] = float("nan")
+                        feats[feature_name] = float("nan")
                 else:
-                    feats[f"parkinson_{window_hours}h"] = float("nan")
+                    feats[feature_name] = float("nan")
 
         # Рассчитываем условную волатильность GARCH(1,1) для каждого окна
         if self.spec.garch_windows:
             price_list = list(st["prices"])
             for window in self.spec.garch_windows:
+                # Создаем имя признака с поддержкой дней, часов и минут
+                window_name = _format_window_name(window)
+                feature_name = f"garch_{window_name}"
+
                 if len(price_list) >= window:
                     garch_vol = calculate_garch_volatility(price_list, window)
                     if garch_vol is not None:
-                        # Имя признака: garch_{окно_в_минутах}m или garch_{окно_в_часах}h для больших окон
-                        if window >= 60 and window % 60 == 0:
-                            window_hours = window // 60
-                            feats[f"garch_{window_hours}h"] = float(garch_vol)
-                        else:
-                            feats[f"garch_{window}m"] = float(garch_vol)
+                        feats[feature_name] = float(garch_vol)
                     else:
-                        if window >= 60 and window % 60 == 0:
-                            window_hours = window // 60
-                            feats[f"garch_{window_hours}h"] = float("nan")
-                        else:
-                            feats[f"garch_{window}m"] = float("nan")
+                        feats[feature_name] = float("nan")
                 else:
-                    if window >= 60 and window % 60 == 0:
-                        window_hours = window // 60
-                        feats[f"garch_{window_hours}h"] = float("nan")
-                    else:
-                        feats[f"garch_{window}m"] = float("nan")
+                    feats[feature_name] = float("nan")
 
         # Рассчитываем Taker Buy Ratio и его производные
         if st["taker_buy_ratios"]:
@@ -546,25 +576,31 @@ class OnlineFeatureTransformer:
             # Рассчитываем скользящее среднее для каждого окна
             if self.spec.taker_buy_ratio_windows:
                 for window in self.spec.taker_buy_ratio_windows:
-                    window_hours = window // 60
+                    # Создаем имя признака с поддержкой дней, часов и минут
+                    window_name = _format_window_name(window)
+                    feature_name = f"taker_buy_ratio_sma_{window_name}"
+
                     if len(ratio_list) >= window:
                         window_data = ratio_list[-window:]
                         sma = sum(window_data) / float(len(window_data))
-                        feats[f"taker_buy_ratio_sma_{window_hours}h"] = float(sma)
+                        feats[feature_name] = float(sma)
                     else:
-                        feats[f"taker_buy_ratio_sma_{window_hours}h"] = float("nan")
+                        feats[feature_name] = float("nan")
 
             # Рассчитываем моментум (изменение за последние N периодов)
             if self.spec.taker_buy_ratio_momentum:
                 for window in self.spec.taker_buy_ratio_momentum:
-                    window_hours = window // 60
+                    # Создаем имя признака с поддержкой дней, часов и минут
+                    window_name = _format_window_name(window)
+                    feature_name = f"taker_buy_ratio_momentum_{window_name}"
+
                     if len(ratio_list) >= window + 1:
                         current = ratio_list[-1]
                         past = ratio_list[-(window + 1)]
                         momentum = current - past
-                        feats[f"taker_buy_ratio_momentum_{window_hours}h"] = float(momentum)
+                        feats[feature_name] = float(momentum)
                     else:
-                        feats[f"taker_buy_ratio_momentum_{window_hours}h"] = float("nan")
+                        feats[feature_name] = float("nan")
 
             # Z-score нормализация будет применена автоматически в FeaturePipeline
 
@@ -573,14 +609,17 @@ class OnlineFeatureTransformer:
             delta_list = list(st["volume_deltas"])
 
             for window in self.spec.cvd_windows:
-                window_hours = window // 60
+                # Создаем имя признака с поддержкой дней, часов и минут
+                window_name = _format_window_name(window)
+                feature_name = f"cvd_{window_name}"
+
                 if len(delta_list) >= window:
                     # CVD = кумулятивная сумма volume_delta за окно
                     window_data = delta_list[-window:]
                     cvd = sum(window_data)
-                    feats[f"cvd_{window_hours}h"] = float(cvd)
+                    feats[feature_name] = float(cvd)
                 else:
-                    feats[f"cvd_{window_hours}h"] = float("nan")
+                    feats[feature_name] = float("nan")
 
         return feats
 
@@ -618,25 +657,22 @@ def apply_offline_features(
     if df is None or df.empty:
         base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
         base_cols += [f"sma_{x}" for x in spec.lookbacks_prices]
-        base_cols += [f"ret_{x}m" for x in spec.lookbacks_prices]
+        # Используем _format_window_name для правильного форматирования имен
+        base_cols += [f"ret_{_format_window_name(x)}" for x in spec.lookbacks_prices]
         if spec.yang_zhang_windows:
-            base_cols += [f"yang_zhang_{w // 60}h" for w in spec.yang_zhang_windows]
+            base_cols += [f"yang_zhang_{_format_window_name(w)}" for w in spec.yang_zhang_windows]
         if spec.parkinson_windows:
-            base_cols += [f"parkinson_{w // 60}h" for w in spec.parkinson_windows]
+            base_cols += [f"parkinson_{_format_window_name(w)}" for w in spec.parkinson_windows]
         if spec.garch_windows:
-            for w in spec.garch_windows:
-                if w >= 60 and w % 60 == 0:
-                    base_cols.append(f"garch_{w // 60}h")
-                else:
-                    base_cols.append(f"garch_{w}m")
+            base_cols += [f"garch_{_format_window_name(w)}" for w in spec.garch_windows]
         if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
             base_cols.append("taker_buy_ratio")
         if spec.taker_buy_ratio_windows:
-            base_cols += [f"taker_buy_ratio_sma_{w // 60}h" for w in spec.taker_buy_ratio_windows]
+            base_cols += [f"taker_buy_ratio_sma_{_format_window_name(w)}" for w in spec.taker_buy_ratio_windows]
         if spec.taker_buy_ratio_momentum:
-            base_cols += [f"taker_buy_ratio_momentum_{w // 60}h" for w in spec.taker_buy_ratio_momentum]
+            base_cols += [f"taker_buy_ratio_momentum_{_format_window_name(w)}" for w in spec.taker_buy_ratio_momentum]
         if spec.cvd_windows:
-            base_cols += [f"cvd_{w // 60}h" for w in spec.cvd_windows]
+            base_cols += [f"cvd_{_format_window_name(w)}" for w in spec.cvd_windows]
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()
