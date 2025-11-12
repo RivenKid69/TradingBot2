@@ -1,7 +1,7 @@
 # configs/realtime.yaml
 market: "futures"             # "spot" или "futures" (используется для бэкапа REST в backfill)
 # symbols are loaded from data/universe/symbols.json
-interval: "1m"
+interval: "4h"  # Changed from 1m to 4h for migration
 
 max_signals_per_sec: 5.0
 backoff_base_s: 2.0
@@ -48,12 +48,12 @@ policy:
     order_qty: 0.1  # доля позиции
 
 features:
-  lookbacks_prices: [5, 15, 60]
+  lookbacks_prices: [240, 720, 1440, 12000]  # 4h timeframe: 4h, 12h, 24h, 200h (changed from 1m: 5m, 15m, 60m)
   rsi_period: 14
-  # Yang-Zhang volatility windows (in minutes): 24h, 7d, 30d
-  yang_zhang_windows: [1440, 10080, 43200]
-  # Parkinson volatility windows (in minutes): 24h, 7d
-  parkinson_windows: [1440, 10080]
+  # Yang-Zhang volatility windows (in minutes) for 4h: 48h, 7d, 30d (changed from 1m: 24h, 7d, 30d)
+  yang_zhang_windows: [2880, 10080, 43200]
+  # Parkinson volatility windows (in minutes) for 4h: 48h, 7d (changed from 1m: 24h, 7d)
+  parkinson_windows: [2880, 10080]
 
 out_csv: "logs/signals.csv"
 min_signal_gap_s: 300

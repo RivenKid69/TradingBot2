@@ -301,7 +301,7 @@ class FeatureSpec:
     taker_buy_ratio_windows: Optional[List[int]] = None
     taker_buy_ratio_momentum: Optional[List[int]] = None
     cvd_windows: Optional[List[int]] = None
-    bar_duration_minutes: int = 1
+    bar_duration_minutes: int = 240  # 4h timeframe (changed from 1 for 1m)
 
     # Исходные значения в минутах (для именования признаков после конвертации в бары)
     _lookbacks_prices_minutes: Optional[List[int]] = None

@@ -26,8 +26,8 @@ def main() -> None:
     ap.add_argument("--threshold", type=float, default=1e-9,
                     help="Допустимое абсолютное отклонение")
     ap.add_argument("--price-col", default="price", help="Имя колонки цены")
-    ap.add_argument("--lookbacks", default="5,15,60",
-                    help="Окна SMA/ret через запятую")
+    ap.add_argument("--lookbacks", default="240,720,1440",
+                    help="Окна SMA/ret через запятую (в минутах для 4h: 240=4h, 720=12h, 1440=24h)")
     ap.add_argument("--rsi-period", type=int, default=14,
                     help="Период RSI (Wilder)")
     args = ap.parse_args()
