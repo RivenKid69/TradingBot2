@@ -440,13 +440,13 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.cvd_windows
         ]
 
-        # Инициализация окон GARCH для 4h интервала: 7д, 14д, 30д в минутах
-        # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 212)!
-        # 7d = 42 бара = 10080 минут
+        # Инициализация окон GARCH для 4h интервала: 8д, 14д, 30д в минутах
+        # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 215)!
+        # 8d = 50 баров = 12000 минут (минимум для GARCH)
         # 14d = 84 бара = 20160 минут
         # 30d = 180 баров = 43200 минут
         if self.garch_windows is None:
-            self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]  # 10080, 20160, 43200 минут
+            self.garch_windows = [50 * 240, 14 * 24 * 60, 30 * 24 * 60]  # 12000, 20160, 43200 минут
         elif isinstance(self.garch_windows, list):
             self.garch_windows = [
                 int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0
@@ -591,16 +591,17 @@ class OnlineFeatureTransformer:
         }
 
         seq = list(st["prices"])
-        # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
+        # CRITICAL FIX #1: Используем бары для имен SMA (согласованность с mediator.py),
+        # минуты для имен returns (форматирование через _format_window_name)
         for i, lb in enumerate(self.spec.lookbacks_prices):
             if len(seq) >= lb:
                 window = seq[-lb:]
                 sma = sum(window) / float(lb)
-                # Используем исходное значение в минутах для имени
-                lb_minutes = self.spec._lookbacks_prices_minutes[i]
-                feats[f"sma_{lb_minutes}"] = float(sma)
+                # Используем значение в барах для имени SMA (согласованность с mediator.py)
+                feats[f"sma_{lb}"] = float(sma)
                 first = float(window[0])
-                # Создаем имя для returns с поддержкой дней, часов и минут
+                # Используем исходное значение в минутах для имени returns (форматирование)
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
                 ret_name = f"ret_{_format_window_name(lb_minutes)}"
                 feats[ret_name] = (
                     float(math.log(price / first)) if first > 0 else 0.0
@@ -772,23 +773,24 @@ def apply_offline_features(
     """
     if df is None or df.empty:
         base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
+        # Используем бары для имен SMA (согласованность с mediator.py)
         base_cols += [f"sma_{x}" for x in spec.lookbacks_prices]
-        # Используем _format_window_name для правильного форматирования имен
-        base_cols += [f"ret_{_format_window_name(x)}" for x in spec.lookbacks_prices]
+        # Используем минуты для имен returns (форматирование через _format_window_name)
+        base_cols += [f"ret_{_format_window_name(x)}" for x in spec._lookbacks_prices_minutes]
         if spec.yang_zhang_windows:
-            base_cols += [f"yang_zhang_{_format_window_name(w)}" for w in spec.yang_zhang_windows]
+            base_cols += [f"yang_zhang_{_format_window_name(w)}" for w in spec._yang_zhang_windows_minutes]
         if spec.parkinson_windows:
-            base_cols += [f"parkinson_{_format_window_name(w)}" for w in spec.parkinson_windows]
+            base_cols += [f"parkinson_{_format_window_name(w)}" for w in spec._parkinson_windows_minutes]
         if spec.garch_windows:
-            base_cols += [f"garch_{_format_window_name(w)}" for w in spec.garch_windows]
+            base_cols += [f"garch_{_format_window_name(w)}" for w in spec._garch_windows_minutes]
         if spec.taker_buy_ratio_windows or spec.taker_buy_ratio_momentum:
             base_cols.append("taker_buy_ratio")
         if spec.taker_buy_ratio_windows:
-            base_cols += [f"taker_buy_ratio_sma_{_format_window_name(w)}" for w in spec.taker_buy_ratio_windows]
+            base_cols += [f"taker_buy_ratio_sma_{_format_window_name(w)}" for w in spec._taker_buy_ratio_windows_minutes]
         if spec.taker_buy_ratio_momentum:
-            base_cols += [f"taker_buy_ratio_momentum_{_format_window_name(w)}" for w in spec.taker_buy_ratio_momentum]
+            base_cols += [f"taker_buy_ratio_momentum_{_format_window_name(w)}" for w in spec._taker_buy_ratio_momentum_minutes]
         if spec.cvd_windows:
-            base_cols += [f"cvd_{_format_window_name(w)}" for w in spec.cvd_windows]
+            base_cols += [f"cvd_{_format_window_name(w)}" for w in spec._cvd_windows_minutes]
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()

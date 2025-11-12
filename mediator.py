@@ -1019,30 +1019,30 @@ class Mediator:
         # Map technical indicators from prepare_and_run.py to norm_cols
         # Original 8 features (adapted for 4h)
         norm_cols[0] = self._get_safe_float(row, "cvd_24h", 0.0)
-        norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней (было cvd_168h)
-        norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # 12 bars instead of 24h (6 bars too short)
-        norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней (было yang_zhang_168h)
-        norm_cols[4] = self._get_safe_float(row, "garch_7d", 0.0)  # 42 bars = 7 days (was garch_12h = 3 bars)
-        norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # 84 bars = 14 days (was garch_24h = 6 bars)
-        norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # 3 bars (was ret_15m = 0.06 bar)
-        norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # 6 bars (was ret_60m = 0.25 bar)
+        norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней
+        norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # 12 bars = 48h
+        norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней
+        norm_cols[4] = self._get_safe_float(row, "garch_8d", 0.0)  # 50 bars = 8 days (минимум для GARCH)
+        norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # 84 bars = 14 days
+        norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # 3 bars
+        norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # 6 bars
 
         # Additional 8 features for complete coverage (43 -> 51) - adapted for 4h
-        norm_cols[8] = self._get_safe_float(row, "ret_4h", 0.0)  # 1 bar (was ret_5m = 0.02 bar)
-        norm_cols[9] = self._get_safe_float(row, "sma_50", 0.0)  # 50 bars = 200h (was sma_60 = 60 minutes = 0.25 bar)
-        norm_cols[10] = self._get_safe_float(row, "yang_zhang_30d", 0.0)  # 43200 минут = 30 дней (было yang_zhang_720h)
-        norm_cols[11] = self._get_safe_float(row, "parkinson_48h", 0.0)  # 12 bars = 48h (was parkinson_24h = 6 bars too short)
-        norm_cols[12] = self._get_safe_float(row, "parkinson_7d", 0.0)  # 10080 минут = 7 дней (было parkinson_168h)
-        norm_cols[13] = self._get_safe_float(row, "garch_30d", 0.0)  # 180 bars = 30 days (was garch_500m = 2.08 bars)
+        norm_cols[8] = self._get_safe_float(row, "ret_4h", 0.0)  # 1 bar
+        norm_cols[9] = self._get_safe_float(row, "sma_50", 0.0)  # 50 bars = 200h
+        norm_cols[10] = self._get_safe_float(row, "yang_zhang_30d", 0.0)  # 43200 минут = 30 дней
+        norm_cols[11] = self._get_safe_float(row, "parkinson_48h", 0.0)  # 12 bars = 48h
+        norm_cols[12] = self._get_safe_float(row, "parkinson_7d", 0.0)  # 10080 минут = 7 дней
+        norm_cols[13] = self._get_safe_float(row, "garch_30d", 0.0)  # 180 bars = 30 days
         norm_cols[14] = self._get_safe_float(row, "taker_buy_ratio", 0.0)
-        norm_cols[15] = self._get_safe_float(row, "taker_buy_ratio_sma_24h", 0.0)  # 6 bars (unchanged)
+        norm_cols[15] = self._get_safe_float(row, "taker_buy_ratio_sma_24h", 0.0)  # 6 bars
 
         # Additional 5 features for complete taker_buy_ratio coverage (51 -> 56) - adapted for 4h
-        norm_cols[16] = self._get_safe_float(row, "taker_buy_ratio_sma_8h", 0.0)  # 2 bars (was 6h = 1.5 bars)
-        norm_cols[17] = self._get_safe_float(row, "taker_buy_ratio_sma_16h", 0.0)  # 4 bars (was 12h = 3 bars)
-        norm_cols[18] = self._get_safe_float(row, "taker_buy_ratio_momentum_4h", 0.0)  # 1 bar (was 1h = 0.25 bar)
-        norm_cols[19] = self._get_safe_float(row, "taker_buy_ratio_momentum_8h", 0.0)  # 2 bars (was 6h = 1.5 bars)
-        norm_cols[20] = self._get_safe_float(row, "taker_buy_ratio_momentum_12h", 0.0)  # 3 bars (unchanged)
+        norm_cols[16] = self._get_safe_float(row, "taker_buy_ratio_sma_8h", 0.0)  # 2 bars
+        norm_cols[17] = self._get_safe_float(row, "taker_buy_ratio_sma_16h", 0.0)  # 4 bars
+        norm_cols[18] = self._get_safe_float(row, "taker_buy_ratio_momentum_4h", 0.0)  # 1 bar
+        norm_cols[19] = self._get_safe_float(row, "taker_buy_ratio_momentum_8h", 0.0)  # 2 bars
+        norm_cols[20] = self._get_safe_float(row, "taker_buy_ratio_momentum_12h", 0.0)  # 3 bars
 
         # NOTE: Normalization (tanh, clip) is applied in obs_builder.pyx when available.
         # In legacy fallback mode (when obs_builder is not available), normalization
