@@ -21,7 +21,7 @@ def main():
     p.add_argument("--in", dest="in_path", required=True, help="Вход: parquet/csv с колонками ts_ms,symbol,price (обычно prices.parquet)")
     p.add_argument("--out", dest="out_path", default="data/features.parquet", help="Куда сохранить parquet фич")
     p.add_argument("--price-col", default="price", help="Имя колонки с ценой (по умолчанию 'price')")
-    p.add_argument("--lookbacks", default="240,720,1440", help="Окна SMA/ret в минутах для 4h интервала (по умолчанию 240,720,1440 = 4h,12h,24h)")
+    p.add_argument("--lookbacks", default="240,720,1440,12000", help="Окна SMA/ret в минутах для 4h интервала (по умолчанию 240,720,1440,12000 = 4h,12h,24h,200h)")
     p.add_argument("--rsi-period", type=int, default=14, help="Период RSI (Wilder)")
     p.add_argument("--yang-zhang-windows", default="2880,10080,43200", help="Окна Yang-Zhang в минутах для 4h (по умолчанию 2880,10080,43200 = 48h,7d,30d)")
     p.add_argument("--open-col", default=None, help="Имя колонки open для Yang-Zhang (опционально)")
@@ -33,7 +33,8 @@ def main():
     p.add_argument("--taker-buy-base-col", default=None, help="Имя колонки taker_buy_base для Taker Buy Ratio (опционально)")
     p.add_argument("--cvd-windows", default="1440,10080", help="Окна Cumulative Volume Delta в минутах для 4h (по умолчанию 1440,10080 = 24h,7d)")
     p.add_argument("--parkinson-windows", default="2880,10080", help="Окна Parkinson волатильности в минутах для 4h (по умолчанию 2880,10080 = 48h,7d)")
-    p.add_argument("--garch-windows", default="10080,20160,43200", help="Окна GARCH(1,1) волатильности в минутах для 4h (по умолчанию 10080,20160,43200 = 7d,14d,30d)")
+    p.add_argument("--garch-windows", default="12000,20160,43200", help="Окна GARCH(1,1) волатильности в минутах для 4h (по умолчанию 12000,20160,43200 = 8d,14d,30d)")
+    p.add_argument("--bar-duration-minutes", type=int, default=240, help="Длительность одного бара в минутах (по умолчанию 240 для 4h интервала)")
     args = p.parse_args()
 
     df = _read_any(args.in_path)
@@ -57,6 +58,7 @@ def main():
         taker_buy_ratio_windows=taker_buy_ratio_wins,
         taker_buy_ratio_momentum=taker_buy_ratio_mom,
         cvd_windows=cvd_wins,
+        bar_duration_minutes=int(args.bar_duration_minutes),
     )
 
     # Определяем, есть ли OHLC колонки в данных
