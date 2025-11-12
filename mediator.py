@@ -955,8 +955,9 @@ class Mediator:
         """Extract technical indicators from row or simulator."""
         # Try to get from row first (from prepare_and_run.py features)
         ma5 = self._get_safe_float(row, "sma_5", float('nan'))
-        # NOTE: Using sma_15 (15-period) in the ma20 slot for compatibility with feature layout
-        ma20 = self._get_safe_float(row, "sma_15", float('nan'))
+        # NOTE: For 4h timeframe using sma_21 (21 bars = 84h ≈ weekly trend)
+        # config_4h_timeframe.py specifies SMA_LOOKBACKS = [5, 21, 50] bars
+        ma20 = self._get_safe_float(row, "sma_21", float('nan'))
         rsi14 = self._get_safe_float(row, "rsi", 50.0)
 
         # For MACD and other indicators, try from simulator if available

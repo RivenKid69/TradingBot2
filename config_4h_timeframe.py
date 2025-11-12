@@ -336,18 +336,22 @@ def get_feature_spec_4h():
     Возвращает FeatureSpec для 4h интервала.
 
     Используется в transformers.py для создания OnlineFeatureTransformer.
+
+    ВАЖНО: Все параметры (SMA_LOOKBACKS, YANG_ZHANG_WINDOWS, etc.) определены в БАРАХ,
+    но FeatureSpec ожидает МИНУТЫ. Поэтому мы конвертируем: бары * 240 минут/бар.
     """
     from transformers import FeatureSpec
 
     return FeatureSpec(
-        lookbacks_prices=SMA_LOOKBACKS,
+        lookbacks_prices=[x * BAR_DURATION_MINUTES for x in SMA_LOOKBACKS],
         rsi_period=RSI_PERIOD,
-        yang_zhang_windows=YANG_ZHANG_WINDOWS,
-        parkinson_windows=PARKINSON_WINDOWS,
-        garch_windows=GARCH_WINDOWS,
-        taker_buy_ratio_windows=TAKER_BUY_RATIO_SMA_WINDOWS,
-        taker_buy_ratio_momentum=TAKER_BUY_RATIO_MOMENTUM_WINDOWS,
-        cvd_windows=CVD_WINDOWS,
+        yang_zhang_windows=[x * BAR_DURATION_MINUTES for x in YANG_ZHANG_WINDOWS],
+        parkinson_windows=[x * BAR_DURATION_MINUTES for x in PARKINSON_WINDOWS],
+        garch_windows=[x * BAR_DURATION_MINUTES for x in GARCH_WINDOWS],
+        taker_buy_ratio_windows=[x * BAR_DURATION_MINUTES for x in TAKER_BUY_RATIO_SMA_WINDOWS],
+        taker_buy_ratio_momentum=[x * BAR_DURATION_MINUTES for x in TAKER_BUY_RATIO_MOMENTUM_WINDOWS],
+        cvd_windows=[x * BAR_DURATION_MINUTES for x in CVD_WINDOWS],
+        bar_duration_minutes=BAR_DURATION_MINUTES,  # КРИТИЧНО!
     )
 
 

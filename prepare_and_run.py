@@ -277,16 +277,10 @@ def prepare() -> list[str]:
         by_sym.setdefault(sym, []).append(df_norm)
 
     # Создаем спецификацию признаков для всех технических индикаторов
-    feature_spec = FeatureSpec(
-        lookbacks_prices=[5, 15, 60],  # окна для SMA и returns
-        rsi_period=14,
-        yang_zhang_windows=[24 * 60, 168 * 60, 720 * 60],  # 24ч, 168ч, 720ч в минутах
-        parkinson_windows=[24 * 60, 168 * 60],  # 24ч, 168ч в минутах для Parkinson
-        garch_windows=[500, 720, 1440],  # 500 мин (~8.3ч), 12ч, 24ч для GARCH(1,1)
-        taker_buy_ratio_windows=[6 * 60, 12 * 60, 24 * 60],  # 6ч, 12ч, 24ч в минутах
-        taker_buy_ratio_momentum=[60, 6 * 60, 12 * 60],  # 1ч, 6ч, 12ч в минутах
-        cvd_windows=[24 * 60, 168 * 60],  # 24ч (1440 мин), 168ч (10080 мин) для CVD
-    )
+    # ВАЖНО: Используем конфигурацию для 4h интервала из config_4h_timeframe.py
+    # Это обеспечивает согласованность параметров с mediator.py и transformers.py
+    from config_4h_timeframe import get_feature_spec_4h
+    feature_spec = get_feature_spec_4h()
 
     for sym, parts in by_sym.items():
         df = pd.concat(parts, ignore_index=True).sort_values("timestamp")
