@@ -1,17 +1,17 @@
 defaults:
   enforce_closed_bars: true
-  timeframe_ms: 60000
-  close_lag_ms: 2000
+  timeframe_ms: 14400000  # 4h timeframe = 4 * 60 * 60 * 1000 ms (changed from 60000 = 1m)
+  close_lag_ms: 8000  # Increased for 4h bars (changed from 2000)
 
 profiles:
-  MKT_OPEN_NEXT_H1:
+  MKT_OPEN_NEXT_4H:  # Changed from H1 to 4H for 4-hour timeframe
     decision_mode: CLOSE_TO_OPEN
-    decision_delay_ms: 2000
-  VWAP_CURRENT_H1:
+    decision_delay_ms: 8000  # Increased for 4h bars (changed from 2000)
+  VWAP_CURRENT_4H:  # Changed from H1 to 4H for 4-hour timeframe
     decision_mode: INTRA_HOUR_WITH_LATENCY
-    decision_delay_ms: 15000
+    decision_delay_ms: 30000  # Increased for 4h bars (changed from 15000)
     latency_steps: 1
   LIMIT_MID_BPS:
     decision_mode: INTRA_HOUR_WITH_LATENCY
-    decision_delay_ms: 30000
+    decision_delay_ms: 60000  # Increased for 4h bars (changed from 30000)
     latency_steps: 1

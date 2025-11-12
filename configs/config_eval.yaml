@@ -82,7 +82,7 @@ components:
     target: impl_offline_data:OfflineCSVBarSource
     params:
       paths: ["data/eval.csv"]
-      timeframe: "1m"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   executor:
     target: impl_sim_executor:SimExecutor
     params:

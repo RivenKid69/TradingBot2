@@ -35,7 +35,7 @@ use_seasonality: false
 market: spot
 
 data:
-  timeframe: "1m"  # symbols are loaded from data/universe/symbols.json
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма; symbols are loaded from data/universe/symbols.json
   # Training window (train_start_ts/train_end_ts); legacy aliases start_ts/end_ts remain supported.
   train_start_ts: 1499990400     # 2017-07-14T00:00:00Z (aka start_ts)
   train_end_ts: 1743465599       # 2025-03-31T23:59:59Z (aka end_ts)
@@ -337,7 +337,7 @@ components:
     target: impl_offline_data:OfflineCSVBarSource
     params:
       paths: ["data/train/*.csv"]
-      timeframe: "1m"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   executor:
     target: impl_sim_executor:SimExecutor
     params:
