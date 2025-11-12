@@ -7,8 +7,8 @@
 
 Шаги (single pass):
   1) Догрузить последние закрытые свечи по каждому символу
-     (Binance, 1h, limit=3 — берём предпоследнюю)
-     -> data/candles/{SYMBOL}.csv    [скрипт: incremental_klines.py]
+     (Binance, 4h, limit=3 — берём предпоследнюю, миграция с 1h на 4h)
+     -> data/klines_4h/{SYMBOL}.csv    [скрипт: incremental_klines_4h.py]
   2) Обновить экономический календарь за окно дат
      -> data/economic_events.csv     [скрипт: prepare_events.py]
         (мягко: при ошибке — лог и продолжить)
@@ -106,14 +106,15 @@ def _normalize_symbols(symbols: Sequence[str]) -> List[str]:
 
 
 def _step1_incremental_klines(symbols: Sequence[str]) -> None:
-    if not _exists_script("incremental_klines.py"):
-        _log("! skip step1: incremental_klines.py not found")
+    # Используем incremental_klines_4h.py для 4h таймфрейма (миграция с 1h)
+    if not _exists_script("incremental_klines_4h.py"):
+        _log("! skip step1: incremental_klines_4h.py not found")
         return
     syms_arg = ",".join(_normalize_symbols(symbols))
     _run(
         [
             sys.executable,
-            "incremental_klines.py",
+            "incremental_klines_4h.py",
             "--symbols",
             syms_arg,
         ],
