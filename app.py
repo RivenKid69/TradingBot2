@@ -2210,13 +2210,13 @@ with tabs[11]:
         st.code(
             """symbols: ["BTCUSDT", "ETHUSDT"]
 market: "futures"         # "spot" или "futures"
-intervals: ["1m"]
-aggregate_to: ["5m", "15m", "1h", "4h"]
+intervals: ["4h"]         # 4h timeframe (мигрировано с 1h)
+aggregate_to: []          # Не используем агрегацию для 4h
 period:
   start: "2024-01-01"
   end: "2024-12-31"
 paths:
-  klines_dir: "data/klines"
+  klines_dir: "data/klines_4h"
   futures_dir: "data/futures"
   prices_out: "data/prices.parquet"
 futures:

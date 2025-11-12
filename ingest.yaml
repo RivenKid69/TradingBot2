@@ -12,7 +12,7 @@ period:
   end: "2024-12-31"
 
 paths:
-  klines_dir: "data/klines"
+  klines_dir: "data/klines_4h"
   futures_dir: "data/futures"
   prices_out: "data/prices.parquet"
 
