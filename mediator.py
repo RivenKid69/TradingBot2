@@ -1022,7 +1022,7 @@ class Mediator:
         norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # 12 bars = 48h
         norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols[4] = self._get_safe_float(row, "garch_8d", 0.0)  # 50 bars = 8 days (минимум для GARCH)
+        norm_cols[4] = self._get_safe_float(row, "garch_200h", 0.0)  # 50 bars = 12000 min = 200h (минимум для GARCH)
         norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # 84 bars = 14 days
         norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # 3 bars
         norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # 6 bars
