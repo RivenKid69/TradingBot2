@@ -4459,7 +4459,7 @@ def main():
             f"Prepare Real Market Data:\n"
             f"  1. Run: python prepare_advanced_data.py    # Fetch Fear & Greed index\n"
             f"  2. Run: python prepare_events.py           # Fetch economic events\n"
-            f"  3. Run: python incremental_klines.py       # Fetch 1h OHLCV candles\n"
+            f"  3. Run: python incremental_klines_4h.py    # Fetch 4h OHLCV candles (migration from 1h)\n"
             f"  4. Run: python prepare_and_run.py          # Merge and export to feather\n\n"
             f"After preparing data, you should see files like:\n"
             f"  {processed_data_dir}/BTCUSDT.feather\n"

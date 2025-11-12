@@ -1,12 +1,10 @@
 # configs/ingest.yaml
+# Конфигурация для 4h таймфрейма (миграция с 1h)
 symbols: ["BTCUSDT", "ETHUSDT"]
 market: "futures"       # "spot" или "futures"
 intervals:
-  - "1m"
-aggregate_to:
-  - "5m"
-  - "15m"
-  - "1h"
+  - "4h"  # Изменено с "1m" на "4h" для миграции таймфрейма
+aggregate_to: []  # Убрана агрегация, так как загружаем напрямую 4h данные
 period:
   start: "2024-01-01"
   end: "2024-12-31"
