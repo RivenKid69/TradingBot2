@@ -2,10 +2,13 @@
 """
 prepare_and_run.py
 ---------------------------------------------------------------
-Merge raw 1h candles from data/candles/ with Fear & Greed (data/fear_greed.csv)
+Merge raw candles from data/candles/ or data/klines/ with Fear & Greed (data/fear_greed.csv)
 and write per-symbol Feather files to data/processed/ expected by training.
 Also enforces column schema and avoids renaming 'volume'.
 Creates technical features (CVD, taker buy ratio, etc.) using apply_offline_features.
+
+ВАЖНО: Проект мигрирован на 4h таймфрейм.
+Используйте ENV переменную BAR_DURATION_SEC=14400 для 4h (по умолчанию).
 """
 import os
 import glob
@@ -106,7 +109,10 @@ def _normalize_ohlcv(df: pd.DataFrame, path: str) -> pd.DataFrame:
     if ts is None:
         for key in open_time_cands:
             if key in cols:
-                ts = _to_seconds_any(df[cols[key]]) + 3600  # 1h бар → сместим к закрытию
+                # Для 4h интервала: 4 часа = 14400 секунд
+                # Используем BAR_DURATION из конфига, по умолчанию 14400 (4h)
+                bar_duration_sec = int(os.environ.get("BAR_DURATION_SEC", "14400"))
+                ts = _to_seconds_any(df[cols[key]]) + bar_duration_sec  # 4h бар → сместим к закрытию
                 break
     if ts is None:
         for c in df.columns:

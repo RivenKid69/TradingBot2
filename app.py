@@ -2211,7 +2211,7 @@ with tabs[11]:
             """symbols: ["BTCUSDT", "ETHUSDT"]
 market: "futures"         # "spot" или "futures"
 intervals: ["1m"]
-aggregate_to: ["5m", "15m", "1h"]
+aggregate_to: ["5m", "15m", "1h", "4h"]
 period:
   start: "2024-01-01"
   end: "2024-12-31"
@@ -4313,7 +4313,7 @@ with tabs[21]:
             "script": "build_adv.py",
             "stats": "logs/offline/build_adv_stats.json",
             "log": "logs/offline/build_adv.log",
-            "default_args": "--market futures --interval 1h --start 2023-01-01T00:00:00Z --end 2023-01-08T00:00:00Z --symbols BTCUSDT,ETHUSDT --out data/adv/klines.parquet",
+            "default_args": "--market futures --interval 4h --start 2023-01-01T00:00:00Z --end 2023-01-08T00:00:00Z --symbols BTCUSDT,ETHUSDT --out data/adv/klines.parquet",
             "supports_dry_run": True,
             "resume_flag": "--resume-from-checkpoint",
             "description": "Fetch OHLCV history and build aggregated ADV parquet.",
@@ -4335,7 +4335,7 @@ with tabs[21]:
             "script": "scripts/build_adv_base.py",
             "stats": "logs/offline/build_adv_base_stats.json",
             "log": "logs/offline/build_adv_base.log",
-            "default_args": "--market futures --interval 1h --window-days 30 --out data/adv/adv_base.json",
+            "default_args": "--market futures --interval 4h --window-days 30 --out data/adv/adv_base.json",
             "supports_dry_run": False,
             "resume_flag": None,
             "description": "Aggregate base volumes into ADV checkpoints.",
