@@ -29,7 +29,7 @@ def make_layout(obs_params=None):
         "bias": 0.0,
         "source": "bars"
     })
-    # Derived features block (1h return and volatility proxy)
+    # Derived features block (4h return and volatility proxy for 4h timeframe)
     layout.append({
         "name": "derived",
         "size": 2,

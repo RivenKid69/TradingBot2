@@ -41,12 +41,16 @@ _EQUITY_COLUMNS: Sequence[str] = (
 )
 
 _ADV_COLUMNS: Sequence[str] = (
-    "adv_quote_1h",
-    "adv_usd_1h",
+    "adv_quote_4h",
+    "adv_usd_4h",
     "adv_quote",
     "adv_usd",
-    "adv_1h",
+    "adv_4h",
     "adv",
+    # Legacy support (for 1h data)
+    "adv_quote_1h",
+    "adv_usd_1h",
+    "adv_1h",
 )
 
 
