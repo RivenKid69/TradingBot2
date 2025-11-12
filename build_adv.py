@@ -278,7 +278,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         description="Fetch Binance OHLCV history and build ADV dataset parquet.",
     )
     parser.add_argument("--market", choices=["spot", "futures"], default="futures")
-    parser.add_argument("--interval", default="1h", help="Kline interval (e.g. 1h,4h,1d)")
+    parser.add_argument("--interval", default="4h", help="Kline interval (e.g. 4h,1h,1d) - default 4h for project migration")
     parser.add_argument("--start", required=True, help="Start of history (ISO8601 or unix ms)")
     parser.add_argument("--end", required=True, help="End of history (ISO8601 or unix ms)")
     parser.add_argument("--symbols", default="", help="Comma-separated symbol list")

@@ -2,7 +2,7 @@
 """
 prepare_and_run.py
 ---------------------------------------------------------------
-Merge raw candles from data/candles/ or data/klines/ with Fear & Greed (data/fear_greed.csv)
+Merge raw candles from data/candles/ or data/klines_4h/ with Fear & Greed (data/fear_greed.csv)
 and write per-symbol Feather files to data/processed/ expected by training.
 Also enforces column schema and avoids renaming 'volume'.
 Creates technical features (CVD, taker buy ratio, etc.) using apply_offline_features.
@@ -20,7 +20,7 @@ import pandas as pd
 
 from transformers import FeatureSpec, apply_offline_features
 
-RAW_DIR = os.path.join("data","candles")  # дефолт; ниже добавим data/klines в список по умолчанию
+RAW_DIR = os.path.join("data","candles")  # дефолт; ниже добавим data/klines_4h в список по умолчанию
 FNG = os.path.join("data","fear_greed.csv")
 EVENTS = os.path.join("data","economic_events.csv")
 EVENT_HORIZON_HOURS = 96
@@ -200,7 +200,7 @@ def _read_any_raw(path: str) -> pd.DataFrame:
 
 def _discover_raw_paths(raw_dirs: list[str]) -> list[str]:
     """Собираем все CSV/Parquet из указанных директорий."""
-    patterns = ("*.csv", "*_1h.parquet", "*.parquet")
+    patterns = ("*.csv", "*_4h.parquet", "*.parquet")
     paths = set()
     for d in raw_dirs:
         if not d:
@@ -215,7 +215,7 @@ def _parse_args():
     ap.add_argument(
         "--raw-dir",
         help="Comma-separated list of directories with raw candles (csv/parquet). "
-             "If omitted, uses ENV RAW_DIR or defaults to 'data/candles,data/klines'.",
+             "If omitted, uses ENV RAW_DIR or defaults to 'data/candles,data/klines_4h'.",
         default=os.environ.get("RAW_DIR", "")
     )
     ap.add_argument(
@@ -263,8 +263,8 @@ def prepare() -> list[str]:
 
     # 1) выбираем директории для поиска raw
     raw_dirs_env = os.environ.get("RAW_DIR", "")
-    # резервные директории по умолчанию: и candles, и klines
-    default_dirs = [RAW_DIR, os.path.join("data","klines")]
+    # резервные директории по умолчанию: и candles, и klines_4h для 4h таймфрейма
+    default_dirs = [RAW_DIR, os.path.join("data","klines_4h")]
     raw_dirs = [p for p in raw_dirs_env.split(",") if p] or default_dirs
 
     # 2) собираем пути raw

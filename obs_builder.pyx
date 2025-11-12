@@ -63,7 +63,7 @@ cdef void build_observation_vector_c(
     cdef double prev_price_d = prev_price
     cdef double position_value
     cdef double total_worth
-    cdef double ret_1h
+    cdef double ret_bar
     cdef double vol_proxy
     cdef double price_momentum
     cdef double bb_squeeze
@@ -111,9 +111,9 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = obv
     feature_idx += 1
 
-    # Derived price/volatility signals
-    ret_1h = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
-    out_features[feature_idx] = <float>ret_1h
+    # Derived price/volatility signals (bar-to-bar return for current timeframe)
+    ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+    out_features[feature_idx] = <float>ret_bar
     feature_idx += 1
 
     vol_proxy = tanh(log1p(atr / (price_d + 1e-8)))

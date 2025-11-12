@@ -70,7 +70,7 @@ def main():
     p.add_argument("--interval", default="1m", help="Интервал kline: 1m/3m/5m/15m/1h/4h/1d и т.п.")
     p.add_argument("--start", required=True, help="Начало периода (YYYY-MM-DD, ISO или unix ms)")
     p.add_argument("--end", required=True, help="Конец периода (YYYY-MM-DD, ISO или unix ms)")
-    p.add_argument("--out-dir", default="data/klines", help="Куда писать parquet по символам")
+    p.add_argument("--out-dir", default="data/klines_4h", help="Куда писать parquet по символам (для 4h таймфрейма)")
     p.add_argument("--limit", type=int, default=1500, help="Лимит на запрос API")
     p.add_argument("--sleep-ms", type=int, default=350, help="Пауза между запросами (ms)")
     args = p.parse_args()

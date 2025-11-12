@@ -21,7 +21,7 @@ class PathsConfig(BaseModel):
     * ``PRICES_OUT`` – override ``prices_out``
     """
 
-    klines_dir: str = Field("data/klines", description="Directory for klines output")
+    klines_dir: str = Field("data/klines_4h", description="Directory for klines output (4h timeframe)")
     futures_dir: str = Field("data/futures", description="Directory for futures data")
     prices_out: str = Field(
         "data/prices.parquet", description="Output path for normalized prices"
