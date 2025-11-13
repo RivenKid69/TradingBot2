@@ -268,7 +268,7 @@ class FeaturePipe:
     price_col: str = "price"
     label_col: Optional[str] = None
     metrics: Optional[SignalQualityMetrics] = None
-    sigma_window: int = 120
+    sigma_window: int = 42  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
     min_sigma_periods: int = 2
     spread_ttl_ms: int = 60_000
     execution: Optional[ExecutionRuntimeConfig] = None

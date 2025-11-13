@@ -857,7 +857,7 @@ def _dynamic_guard_mask(
         getattr(vol_cfg, "window", None) or getattr(dyn_cfg, "sigma_window", None)
     )
     if sigma_window <= 1:
-        sigma_window = 120
+        sigma_window = 42  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
     sigma_min_periods = _coerce_positive_int(
         getattr(vol_cfg, "min_periods", None) or getattr(dyn_cfg, "sigma_min_periods", None)
     )

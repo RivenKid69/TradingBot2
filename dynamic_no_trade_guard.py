@@ -101,9 +101,9 @@ class DynamicNoTradeGuard:
         vol_cfg = getattr(cfg, "volatility", None)
         spread_cfg = getattr(cfg, "spread", None)
 
-        sigma_window = int(getattr(vol_cfg, "window", None) or cfg.sigma_window or 120)
+        sigma_window = int(getattr(vol_cfg, "window", None) or cfg.sigma_window or 42)  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
         if sigma_window <= 1:
-            sigma_window = 120
+            sigma_window = 42  # 42 × 4h = 168h = 7 дней для 4h таймфрейма (было 120 для 1m)
         sigma_min = int(
             getattr(vol_cfg, "min_periods", None)
             or cfg.sigma_min_periods

@@ -957,10 +957,12 @@ class Mediator:
     def _extract_technical_indicators(self, row: Any, sim: Any, row_idx: int) -> Dict[str, float]:
         """Extract technical indicators from row or simulator."""
         # Try to get from row first (from prepare_and_run.py features)
-        ma5 = self._get_safe_float(row, "sma_5", float('nan'))
-        # NOTE: For 4h timeframe using sma_21 (21 bars = 84h ≈ weekly trend)
-        # config_4h_timeframe.py specifies SMA_LOOKBACKS = [5, 21, 50] bars
-        ma20 = self._get_safe_float(row, "sma_21", float('nan'))
+        # For 4h timeframe: transformers.py creates SMA names in MINUTES (not bars)
+        # sma_1200 = 5 bars × 240 min/bar = 1200 minutes = 20 hours (short-term MA)
+        ma5 = self._get_safe_float(row, "sma_1200", float('nan'))
+        # NOTE: For 4h timeframe using sma_5040 (21 bars = 84h ≈ 3.5 days, weekly trend)
+        # config_4h_timeframe.py specifies SMA_LOOKBACKS = [5, 21, 50] bars → [1200, 5040, 12000] minutes
+        ma20 = self._get_safe_float(row, "sma_5040", float('nan'))
         rsi14 = self._get_safe_float(row, "rsi", 50.0)
 
         # For MACD and other indicators, try from simulator if available
