@@ -317,13 +317,16 @@ class FeatureSpec:
             not isinstance(self.lookbacks_prices, list)
             or len(self.lookbacks_prices) == 0
         ):
-            # Для 4h интервала: окна для SMA и returns (КРИТИЧНО: только основные окна)
+            # Для 4h интервала: окна для SMA и returns (ПОЛНЫЙ НАБОР)
             # 1 бар 4h = 240 минут
             # 4h = 1 бар = 240 минут (ret_4h, sma_240)
             # 12h = 3 бара = 720 минут (ret_12h, sma_720)
+            # 20h = 5 баров = 1200 минут (ret_20h, sma_1200) - SMA краткосрочный
             # 24h = 6 баров = 1440 минут (ret_24h, sma_1440)
-            # 200h = 50 баров = 12000 минут (ret_200h, sma_12000)
-            self.lookbacks_prices = [240, 720, 1440, 12000]
+            # 3.5d = 21 бар = 5040 минут (ret_3.5d, sma_5040) - SMA среднесрочный
+            # 7d = 42 бара = 10080 минут (ret_7d, sma_10080) - returns долгосрочный
+            # 200h = 50 баров = 12000 минут (ret_200h, sma_12000) - SMA долгосрочный
+            self.lookbacks_prices = [240, 720, 1200, 1440, 5040, 10080, 12000]
         self.lookbacks_prices = [
             int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
         ]
@@ -401,12 +404,13 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.taker_buy_ratio_windows
         ]
 
-        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч в минутах
+        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч, 24ч в минутах
         # 4h = 1 бар = 240 минут
         # 8h = 2 бара = 480 минут
         # 12h = 3 бара = 720 минут
+        # 24h = 6 баров = 1440 минут (добавлено для полного покрытия)
         if self.taker_buy_ratio_momentum is None:
-            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]  # 240, 480, 720 минут
+            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60, 24 * 60]  # 240, 480, 720, 1440 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
             self.taker_buy_ratio_momentum = [
                 int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0
