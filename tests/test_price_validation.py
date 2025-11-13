@@ -435,6 +435,167 @@ class TestPriceValidationErrorMessages:
             "Should clearly identify the problem"
 
 
+class TestPortfolioValidation:
+    """Test suite for cash and units validation."""
+
+    def setup_method(self):
+        """Set up test fixtures with valid default parameters."""
+        self.valid_params = {
+            "price": 50000.0,
+            "prev_price": 49500.0,
+            "log_volume_norm": 0.5,
+            "rel_volume": 0.3,
+            "ma5": 50100.0,
+            "ma20": 49900.0,
+            "rsi14": 55.0,
+            "macd": 10.0,
+            "macd_signal": 8.0,
+            "momentum": 15.0,
+            "atr": 500.0,
+            "cci": 20.0,
+            "obv": 10000.0,
+            "bb_lower": 49000.0,
+            "bb_upper": 51000.0,
+            "is_high_importance": 0.0,
+            "time_since_event": 1.0,
+            "fear_greed_value": 50.0,
+            "has_fear_greed": True,
+            "risk_off_flag": False,
+            "cash": 10000.0,
+            "units": 0.5,
+            "last_vol_imbalance": 0.1,
+            "last_trade_intensity": 5.0,
+            "last_realized_spread": 0.001,
+            "last_agent_fill_ratio": 0.95,
+            "token_id": 0,
+            "max_num_tokens": 1,
+            "num_tokens": 1,
+            "norm_cols_values": np.zeros(21, dtype=np.float32),
+            "out_features": np.zeros(56, dtype=np.float32),
+        }
+
+    def test_nan_cash_raises_error(self):
+        """Test 21: NaN cash should raise ValueError."""
+        params = self.valid_params.copy()
+        params["cash"] = float("nan")
+
+        with pytest.raises(ValueError) as exc_info:
+            build_observation_vector(**params)
+
+        error_msg = str(exc_info.value)
+        assert "cash" in error_msg.lower(), "Error should mention cash parameter"
+        assert "NaN" in error_msg, "Error should mention NaN"
+
+    def test_inf_cash_raises_error(self):
+        """Test 22: +Inf cash should raise ValueError."""
+        params = self.valid_params.copy()
+        params["cash"] = float("inf")
+
+        with pytest.raises(ValueError) as exc_info:
+            build_observation_vector(**params)
+
+        error_msg = str(exc_info.value)
+        assert "cash" in error_msg.lower(), "Error should mention cash"
+        assert "infinity" in error_msg.lower(), "Error should mention infinity"
+
+    def test_nan_units_raises_error(self):
+        """Test 23: NaN units should raise ValueError."""
+        params = self.valid_params.copy()
+        params["units"] = float("nan")
+
+        with pytest.raises(ValueError) as exc_info:
+            build_observation_vector(**params)
+
+        error_msg = str(exc_info.value)
+        assert "units" in error_msg.lower(), "Error should mention units parameter"
+        assert "NaN" in error_msg, "Error should mention NaN"
+
+    def test_inf_units_raises_error(self):
+        """Test 24: +Inf units should raise ValueError."""
+        params = self.valid_params.copy()
+        params["units"] = float("inf")
+
+        with pytest.raises(ValueError) as exc_info:
+            build_observation_vector(**params)
+
+        error_msg = str(exc_info.value)
+        assert "units" in error_msg.lower(), "Error should mention units"
+        assert "infinity" in error_msg.lower(), "Error should mention infinity"
+
+    def test_zero_cash_succeeds(self):
+        """Test 25: Zero cash is valid (no money in account)."""
+        params = self.valid_params.copy()
+        params["cash"] = 0.0
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+    def test_zero_units_succeeds(self):
+        """Test 26: Zero units is valid (no position)."""
+        params = self.valid_params.copy()
+        params["units"] = 0.0
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+    def test_negative_cash_succeeds(self):
+        """Test 27: Negative cash is valid (margin debt, short position)."""
+        params = self.valid_params.copy()
+        params["cash"] = -5000.0  # Margin debt
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+    def test_negative_units_succeeds(self):
+        """Test 28: Negative units is valid (short position)."""
+        params = self.valid_params.copy()
+        params["units"] = -0.5  # Short position
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+    def test_both_cash_and_units_zero_succeeds(self):
+        """Test 29: Both cash and units = 0 (empty portfolio)."""
+        params = self.valid_params.copy()
+        params["cash"] = 0.0
+        params["units"] = 0.0
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+    def test_large_cash_values_succeed(self):
+        """Test 30: Very large cash values should work."""
+        params = self.valid_params.copy()
+        params["cash"] = 1e9  # 1 billion
+
+        # Should not raise
+        build_observation_vector(**params)
+
+        obs = params["out_features"]
+        assert not np.any(np.isnan(obs)), "No NaN in observation"
+        assert not np.any(np.isinf(obs)), "No Inf in observation"
+
+
 if __name__ == "__main__":
     # Run tests with pytest
     pytest.main([__file__, "-v", "--tb=short"])

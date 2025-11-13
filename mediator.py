@@ -912,6 +912,80 @@ class Mediator:
         return numeric
 
     @staticmethod
+    def _validate_critical_price(value: Any, param_name: str = "price") -> float:
+        """
+        Validate critical price parameter with strict requirements.
+
+        This function enforces strict validation for price parameters where 0.0 is NOT
+        an acceptable fallback. Used for mark_price, prev_price, and other critical
+        price values that must be positive and finite.
+
+        Args:
+            value: The price value to validate
+            param_name: Parameter name for error messages
+
+        Returns:
+            float: Validated price value (guaranteed to be positive and finite)
+
+        Raises:
+            ValueError: If price is None, NaN, Inf, or <= 0
+
+        Best practices:
+        - Financial data standards require positive, finite prices
+        - Zero/negative prices indicate data corruption, not "no price"
+        - NaN/Inf indicate upstream calculation errors that must be fixed
+        - Fail-fast approach prevents silent data corruption
+
+        References:
+        - "Best Practices for Ensuring Financial Data Accuracy" (Paystand)
+        - "Investment Model Validation" (CFA Institute)
+        - "Training ML Models with Financial Data" (EODHD)
+        """
+        if value is None:
+            raise ValueError(
+                f"Invalid {param_name}: None. "
+                f"Price parameters cannot be None. "
+                f"This indicates missing data in the pipeline. "
+                f"Check data source and ensure price is provided."
+            )
+
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"Invalid {param_name}: cannot convert {type(value).__name__} to float. "
+                f"Price must be a numeric value. "
+                f"Original error: {e}"
+            )
+
+        if math.isnan(numeric):
+            raise ValueError(
+                f"Invalid {param_name}: NaN (Not a Number). "
+                f"This indicates missing or corrupted market data. "
+                f"NaN prices cannot be safely defaulted to 0.0. "
+                f"Fix data source to provide valid prices."
+            )
+
+        if math.isinf(numeric):
+            sign = "positive" if numeric > 0 else "negative"
+            raise ValueError(
+                f"Invalid {param_name}: {sign} infinity. "
+                f"This indicates arithmetic overflow in calculations. "
+                f"Check price calculations for numerical stability. "
+                f"Infinity prices cannot be safely handled."
+            )
+
+        if numeric <= 0.0:
+            raise ValueError(
+                f"Invalid {param_name}: {numeric:.10f}. "
+                f"Price must be strictly positive (> 0). "
+                f"Zero or negative prices are invalid in trading systems. "
+                f"If this is intentional (e.g., testing), use a small positive value like 0.01."
+            )
+
+        return numeric
+
+    @staticmethod
     def _get_safe_float(row: Any, col: str, default: float = 0.0) -> float:
         """Safely extract float value from row with fallback."""
         if row is None:
@@ -928,9 +1002,17 @@ class Mediator:
             return default
 
     def _extract_market_data(self, row: Any, state: Any, mark_price: float, prev_price: float) -> Dict[str, float]:
-        """Extract basic market data from row."""
-        price = self._coerce_finite(mark_price, default=0.0)
-        prev = self._coerce_finite(prev_price, default=price)
+        """
+        Extract basic market data from row.
+
+        CRITICAL: Uses strict validation for price parameters.
+        - mark_price and prev_price MUST be positive and finite
+        - Will raise ValueError if invalid (fail-fast approach)
+        - No fallback to 0.0 for prices (would corrupt observations)
+        """
+        # CRITICAL: Strict validation for prices (no fallback to 0.0)
+        price = self._validate_critical_price(mark_price, param_name="mark_price")
+        prev = self._validate_critical_price(prev_price, param_name="prev_price")
 
         # Volume normalization (adapted for 4h timeframe)
         # 4h bars aggregate ~240x more volume than 1h bars, so we use 240e6 divisor

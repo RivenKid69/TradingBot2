@@ -68,6 +68,50 @@ cdef inline void _validate_price(float price, str param_name) except *:
         )
 
 
+cdef inline void _validate_portfolio_value(float value, str param_name) except *:
+    """
+    Validate portfolio value (cash or units) - finite but can be zero.
+
+    Portfolio values have different validation rules than prices:
+    - CAN be 0.0 (valid state: no cash or no position)
+    - CAN be negative for cash (short positions, margin debt)
+    - CANNOT be NaN (indicates missing/corrupted data)
+    - CANNOT be Inf (indicates calculation overflow)
+
+    Args:
+        value: The portfolio value to validate (cash or units)
+        param_name: Parameter name for error messages
+
+    Raises:
+        ValueError: If value is NaN or Inf
+
+    Best practices:
+    - Zero cash/units is valid portfolio state
+    - Negative cash can be valid (margin, short positions)
+    - NaN/Inf indicate data corruption and must be caught
+
+    References:
+    - "Investment Model Validation" (CFA Institute)
+    - "Best Practices for Ensuring Financial Data Accuracy" (Paystand)
+    """
+    if isnan(value):
+        raise ValueError(
+            f"Invalid {param_name}: NaN (Not a Number). "
+            f"Portfolio values must be finite numbers. "
+            f"NaN indicates missing or corrupted portfolio state. "
+            f"Check state management and data pipeline integrity."
+        )
+
+    if isinf(value):
+        sign = "positive" if value > 0 else "negative"
+        raise ValueError(
+            f"Invalid {param_name}: {sign} infinity. "
+            f"Portfolio values must be finite. "
+            f"Infinity indicates arithmetic overflow in calculations. "
+            f"Check portfolio valuation logic and numerical stability."
+        )
+
+
 cpdef int compute_n_features(list layout):
     """Utility used by legacy Python code to count feature slots."""
     cdef int total = 0
@@ -371,21 +415,34 @@ cpdef void build_observation_vector(
     """
     Python-callable wrapper that forwards to the ``nogil`` implementation.
 
-    CRITICAL: Validates price inputs before processing to prevent NaN/Inf propagation.
+    CRITICAL: Validates critical inputs before processing to prevent NaN/Inf propagation.
     This is the entry point for all observation vector construction and must enforce
     data integrity constraints.
 
     Validation performed:
     - price must be finite (not NaN/Inf) and positive (> 0)
     - prev_price must be finite (not NaN/Inf) and positive (> 0)
+    - cash must be finite (not NaN/Inf), can be 0 or negative
+    - units must be finite (not NaN/Inf), can be 0 or negative
 
     If validation fails, ValueError is raised with diagnostic information.
     This fail-fast approach prevents silent data corruption in the observation vector.
+
+    Best practices implemented:
+    - Price validation: Strict (must be > 0)
+    - Portfolio validation: Allows 0/negative but not NaN/Inf
+    - Fail-fast approach catches data issues early
+    - Clear error messages for debugging
     """
     # CRITICAL: Validate price inputs before any computation
     # This prevents NaN/Inf propagation through 15+ calculations downstream
     _validate_price(price, "price")
     _validate_price(prev_price, "prev_price")
+
+    # Validate portfolio state (cash and units)
+    # These can be 0 or negative (valid states) but not NaN/Inf
+    _validate_portfolio_value(cash, "cash")
+    _validate_portfolio_value(units, "units")
 
     build_observation_vector_c(
         price,
