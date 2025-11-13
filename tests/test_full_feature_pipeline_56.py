@@ -73,13 +73,13 @@ def test_mediator_extract_norm_cols_size():
         "cvd_7d": 5000.0,  # было cvd_168h
         "yang_zhang_48h": 0.05,  # было yang_zhang_24h
         "yang_zhang_7d": 0.08,  # было yang_zhang_168h
-        "garch_200h": 0.03,  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_7d": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d": 0.04,  # было garch_24h
         "ret_12h": 0.001,  # было ret_15m
         "ret_24h": 0.005,  # было ret_60m
         # Additional 8 (43->51)
         "ret_4h": 0.0005,  # было ret_5m
-        "sma_50": 50000.0,  # было sma_60 (50 баров = 200h для 4h)
+        "sma_12000": 50000.0,  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
         "yang_zhang_30d": 0.12,  # было yang_zhang_720h
         "parkinson_48h": 0.06,  # было parkinson_24h
         "parkinson_7d": 0.09,  # было parkinson_168h
@@ -224,7 +224,7 @@ def test_full_pipeline_integration():
         # Технические признаки
         "sma_5": [50000.0, 50050.0, 50100.0],
         "sma_15": [49900.0, 49950.0, 50000.0],
-        "sma_50": [49800.0, 49850.0, 49900.0],  # было sma_60
+        "sma_12000": [49800.0, 49850.0, 49900.0],  # было sma_60 (50 баров = 12000 минут = 200h)
         "ret_4h": [0.001, 0.002, 0.001],  # было ret_5m
         "ret_12h": [0.003, 0.004, 0.003],  # было ret_15m
         "ret_24h": [0.010, 0.012, 0.011],  # было ret_60m
@@ -235,7 +235,7 @@ def test_full_pipeline_integration():
         "parkinson_48h": [0.06, 0.062, 0.061],  # было parkinson_24h
         "parkinson_7d": [0.09, 0.092, 0.091],  # было parkinson_168h
         "garch_30d": [0.025, 0.026, 0.0255],  # было garch_500m
-        "garch_200h": [0.03, 0.031, 0.0305],  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_7d": [0.03, 0.031, 0.0305],  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d": [0.04, 0.041, 0.0405],  # было garch_24h
         "taker_buy_ratio": [0.52, 0.53, 0.525],
         "taker_buy_ratio_sma_8h": [0.51, 0.52, 0.515],  # было 6h
@@ -320,12 +320,12 @@ def test_all_21_norm_cols_present_in_dataframe():
         "cvd_7d",  # было cvd_168h
         "yang_zhang_48h",  # было yang_zhang_24h
         "yang_zhang_7d",  # было yang_zhang_168h
-        "garch_200h",  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_7d",  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d",  # было garch_24h
         "ret_12h",  # было ret_15m
         "ret_24h",  # было ret_60m
         "ret_4h",  # было ret_5m
-        "sma_50",  # было sma_60 (50 баров = 200h для 4h)
+        "sma_12000",  # было sma_60 (50 баров = 12000 минут = 200h для 4h)
         "yang_zhang_30d",  # было yang_zhang_720h
         "parkinson_48h",  # было parkinson_24h
         "parkinson_7d",  # было parkinson_168h

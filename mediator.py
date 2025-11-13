@@ -1012,7 +1012,7 @@ class Mediator:
         Adapted for 4h timeframe:
         - GARCH windows: 7d/14d/30d (42/84/180 bars) instead of 500m/12h/24h
         - Returns: 4h/12h/24h (1/3/6 bars) instead of 5m/15m/60m
-        - SMA: sma_50 (50 bars = 200h) instead of sma_60 (60 minutes)
+        - SMA: sma_12000 (50 bars = 12000 минут = 200h) instead of sma_60 (60 minutes)
         - Taker Buy Ratio Momentum: 4h (1 bar) instead of 1h
         """
         norm_cols = np.zeros(21, dtype=np.float32)
@@ -1023,14 +1023,14 @@ class Mediator:
         norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # 12 bars = 48h
         norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols[4] = self._get_safe_float(row, "garch_200h", 0.0)  # 50 bars = 12000 min = 200h (минимум для GARCH)
+        norm_cols[4] = self._get_safe_float(row, "garch_7d", 0.0)  # 42 bars = 10080 min = 7d (минимум для GARCH на 4h)
         norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # 84 bars = 14 days
         norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # 3 bars
         norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # 6 bars
 
         # Additional 8 features for complete coverage (43 -> 51) - adapted for 4h
         norm_cols[8] = self._get_safe_float(row, "ret_4h", 0.0)  # 1 bar
-        norm_cols[9] = self._get_safe_float(row, "sma_50", 0.0)  # 50 bars = 200h
+        norm_cols[9] = self._get_safe_float(row, "sma_12000", 0.0)  # 50 bars = 12000 минут = 200h
         norm_cols[10] = self._get_safe_float(row, "yang_zhang_30d", 0.0)  # 43200 минут = 30 дней
         norm_cols[11] = self._get_safe_float(row, "parkinson_48h", 0.0)  # 12 bars = 48h
         norm_cols[12] = self._get_safe_float(row, "parkinson_7d", 0.0)  # 10080 минут = 7 дней

@@ -22,15 +22,21 @@ def test_critical_1_sma_names():
     # Проверяем что после конвертации имеем правильные значения в барах
     assert spec.lookbacks_prices == [1, 3, 6, 50], f"Expected [1, 3, 6, 50] bars, got {spec.lookbacks_prices}"
 
-    # Обновляем трансформер с данными
-    feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
+    # Генерируем достаточно данных (60 баров, чтобы покрыть sma_12000 = 50 баров)
+    import random
+    random.seed(42)
+    base_price = 50000.0
+    for i in range(60):
+        noise = random.uniform(-0.01, 0.01)
+        price = base_price * (1 + i * 0.0001 + noise)
+        feats = transformer.update(symbol="BTCUSDT", ts_ms=1000 + i * 1000, close=price)
 
-    # Проверяем что имена sma используют бары (для согласованности с mediator.py)
-    expected_sma_names = ["sma_1", "sma_3", "sma_6", "sma_50"]
+    # ИСПРАВЛЕНО: Проверяем что имена sma используют МИНУТЫ (sma_240, sma_12000, не sma_1, sma_50)
+    expected_sma_names = ["sma_240", "sma_720", "sma_1440", "sma_12000"]
     for name in expected_sma_names:
         assert name in feats, f"Missing feature: {name}. Available: {list(feats.keys())}"
 
-    print("✅ PASSED: SMA имена используют бары (sma_50, не sma_12000)")
+    print("✅ PASSED: SMA имена используют минуты (sma_240, sma_12000)")
     print(f"   Сгенерированные SMA: {[k for k in feats.keys() if k.startswith('sma_')]}")
     return True
 
@@ -52,17 +58,18 @@ def test_critical_2_default_lookbacks():
     return True
 
 def test_critical_4_garch_8d():
-    """CRITICAL #4: Проверка что garch_7d изменен на garch_200h (50 баров минимум)
+    """CRITICAL #4: Проверка GARCH окна для 4h таймфрейма
 
-    Примечание: Имя функции содержит "8d" по историческим причинам (8.33 дня),
-    но фактически проверяется garch_200h (200 часов), так как 12000 % 1440 != 0.
+    ИСПРАВЛЕНО: Первое окно теперь 7d (42 бара), а не 8d (50 баров).
+    42 бара - практический минимум для GARCH на 4h таймфрейме.
     """
     print("\n" + "="*80)
-    print("ТЕСТ #3: CRITICAL #4 - GARCH минимум 50 баров")
+    print("ТЕСТ #3: CRITICAL #4 - GARCH окна для 4h")
     print("="*80)
 
     spec = FeatureSpec(
-        garch_windows=[],  # Должны быть установлены defaults
+        lookbacks_prices=[],  # Defaults будут установлены
+        garch_windows=None,  # None активирует defaults ([] не активирует!)
         bar_duration_minutes=240
     )
 
@@ -70,25 +77,23 @@ def test_critical_4_garch_8d():
     print(f"   GARCH windows (bars): {spec.garch_windows}")
     print(f"   GARCH windows (minutes): {spec._garch_windows_minutes}")
 
-    # Первое окно должно быть >= 50 баров
-    assert spec.garch_windows[0] >= 50, f"First GARCH window must be >= 50 bars, got {spec.garch_windows[0]}"
+    # ИСПРАВЛЕНО: Первое окно теперь 42 бара (7 дней), а не 50
+    assert spec.garch_windows[0] == 42, f"First GARCH window should be 42 bars (7d), got {spec.garch_windows[0]}"
 
-    # Проверяем что это 12000 минут (50 * 240)
-    assert spec._garch_windows_minutes[0] == 12000, \
-        f"Expected 12000 minutes (8d), got {spec._garch_windows_minutes[0]}"
+    # Проверяем что это 10080 минут (7 * 24 * 60)
+    assert spec._garch_windows_minutes[0] == 10080, \
+        f"Expected 10080 minutes (7d), got {spec._garch_windows_minutes[0]}"
 
     # Проверяем формирование имени
     transformer = OnlineFeatureTransformer(spec)
     feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
 
-    # Должен быть garch_200h (12000 мин = 200 часов), а не garch_7d
-    # Примечание: 12000 минут = 8.33 дней, но _format_window_name форматирует как "200h"
-    # потому что 12000 % 1440 != 0 (не кратно дню)
-    assert "garch_200h" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
-        f"Expected garch_200h or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
+    # ИСПРАВЛЕНО: Должен быть garch_7d (10080 мин = 7 дней), а не garch_200h
+    assert "garch_7d" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
+        f"Expected garch_7d or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
 
-    print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров >= 50")
-    print(f"   Это {spec._garch_windows_minutes[0]} минут = 200 часов = garch_200h")
+    print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров (7 дней)")
+    print(f"   Это {spec._garch_windows_minutes[0]} минут = 7d = garch_7d")
     return True
 
 def test_major_1_empty_df_names():
@@ -144,18 +149,25 @@ def test_mediator_compatibility():
     print("ТЕСТ #6: Совместимость с mediator.py")
     print("="*80)
 
-    spec = FeatureSpec(bar_duration_minutes=240)
+    spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)  # Defaults будут установлены
     transformer = OnlineFeatureTransformer(spec)
 
-    # Генерируем признаки
-    feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
+    # Генерируем достаточно данных (60 баров для покрытия всех defaults)
+    import random
+    random.seed(42)
+    base_price = 50000.0
+    for i in range(60):
+        noise = random.uniform(-0.01, 0.01)
+        price = base_price * (1 + i * 0.0001 + noise)
+        feats = transformer.update(symbol="BTCUSDT", ts_ms=1000 + i * 1000, close=price)
 
-    # Признаки, которые ожидает mediator.py (из norm_cols)
+    # ИСПРАВЛЕНО: Признаки, которые ожидает mediator.py с новыми именами
     expected_features = [
-        "sma_50",  # norm_cols[9]
-        "ret_4h",  # norm_cols[8]
-        "ret_12h", # norm_cols[6]
-        "ret_24h", # norm_cols[7]
+        "sma_240",  # Было sma_1, теперь sma_240 (4h)
+        "sma_12000",  # Было sma_50, теперь sma_12000 (200h)
+        "ret_4h",  # без изменений
+        "ret_12h", # без изменений
+        "ret_24h", # без изменений
         # Волатильности будут NaN (недостаточно данных), но имена должны совпадать
     ]
 
@@ -163,7 +175,7 @@ def test_mediator_compatibility():
         # Проверяем что признак либо есть, либо это нормально (недостаточно данных)
         if feat.startswith("sma_") or feat.startswith("ret_"):
             # SMA и ret должны быть даже с минимальными данными (могут быть NaN)
-            assert feat in feats or feat.replace("_", "_") in feats, \
+            assert feat in feats, \
                 f"Missing expected feature: {feat}. Available: {list(feats.keys())}"
 
     print("✅ PASSED: Имена признаков совместимы с mediator.py")
@@ -180,7 +192,7 @@ def main():
     tests = [
         ("CRITICAL #1: SMA имена", test_critical_1_sma_names),
         ("CRITICAL #2: Default lookbacks", test_critical_2_default_lookbacks),
-        ("CRITICAL #4: GARCH >= 50 баров", test_critical_4_garch_8d),
+        ("CRITICAL #4: GARCH 7d окно", test_critical_4_garch_8d),
         ("MAJOR #1: Empty df имена", test_major_1_empty_df_names),
         ("Utility: _format_window_name", test_format_window_name),
         ("Integration: mediator.py", test_mediator_compatibility),
