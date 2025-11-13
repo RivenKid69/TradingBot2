@@ -1018,7 +1018,14 @@ class Mediator:
         - GARCH windows: 200h/14d/30d (50/84/180 bars) instead of 500m/12h/24h
         - Returns: 4h/12h/24h (1/3/6 bars) instead of 5m/15m/60m
         - SMA: sma_12000 (50 bars = 12000 минут = 200h) instead of sma_60 (60 minutes)
-        - Taker Buy Ratio Momentum: 4h (1 bar) instead of 1h
+        - Taker Buy Ratio Momentum: 4h/8h/12h (1/2/3 bars) instead of 1h
+
+        АРХИТЕКТУРНОЕ РЕШЕНИЕ: EXT_NORM_DIM = 21 (используется подмножество)
+        transformers.py генерирует БОЛЬШЕ признаков чем используется здесь:
+        - Генерируется 4 окна taker_buy_ratio_momentum, используется 3 (4h,8h,12h)
+        - Генерируется ret_7d, но используется только ret_4h, ret_12h, ret_24h
+        - Причина: баланс между гибкостью генерации и компактностью observation
+        - Это стандартная практика (sklearn fit на всех признаках, predict на подмножестве)
         """
         norm_cols = np.zeros(21, dtype=np.float32)
 
@@ -1049,6 +1056,8 @@ class Mediator:
         norm_cols[18] = self._get_safe_float(row, "taker_buy_ratio_momentum_4h", 0.0)  # 1 bar
         norm_cols[19] = self._get_safe_float(row, "taker_buy_ratio_momentum_8h", 0.0)  # 2 bars
         norm_cols[20] = self._get_safe_float(row, "taker_buy_ratio_momentum_12h", 0.0)  # 3 bars
+        # NOTE: taker_buy_ratio_momentum_24h генерируется transformers.py, но НЕ используется
+        # в observation для компактности (21 external признаков вместо 22)
 
         # NOTE: Normalization (tanh, clip) is applied in obs_builder.pyx when available.
         # In legacy fallback mode (when obs_builder is not available), normalization
