@@ -223,8 +223,36 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = obv if not isnan(obv) else 0.0
     feature_idx += 1
 
-    # Derived price/volatility signals (bar-to-bar return for current timeframe)
-    ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+    # CRITICAL: Derived price/volatility signals (bar-to-bar return for current timeframe)
+    # Defense-in-depth validation for prev_price_d (should already be validated at wrapper level)
+    # This protects against any unexpected code path that might bypass wrapper validation
+    #
+    # ret_bar calculation (feature index 14):
+    # - Numerator: price_d - prev_price_d (price change)
+    # - Denominator: prev_price_d + 1e-8 (prevents division by zero)
+    # - tanh normalization: maps (-inf, +inf) → (-1, 1)
+    #
+    # Vulnerability if prev_price_d is NaN/Inf:
+    # - NaN in division → NaN in ret_bar → NaN propagates through neural network
+    # - Inf in division → undefined behavior → potential NaN
+    # - Zero in division → protected by 1e-8 epsilon
+    #
+    # Defense layers (defense-in-depth):
+    # 1. Mediator validation: _validate_critical_price() at mediator.py:1015
+    # 2. Wrapper validation: _validate_price() at obs_builder.pyx:440
+    # 3. Inline check (below): Final safety net for ret_bar calculation
+    #
+    # Research references:
+    # - "Defense in Depth" security principle (multiple validation layers)
+    # - "Fail-fast validation" best practice (catch errors early)
+    # - IEEE 754: NaN propagates through arithmetic operations
+    if isnan(prev_price_d) or isinf(prev_price_d) or prev_price_d <= 0.0:
+        # This should NEVER happen if wrapper validation is working correctly
+        # If we reach here, it indicates a serious bug in the validation chain
+        # Use 0.0 as emergency fallback for ret_bar (no return signal)
+        ret_bar = 0.0
+    else:
+        ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
     out_features[feature_idx] = <float>ret_bar
     feature_idx += 1
 
