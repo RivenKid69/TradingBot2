@@ -3,7 +3,7 @@ run_id: default-run
 logs_dir: logs
 artifacts_dir: artifacts
 seasonality_log_level: INFO
-execution_profile: MKT_OPEN_NEXT_H1
+execution_profile: MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
 execution_params:
   slippage_bps: 0.0
   limit_offset_bps: 0.0  # e.g. 25 for 0.25% offset when using LIMIT_MID_BPS
@@ -15,7 +15,7 @@ execution:
   spot_only: true
   fill_policy: next_open_market   # close_t → open_{t+1}
   intrabar_price_model: "bridge"  # Модель заполнения внутри бара (например: linear, bridge, reference).
-  timeframe_ms: 3600000           # Размер базового бара в миллисекундах (H1 = 60 минут = 3_600_000 мс).
+  timeframe_ms: 14400000          # Размер базового бара в миллисекундах (4H = 240 минут = 14_400_000 мс, изменено с 3_600_000 = H1).
   reference_prices_path: null     # Путь к M1-референсу для режима intrabar "reference"; оставьте null для bridge/linear.
   use_latency_from: null
   latency_constant_ms: null
@@ -30,10 +30,10 @@ execution:
     # Формат файла: {"meta": {...}, "data": {"SYMBOL": {"adv_base": <float>, "days": <int>,
     #   "days_total": <int>, "last_day": "<ISO8601>"}, ...}}; значения указываются в базовой валюте.
     floor_base: null         # Минимальный дневной ADV (в базовой валюте): используется как фолбек и нижняя граница.
-    timeframe_ms: null       # Необязательный override размера бара (в мс) для конвертации дневного ADV в per-bar.
+    timeframe_ms: 14400000   # Override размера бара (в мс) для конвертации дневного ADV в per-bar (4H = 14_400_000 мс, изменено с null).
   bridge:
     intrabar_price_model: "bridge"  # Пример конфигурации для симулятора в режиме моста (bridge adapter).
-    timeframe_ms: 3600000           # Должен совпадать с целевым таймфреймом бара.
+    timeframe_ms: 14400000          # Должен совпадать с целевым таймфреймом бара (4H = 14_400_000 мс, изменено с 3_600_000 = H1).
     reference_prices_path: null     # Опциональный путь к M1-референсу для bridge/reference адаптера.
     use_latency_from: null
     latency_constant_ms: null
@@ -61,7 +61,7 @@ use_seasonality: true
 market: spot
 
 data:
-  timeframe: "1m"  # symbols are loaded from data/universe/symbols.json
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма; symbols are loaded from data/universe/symbols.json
 
 model:
   algo: "ppo"
@@ -254,7 +254,7 @@ components:
     target: impl_offline_data:OfflineCSVBarSource
     params:
       paths: ["data/sample.csv"]
-      timeframe: "1m"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   executor:
     target: impl_sim_executor:SimExecutor
     params:

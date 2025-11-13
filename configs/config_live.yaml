@@ -26,8 +26,8 @@ execution:
   enabled: false
 timing:
   enforce_closed_bars: true
-  timeframe_ms: 60000
-  close_lag_ms: 2000
+  timeframe_ms: 14400000  # 4h timeframe = 4 * 60 * 60 * 1000 ms (changed from 60000 = 1m)
+  close_lag_ms: 8000  # Increased for 4h bars (changed from 2000)
 clock_sync:
   refresh_sec: 300        # How often to resync clocks in seconds
   warn_threshold_ms: 500  # Log warning if drift exceeds this many milliseconds
@@ -55,7 +55,7 @@ api:
   api_key: null
   api_secret: null
 data:
-  timeframe: "1m"  # symbols are loaded from data/universe/symbols.json
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма; symbols are loaded from data/universe/symbols.json
 # Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
 # values clamped to [0.1, 10.0])
 liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
@@ -139,7 +139,7 @@ components:
   market_data:
     target: impl_binance_public:BinancePublicBarSource
     params:
-      timeframe: "1m"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   executor:
     target: impl_sim_executor:SimExecutor
     params:

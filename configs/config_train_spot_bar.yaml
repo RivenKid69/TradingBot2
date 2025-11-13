@@ -9,7 +9,7 @@ symbols:
 data:
   symbols:
     - BTCUSDT
-  timeframe: "1m"
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   train_start_ts: 1672531200
   train_end_ts: 1698796799
   val_start_ts: 1698796800
@@ -99,7 +99,7 @@ components:
     params:
       paths:
         - "data/processed/*.feather"
-      timeframe: "1m"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
   executor:
     target: impl_sim_executor:SimExecutor
     params:
