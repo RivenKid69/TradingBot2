@@ -52,7 +52,11 @@ def test_critical_2_default_lookbacks():
     return True
 
 def test_critical_4_garch_8d():
-    """CRITICAL #4: Проверка что garch_7d изменен на garch_8d (50 баров минимум)"""
+    """CRITICAL #4: Проверка что garch_7d изменен на garch_200h (50 баров минимум)
+
+    Примечание: Имя функции содержит "8d" по историческим причинам (8.33 дня),
+    но фактически проверяется garch_200h (200 часов), так как 12000 % 1440 != 0.
+    """
     print("\n" + "="*80)
     print("ТЕСТ #3: CRITICAL #4 - GARCH минимум 50 баров")
     print("="*80)
@@ -77,12 +81,14 @@ def test_critical_4_garch_8d():
     transformer = OnlineFeatureTransformer(spec)
     feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
 
-    # Должен быть garch_8d, а не garch_7d
-    assert "garch_8d" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
-        f"Expected garch_8d or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
+    # Должен быть garch_200h (12000 мин = 200 часов), а не garch_7d
+    # Примечание: 12000 минут = 8.33 дней, но _format_window_name форматирует как "200h"
+    # потому что 12000 % 1440 != 0 (не кратно дню)
+    assert "garch_200h" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
+        f"Expected garch_200h or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
 
     print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров >= 50")
-    print(f"   Это {spec._garch_windows_minutes[0]} минут = 8.33 дней ≈ 8d")
+    print(f"   Это {spec._garch_windows_minutes[0]} минут = 200 часов = garch_200h")
     return True
 
 def test_major_1_empty_df_names():

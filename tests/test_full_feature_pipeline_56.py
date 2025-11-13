@@ -66,32 +66,32 @@ def test_mediator_extract_norm_cols_size():
 
     mediator = Mediator(mock_env, event_level=0)
 
-    # Создаем mock row с всеми 24 техническими признаками
+    # Создаем mock row с всеми 24 техническими признаками (обновлено для 4h таймфрейма)
     mock_row = pd.Series({
         # Original 8
         "cvd_24h": 1000.0,
-        "cvd_168h": 5000.0,
-        "yang_zhang_24h": 0.05,
-        "yang_zhang_168h": 0.08,
-        "garch_12h": 0.03,
-        "garch_24h": 0.04,
-        "ret_15m": 0.001,
-        "ret_60m": 0.005,
+        "cvd_7d": 5000.0,  # было cvd_168h
+        "yang_zhang_48h": 0.05,  # было yang_zhang_24h
+        "yang_zhang_7d": 0.08,  # было yang_zhang_168h
+        "garch_200h": 0.03,  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_14d": 0.04,  # было garch_24h
+        "ret_12h": 0.001,  # было ret_15m
+        "ret_24h": 0.005,  # было ret_60m
         # Additional 8 (43->51)
-        "ret_5m": 0.0005,
-        "sma_60": 50000.0,
-        "yang_zhang_720h": 0.12,
-        "parkinson_24h": 0.06,
-        "parkinson_168h": 0.09,
-        "garch_500m": 0.025,
+        "ret_4h": 0.0005,  # было ret_5m
+        "sma_50": 50000.0,  # было sma_60 (50 баров = 200h для 4h)
+        "yang_zhang_30d": 0.12,  # было yang_zhang_720h
+        "parkinson_48h": 0.06,  # было parkinson_24h
+        "parkinson_7d": 0.09,  # было parkinson_168h
+        "garch_30d": 0.025,  # было garch_500m
         "taker_buy_ratio": 0.52,
         "taker_buy_ratio_sma_24h": 0.51,
-        # Additional 5 (51->56) - НОВЫЕ
-        "taker_buy_ratio_sma_6h": 0.53,
-        "taker_buy_ratio_sma_12h": 0.52,
-        "taker_buy_ratio_momentum_1h": 0.01,
-        "taker_buy_ratio_momentum_6h": 0.02,
-        "taker_buy_ratio_momentum_12h": 0.015,
+        # Additional 5 (51->56) - НОВЫЕ (обновлено для 4h)
+        "taker_buy_ratio_sma_8h": 0.53,  # было 6h
+        "taker_buy_ratio_sma_16h": 0.52,  # было 12h
+        "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
+        "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
+        "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
     })
 
     norm_cols = mediator._extract_norm_cols(mock_row)
@@ -212,7 +212,7 @@ def test_full_pipeline_integration():
 
     from mediator import Mediator
 
-    # Создаем mock DataFrame с полным набором признаков
+    # Создаем mock DataFrame с полным набором признаков (обновлено для 4h таймфрейма)
     df_data = {
         "timestamp": [1000000, 1000060, 1000120],
         "open": [50000.0, 50100.0, 50200.0],
@@ -224,28 +224,28 @@ def test_full_pipeline_integration():
         # Технические признаки
         "sma_5": [50000.0, 50050.0, 50100.0],
         "sma_15": [49900.0, 49950.0, 50000.0],
-        "sma_60": [49800.0, 49850.0, 49900.0],
-        "ret_5m": [0.001, 0.002, 0.001],
-        "ret_15m": [0.003, 0.004, 0.003],
-        "ret_60m": [0.010, 0.012, 0.011],
+        "sma_50": [49800.0, 49850.0, 49900.0],  # было sma_60
+        "ret_4h": [0.001, 0.002, 0.001],  # было ret_5m
+        "ret_12h": [0.003, 0.004, 0.003],  # было ret_15m
+        "ret_24h": [0.010, 0.012, 0.011],  # было ret_60m
         "rsi": [55.0, 60.0, 58.0],
-        "yang_zhang_24h": [0.05, 0.052, 0.051],
-        "yang_zhang_168h": [0.08, 0.082, 0.081],
-        "yang_zhang_720h": [0.12, 0.122, 0.121],
-        "parkinson_24h": [0.06, 0.062, 0.061],
-        "parkinson_168h": [0.09, 0.092, 0.091],
-        "garch_500m": [0.025, 0.026, 0.0255],
-        "garch_12h": [0.03, 0.031, 0.0305],
-        "garch_24h": [0.04, 0.041, 0.0405],
+        "yang_zhang_48h": [0.05, 0.052, 0.051],  # было yang_zhang_24h
+        "yang_zhang_7d": [0.08, 0.082, 0.081],  # было yang_zhang_168h
+        "yang_zhang_30d": [0.12, 0.122, 0.121],  # было yang_zhang_720h
+        "parkinson_48h": [0.06, 0.062, 0.061],  # было parkinson_24h
+        "parkinson_7d": [0.09, 0.092, 0.091],  # было parkinson_168h
+        "garch_30d": [0.025, 0.026, 0.0255],  # было garch_500m
+        "garch_200h": [0.03, 0.031, 0.0305],  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_14d": [0.04, 0.041, 0.0405],  # было garch_24h
         "taker_buy_ratio": [0.52, 0.53, 0.525],
-        "taker_buy_ratio_sma_6h": [0.51, 0.52, 0.515],
-        "taker_buy_ratio_sma_12h": [0.50, 0.51, 0.505],
+        "taker_buy_ratio_sma_8h": [0.51, 0.52, 0.515],  # было 6h
+        "taker_buy_ratio_sma_16h": [0.50, 0.51, 0.505],  # было 12h
         "taker_buy_ratio_sma_24h": [0.49, 0.50, 0.495],
-        "taker_buy_ratio_momentum_1h": [0.01, 0.015, 0.012],
-        "taker_buy_ratio_momentum_6h": [0.02, 0.025, 0.022],
+        "taker_buy_ratio_momentum_4h": [0.01, 0.015, 0.012],  # было 1h
+        "taker_buy_ratio_momentum_8h": [0.02, 0.025, 0.022],  # было 6h
         "taker_buy_ratio_momentum_12h": [0.015, 0.020, 0.017],
         "cvd_24h": [1000.0, 1200.0, 1100.0],
-        "cvd_168h": [5000.0, 5500.0, 5250.0],
+        "cvd_7d": [5000.0, 5500.0, 5250.0],  # было cvd_168h
         "fear_greed_value": [50.0, 55.0, 52.0],
         "is_high_importance": [0, 0, 0],
     }
@@ -314,30 +314,30 @@ def test_full_pipeline_integration():
 
 
 def test_all_21_norm_cols_present_in_dataframe():
-    """Проверка что все 21 признака правильно именованы"""
+    """Проверка что все 21 признака правильно именованы (обновлено для 4h таймфрейма)"""
     expected_cols = [
         "cvd_24h",
-        "cvd_168h",
-        "yang_zhang_24h",
-        "yang_zhang_168h",
-        "garch_12h",
-        "garch_24h",
-        "ret_15m",
-        "ret_60m",
-        "ret_5m",
-        "sma_60",
-        "yang_zhang_720h",
-        "parkinson_24h",
-        "parkinson_168h",
-        "garch_500m",
+        "cvd_7d",  # было cvd_168h
+        "yang_zhang_48h",  # было yang_zhang_24h
+        "yang_zhang_7d",  # было yang_zhang_168h
+        "garch_200h",  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_14d",  # было garch_24h
+        "ret_12h",  # было ret_15m
+        "ret_24h",  # было ret_60m
+        "ret_4h",  # было ret_5m
+        "sma_50",  # было sma_60 (50 баров = 200h для 4h)
+        "yang_zhang_30d",  # было yang_zhang_720h
+        "parkinson_48h",  # было parkinson_24h
+        "parkinson_7d",  # было parkinson_168h
+        "garch_30d",  # было garch_500m
         "taker_buy_ratio",
         "taker_buy_ratio_sma_24h",
-        # НОВЫЕ 5 признаков
-        "taker_buy_ratio_sma_6h",
-        "taker_buy_ratio_sma_12h",
-        "taker_buy_ratio_momentum_1h",
-        "taker_buy_ratio_momentum_6h",
-        "taker_buy_ratio_momentum_12h",
+        # НОВЫЕ 5 признаков (обновлено для 4h)
+        "taker_buy_ratio_sma_8h",  # было 6h
+        "taker_buy_ratio_sma_16h",  # было 12h
+        "taker_buy_ratio_momentum_4h",  # было 1h
+        "taker_buy_ratio_momentum_8h",  # было 6h
+        "taker_buy_ratio_momentum_12h",  # без изменений
     ]
 
     assert len(expected_cols) == 21, f"Expected 21 column names, got {len(expected_cols)}"

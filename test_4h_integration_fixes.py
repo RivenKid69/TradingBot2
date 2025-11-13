@@ -138,7 +138,8 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
         # Проверяем имена GARCH для 4h интервала
-        expected_garch_names = ["garch_7d", "garch_14d", "garch_30d"]
+        # КРИТИЧНО: GARCH требует минимум 50 баров (12000 минут = 200h)
+        expected_garch_names = ["garch_200h", "garch_14d", "garch_30d"]
         for name in expected_garch_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
@@ -282,7 +283,7 @@ class TestIntegrationEnd2End(unittest.TestCase):
         expected_features = [
             "ret_4h", "ret_12h", "ret_24h", "ret_200h",
             "sma_240", "sma_720", "sma_1440", "sma_12000",
-            "garch_7d", "garch_14d", "garch_30d",
+            "garch_200h", "garch_14d", "garch_30d",
             "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
             "parkinson_48h", "parkinson_7d",
             "taker_buy_ratio",
@@ -296,7 +297,7 @@ class TestIntegrationEnd2End(unittest.TestCase):
         self.assertEqual(missing_features, [], f"Отсутствуют признаки: {missing_features}")
 
         # Проверяем что GARCH признаки не NaN (достаточно данных)
-        for garch_name in ["garch_7d", "garch_14d", "garch_30d"]:
+        for garch_name in ["garch_200h", "garch_14d", "garch_30d"]:
             self.assertFalse(math.isnan(feats[garch_name]),
                 f"GARCH признак {garch_name} не должен быть NaN при наличии 200 баров данных"
             )
