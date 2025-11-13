@@ -404,13 +404,15 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.taker_buy_ratio_windows
         ]
 
-        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч в минутах
+        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч, 24ч в минутах
         # 4h = 1 бар = 240 минут
         # 8h = 2 бара = 480 минут
         # 12h = 3 бара = 720 минут
-        # ПРИМЕЧАНИЕ: 24h удалено для соответствия mediator.py (56 признаков) и избыточности с ret_24h
+        # 24h = 6 баров = 1440 минут (для долгосрочного моментума)
+        # КРИТИЧНО: mediator.py использует только 3 первых (norm_cols[18,19,20])
+        # TODO: либо расширить norm_cols до 22 и добавить 24h, либо удалить из config
         if self.taker_buy_ratio_momentum is None:
-            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]  # 240, 480, 720 минут
+            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60, 24 * 60]  # 240, 480, 720, 1440 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
             self.taker_buy_ratio_momentum = [
                 int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0

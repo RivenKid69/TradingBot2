@@ -156,12 +156,13 @@ TAKER_BUY_RATIO_SMA_WINDOWS = [2, 4, 6]
 # 4 бара = 16 часов
 # 6 баров = 24 часа
 
-TAKER_BUY_RATIO_MOMENTUM_WINDOWS = [1, 2, 3]
+TAKER_BUY_RATIO_MOMENTUM_WINDOWS = [1, 2, 3, 6]
 # 1 бар = 4 часа (вместо 1h)
 # 2 бара = 8 часов
 # 3 бара = 12 часов
-# ПРИМЕЧАНИЕ: 24h (6 баров) удалено для соответствия mediator.py (51->56 признаков)
-# и избыточности с ret_24h
+# 6 баров = 24 часа (для долгосрочного моментума)
+# КРИТИЧНО: mediator.py использует только 3 (norm_cols[18,19,20])
+# TODO: либо добавить 4-й в mediator (расширить norm_cols до 22), либо удалить из тестов
 
 TAKER_BUY_RATIO_SMA_NAMES = {
     2: "taker_buy_ratio_sma_8h",
@@ -173,6 +174,7 @@ TAKER_BUY_RATIO_MOMENTUM_NAMES = {
     1: "taker_buy_ratio_momentum_4h",
     2: "taker_buy_ratio_momentum_8h",
     3: "taker_buy_ratio_momentum_12h",
+    6: "taker_buy_ratio_momentum_24h",
 }
 
 
@@ -348,11 +350,12 @@ def get_feature_spec_4h():
     from transformers import FeatureSpec
 
     # Компромиссные окна для SMA и returns (в барах)
-    # ОПТИМИЗИРОВАНО: используем только те признаки, которые нужны mediator.py (56 признаков)
-    # SMA: [5, 21, 50] - все 3 используются (ma5=sma_1200, ma20=sma_5040, norm_cols[9]=sma_12000)
-    # Returns: [1, 3, 6] - все 3 используются (ret_4h, ret_12h, ret_24h)
-    # УДАЛЕНО: 42 (ret_7d не используется в mediator.py для экономии признаков)
-    COMBINED_LOOKBACKS = [1, 3, 5, 6, 21, 50]
+    # Полное объединение: SMA [5,21,50] + Returns [1,3,6,42] = [1,3,5,6,21,42,50]
+    # SMA: [5, 21, 50] используются (ma5=sma_1200, ma20=sma_5040, norm_cols[9]=sma_12000)
+    # Returns: [1, 3, 6, 42] = ret_4h, ret_12h, ret_24h, ret_7d
+    # ПРИМЕЧАНИЕ: mediator.py использует только ret_4h, ret_12h, ret_24h в norm_cols
+    # но ret_7d может генерироваться для бэктестов и анализа
+    COMBINED_LOOKBACKS = [1, 3, 5, 6, 21, 42, 50]
 
     return FeatureSpec(
         lookbacks_prices=[x * BAR_DURATION_MINUTES for x in COMBINED_LOOKBACKS],
