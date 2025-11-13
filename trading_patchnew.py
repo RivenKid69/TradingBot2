@@ -89,7 +89,7 @@ except Exception:  # pragma: no cover - fallback to simple dataclass
         base_bps: float = 3.0
         alpha_vol: float = 0.5
         beta_illiquidity: float = 1.0
-        liq_ref: float = 1000.0
+        liq_ref: float = 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
         min_bps: float = 1.0
         max_bps: float = 25.0
 
