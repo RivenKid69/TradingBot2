@@ -25,16 +25,16 @@ class TestCritical1_DefaultParameters(unittest.TestCase):
         spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)
 
         # Для 4h интервала (1 бар = 240 минут):
-        # Исходные значения: 240, 720, 1440, 12000 минут
-        # После конвертации: 1, 3, 6, 50 баров
-        expected_bars = [1, 3, 6, 50]
+        # Исходные значения: 240, 720, 1200, 1440, 5040, 10080, 12000 минут (ПОЛНЫЙ НАБОР)
+        # После конвертации: 1, 3, 5, 6, 21, 42, 50 баров
+        expected_bars = [1, 3, 5, 6, 21, 42, 50]
         self.assertEqual(spec.lookbacks_prices, expected_bars,
             f"Дефолтные lookbacks_prices должны быть {expected_bars} баров для 4h, "
             f"но получили {spec.lookbacks_prices}"
         )
 
         # Проверяем что исходные значения в минутах сохранены
-        expected_minutes = [240, 720, 1440, 12000]
+        expected_minutes = [240, 720, 1200, 1440, 5040, 10080, 12000]
         self.assertEqual(spec._lookbacks_prices_minutes, expected_minutes,
             f"Исходные lookbacks_prices должны быть {expected_minutes} минут для 4h, "
             f"но получили {spec._lookbacks_prices_minutes}"
@@ -97,8 +97,8 @@ class TestCritical1_DefaultParameters(unittest.TestCase):
         # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
         spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
-        # Для 4h интервала: 240, 480, 720 минут = 1, 2, 3 бара
-        expected = [1, 2, 3]
+        # Для 4h интервала: 240, 480, 720, 1440 минут = 1, 2, 3, 6 баров (ПОЛНЫЙ НАБОР)
+        expected = [1, 2, 3, 6]
         self.assertEqual(spec.taker_buy_ratio_momentum, expected,
             f"Дефолтные taker_buy_ratio_momentum должны быть {expected} баров для 4h, "
             f"но получили {spec.taker_buy_ratio_momentum}"
@@ -111,11 +111,12 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
     def test_generated_feature_names_for_4h(self):
         """Проверяет что transformers.py генерирует правильные имена для 4h интервала."""
         # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
-        spec = FeatureSpec(lookbacks_prices=[240, 720, 1440, 12000], bar_duration_minutes=240)
+        # ИСПРАВЛЕНО: Используем полный набор окон
+        spec = FeatureSpec(lookbacks_prices=[240, 720, 1200, 1440, 5040, 10080, 12000], bar_duration_minutes=240)
         transformer = OnlineFeatureTransformer(spec)
 
         # Генерируем достаточно баров для всех lookbacks
-        # lookbacks_prices=[240,720,1440,12000] → [1,3,6,50] баров
+        # lookbacks_prices=[240,720,1200,1440,5040,10080,12000] → [1,3,5,6,21,42,50] баров
         # Нужно минимум 50 баров для всех признаков
         for i in range(60):
             feats = transformer.update(
@@ -129,9 +130,10 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
                 taker_buy_base=60.0,
             )
 
-        # Проверяем имена returns для 4h интервала
+        # Проверяем имена returns для 4h интервала (ПОЛНЫЙ НАБОР)
         # CRITICAL FIX #3: Исправлено имя ret_50 → ret_200h (12000 минут = 200 часов)
-        expected_return_names = ["ret_4h", "ret_12h", "ret_24h", "ret_200h"]
+        # ИСПРАВЛЕНО: ret_3.5d → ret_84h (5040 минут = 84 часа, не кратно дню)
+        expected_return_names = ["ret_4h", "ret_12h", "ret_20h", "ret_24h", "ret_84h", "ret_7d", "ret_200h"]
         for name in expected_return_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
@@ -156,14 +158,14 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
         for name in expected_tbr_sma_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
-        # Проверяем имена Taker Buy Ratio Momentum для 4h интервала
-        expected_tbr_mom_names = ["taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h"]
+        # Проверяем имена Taker Buy Ratio Momentum для 4h интервала (ПОЛНЫЙ НАБОР)
+        expected_tbr_mom_names = ["taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h", "taker_buy_ratio_momentum_24h"]
         for name in expected_tbr_mom_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
-        # Проверяем наличие SMA признаков (в минутах)
+        # Проверяем наличие SMA признаков (в минутах) - ПОЛНЫЙ НАБОР
         # ИСПРАВЛЕНО: sma_50 → sma_12000 (имена SMA теперь в минутах, а не в барах)
-        expected_sma_names = ["sma_240", "sma_720", "sma_1440", "sma_12000"]
+        expected_sma_names = ["sma_240", "sma_720", "sma_1200", "sma_1440", "sma_5040", "sma_10080", "sma_12000"]
         for name in expected_sma_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в features")
 
@@ -178,8 +180,10 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
         self.assertEqual(_format_window_name(240), "4h", "240 минут должно быть 4h")
         self.assertEqual(_format_window_name(480), "8h", "480 минут должно быть 8h")
         self.assertEqual(_format_window_name(720), "12h", "720 минут должно быть 12h")
+        self.assertEqual(_format_window_name(1200), "20h", "1200 минут должно быть 20h")
         self.assertEqual(_format_window_name(1440), "24h", "1440 минут должно быть 24h")
         self.assertEqual(_format_window_name(2880), "48h", "2880 минут должно быть 48h")
+        self.assertEqual(_format_window_name(5040), "84h", "5040 минут должно быть 84h (3.5 дня)")
         self.assertEqual(_format_window_name(12000), "200h", "12000 минут = 200 часов (не кратно дню)")
 
 
@@ -285,19 +289,22 @@ class TestIntegrationEnd2End(unittest.TestCase):
                 taker_buy_base=60.0 + i * 0.1,
             )
 
-        # Проверяем что все ожидаемые признаки присутствуют
+        # Проверяем что все ожидаемые признаки присутствуют (ПОЛНЫЙ НАБОР)
         # CRITICAL FIX #3: Исправлены имена согласно дефолтным значениям
-        # lookbacks_prices=[240,720,1440,12000] → returns: ret_4h, ret_12h, ret_24h, ret_200h, SMA: sma_240, sma_720, sma_1440, sma_12000
+        # lookbacks_prices=[240,720,1200,1440,5040,10080,12000] → returns: ret_4h, ret_12h, ret_20h, ret_24h, ret_84h, ret_7d, ret_200h
+        # SMA: sma_240, sma_720, sma_1200, sma_1440, sma_5040, sma_10080, sma_12000
         # garch_windows=[12000,20160,43200] → garch_200h, garch_14d, garch_30d (50, 84, 180 баров)
+        # taker_buy_ratio_momentum=[240,480,720,1440] → 4h, 8h, 12h, 24h
+        # ИСПРАВЛЕНО: ret_3.5d → ret_84h (5040 минут = 84 часа, не кратно дню)
         expected_features = [
-            "ret_4h", "ret_12h", "ret_24h", "ret_200h",
-            "sma_240", "sma_720", "sma_1440", "sma_12000",
+            "ret_4h", "ret_12h", "ret_20h", "ret_24h", "ret_84h", "ret_7d", "ret_200h",
+            "sma_240", "sma_720", "sma_1200", "sma_1440", "sma_5040", "sma_10080", "sma_12000",
             "garch_200h", "garch_14d", "garch_30d",  # КРИТИЧНО: garch_200h = 50 баров (минимум для GARCH)
             "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
             "parkinson_48h", "parkinson_7d",
             "taker_buy_ratio",
             "taker_buy_ratio_sma_8h", "taker_buy_ratio_sma_16h", "taker_buy_ratio_sma_24h",
-            "taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h",
+            "taker_buy_ratio_momentum_4h", "taker_buy_ratio_momentum_8h", "taker_buy_ratio_momentum_12h", "taker_buy_ratio_momentum_24h",
             "cvd_24h", "cvd_7d",
             "rsi",
         ]
