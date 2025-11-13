@@ -3,7 +3,8 @@
 prepare_demo_data.py
 --------------------
 Creates minimal demo data for testing the training pipeline when real market data
-is not available. This generates synthetic OHLCV data for testing purposes only.
+is not available. This generates synthetic 4h OHLCV data for testing purposes only.
+(Changed from 1h to 4h timeframe)
 
 IMPORTANT: Run this script in your project's Python environment (not system Python)
 to ensure numpy/pandas are available. For example:
@@ -14,10 +15,10 @@ Usage:
     python prepare_demo_data.py [--rows NUM_ROWS] [--symbols SYMBOL1,SYMBOL2]
 
 Example:
-    # Generate 2000 hours (~83 days) of synthetic data for 2 symbols
+    # Generate 2000 4h bars (~333 days) of synthetic data for 2 symbols
     python prepare_demo_data.py --rows 2000 --symbols BTCUSDT,ETHUSDT
 
-    # Generate 5000 hours with custom start date
+    # Generate 5000 4h bars with custom start date
     python prepare_demo_data.py --rows 5000 --symbols BTCUSDT,ETHUSDT,BNBUSDT --start-date 2023-01-01
 """
 import argparse
@@ -31,17 +32,17 @@ from datetime import datetime, timedelta
 def generate_synthetic_ohlcv(
     symbol: str,
     start_ts: int,
-    num_hours: int,
+    num_bars: int,
     base_price: float = 30000.0,
     volatility: float = 0.02,
 ) -> pd.DataFrame:
-    """Generate synthetic hourly OHLCV data for testing."""
+    """Generate synthetic 4h OHLCV data for testing (changed from 1h to 4h timeframe)."""
     np.random.seed(hash(symbol) % (2**32))
 
-    timestamps = [start_ts + i * 3600 for i in range(num_hours)]
+    timestamps = [start_ts + i * 14400 for i in range(num_bars)]  # Changed from 3600 (1h) to 14400 (4h)
 
     # Generate price walk
-    returns = np.random.normal(0, volatility, num_hours)
+    returns = np.random.normal(0, volatility, num_bars)
     prices = base_price * np.exp(np.cumsum(returns))
 
     # Generate OHLC from close prices
@@ -73,15 +74,15 @@ def generate_synthetic_ohlcv(
     return pd.DataFrame(data)
 
 
-def generate_fear_greed(start_ts: int, num_hours: int) -> pd.DataFrame:
-    """Generate synthetic Fear & Greed index."""
+def generate_fear_greed(start_ts: int, num_bars: int) -> pd.DataFrame:
+    """Generate synthetic Fear & Greed index (4h bars, changed from 1h)."""
     np.random.seed(42)
-    timestamps = [start_ts + i * 3600 for i in range(num_hours)]
+    timestamps = [start_ts + i * 14400 for i in range(num_bars)]  # Changed from 3600 (1h) to 14400 (4h)
 
     # Generate mean-reverting fear/greed
     values = []
     current = 50
-    for _ in range(num_hours):
+    for _ in range(num_bars):
         current += np.random.normal(0, 5) - (current - 50) * 0.1
         current = np.clip(current, 0, 100)
         values.append(current)
@@ -101,7 +102,7 @@ def main():
         "--rows",
         type=int,
         default=2000,
-        help="Number of hourly rows to generate (default: 2000 = ~83 days)",
+        help="Number of 4h bars to generate (default: 2000 = ~333 days, changed from hourly)",
     )
     parser.add_argument(
         "--symbols",
@@ -133,7 +134,7 @@ def main():
     # Create output directory
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Generating {args.rows} hours of synthetic data for {len(symbols)} symbols...")
+    print(f"Generating {args.rows} 4h bars of synthetic data for {len(symbols)} symbols...")
     print(f"Start date: {start_dt.isoformat()}")
     print(f"Output directory: {out_dir}")
     print()

@@ -120,9 +120,9 @@ def test_make_features_with_garch():
                 print(f"  - Макс: {valid_values.max():.6f}")
                 print(f"  - Среднее: {valid_values.mean():.6f}")
 
-    # Проверяем что другие признаки не пострадали
+    # Проверяем что другие признаки не пострадали (updated for 4h timeframe migration)
     expected_features = ['ref_price', 'rsi', 'sma_5', 'sma_15', 'sma_60',
-                        'ret_5m', 'ret_15m', 'ret_60m',
+                        'ret_4h', 'ret_24h',  # Changed from ret_5m, ret_15m, ret_60m
                         'yang_zhang_24h', 'parkinson_24h']
 
     print(f"\n\nПроверка других признаков:")

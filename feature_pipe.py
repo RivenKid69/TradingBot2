@@ -47,10 +47,7 @@ _ADV_COLUMNS: Sequence[str] = (
     "adv_usd",
     "adv_4h",
     "adv",
-    # Legacy support (for 1h data)
-    "adv_quote_1h",
-    "adv_usd_1h",
-    "adv_1h",
+    # Legacy 1h feature names removed during 4h migration
 )
 
 

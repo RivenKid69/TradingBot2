@@ -120,7 +120,7 @@ print("-" * 80)
 
 # Create synthetic dataframe with technical indicators
 df = pd.DataFrame({
-    'timestamp': [1700000000 + i * 3600 for i in range(200)],
+    'timestamp': [1700000000 + i * 14400 for i in range(200)],  # Changed from 3600 (1h) to 14400 (4h)
     'open': [50000 + i * 10 for i in range(200)],
     'high': [50100 + i * 10 for i in range(200)],
     'low': [49900 + i * 10 for i in range(200)],
@@ -138,8 +138,8 @@ df = pd.DataFrame({
     'yang_zhang_168h': [0.015 + (i % 7) * 0.001 for i in range(200)],
     'garch_12h': [0.02 + (i % 3) * 0.002 for i in range(200)],
     'garch_24h': [0.025 + (i % 4) * 0.002 for i in range(200)],
-    'ret_15m': [(i % 15) * 0.0001 for i in range(200)],
-    'ret_60m': [(i % 25) * 0.0002 for i in range(200)],
+    'ret_4h': [(i % 15) * 0.0001 for i in range(200)],  # Changed from ret_15m (migration to 4h)
+    'ret_24h': [(i % 25) * 0.0002 for i in range(200)],  # Changed from ret_60m (migration to 4h)
     'fear_greed_value': [50 + (i % 30) for i in range(200)],
 })
 
