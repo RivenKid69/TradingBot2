@@ -342,14 +342,14 @@ def get_feature_spec_4h():
 
     ОБНОВЛЕНИЕ: lookbacks_prices теперь содержит компромиссные окна для SMA и returns,
     так как transformers.py использует один параметр для обоих признаков.
-    Окна: [240, 720, 1440, 5040, 10080, 12000] минут = [4h, 12h, 24h, 3.5d, 7d, 8.3d]
-    Это охватывает основные returns (4h, 12h, 24h, 7d) и важные SMA (3.5d, 8.3d).
+    Окна: [240, 720, 1200, 1440, 5040, 10080, 12000] минут = [4h, 12h, 20h, 24h, 3.5d, 7d, 8.3d]
+    Это полное объединение SMA_LOOKBACKS [5,21,50] и RETURN_LOOKBACKS [1,3,6,42].
     """
     from transformers import FeatureSpec
 
     # Компромиссные окна для SMA и returns (в барах)
-    # [1, 3, 6, 21, 42, 50] = [4h, 12h, 24h, 3.5d, 7d, 8.3d]
-    COMBINED_LOOKBACKS = [1, 3, 6, 21, 42, 50]
+    # Полное объединение: SMA [5,21,50] + Returns [1,3,6,42] = [1,3,5,6,21,42,50]
+    COMBINED_LOOKBACKS = [1, 3, 5, 6, 21, 42, 50]
 
     return FeatureSpec(
         lookbacks_prices=[x * BAR_DURATION_MINUTES for x in COMBINED_LOOKBACKS],

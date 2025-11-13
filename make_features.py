@@ -21,7 +21,7 @@ def main():
     p.add_argument("--in", dest="in_path", required=True, help="Вход: parquet/csv с колонками ts_ms,symbol,price (обычно prices.parquet)")
     p.add_argument("--out", dest="out_path", default="data/features.parquet", help="Куда сохранить parquet фич")
     p.add_argument("--price-col", default="price", help="Имя колонки с ценой (по умолчанию 'price')")
-    p.add_argument("--lookbacks", default="240,720,1440,5040,10080,12000", help="Окна SMA/ret в минутах для 4h интервала (по умолчанию 240,720,1440,5040,10080,12000 = 4h,12h,24h,3.5d,7d,8.3d)")
+    p.add_argument("--lookbacks", default="240,720,1200,1440,5040,10080,12000", help="Окна SMA/ret в минутах для 4h интервала (по умолчанию 240,720,1200,1440,5040,10080,12000 = 4h,12h,20h,24h,3.5d,7d,8.3d)")
     p.add_argument("--rsi-period", type=int, default=14, help="Период RSI (Wilder)")
     p.add_argument("--yang-zhang-windows", default="2880,10080,43200", help="Окна Yang-Zhang в минутах для 4h (по умолчанию 2880,10080,43200 = 48h,7d,30d)")
     p.add_argument("--open-col", default=None, help="Имя колонки open для Yang-Zhang (опционально)")
