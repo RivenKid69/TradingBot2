@@ -53,7 +53,7 @@ def attach_minute_stats(
     start = int(df["T"].min())
     end = int(df["T"].max())
     kl = client.get_klines(
-        market=market, symbol=symbol, interval="1m", start_ms=start, end_ms=end
+        market=market, symbol=symbol, interval="4h", start_ms=start, end_ms=end  # Changed from 1m to 4h
     )
     cols = [
         "open_time",

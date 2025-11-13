@@ -176,7 +176,7 @@ def _step3_build_features(extra_args: Sequence[str]) -> None:
 
 
 def _step4_validate_processed(
-    *, max_age_sec: int | None = 3600, skip_freshness: bool = False
+    *, max_age_sec: int | None = 14400, skip_freshness: bool = False  # Changed from 3600 (1h) to 14400 (4h)
 ) -> None:
     if not _exists_script("validate_processed.py"):
         _log("! step4 skipped: validate_processed.py not found")
@@ -206,7 +206,7 @@ def run_single_cycle(
     skip_events: bool = False,
     extra_prepare_args: Sequence[str] | None = None,
     extra_infer_args: Sequence[str] | None = None,
-    validate_max_age_sec: int | None = 3600,
+    validate_max_age_sec: int | None = 14400,  # Changed from 3600 (1h) to 14400 (4h)
     skip_validate_freshness: bool = False,
 ) -> None:
     symbols_list = _normalize_symbols(symbols) or ["BTCUSDT", "ETHUSDT"]
@@ -239,7 +239,7 @@ def run_continuous(
     skip_events: bool = False,
     extra_prepare_args: Sequence[str] | None = None,
     extra_infer_args: Sequence[str] | None = None,
-    validate_max_age_sec: int | None = 3600,
+    validate_max_age_sec: int | None = 14400,  # Changed from 3600 (1h) to 14400 (4h)
     skip_validate_freshness: bool = False,
 ) -> None:
     while True:
@@ -270,7 +270,7 @@ def once() -> None:
     symbols = _env_list("SYMS", ["BTCUSDT", "ETHUSDT"])
     events_days = _env_int("EVENTS_DAYS", 90)
     skip_events = _env_bool("SKIP_EVENTS", False)
-    validate_max_age_sec = _env_int("VALIDATE_MAX_AGE_SEC", 3600)
+    validate_max_age_sec = _env_int("VALIDATE_MAX_AGE_SEC", 14400)  # Changed from 3600 (1h) to 14400 (4h)
     skip_validate_freshness = _env_bool("SKIP_VALIDATE_FRESHNESS", False)
     run_single_cycle(
         symbols,
@@ -291,7 +291,7 @@ def main() -> None:
     skip_events = _env_bool("SKIP_EVENTS", False)
     extra_prepare = _extra_from_env("EXTRA_ARGS_PREPARE")
     extra_infer = _extra_from_env("EXTRA_ARGS_INFER")
-    validate_max_age_sec = _env_int("VALIDATE_MAX_AGE_SEC", 3600)
+    validate_max_age_sec = _env_int("VALIDATE_MAX_AGE_SEC", 14400)  # Changed from 3600 (1h) to 14400 (4h)
     skip_validate_freshness = _env_bool("SKIP_VALIDATE_FRESHNESS", False)
 
     if loop:

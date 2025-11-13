@@ -36,7 +36,7 @@ no_trade:
 guards:
   min_history_bars: 180
   gap_cooldown_bars: 10
-  gap_threshold_ms: 90000
+  gap_threshold_ms: 21600000  # 1.5 * 4h = 6 hours (changed from 90000 = 1.5m for 1m timeframe)
 
 policy:
   module: "strategies.momentum"

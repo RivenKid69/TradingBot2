@@ -47,8 +47,8 @@ def _read_fng() -> pd.DataFrame:
     fng = fng[["timestamp", "fear_greed_value"]].copy()
     # add normalized column for convenience
     fng["fear_greed_value_norm"] = fng["fear_greed_value"].astype(float) / 100.0
-    # round to hour boundary (floor) to align with 1h candles
-    fng["timestamp"] = (fng["timestamp"] // 3600) * 3600
+    # round to 4h boundary (floor) to align with 4h candles (changed from 1h)
+    fng["timestamp"] = (fng["timestamp"] // 14400) * 14400  # Changed from 3600 (1h) to 14400 (4h)
     fng = fng.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
     return fng
 
@@ -77,8 +77,8 @@ def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     for c in int_cols:
         df[c] = df[c].astype("int64")
     df["symbol"] = df["symbol"].astype(str)
-    # hour alignment & dedup
-    df["timestamp"] = (df["timestamp"] // 3600) * 3600
+    # 4h alignment & dedup (changed from hour for 4h timeframe)
+    df["timestamp"] = (df["timestamp"] // 14400) * 14400  # Changed from 3600 (1h) to 14400 (4h)
     df = df.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
     return df
 
@@ -108,7 +108,7 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
                 ts = df["open_time"].astype("int64")
                 if ts.max() > 10_000_000_000:
                     ts = ts // 1000
-                df["timestamp"] = ts + 3600  # shift to close
+                df["timestamp"] = ts + 14400  # shift to close (4h bar, changed from 3600 = 1h)
             else:
                 raise ValueError(f"{p}: neither 'timestamp' nor close/open_time present")
         # Ensure required columns exist; if quote_asset_volume missing, try derive

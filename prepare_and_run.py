@@ -36,8 +36,8 @@ def _read_raw(path: str) -> pd.DataFrame:
             df[c] = (df[c] // 1000).astype("int64")
         else:
             df[c] = df[c].astype("int64")
-    # Canonical timestamp = close_time floored to hour
-    df["timestamp"] = (df["close_time"] // 3600) * 3600
+    # Canonical timestamp = close_time floored to 4h boundary (changed from hour for 4h timeframe)
+    df["timestamp"] = (df["close_time"] // 14400) * 14400  # Changed from 3600 (1h) to 14400 (4h)
     # Ensure symbol
     if "symbol" not in df.columns:
         sym = os.path.splitext(os.path.basename(path))[0]
@@ -234,7 +234,7 @@ def _read_fng() -> pd.DataFrame:
         f["timestamp"] = (f["timestamp"] // 1000).astype("int64")
     else:
         f["timestamp"] = f["timestamp"].astype("int64")
-    f["timestamp"] = (f["timestamp"] // 3600) * 3600
+    f["timestamp"] = (f["timestamp"] // 14400) * 14400  # Changed from 3600 (1h) to 14400 (4h) for 4h timeframe
     if "fear_greed_value" not in f.columns and "value" in f.columns:
         f = f.rename(columns={"value":"fear_greed_value"})
     f["fear_greed_value_norm"] = f["fear_greed_value"].astype(float) / 100.0
@@ -250,7 +250,7 @@ def _read_events() -> pd.DataFrame:
         e["timestamp"] = (e["timestamp"] // 1000).astype("int64")
     else:
         e["timestamp"] = e["timestamp"].astype("int64")
-    e["timestamp"] = (e["timestamp"] // 3600) * 3600
+    e["timestamp"] = (e["timestamp"] // 14400) * 14400  # Changed from 3600 (1h) to 14400 (4h) for 4h timeframe
     e = e.sort_values("timestamp")[["timestamp","importance_level"]]
     return e
 

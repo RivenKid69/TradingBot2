@@ -10,11 +10,11 @@ exchange_specs_path: "data/exchange_specs.json"
 # Гварды симуляции: блокировка сигналов
 #   - min_history_bars: холодный старт (минимум баров истории до разрешения сигналов)
 #   - gap_cooldown_bars: пауза после обнаружения гэпа
-#   - gap_threshold_ms: (опционально) считаем гэпом, если Δt > gap_threshold_ms. Если не задан, используем 90_000 мс для 1m.
+#   - gap_threshold_ms: (опционально) считаем гэпом, если Δt > gap_threshold_ms. Если не задан, используем 21_600_000 мс для 4h (1.5x интервала, changed from 90_000 for 1m).
 sim_guards:
   min_history_bars: 180
   gap_cooldown_bars: 10
-  gap_threshold_ms: 90000
+  gap_threshold_ms: 21600000  # 1.5 * 4h = 6 hours (changed from 90000 = 1.5m for 1m timeframe)
 
 # Частотный кулдаун сигналов (в секундах), как в realtime.yaml → min_signal_gap_s
 min_signal_gap_s: 300
@@ -48,7 +48,7 @@ dynamic_spread:
   beta_illiquidity: 1.0         # множитель штрафа за низкую ликвидность
   vol_mode: "hl"                # "hl" = (high-low)/close; "ret" = |log return|
   liq_col: "number_of_trades"   # "number_of_trades" или "volume" (если нет trades)
-  liq_ref: 1000.0               # опорный уровень ликвидности за 1 минуту
+  liq_ref: 240000.0             # опорный уровень ликвидности за 4 часа (240 минут * 1000 = 240000, changed from 1000.0 for 1m)
   min_bps: 1.0                  # нижняя граница итогового спреда
   max_bps: 25.0                 # верхняя граница итогового спреда
 

@@ -93,7 +93,7 @@ class DynSpreadConfig:
         if liq_col_val is None:
             liq_col_val = "number_of_trades"
         if liq_ref_val is None:
-            liq_ref_val = 1000.0
+            liq_ref_val = 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
 
         cfg = cls(
             enabled=bool(d.get("enabled", True)),
@@ -508,7 +508,7 @@ class BacktestAdapter:
 
         if last is not None:
             dt = int(ts) - int(last)
-            thr = self._guards.gap_threshold_ms if self._guards.gap_threshold_ms is not None else 90000
+            thr = self._guards.gap_threshold_ms if self._guards.gap_threshold_ms is not None else 21600000  # 1.5 * 4h = 6 hours (changed from 90000 = 1.5m for 1m timeframe)
             if dt > max(0, int(thr)):
                 self._cooldown_left[sym] = int(self._guards.gap_cooldown_bars or 0)
 

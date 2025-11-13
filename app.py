@@ -2253,7 +2253,7 @@ dynamic_spread:
   beta_illiquidity: 1.0
   vol_mode: "hl"
   liq_col: "number_of_trades"
-  liq_ref: 1000.0
+  liq_ref: 240000.0  # 4h timeframe: 240 minutes * 1000 = 240000 (changed from 1000.0 for 1m)
   min_bps: 1.0
   max_bps: 25.0
 out_reports: "logs/sandbox_reports.csv"
@@ -3289,7 +3289,7 @@ with tabs[13]:
             )
         )
         liq_ref = float(
-            (current_cfg.get("dynamic_spread", {}) or {}).get("liq_ref", 1000.0)
+            (current_cfg.get("dynamic_spread", {}) or {}).get("liq_ref", 240000.0)  # 4h timeframe: 240 min * 1000 (changed from 1000.0 for 1m)
         )
 
         st.caption(f"Ликвидность: liq_col='{liq_col}', liq_ref={liq_ref}")
