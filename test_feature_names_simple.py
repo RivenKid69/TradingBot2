@@ -54,8 +54,9 @@ def test_feature_names():
     expected_features = [
         # Returns
         "ret_4h", "ret_12h", "ret_24h",
-        # GARCH
-        "garch_7d", "garch_14d", "garch_30d",
+        # GARCH - КРИТИЧНО: минимум 50 баров для стабильной оценки!
+        # 12000 минут = 50 баров = 200h (минимум для GARCH)
+        "garch_200h", "garch_14d", "garch_30d",
         # Yang-Zhang
         "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
         # Parkinson
@@ -70,7 +71,7 @@ def test_feature_names():
 
     # Feature spec parameters for 4h interval
     lookbacks_prices = [240, 720, 1440]  # 4h, 12h, 24h
-    garch_windows = [10080, 20160, 43200]  # 7d, 14d, 30d
+    garch_windows = [12000, 20160, 43200]  # 200h (8.33d), 14d, 30d - минимум 50 баров!
     yang_zhang_windows = [2880, 10080, 43200]  # 48h, 7d, 30d
     parkinson_windows = [2880, 10080]  # 48h, 7d
     cvd_windows = [1440, 10080]  # 24h, 7d

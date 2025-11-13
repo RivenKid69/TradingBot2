@@ -66,7 +66,7 @@ def test_feature_name_consistency():
     expected_features = [
         "cvd_24h", "cvd_7d",
         "yang_zhang_48h", "yang_zhang_7d",
-        "garch_7d", "garch_14d",
+        "garch_200h", "garch_14d",
         "ret_12h", "ret_24h", "ret_4h",
         "sma_50",  # ПРОБЛЕМА: ожидается sma_50, но генерируется sma_12000!
         "yang_zhang_30d",
