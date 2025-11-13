@@ -17787,64 +17787,18 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":249
- *     # - "Fail-fast validation" best practice (catch errors early)
- *     # - IEEE 754: NaN propagates through arithmetic operations
- *     if isnan(prev_price_d) or isinf(prev_price_d) or prev_price_d <= 0.0:             # <<<<<<<<<<<<<<
- *         # This should NEVER happen if wrapper validation is working correctly
- *         # If we reach here, it indicates a serious bug in the validation chain
-*/
-  __pyx_t_5 = isnan(__pyx_v_prev_price_d);
-  if (!__pyx_t_5) {
-  } else {
-    __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L4_bool_binop_done;
-  }
-  __pyx_t_5 = (isinf(__pyx_v_prev_price_d) != 0);
-  if (!__pyx_t_5) {
-  } else {
-    __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L4_bool_binop_done;
-  }
-  __pyx_t_5 = (__pyx_v_prev_price_d <= 0.0);
-  __pyx_t_3 = __pyx_t_5;
-  __pyx_L4_bool_binop_done:;
-  if (__pyx_t_3) {
-
-    /* "obs_builder.pyx":253
- *         # If we reach here, it indicates a serious bug in the validation chain
- *         # Use 0.0 as emergency fallback for ret_bar (no return signal)
- *         ret_bar = 0.0             # <<<<<<<<<<<<<<
- *     else:
- *         ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
-*/
-    __pyx_v_ret_bar = 0.0;
-
-    /* "obs_builder.pyx":249
- *     # - "Fail-fast validation" best practice (catch errors early)
- *     # - IEEE 754: NaN propagates through arithmetic operations
- *     if isnan(prev_price_d) or isinf(prev_price_d) or prev_price_d <= 0.0:             # <<<<<<<<<<<<<<
- *         # This should NEVER happen if wrapper validation is working correctly
- *         # If we reach here, it indicates a serious bug in the validation chain
-*/
-    goto __pyx_L3;
-  }
-
   /* "obs_builder.pyx":255
- *         ret_bar = 0.0
- *     else:
- *         ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))             # <<<<<<<<<<<<<<
+ *     # - IEEE 754: NaN propagation requires explicit handling at data boundaries
+ *     # - Financial data standards: Validation at ingestion, not in calculations
+ *     ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))             # <<<<<<<<<<<<<<
  *     out_features[feature_idx] = <float>ret_bar
  *     feature_idx += 1
 */
-  /*else*/ {
-    __pyx_v_ret_bar = tanh(((__pyx_v_price_d - __pyx_v_prev_price_d) / (__pyx_v_prev_price_d + 1e-8)));
-  }
-  __pyx_L3:;
+  __pyx_v_ret_bar = tanh(((__pyx_v_price_d - __pyx_v_prev_price_d) / (__pyx_v_prev_price_d + 1e-8)));
 
   /* "obs_builder.pyx":256
- *     else:
- *         ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+ *     # - Financial data standards: Validation at ingestion, not in calculations
+ *     ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
  *     out_features[feature_idx] = <float>ret_bar             # <<<<<<<<<<<<<<
  *     feature_idx += 1
  * 
@@ -17853,7 +17807,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = ((float)__pyx_v_ret_bar);
 
   /* "obs_builder.pyx":257
- *         ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+ *     ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
  *     out_features[feature_idx] = <float>ret_bar
  *     feature_idx += 1             # <<<<<<<<<<<<<<
  * 
@@ -17933,7 +17887,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_val = 1.0
  *     else:
 */
-    goto __pyx_L7;
+    goto __pyx_L3;
   }
 
   /* "obs_builder.pyx":270
@@ -17947,7 +17901,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_cash) / __pyx_v_total_worth), 0.0, 1.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 270, __pyx_L1_error)
     __pyx_v_feature_val = __pyx_t_4;
   }
-  __pyx_L7:;
+  __pyx_L3:;
 
   /* "obs_builder.pyx":271
  *     else:
@@ -17994,7 +17948,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_val = 0.0
  *     else:
 */
-    goto __pyx_L8;
+    goto __pyx_L4;
   }
 
   /* "obs_builder.pyx":277
@@ -18007,7 +17961,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_feature_val = ((float)tanh((__pyx_v_position_value / (__pyx_v_total_worth + 1e-8))));
   }
-  __pyx_L8:;
+  __pyx_L4:;
 
   /* "obs_builder.pyx":278
  *     else:
@@ -18140,7 +18094,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         price_momentum = tanh(momentum / (price_d * 0.01 + 1e-8))
  *     else:
 */
-    goto __pyx_L9;
+    goto __pyx_L5;
   }
 
   /* "obs_builder.pyx":304
@@ -18153,7 +18107,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_price_momentum = 0.0;
   }
-  __pyx_L9:;
+  __pyx_L5:;
 
   /* "obs_builder.pyx":305
  *     else:
@@ -18208,7 +18162,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
  *     else:
 */
-    goto __pyx_L10;
+    goto __pyx_L6;
   }
 
   /* "obs_builder.pyx":317
@@ -18221,7 +18175,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_bb_squeeze = 0.0;
   }
-  __pyx_L10:;
+  __pyx_L6:;
 
   /* "obs_builder.pyx":318
  *     else:
@@ -18253,11 +18207,11 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   if (__pyx_t_5) {
   } else {
     __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L12_bool_binop_done;
+    goto __pyx_L8_bool_binop_done;
   }
   __pyx_t_5 = (!isnan(__pyx_v_macd_signal));
   __pyx_t_3 = __pyx_t_5;
-  __pyx_L12_bool_binop_done:;
+  __pyx_L8_bool_binop_done:;
   if (__pyx_t_3) {
 
     /* "obs_builder.pyx":326
@@ -18276,7 +18230,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
  *     else:
 */
-    goto __pyx_L11;
+    goto __pyx_L7;
   }
 
   /* "obs_builder.pyx":328
@@ -18289,7 +18243,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_trend_strength = 0.0;
   }
-  __pyx_L11:;
+  __pyx_L7:;
 
   /* "obs_builder.pyx":329
  *     else:
@@ -18339,11 +18293,11 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   if (!__pyx_t_5) {
   } else {
     __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L15_bool_binop_done;
+    goto __pyx_L11_bool_binop_done;
   }
   __pyx_t_5 = (__pyx_v_bb_width <= __pyx_v_min_bb_width);
   __pyx_t_3 = __pyx_t_5;
-  __pyx_L15_bool_binop_done:;
+  __pyx_L11_bool_binop_done:;
   if (__pyx_t_3) {
 
     /* "obs_builder.pyx":342
@@ -18362,7 +18316,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_val = 0.5
  *     else:
 */
-    goto __pyx_L14;
+    goto __pyx_L10;
   }
 
   /* "obs_builder.pyx":344
@@ -18376,7 +18330,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_t_4 = __pyx_f_11obs_builder__clipf(((__pyx_v_price_d - __pyx_v_bb_lower) / (__pyx_v_bb_width + 1e-9)), -1.0, 2.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 344, __pyx_L1_error)
     __pyx_v_feature_val = __pyx_t_4;
   }
-  __pyx_L14:;
+  __pyx_L10:;
 
   /* "obs_builder.pyx":345
  *     else:
@@ -18423,7 +18377,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
  *     else:
 */
-    goto __pyx_L17;
+    goto __pyx_L13;
   }
 
   /* "obs_builder.pyx":353
@@ -18436,7 +18390,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_feature_val = 0.0;
   }
-  __pyx_L17:;
+  __pyx_L13:;
 
   /* "obs_builder.pyx":354
  *     else:
@@ -18554,7 +18508,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_val = _clipf(fear_greed_value / 100.0, -3.0, 3.0)
  *         indicator = 1.0
 */
-    goto __pyx_L18;
+    goto __pyx_L14;
   }
 
   /* "obs_builder.pyx":372
@@ -18576,7 +18530,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_indicator = 0.0;
   }
-  __pyx_L18:;
+  __pyx_L14:;
 
   /* "obs_builder.pyx":374
  *         feature_val = 0.0
@@ -18728,7 +18682,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *             feature_val = _clipf(token_id / (<double>max_num_tokens), 0.0, 1.0)
  *         else:
 */
-      goto __pyx_L22;
+      goto __pyx_L18;
     }
 
     /* "obs_builder.pyx":396
@@ -18741,7 +18695,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     /*else*/ {
       __pyx_v_feature_val = 0.0;
     }
-    __pyx_L22:;
+    __pyx_L18:;
 
     /* "obs_builder.pyx":397
  *         else:
@@ -18808,11 +18762,11 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     if (__pyx_t_5) {
     } else {
       __pyx_t_3 = __pyx_t_5;
-      goto __pyx_L26_bool_binop_done;
+      goto __pyx_L22_bool_binop_done;
     }
     __pyx_t_5 = (__pyx_v_token_id < __pyx_v_max_num_tokens);
     __pyx_t_3 = __pyx_t_5;
-    __pyx_L26_bool_binop_done:;
+    __pyx_L22_bool_binop_done:;
     if (__pyx_t_3) {
 
       /* "obs_builder.pyx":405

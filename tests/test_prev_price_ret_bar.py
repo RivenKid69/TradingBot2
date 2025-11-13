@@ -381,6 +381,38 @@ class TestPrevPriceRetBarValidation:
         # Should mention "price" (validated first), not "prev_price"
         assert "price" in error_msg.lower(), "Should validate price first"
 
+    def test_fail_fast_not_silent_failure(self, valid_params):
+        """
+        Test P3.4: CRITICAL - System fails loudly, does NOT return silent 0.0.
+
+        This test explicitly verifies fail-fast philosophy:
+        - Invalid prev_price → ValueError raised (fail loudly)
+        - NOT silent ret_bar = 0.0 (silent corruption)
+
+        Anti-pattern we're preventing:
+        - Silent fallback that masks data corruption
+        - Model training on wrong signals without warning
+        - Impossible debugging due to no error signal
+
+        This is the CORE test for fail-fast vs silent failure design.
+        """
+        params = valid_params.copy()
+        params["prev_price"] = float("nan")
+
+        # CRITICAL: System must raise ValueError, not return silent 0.0
+        with pytest.raises(ValueError) as exc_info:
+            build_observation_vector(**params)
+
+        # Verify error message is informative
+        error_msg = str(exc_info.value)
+        assert "prev_price" in error_msg.lower(), \
+            "Error must identify prev_price parameter"
+        assert "NaN" in error_msg or "nan" in error_msg.lower(), \
+            "Error must mention NaN"
+
+        # CRITICAL: If this test passes, we have fail-fast behavior (correct)
+        # If this test fails (no exception), we have silent failure (WRONG)
+
     # ========================================================================
     # P4 Tests: Real-world scenarios
     # ========================================================================

@@ -224,35 +224,35 @@ cdef void build_observation_vector_c(
     feature_idx += 1
 
     # CRITICAL: Derived price/volatility signals (bar-to-bar return for current timeframe)
-    # Defense-in-depth validation for prev_price_d (should already be validated at wrapper level)
-    # This protects against any unexpected code path that might bypass wrapper validation
-    #
     # ret_bar calculation (feature index 14):
+    # - Formula: tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
     # - Numerator: price_d - prev_price_d (price change)
-    # - Denominator: prev_price_d + 1e-8 (prevents division by zero)
+    # - Denominator: prev_price_d + 1e-8 (epsilon prevents division by zero)
     # - tanh normalization: maps (-inf, +inf) → (-1, 1)
     #
-    # Vulnerability if prev_price_d is NaN/Inf:
-    # - NaN in division → NaN in ret_bar → NaN propagates through neural network
-    # - Inf in division → undefined behavior → potential NaN
-    # - Zero in division → protected by 1e-8 epsilon
+    # Safety guarantees:
+    # 1. Division by zero: Impossible due to +1e-8 epsilon
+    #    Even if prev_price_d = 0.0: division = x / 1e-8 = large finite number
     #
-    # Defense layers (defense-in-depth):
-    # 1. Mediator validation: _validate_critical_price() at mediator.py:1015
-    # 2. Wrapper validation: _validate_price() at obs_builder.pyx:440
-    # 3. Inline check (below): Final safety net for ret_bar calculation
+    # 2. NaN/Inf protection: Enforced by fail-fast validation at entry points
+    #    - P0: Mediator validation (_validate_critical_price at mediator.py:1015)
+    #    - P1: Wrapper validation (_validate_price at obs_builder.pyx:469-470)
+    #    Both price AND prev_price are validated as finite, positive, non-zero
+    #    If validation fails → ValueError raised immediately (fail-fast)
     #
+    # 3. No silent failures: Invalid data causes immediate exception, not silent corruption
+    #
+    # Direct call path (lob_state_cython.pyx:62):
+    # - Only used for feature vector size calculation with dummy zeros
+    # - price=0.0, prev_price=0.0 → ret_bar = tanh(0/1e-8) = tanh(0) = 0.0
+    # - Safe and correct for initialization purposes
+    #
+    # Design philosophy: Fail-fast at entry (P0/P1) > Silent fallbacks in computation
     # Research references:
-    # - "Defense in Depth" security principle (multiple validation layers)
-    # - "Fail-fast validation" best practice (catch errors early)
-    # - IEEE 754: NaN propagates through arithmetic operations
-    if isnan(prev_price_d) or isinf(prev_price_d) or prev_price_d <= 0.0:
-        # This should NEVER happen if wrapper validation is working correctly
-        # If we reach here, it indicates a serious bug in the validation chain
-        # Use 0.0 as emergency fallback for ret_bar (no return signal)
-        ret_bar = 0.0
-    else:
-        ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+    # - "Fail-fast validation" (Martin Fowler): Catch errors early, fail loudly
+    # - IEEE 754: NaN propagation requires explicit handling at data boundaries
+    # - Financial data standards: Validation at ingestion, not in calculations
+    ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
     out_features[feature_idx] = <float>ret_bar
     feature_idx += 1
 
