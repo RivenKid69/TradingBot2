@@ -404,13 +404,13 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.taker_buy_ratio_windows
         ]
 
-        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч, 24ч в минутах
+        # Инициализация окон моментума Taker Buy Ratio для 4h интервала: 4ч, 8ч, 12ч в минутах
         # 4h = 1 бар = 240 минут
         # 8h = 2 бара = 480 минут
         # 12h = 3 бара = 720 минут
-        # 24h = 6 баров = 1440 минут (добавлено для полного покрытия)
+        # ПРИМЕЧАНИЕ: 24h удалено для соответствия mediator.py (56 признаков) и избыточности с ret_24h
         if self.taker_buy_ratio_momentum is None:
-            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60, 24 * 60]  # 240, 480, 720, 1440 минут
+            self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60]  # 240, 480, 720 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
             self.taker_buy_ratio_momentum = [
                 int(abs(x)) for x in self.taker_buy_ratio_momentum if int(abs(x)) > 0
@@ -777,8 +777,10 @@ def apply_offline_features(
     """
     if df is None or df.empty:
         base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
-        # Используем бары для имен SMA (согласованность с mediator.py)
-        base_cols += [f"sma_{x}" for x in spec.lookbacks_prices]
+        # КРИТИЧНО: используем МИНУТЫ для имен SMA (согласованность с mediator.py и update())
+        # Онлайн (update) генерирует: sma_240, sma_720, sma_1200, sma_1440, sma_5040, sma_12000
+        # Оффлайн (apply_offline_features) должен генерировать ТЕ ЖЕ имена
+        base_cols += [f"sma_{x}" for x in spec._lookbacks_prices_minutes]
         # Используем минуты для имен returns (форматирование через _format_window_name)
         base_cols += [f"ret_{_format_window_name(x)}" for x in spec._lookbacks_prices_minutes]
         if spec.yang_zhang_windows:
