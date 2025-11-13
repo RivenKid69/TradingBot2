@@ -58,12 +58,14 @@ def test_make_features_with_garch():
     print(f"  - Период: {n_points} минут\n")
 
     # Создаем спецификацию признаков с GARCH
+    # КРИТИЧНО: bar_duration_minutes=1 для 1-минутных данных!
     spec = FeatureSpec(
         lookbacks_prices=[5, 15, 60],
         rsi_period=14,
         yang_zhang_windows=[1440],  # 24ч
         parkinson_windows=[1440],   # 24ч
         garch_windows=[500, 720],   # 500 мин, 12ч
+        bar_duration_minutes=1  # КРИТИЧНО: данные генерируются каждую минуту!
     )
 
     print("Спецификация признаков:")
@@ -121,6 +123,7 @@ def test_make_features_with_garch():
                 print(f"  - Среднее: {valid_values.mean():.6f}")
 
     # Проверяем что другие признаки не пострадали
+    # ВАЖНО: тест использует 1-минутные данные, поэтому имена признаков в минутах
     expected_features = ['ref_price', 'rsi', 'sma_5', 'sma_15', 'sma_60',
                         'ret_5m', 'ret_15m', 'ret_60m',
                         'yang_zhang_24h', 'parkinson_24h']
@@ -203,6 +206,7 @@ def test_make_features_script():
             "--yang-zhang-windows", "1440",
             "--parkinson-windows", "1440",
             "--garch-windows", "500,720",
+            "--bar-duration-minutes", "1",  # КРИТИЧНО: данные генерируются каждую минуту!
             "--open-col", "open",
             "--high-col", "high",
             "--low-col", "low",
