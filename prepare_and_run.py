@@ -356,7 +356,7 @@ def prepare() -> list[str]:
             # Объединяем по индексу (порядок должен совпадать)
             df = pd.concat([df, features_to_merge], axis=1)
 
-            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_168h, garch_500m, garch_12h, garch_24h")
+            print(f"  ✓ {sym}: Created technical features including cvd_24h, cvd_7d, garch_200h, garch_14d, garch_30d")
         except Exception as e:
             print(f"  ⚠ {sym}: Failed to create technical features: {e}")
             # Продолжаем без технических признаков, если что-то пошло не так
