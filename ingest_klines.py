@@ -38,7 +38,8 @@ def _fetch_all_klines(client: BinancePublicClient, *, market: str, symbol: str, 
         batch = client.get_klines(market=market, symbol=symbol, interval=interval, start_ms=cur, end_ms=end_ms, limit=limit)
         if not batch:
             # двигаем окно на один интервал (эвристика), чтобы избежать вечного цикла
-            cur += 60_000
+            # Fallback: используем 4h = 14_400_000 ms (changed from 60_000 = 1m)
+            cur += 14_400_000
             time.sleep(sleep_ms / 1000.0)
             continue
         out.extend(batch)
@@ -67,7 +68,7 @@ def main():
     p = argparse.ArgumentParser(description="Ingest Binance klines (public, no keys).")
     p.add_argument("--market", choices=["spot", "futures"], default="spot", help="Рынок: spot или futures (USDT-M)")
     p.add_argument("--symbols", required=True, help="Символы через запятую, например BTCUSDT,ETHUSDT")
-    p.add_argument("--interval", default="1m", help="Интервал kline: 1m/3m/5m/15m/1h/4h/1d и т.п.")
+    p.add_argument("--interval", default="4h", help="Интервал kline: 1m/3m/5m/15m/1h/4h/1d и т.п. (изменено с 1m на 4h)")
     p.add_argument("--start", required=True, help="Начало периода (YYYY-MM-DD, ISO или unix ms)")
     p.add_argument("--end", required=True, help="Конец периода (YYYY-MM-DD, ISO или unix ms)")
     p.add_argument("--out-dir", default="data/klines_4h", help="Куда писать parquet по символам (для 4h таймфрейма)")

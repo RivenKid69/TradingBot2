@@ -2,7 +2,7 @@
 """
 incremental_klines.py
 --------------------------------------------------------------
-Incrementally *synchronise* CLOSED 1h Binance candles per symbol.
+Incrementally *synchronise* CLOSED 4h Binance candles per symbol.
 
 The previous implementation only appended the latest closed bar. In case the
 script was run a handful of times before the training pipeline, the resulting
@@ -30,7 +30,7 @@ BASE = "https://api.binance.com/api/v3/klines"
 OUT_DIR = os.path.join("data", "candles")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-INTERVAL_MS = 3_600_000  # 1h
+INTERVAL_MS = 14_400_000  # 4h (changed from 3_600_000 = 1h)
 MAX_BATCH = 1000
 
 HEADER = [
@@ -130,7 +130,7 @@ def _read_first_ts(path: str) -> Optional[int]:
 def _fetch_earliest_open_time(symbol: str) -> Optional[int]:
     params = {
         "symbol": symbol.upper(),
-        "interval": "1h",
+        "interval": "4h",  # Changed from 1h to 4h for 4-hour timeframe
         "startTime": 0,
         "limit": 1,
     }
@@ -148,7 +148,7 @@ def _fetch_earliest_open_time(symbol: str) -> Optional[int]:
 
 
 def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None) -> int:
-    """Backfill and append all CLOSED 1h candles for ``symbol``.
+    """Backfill and append all CLOSED 4h candles for ``symbol``.
 
     Parameters
     ----------
@@ -216,7 +216,7 @@ def sync_symbol(symbol: str, close_lag_ms: int, *, out_dir: Optional[str] = None
         limit = min(MAX_BATCH, steps)
         params = {
             "symbol": symbol.upper(),
-            "interval": "1h",
+            "interval": "4h",  # Changed from 1h to 4h for 4-hour timeframe
             "startTime": cursor,
             "limit": max(limit, 1),
         }

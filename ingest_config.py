@@ -45,7 +45,7 @@ class PathsConfig(BaseModel):
 
 
 class FuturesConfig(BaseModel):
-    mark_interval: str = "1m"
+    mark_interval: str = "4h"  # Changed from 1m to 4h for 4-hour timeframe
 
 
 class SlownessConfig(BaseModel):
@@ -56,7 +56,7 @@ class SlownessConfig(BaseModel):
 class IngestConfig(BaseModel):
     symbols: List[str]
     market: str = "spot"
-    intervals: List[str] = Field(default_factory=lambda: ["1m"])
+    intervals: List[str] = Field(default_factory=lambda: ["4h"])  # Changed from 1m to 4h for 4-hour timeframe
     aggregate_to: List[str] = Field(default_factory=list)
     period: PeriodConfig
     paths: PathsConfig = PathsConfig()

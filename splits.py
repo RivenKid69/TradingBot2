@@ -86,11 +86,11 @@ def make_walkforward_splits(
     ts_col: str = "ts_ms",
     symbol_col: Optional[str] = "symbol",
     interval_ms: Optional[int] = None,
-    train_span_bars: int = 7 * 24 * 60,     # 7 дней @ 1m
-    val_span_bars: int = 1 * 24 * 60,       # 1 день @ 1m
-    step_bars: int = 1 * 24 * 60,           # шаг окна 1 день
-    horizon_bars: int = 60,                 # горизонт таргета (purge = h)
-    embargo_bars: int = 5,                  # буфер между train и val
+    train_span_bars: int = 7 * 6,           # 7 дней @ 4h = 42 бара (changed from 7*24*60 @ 1m)
+    val_span_bars: int = 1 * 6,             # 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
+    step_bars: int = 1 * 6,                 # шаг окна 1 день @ 4h = 6 баров (changed from 1*24*60 @ 1m)
+    horizon_bars: int = 15,                 # горизонт таргета ~2.5 дня @ 4h (changed from 60 @ 1m)
+    embargo_bars: int = 2,                  # буфер между train и val @ 4h (changed from 5 @ 1m)
 ) -> Tuple[pd.DataFrame, List[WFSplit]]:
     """
     Возвращает (df_out, manifest), где:

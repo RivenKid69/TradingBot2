@@ -57,7 +57,7 @@ class BinanceWS:
         self,
         *,
         symbols: List[str],
-        interval: str = "1m",
+        interval: str = "4h",  # Changed from 1m to 4h for 4-hour timeframe
         bus: EventBus,
         base_url: str = "wss://stream.binance.com:9443",
         heartbeat_interval_s: float = 15.0,

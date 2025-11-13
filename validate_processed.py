@@ -128,7 +128,7 @@ def _check_sorted_unique_ts(df: pd.DataFrame) -> None:
         )
 
 
-def _check_ts_continuity(df: pd.DataFrame, step_sec: int = 3600) -> None:
+def _check_ts_continuity(df: pd.DataFrame, step_sec: int = 14400) -> None:  # Changed from 3600 (1h) to 14400 (4h)
     ts = df["timestamp"].to_numpy()
     diffs = ts[1:] - ts[:-1]
     if not (np.all(diffs == step_sec)):
@@ -141,13 +141,13 @@ def _check_ts_continuity(df: pd.DataFrame, step_sec: int = 3600) -> None:
 
 def _check_utc_alignment(df: pd.DataFrame) -> None:
     ts = df["timestamp"].to_numpy()
-    mis = ts % 3600
+    mis = ts % 14400  # Changed from 3600 (1h) to 14400 (4h) for 4-hour alignment
     if (mis != 0).any():
         bad_idx = int(np.where(mis != 0)[0][0])
-        _fail(f"UTC alignment failed at index {bad_idx}: ts%3600={int(mis[bad_idx])}")
+        _fail(f"UTC alignment failed at index {bad_idx}: ts%14400={int(mis[bad_idx])}")  # Updated error message
 
 
-def _check_freshness(df: pd.DataFrame, max_age_sec: int = 3600) -> None:
+def _check_freshness(df: pd.DataFrame, max_age_sec: int = 14400) -> None:  # Changed from 3600 (1h) to 14400 (4h)
     if len(df) == 0:
         _fail("Empty dataframe")
     last_ts = int(df["timestamp"].iloc[-1])
@@ -210,13 +210,13 @@ def _validate_file(
         _check_for_nulls(df)
         _check_ohlc(df)
         _check_sorted_unique_ts(df)
-        _check_ts_continuity(df, step_sec=3600)
+        _check_ts_continuity(df, step_sec=14400)  # Changed from 3600 (1h) to 14400 (4h)
         _check_utc_alignment(df)
         _check_symbol_consistency(df, path)
         _check_no_duplicates(df)
         if not skip_freshness:
             if max_age_sec is None:
-                eff_age = 3600
+                eff_age = 14400  # Changed from 3600 (1h) to 14400 (4h)
             else:
                 eff_age = max_age_sec
             if eff_age > 0:
@@ -247,7 +247,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-age-sec",
         type=int,
-        default=3600,
+        default=14400,  # Changed from 3600 (1h) to 14400 (4h)
         help=(
             "Максимальный допустимый возраст последнего бара в секундах. "
             "Значение <=0 отключает проверку."

@@ -77,7 +77,7 @@ def main():
     p.add_argument("--symbol", required=True, help="Символ фьючерса, например BTCUSDT")
     p.add_argument("--start", required=True, help="Начало периода (YYYY-MM-DD или unix ms)")
     p.add_argument("--end", required=True, help="Конец периода (YYYY-MM-DD или unix ms)")
-    p.add_argument("--mark-interval", default="1m", help="Интервал mark-price klines")
+    p.add_argument("--mark-interval", default="4h", help="Интервал mark-price klines (изменено с 1m на 4h)")
     p.add_argument("--out-dir", default="data/futures", help="Куда писать parquet")
     p.add_argument("--limit", type=int, default=1500, help="Лимит на запрос")
     p.add_argument("--sleep-ms", type=int, default=350, help="Пауза между запросами")

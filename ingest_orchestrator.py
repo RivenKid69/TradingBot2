@@ -34,10 +34,10 @@ def _ensure_dir(path: str) -> None:
 
 def _pick_base_interval(intervals: List[str]) -> str:
     if not intervals:
-        return "1m"
+        return "4h"  # Changed from 1m to 4h for 4-hour timeframe
     ivals = [i.strip() for i in intervals if i.strip() in _INTERVAL_MS]
     if not ivals:
-        return "1m"
+        return "4h"  # Changed from 1m to 4h for 4-hour timeframe
     return sorted(ivals, key=lambda x: _INTERVAL_MS[x])[0]
 
 
