@@ -276,7 +276,7 @@ def run_backtest_from_yaml(
             if getattr(getattr(sim_cfg, "data", None), "symbols", [])
             else "BTCUSDT"
         ),
-        timeframe=getattr(sim_cfg.data, "timeframe", "1m"),
+        timeframe=getattr(sim_cfg.data, "timeframe", "4h"),  # Changed from "1m" to "4h" for 4-hour timeframe
         dynamic_spread_config=cfg.dynamic_spread,
         exchange_specs_path=cfg.exchange_specs_path,
         guards_config=cfg.sim_guards,

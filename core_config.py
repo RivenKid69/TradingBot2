@@ -69,7 +69,7 @@ class TimingConfig(BaseModel):
     """Настройки тайминга обработки баров и задержек закрытия."""
 
     enforce_closed_bars: bool = Field(default=True)
-    timeframe_ms: int = Field(default=60_000)
+    timeframe_ms: int = Field(default=14_400_000)  # 4h timeframe (changed from 60_000 for 1m)
     close_lag_ms: int = Field(default=2000)
 
 
@@ -1031,7 +1031,7 @@ class ExecutionParams(BaseModel):
 
 class SimulationDataConfig(BaseModel):
     symbols: List[str] = Field(default_factory=get_symbols)
-    timeframe: str = Field(..., description="Например: '1m', '5m'")
+    timeframe: str = Field(..., description="Например: '4h', '1d' (проект использует 4h)")
     start_ts: Optional[int] = None
     end_ts: Optional[int] = None
     prices_path: Optional[str] = Field(
