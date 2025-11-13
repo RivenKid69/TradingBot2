@@ -68,4 +68,4 @@ cpdef void build_observation_vector(
     int num_tokens,
     float[::1] norm_cols_values,
     float[::1] out_features
-) noexcept
+)

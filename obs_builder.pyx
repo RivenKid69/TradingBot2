@@ -1,7 +1,7 @@
 # cython: language_level=3, boundscheck=False, wraparound=False, cdivision=True
 
 from cython cimport Py_ssize_t
-from libc.math cimport tanh, log1p, isnan
+from libc.math cimport tanh, log1p, isnan, isinf, isfinite
 
 
 cdef inline float _clipf(double value, double lower, double upper) nogil:
@@ -18,6 +18,54 @@ cdef inline float _clipf(double value, double lower, double upper) nogil:
     elif value > upper:
         value = upper
     return <float>value
+
+
+cdef inline void _validate_price(float price, str param_name) except *:
+    """
+    Validate that price is finite and positive.
+
+    This function enforces critical data integrity constraints for price data:
+    1. Price must not be NaN (indicates missing or corrupted data)
+    2. Price must not be Inf/-Inf (indicates computation overflow)
+    3. Price must be strictly positive (negative/zero prices are invalid)
+
+    Args:
+        price: The price value to validate
+        param_name: Name of the parameter for error messages (e.g., "price", "prev_price")
+
+    Raises:
+        ValueError: If price fails validation with detailed diagnostic message
+
+    Research references:
+    - "Data validation best practices" (Cube Software)
+    - "Incomplete Data - Machine Learning Trading" (OMSCS)
+    - Financial data standards require positive, finite prices
+    """
+    if isnan(price):
+        raise ValueError(
+            f"Invalid {param_name}: NaN (Not a Number). "
+            f"This indicates missing or corrupted market data. "
+            f"All price inputs must be valid finite numbers. "
+            f"Check data source integrity and preprocessing pipeline."
+        )
+
+    if isinf(price):
+        sign = "positive" if price > 0 else "negative"
+        raise ValueError(
+            f"Invalid {param_name}: {sign} infinity. "
+            f"This indicates arithmetic overflow in upstream calculations. "
+            f"All price inputs must be finite values. "
+            f"Review data transformations and numerical stability."
+        )
+
+    if price <= 0.0:
+        raise ValueError(
+            f"Invalid {param_name}: {price:.10f}. "
+            f"Price must be strictly positive (> 0). "
+            f"Negative or zero prices are invalid in trading systems. "
+            f"This may indicate data errors, incorrect units, or "
+            f"issues with price normalization/denormalization."
+        )
 
 
 cpdef int compute_n_features(list layout):
@@ -319,8 +367,25 @@ cpdef void build_observation_vector(
     int num_tokens,
     float[::1] norm_cols_values,
     float[::1] out_features
-) noexcept:
-    """Python-callable wrapper that forwards to the ``nogil`` implementation."""
+):
+    """
+    Python-callable wrapper that forwards to the ``nogil`` implementation.
+
+    CRITICAL: Validates price inputs before processing to prevent NaN/Inf propagation.
+    This is the entry point for all observation vector construction and must enforce
+    data integrity constraints.
+
+    Validation performed:
+    - price must be finite (not NaN/Inf) and positive (> 0)
+    - prev_price must be finite (not NaN/Inf) and positive (> 0)
+
+    If validation fails, ValueError is raised with diagnostic information.
+    This fail-fast approach prevents silent data corruption in the observation vector.
+    """
+    # CRITICAL: Validate price inputs before any computation
+    # This prevents NaN/Inf propagation through 15+ calculations downstream
+    _validate_price(price, "price")
+    _validate_price(prev_price, "prev_price")
 
     build_observation_vector_c(
         price,
