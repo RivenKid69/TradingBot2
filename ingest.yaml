@@ -15,7 +15,7 @@ paths:
   prices_out: "data/prices.parquet"
 
 futures:
-  mark_interval: "1m"
+  mark_interval: "4h"  # Изменено с "1m" для соответствия 4h таймфрейму
 
 slowness:
   api_limit: 1500

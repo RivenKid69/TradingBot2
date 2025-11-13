@@ -291,7 +291,7 @@ def _parse_symbols(s: str) -> List[str]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Incrementally synchronise CLOSED 1h candles from Binance."
+        description="Incrementally synchronise CLOSED 4h candles from Binance."
     )
     parser.add_argument(
         "--symbols",
