@@ -1005,10 +1005,16 @@ class Mediator:
         """
         Extract basic market data from row.
 
-        CRITICAL: Uses strict validation for price parameters.
+        CRITICAL: Uses strict validation for price parameters and volume metrics.
         - mark_price and prev_price MUST be positive and finite
+        - log_volume_norm and rel_volume MUST be finite (defense-in-depth)
         - Will raise ValueError if invalid (fail-fast approach)
         - No fallback to 0.0 for prices (would corrupt observations)
+
+        Defense-in-depth strategy:
+        - P0: Raw volume data validated by _get_safe_float (returns default if not finite)
+        - P1: Volume metric computation results validated here (this function)
+        - P2: Final validation at obs_builder.pyx wrapper before writing to observation
         """
         # CRITICAL: Strict validation for prices (no fallback to 0.0)
         price = self._validate_critical_price(mark_price, param_name="mark_price")
@@ -1021,13 +1027,42 @@ class Mediator:
 
         log_volume_norm = 0.0
         if quote_volume > 0:
-            log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
+            try:
+                log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
+                # CRITICAL: Defense-in-depth validation after computation
+                if not math.isfinite(log_volume_norm):
+                    raise ValueError(
+                        f"Invalid log_volume_norm computation result: {log_volume_norm}. "
+                        f"Input quote_volume={quote_volume}. "
+                        f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
+                        f"Check volume data range and normalization factor."
+                    )
+            except (ValueError, FloatingPointError) as e:
+                # Re-raise with context, or fall back to 0.0 if computation failed
+                # For now, fail-fast to catch issues early
+                raise ValueError(
+                    f"Failed to compute log_volume_norm from quote_volume={quote_volume}: {e}"
+                )
 
         # Base volume normalization (adapted for 4h timeframe)
         # 4h bars aggregate ~240x more base volume than 1m bars (as per config_4h_timeframe.py)
         rel_volume = 0.0
         if volume > 0:
-            rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))
+            try:
+                rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))
+                # CRITICAL: Defense-in-depth validation after computation
+                if not math.isfinite(rel_volume):
+                    raise ValueError(
+                        f"Invalid rel_volume computation result: {rel_volume}. "
+                        f"Input volume={volume}. "
+                        f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
+                        f"Check volume data range and normalization factor."
+                    )
+            except (ValueError, FloatingPointError) as e:
+                # Re-raise with context
+                raise ValueError(
+                    f"Failed to compute rel_volume from volume={volume}: {e}"
+                )
 
         return {
             "price": price,
