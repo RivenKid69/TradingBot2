@@ -417,7 +417,9 @@ class TradingEnv(gym.Env):
                 step_ms = float(self.df["ts_ms"].iloc[1] - self.df["ts_ms"].iloc[0])
                 bars_per_hour = int(3600000 / step_ms) if step_ms > 0 else 1
             else:
-                bars_per_hour = 60
+                # Fallback для 4h таймфрейма: 0.25 бара в час (changed from 60 for 1m)
+                # При 4h: bars_per_hour = 3600000 / 14400000 = 0.25
+                bars_per_hour = 0.25
             win = max(1, int(self._liq_window_h * bars_per_hour))
             self.df["liq_roll"] = (
                 self.df[self._liq_col]

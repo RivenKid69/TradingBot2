@@ -186,13 +186,13 @@ def _resolve_symbols(arg_value: str | None) -> List[str]:
 
 def _resolve_intervals(value: str | Sequence[str] | None) -> List[str]:
     if value is None:
-        return ["1h"]
+        return ["4h"]  # Changed from 1h to 4h for 4-hour timeframe
     if isinstance(value, str):
         tokens = [token.strip() for token in value.split(",") if token.strip()]
     else:
         tokens = [str(token).strip() for token in value if str(token).strip()]
     cleaned: List[str] = []
-    for token in tokens or ["1h"]:
+    for token in tokens or ["4h"]:  # Changed from 1h to 4h for 4-hour timeframe
         norm = token.lower()
         if norm not in INTERVAL_TO_MS:
             raise ValueError(f"Unsupported interval: {token}")
@@ -686,7 +686,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--intervals",
-        default="1h",
+        default="4h",  # Changed from 1h to 4h for 4-hour timeframe
         help="Comma-separated kline intervals (e.g. 1h,4h)",
     )
     parser.add_argument(
