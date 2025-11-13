@@ -15,7 +15,7 @@ execution_config:
 max_signals_per_sec: 5.0
 backoff_base_s: 2.0
 max_backoff_s: 60.0
-execution_profile: MKT_OPEN_NEXT_H1
+execution_profile: MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
 execution_params:
   slippage_bps: 0.0
   limit_offset_bps: 0.0  # e.g. 25 for 0.25% offset when using LIMIT_MID_BPS

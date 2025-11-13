@@ -918,9 +918,14 @@ class CommonRunConfig(BaseModel):
 class ExecutionProfile(str, Enum):
     """Подход к исполнению заявок."""
 
+    # Legacy 1h/1m profiles (kept for backward compatibility)
     MKT_OPEN_NEXT_H1 = "MKT_OPEN_NEXT_H1"
     VWAP_CURRENT_H1 = "VWAP_CURRENT_H1"
     LIMIT_MID_BPS = "LIMIT_MID_BPS"
+
+    # 4h timeframe profiles (primary for 4h project)
+    MKT_OPEN_NEXT_4H = "MKT_OPEN_NEXT_4H"
+    VWAP_CURRENT_4H = "VWAP_CURRENT_4H"
 
 
 def _coerce_execution_profile(value: Any) -> ExecutionProfile:
@@ -1053,7 +1058,7 @@ class SimulationConfig(CommonRunConfig):
     data: SimulationDataConfig
     limits: Dict[str, Any] = Field(default_factory=dict)
     execution_profile: ExecutionProfile = Field(
-        default=ExecutionProfile.MKT_OPEN_NEXT_H1
+        default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
     execution: ExecutionRuntimeConfig = Field(default_factory=ExecutionRuntimeConfig)
@@ -1091,7 +1096,7 @@ class LiveConfig(CommonRunConfig):
     fees: Dict[str, Any] = Field(default_factory=dict)
     slippage: Dict[str, Any] = Field(default_factory=dict)
     execution_profile: ExecutionProfile = Field(
-        default=ExecutionProfile.MKT_OPEN_NEXT_H1
+        default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
 
@@ -1183,7 +1188,7 @@ class TrainConfig(CommonRunConfig):
     data: TrainDataConfig
     model: ModelConfig
     execution_profile: ExecutionProfile = Field(
-        default=ExecutionProfile.MKT_OPEN_NEXT_H1
+        default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
 
@@ -1209,7 +1214,7 @@ class EvalConfig(CommonRunConfig):
         default_factory=lambda: ["sharpe", "sortino", "mdd", "pnl"]
     )
     execution_profile: ExecutionProfile = Field(
-        default=ExecutionProfile.MKT_OPEN_NEXT_H1
+        default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
     all_profiles: bool = Field(default=False)
