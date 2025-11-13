@@ -223,7 +223,35 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = obv if not isnan(obv) else 0.0
     feature_idx += 1
 
-    # Derived price/volatility signals (bar-to-bar return for current timeframe)
+    # CRITICAL: Derived price/volatility signals (bar-to-bar return for current timeframe)
+    # ret_bar calculation (feature index 14):
+    # - Formula: tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+    # - Numerator: price_d - prev_price_d (price change)
+    # - Denominator: prev_price_d + 1e-8 (epsilon prevents division by zero)
+    # - tanh normalization: maps (-inf, +inf) → (-1, 1)
+    #
+    # Safety guarantees:
+    # 1. Division by zero: Impossible due to +1e-8 epsilon
+    #    Even if prev_price_d = 0.0: division = x / 1e-8 = large finite number
+    #
+    # 2. NaN/Inf protection: Enforced by fail-fast validation at entry points
+    #    - P0: Mediator validation (_validate_critical_price at mediator.py:1015)
+    #    - P1: Wrapper validation (_validate_price at obs_builder.pyx:469-470)
+    #    Both price AND prev_price are validated as finite, positive, non-zero
+    #    If validation fails → ValueError raised immediately (fail-fast)
+    #
+    # 3. No silent failures: Invalid data causes immediate exception, not silent corruption
+    #
+    # Direct call path (lob_state_cython.pyx:62):
+    # - Only used for feature vector size calculation with dummy zeros
+    # - price=0.0, prev_price=0.0 → ret_bar = tanh(0/1e-8) = tanh(0) = 0.0
+    # - Safe and correct for initialization purposes
+    #
+    # Design philosophy: Fail-fast at entry (P0/P1) > Silent fallbacks in computation
+    # Research references:
+    # - "Fail-fast validation" (Martin Fowler): Catch errors early, fail loudly
+    # - IEEE 754: NaN propagation requires explicit handling at data boundaries
+    # - Financial data standards: Validation at ingestion, not in calculations
     ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
     out_features[feature_idx] = <float>ret_bar
     feature_idx += 1
