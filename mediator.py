@@ -932,17 +932,20 @@ class Mediator:
         price = self._coerce_finite(mark_price, default=0.0)
         prev = self._coerce_finite(prev_price, default=price)
 
-        # Volume normalization
+        # Volume normalization (adapted for 4h timeframe)
+        # 4h bars aggregate ~240x more volume than 1h bars, so we use 240e6 divisor
         volume = self._get_safe_float(row, "volume", 1.0)
         quote_volume = self._get_safe_float(row, "quote_asset_volume", 1.0)
 
         log_volume_norm = 0.0
         if quote_volume > 0:
-            log_volume_norm = float(np.tanh(np.log1p(quote_volume / 1e6)))
+            log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
 
+        # Base volume normalization (adapted for 4h timeframe)
+        # 4h bars aggregate ~240x more base volume than 1m bars (as per config_4h_timeframe.py)
         rel_volume = 0.0
         if volume > 0:
-            rel_volume = float(np.tanh(np.log1p(volume / 100.0)))
+            rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))
 
         return {
             "price": price,
