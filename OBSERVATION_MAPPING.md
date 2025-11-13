@@ -82,7 +82,7 @@ This document describes the complete structure of the observation vector (56 fea
 | Position | Feature | Source | Description |
 |----------|---------|--------|-------------|
 | 27 | `is_high_importance` | `df['is_high_importance']` | Binary flag for high-importance events |
-| 28 | `time_since_event` | `tanh(df['time_since_event'] / 6.0)` | Hours since last major event (normalized for 4h timeframe, 6 bars = 24h) |
+| 28 | `time_since_event` | `tanh(df['time_since_event'] / 24.0)` | Hours since last major event (normalized) |
 | 29 | `risk_off_flag` | `fear_greed < 25` | Binary flag for risk-off market regime |
 
 ### Positions 30-31: Fear & Greed Index (2 features)
