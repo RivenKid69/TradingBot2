@@ -60,8 +60,9 @@ def test_critical_2_default_lookbacks():
 def test_critical_4_garch_8d():
     """CRITICAL #4: Проверка GARCH окна для 4h таймфрейма
 
-    ИСПРАВЛЕНО: Первое окно теперь 7d (42 бара), а не 8d (50 баров).
-    42 бара - практический минимум для GARCH на 4h таймфрейме.
+    ИСПРАВЛЕНО: Первое окно теперь 50 баров (200h), потому что
+    GARCH требует минимум 50 наблюдений для стабильной оценки (см. transformers.py:215).
+    50 баров × 4h = 200h = 8.33 дня = garch_200h
     """
     print("\n" + "="*80)
     print("ТЕСТ #3: CRITICAL #4 - GARCH окна для 4h")
@@ -77,23 +78,25 @@ def test_critical_4_garch_8d():
     print(f"   GARCH windows (bars): {spec.garch_windows}")
     print(f"   GARCH windows (minutes): {spec._garch_windows_minutes}")
 
-    # ИСПРАВЛЕНО: Первое окно теперь 42 бара (7 дней), а не 50
-    assert spec.garch_windows[0] == 42, f"First GARCH window should be 42 bars (7d), got {spec.garch_windows[0]}"
+    # ИСПРАВЛЕНО: Первое окно теперь 50 баров (200h), минимум для GARCH
+    assert spec.garch_windows[0] == 50, f"First GARCH window should be 50 bars (200h), got {spec.garch_windows[0]}"
 
-    # Проверяем что это 10080 минут (7 * 24 * 60)
-    assert spec._garch_windows_minutes[0] == 10080, \
-        f"Expected 10080 minutes (7d), got {spec._garch_windows_minutes[0]}"
+    # Проверяем что это 12000 минут (50 * 240)
+    assert spec._garch_windows_minutes[0] == 12000, \
+        f"Expected 12000 minutes (200h), got {spec._garch_windows_minutes[0]}"
 
     # Проверяем формирование имени
     transformer = OnlineFeatureTransformer(spec)
     feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
 
-    # ИСПРАВЛЕНО: Должен быть garch_7d (10080 мин = 7 дней), а не garch_200h
+    # ИСПРАВЛЕНО: Должен быть garch_200h (12000 мин = 200h = 50 баров)
+    # На первом баре будет NaN (недостаточно данных), это нормально
     assert "garch_200h" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
-        f"Expected garch_7d or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
+        f"Expected garch_200h or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
 
-    print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров (7 дней)")
-    print(f"   Это {spec._garch_windows_minutes[0]} минут = 7d = garch_7d")
+    print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров (200h)")
+    print(f"   Это {spec._garch_windows_minutes[0]} минут = 200h = garch_200h")
+    print(f"   Примечание: 50 баров - минимум для стабильной оценки GARCH(1,1)")
     return True
 
 def test_major_1_empty_df_names():
