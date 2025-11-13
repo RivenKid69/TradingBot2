@@ -198,10 +198,12 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = is_high_importance
     feature_idx += 1
 
-    # CRITICAL FIX: Adapted for 4h timeframe (6 bars * 4h = 24h window)
-    # Changed from 24.0 (for 1h timeframe) to 6.0 (for 4h timeframe)
-    # This normalizes events within ~24 hours (6 bars on 4h timeframe)
-    out_features[feature_idx] = <float>tanh(time_since_event / 6.0)
+    # NOTE: time_since_event is measured in HOURS (not bars)
+    # Therefore divisor 24.0 normalizes events within ~24 hours regardless of timeframe
+    # For 1h: event 24h ago → tanh(24/24) ≈ 0.76
+    # For 4h: event 24h ago → tanh(24/24) ≈ 0.76 (same semantic!)
+    # DO NOT change to 6.0 - that would make events decay 4x faster!
+    out_features[feature_idx] = <float>tanh(time_since_event / 24.0)
     feature_idx += 1
 
     out_features[feature_idx] = 1.0 if risk_off_flag else 0.0

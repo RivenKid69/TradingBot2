@@ -301,7 +301,7 @@ feature_val = _clipf(tanh(norm_cols_values[i]), -3.0, 3.0)
 
 #### Metadata:
 - `fear_greed_value = clip(fear_greed_value / 100, -3, 3)` → [-3, 3]
-- `time_since_event = tanh(time_since_event / 6.0)` → [-1, 1] (adapted for 4h timeframe, 6 bars = 24h)
+- `time_since_event = tanh(time_since_event / 24.0)` → [-1, 1] (measured in hours, same for all timeframes)
 
 ### Защита от NaN/Inf:
 - ✅ _get_safe_float преобразует NaN → default
