@@ -440,13 +440,13 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.cvd_windows
         ]
 
-        # Инициализация окон GARCH для 4h интервала: 7д, 14д, 30д в минутах
+        # Инициализация окон GARCH для 4h интервала: 200h, 14д, 30д в минутах
         # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 215)!
-        # 7d = 42 бара = 10080 минут (первое окно, минимум для стабильности)
+        # 50 баров = 12000 минут = 200h (минимальное окно для GARCH на 4h)
         # 14d = 84 бара = 20160 минут
         # 30d = 180 баров = 43200 минут
         if self.garch_windows is None:
-            self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]  # 10080, 20160, 43200 минут
+            self.garch_windows = [50 * 240, 14 * 24 * 60, 30 * 24 * 60]  # 12000, 20160, 43200 минут
         elif isinstance(self.garch_windows, list):
             self.garch_windows = [
                 int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0

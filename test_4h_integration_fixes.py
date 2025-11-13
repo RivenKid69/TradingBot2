@@ -46,11 +46,11 @@ class TestCritical1_DefaultParameters(unittest.TestCase):
         spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
         # Для 4h интервала (1 бар = 240 минут):
-        # Исходные: 10080, 20160, 43200 минут
-        # После конвертации: 42, 84, 180 баров
-        # ПРИМЕЧАНИЕ: 42 бара (7 дней) - минимально рекомендуемое окно для GARCH на 4h
-        # 50 баров идеально, но 42 бара приемлемо для практических целей
-        expected_bars = [42, 84, 180]
+        # Исходные: 12000, 20160, 43200 минут
+        # После конвертации: 50, 84, 180 баров
+        # КРИТИЧНО: 50 баров (200h) - минимально рекомендуемое окно для GARCH на 4h
+        # GARCH требует минимум 50 наблюдений для стабильности
+        expected_bars = [50, 84, 180]
         self.assertEqual(spec.garch_windows, expected_bars,
             f"Дефолтные garch_windows должны быть {expected_bars} баров для 4h, "
             f"но получили {spec.garch_windows}"
@@ -73,7 +73,7 @@ class TestCritical1_DefaultParameters(unittest.TestCase):
         # CRITICAL FIX #1: Указываем bar_duration_minutes=240 для 4h интервала
         spec = FeatureSpec(lookbacks_prices=[240], bar_duration_minutes=240)
 
-        # Для 4h интервала: 2880, 10080 минут = 12, 42 бара
+        # Для 4h интервала: 2880, 10080 минут = 12, 42 бара (Yang-Zhang и Parkinson)
         expected = [12, 42]
         self.assertEqual(spec.parkinson_windows, expected,
             f"Дефолтные parkinson_windows должны быть {expected} баров для 4h, "
@@ -136,8 +136,8 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
         # Проверяем имена GARCH для 4h интервала
-        # ИСПРАВЛЕНО: Первое окно теперь 7d (42 бара), а не 200h (50 баров)
-        expected_garch_names = ["garch_7d", "garch_14d", "garch_30d"]
+        # КРИТИЧНО: Первое окно 200h (50 баров) - минимум для GARCH
+        expected_garch_names = ["garch_200h", "garch_14d", "garch_30d"]
         for name in expected_garch_names:
             self.assertIn(name, feats, f"Ожидали признак {name}, но его нет в {list(feats.keys())}")
 
@@ -262,8 +262,8 @@ class TestIntegrationEnd2End(unittest.TestCase):
         spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)  # Используем дефолты
         transformer = OnlineFeatureTransformer(spec)
 
-        # Генерируем достаточно данных для GARCH (минимум 50 баров для 7d окна)
-        # 7d = 42 бара для 4h, но мы генерируем 50+ для надежности
+        # Генерируем достаточно данных для GARCH (минимум 50 баров для 200h окна)
+        # 200h = 50 баров для 4h, генерируем 200+ для надежности всех окон
         # КРИТИЧНО: Добавляем случайный шум для GARCH, иначе модель не сходится
         import random
         random.seed(42)  # Для воспроизводимости
@@ -288,11 +288,11 @@ class TestIntegrationEnd2End(unittest.TestCase):
         # Проверяем что все ожидаемые признаки присутствуют
         # CRITICAL FIX #3: Исправлены имена согласно дефолтным значениям
         # lookbacks_prices=[240,720,1440,12000] → returns: ret_4h, ret_12h, ret_24h, ret_200h, SMA: sma_240, sma_720, sma_1440, sma_12000
-        # garch_windows=[10080,20160,43200] → garch_7d, garch_14d, garch_30d (NOT garch_200h!)
+        # garch_windows=[12000,20160,43200] → garch_200h, garch_14d, garch_30d (50, 84, 180 баров)
         expected_features = [
             "ret_4h", "ret_12h", "ret_24h", "ret_200h",
             "sma_240", "sma_720", "sma_1440", "sma_12000",
-            "garch_7d", "garch_14d", "garch_30d",  # ИСПРАВЛЕНО: garch_200h → garch_7d (7d = 42 бара)
+            "garch_200h", "garch_14d", "garch_30d",  # КРИТИЧНО: garch_200h = 50 баров (минимум для GARCH)
             "yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d",
             "parkinson_48h", "parkinson_7d",
             "taker_buy_ratio",
@@ -305,17 +305,16 @@ class TestIntegrationEnd2End(unittest.TestCase):
         missing_features = [f for f in expected_features if f not in feats]
         self.assertEqual(missing_features, [], f"Отсутствуют признаки: {missing_features}")
 
-        # Проверяем что GARCH признаки не NaN (достаточно данных)
-        # ИСПРАВЛЕНО: garch_200h → garch_7d (первое окно теперь 7 дней = 42 бара)
-        # ПРИМЕЧАНИЕ: garch_7d (42 бара) может быть NaN, так как это меньше рекомендуемого минимума (50 баров)
-        # Проверяем только длинные окна которые гарантированно сходятся
-        for garch_name in ["garch_14d", "garch_30d"]:
+        # Проверяем что все GARCH признаки не NaN (достаточно данных: 200 баров)
+        # КРИТИЧНО: garch_200h требует минимум 50 баров
+        # Проверяем все окна которые должны сходиться при 200 барах данных
+        for garch_name in ["garch_200h", "garch_14d", "garch_30d"]:
             self.assertFalse(math.isnan(feats[garch_name]),
                 f"GARCH признак {garch_name} не должен быть NaN при наличии 200 баров данных"
             )
 
-        # garch_7d присутствует, но может быть NaN из-за малого окна (42 < 50)
-        self.assertIn("garch_7d", feats, "garch_7d должен присутствовать в признаках")
+        # garch_200h присутствует и валиден (50 баров >= минимум)
+        self.assertIn("garch_200h", feats, "garch_200h должен присутствовать в признаках")
 
         # Проверяем что Yang-Zhang признаки не NaN
         for yz_name in ["yang_zhang_48h", "yang_zhang_7d", "yang_zhang_30d"]:
