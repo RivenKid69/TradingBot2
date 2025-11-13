@@ -184,7 +184,7 @@ class MockMediator:
         norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # было cvd_168h
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # было yang_zhang_24h
         norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # было yang_zhang_168h
-        norm_cols[4] = self._get_safe_float(row, "garch_7d", 0.0)  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+        norm_cols[4] = self._get_safe_float(row, "garch_200h", 0.0)  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # было garch_24h
         norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # было ret_15m
         norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # было ret_60m
@@ -343,7 +343,7 @@ def test_observation_size_and_non_zero():
             "cvd_7d": [(i % 20) / 20.0 for i in range(200)],  # было cvd_168h
             "yang_zhang_48h": [0.01 + (i % 5) * 0.001 for i in range(200)],  # было yang_zhang_24h
             "yang_zhang_7d": [0.015 + (i % 7) * 0.001 for i in range(200)],  # было yang_zhang_168h
-            "garch_7d": [0.02 + (i % 3) * 0.002 for i in range(200)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [0.02 + (i % 3) * 0.002 for i in range(200)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.025 + (i % 4) * 0.002 for i in range(200)],  # было garch_24h
             "ret_12h": [(i % 15) * 0.0001 for i in range(200)],  # было ret_15m
             "ret_24h": [(i % 25) * 0.0002 for i in range(200)],  # было ret_60m
@@ -389,7 +389,7 @@ def test_technical_indicators_present():
             "cvd_7d": [0.3],  # было cvd_168h
             "yang_zhang_48h": [0.025],  # было yang_zhang_24h
             "yang_zhang_7d": [0.030],  # было yang_zhang_168h
-            "garch_7d": [0.028],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [0.028],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.032],  # было garch_24h
             "ret_12h": [0.001],  # было ret_15m
             "ret_24h": [0.002],  # было ret_60m
@@ -438,7 +438,7 @@ def test_cvd_garch_yangzhang_in_obs():
             "cvd_7d": [2.0],  # Non-zero value (было cvd_168h)
             "yang_zhang_48h": [0.05],  # Non-zero value (было yang_zhang_24h)
             "yang_zhang_7d": [0.06],  # было yang_zhang_168h
-            "garch_7d": [0.04],  # Non-zero value (было garch_12h). 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [0.04],  # Non-zero value (было garch_12h). 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.045],  # было garch_24h
             "ret_12h": [0.001],  # было ret_15m
             "ret_24h": [0.002],  # было ret_60m
@@ -488,7 +488,7 @@ def test_observations_in_training_env():
             "cvd_7d": [np.cos(i * 0.02) * 0.3 for i in range(n_steps)],  # было cvd_168h
             "yang_zhang_48h": [0.02 + (i % 10) * 0.001 for i in range(n_steps)],  # было yang_zhang_24h
             "yang_zhang_7d": [0.025 + (i % 15) * 0.001 for i in range(n_steps)],  # было yang_zhang_168h
-            "garch_7d": [0.03 + (i % 5) * 0.002 for i in range(n_steps)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "garch_200h": [0.03 + (i % 5) * 0.002 for i in range(n_steps)],  # было garch_12h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
             "garch_14d": [0.035 + (i % 8) * 0.002 for i in range(n_steps)],  # было garch_24h
             "ret_12h": [(i % 20) * 0.0001 for i in range(n_steps)],  # было ret_15m
             "ret_24h": [(i % 30) * 0.0002 for i in range(n_steps)],  # было ret_60m

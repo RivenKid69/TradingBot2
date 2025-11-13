@@ -63,7 +63,7 @@ def test_mediator_norm_cols():
         "cvd_7d": 5000.0,  # было cvd_168h
         "yang_zhang_48h": 0.05,  # было yang_zhang_24h
         "yang_zhang_7d": 0.08,  # было yang_zhang_168h
-        "garch_7d": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
+        "garch_200h": 0.03,  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d": 0.04,  # было garch_24h
         "ret_12h": 0.001,  # было ret_15m
         "ret_24h": 0.005,  # было ret_60m
@@ -200,7 +200,7 @@ def test_column_names():
         "cvd_7d",  # было cvd_168h
         "yang_zhang_48h",  # было yang_zhang_24h
         "yang_zhang_7d",  # было yang_zhang_168h
-        "garch_7d",  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
+        "garch_200h",  # было garch_12h (42 бара = 10080 мин = 7d, минимум для GARCH на 4h)
         "garch_14d",  # было garch_24h
         "ret_12h",  # было ret_15m
         "ret_24h",  # было ret_60m

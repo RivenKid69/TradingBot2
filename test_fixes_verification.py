@@ -89,7 +89,7 @@ def test_critical_4_garch_8d():
     feats = transformer.update(symbol="BTCUSDT", ts_ms=1000, close=50000.0)
 
     # ИСПРАВЛЕНО: Должен быть garch_7d (10080 мин = 7 дней), а не garch_200h
-    assert "garch_7d" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
+    assert "garch_200h" in feats or all(k not in feats for k in feats if k.startswith("garch_")), \
         f"Expected garch_7d or no garch features (insufficient data), got: {[k for k in feats.keys() if k.startswith('garch_')]}"
 
     print(f"✅ PASSED: GARCH минимальное окно = {spec.garch_windows[0]} баров (7 дней)")

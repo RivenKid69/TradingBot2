@@ -32,7 +32,7 @@ def test_feature_name_consistency():
     with open("mediator.py", "r") as f:
         mediator_content = f.read()
 
-    expected_names = ["garch_7d", "garch_14d", "garch_30d"]  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+    expected_names = ["garch_200h", "garch_14d", "garch_30d"]  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
 
     print(f"\nОжидаемые имена в mediator.py:")
     for i, name in enumerate(expected_names):
@@ -47,26 +47,26 @@ def test_feature_name_consistency():
         if not match:
             all_match = False
 
-    # Проверяем что garch_7d присутствует в mediator.py
-    if "garch_7d" in mediator_content:
-        print(f"\n✅ Признак 'garch_7d' найден в mediator.py")
+    # Проверяем что garch_200h присутствует в mediator.py
+    if "garch_200h" in mediator_content:
+        print(f"\n✅ Признак 'garch_200h' найден в mediator.py")
     else:
-        print(f"\n❌ Признак 'garch_7d' НЕ найден в mediator.py")
+        print(f"\n❌ Признак 'garch_200h' НЕ найден в mediator.py")
         all_match = False
 
-    # Проверяем что старое имя garch_8d больше НЕ используется
-    if "garch_8d" not in mediator_content or mediator_content.count("garch_8d") == 0:
-        print(f"✅ Старое имя 'garch_8d' не используется в mediator.py")
+    # Проверяем что старое имя garch_7d больше НЕ используется
+    if "garch_7d" not in mediator_content or mediator_content.count("garch_7d") == 0:
+        print(f"✅ Старое имя 'garch_7d' не используется в mediator.py")
     else:
         # Проверяем что это не упоминание в комментариях или истории
         import re
         # Ищем использование в коде (не в комментариях)
-        code_usage = re.findall(r'["\']garch_8d["\']', mediator_content)
+        code_usage = re.findall(r'["\']garch_7d["\']', mediator_content)
         if code_usage:
-            print(f"❌ Старое имя 'garch_8d' все еще используется в коде: {len(code_usage)} раз")
+            print(f"❌ Старое имя 'garch_7d' все еще используется в коде: {len(code_usage)} раз")
             all_match = False
         else:
-            print(f"✅ 'garch_8d' упоминается только в комментариях (OK)")
+            print(f"✅ 'garch_7d' упоминается только в комментариях (OK)")
 
     return all_match
 
@@ -99,7 +99,7 @@ def test_all_feature_names():
         "garch": {
             "windows": [50 * 240, 14 * 24 * 60, 30 * 24 * 60],
             "prefix": "garch_",
-            "expected": ["garch_7d", "garch_14d", "garch_30d"]  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+            "expected": ["garch_200h", "garch_14d", "garch_30d"]  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
         },
         "cvd": {
             "windows": [24 * 60, 7 * 24 * 60],
@@ -149,7 +149,7 @@ def test_mediator_norm_cols_indices():
         1: "cvd_7d",
         2: "yang_zhang_48h",
         3: "yang_zhang_7d",
-        4: "garch_7d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+        4: "garch_200h",  # 50 баров = 12000 мин = 200h, минимум для GARCH на 4h
         5: "garch_14d",
         6: "ret_12h",
         7: "ret_24h",

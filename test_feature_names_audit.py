@@ -66,7 +66,7 @@ def test_feature_name_consistency():
     expected_features = [
         "cvd_24h", "cvd_7d",
         "yang_zhang_48h", "yang_zhang_7d",
-        "garch_7d", "garch_14d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
+        "garch_200h", "garch_14d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         "ret_12h", "ret_24h", "ret_4h",
         "sma_12000",  # было sma_50. 50 баров = 12000 минут = 200h
         "yang_zhang_30d",

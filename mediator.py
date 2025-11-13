@@ -1010,7 +1010,7 @@ class Mediator:
         """Extract normalized columns for external features (cvd, garch, yang_zhang, etc.).
 
         Adapted for 4h timeframe:
-        - GARCH windows: 7d/14d/30d (42/84/180 bars) instead of 500m/12h/24h
+        - GARCH windows: 200h/14d/30d (50/84/180 bars) instead of 500m/12h/24h
         - Returns: 4h/12h/24h (1/3/6 bars) instead of 5m/15m/60m
         - SMA: sma_12000 (50 bars = 12000 минут = 200h) instead of sma_60 (60 minutes)
         - Taker Buy Ratio Momentum: 4h (1 bar) instead of 1h
@@ -1023,7 +1023,7 @@ class Mediator:
         norm_cols[1] = self._get_safe_float(row, "cvd_7d", 0.0)  # 10080 минут = 7 дней
         norm_cols[2] = self._get_safe_float(row, "yang_zhang_48h", 0.0)  # 12 bars = 48h
         norm_cols[3] = self._get_safe_float(row, "yang_zhang_7d", 0.0)  # 10080 минут = 7 дней
-        norm_cols[4] = self._get_safe_float(row, "garch_7d", 0.0)  # 42 bars = 10080 min = 7d (минимум для GARCH на 4h)
+        norm_cols[4] = self._get_safe_float(row, "garch_200h", 0.0)  # 50 bars = 12000 min = 200h (минимум для GARCH на 4h)
         norm_cols[5] = self._get_safe_float(row, "garch_14d", 0.0)  # 84 bars = 14 days
         norm_cols[6] = self._get_safe_float(row, "ret_12h", 0.0)  # 3 bars
         norm_cols[7] = self._get_safe_float(row, "ret_24h", 0.0)  # 6 bars
