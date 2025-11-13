@@ -109,7 +109,7 @@ def test_cvd_offline():
 
     # Проверяем наличие CVD признаков
     assert "cvd_24h" in result.columns, "cvd_24h не найден"
-    assert "cvd_168h" in result.columns, "cvd_168h не найден"
+    assert "cvd_7d" in result.columns, "cvd_7d не найден"  # было cvd_168h, но _format_window_name(10080) = "7d"
 
     # Проверяем последнюю строку (должна иметь данные для 24ч окна)
     last_row = result.iloc[-1]
@@ -121,9 +121,9 @@ def test_cvd_offline():
     assert not pd.isna(cvd_24h), "CVD 24h не должен быть NaN в конце"
 
     # Проверяем что CVD 7d недоступен (только 2 дня данных)
-    cvd_168h = last_row["cvd_168h"]
-    print(f"CVD 168h в последней строке: {cvd_168h}")
-    assert pd.isna(cvd_168h), "CVD 168h должен быть NaN (недостаточно данных)"
+    cvd_7d = last_row["cvd_7d"]  # было cvd_168h
+    print(f"CVD 7d в последней строке: {cvd_7d}")
+    assert pd.isna(cvd_7d), "CVD 7d должен быть NaN (недостаточно данных)"
 
     print("✓ Тест 2 пройден\n")
 
