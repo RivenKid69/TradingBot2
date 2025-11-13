@@ -317,16 +317,13 @@ class FeatureSpec:
             not isinstance(self.lookbacks_prices, list)
             or len(self.lookbacks_prices) == 0
         ):
-            # Для 4h интервала: компромиссные окна для SMA и returns
+            # Для 4h интервала: окна для SMA и returns (КРИТИЧНО: только основные окна)
             # 1 бар 4h = 240 минут
-            # 4h = 1 бар = 240 минут (ret_4h, sma_1)
-            # 12h = 3 бара = 720 минут (ret_12h, sma_3)
-            # 20h = 5 баров = 1200 минут (sma_5)
-            # 24h = 6 баров = 1440 минут (ret_24h, sma_6)
-            # 3.5d = 21 бар = 5040 минут (sma_21)
-            # 7d = 42 бара = 10080 минут (ret_7d, sma_42)
-            # 8.3d = 50 баров = 12000 минут (sma_50)
-            self.lookbacks_prices = [240, 720, 1200, 1440, 5040, 10080, 12000]
+            # 4h = 1 бар = 240 минут (ret_4h, sma_240)
+            # 12h = 3 бара = 720 минут (ret_12h, sma_720)
+            # 24h = 6 баров = 1440 минут (ret_24h, sma_1440)
+            # 200h = 50 баров = 12000 минут (ret_200h, sma_12000)
+            self.lookbacks_prices = [240, 720, 1440, 12000]
         self.lookbacks_prices = [
             int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
         ]
@@ -443,13 +440,13 @@ class FeatureSpec:
             max(1, x // self.bar_duration_minutes) for x in self.cvd_windows
         ]
 
-        # Инициализация окон GARCH для 4h интервала: 50 баров (мин), 14д, 30д в минутах
+        # Инициализация окон GARCH для 4h интервала: 7д, 14д, 30д в минутах
         # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 215)!
-        # 50 баров (8.33d) = 12000 минут = 200h (минимум для GARCH)
+        # 7d = 42 бара = 10080 минут (первое окно, минимум для стабильности)
         # 14d = 84 бара = 20160 минут
         # 30d = 180 баров = 43200 минут
         if self.garch_windows is None:
-            self.garch_windows = [50 * 240, 14 * 24 * 60, 30 * 24 * 60]  # 12000, 20160, 43200 минут
+            self.garch_windows = [7 * 24 * 60, 14 * 24 * 60, 30 * 24 * 60]  # 10080, 20160, 43200 минут
         elif isinstance(self.garch_windows, list):
             self.garch_windows = [
                 int(abs(x)) for x in self.garch_windows if int(abs(x)) > 0
@@ -594,17 +591,17 @@ class OnlineFeatureTransformer:
         }
 
         seq = list(st["prices"])
-        # CRITICAL FIX #1: Используем бары для имен SMA (согласованность с mediator.py),
-        # минуты для имен returns (форматирование через _format_window_name)
+        # CRITICAL FIX #1: Используем минуты для имен SMA (sma_240, sma_1440, sma_12000),
+        # форматированные имена для returns (ret_4h, ret_24h, ret_200h)
         for i, lb in enumerate(self.spec.lookbacks_prices):
             if len(seq) >= lb:
                 window = seq[-lb:]
                 sma = sum(window) / float(lb)
-                # Используем значение в барах для имени SMA (согласованность с mediator.py)
-                feats[f"sma_{lb}"] = float(sma)
-                first = float(window[0])
-                # Используем исходное значение в минутах для имени returns (форматирование)
+                # Используем значение в минутах для имени SMA (сырые минуты: 240, 1440, 12000)
                 lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                feats[f"sma_{lb_minutes}"] = float(sma)
+                first = float(window[0])
+                # Используем форматированное значение для имени returns (4h, 24h, 200h)
                 ret_name = f"ret_{_format_window_name(lb_minutes)}"
                 feats[ret_name] = (
                     float(math.log(price / first)) if first > 0 else 0.0

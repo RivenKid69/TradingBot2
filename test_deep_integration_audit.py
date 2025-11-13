@@ -308,7 +308,7 @@ def test_feature_name_consistency():
     )
 
     # Проверяем имена для GARCH
-    expected_garch_names = ["garch_200h", "garch_14d", "garch_30d"]
+    expected_garch_names = ["garch_7d", "garch_14d", "garch_30d"]  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
     for i, window_minutes in enumerate(spec._garch_windows_minutes):
         name = f"garch_{_format_window_name(window_minutes)}"
         assert name == expected_garch_names[i], \
@@ -346,12 +346,12 @@ def test_mediator_norm_cols_mapping():
         1: "cvd_7d",
         2: "yang_zhang_48h",
         3: "yang_zhang_7d",
-        4: "garch_200h",
+        4: "garch_7d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         5: "garch_14d",
         6: "ret_12h",
         7: "ret_24h",
         8: "ret_4h",
-        9: "sma_50",
+        9: "sma_12000",  # было sma_50. 50 баров = 12000 минут = 200h
         10: "yang_zhang_30d",
         11: "parkinson_48h",
         12: "parkinson_7d",

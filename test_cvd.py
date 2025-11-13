@@ -12,9 +12,10 @@ def test_cvd_online():
     print("Тест 1: Онлайн вычисление CVD")
 
     spec = FeatureSpec(
-        lookbacks_prices=[5, 10],
+        lookbacks_prices=[240, 720],  # 4h, 12h для 4h таймфрейма
         rsi_period=14,
-        cvd_windows=[5, 10],  # Малые окна для теста
+        cvd_windows=[5, 10],  # Малые окна для теста (в минутах)
+        bar_duration_minutes=1,  # Используем минутные данные для теста
     )
 
     transformer = OnlineFeatureTransformer(spec)
@@ -55,16 +56,16 @@ def test_cvd_online():
     # Проверяем последний результат (должно быть 10 баров)
     last_feats = results[-1]
 
-    print(f"CVD 5 периодов (окно 0.08h): {last_feats.get('cvd_0h', 'N/A')}")
-    print(f"CVD 10 периодов (окно 0.17h): {last_feats.get('cvd_0h', 'N/A')}")
+    print(f"CVD 5 периодов (окно 5m): {last_feats.get('cvd_5m', 'N/A')}")
+    print(f"CVD 10 периодов (окно 10m): {last_feats.get('cvd_10m', 'N/A')}")
 
     # Проверяем наличие CVD признаков
-    assert 'cvd_0h' in last_feats, "CVD признак не найден"
+    assert 'cvd_5m' in last_feats, f"CVD признак cvd_5m не найден. Доступные: {list(last_feats.keys())}"
 
     # Вычисляем ожидаемое значение для окна 5 (последние 5 баров)
     # Бары 6-10: deltas = [800, -200, -400, 300, 500]
     expected_cvd_5 = 800 + (-200) + (-400) + 300 + 500
-    actual_cvd_5 = last_feats['cvd_0h']
+    actual_cvd_5 = last_feats['cvd_5m']
 
     print(f"Ожидаемый CVD (5 баров): {expected_cvd_5}")
     print(f"Фактический CVD (5 баров): {actual_cvd_5}")
@@ -89,9 +90,10 @@ def test_cvd_offline():
     df = pd.DataFrame(data)
 
     spec = FeatureSpec(
-        lookbacks_prices=[5, 10],
+        lookbacks_prices=[240, 720],  # 4h, 12h для 4h таймфрейма
         rsi_period=14,
-        cvd_windows=[1440, 10080],  # 24ч, 168ч (7д)
+        cvd_windows=[1440, 10080],  # 24ч, 7д (в минутах)
+        bar_duration_minutes=1,  # Минутные данные в тесте
     )
 
     result = apply_offline_features(
@@ -133,9 +135,10 @@ def test_cvd_edge_cases():
     print("Тест 3: Граничные случаи CVD")
 
     spec = FeatureSpec(
-        lookbacks_prices=[5],
+        lookbacks_prices=[240],  # 4h для 4h таймфрейма
         rsi_period=14,
-        cvd_windows=[5],
+        cvd_windows=[5],  # Малое окно для теста (5 минут)
+        bar_duration_minutes=1,  # Используем минутные данные для теста
     )
 
     transformer = OnlineFeatureTransformer(spec)
@@ -171,7 +174,7 @@ def test_cvd_edge_cases():
     # delta = 500 - 500 = 0
 
     # После 3 баров CVD должен быть недоступен (окно 5)
-    assert pd.isna(feats3.get('cvd_0h', float('nan'))), "CVD должен быть NaN (недостаточно данных)"
+    assert pd.isna(feats3.get('cvd_5m', float('nan'))), "CVD должен быть NaN (недостаточно данных)"
 
     # Добавляем еще 2 бара
     for i in range(2):
@@ -192,7 +195,7 @@ def test_cvd_edge_cases():
         taker_buy_base=700.0,
     )
 
-    cvd = feats_final.get('cvd_0h', float('nan'))
+    cvd = feats_final.get('cvd_5m', float('nan'))
     assert not pd.isna(cvd), "CVD не должен быть NaN после 5 баров"
 
     # Последние 5 дельт: [-1000, 0, 0, 0, 400]

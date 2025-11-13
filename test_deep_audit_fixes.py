@@ -32,7 +32,7 @@ def test_feature_name_consistency():
     with open("mediator.py", "r") as f:
         mediator_content = f.read()
 
-    expected_names = ["garch_200h", "garch_14d", "garch_30d"]
+    expected_names = ["garch_7d", "garch_14d", "garch_30d"]  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
 
     print(f"\nОжидаемые имена в mediator.py:")
     for i, name in enumerate(expected_names):
@@ -47,11 +47,11 @@ def test_feature_name_consistency():
         if not match:
             all_match = False
 
-    # Проверяем что garch_200h присутствует в mediator.py
-    if "garch_200h" in mediator_content:
-        print(f"\n✅ Признак 'garch_200h' найден в mediator.py")
+    # Проверяем что garch_7d присутствует в mediator.py
+    if "garch_7d" in mediator_content:
+        print(f"\n✅ Признак 'garch_7d' найден в mediator.py")
     else:
-        print(f"\n❌ Признак 'garch_200h' НЕ найден в mediator.py")
+        print(f"\n❌ Признак 'garch_7d' НЕ найден в mediator.py")
         all_match = False
 
     # Проверяем что старое имя garch_8d больше НЕ используется
@@ -99,7 +99,7 @@ def test_all_feature_names():
         "garch": {
             "windows": [50 * 240, 14 * 24 * 60, 30 * 24 * 60],
             "prefix": "garch_",
-            "expected": ["garch_200h", "garch_14d", "garch_30d"]
+            "expected": ["garch_7d", "garch_14d", "garch_30d"]  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         },
         "cvd": {
             "windows": [24 * 60, 7 * 24 * 60],
@@ -149,12 +149,12 @@ def test_mediator_norm_cols_indices():
         1: "cvd_7d",
         2: "yang_zhang_48h",
         3: "yang_zhang_7d",
-        4: "garch_200h",  # КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ
+        4: "garch_7d",  # было garch_200h. 42 бара = 10080 мин = 7d, минимум для GARCH на 4h
         5: "garch_14d",
         6: "ret_12h",
         7: "ret_24h",
         8: "ret_4h",
-        9: "sma_50",
+        9: "sma_12000",  # было sma_50. 50 баров = 12000 минут = 200h
         10: "yang_zhang_30d",
         11: "parkinson_48h",
         12: "parkinson_7d",
