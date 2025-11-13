@@ -339,11 +339,20 @@ def get_feature_spec_4h():
 
     ВАЖНО: Все параметры (SMA_LOOKBACKS, YANG_ZHANG_WINDOWS, etc.) определены в БАРАХ,
     но FeatureSpec ожидает МИНУТЫ. Поэтому мы конвертируем: бары * 240 минут/бар.
+
+    ОБНОВЛЕНИЕ: lookbacks_prices теперь содержит компромиссные окна для SMA и returns,
+    так как transformers.py использует один параметр для обоих признаков.
+    Окна: [240, 720, 1200, 1440, 5040, 10080, 12000] минут = [4h, 12h, 20h, 24h, 3.5d, 7d, 8.3d]
+    Это полное объединение SMA_LOOKBACKS [5,21,50] и RETURN_LOOKBACKS [1,3,6,42].
     """
     from transformers import FeatureSpec
 
+    # Компромиссные окна для SMA и returns (в барах)
+    # Полное объединение: SMA [5,21,50] + Returns [1,3,6,42] = [1,3,5,6,21,42,50]
+    COMBINED_LOOKBACKS = [1, 3, 5, 6, 21, 42, 50]
+
     return FeatureSpec(
-        lookbacks_prices=[x * BAR_DURATION_MINUTES for x in SMA_LOOKBACKS],
+        lookbacks_prices=[x * BAR_DURATION_MINUTES for x in COMBINED_LOOKBACKS],
         rsi_period=RSI_PERIOD,
         yang_zhang_windows=[x * BAR_DURATION_MINUTES for x in YANG_ZHANG_WINDOWS],
         parkinson_windows=[x * BAR_DURATION_MINUTES for x in PARKINSON_WINDOWS],

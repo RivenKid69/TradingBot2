@@ -317,13 +317,16 @@ class FeatureSpec:
             not isinstance(self.lookbacks_prices, list)
             or len(self.lookbacks_prices) == 0
         ):
-            # Для 4h интервала: 4h, 12h, 24h, 50 баров (200h)
+            # Для 4h интервала: компромиссные окна для SMA и returns
             # 1 бар 4h = 240 минут
-            # 4h = 1 бар = 240 минут
-            # 12h = 3 бара = 720 минут
-            # 24h = 6 баров = 1440 минут
-            # 50 баров = 200h = 12000 минут (для sma_50)
-            self.lookbacks_prices = [240, 720, 1440, 12000]
+            # 4h = 1 бар = 240 минут (ret_4h, sma_1)
+            # 12h = 3 бара = 720 минут (ret_12h, sma_3)
+            # 20h = 5 баров = 1200 минут (sma_5)
+            # 24h = 6 баров = 1440 минут (ret_24h, sma_6)
+            # 3.5d = 21 бар = 5040 минут (sma_21)
+            # 7d = 42 бара = 10080 минут (ret_7d, sma_42)
+            # 8.3d = 50 баров = 12000 минут (sma_50)
+            self.lookbacks_prices = [240, 720, 1200, 1440, 5040, 10080, 12000]
         self.lookbacks_prices = [
             int(abs(x)) for x in self.lookbacks_prices if int(abs(x)) > 0
         ]
