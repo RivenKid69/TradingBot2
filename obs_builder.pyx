@@ -5,6 +5,14 @@ from libc.math cimport tanh, log1p, isnan
 
 
 cdef inline float _clipf(double value, double lower, double upper) nogil:
+    """
+    Clip value to [lower, upper] range with NaN handling.
+
+    CRITICAL: NaN comparisons are always False in C/Cython, so we must check explicitly.
+    If value is NaN, we return 0.0 as a safe default to prevent NaN propagation.
+    """
+    if isnan(value):
+        return 0.0
     if value < lower:
         value = lower
     elif value > upper:
@@ -96,19 +104,31 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = 1.0 if ma20_valid else 0.0
     feature_idx += 1
 
-    out_features[feature_idx] = rsi14
+    # Technical indicators with NaN handling (early bars may not have enough history)
+    # RSI: 50.0 = neutral (no trend signal)
+    out_features[feature_idx] = rsi14 if not isnan(rsi14) else 50.0
     feature_idx += 1
-    out_features[feature_idx] = macd
+
+    # MACD: 0.0 = no divergence signal
+    out_features[feature_idx] = macd if not isnan(macd) else 0.0
     feature_idx += 1
-    out_features[feature_idx] = macd_signal
+    out_features[feature_idx] = macd_signal if not isnan(macd_signal) else 0.0
     feature_idx += 1
-    out_features[feature_idx] = momentum
+
+    # Momentum: 0.0 = no price movement
+    out_features[feature_idx] = momentum if not isnan(momentum) else 0.0
     feature_idx += 1
-    out_features[feature_idx] = atr
+
+    # ATR: default to 1% of price (small volatility estimate)
+    out_features[feature_idx] = atr if not isnan(atr) else <float>(price_d * 0.01)
     feature_idx += 1
-    out_features[feature_idx] = cci
+
+    # CCI: 0.0 = at average level
+    out_features[feature_idx] = cci if not isnan(cci) else 0.0
     feature_idx += 1
-    out_features[feature_idx] = obv
+
+    # OBV: always valid, but handle NaN defensively
+    out_features[feature_idx] = obv if not isnan(obv) else 0.0
     feature_idx += 1
 
     # Derived price/volatility signals (bar-to-bar return for current timeframe)
@@ -157,7 +177,11 @@ cdef void build_observation_vector_c(
     # 1. Price momentum (replaces ofi_proxy) - captures trend direction and strength
     # Uses normalized momentum indicator to measure price movement strength
     # Normalized by 1% of price (price_d * 0.01) for sensitivity to typical intraday moves
-    price_momentum = tanh(momentum / (price_d * 0.01 + 1e-8))
+    # NaN handling: if momentum is NaN (first 10 bars), use 0.0 (no momentum)
+    if not isnan(momentum):
+        price_momentum = tanh(momentum / (price_d * 0.01 + 1e-8))
+    else:
+        price_momentum = 0.0
     out_features[feature_idx] = <float>price_momentum
     feature_idx += 1
 
@@ -165,21 +189,35 @@ cdef void build_observation_vector_c(
     # High value = high volatility (wide bands), low value = low volatility (squeeze)
     # Normalized by full price (price_d) not 1% because bb_width is typically 1-5% of price
     # This ensures the normalized value is in a reasonable range for tanh
-    bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
+    # NaN handling: if BB not ready (first 20 bars), use 0.0 (neutral volatility)
+    bb_valid = not isnan(bb_lower)
+    if bb_valid:
+        bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
+    else:
+        bb_squeeze = 0.0
     out_features[feature_idx] = <float>bb_squeeze
     feature_idx += 1
 
     # 3. Trend strength via MACD divergence (replaces micro_dev) - measures trend strength
     # Positive = bullish trend, negative = bearish trend, magnitude = strength
     # Normalized by 1% of price (price_d * 0.01) similar to price_momentum for consistency
-    trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
+    # NaN handling: if MACD not ready (first ~26 bars), use 0.0 (no trend signal)
+    if not isnan(macd) and not isnan(macd_signal):
+        trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
+    else:
+        trend_strength = 0.0
     out_features[feature_idx] = <float>trend_strength
     feature_idx += 1
 
     # --- Bollinger band context -------------------------------------------
+    # Position within bands and band width - critical features for volatility-based strategies
+    # NOTE: bb_valid is already computed above for bb_squeeze, reuse it
     bb_width = bb_upper - bb_lower
-    bb_valid = not isnan(bb_lower)
     min_bb_width = price_d * 0.0001
+
+    # Feature 1: Price position within Bollinger Bands
+    # 0.5 = at the middle (default when bands not available)
+    # 0.0 = at lower band, 1.0 = at upper band
     if (not bb_valid) or bb_width <= min_bb_width:
         feature_val = 0.5
     else:
@@ -187,6 +225,8 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = feature_val
     feature_idx += 1
 
+    # Feature 2: Normalized band width (volatility measure)
+    # 0.0 = bands not available or zero width
     if bb_valid:
         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
     else:
