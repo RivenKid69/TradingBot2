@@ -57,30 +57,30 @@ def test_mediator_norm_cols():
 
     mediator = Mediator(mock_env, event_level=0)
 
-    # Создаем mock row с всеми 21 признаками
+    # Создаем mock row с всеми 21 признаками (обновлено для 4h таймфрейма)
     mock_row = pd.Series({
         "cvd_24h": 1000.0,
-        "cvd_168h": 5000.0,
-        "yang_zhang_24h": 0.05,
-        "yang_zhang_168h": 0.08,
-        "garch_12h": 0.03,
-        "garch_24h": 0.04,
-        "ret_15m": 0.001,
-        "ret_60m": 0.005,
-        "ret_5m": 0.0005,
-        "sma_60": 50000.0,
-        "yang_zhang_720h": 0.12,
-        "parkinson_24h": 0.06,
-        "parkinson_168h": 0.09,
-        "garch_500m": 0.025,
+        "cvd_7d": 5000.0,  # было cvd_168h
+        "yang_zhang_48h": 0.05,  # было yang_zhang_24h
+        "yang_zhang_7d": 0.08,  # было yang_zhang_168h
+        "garch_200h": 0.03,  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_14d": 0.04,  # было garch_24h
+        "ret_12h": 0.001,  # было ret_15m
+        "ret_24h": 0.005,  # было ret_60m
+        "ret_4h": 0.0005,  # было ret_5m
+        "sma_50": 50000.0,  # было sma_60 (50 баров = 200h для 4h)
+        "yang_zhang_30d": 0.12,  # было yang_zhang_720h
+        "parkinson_48h": 0.06,  # было parkinson_24h
+        "parkinson_7d": 0.09,  # было parkinson_168h
+        "garch_30d": 0.025,  # было garch_500m
         "taker_buy_ratio": 0.52,
         "taker_buy_ratio_sma_24h": 0.51,
-        # НОВЫЕ 5 признаков
-        "taker_buy_ratio_sma_6h": 0.53,
-        "taker_buy_ratio_sma_12h": 0.52,
-        "taker_buy_ratio_momentum_1h": 0.01,
-        "taker_buy_ratio_momentum_6h": 0.02,
-        "taker_buy_ratio_momentum_12h": 0.015,
+        # НОВЫЕ 5 признаков (обновлено для 4h)
+        "taker_buy_ratio_sma_8h": 0.53,  # было 6h
+        "taker_buy_ratio_sma_16h": 0.52,  # было 12h
+        "taker_buy_ratio_momentum_4h": 0.01,  # было 1h
+        "taker_buy_ratio_momentum_8h": 0.02,  # было 6h
+        "taker_buy_ratio_momentum_12h": 0.015,  # без изменений
     })
 
     norm_cols = mediator._extract_norm_cols(mock_row)
@@ -194,29 +194,30 @@ def test_column_names():
     print("ПРОВЕРКА 4: Имена колонок norm_cols")
     print("=" * 70)
 
+    # Обновлено для 4h таймфрейма
     expected_cols = [
         "cvd_24h",
-        "cvd_168h",
-        "yang_zhang_24h",
-        "yang_zhang_168h",
-        "garch_12h",
-        "garch_24h",
-        "ret_15m",
-        "ret_60m",
-        "ret_5m",
-        "sma_60",
-        "yang_zhang_720h",
-        "parkinson_24h",
-        "parkinson_168h",
-        "garch_500m",
+        "cvd_7d",  # было cvd_168h
+        "yang_zhang_48h",  # было yang_zhang_24h
+        "yang_zhang_7d",  # было yang_zhang_168h
+        "garch_200h",  # было garch_12h (КРИТИЧНО: минимум 50 баров!)
+        "garch_14d",  # было garch_24h
+        "ret_12h",  # было ret_15m
+        "ret_24h",  # было ret_60m
+        "ret_4h",  # было ret_5m
+        "sma_50",  # было sma_60 (50 баров = 200h для 4h)
+        "yang_zhang_30d",  # было yang_zhang_720h
+        "parkinson_48h",  # было parkinson_24h
+        "parkinson_7d",  # было parkinson_168h
+        "garch_30d",  # было garch_500m
         "taker_buy_ratio",
         "taker_buy_ratio_sma_24h",
-        # НОВЫЕ 5
-        "taker_buy_ratio_sma_6h",
-        "taker_buy_ratio_sma_12h",
-        "taker_buy_ratio_momentum_1h",
-        "taker_buy_ratio_momentum_6h",
-        "taker_buy_ratio_momentum_12h",
+        # НОВЫЕ 5 (обновлено для 4h)
+        "taker_buy_ratio_sma_8h",  # было 6h
+        "taker_buy_ratio_sma_16h",  # было 12h
+        "taker_buy_ratio_momentum_4h",  # было 1h
+        "taker_buy_ratio_momentum_8h",  # было 6h
+        "taker_buy_ratio_momentum_12h",  # без изменений
     ]
 
     print(f"Всего колонок: {len(expected_cols)}")
