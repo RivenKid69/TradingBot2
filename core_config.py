@@ -918,9 +918,14 @@ class CommonRunConfig(BaseModel):
 class ExecutionProfile(str, Enum):
     """Подход к исполнению заявок."""
 
+    # Legacy 1h/1m profiles (kept for backward compatibility)
     MKT_OPEN_NEXT_H1 = "MKT_OPEN_NEXT_H1"
     VWAP_CURRENT_H1 = "VWAP_CURRENT_H1"
     LIMIT_MID_BPS = "LIMIT_MID_BPS"
+
+    # 4h timeframe profiles (primary for 4h project)
+    MKT_OPEN_NEXT_4H = "MKT_OPEN_NEXT_4H"
+    VWAP_CURRENT_4H = "VWAP_CURRENT_4H"
 
 
 def _coerce_execution_profile(value: Any) -> ExecutionProfile:
