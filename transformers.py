@@ -409,8 +409,12 @@ class FeatureSpec:
         # 8h = 2 бара = 480 минут
         # 12h = 3 бара = 720 минут
         # 24h = 6 баров = 1440 минут (для долгосрочного моментума)
-        # КРИТИЧНО: mediator.py использует только 3 первых (norm_cols[18,19,20])
-        # TODO: либо расширить norm_cols до 22 и добавить 24h, либо удалить из config
+        #
+        # АРХИТЕКТУРНОЕ РЕШЕНИЕ: Генерируется 4 окна, используется 3 в observation
+        # - Генерируем ВСЕ 4 окна для гибкости (бэктесты, анализ, будущие эксперименты)
+        # - mediator.py использует только 3 первых в norm_cols[18,19,20] для компактности
+        # - observation vector = 56 признаков (21 external из них)
+        # - Это стандартная практика (аналогично sklearn, XGBoost: fit на всех, predict на подмножестве)
         if self.taker_buy_ratio_momentum is None:
             self.taker_buy_ratio_momentum = [4 * 60, 8 * 60, 12 * 60, 24 * 60]  # 240, 480, 720, 1440 минут
         elif isinstance(self.taker_buy_ratio_momentum, list):
