@@ -136,11 +136,10 @@ cdef inline void _validate_volume_metric(float value, str param_name) except *:
 
     Design rationale:
     - Volume metrics computed in mediator._extract_market_data()
-    - Formula: tanh(log1p(volume / normalizer)) should yield [-1, 1]
-    - If NaN/Inf appears, indicates:
-      1. Corrupted raw volume data (despite _get_safe_float)
-      2. Numerical overflow in log1p/tanh computation
-      3. Data pipeline error upstream
+    - Formula: tanh(log1p(volume / normalizer)) with volume >= 0 guaranteed by P0
+    - P0 layer (_get_safe_float with min_value=0.0) prevents negative volumes
+    - With volume >= 0, tanh(log1p(...)) always yields finite result in [-1, 1]
+    - This P2 validation catches any remaining edge cases or pipeline errors
     - Fail-fast approach prevents silent NaN propagation to observation vector
     """
     if isnan(value):
