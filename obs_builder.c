@@ -18315,26 +18315,69 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":363
- *     # This ensures the normalized value is in a reasonable range for tanh
- *     # NaN handling: if BB not ready (first 20 bars), use 0.0 (neutral volatility)
- *     bb_valid = not isnan(bb_lower)             # <<<<<<<<<<<<<<
+  /* "obs_builder.pyx":375
+ *     # - "Defense in Depth" (OWASP): Validate all required inputs, not just subset
+ *     # - "Data Validation Best Practices": Complete validation prevents partial failures
+ *     bb_valid = (not isnan(bb_lower) and not isnan(bb_upper) and             # <<<<<<<<<<<<<<
+ *                 isfinite(bb_lower) and isfinite(bb_upper) and
+ *                 bb_upper >= bb_lower)
+*/
+  __pyx_t_5 = (!isnan(__pyx_v_bb_lower));
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_3 = __pyx_t_5;
+    goto __pyx_L6_bool_binop_done;
+  }
+  __pyx_t_5 = (!isnan(__pyx_v_bb_upper));
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_3 = __pyx_t_5;
+    goto __pyx_L6_bool_binop_done;
+  }
+
+  /* "obs_builder.pyx":376
+ *     # - "Data Validation Best Practices": Complete validation prevents partial failures
+ *     bb_valid = (not isnan(bb_lower) and not isnan(bb_upper) and
+ *                 isfinite(bb_lower) and isfinite(bb_upper) and             # <<<<<<<<<<<<<<
+ *                 bb_upper >= bb_lower)
+ *     if bb_valid:
+*/
+  __pyx_t_5 = isfinite(__pyx_v_bb_lower);
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_3 = __pyx_t_5;
+    goto __pyx_L6_bool_binop_done;
+  }
+  __pyx_t_5 = isfinite(__pyx_v_bb_upper);
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_3 = __pyx_t_5;
+    goto __pyx_L6_bool_binop_done;
+  }
+
+  /* "obs_builder.pyx":377
+ *     bb_valid = (not isnan(bb_lower) and not isnan(bb_upper) and
+ *                 isfinite(bb_lower) and isfinite(bb_upper) and
+ *                 bb_upper >= bb_lower)             # <<<<<<<<<<<<<<
  *     if bb_valid:
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
 */
-  __pyx_v_bb_valid = (!isnan(__pyx_v_bb_lower));
+  __pyx_t_5 = (__pyx_v_bb_upper >= __pyx_v_bb_lower);
+  __pyx_t_3 = __pyx_t_5;
+  __pyx_L6_bool_binop_done:;
+  __pyx_v_bb_valid = __pyx_t_3;
 
-  /* "obs_builder.pyx":364
- *     # NaN handling: if BB not ready (first 20 bars), use 0.0 (neutral volatility)
- *     bb_valid = not isnan(bb_lower)
+  /* "obs_builder.pyx":378
+ *                 isfinite(bb_lower) and isfinite(bb_upper) and
+ *                 bb_upper >= bb_lower)
  *     if bb_valid:             # <<<<<<<<<<<<<<
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
  *     else:
 */
   if (__pyx_v_bb_valid) {
 
-    /* "obs_builder.pyx":365
- *     bb_valid = not isnan(bb_lower)
+    /* "obs_builder.pyx":379
+ *                 bb_upper >= bb_lower)
  *     if bb_valid:
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))             # <<<<<<<<<<<<<<
  *     else:
@@ -18342,17 +18385,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_bb_squeeze = tanh((((double)(__pyx_v_bb_upper - __pyx_v_bb_lower)) / (__pyx_v_price_d + 1e-8)));
 
-    /* "obs_builder.pyx":364
- *     # NaN handling: if BB not ready (first 20 bars), use 0.0 (neutral volatility)
- *     bb_valid = not isnan(bb_lower)
+    /* "obs_builder.pyx":378
+ *                 isfinite(bb_lower) and isfinite(bb_upper) and
+ *                 bb_upper >= bb_lower)
  *     if bb_valid:             # <<<<<<<<<<<<<<
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
  *     else:
 */
-    goto __pyx_L6;
+    goto __pyx_L11;
   }
 
-  /* "obs_builder.pyx":367
+  /* "obs_builder.pyx":381
  *         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
  *     else:
  *         bb_squeeze = 0.0             # <<<<<<<<<<<<<<
@@ -18362,9 +18405,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_bb_squeeze = 0.0;
   }
-  __pyx_L6:;
+  __pyx_L11:;
 
-  /* "obs_builder.pyx":368
+  /* "obs_builder.pyx":382
  *     else:
  *         bb_squeeze = 0.0
  *     out_features[feature_idx] = <float>bb_squeeze             # <<<<<<<<<<<<<<
@@ -18374,7 +18417,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = ((float)__pyx_v_bb_squeeze);
 
-  /* "obs_builder.pyx":369
+  /* "obs_builder.pyx":383
  *         bb_squeeze = 0.0
  *     out_features[feature_idx] = <float>bb_squeeze
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18383,7 +18426,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":375
+  /* "obs_builder.pyx":389
  *     # Normalized by 1% of price (price_d * 0.01) similar to price_momentum for consistency
  *     # NaN handling: if MACD not ready (first ~26 bars), use 0.0 (no trend signal)
  *     if not isnan(macd) and not isnan(macd_signal):             # <<<<<<<<<<<<<<
@@ -18394,14 +18437,14 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   if (__pyx_t_5) {
   } else {
     __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L8_bool_binop_done;
+    goto __pyx_L13_bool_binop_done;
   }
   __pyx_t_5 = (!isnan(__pyx_v_macd_signal));
   __pyx_t_3 = __pyx_t_5;
-  __pyx_L8_bool_binop_done:;
+  __pyx_L13_bool_binop_done:;
   if (__pyx_t_3) {
 
-    /* "obs_builder.pyx":376
+    /* "obs_builder.pyx":390
  *     # NaN handling: if MACD not ready (first ~26 bars), use 0.0 (no trend signal)
  *     if not isnan(macd) and not isnan(macd_signal):
  *         trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))             # <<<<<<<<<<<<<<
@@ -18410,17 +18453,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_trend_strength = tanh((((double)(__pyx_v_macd - __pyx_v_macd_signal)) / ((__pyx_v_price_d * 0.01) + 1e-8)));
 
-    /* "obs_builder.pyx":375
+    /* "obs_builder.pyx":389
  *     # Normalized by 1% of price (price_d * 0.01) similar to price_momentum for consistency
  *     # NaN handling: if MACD not ready (first ~26 bars), use 0.0 (no trend signal)
  *     if not isnan(macd) and not isnan(macd_signal):             # <<<<<<<<<<<<<<
  *         trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
  *     else:
 */
-    goto __pyx_L7;
+    goto __pyx_L12;
   }
 
-  /* "obs_builder.pyx":378
+  /* "obs_builder.pyx":392
  *         trend_strength = tanh((macd - macd_signal) / (price_d * 0.01 + 1e-8))
  *     else:
  *         trend_strength = 0.0             # <<<<<<<<<<<<<<
@@ -18430,9 +18473,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_trend_strength = 0.0;
   }
-  __pyx_L7:;
+  __pyx_L12:;
 
-  /* "obs_builder.pyx":379
+  /* "obs_builder.pyx":393
  *     else:
  *         trend_strength = 0.0
  *     out_features[feature_idx] = <float>trend_strength             # <<<<<<<<<<<<<<
@@ -18442,7 +18485,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = ((float)__pyx_v_trend_strength);
 
-  /* "obs_builder.pyx":380
+  /* "obs_builder.pyx":394
  *         trend_strength = 0.0
  *     out_features[feature_idx] = <float>trend_strength
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18451,17 +18494,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":385
- *     # Position within bands and band width - critical features for volatility-based strategies
- *     # NOTE: bb_valid is already computed above for bb_squeeze, reuse it
+  /* "obs_builder.pyx":406
+ *     # Even with bb_valid check, explicitly verify bb_width is finite
+ *     # This catches any remaining edge cases or calculation errors
  *     bb_width = bb_upper - bb_lower             # <<<<<<<<<<<<<<
  *     min_bb_width = price_d * 0.0001
  * 
 */
   __pyx_v_bb_width = (__pyx_v_bb_upper - __pyx_v_bb_lower);
 
-  /* "obs_builder.pyx":386
- *     # NOTE: bb_valid is already computed above for bb_squeeze, reuse it
+  /* "obs_builder.pyx":407
+ *     # This catches any remaining edge cases or calculation errors
  *     bb_width = bb_upper - bb_lower
  *     min_bb_width = price_d * 0.0001             # <<<<<<<<<<<<<<
  * 
@@ -18469,9 +18512,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_min_bb_width = (__pyx_v_price_d * 0.0001);
 
-  /* "obs_builder.pyx":391
- *     # 0.5 = at the middle (default when bands not available)
- *     # 0.0 = at lower band, 1.0 = at upper band
+  /* "obs_builder.pyx":422
+ *     # - Layer 2: Prevents division by zero/near-zero
+ *     # - Layer 3: Final safety net converts any NaN to 0.0
  *     if (not bb_valid) or bb_width <= min_bb_width:             # <<<<<<<<<<<<<<
  *         feature_val = 0.5
  *     else:
@@ -18480,48 +18523,80 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   if (!__pyx_t_5) {
   } else {
     __pyx_t_3 = __pyx_t_5;
-    goto __pyx_L11_bool_binop_done;
+    goto __pyx_L16_bool_binop_done;
   }
   __pyx_t_5 = (__pyx_v_bb_width <= __pyx_v_min_bb_width);
   __pyx_t_3 = __pyx_t_5;
-  __pyx_L11_bool_binop_done:;
+  __pyx_L16_bool_binop_done:;
   if (__pyx_t_3) {
 
-    /* "obs_builder.pyx":392
- *     # 0.0 = at lower band, 1.0 = at upper band
+    /* "obs_builder.pyx":423
+ *     # - Layer 3: Final safety net converts any NaN to 0.0
  *     if (not bb_valid) or bb_width <= min_bb_width:
  *         feature_val = 0.5             # <<<<<<<<<<<<<<
  *     else:
- *         feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
+ *         # Additional safety: verify bb_width is finite before division
 */
     __pyx_v_feature_val = 0.5;
 
-    /* "obs_builder.pyx":391
- *     # 0.5 = at the middle (default when bands not available)
- *     # 0.0 = at lower band, 1.0 = at upper band
+    /* "obs_builder.pyx":422
+ *     # - Layer 2: Prevents division by zero/near-zero
+ *     # - Layer 3: Final safety net converts any NaN to 0.0
  *     if (not bb_valid) or bb_width <= min_bb_width:             # <<<<<<<<<<<<<<
  *         feature_val = 0.5
  *     else:
 */
-    goto __pyx_L10;
+    goto __pyx_L15;
   }
 
-  /* "obs_builder.pyx":394
- *         feature_val = 0.5
+  /* "obs_builder.pyx":426
  *     else:
- *         feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)             # <<<<<<<<<<<<<<
+ *         # Additional safety: verify bb_width is finite before division
+ *         if not isfinite(bb_width):             # <<<<<<<<<<<<<<
+ *             feature_val = 0.5
+ *         else:
+*/
+  /*else*/ {
+    __pyx_t_3 = (!isfinite(__pyx_v_bb_width));
+    if (__pyx_t_3) {
+
+      /* "obs_builder.pyx":427
+ *         # Additional safety: verify bb_width is finite before division
+ *         if not isfinite(bb_width):
+ *             feature_val = 0.5             # <<<<<<<<<<<<<<
+ *         else:
+ *             feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
+*/
+      __pyx_v_feature_val = 0.5;
+
+      /* "obs_builder.pyx":426
+ *     else:
+ *         # Additional safety: verify bb_width is finite before division
+ *         if not isfinite(bb_width):             # <<<<<<<<<<<<<<
+ *             feature_val = 0.5
+ *         else:
+*/
+      goto __pyx_L18;
+    }
+
+    /* "obs_builder.pyx":429
+ *             feature_val = 0.5
+ *         else:
+ *             feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)             # <<<<<<<<<<<<<<
  *     out_features[feature_idx] = feature_val
  *     feature_idx += 1
 */
-  /*else*/ {
-    __pyx_t_4 = __pyx_f_11obs_builder__clipf(((__pyx_v_price_d - __pyx_v_bb_lower) / (__pyx_v_bb_width + 1e-9)), -1.0, 2.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 394, __pyx_L1_error)
-    __pyx_v_feature_val = __pyx_t_4;
+    /*else*/ {
+      __pyx_t_4 = __pyx_f_11obs_builder__clipf(((__pyx_v_price_d - __pyx_v_bb_lower) / (__pyx_v_bb_width + 1e-9)), -1.0, 2.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 429, __pyx_L1_error)
+      __pyx_v_feature_val = __pyx_t_4;
+    }
+    __pyx_L18:;
   }
-  __pyx_L10:;
+  __pyx_L15:;
 
-  /* "obs_builder.pyx":395
- *     else:
- *         feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
+  /* "obs_builder.pyx":430
+ *         else:
+ *             feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
  *     out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
  *     feature_idx += 1
  * 
@@ -18529,8 +18604,8 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-  /* "obs_builder.pyx":396
- *         feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
+  /* "obs_builder.pyx":431
+ *             feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
  *     out_features[feature_idx] = feature_val
  *     feature_idx += 1             # <<<<<<<<<<<<<<
  * 
@@ -18538,37 +18613,69 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":400
- *     # Feature 2: Normalized band width (volatility measure)
- *     # 0.0 = bands not available or zero width
+  /* "obs_builder.pyx":440
+ *     # 2. Secondary: Verify bb_width is finite before normalization
+ *     # 3. Tertiary: _clipf handles any remaining NaN
  *     if bb_valid:             # <<<<<<<<<<<<<<
- *         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
- *     else:
+ *         # Additional safety: verify bb_width is finite
+ *         if not isfinite(bb_width):
 */
   if (__pyx_v_bb_valid) {
 
-    /* "obs_builder.pyx":401
- *     # 0.0 = bands not available or zero width
+    /* "obs_builder.pyx":442
  *     if bb_valid:
- *         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)             # <<<<<<<<<<<<<<
+ *         # Additional safety: verify bb_width is finite
+ *         if not isfinite(bb_width):             # <<<<<<<<<<<<<<
+ *             feature_val = 0.0
+ *         else:
+*/
+    __pyx_t_3 = (!isfinite(__pyx_v_bb_width));
+    if (__pyx_t_3) {
+
+      /* "obs_builder.pyx":443
+ *         # Additional safety: verify bb_width is finite
+ *         if not isfinite(bb_width):
+ *             feature_val = 0.0             # <<<<<<<<<<<<<<
+ *         else:
+ *             feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
+*/
+      __pyx_v_feature_val = 0.0;
+
+      /* "obs_builder.pyx":442
+ *     if bb_valid:
+ *         # Additional safety: verify bb_width is finite
+ *         if not isfinite(bb_width):             # <<<<<<<<<<<<<<
+ *             feature_val = 0.0
+ *         else:
+*/
+      goto __pyx_L20;
+    }
+
+    /* "obs_builder.pyx":445
+ *             feature_val = 0.0
+ *         else:
+ *             feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)             # <<<<<<<<<<<<<<
  *     else:
  *         feature_val = 0.0
 */
-    __pyx_t_4 = __pyx_f_11obs_builder__clipf((__pyx_v_bb_width / (__pyx_v_price_d + 1e-8)), 0.0, 10.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 401, __pyx_L1_error)
-    __pyx_v_feature_val = __pyx_t_4;
+    /*else*/ {
+      __pyx_t_4 = __pyx_f_11obs_builder__clipf((__pyx_v_bb_width / (__pyx_v_price_d + 1e-8)), 0.0, 10.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 445, __pyx_L1_error)
+      __pyx_v_feature_val = __pyx_t_4;
+    }
+    __pyx_L20:;
 
-    /* "obs_builder.pyx":400
- *     # Feature 2: Normalized band width (volatility measure)
- *     # 0.0 = bands not available or zero width
+    /* "obs_builder.pyx":440
+ *     # 2. Secondary: Verify bb_width is finite before normalization
+ *     # 3. Tertiary: _clipf handles any remaining NaN
  *     if bb_valid:             # <<<<<<<<<<<<<<
- *         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
- *     else:
+ *         # Additional safety: verify bb_width is finite
+ *         if not isfinite(bb_width):
 */
-    goto __pyx_L13;
+    goto __pyx_L19;
   }
 
-  /* "obs_builder.pyx":403
- *         feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
+  /* "obs_builder.pyx":447
+ *             feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
  *     else:
  *         feature_val = 0.0             # <<<<<<<<<<<<<<
  *     out_features[feature_idx] = feature_val
@@ -18577,9 +18684,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_feature_val = 0.0;
   }
-  __pyx_L13:;
+  __pyx_L19:;
 
-  /* "obs_builder.pyx":404
+  /* "obs_builder.pyx":448
  *     else:
  *         feature_val = 0.0
  *     out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
@@ -18589,7 +18696,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-  /* "obs_builder.pyx":405
+  /* "obs_builder.pyx":449
  *         feature_val = 0.0
  *     out_features[feature_idx] = feature_val
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18598,7 +18705,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":408
+  /* "obs_builder.pyx":452
  * 
  *     # --- Event metadata ----------------------------------------------------
  *     out_features[feature_idx] = is_high_importance             # <<<<<<<<<<<<<<
@@ -18608,7 +18715,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_is_high_importance;
 
-  /* "obs_builder.pyx":409
+  /* "obs_builder.pyx":453
  *     # --- Event metadata ----------------------------------------------------
  *     out_features[feature_idx] = is_high_importance
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18617,7 +18724,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":411
+  /* "obs_builder.pyx":455
  *     feature_idx += 1
  * 
  *     out_features[feature_idx] = <float>tanh(time_since_event / 24.0)             # <<<<<<<<<<<<<<
@@ -18627,7 +18734,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = ((float)tanh((((double)__pyx_v_time_since_event) / 24.0)));
 
-  /* "obs_builder.pyx":412
+  /* "obs_builder.pyx":456
  * 
  *     out_features[feature_idx] = <float>tanh(time_since_event / 24.0)
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18636,7 +18743,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":414
+  /* "obs_builder.pyx":458
  *     feature_idx += 1
  * 
  *     out_features[feature_idx] = 1.0 if risk_off_flag else 0.0             # <<<<<<<<<<<<<<
@@ -18651,7 +18758,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_t_2;
 
-  /* "obs_builder.pyx":415
+  /* "obs_builder.pyx":459
  * 
  *     out_features[feature_idx] = 1.0 if risk_off_flag else 0.0
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18660,7 +18767,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":418
+  /* "obs_builder.pyx":462
  * 
  *     # --- Fear & Greed ------------------------------------------------------
  *     if has_fear_greed:             # <<<<<<<<<<<<<<
@@ -18669,17 +18776,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   if (__pyx_v_has_fear_greed) {
 
-    /* "obs_builder.pyx":419
+    /* "obs_builder.pyx":463
  *     # --- Fear & Greed ------------------------------------------------------
  *     if has_fear_greed:
  *         feature_val = _clipf(fear_greed_value / 100.0, -3.0, 3.0)             # <<<<<<<<<<<<<<
  *         indicator = 1.0
  *     else:
 */
-    __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_fear_greed_value) / 100.0), -3.0, 3.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 419, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_fear_greed_value) / 100.0), -3.0, 3.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 463, __pyx_L1_error)
     __pyx_v_feature_val = __pyx_t_4;
 
-    /* "obs_builder.pyx":420
+    /* "obs_builder.pyx":464
  *     if has_fear_greed:
  *         feature_val = _clipf(fear_greed_value / 100.0, -3.0, 3.0)
  *         indicator = 1.0             # <<<<<<<<<<<<<<
@@ -18688,17 +18795,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_indicator = 1.0;
 
-    /* "obs_builder.pyx":418
+    /* "obs_builder.pyx":462
  * 
  *     # --- Fear & Greed ------------------------------------------------------
  *     if has_fear_greed:             # <<<<<<<<<<<<<<
  *         feature_val = _clipf(fear_greed_value / 100.0, -3.0, 3.0)
  *         indicator = 1.0
 */
-    goto __pyx_L14;
+    goto __pyx_L21;
   }
 
-  /* "obs_builder.pyx":422
+  /* "obs_builder.pyx":466
  *         indicator = 1.0
  *     else:
  *         feature_val = 0.0             # <<<<<<<<<<<<<<
@@ -18708,7 +18815,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   /*else*/ {
     __pyx_v_feature_val = 0.0;
 
-    /* "obs_builder.pyx":423
+    /* "obs_builder.pyx":467
  *     else:
  *         feature_val = 0.0
  *         indicator = 0.0             # <<<<<<<<<<<<<<
@@ -18717,9 +18824,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_indicator = 0.0;
   }
-  __pyx_L14:;
+  __pyx_L21:;
 
-  /* "obs_builder.pyx":424
+  /* "obs_builder.pyx":468
  *         feature_val = 0.0
  *         indicator = 0.0
  *     out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
@@ -18729,7 +18836,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-  /* "obs_builder.pyx":425
+  /* "obs_builder.pyx":469
  *         indicator = 0.0
  *     out_features[feature_idx] = feature_val
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18738,7 +18845,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":426
+  /* "obs_builder.pyx":470
  *     out_features[feature_idx] = feature_val
  *     feature_idx += 1
  *     out_features[feature_idx] = indicator             # <<<<<<<<<<<<<<
@@ -18748,7 +18855,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_1 = __pyx_v_feature_idx;
   *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_indicator;
 
-  /* "obs_builder.pyx":427
+  /* "obs_builder.pyx":471
  *     feature_idx += 1
  *     out_features[feature_idx] = indicator
  *     feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18757,7 +18864,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
   __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-  /* "obs_builder.pyx":430
+  /* "obs_builder.pyx":474
  * 
  *     # --- External normalised columns --------------------------------------
  *     for i in range(norm_cols_values.shape[0]):             # <<<<<<<<<<<<<<
@@ -18769,7 +18876,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "obs_builder.pyx":432
+    /* "obs_builder.pyx":476
  *     for i in range(norm_cols_values.shape[0]):
  *         # Apply tanh normalization first, then clip to safe range
  *         feature_val = _clipf(tanh(norm_cols_values[i]), -3.0, 3.0)             # <<<<<<<<<<<<<<
@@ -18777,10 +18884,10 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
  *         feature_idx += 1
 */
     __pyx_t_1 = __pyx_v_i;
-    __pyx_t_4 = __pyx_f_11obs_builder__clipf(tanh((*((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_norm_cols_values.data) + __pyx_t_1)) )))), -3.0, 3.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 432, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_11obs_builder__clipf(tanh((*((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_norm_cols_values.data) + __pyx_t_1)) )))), -3.0, 3.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 476, __pyx_L1_error)
     __pyx_v_feature_val = __pyx_t_4;
 
-    /* "obs_builder.pyx":433
+    /* "obs_builder.pyx":477
  *         # Apply tanh normalization first, then clip to safe range
  *         feature_val = _clipf(tanh(norm_cols_values[i]), -3.0, 3.0)
  *         out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
@@ -18790,7 +18897,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_t_1 = __pyx_v_feature_idx;
     *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-    /* "obs_builder.pyx":434
+    /* "obs_builder.pyx":478
  *         feature_val = _clipf(tanh(norm_cols_values[i]), -3.0, 3.0)
  *         out_features[feature_idx] = feature_val
  *         feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18800,7 +18907,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
   }
 
-  /* "obs_builder.pyx":437
+  /* "obs_builder.pyx":481
  * 
  *     # --- Token metadata ----------------------------------------------------
  *     if max_num_tokens > 0:             # <<<<<<<<<<<<<<
@@ -18810,17 +18917,17 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_t_3 = (__pyx_v_max_num_tokens > 0);
   if (__pyx_t_3) {
 
-    /* "obs_builder.pyx":439
+    /* "obs_builder.pyx":483
  *     if max_num_tokens > 0:
  *         # Normalised statistics to keep vector length fixed
  *         feature_val = _clipf(num_tokens / (<double>max_num_tokens), 0.0, 1.0)             # <<<<<<<<<<<<<<
  *         out_features[feature_idx] = feature_val
  *         feature_idx += 1
 */
-    __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_num_tokens) / ((double)__pyx_v_max_num_tokens)), 0.0, 1.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 439, __pyx_L1_error)
+    __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_num_tokens) / ((double)__pyx_v_max_num_tokens)), 0.0, 1.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 483, __pyx_L1_error)
     __pyx_v_feature_val = __pyx_t_4;
 
-    /* "obs_builder.pyx":440
+    /* "obs_builder.pyx":484
  *         # Normalised statistics to keep vector length fixed
  *         feature_val = _clipf(num_tokens / (<double>max_num_tokens), 0.0, 1.0)
  *         out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
@@ -18830,7 +18937,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_t_1 = __pyx_v_feature_idx;
     *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-    /* "obs_builder.pyx":441
+    /* "obs_builder.pyx":485
  *         feature_val = _clipf(num_tokens / (<double>max_num_tokens), 0.0, 1.0)
  *         out_features[feature_idx] = feature_val
  *         feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18839,7 +18946,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-    /* "obs_builder.pyx":443
+    /* "obs_builder.pyx":487
  *         feature_idx += 1
  * 
  *         if 0 <= token_id < max_num_tokens:             # <<<<<<<<<<<<<<
@@ -18852,27 +18959,27 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     }
     if (__pyx_t_3) {
 
-      /* "obs_builder.pyx":444
+      /* "obs_builder.pyx":488
  * 
  *         if 0 <= token_id < max_num_tokens:
  *             feature_val = _clipf(token_id / (<double>max_num_tokens), 0.0, 1.0)             # <<<<<<<<<<<<<<
  *         else:
  *             feature_val = 0.0
 */
-      __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_token_id) / ((double)__pyx_v_max_num_tokens)), 0.0, 1.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 444, __pyx_L1_error)
+      __pyx_t_4 = __pyx_f_11obs_builder__clipf((((double)__pyx_v_token_id) / ((double)__pyx_v_max_num_tokens)), 0.0, 1.0); if (unlikely(__pyx_t_4 == ((float)-1) && __Pyx_ErrOccurredWithGIL())) __PYX_ERR(0, 488, __pyx_L1_error)
       __pyx_v_feature_val = __pyx_t_4;
 
-      /* "obs_builder.pyx":443
+      /* "obs_builder.pyx":487
  *         feature_idx += 1
  * 
  *         if 0 <= token_id < max_num_tokens:             # <<<<<<<<<<<<<<
  *             feature_val = _clipf(token_id / (<double>max_num_tokens), 0.0, 1.0)
  *         else:
 */
-      goto __pyx_L18;
+      goto __pyx_L25;
     }
 
-    /* "obs_builder.pyx":446
+    /* "obs_builder.pyx":490
  *             feature_val = _clipf(token_id / (<double>max_num_tokens), 0.0, 1.0)
  *         else:
  *             feature_val = 0.0             # <<<<<<<<<<<<<<
@@ -18882,9 +18989,9 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     /*else*/ {
       __pyx_v_feature_val = 0.0;
     }
-    __pyx_L18:;
+    __pyx_L25:;
 
-    /* "obs_builder.pyx":447
+    /* "obs_builder.pyx":491
  *         else:
  *             feature_val = 0.0
  *         out_features[feature_idx] = feature_val             # <<<<<<<<<<<<<<
@@ -18894,7 +19001,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     __pyx_t_1 = __pyx_v_feature_idx;
     *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = __pyx_v_feature_val;
 
-    /* "obs_builder.pyx":448
+    /* "obs_builder.pyx":492
  *             feature_val = 0.0
  *         out_features[feature_idx] = feature_val
  *         feature_idx += 1             # <<<<<<<<<<<<<<
@@ -18903,7 +19010,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_feature_idx = (__pyx_v_feature_idx + 1);
 
-    /* "obs_builder.pyx":450
+    /* "obs_builder.pyx":494
  *         feature_idx += 1
  * 
  *         padded_tokens = max_num_tokens             # <<<<<<<<<<<<<<
@@ -18912,7 +19019,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_padded_tokens = __pyx_v_max_num_tokens;
 
-    /* "obs_builder.pyx":451
+    /* "obs_builder.pyx":495
  * 
  *         padded_tokens = max_num_tokens
  *         for i in range(padded_tokens):             # <<<<<<<<<<<<<<
@@ -18924,7 +19031,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_10; __pyx_t_6+=1) {
       __pyx_v_i = __pyx_t_6;
 
-      /* "obs_builder.pyx":452
+      /* "obs_builder.pyx":496
  *         padded_tokens = max_num_tokens
  *         for i in range(padded_tokens):
  *             out_features[feature_idx + i] = 0.0             # <<<<<<<<<<<<<<
@@ -18935,7 +19042,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
       *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = 0.0;
     }
 
-    /* "obs_builder.pyx":454
+    /* "obs_builder.pyx":498
  *             out_features[feature_idx + i] = 0.0
  * 
  *         if 0 <= token_id < num_tokens and token_id < max_num_tokens:             # <<<<<<<<<<<<<<
@@ -18949,14 +19056,14 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
     if (__pyx_t_5) {
     } else {
       __pyx_t_3 = __pyx_t_5;
-      goto __pyx_L22_bool_binop_done;
+      goto __pyx_L29_bool_binop_done;
     }
     __pyx_t_5 = (__pyx_v_token_id < __pyx_v_max_num_tokens);
     __pyx_t_3 = __pyx_t_5;
-    __pyx_L22_bool_binop_done:;
+    __pyx_L29_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "obs_builder.pyx":455
+      /* "obs_builder.pyx":499
  * 
  *         if 0 <= token_id < num_tokens and token_id < max_num_tokens:
  *             out_features[feature_idx + token_id] = 1.0             # <<<<<<<<<<<<<<
@@ -18966,7 +19073,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
       __pyx_t_1 = (__pyx_v_feature_idx + __pyx_v_token_id);
       *((float *) ( /* dim=0 */ ((char *) (((float *) __pyx_v_out_features.data) + __pyx_t_1)) )) = 1.0;
 
-      /* "obs_builder.pyx":454
+      /* "obs_builder.pyx":498
  *             out_features[feature_idx + i] = 0.0
  * 
  *         if 0 <= token_id < num_tokens and token_id < max_num_tokens:             # <<<<<<<<<<<<<<
@@ -18975,7 +19082,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     }
 
-    /* "obs_builder.pyx":457
+    /* "obs_builder.pyx":501
  *             out_features[feature_idx + token_id] = 1.0
  * 
  *         feature_idx += padded_tokens             # <<<<<<<<<<<<<<
@@ -18984,7 +19091,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
 */
     __pyx_v_feature_idx = (__pyx_v_feature_idx + __pyx_v_padded_tokens);
 
-    /* "obs_builder.pyx":437
+    /* "obs_builder.pyx":481
  * 
  *     # --- Token metadata ----------------------------------------------------
  *     if max_num_tokens > 0:             # <<<<<<<<<<<<<<
@@ -19010,7 +19117,7 @@ static void __pyx_f_11obs_builder_build_observation_vector_c(float __pyx_v_price
   __pyx_L0:;
 }
 
-/* "obs_builder.pyx":460
+/* "obs_builder.pyx":504
  * 
  * 
  * cpdef void build_observation_vector(             # <<<<<<<<<<<<<<
@@ -19030,61 +19137,61 @@ static void __pyx_f_11obs_builder_build_observation_vector(float __pyx_v_price, 
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
 
-  /* "obs_builder.pyx":520
+  /* "obs_builder.pyx":564
  *     # CRITICAL: Validate price inputs before any computation
  *     # This prevents NaN/Inf propagation through 15+ calculations downstream
  *     _validate_price(price, "price")             # <<<<<<<<<<<<<<
  *     _validate_price(prev_price, "prev_price")
  * 
 */
-  __pyx_f_11obs_builder__validate_price(__pyx_v_price, __pyx_mstate_global->__pyx_n_u_price); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_price(__pyx_v_price, __pyx_mstate_global->__pyx_n_u_price); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 564, __pyx_L1_error)
 
-  /* "obs_builder.pyx":521
+  /* "obs_builder.pyx":565
  *     # This prevents NaN/Inf propagation through 15+ calculations downstream
  *     _validate_price(price, "price")
  *     _validate_price(prev_price, "prev_price")             # <<<<<<<<<<<<<<
  * 
  *     # CRITICAL: Validate volume metrics to prevent NaN propagation
 */
-  __pyx_f_11obs_builder__validate_price(__pyx_v_prev_price, __pyx_mstate_global->__pyx_n_u_prev_price); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 521, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_price(__pyx_v_prev_price, __pyx_mstate_global->__pyx_n_u_prev_price); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 565, __pyx_L1_error)
 
-  /* "obs_builder.pyx":526
+  /* "obs_builder.pyx":570
  *     # These are computed from raw volume data and can be corrupted upstream
  *     # Without this check, corrupted values would be written directly to observation array
  *     _validate_volume_metric(log_volume_norm, "log_volume_norm")             # <<<<<<<<<<<<<<
  *     _validate_volume_metric(rel_volume, "rel_volume")
  * 
 */
-  __pyx_f_11obs_builder__validate_volume_metric(__pyx_v_log_volume_norm, __pyx_mstate_global->__pyx_n_u_log_volume_norm); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 526, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_volume_metric(__pyx_v_log_volume_norm, __pyx_mstate_global->__pyx_n_u_log_volume_norm); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 570, __pyx_L1_error)
 
-  /* "obs_builder.pyx":527
+  /* "obs_builder.pyx":571
  *     # Without this check, corrupted values would be written directly to observation array
  *     _validate_volume_metric(log_volume_norm, "log_volume_norm")
  *     _validate_volume_metric(rel_volume, "rel_volume")             # <<<<<<<<<<<<<<
  * 
  *     # Validate portfolio state (cash and units)
 */
-  __pyx_f_11obs_builder__validate_volume_metric(__pyx_v_rel_volume, __pyx_mstate_global->__pyx_n_u_rel_volume); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_volume_metric(__pyx_v_rel_volume, __pyx_mstate_global->__pyx_n_u_rel_volume); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 571, __pyx_L1_error)
 
-  /* "obs_builder.pyx":531
+  /* "obs_builder.pyx":575
  *     # Validate portfolio state (cash and units)
  *     # These can be 0 or negative (valid states) but not NaN/Inf
  *     _validate_portfolio_value(cash, "cash")             # <<<<<<<<<<<<<<
  *     _validate_portfolio_value(units, "units")
  * 
 */
-  __pyx_f_11obs_builder__validate_portfolio_value(__pyx_v_cash, __pyx_mstate_global->__pyx_n_u_cash); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_portfolio_value(__pyx_v_cash, __pyx_mstate_global->__pyx_n_u_cash); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 575, __pyx_L1_error)
 
-  /* "obs_builder.pyx":532
+  /* "obs_builder.pyx":576
  *     # These can be 0 or negative (valid states) but not NaN/Inf
  *     _validate_portfolio_value(cash, "cash")
  *     _validate_portfolio_value(units, "units")             # <<<<<<<<<<<<<<
  * 
  *     build_observation_vector_c(
 */
-  __pyx_f_11obs_builder__validate_portfolio_value(__pyx_v_units, __pyx_mstate_global->__pyx_n_u_units); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_f_11obs_builder__validate_portfolio_value(__pyx_v_units, __pyx_mstate_global->__pyx_n_u_units); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 576, __pyx_L1_error)
 
-  /* "obs_builder.pyx":534
+  /* "obs_builder.pyx":578
  *     _validate_portfolio_value(units, "units")
  * 
  *     build_observation_vector_c(             # <<<<<<<<<<<<<<
@@ -19093,7 +19200,7 @@ static void __pyx_f_11obs_builder_build_observation_vector(float __pyx_v_price, 
 */
   __pyx_f_11obs_builder_build_observation_vector_c(__pyx_v_price, __pyx_v_prev_price, __pyx_v_log_volume_norm, __pyx_v_rel_volume, __pyx_v_ma5, __pyx_v_ma20, __pyx_v_rsi14, __pyx_v_macd, __pyx_v_macd_signal, __pyx_v_momentum, __pyx_v_atr, __pyx_v_cci, __pyx_v_obv, __pyx_v_bb_lower, __pyx_v_bb_upper, __pyx_v_is_high_importance, __pyx_v_time_since_event, __pyx_v_fear_greed_value, __pyx_v_has_fear_greed, __pyx_v_risk_off_flag, __pyx_v_cash, __pyx_v_units, __pyx_v_last_vol_imbalance, __pyx_v_last_trade_intensity, __pyx_v_last_realized_spread, __pyx_v_last_agent_fill_ratio, __pyx_v_token_id, __pyx_v_max_num_tokens, __pyx_v_num_tokens, __pyx_v_norm_cols_values, __pyx_v_out_features);
 
-  /* "obs_builder.pyx":460
+  /* "obs_builder.pyx":504
  * 
  * 
  * cpdef void build_observation_vector(             # <<<<<<<<<<<<<<
@@ -19178,242 +19285,242 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_price,&__pyx_mstate_global->__pyx_n_u_prev_price,&__pyx_mstate_global->__pyx_n_u_log_volume_norm,&__pyx_mstate_global->__pyx_n_u_rel_volume,&__pyx_mstate_global->__pyx_n_u_ma5,&__pyx_mstate_global->__pyx_n_u_ma20,&__pyx_mstate_global->__pyx_n_u_rsi14,&__pyx_mstate_global->__pyx_n_u_macd,&__pyx_mstate_global->__pyx_n_u_macd_signal,&__pyx_mstate_global->__pyx_n_u_momentum,&__pyx_mstate_global->__pyx_n_u_atr,&__pyx_mstate_global->__pyx_n_u_cci,&__pyx_mstate_global->__pyx_n_u_obv,&__pyx_mstate_global->__pyx_n_u_bb_lower,&__pyx_mstate_global->__pyx_n_u_bb_upper,&__pyx_mstate_global->__pyx_n_u_is_high_importance,&__pyx_mstate_global->__pyx_n_u_time_since_event,&__pyx_mstate_global->__pyx_n_u_fear_greed_value,&__pyx_mstate_global->__pyx_n_u_has_fear_greed,&__pyx_mstate_global->__pyx_n_u_risk_off_flag,&__pyx_mstate_global->__pyx_n_u_cash,&__pyx_mstate_global->__pyx_n_u_units,&__pyx_mstate_global->__pyx_n_u_last_vol_imbalance,&__pyx_mstate_global->__pyx_n_u_last_trade_intensity,&__pyx_mstate_global->__pyx_n_u_last_realized_spread,&__pyx_mstate_global->__pyx_n_u_last_agent_fill_ratio,&__pyx_mstate_global->__pyx_n_u_token_id,&__pyx_mstate_global->__pyx_n_u_max_num_tokens,&__pyx_mstate_global->__pyx_n_u_num_tokens,&__pyx_mstate_global->__pyx_n_u_norm_cols_values,&__pyx_mstate_global->__pyx_n_u_out_features,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 460, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 504, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case 31:
         values[30] = __Pyx_ArgRef_FASTCALL(__pyx_args, 30);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[30])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[30])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 30:
         values[29] = __Pyx_ArgRef_FASTCALL(__pyx_args, 29);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[29])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[29])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 29:
         values[28] = __Pyx_ArgRef_FASTCALL(__pyx_args, 28);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[28])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[28])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 28:
         values[27] = __Pyx_ArgRef_FASTCALL(__pyx_args, 27);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[27])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[27])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 27:
         values[26] = __Pyx_ArgRef_FASTCALL(__pyx_args, 26);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[26])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[26])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 26:
         values[25] = __Pyx_ArgRef_FASTCALL(__pyx_args, 25);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[25])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[25])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 25:
         values[24] = __Pyx_ArgRef_FASTCALL(__pyx_args, 24);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[24])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[24])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 24:
         values[23] = __Pyx_ArgRef_FASTCALL(__pyx_args, 23);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[23])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[23])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 23:
         values[22] = __Pyx_ArgRef_FASTCALL(__pyx_args, 22);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[22])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[22])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 22:
         values[21] = __Pyx_ArgRef_FASTCALL(__pyx_args, 21);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[21])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[21])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 21:
         values[20] = __Pyx_ArgRef_FASTCALL(__pyx_args, 20);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[20])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[20])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 20:
         values[19] = __Pyx_ArgRef_FASTCALL(__pyx_args, 19);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[19])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[19])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 19:
         values[18] = __Pyx_ArgRef_FASTCALL(__pyx_args, 18);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[18])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[18])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 18:
         values[17] = __Pyx_ArgRef_FASTCALL(__pyx_args, 17);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[17])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[17])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 17:
         values[16] = __Pyx_ArgRef_FASTCALL(__pyx_args, 16);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[16])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[16])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 16:
         values[15] = __Pyx_ArgRef_FASTCALL(__pyx_args, 15);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[15])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[15])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 15:
         values[14] = __Pyx_ArgRef_FASTCALL(__pyx_args, 14);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[14])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[14])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 14:
         values[13] = __Pyx_ArgRef_FASTCALL(__pyx_args, 13);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[13])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[13])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 13:
         values[12] = __Pyx_ArgRef_FASTCALL(__pyx_args, 12);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[12])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[12])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 12:
         values[11] = __Pyx_ArgRef_FASTCALL(__pyx_args, 11);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[11])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[11])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 11:
         values[10] = __Pyx_ArgRef_FASTCALL(__pyx_args, 10);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[10])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[10])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case 10:
         values[9] = __Pyx_ArgRef_FASTCALL(__pyx_args, 9);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[9])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[9])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  9:
         values[8] = __Pyx_ArgRef_FASTCALL(__pyx_args, 8);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[8])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[8])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  8:
         values[7] = __Pyx_ArgRef_FASTCALL(__pyx_args, 7);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  7:
         values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 504, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "build_observation_vector", 0) < (0)) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "build_observation_vector", 0) < (0)) __PYX_ERR(0, 504, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 31; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("build_observation_vector", 1, 31, 31, i); __PYX_ERR(0, 460, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("build_observation_vector", 1, 31, 31, i); __PYX_ERR(0, 504, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 31)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[6] = __Pyx_ArgRef_FASTCALL(__pyx_args, 6);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[6])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[7] = __Pyx_ArgRef_FASTCALL(__pyx_args, 7);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[7])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[8] = __Pyx_ArgRef_FASTCALL(__pyx_args, 8);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[8])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[8])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[9] = __Pyx_ArgRef_FASTCALL(__pyx_args, 9);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[9])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[9])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[10] = __Pyx_ArgRef_FASTCALL(__pyx_args, 10);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[10])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[10])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[11] = __Pyx_ArgRef_FASTCALL(__pyx_args, 11);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[11])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[11])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[12] = __Pyx_ArgRef_FASTCALL(__pyx_args, 12);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[12])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[12])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[13] = __Pyx_ArgRef_FASTCALL(__pyx_args, 13);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[13])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[13])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[14] = __Pyx_ArgRef_FASTCALL(__pyx_args, 14);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[14])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[14])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[15] = __Pyx_ArgRef_FASTCALL(__pyx_args, 15);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[15])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[15])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[16] = __Pyx_ArgRef_FASTCALL(__pyx_args, 16);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[16])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[16])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[17] = __Pyx_ArgRef_FASTCALL(__pyx_args, 17);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[17])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[17])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[18] = __Pyx_ArgRef_FASTCALL(__pyx_args, 18);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[18])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[18])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[19] = __Pyx_ArgRef_FASTCALL(__pyx_args, 19);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[19])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[19])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[20] = __Pyx_ArgRef_FASTCALL(__pyx_args, 20);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[20])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[20])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[21] = __Pyx_ArgRef_FASTCALL(__pyx_args, 21);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[21])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[21])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[22] = __Pyx_ArgRef_FASTCALL(__pyx_args, 22);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[22])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[22])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[23] = __Pyx_ArgRef_FASTCALL(__pyx_args, 23);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[23])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[23])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[24] = __Pyx_ArgRef_FASTCALL(__pyx_args, 24);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[24])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[24])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[25] = __Pyx_ArgRef_FASTCALL(__pyx_args, 25);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[25])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[25])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[26] = __Pyx_ArgRef_FASTCALL(__pyx_args, 26);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[26])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[26])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[27] = __Pyx_ArgRef_FASTCALL(__pyx_args, 27);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[27])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[27])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[28] = __Pyx_ArgRef_FASTCALL(__pyx_args, 28);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[28])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[28])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[29] = __Pyx_ArgRef_FASTCALL(__pyx_args, 29);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[29])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[29])) __PYX_ERR(0, 504, __pyx_L3_error)
       values[30] = __Pyx_ArgRef_FASTCALL(__pyx_args, 30);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[30])) __PYX_ERR(0, 460, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[30])) __PYX_ERR(0, 504, __pyx_L3_error)
     }
-    __pyx_v_price = __Pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_price == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 461, __pyx_L3_error)
-    __pyx_v_prev_price = __Pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_prev_price == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 462, __pyx_L3_error)
-    __pyx_v_log_volume_norm = __Pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_log_volume_norm == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 463, __pyx_L3_error)
-    __pyx_v_rel_volume = __Pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_rel_volume == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 464, __pyx_L3_error)
-    __pyx_v_ma5 = __Pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_ma5 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 465, __pyx_L3_error)
-    __pyx_v_ma20 = __Pyx_PyFloat_AsFloat(values[5]); if (unlikely((__pyx_v_ma20 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 466, __pyx_L3_error)
-    __pyx_v_rsi14 = __Pyx_PyFloat_AsFloat(values[6]); if (unlikely((__pyx_v_rsi14 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 467, __pyx_L3_error)
-    __pyx_v_macd = __Pyx_PyFloat_AsFloat(values[7]); if (unlikely((__pyx_v_macd == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 468, __pyx_L3_error)
-    __pyx_v_macd_signal = __Pyx_PyFloat_AsFloat(values[8]); if (unlikely((__pyx_v_macd_signal == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 469, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_momentum == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 470, __pyx_L3_error)
-    __pyx_v_atr = __Pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_atr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 471, __pyx_L3_error)
-    __pyx_v_cci = __Pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_cci == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 472, __pyx_L3_error)
-    __pyx_v_obv = __Pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_obv == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 473, __pyx_L3_error)
-    __pyx_v_bb_lower = __Pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_bb_lower == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 474, __pyx_L3_error)
-    __pyx_v_bb_upper = __Pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_bb_upper == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 475, __pyx_L3_error)
-    __pyx_v_is_high_importance = __Pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_is_high_importance == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 476, __pyx_L3_error)
-    __pyx_v_time_since_event = __Pyx_PyFloat_AsFloat(values[16]); if (unlikely((__pyx_v_time_since_event == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 477, __pyx_L3_error)
-    __pyx_v_fear_greed_value = __Pyx_PyFloat_AsFloat(values[17]); if (unlikely((__pyx_v_fear_greed_value == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 478, __pyx_L3_error)
-    __pyx_v_has_fear_greed = __Pyx_PyObject_IsTrue(values[18]); if (unlikely((__pyx_v_has_fear_greed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 479, __pyx_L3_error)
-    __pyx_v_risk_off_flag = __Pyx_PyObject_IsTrue(values[19]); if (unlikely((__pyx_v_risk_off_flag == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 480, __pyx_L3_error)
-    __pyx_v_cash = __Pyx_PyFloat_AsFloat(values[20]); if (unlikely((__pyx_v_cash == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 481, __pyx_L3_error)
-    __pyx_v_units = __Pyx_PyFloat_AsFloat(values[21]); if (unlikely((__pyx_v_units == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 482, __pyx_L3_error)
-    __pyx_v_last_vol_imbalance = __Pyx_PyFloat_AsFloat(values[22]); if (unlikely((__pyx_v_last_vol_imbalance == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 483, __pyx_L3_error)
-    __pyx_v_last_trade_intensity = __Pyx_PyFloat_AsFloat(values[23]); if (unlikely((__pyx_v_last_trade_intensity == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 484, __pyx_L3_error)
-    __pyx_v_last_realized_spread = __Pyx_PyFloat_AsFloat(values[24]); if (unlikely((__pyx_v_last_realized_spread == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 485, __pyx_L3_error)
-    __pyx_v_last_agent_fill_ratio = __Pyx_PyFloat_AsFloat(values[25]); if (unlikely((__pyx_v_last_agent_fill_ratio == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 486, __pyx_L3_error)
-    __pyx_v_token_id = __Pyx_PyLong_As_int(values[26]); if (unlikely((__pyx_v_token_id == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 487, __pyx_L3_error)
-    __pyx_v_max_num_tokens = __Pyx_PyLong_As_int(values[27]); if (unlikely((__pyx_v_max_num_tokens == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 488, __pyx_L3_error)
-    __pyx_v_num_tokens = __Pyx_PyLong_As_int(values[28]); if (unlikely((__pyx_v_num_tokens == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 489, __pyx_L3_error)
-    __pyx_v_norm_cols_values = __Pyx_PyObject_to_MemoryviewSlice_dc_float(values[29], PyBUF_WRITABLE); if (unlikely(!__pyx_v_norm_cols_values.memview)) __PYX_ERR(0, 490, __pyx_L3_error)
-    __pyx_v_out_features = __Pyx_PyObject_to_MemoryviewSlice_dc_float(values[30], PyBUF_WRITABLE); if (unlikely(!__pyx_v_out_features.memview)) __PYX_ERR(0, 491, __pyx_L3_error)
+    __pyx_v_price = __Pyx_PyFloat_AsFloat(values[0]); if (unlikely((__pyx_v_price == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 505, __pyx_L3_error)
+    __pyx_v_prev_price = __Pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_prev_price == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L3_error)
+    __pyx_v_log_volume_norm = __Pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_log_volume_norm == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 507, __pyx_L3_error)
+    __pyx_v_rel_volume = __Pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_rel_volume == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L3_error)
+    __pyx_v_ma5 = __Pyx_PyFloat_AsFloat(values[4]); if (unlikely((__pyx_v_ma5 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 509, __pyx_L3_error)
+    __pyx_v_ma20 = __Pyx_PyFloat_AsFloat(values[5]); if (unlikely((__pyx_v_ma20 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 510, __pyx_L3_error)
+    __pyx_v_rsi14 = __Pyx_PyFloat_AsFloat(values[6]); if (unlikely((__pyx_v_rsi14 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 511, __pyx_L3_error)
+    __pyx_v_macd = __Pyx_PyFloat_AsFloat(values[7]); if (unlikely((__pyx_v_macd == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 512, __pyx_L3_error)
+    __pyx_v_macd_signal = __Pyx_PyFloat_AsFloat(values[8]); if (unlikely((__pyx_v_macd_signal == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 513, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_momentum == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 514, __pyx_L3_error)
+    __pyx_v_atr = __Pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_atr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 515, __pyx_L3_error)
+    __pyx_v_cci = __Pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_cci == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 516, __pyx_L3_error)
+    __pyx_v_obv = __Pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_obv == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 517, __pyx_L3_error)
+    __pyx_v_bb_lower = __Pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_bb_lower == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 518, __pyx_L3_error)
+    __pyx_v_bb_upper = __Pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_bb_upper == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 519, __pyx_L3_error)
+    __pyx_v_is_high_importance = __Pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_is_high_importance == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 520, __pyx_L3_error)
+    __pyx_v_time_since_event = __Pyx_PyFloat_AsFloat(values[16]); if (unlikely((__pyx_v_time_since_event == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 521, __pyx_L3_error)
+    __pyx_v_fear_greed_value = __Pyx_PyFloat_AsFloat(values[17]); if (unlikely((__pyx_v_fear_greed_value == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 522, __pyx_L3_error)
+    __pyx_v_has_fear_greed = __Pyx_PyObject_IsTrue(values[18]); if (unlikely((__pyx_v_has_fear_greed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 523, __pyx_L3_error)
+    __pyx_v_risk_off_flag = __Pyx_PyObject_IsTrue(values[19]); if (unlikely((__pyx_v_risk_off_flag == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 524, __pyx_L3_error)
+    __pyx_v_cash = __Pyx_PyFloat_AsFloat(values[20]); if (unlikely((__pyx_v_cash == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L3_error)
+    __pyx_v_units = __Pyx_PyFloat_AsFloat(values[21]); if (unlikely((__pyx_v_units == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 526, __pyx_L3_error)
+    __pyx_v_last_vol_imbalance = __Pyx_PyFloat_AsFloat(values[22]); if (unlikely((__pyx_v_last_vol_imbalance == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L3_error)
+    __pyx_v_last_trade_intensity = __Pyx_PyFloat_AsFloat(values[23]); if (unlikely((__pyx_v_last_trade_intensity == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 528, __pyx_L3_error)
+    __pyx_v_last_realized_spread = __Pyx_PyFloat_AsFloat(values[24]); if (unlikely((__pyx_v_last_realized_spread == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
+    __pyx_v_last_agent_fill_ratio = __Pyx_PyFloat_AsFloat(values[25]); if (unlikely((__pyx_v_last_agent_fill_ratio == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 530, __pyx_L3_error)
+    __pyx_v_token_id = __Pyx_PyLong_As_int(values[26]); if (unlikely((__pyx_v_token_id == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L3_error)
+    __pyx_v_max_num_tokens = __Pyx_PyLong_As_int(values[27]); if (unlikely((__pyx_v_max_num_tokens == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 532, __pyx_L3_error)
+    __pyx_v_num_tokens = __Pyx_PyLong_As_int(values[28]); if (unlikely((__pyx_v_num_tokens == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
+    __pyx_v_norm_cols_values = __Pyx_PyObject_to_MemoryviewSlice_dc_float(values[29], PyBUF_WRITABLE); if (unlikely(!__pyx_v_norm_cols_values.memview)) __PYX_ERR(0, 534, __pyx_L3_error)
+    __pyx_v_out_features = __Pyx_PyObject_to_MemoryviewSlice_dc_float(values[30], PyBUF_WRITABLE); if (unlikely(!__pyx_v_out_features.memview)) __PYX_ERR(0, 535, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("build_observation_vector", 1, 31, 31, __pyx_nargs); __PYX_ERR(0, 460, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("build_observation_vector", 1, 31, 31, __pyx_nargs); __PYX_ERR(0, 504, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -19447,10 +19554,10 @@ static PyObject *__pyx_pf_11obs_builder_2build_observation_vector(CYTHON_UNUSED 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("build_observation_vector", 0);
   __Pyx_XDECREF(__pyx_r);
-  if (unlikely(!__pyx_v_norm_cols_values.memview)) { __Pyx_RaiseUnboundLocalError("norm_cols_values"); __PYX_ERR(0, 460, __pyx_L1_error) }
-  if (unlikely(!__pyx_v_out_features.memview)) { __Pyx_RaiseUnboundLocalError("out_features"); __PYX_ERR(0, 460, __pyx_L1_error) }
-  __pyx_f_11obs_builder_build_observation_vector(__pyx_v_price, __pyx_v_prev_price, __pyx_v_log_volume_norm, __pyx_v_rel_volume, __pyx_v_ma5, __pyx_v_ma20, __pyx_v_rsi14, __pyx_v_macd, __pyx_v_macd_signal, __pyx_v_momentum, __pyx_v_atr, __pyx_v_cci, __pyx_v_obv, __pyx_v_bb_lower, __pyx_v_bb_upper, __pyx_v_is_high_importance, __pyx_v_time_since_event, __pyx_v_fear_greed_value, __pyx_v_has_fear_greed, __pyx_v_risk_off_flag, __pyx_v_cash, __pyx_v_units, __pyx_v_last_vol_imbalance, __pyx_v_last_trade_intensity, __pyx_v_last_realized_spread, __pyx_v_last_agent_fill_ratio, __pyx_v_token_id, __pyx_v_max_num_tokens, __pyx_v_num_tokens, __pyx_v_norm_cols_values, __pyx_v_out_features, 1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 460, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 460, __pyx_L1_error)
+  if (unlikely(!__pyx_v_norm_cols_values.memview)) { __Pyx_RaiseUnboundLocalError("norm_cols_values"); __PYX_ERR(0, 504, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_out_features.memview)) { __Pyx_RaiseUnboundLocalError("out_features"); __PYX_ERR(0, 504, __pyx_L1_error) }
+  __pyx_f_11obs_builder_build_observation_vector(__pyx_v_price, __pyx_v_prev_price, __pyx_v_log_volume_norm, __pyx_v_rel_volume, __pyx_v_ma5, __pyx_v_ma20, __pyx_v_rsi14, __pyx_v_macd, __pyx_v_macd_signal, __pyx_v_momentum, __pyx_v_atr, __pyx_v_cci, __pyx_v_obv, __pyx_v_bb_lower, __pyx_v_bb_upper, __pyx_v_is_high_importance, __pyx_v_time_since_event, __pyx_v_fear_greed_value, __pyx_v_has_fear_greed, __pyx_v_risk_off_flag, __pyx_v_cash, __pyx_v_units, __pyx_v_last_vol_imbalance, __pyx_v_last_trade_intensity, __pyx_v_last_realized_spread, __pyx_v_last_agent_fill_ratio, __pyx_v_token_id, __pyx_v_max_num_tokens, __pyx_v_num_tokens, __pyx_v_norm_cols_values, __pyx_v_out_features, 1); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 504, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_void_to_None(NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 504, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -21342,19 +21449,19 @@ __Pyx_RefNannySetupContext("PyInit_obs_builder", 0);
   if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_compute_n_features, __pyx_t_4) < (0)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "obs_builder.pyx":460
+  /* "obs_builder.pyx":504
  * 
  * 
  * cpdef void build_observation_vector(             # <<<<<<<<<<<<<<
  *     float price,
  *     float prev_price,
 */
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_11obs_builder_3build_observation_vector, 0, __pyx_mstate_global->__pyx_n_u_build_observation_vector, NULL, __pyx_mstate_global->__pyx_n_u_obs_builder, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 460, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_11obs_builder_3build_observation_vector, 0, __pyx_mstate_global->__pyx_n_u_build_observation_vector, NULL, __pyx_mstate_global->__pyx_n_u_obs_builder, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 504, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_build_observation_vector, __pyx_t_4) < (0)) __PYX_ERR(0, 460, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_build_observation_vector, __pyx_t_4) < (0)) __PYX_ERR(0, 504, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "obs_builder.pyx":1
@@ -21617,7 +21724,7 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
     __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_obs_builder_pyx, __pyx_mstate->__pyx_n_u_compute_n_features, __pyx_mstate->__pyx_kp_b_iso88591_A_Q_e4q_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {31, 0, 0, 31, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 460};
+    const __Pyx_PyCode_New_function_description descr = {31, 0, 0, 31, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 504};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_price, __pyx_mstate->__pyx_n_u_prev_price, __pyx_mstate->__pyx_n_u_log_volume_norm, __pyx_mstate->__pyx_n_u_rel_volume, __pyx_mstate->__pyx_n_u_ma5, __pyx_mstate->__pyx_n_u_ma20, __pyx_mstate->__pyx_n_u_rsi14, __pyx_mstate->__pyx_n_u_macd, __pyx_mstate->__pyx_n_u_macd_signal, __pyx_mstate->__pyx_n_u_momentum, __pyx_mstate->__pyx_n_u_atr, __pyx_mstate->__pyx_n_u_cci, __pyx_mstate->__pyx_n_u_obv, __pyx_mstate->__pyx_n_u_bb_lower, __pyx_mstate->__pyx_n_u_bb_upper, __pyx_mstate->__pyx_n_u_is_high_importance, __pyx_mstate->__pyx_n_u_time_since_event, __pyx_mstate->__pyx_n_u_fear_greed_value, __pyx_mstate->__pyx_n_u_has_fear_greed, __pyx_mstate->__pyx_n_u_risk_off_flag, __pyx_mstate->__pyx_n_u_cash, __pyx_mstate->__pyx_n_u_units, __pyx_mstate->__pyx_n_u_last_vol_imbalance, __pyx_mstate->__pyx_n_u_last_trade_intensity, __pyx_mstate->__pyx_n_u_last_realized_spread, __pyx_mstate->__pyx_n_u_last_agent_fill_ratio, __pyx_mstate->__pyx_n_u_token_id, __pyx_mstate->__pyx_n_u_max_num_tokens, __pyx_mstate->__pyx_n_u_num_tokens, __pyx_mstate->__pyx_n_u_norm_cols_values, __pyx_mstate->__pyx_n_u_out_features};
     __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_obs_builder_pyx, __pyx_mstate->__pyx_n_u_build_observation_vector, __pyx_mstate->__pyx_kp_b_iso88591_x_1G1_1L_1_Q_1L_QfA_QgQ_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
