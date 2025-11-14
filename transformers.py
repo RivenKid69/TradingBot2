@@ -604,17 +604,25 @@ class OnlineFeatureTransformer:
         # CRITICAL FIX #1: Используем минуты для имен SMA (sma_240, sma_1440, sma_12000),
         # форматированные имена для returns (ret_4h, ret_24h, ret_200h)
         for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+
+            # Для SMA нужно минимум lb элементов
             if len(seq) >= lb:
                 window = seq[-lb:]
                 sma = sum(window) / float(lb)
                 # Используем значение в минутах для имени SMA (сырые минуты: 240, 1440, 12000)
-                lb_minutes = self.spec._lookbacks_prices_minutes[i]
                 feats[f"sma_{lb_minutes}"] = float(sma)
-                first = float(window[0])
+
+            # CRITICAL FIX: Для returns нужно минимум lb+1 элементов
+            # (цена lb баров назад + текущая цена)
+            # При lb=1: нужно сравнить текущую цену с ценой 1 бар назад
+            if len(seq) > lb:
+                # Берем цену lb баров назад (-(lb+1) элемент)
+                old_price = float(seq[-(lb + 1)])
                 # Используем форматированное значение для имени returns (4h, 24h, 200h)
                 ret_name = f"ret_{_format_window_name(lb_minutes)}"
                 feats[ret_name] = (
-                    float(math.log(price / first)) if first > 0 else 0.0
+                    float(math.log(price / old_price)) if old_price > 0 else 0.0
                 )
 
         if (
