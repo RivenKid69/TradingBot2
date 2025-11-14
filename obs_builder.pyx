@@ -154,7 +154,43 @@ cdef void build_observation_vector_c(
     float[::1] norm_cols_values,
     float[::1] out_features
 ) noexcept nogil:
-    """Populate ``out_features`` with the observation vector without acquiring the GIL."""
+    """
+    Populate ``out_features`` with the observation vector without acquiring the GIL.
+
+    ⚠️ CRITICAL WARNING - INTERNAL USE ONLY ⚠️
+
+    This function is EXPORTED via obs_builder.pxd for performance-critical internal use
+    but has NO INPUT VALIDATION. Direct calls bypass fail-fast validation layers.
+
+    SAFE usage patterns:
+    1. Via build_observation_vector() wrapper (RECOMMENDED for all production code)
+       - Validates price, prev_price, cash, units before calling this function
+       - Raises ValueError immediately on invalid inputs (fail-fast)
+
+    2. Direct cimport for dummy/initialization data ONLY (e.g., lob_state_cython.pyx:62)
+       - ONLY safe with hardcoded zeros or pre-validated data
+       - price=0.0, prev_price=0.0 → mathematically safe due to epsilon protection
+       - DO NOT use with real market data without external validation
+
+    UNSAFE usage (DO NOT DO THIS):
+    ❌ from obs_builder cimport build_observation_vector_c
+    ❌ build_observation_vector_c(nan_price, real_prev_price, ...)  # NO VALIDATION!
+
+    If invalid data reaches this function directly:
+    - NaN/Inf in price/prev_price → NaN propagates to ret_bar (detectable but not prevented)
+    - Zero prices → protected by epsilon, but violates financial data standards
+    - Negative prices → calculations proceed, producing incorrect results
+
+    Design rationale:
+    - Function is `noexcept nogil` for performance → cannot raise Python exceptions
+    - Validation MUST happen at entry points (mediator, wrapper) not here
+    - "Validate inputs, trust validated data" principle (Defensive Programming)
+
+    Best practices references:
+    - "Defensive Programming" (Steve McConnell): Validate at boundaries, not internally
+    - "Clean Code" (Robert C. Martin): Functions should do one thing well
+    - This function does computation; validation is wrapper's responsibility
+    """
 
     cdef int feature_idx = 0
     cdef float feature_val
@@ -223,35 +259,61 @@ cdef void build_observation_vector_c(
     out_features[feature_idx] = obv if not isnan(obv) else 0.0
     feature_idx += 1
 
-    # CRITICAL: Derived price/volatility signals (bar-to-bar return for current timeframe)
-    # ret_bar calculation (feature index 14):
-    # - Formula: tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
-    # - Numerator: price_d - prev_price_d (price change)
+    # ========================================================================
+    # CRITICAL: Bar-to-bar return calculation (ret_bar at feature index 14)
+    # ========================================================================
+    # Formula: ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
+    #
+    # Mathematical breakdown:
+    # - Numerator: price_d - prev_price_d (absolute price change)
     # - Denominator: prev_price_d + 1e-8 (epsilon prevents division by zero)
-    # - tanh normalization: maps (-inf, +inf) → (-1, 1)
+    # - Division: (price_d - prev_price_d) / (prev_price_d + 1e-8) = percentage return
+    # - tanh: Normalizes (-inf, +inf) → (-1, 1) for neural network stability
     #
     # Safety guarantees:
-    # 1. Division by zero: Impossible due to +1e-8 epsilon
-    #    Even if prev_price_d = 0.0: division = x / 1e-8 = large finite number
     #
-    # 2. NaN/Inf protection: Enforced by fail-fast validation at entry points
+    # 1. Division by zero protection (mathematical):
+    #    - Epsilon 1e-8 ensures denominator never zero
+    #    - If prev_price_d = 0.0: denominator = 0.0 + 1e-8 = 1e-8
+    #    - Example: (50000 - 0) / 1e-8 = 5e12 (large finite number, not NaN)
+    #    - tanh(5e12) ≈ 1.0 (saturates at extreme values)
+    #
+    # 2. NaN/Inf protection (validation at entry points):
+    #    Production path (validated):
     #    - P0: Mediator validation (_validate_critical_price at mediator.py:1015)
-    #    - P1: Wrapper validation (_validate_price at obs_builder.pyx:469-470)
-    #    Both price AND prev_price are validated as finite, positive, non-zero
-    #    If validation fails → ValueError raised immediately (fail-fast)
+    #    - P1: Wrapper validation (_validate_price at obs_builder.pyx:467-468)
+    #    - Both price AND prev_price validated: finite, positive, > 0
+    #    - Invalid input → ValueError raised immediately (fail-fast)
     #
-    # 3. No silent failures: Invalid data causes immediate exception, not silent corruption
+    #    Direct cimport path (unvalidated, internal use only):
+    #    - lob_state_cython.pyx:62 with dummy zeros for size calculation
+    #    - price=0.0, prev_price=0.0 → (0-0)/(0+1e-8) = 0/1e-8 = 0
+    #    - tanh(0) = 0.0 (safe, correct for initialization)
+    #    - WARNING: Real data via direct cimport is UNSAFE (no validation!)
     #
-    # Direct call path (lob_state_cython.pyx:62):
-    # - Only used for feature vector size calculation with dummy zeros
-    # - price=0.0, prev_price=0.0 → ret_bar = tanh(0/1e-8) = tanh(0) = 0.0
-    # - Safe and correct for initialization purposes
+    # 3. Validation philosophy (why different parameters handled differently):
     #
-    # Design philosophy: Fail-fast at entry (P0/P1) > Silent fallbacks in computation
+    #    Critical prices (price, prev_price): FAIL-FAST
+    #    - NaN/Inf/zero/negative → ValueError raised
+    #    - Reason: Prices must ALWAYS be valid, no legitimate NaN state
+    #    - Financial data standards: positive finite prices required
+    #    - Reference: "Best Practices for Financial Data Accuracy" (Paystand)
+    #
+    #    Optional indicators (RSI, MACD, etc): SILENT FALLBACK
+    #    - NaN → default neutral value (e.g., RSI=50.0, MACD=0.0)
+    #    - Reason: Early bars lack sufficient history, NaN is expected
+    #    - Safe default values preserve model functionality
+    #    - Reference: "Incomplete Data - Machine Learning Trading" (OMSCS)
+    #
+    # Design principle: "Validate inputs at boundaries, trust validated data internally"
+    # - Entry points (mediator, wrapper): Strict validation with fail-fast
+    # - Computation functions: Simple logic, assumes validated inputs
+    # - Reference: "Defensive Programming" (Steve McConnell, Code Complete)
+    #
     # Research references:
-    # - "Fail-fast validation" (Martin Fowler): Catch errors early, fail loudly
+    # - "Fail-Fast" (Martin Fowler, 2004): Software design philosophy
     # - IEEE 754: NaN propagation requires explicit handling at data boundaries
-    # - Financial data standards: Validation at ingestion, not in calculations
+    # - "Clean Code" (Robert C. Martin): Validation vs computation separation
     ret_bar = tanh((price_d - prev_price_d) / (prev_price_d + 1e-8))
     out_features[feature_idx] = <float>ret_bar
     feature_idx += 1
