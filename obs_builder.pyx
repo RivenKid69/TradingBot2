@@ -360,7 +360,21 @@ cdef void build_observation_vector_c(
     # Normalized by full price (price_d) not 1% because bb_width is typically 1-5% of price
     # This ensures the normalized value is in a reasonable range for tanh
     # NaN handling: if BB not ready (first 20 bars), use 0.0 (neutral volatility)
-    bb_valid = not isnan(bb_lower)
+    #
+    # CRITICAL: Validate BOTH bb_lower AND bb_upper for completeness
+    # - Bollinger Bands require both bounds to be valid
+    # - If only one is NaN/Inf, derived features (bb_width, bb_position) become NaN
+    # - bb_width = bb_upper - bb_lower: if either is NaN/Inf → NaN propagation
+    # - Must check finitude (not just NaN) to catch Inf values
+    # - Logical consistency: bb_upper should be >= bb_lower (sanity check)
+    #
+    # Research references:
+    # - "Bollinger Bands" (John Bollinger): Upper band > Lower band by definition
+    # - "Defense in Depth" (OWASP): Validate all required inputs, not just subset
+    # - "Data Validation Best Practices": Complete validation prevents partial failures
+    bb_valid = (not isnan(bb_lower) and not isnan(bb_upper) and
+                isfinite(bb_lower) and isfinite(bb_upper) and
+                bb_upper >= bb_lower)
     if bb_valid:
         bb_squeeze = tanh((bb_upper - bb_lower) / (price_d + 1e-8))
     else:
@@ -381,24 +395,54 @@ cdef void build_observation_vector_c(
 
     # --- Bollinger band context -------------------------------------------
     # Position within bands and band width - critical features for volatility-based strategies
-    # NOTE: bb_valid is already computed above for bb_squeeze, reuse it
+    # NOTE: bb_valid is already computed above for bb_squeeze with FULL validation:
+    #       - Validates both bb_lower AND bb_upper are finite (not NaN/Inf)
+    #       - Ensures logical consistency: bb_upper >= bb_lower
+    #       - If validation fails, both features default to safe values
+    #
+    # Defense-in-depth: Double-check bb_width calculation
+    # Even with bb_valid check, explicitly verify bb_width is finite
+    # This catches any remaining edge cases or calculation errors
     bb_width = bb_upper - bb_lower
     min_bb_width = price_d * 0.0001
 
     # Feature 1: Price position within Bollinger Bands
     # 0.5 = at the middle (default when bands not available)
     # 0.0 = at lower band, 1.0 = at upper band
+    #
+    # Defense-in-depth validation:
+    # 1. Primary: bb_valid check (both bands finite and consistent)
+    # 2. Secondary: bb_width > min_bb_width (avoid division by near-zero)
+    # 3. Tertiary: _clipf handles any remaining NaN via NaN-to-zero conversion
+    #
+    # This triple-layer approach ensures bb_position CANNOT be NaN:
+    # - Layer 1: Prevents invalid inputs from being used
+    # - Layer 2: Prevents division by zero/near-zero
+    # - Layer 3: Final safety net converts any NaN to 0.0
     if (not bb_valid) or bb_width <= min_bb_width:
         feature_val = 0.5
     else:
-        feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
+        # Additional safety: verify bb_width is finite before division
+        if not isfinite(bb_width):
+            feature_val = 0.5
+        else:
+            feature_val = _clipf((price_d - bb_lower) / (bb_width + 1e-9), -1.0, 2.0)
     out_features[feature_idx] = feature_val
     feature_idx += 1
 
     # Feature 2: Normalized band width (volatility measure)
     # 0.0 = bands not available or zero width
+    #
+    # Defense-in-depth validation:
+    # 1. Primary: bb_valid check ensures inputs are finite
+    # 2. Secondary: Verify bb_width is finite before normalization
+    # 3. Tertiary: _clipf handles any remaining NaN
     if bb_valid:
-        feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
+        # Additional safety: verify bb_width is finite
+        if not isfinite(bb_width):
+            feature_val = 0.0
+        else:
+            feature_val = _clipf(bb_width / (price_d + 1e-8), 0.0, 10.0)
     else:
         feature_val = 0.0
     out_features[feature_idx] = feature_val
