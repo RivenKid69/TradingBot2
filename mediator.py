@@ -1027,41 +1027,30 @@ class Mediator:
 
         log_volume_norm = 0.0
         if quote_volume > 0:
-            try:
-                log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
-                # CRITICAL: Defense-in-depth validation after computation
-                if not math.isfinite(log_volume_norm):
-                    raise ValueError(
-                        f"Invalid log_volume_norm computation result: {log_volume_norm}. "
-                        f"Input quote_volume={quote_volume}. "
-                        f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
-                        f"Check volume data range and normalization factor."
-                    )
-            except (ValueError, FloatingPointError) as e:
-                # Re-raise with context, or fall back to 0.0 if computation failed
-                # For now, fail-fast to catch issues early
+            log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
+            # CRITICAL: Defense-in-depth validation after computation
+            # Detects numerical overflow/underflow in tanh(log1p(...)) transformation
+            if not math.isfinite(log_volume_norm):
                 raise ValueError(
-                    f"Failed to compute log_volume_norm from quote_volume={quote_volume}: {e}"
+                    f"Invalid log_volume_norm computation result: {log_volume_norm}. "
+                    f"Input quote_volume={quote_volume}. "
+                    f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
+                    f"Check volume data range and normalization factor."
                 )
 
         # Base volume normalization (adapted for 4h timeframe)
         # 4h bars aggregate ~240x more base volume than 1m bars (as per config_4h_timeframe.py)
         rel_volume = 0.0
         if volume > 0:
-            try:
-                rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))
-                # CRITICAL: Defense-in-depth validation after computation
-                if not math.isfinite(rel_volume):
-                    raise ValueError(
-                        f"Invalid rel_volume computation result: {rel_volume}. "
-                        f"Input volume={volume}. "
-                        f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
-                        f"Check volume data range and normalization factor."
-                    )
-            except (ValueError, FloatingPointError) as e:
-                # Re-raise with context
+            rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))
+            # CRITICAL: Defense-in-depth validation after computation
+            # Detects numerical overflow/underflow in tanh(log1p(...)) transformation
+            if not math.isfinite(rel_volume):
                 raise ValueError(
-                    f"Failed to compute rel_volume from volume={volume}: {e}"
+                    f"Invalid rel_volume computation result: {rel_volume}. "
+                    f"Input volume={volume}. "
+                    f"This indicates numerical overflow in tanh(log1p(...)) calculation. "
+                    f"Check volume data range and normalization factor."
                 )
 
         return {

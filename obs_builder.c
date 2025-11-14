@@ -19050,7 +19050,7 @@ static void __pyx_f_11obs_builder_build_observation_vector(float __pyx_v_price, 
 
   /* "obs_builder.pyx":527
  *     # These are computed from raw volume data and can be corrupted upstream
- *     # Lines obs_builder.pyx:182-184 directly write these to observation without checks
+ *     # Without this check, corrupted values would be written directly to observation array
  *     _validate_volume_metric(log_volume_norm, "log_volume_norm")             # <<<<<<<<<<<<<<
  *     _validate_volume_metric(rel_volume, "rel_volume")
  * 
@@ -19058,7 +19058,7 @@ static void __pyx_f_11obs_builder_build_observation_vector(float __pyx_v_price, 
   __pyx_f_11obs_builder__validate_volume_metric(__pyx_v_log_volume_norm, __pyx_mstate_global->__pyx_n_u_log_volume_norm); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 527, __pyx_L1_error)
 
   /* "obs_builder.pyx":528
- *     # Lines obs_builder.pyx:182-184 directly write these to observation without checks
+ *     # Without this check, corrupted values would be written directly to observation array
  *     _validate_volume_metric(log_volume_norm, "log_volume_norm")
  *     _validate_volume_metric(rel_volume, "rel_volume")             # <<<<<<<<<<<<<<
  * 

@@ -135,7 +135,7 @@ cdef inline void _validate_volume_metric(float value, str param_name) except *:
     - "Fail-fast validation" (Martin Fowler): Catch errors early in pipeline
 
     Design rationale:
-    - Volume metrics computed from raw volume data (mediator.py:1022-1030)
+    - Volume metrics computed in mediator._extract_market_data()
     - Formula: tanh(log1p(volume / normalizer)) should yield [-1, 1]
     - If NaN/Inf appears, indicates:
       1. Corrupted raw volume data (despite _get_safe_float)
@@ -523,7 +523,7 @@ cpdef void build_observation_vector(
 
     # CRITICAL: Validate volume metrics to prevent NaN propagation
     # These are computed from raw volume data and can be corrupted upstream
-    # Lines obs_builder.pyx:182-184 directly write these to observation without checks
+    # Without this check, corrupted values would be written directly to observation array
     _validate_volume_metric(log_volume_norm, "log_volume_norm")
     _validate_volume_metric(rel_volume, "rel_volume")
 
