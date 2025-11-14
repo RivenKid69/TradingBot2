@@ -986,8 +986,36 @@ class Mediator:
         return numeric
 
     @staticmethod
-    def _get_safe_float(row: Any, col: str, default: float = 0.0) -> float:
-        """Safely extract float value from row with fallback."""
+    def _get_safe_float(
+        row: Any,
+        col: str,
+        default: float = 0.0,
+        min_value: float = None,
+        max_value: float = None
+    ) -> float:
+        """
+        Safely extract float value from row with fallback and range validation.
+
+        Args:
+            row: Data row to extract from
+            col: Column name
+            default: Default value if extraction fails
+            min_value: Minimum allowed value (inclusive). If result < min_value, returns default
+            max_value: Maximum allowed value (inclusive). If result > max_value, returns default
+
+        Returns:
+            Extracted float value or default if invalid/out of range
+
+        Validates:
+        - Not None
+        - Can convert to float
+        - Is finite (not NaN/Inf)
+        - Within [min_value, max_value] range if specified
+
+        Examples:
+        - volume = _get_safe_float(row, "volume", 1.0, min_value=0.0)  # Ensures >= 0
+        - price = _get_safe_float(row, "price", 50000.0, min_value=0.01, max_value=1e9)
+        """
         if row is None:
             return default
         try:
@@ -996,6 +1024,11 @@ class Mediator:
                 return default
             result = float(val)
             if not math.isfinite(result):
+                return default
+            # Range validation
+            if min_value is not None and result < min_value:
+                return default
+            if max_value is not None and result > max_value:
                 return default
             return result
         except (TypeError, ValueError, KeyError, AttributeError):
@@ -1009,6 +1042,11 @@ class Mediator:
         - mark_price and prev_price MUST be positive and finite
         - Will raise ValueError if invalid (fail-fast approach)
         - No fallback to 0.0 for prices (would corrupt observations)
+
+        Volume validation strategy:
+        - P0: Raw volume data validated by _get_safe_float with min_value=0.0
+          (ensures volume >= 0, prevents negative values that cause log1p(x<-1) → NaN)
+        - P2: Final validation at obs_builder.pyx wrapper before writing to observation
         """
         # CRITICAL: Strict validation for prices (no fallback to 0.0)
         price = self._validate_critical_price(mark_price, param_name="mark_price")
@@ -1016,15 +1054,16 @@ class Mediator:
 
         # Volume normalization (adapted for 4h timeframe)
         # 4h bars aggregate ~240x more volume than 1h bars, so we use 240e6 divisor
-        volume = self._get_safe_float(row, "volume", 1.0)
-        quote_volume = self._get_safe_float(row, "quote_asset_volume", 1.0)
+        # CRITICAL: min_value=0.0 ensures volume >= 0, preventing log1p domain errors
+        volume = self._get_safe_float(row, "volume", 1.0, min_value=0.0)
+        quote_volume = self._get_safe_float(row, "quote_asset_volume", 1.0, min_value=0.0)
 
+        # Compute normalized volume metrics
+        # With volume >= 0 guaranteed by P0, tanh(log1p(x)) always yields finite result in [-1, 1]
         log_volume_norm = 0.0
         if quote_volume > 0:
             log_volume_norm = float(np.tanh(np.log1p(quote_volume / 240e6)))
 
-        # Base volume normalization (adapted for 4h timeframe)
-        # 4h bars aggregate ~240x more base volume than 1m bars (as per config_4h_timeframe.py)
         rel_volume = 0.0
         if volume > 0:
             rel_volume = float(np.tanh(np.log1p(volume / 24000.0)))

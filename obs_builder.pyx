@@ -112,6 +112,56 @@ cdef inline void _validate_portfolio_value(float value, str param_name) except *
         )
 
 
+cdef inline void _validate_volume_metric(float value, str param_name) except *:
+    """
+    Validate volume-derived metrics (log_volume_norm, rel_volume).
+
+    Volume metrics are derived from market data transformations and must be finite.
+    Unlike prices, they CAN be zero (no volume) or negative (theoretical edge case).
+    However, they CANNOT be NaN or Inf as this indicates upstream calculation errors.
+
+    Typical range: [-1, 1] due to tanh normalization, but we validate finitude only.
+
+    Args:
+        value: The volume metric to validate
+        param_name: Parameter name for error messages (e.g., "log_volume_norm")
+
+    Raises:
+        ValueError: If value is NaN or Inf with detailed diagnostic message
+
+    Research references:
+    - "Defense in Depth" (OWASP): Multiple validation layers prevent NaN propagation
+    - "Data Validation Best Practices" (Cube Software): Validate at boundaries
+    - "Fail-fast validation" (Martin Fowler): Catch errors early in pipeline
+
+    Design rationale:
+    - Volume metrics computed in mediator._extract_market_data()
+    - Formula: tanh(log1p(volume / normalizer)) with volume >= 0 guaranteed by P0
+    - P0 layer (_get_safe_float with min_value=0.0) prevents negative volumes
+    - With volume >= 0, tanh(log1p(...)) always yields finite result in [-1, 1]
+    - This P2 validation catches any remaining edge cases or pipeline errors
+    - Fail-fast approach prevents silent NaN propagation to observation vector
+    """
+    if isnan(value):
+        raise ValueError(
+            f"Invalid {param_name}: NaN (Not a Number). "
+            f"Volume metrics must be finite numbers. "
+            f"NaN indicates corrupted market data or calculation error. "
+            f"Check volume data source and normalization pipeline. "
+            f"Common causes: missing volume data, division by zero, log of negative."
+        )
+
+    if isinf(value):
+        sign = "positive" if value > 0 else "negative"
+        raise ValueError(
+            f"Invalid {param_name}: {sign} infinity. "
+            f"Volume metrics must be finite. "
+            f"Infinity indicates numerical overflow in volume normalization. "
+            f"Check volume scaling factors and log1p/tanh computations. "
+            f"Review mediator.py _extract_market_data() for calculation errors."
+        )
+
+
 cpdef int compute_n_features(list layout):
     """Utility used by legacy Python code to count feature slots."""
     cdef int total = 0
@@ -450,6 +500,8 @@ cpdef void build_observation_vector(
     Validation performed:
     - price must be finite (not NaN/Inf) and positive (> 0)
     - prev_price must be finite (not NaN/Inf) and positive (> 0)
+    - log_volume_norm must be finite (not NaN/Inf), can be 0 or negative
+    - rel_volume must be finite (not NaN/Inf), can be 0 or negative
     - cash must be finite (not NaN/Inf), can be 0 or negative
     - units must be finite (not NaN/Inf), can be 0 or negative
 
@@ -458,6 +510,7 @@ cpdef void build_observation_vector(
 
     Best practices implemented:
     - Price validation: Strict (must be > 0)
+    - Volume metrics validation: Must be finite (can be 0 or negative)
     - Portfolio validation: Allows 0/negative but not NaN/Inf
     - Fail-fast approach catches data issues early
     - Clear error messages for debugging
@@ -466,6 +519,12 @@ cpdef void build_observation_vector(
     # This prevents NaN/Inf propagation through 15+ calculations downstream
     _validate_price(price, "price")
     _validate_price(prev_price, "prev_price")
+
+    # CRITICAL: Validate volume metrics to prevent NaN propagation
+    # These are computed from raw volume data and can be corrupted upstream
+    # Without this check, corrupted values would be written directly to observation array
+    _validate_volume_metric(log_volume_norm, "log_volume_norm")
+    _validate_volume_metric(rel_volume, "rel_volume")
 
     # Validate portfolio state (cash and units)
     # These can be 0 or negative (valid states) but not NaN/Inf
