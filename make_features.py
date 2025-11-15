@@ -1,4 +1,4 @@
-# scripts/make_features.py
+# make_features.py
 from __future__ import annotations
 
 import argparse
