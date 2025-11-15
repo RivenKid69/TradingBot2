@@ -86,14 +86,15 @@ class AsofMerger:
         for spec in specs:
             s = spec.normalized()
             left_by = self.base_keys if self.base_keys else None
-            right_by = s.keys if s.keys else None
+            right_by = list(s.keys) if s.keys else None
             # pandas требует одинаковые множества ключей для merge_asof(by=...)
             if (left_by or []) != (right_by or []):
                 raise ValueError(f"[{s.name}] несовпадающий набор ключей: base={left_by}, right={right_by}")
 
             # allow_exact_matches=False имитирует «решение позже источника» (исключить совпадание времени)
             allow = bool(s.allow_exact_matches)
-            tol = None if s.tolerance_ms is None else pd.Timedelta(milliseconds=int(s.tolerance_ms))
+            # tolerance для int64 timestamp должна быть int (миллисекунды)
+            tol = int(s.tolerance_ms) if s.tolerance_ms is not None else None
 
             out = pd.merge_asof(
                 out,
