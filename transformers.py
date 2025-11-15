@@ -46,11 +46,66 @@ def _format_window_name(window_minutes: int) -> str:
         return f"{window_minutes}m"
 
 
-def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
+def calculate_close_to_close_volatility(close_prices: List[float], n: int) -> Optional[float]:
+    """
+    Рассчитывает стандартную close-to-close волатильность (стандартное отклонение log returns).
+
+    Используется как fallback метод когда OHLC данные недоступны для Yang-Zhang волатильности.
+    Согласно исследованиям (Quant StackExchange), это рекомендуемый подход когда
+    полные OHLC данные недоступны.
+
+    Формула:
+    σ = sqrt((1/(n-1)) Σ(r_i - μ)²)
+    где r_i = log(C_i/C_{i-1}) - логарифмический возврат
+
+    Args:
+        close_prices: список цен закрытия
+        n: размер окна
+
+    Returns:
+        Close-to-close волатильность или None если недостаточно данных
+    """
+    if not close_prices or len(close_prices) < n or n < 2:
+        return None
+
+    # Берем последние n цен
+    prices = list(close_prices)[-n:]
+
+    try:
+        # Рассчитываем log returns
+        log_returns = []
+        for i in range(1, len(prices)):
+            if prices[i-1] > 0 and prices[i] > 0:
+                log_returns.append(math.log(prices[i] / prices[i-1]))
+
+        if len(log_returns) < 2:
+            return None
+
+        # Рассчитываем среднее и стандартное отклонение
+        mean_return = sum(log_returns) / len(log_returns)
+        variance = sum((r - mean_return) ** 2 for r in log_returns) / (len(log_returns) - 1)
+
+        if variance < 0:
+            return None
+
+        return math.sqrt(variance)
+
+    except (ValueError, ZeroDivisionError, ArithmeticError):
+        return None
+
+
+def calculate_yang_zhang_volatility(
+    ohlc_bars: List[Dict[str, float]],
+    n: int,
+    close_prices: Optional[List[float]] = None
+) -> Optional[float]:
     """
     Рассчитывает волатильность Yang-Zhang для последних n баров.
 
-    Формула:
+    КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавлен fallback к close-to-close volatility
+    когда OHLC данные недостаточны или недоступны.
+
+    Формула Yang-Zhang:
     σ²_YZ = σ²_o + k·σ²_c + (1-k)·σ²_rs
     где:
     - σ²_o = ночная волатильность = (1/(n-1)) Σ(log(O_i/C_{i-1}) - μ_o)²
@@ -58,16 +113,38 @@ def calculate_yang_zhang_volatility(ohlc_bars: List[Dict[str, float]], n: int) -
     - σ²_rs = Роджерс-Сатчелл = (1/n) Σ[log(H_i/C_i)·log(H_i/O_i) + log(L_i/C_i)·log(L_i/O_i)]
     - k = 0.34 (эмпирически оптимальный вес)
 
+    Fallback к close-to-close:
+    Если OHLC данные недоступны или недостаточны, используется стандартная
+    close-to-close волатильность. Это рекомендованный подход согласно
+    финансовым исследованиям (Quant StackExchange).
+
     Args:
         ohlc_bars: список словарей с ключами 'open', 'high', 'low', 'close'
         n: размер окна
+        close_prices: опциональный список цен закрытия для fallback метода
 
     Returns:
-        Волатильность Yang-Zhang или None если недостаточно данных
+        Волатильность Yang-Zhang или close-to-close если OHLC недоступны,
+        или None если данных недостаточно
     """
-    if not ohlc_bars or len(ohlc_bars) < n or n < 2:
-        return None
+    # Пытаемся рассчитать Yang-Zhang если есть достаточно OHLC данных
+    if ohlc_bars and len(ohlc_bars) >= n and n >= 2:
+        yz_result = _try_calculate_yang_zhang(ohlc_bars, n)
+        if yz_result is not None:
+            return yz_result
 
+    # Fallback к close-to-close volatility
+    if close_prices is not None:
+        return calculate_close_to_close_volatility(close_prices, n)
+
+    return None
+
+
+def _try_calculate_yang_zhang(ohlc_bars: List[Dict[str, float]], n: int) -> Optional[float]:
+    """
+    Внутренняя функция для попытки расчета Yang-Zhang волатильности.
+    Возвращает None если данные недостаточны или некорректны.
+    """
     # Берем последние n баров
     bars = list(ohlc_bars)[-n:]
 
@@ -647,8 +724,10 @@ class OnlineFeatureTransformer:
             feats["rsi"] = float("nan")
 
         # Рассчитываем Yang-Zhang волатильность для каждого окна
-        if self.spec.yang_zhang_windows and st["ohlc_bars"]:
-            ohlc_list = list(st["ohlc_bars"])
+        # CRITICAL FIX: Теперь всегда вычисляем, используя fallback к close-to-close если OHLC недоступны
+        if self.spec.yang_zhang_windows:
+            ohlc_list = list(st["ohlc_bars"]) if st["ohlc_bars"] else []
+            close_list = list(st["prices"])  # Всегда доступны для fallback
             # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
             for i, window in enumerate(self.spec.yang_zhang_windows):
                 # Создаем имя признака с поддержкой дней, часов и минут
@@ -656,12 +735,14 @@ class OnlineFeatureTransformer:
                 window_name = _format_window_name(window_minutes)
                 feature_name = f"yang_zhang_{window_name}"
 
-                if len(ohlc_list) >= window:
-                    yz_vol = calculate_yang_zhang_volatility(ohlc_list, window)
-                    if yz_vol is not None:
-                        feats[feature_name] = float(yz_vol)
-                    else:
-                        feats[feature_name] = float("nan")
+                # Передаем как OHLC, так и close цены для hybrid подхода
+                yz_vol = calculate_yang_zhang_volatility(
+                    ohlc_list,
+                    window,
+                    close_prices=close_list
+                )
+                if yz_vol is not None:
+                    feats[feature_name] = float(yz_vol)
                 else:
                     feats[feature_name] = float("nan")
 
