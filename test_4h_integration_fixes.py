@@ -190,11 +190,11 @@ class TestCritical2_FeatureNamesMatch(unittest.TestCase):
 class TestMajor1_ParkinsonFormula(unittest.TestCase):
     """Проверка MAJOR #1: Формула Parkinson с проверкой минимального процента валидных баров."""
 
-    def test_parkinson_requires_80_percent_valid_bars(self):
-        """Проверяет что Parkinson требует минимум 80% валидных баров."""
+    def test_parkinson_requires_60_percent_valid_bars(self):
+        """Проверяет что Parkinson требует минимум 60% валидных баров."""
         from transformers import calculate_parkinson_volatility
 
-        # Окно n=10, нужно минимум max(2, int(0.8*10)) = 8 валидных баров
+        # Окно n=10, нужно минимум max(2, int(0.6*10)) = 6 валидных баров
 
         # Случай 1: Все бары валидны (10/10 = 100%) → должно работать
         valid_bars = [
@@ -203,24 +203,26 @@ class TestMajor1_ParkinsonFormula(unittest.TestCase):
         result = calculate_parkinson_volatility(valid_bars, 10)
         self.assertIsNotNone(result, "Должно работать с 100% валидных баров")
 
-        # Случай 2: 8 валидных баров (8/10 = 80%) → должно работать
+        # Случай 2: 6 валидных баров (6/10 = 60%) → должно работать
         mixed_bars = [
-            {"high": 101.0, "low": 99.0} for _ in range(8)
+            {"high": 101.0, "low": 99.0} for _ in range(6)
         ] + [
+            {"high": 0.0, "low": 0.0},  # Невалидный
+            {"high": 0.0, "low": 0.0},  # Невалидный
             {"high": 0.0, "low": 0.0},  # Невалидный
             {"high": 0.0, "low": 0.0},  # Невалидный
         ]
         result = calculate_parkinson_volatility(mixed_bars, 10)
-        self.assertIsNotNone(result, "Должно работать с 80% валидных баров")
+        self.assertIsNotNone(result, "Должно работать с 60% валидных баров")
 
-        # Случай 3: 7 валидных баров (7/10 = 70%) → должно вернуть None
+        # Случай 3: 5 валидных баров (5/10 = 50%) → должно вернуть None
         few_valid_bars = [
-            {"high": 101.0, "low": 99.0} for _ in range(7)
+            {"high": 101.0, "low": 99.0} for _ in range(5)
         ] + [
-            {"high": 0.0, "low": 0.0} for _ in range(3)
+            {"high": 0.0, "low": 0.0} for _ in range(5)
         ]
         result = calculate_parkinson_volatility(few_valid_bars, 10)
-        self.assertIsNone(result, "Не должно работать с 70% валидных баров")
+        self.assertIsNone(result, "Не должно работать с 50% валидных баров")
 
 
 class TestMinor2_TakerBuyRatioClamping(unittest.TestCase):

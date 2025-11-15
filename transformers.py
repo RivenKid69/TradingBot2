@@ -252,15 +252,18 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
                 sum_sq += log_hl ** 2
                 valid_bars += 1
 
-        # Требуем минимум 2 валидных бара и минимум 80% от запрошенного окна
-        # Это обеспечивает статистическую надежность оценки
-        min_required = max(2, int(0.8 * n))
+        # Требуем минимум 2 валидных бара и минимум 60% от запрошенного окна
+        # 60% обеспечивает баланс между статистической надежностью и устойчивостью к пропускам
+        # 80% было слишком строго и часто приводило к NaN при gaps/weekends
+        min_required = max(2, int(0.6 * n))
         if valid_bars < min_required:
             return None
 
         # σ² = (1/(4n·ln(2))) · Σ(ln(H_i/L_i))²
-        # Используем valid_bars (количество реально использованных данных) для корректной оценки
-        parkinson_var = sum_sq / (4 * valid_bars * math.log(2))
+        # CRITICAL FIX: Используем n (размер окна), а не valid_bars
+        # Формула Parkinson оценивает волатильность за ПЕРИОД n, независимо от пропусков
+        # Использование valid_bars систематически завышает волатильность
+        parkinson_var = sum_sq / (4 * n * math.log(2))
 
         # Возвращаем стандартное отклонение
         return math.sqrt(parkinson_var)

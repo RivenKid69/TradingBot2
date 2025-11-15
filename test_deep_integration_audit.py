@@ -107,7 +107,7 @@ def test_parkinson_edge_cases():
     vol = calculate_parkinson_volatility(ohlc_bars, n=2)
     assert vol is None, "Должен вернуть None при high < low"
 
-    # Недостаточно валидных баров (< 80% от окна)
+    # Недостаточно валидных баров (< 60% от окна)
     ohlc_bars = [
         {"high": 105, "low": 98},
         {"high": 0, "low": 0},  # невалидный бар
@@ -116,7 +116,7 @@ def test_parkinson_edge_cases():
         {"high": 115, "low": 108},
     ]
     vol = calculate_parkinson_volatility(ohlc_bars, n=5)
-    assert vol is None, "Должен вернуть None при < 80% валидных баров"
+    assert vol is None, "Должен вернуть None при < 60% валидных баров (2/5 = 40%)"
 
     print("✓ Parkinson граничные случаи обработаны корректно")
 
