@@ -736,6 +736,13 @@ class OnlineFeatureTransformer:
                 all_windows.extend(self.spec.cvd_windows)
             maxlen = max(all_windows) if all_windows else 100
 
+            # CRITICAL FIX: Momentum calculation requires window + 1 elements
+            # (need both current value and value from 'window' bars ago)
+            # Ensure maxlen is sufficient for all momentum windows
+            if self.spec.taker_buy_ratio_momentum:
+                max_momentum_window = max(self.spec.taker_buy_ratio_momentum)
+                maxlen = max(maxlen, max_momentum_window + 1)
+
             st = {
                 "prices": deque(maxlen=maxlen),  # type: deque[float]
                 "avg_gain": None,  # type: Optional[float]
@@ -810,7 +817,25 @@ class OnlineFeatureTransformer:
         if volume is not None and taker_buy_base is not None and volume > 0:
             # Добавляем clamping на случай аномальных данных (taker_buy_base > volume)
             # Нормальный диапазон: [0.0, 1.0]
-            taker_buy_ratio = min(1.0, max(0.0, float(taker_buy_base) / float(volume)))
+            raw_ratio = float(taker_buy_base) / float(volume)
+            taker_buy_ratio = min(1.0, max(0.0, raw_ratio))
+
+            # CRITICAL FIX: Data quality check - warn on anomalous values
+            if raw_ratio > 1.0:
+                warnings.warn(
+                    f"Data quality issue: taker_buy_base ({taker_buy_base}) > volume ({volume}) "
+                    f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 1.0",
+                    UserWarning,
+                    stacklevel=2
+                )
+            elif raw_ratio < 0.0:
+                warnings.warn(
+                    f"Data quality issue: negative taker_buy_base ({taker_buy_base}) "
+                    f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 0.0",
+                    UserWarning,
+                    stacklevel=2
+                )
+
             st["taker_buy_ratios"].append(taker_buy_ratio)
 
         # Вычисляем и сохраняем Volume Delta для CVD
@@ -982,15 +1007,22 @@ class OnlineFeatureTransformer:
                         past = ratio_list[-(window + 1)]
 
                         # CRITICAL FIX: Используем ROC вместо абсолютной разницы
-                        # Защита от деления на ноль: если past = 0, используем абсолютную разницу
-                        if abs(past) > 1e-10:  # past != 0
+                        # Защита от деления на очень маленькие числа
+                        # Threshold 0.01 (1%) prevents extreme ROC values
+                        # For taker_buy_ratio in [0, 1], this is reasonable
+                        if abs(past) > 0.01:
                             # ROC (Rate of Change): процентное изменение
                             momentum = (current - past) / past
                         else:
-                            # Fallback для редкого случая past = 0
-                            # В этом случае: если current > 0, momentum = +infinity (используем +1.0)
-                            # если current = 0, momentum = 0
-                            momentum = 1.0 if current > 1e-10 else 0.0
+                            # Fallback для случая когда past очень маленькое (<1%)
+                            # Используем знак разницы без деления
+                            # +1.0 для роста, -1.0 для падения, 0 для неизменности
+                            if current > past + 0.001:  # Выросло значительно
+                                momentum = 1.0
+                            elif current < past - 0.001:  # Упало значительно
+                                momentum = -1.0
+                            else:  # Практически не изменилось
+                                momentum = 0.0
 
                         feats[feature_name] = float(momentum)
                     else:
@@ -1094,7 +1126,15 @@ def apply_offline_features(
             cols_to_keep.extend([volume_col, taker_buy_base_col])
             has_volume_data = True
 
-    d = d[cols_to_keep].dropna().copy()
+    # CRITICAL FIX: Selective dropna to prevent temporal discontinuity
+    # Only drop rows where REQUIRED fields (ts, symbol, price) are NaN
+    # Keep rows where OPTIONAL fields (OHLC, volume, taker_buy_base) have NaN
+    # This prevents data gaps and maintains temporal continuity
+    d = d[cols_to_keep].copy()
+    # Drop only if required fields are NaN
+    required_cols = [ts_col, symbol_col, price_col]
+    d = d.dropna(subset=required_cols).copy()
+
     d[ts_col] = d[ts_col].astype("int64")
     d[symbol_col] = d[symbol_col].astype(str)
 
@@ -1121,13 +1161,22 @@ def apply_offline_features(
         }
 
         if has_ohlc:
-            update_kwargs["open_price"] = float(row[open_col])
-            update_kwargs["high"] = float(row[high_col])
-            update_kwargs["low"] = float(row[low_col])
+            # Handle NaN in OHLC data gracefully - skip if any are NaN
+            open_val = row[open_col]
+            high_val = row[high_col]
+            low_val = row[low_col]
+            if not (pd.isna(open_val) or pd.isna(high_val) or pd.isna(low_val)):
+                update_kwargs["open_price"] = float(open_val)
+                update_kwargs["high"] = float(high_val)
+                update_kwargs["low"] = float(low_val)
 
         if has_volume_data:
-            update_kwargs["volume"] = float(row[volume_col])
-            update_kwargs["taker_buy_base"] = float(row[taker_buy_base_col])
+            # Handle NaN in volume data gracefully - skip if any are NaN
+            vol_val = row[volume_col]
+            tbb_val = row[taker_buy_base_col]
+            if not (pd.isna(vol_val) or pd.isna(tbb_val)):
+                update_kwargs["volume"] = float(vol_val)
+                update_kwargs["taker_buy_base"] = float(tbb_val)
 
         feats = transformer.update(**update_kwargs)
 
