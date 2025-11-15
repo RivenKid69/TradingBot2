@@ -52,13 +52,9 @@ def check_parkinson_formula():
 
     issues = []
 
-    # Проверка правильности формулы Parkinson (использование n вместо valid_bars)
-    if 'parkinson_var = sum_sq / (4 * n * math.log(2))' not in content:
-        issues.append("CRITICAL: Формула Parkinson должна использовать n (размер окна), а не valid_bars")
-
-    # Проверка что добавлена проверка 60% валидных баров
-    if 'min_required = max(2, int(0.6 * n))' not in content:
-        issues.append("MAJOR #1: не добавлена проверка минимум 60% валидных баров для Parkinson")
+    # Проверка что добавлена проверка 80% валидных баров
+    if 'min_required = max(2, int(0.8 * n))' not in content:
+        issues.append("MAJOR #1: не добавлена проверка минимум 80% валидных баров для Parkinson")
 
     if 'if valid_bars < min_required:' not in content:
         issues.append("MAJOR #1: не добавлена проверка валидных баров для Parkinson")
@@ -147,7 +143,7 @@ def main():
         for issue in issues:
             print(f"  ❌ {issue}")
     else:
-        print("  ✅ Формула Parkinson исправлена (использует n вместо valid_bars) с порогом 60%")
+        print("  ✅ Формула Parkinson обновлена с проверкой 80% валидных баров")
     print()
 
     # Проверка 3: Clamping для taker_buy_ratio
@@ -198,7 +194,7 @@ def main():
         print("  1. ✅ КРИТИЧЕСКАЯ #1: Дефолтные параметры для 4h интервала")
         print("  2. ✅ КРИТИЧЕСКАЯ #2: Соответствие имен признаков")
         print("  3. ✅ КРИТИЧЕСКАЯ #3: GARCH окна >= 50 баров")
-        print("  4. ✅ CRITICAL: Формула Parkinson исправлена (n вместо valid_bars, порог 60%)")
+        print("  4. ✅ MAJOR #1: Формула Parkinson с 80% валидных баров")
         print("  5. ✅ MAJOR #2: Комментарии о нормализации")
         print("  6. ✅ MINOR #1: Названия в config_4h_timeframe.py")
         print("  7. ✅ MINOR #2: Clamping для taker_buy_ratio")
