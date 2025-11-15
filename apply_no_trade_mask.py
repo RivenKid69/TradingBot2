@@ -1,4 +1,4 @@
-# scripts/apply_no_trade_mask.py
+# apply_no_trade_mask.py
 from __future__ import annotations
 
 import argparse

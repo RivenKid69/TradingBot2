@@ -1,4 +1,4 @@
-# scripts/check_feature_parity.py
+# check_feature_parity.py
 from __future__ import annotations
 
 import argparse

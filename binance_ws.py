@@ -1,4 +1,4 @@
-# realtime/binance_ws.py
+# binance_ws.py
 from __future__ import annotations
 
 import asyncio
