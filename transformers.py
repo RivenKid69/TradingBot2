@@ -625,13 +625,24 @@ class OnlineFeatureTransformer:
                     float(math.log(price / old_price)) if old_price > 0 else 0.0
                 )
 
-        if (
-            st["avg_gain"] is not None
-            and st["avg_loss"] is not None
-            and float(st["avg_loss"]) > 0.0
-        ):
-            rs = float(st["avg_gain"]) / float(st["avg_loss"])
-            feats["rsi"] = float(100.0 - (100.0 / (1.0 + rs)))
+        # CRITICAL FIX: Handle edge cases for RSI calculation (Wilder's formula)
+        if st["avg_gain"] is not None and st["avg_loss"] is not None:
+            avg_gain = float(st["avg_gain"])
+            avg_loss = float(st["avg_loss"])
+
+            if avg_loss == 0.0 and avg_gain > 0.0:
+                # Pure uptrend: RS = infinity → RSI = 100
+                feats["rsi"] = float(100.0)
+            elif avg_gain == 0.0 and avg_loss > 0.0:
+                # Pure downtrend: RS = 0 → RSI = 0
+                feats["rsi"] = float(0.0)
+            elif avg_gain == 0.0 and avg_loss == 0.0:
+                # No price movement: neutral RSI
+                feats["rsi"] = float(50.0)
+            else:
+                # Normal case: both avg_gain and avg_loss > 0
+                rs = avg_gain / avg_loss
+                feats["rsi"] = float(100.0 - (100.0 / (1.0 + rs)))
         else:
             feats["rsi"] = float("nan")
 
