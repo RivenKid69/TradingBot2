@@ -1,4 +1,4 @@
-# training/splits.py
+# splits.py
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict

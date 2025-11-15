@@ -1,4 +1,4 @@
-# scripts/train_calibrator.py
+# train_calibrator.py
 from __future__ import annotations
 
 import argparse

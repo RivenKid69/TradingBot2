@@ -1,4 +1,4 @@
-# sim/latency.py
+# latency.py
 from __future__ import annotations
 
 import random

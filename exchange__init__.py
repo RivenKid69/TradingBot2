@@ -1,4 +1,4 @@
-# exchange/__init__.py
+# exchange__init__.py
 from __future__ import annotations
 
 from exchangespecs import (

@@ -1,4 +1,4 @@
-# scripts/make_drift_baseline.py
+# make_drift_baseline.py
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,4 @@
-# scripts/fetch_binance_filters.py
+# fetch_binance_filters.py
 from __future__ import annotations
 
 import json

@@ -1,4 +1,4 @@
-# features/__init__.py
+# features__init__.py
 from __future__ import annotations
 
 from transformers import (
