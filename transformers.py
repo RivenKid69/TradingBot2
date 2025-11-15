@@ -810,7 +810,25 @@ class OnlineFeatureTransformer:
         if volume is not None and taker_buy_base is not None and volume > 0:
             # Добавляем clamping на случай аномальных данных (taker_buy_base > volume)
             # Нормальный диапазон: [0.0, 1.0]
-            taker_buy_ratio = min(1.0, max(0.0, float(taker_buy_base) / float(volume)))
+            raw_ratio = float(taker_buy_base) / float(volume)
+            taker_buy_ratio = min(1.0, max(0.0, raw_ratio))
+
+            # CRITICAL FIX: Data quality check - warn on anomalous values
+            if raw_ratio > 1.0:
+                warnings.warn(
+                    f"Data quality issue: taker_buy_base ({taker_buy_base}) > volume ({volume}) "
+                    f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 1.0",
+                    UserWarning,
+                    stacklevel=2
+                )
+            elif raw_ratio < 0.0:
+                warnings.warn(
+                    f"Data quality issue: negative taker_buy_base ({taker_buy_base}) "
+                    f"for {sym} at {ts_ms}. Ratio clamped from {raw_ratio:.4f} to 0.0",
+                    UserWarning,
+                    stacklevel=2
+                )
+
             st["taker_buy_ratios"].append(taker_buy_ratio)
 
         # Вычисляем и сохраняем Volume Delta для CVD
@@ -1094,7 +1112,15 @@ def apply_offline_features(
             cols_to_keep.extend([volume_col, taker_buy_base_col])
             has_volume_data = True
 
-    d = d[cols_to_keep].dropna().copy()
+    # CRITICAL FIX: Selective dropna to prevent temporal discontinuity
+    # Only drop rows where REQUIRED fields (ts, symbol, price) are NaN
+    # Keep rows where OPTIONAL fields (OHLC, volume, taker_buy_base) have NaN
+    # This prevents data gaps and maintains temporal continuity
+    d = d[cols_to_keep].copy()
+    # Drop only if required fields are NaN
+    required_cols = [ts_col, symbol_col, price_col]
+    d = d.dropna(subset=required_cols).copy()
+
     d[ts_col] = d[ts_col].astype("int64")
     d[symbol_col] = d[symbol_col].astype(str)
 
@@ -1121,13 +1147,22 @@ def apply_offline_features(
         }
 
         if has_ohlc:
-            update_kwargs["open_price"] = float(row[open_col])
-            update_kwargs["high"] = float(row[high_col])
-            update_kwargs["low"] = float(row[low_col])
+            # Handle NaN in OHLC data gracefully - skip if any are NaN
+            open_val = row[open_col]
+            high_val = row[high_col]
+            low_val = row[low_col]
+            if not (pd.isna(open_val) or pd.isna(high_val) or pd.isna(low_val)):
+                update_kwargs["open_price"] = float(open_val)
+                update_kwargs["high"] = float(high_val)
+                update_kwargs["low"] = float(low_val)
 
         if has_volume_data:
-            update_kwargs["volume"] = float(row[volume_col])
-            update_kwargs["taker_buy_base"] = float(row[taker_buy_base_col])
+            # Handle NaN in volume data gracefully - skip if any are NaN
+            vol_val = row[volume_col]
+            tbb_val = row[taker_buy_base_col]
+            if not (pd.isna(vol_val) or pd.isna(tbb_val)):
+                update_kwargs["volume"] = float(vol_val)
+                update_kwargs["taker_buy_base"] = float(tbb_val)
 
         feats = transformer.update(**update_kwargs)
 
