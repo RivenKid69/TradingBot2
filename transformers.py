@@ -269,86 +269,225 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
         return None
 
 
+def _calculate_ewma_volatility(prices: List[float], lambda_decay: float = 0.94) -> Optional[float]:
+    """
+    Рассчитывает волатильность с использованием EWMA (Exponentially Weighted Moving Average).
+
+    EWMA - это robust альтернатива GARCH, которая:
+    - Не требует большого объема данных (минимум 2 точки)
+    - Не требует сложной оптимизации
+    - Является частным случаем GARCH(1,1)
+    - Дает хорошие прогнозы в условиях изменчивой волатильности
+
+    Формула: σ²_t = λ * σ²_{t-1} + (1-λ) * r²_{t-1}
+
+    Args:
+        prices: список цен (минимум 2)
+        lambda_decay: decay factor (обычно 0.94 для дневных данных, 0.97 для месячных)
+                     RiskMetrics рекомендует 0.94
+
+    Returns:
+        Прогноз волатильности или None если недостаточно данных
+    """
+    if not prices or len(prices) < 2:
+        return None
+
+    try:
+        # Берем все доступные цены для EWMA
+        price_array = np.array(prices, dtype=float)
+
+        # Проверяем валидность данных
+        if np.any(price_array <= 0) or np.any(~np.isfinite(price_array)):
+            return None
+
+        # Вычисляем логарифмические доходности
+        log_returns = np.log(price_array[1:] / price_array[:-1])
+
+        # Проверяем валидность доходностей
+        if not np.all(np.isfinite(log_returns)):
+            return None
+
+        # Инициализируем дисперсию значением первого квадрата доходности
+        # или используем sample variance если достаточно данных
+        if len(log_returns) >= 10:
+            variance = np.var(log_returns, ddof=1)
+        else:
+            variance = log_returns[0] ** 2
+
+        # Рекурсивно вычисляем EWMA
+        for ret in log_returns:
+            variance = lambda_decay * variance + (1 - lambda_decay) * (ret ** 2)
+
+        # Возвращаем стандартное отклонение (волатильность)
+        volatility = np.sqrt(variance)
+
+        if not np.isfinite(volatility) or volatility <= 0:
+            return None
+
+        return float(volatility)
+
+    except (ValueError, Exception):
+        return None
+
+
+def _calculate_historical_volatility(prices: List[float], min_periods: int = 2) -> Optional[float]:
+    """
+    Рассчитывает простую историческую волатильность (standard deviation).
+
+    Это самый базовый и robust метод оценки волатильности:
+    - Требует минимум данных (2+ точки)
+    - Всегда сходится
+    - Не требует оптимизации
+
+    Args:
+        prices: список цен
+        min_periods: минимальное количество точек (по умолчанию 2)
+
+    Returns:
+        Историческая волатильность или None если недостаточно данных
+    """
+    if not prices or len(prices) < min_periods:
+        return None
+
+    try:
+        # Берем все доступные цены
+        price_array = np.array(prices, dtype=float)
+
+        # Проверяем валидность данных
+        if np.any(price_array <= 0) or np.any(~np.isfinite(price_array)):
+            return None
+
+        # Вычисляем логарифмические доходности
+        log_returns = np.log(price_array[1:] / price_array[:-1])
+
+        # Проверяем валидность доходностей
+        if not np.all(np.isfinite(log_returns)):
+            return None
+
+        # Вычисляем стандартное отклонение
+        volatility = np.std(log_returns, ddof=1)
+
+        if not np.isfinite(volatility) or volatility < 0:
+            return None
+
+        return float(volatility)
+
+    except (ValueError, Exception):
+        return None
+
+
 def calculate_garch_volatility(prices: List[float], n: int) -> Optional[float]:
     """
-    Рассчитывает условную волатильность GARCH(1,1) на основе логарифмических доходностей.
+    Рассчитывает условную волатильность с robust fallback стратегией.
+
+    Стратегия (cascading fallback):
+    1. GARCH(1,1) - если достаточно данных (n >= 50) и модель сходится
+    2. EWMA - если GARCH не сходится или данных 2-49 баров
+    3. Historical Volatility - финальный fallback для минимальных данных (2+ бара)
+    4. Minimum floor - для flat markets (волатильность < 1e-10)
 
     Модель GARCH(1,1):
     r_t = μ + ε_t
     ε_t = σ_t * z_t, где z_t ~ N(0,1)
     σ²_t = ω + α*ε²_{t-1} + β*σ²_{t-1}
 
-    Функция подгоняет модель GARCH(1,1) на скользящем окне из последних n наблюдений
-    и возвращает прогноз условной волатильности на один шаг вперед σ_{t+1}.
+    EWMA (если GARCH не подходит):
+    σ²_t = λ * σ²_{t-1} + (1-λ) * r²_{t-1}, где λ=0.94
 
     Args:
         prices: список цен
-        n: размер скользящего окна (рекомендуется 500+ наблюдений)
+        n: размер скользящего окна для GARCH (рекомендуется 50-500+ наблюдений)
 
     Returns:
-        Прогноз условной волатильности σ_{t+1} или None если недостаточно данных
-        или подгонка модели не удалась
+        Прогноз условной волатильности или None только если < 2 точек данных
+
+    References:
+        - RiskMetrics Technical Document (1996) - EWMA параметры
+        - Brownlees & Gallo (2010) - Comparison of volatility measures
+        - Hansen & Lunde (2005) - Forecast comparison
     """
-    if not prices or len(prices) < n or n < 50:  # минимум 50 наблюдений для стабильной оценки
+    MIN_GARCH_OBSERVATIONS = 50
+    MIN_EWMA_OBSERVATIONS = 2
+    VOLATILITY_FLOOR = 1e-10  # минимальная волатильность для flat markets
+
+    # Валидация входных данных
+    if not prices or len(prices) < MIN_EWMA_OBSERVATIONS:
         return None
 
-    try:
-        # Берем последние n цен
-        price_window = np.array(prices[-n:], dtype=float)
+    available_data = len(prices)
 
-        # Проверяем валидность данных
-        if np.any(price_window <= 0) or np.any(~np.isfinite(price_window)):
-            return None
+    # Попытка 1: GARCH(1,1) - только если достаточно данных
+    if available_data >= MIN_GARCH_OBSERVATIONS and n >= MIN_GARCH_OBSERVATIONS:
+        try:
+            # Берем последние n цен
+            window_size = min(n, available_data)
+            price_window = np.array(prices[-window_size:], dtype=float)
 
-        # Вычисляем логарифмические доходности
-        log_returns = np.log(price_window[1:] / price_window[:-1])
+            # Проверяем валидность данных
+            if np.any(price_window <= 0) or np.any(~np.isfinite(price_window)):
+                # Переходим к EWMA
+                pass
+            else:
+                # Вычисляем логарифмические доходности
+                log_returns = np.log(price_window[1:] / price_window[:-1])
 
-        # Проверяем, что есть вариация в данных
-        if np.std(log_returns) < 1e-10:
-            return None
+                # Проверяем, что есть вариация в данных
+                returns_std = np.std(log_returns)
+                if returns_std >= VOLATILITY_FLOOR:
+                    # Конвертируем в процентные доходности для лучшей численной стабильности
+                    returns_pct = log_returns * 100
 
-        # Конвертируем в процентные доходности для лучшей численной стабильности
-        returns_pct = log_returns * 100
+                    # Подавляем предупреждения от arch (они могут быть шумными)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
 
-        # Подавляем предупреждения от arch (они могут быть шумными)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+                        # Создаем и подгоняем модель GARCH(1,1)
+                        model = arch_model(
+                            returns_pct,
+                            vol='Garch',
+                            p=1,  # GARCH порядок
+                            q=1,  # ARCH порядок
+                            dist='normal',  # нормальное распределение
+                            rescale=False
+                        )
 
-            # Создаем и подгоняем модель GARCH(1,1)
-            # rescale=False чтобы сохранить исходный масштаб данных
-            model = arch_model(
-                returns_pct,
-                vol='Garch',
-                p=1,  # GARCH порядок
-                q=1,  # ARCH порядок
-                dist='normal',  # нормальное распределение
-                rescale=False
-            )
+                        # Подгоняем модель с максимальной итерацией
+                        result = model.fit(
+                            update_freq=0,
+                            disp='off',
+                            show_warning=False,
+                            options={'maxiter': 1000}
+                        )
 
-            # Подгоняем модель с максимальной итерацией
-            result = model.fit(
-                update_freq=0,  # не выводим итерационный процесс
-                disp='off',  # отключаем вывод
-                show_warning=False,  # отключаем предупреждения
-                options={'maxiter': 1000}
-            )
+                        # Получаем прогноз условной волатильности на 1 шаг вперед
+                        forecast = result.forecast(horizon=1, reindex=False)
+                        forecast_variance = forecast.variance.values[-1, 0]
 
-            # Получаем прогноз условной волатильности на 1 шаг вперед
-            # forecast возвращает дисперсию, нам нужно стандартное отклонение
-            forecast = result.forecast(horizon=1, reindex=False)
-            forecast_variance = forecast.variance.values[-1, 0]
+                        if np.isfinite(forecast_variance) and forecast_variance > 0:
+                            # Конвертируем обратно из процентного масштаба
+                            forecast_volatility = np.sqrt(forecast_variance) / 100
 
-            if not np.isfinite(forecast_variance) or forecast_variance <= 0:
-                return None
+                            if np.isfinite(forecast_volatility):
+                                # GARCH успешно!
+                                return float(forecast_volatility)
 
-            # Конвертируем обратно из процентного масштаба
-            forecast_volatility = np.sqrt(forecast_variance) / 100
+        except (ValueError, RuntimeError, np.linalg.LinAlgError, Exception):
+            # GARCH не сошелся, переходим к EWMA
+            pass
 
-            return float(forecast_volatility)
+    # Попытка 2: EWMA - robust fallback для недостаточных данных или несходимости GARCH
+    ewma_result = _calculate_ewma_volatility(prices, lambda_decay=0.94)
+    if ewma_result is not None and ewma_result >= VOLATILITY_FLOOR:
+        return ewma_result
 
-    except (ValueError, RuntimeError, np.linalg.LinAlgError, Exception):
-        # Модель GARCH может не сходиться в некоторых случаях
-        return None
+    # Попытка 3: Historical Volatility - финальный fallback
+    hist_vol = _calculate_historical_volatility(prices, min_periods=MIN_EWMA_OBSERVATIONS)
+    if hist_vol is not None:
+        # Применяем minimum floor для flat markets
+        return float(max(hist_vol, VOLATILITY_FLOOR))
+
+    # Если все методы не сработали (очень редкий случай)
+    return None
 
 
 @dataclass
@@ -528,8 +667,11 @@ class FeatureSpec:
         ]
 
         # Инициализация окон GARCH для 4h интервала: 200h, 14д, 30д в минутах
-        # КРИТИЧНО: GARCH требует минимум 50 наблюдений (строка 215)!
-        # 50 баров = 12000 минут = 200h (минимальное окно для GARCH на 4h)
+        # GARCH с fallback стратегией:
+        # - GARCH(1,1): требует минимум 50 наблюдений (строка 379+)
+        # - EWMA fallback: работает с 2+ баров (robust, не требует оптимизации)
+        # - Historical vol: финальный fallback для 2+ баров
+        # 50 баров = 12000 минут = 200h (оптимальное окно для полного GARCH на 4h)
         # 14d = 84 бара = 20160 минут
         # 30d = 180 баров = 43200 минут
         if self.garch_windows is None:
@@ -765,7 +907,8 @@ class OnlineFeatureTransformer:
                 else:
                     feats[feature_name] = float("nan")
 
-        # Рассчитываем условную волатильность GARCH(1,1) для каждого окна
+        # Рассчитываем условную волатильность с robust fallback стратегией
+        # GARCH(1,1) -> EWMA -> Historical Volatility
         if self.spec.garch_windows:
             price_list = list(st["prices"])
             # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
@@ -775,13 +918,16 @@ class OnlineFeatureTransformer:
                 window_name = _format_window_name(window_minutes)
                 feature_name = f"garch_{window_name}"
 
-                if len(price_list) >= window:
-                    garch_vol = calculate_garch_volatility(price_list, window)
-                    if garch_vol is not None:
-                        feats[feature_name] = float(garch_vol)
-                    else:
-                        feats[feature_name] = float("nan")
+                # calculate_garch_volatility использует cascading fallback:
+                # 1. Пробует GARCH(1,1) если >= 50 баров
+                # 2. Fallback на EWMA если недостаточно данных или GARCH не сходится
+                # 3. Fallback на Historical Volatility для минимальных данных (2+ бара)
+                # Возвращает None только если < 2 баров
+                garch_vol = calculate_garch_volatility(price_list, window)
+                if garch_vol is not None:
+                    feats[feature_name] = float(garch_vol)
                 else:
+                    # Только если данных меньше 2 баров (очень редко)
                     feats[feature_name] = float("nan")
 
         # Рассчитываем Taker Buy Ratio и его производные

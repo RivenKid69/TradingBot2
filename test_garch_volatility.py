@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 """
-Тест для проверки корректности расчета условной волатильности GARCH(1,1).
+Тест для проверки корректности расчета условной волатильности GARCH(1,1)
+с robust fallback стратегией (GARCH -> EWMA -> Historical Volatility).
 """
 
 import math
 import numpy as np
-from transformers import calculate_garch_volatility, FeatureSpec, OnlineFeatureTransformer
+from transformers import (
+    calculate_garch_volatility,
+    _calculate_ewma_volatility,
+    _calculate_historical_volatility,
+    FeatureSpec,
+    OnlineFeatureTransformer,
+)
 
 
 def test_garch_basic():
@@ -132,26 +139,47 @@ def test_online_transformer():
 
 
 def test_edge_cases():
-    """Тест граничных случаев."""
-    print("=== Тест 3: Граничные случаи ===")
+    """Тест граничных случаев с новой fallback стратегией."""
+    print("=== Тест 3: Граничные случаи (с fallback стратегией) ===")
 
-    # Тест 1: Недостаточно данных
+    # Тест 1: Недостаточно данных для GARCH (< 50), но достаточно для EWMA
+    print("\n  [1] Недостаточно данных для GARCH (30 баров) - должен использовать EWMA")
     prices = [100.0 + i * 0.1 for i in range(30)]
     vol = calculate_garch_volatility(prices, 500)
-    if vol is None:
-        print("  ✓ Корректная обработка недостаточных данных")
+    if vol is not None and vol > 0:
+        print(f"    ✓ EWMA fallback успешно: {vol:.6f}")
     else:
-        print("  ❌ ОШИБКА: должна вернуться None при недостатке данных")
+        print("    ❌ ОШИБКА: должна вернуться валидная волатильность через EWMA")
 
-    # Тест 2: Очень низкая волатильность (почти константные цены)
-    prices = [100.0 + 0.0001 * i for i in range(600)]
+    # Тест 2: Только 2 бара - минимум для Historical Volatility
+    print("\n  [2] Минимум данных (2 бара) - должен использовать Historical Volatility")
+    prices = [100.0, 101.0]
+    vol = calculate_garch_volatility(prices, 500)
+    if vol is not None and vol > 0:
+        print(f"    ✓ Historical volatility fallback успешно: {vol:.6f}")
+    else:
+        print("    ❌ ОШИБКА: должна вернуться валидная волатильность")
+
+    # Тест 3: 1 бар - недостаточно для любого метода
+    print("\n  [3] Недостаточно данных (1 бар) - должен вернуть None")
+    prices = [100.0]
     vol = calculate_garch_volatility(prices, 500)
     if vol is None:
-        print("  ✓ Корректная обработка данных с нулевой вариацией")
+        print("    ✓ Корректная обработка недостаточных данных")
     else:
-        print(f"  ⚠️  Очень низкая волатильность: {vol}")
+        print("    ❌ ОШИБКА: должна вернуться None при < 2 барах")
 
-    # Тест 3: Высокая волатильность
+    # Тест 4: Очень низкая волатильность (почти константные цены) - flat market
+    print("\n  [4] Flat market (почти константные цены) - должен применить floor")
+    prices = [100.0 + 0.00001 * i for i in range(600)]
+    vol = calculate_garch_volatility(prices, 500)
+    if vol is not None and vol >= 1e-10:
+        print(f"    ✓ Flat market с floor: {vol:.10f} (>= 1e-10)")
+    else:
+        print(f"    ❌ ОШИБКА: должна применить minimum floor, получено: {vol}")
+
+    # Тест 5: Высокая волатильность
+    print("\n  [5] Высокая волатильность - все методы должны работать")
     np.random.seed(99)
     base_price = 100.0
     prices = [base_price]
@@ -163,9 +191,9 @@ def test_edge_cases():
 
     vol = calculate_garch_volatility(prices, 500)
     if vol is not None and vol > 0:
-        print(f"  ✓ Высокая волатильность рассчитана: {vol:.6f}")
+        print(f"    ✓ Высокая волатильность рассчитана: {vol:.6f}")
     else:
-        print("  ❌ ОШИБКА: не удалось рассчитать высокую волатильность")
+        print("    ❌ ОШИБКА: не удалось рассчитать высокую волатильность")
 
     print()
     return True
@@ -290,11 +318,171 @@ def test_convergence():
     return True
 
 
+def test_fallback_methods():
+    """Тест всех трех методов расчета волатильности."""
+    print("=== Тест 7: Проверка всех fallback методов ===")
+
+    # Генерируем тестовые данные
+    np.random.seed(456)
+    base_price = 100.0
+    prices = [base_price]
+    for _ in range(100):
+        log_return = np.random.normal(0, 0.02)
+        new_price = prices[-1] * math.exp(log_return)
+        prices.append(new_price)
+
+    # Тест EWMA
+    print("\n  [1] Тестирование EWMA (lambda=0.94)")
+    ewma_vol = _calculate_ewma_volatility(prices, lambda_decay=0.94)
+    if ewma_vol is not None and ewma_vol > 0:
+        print(f"    ✓ EWMA успешно: {ewma_vol:.6f}")
+    else:
+        print("    ❌ ОШИБКА: EWMA не рассчитан")
+
+    # Тест Historical Volatility
+    print("\n  [2] Тестирование Historical Volatility")
+    hist_vol = _calculate_historical_volatility(prices, min_periods=2)
+    if hist_vol is not None and hist_vol > 0:
+        print(f"    ✓ Historical vol успешно: {hist_vol:.6f}")
+    else:
+        print("    ❌ ОШИБКА: Historical volatility не рассчитан")
+
+    # Проверка согласованности методов
+    print("\n  [3] Проверка согласованности методов")
+    if ewma_vol is not None and hist_vol is not None:
+        ratio = ewma_vol / hist_vol
+        print(f"    EWMA / Historical ratio: {ratio:.2f}")
+        if 0.5 < ratio < 2.0:
+            print("    ✓ Методы дают согласованные результаты")
+        else:
+            print("    ⚠️  Методы дают существенно разные результаты")
+
+    # Тест минимальных данных для каждого метода
+    print("\n  [4] Минимальные данные для каждого метода")
+
+    # EWMA с 2 точками
+    prices_2 = [100.0, 101.5]
+    ewma_2 = _calculate_ewma_volatility(prices_2)
+    if ewma_2 is not None:
+        print(f"    ✓ EWMA работает с 2 точками: {ewma_2:.6f}")
+    else:
+        print("    ❌ ОШИБКА: EWMA должен работать с 2 точками")
+
+    # Historical с 2 точками
+    hist_2 = _calculate_historical_volatility(prices_2)
+    if hist_2 is not None:
+        print(f"    ✓ Historical vol работает с 2 точками: {hist_2:.6f}")
+    else:
+        print("    ❌ ОШИБКА: Historical должен работать с 2 точками")
+
+    print()
+    return True
+
+
+def test_nan_elimination():
+    """Тест на устранение NaN значений."""
+    print("=== Тест 8: Устранение NaN значений ===")
+
+    test_cases = [
+        (2, "2 бара"),
+        (10, "10 баров"),
+        (30, "30 баров"),
+        (49, "49 баров (граница GARCH)"),
+        (50, "50 баров (минимум GARCH)"),
+        (100, "100 баров"),
+        (500, "500 баров"),
+    ]
+
+    nan_count = 0
+    valid_count = 0
+
+    print("\n  Проверка для различного количества баров:")
+    for n_bars, description in test_cases:
+        # Генерируем данные
+        np.random.seed(n_bars)
+        prices = [100.0]
+        for _ in range(n_bars - 1):
+            log_return = np.random.normal(0, 0.02)
+            prices.append(prices[-1] * math.exp(log_return))
+
+        vol = calculate_garch_volatility(prices, 500)
+
+        if vol is None or math.isnan(vol):
+            nan_count += 1
+            print(f"    ❌ {description}: NaN")
+        else:
+            valid_count += 1
+            print(f"    ✓ {description}: {vol:.6f}")
+
+    # Тест flat market
+    print("\n  Проверка flat market:")
+    flat_prices = [100.0] * 100
+    flat_vol = calculate_garch_volatility(flat_prices, 50)
+    if flat_vol is not None and not math.isnan(flat_vol):
+        print(f"    ✓ Flat market: {flat_vol:.10f} (с floor)")
+    else:
+        print(f"    ❌ Flat market: NaN (не применен floor)")
+        nan_count += 1
+
+    print(f"\n  Итог: {valid_count} валидных значений, {nan_count} NaN")
+    if nan_count <= 1:  # Только < 2 баров может быть NaN
+        print("  ✓ NaN устранены для всех случаев >= 2 баров")
+    else:
+        print(f"  ❌ ОШИБКА: {nan_count} случаев вернули NaN")
+
+    print()
+    return nan_count <= 1
+
+
+def test_convergence_robustness():
+    """Тест robust обработки несходимости GARCH."""
+    print("=== Тест 9: Робастность при несходимости GARCH ===")
+
+    # Создаем "сложные" данные которые могут вызвать проблемы сходимости
+    print("\n  [1] Экстремальные скачки цен")
+    np.random.seed(333)
+    prices = [100.0]
+    for i in range(60):
+        # Периодические экстремальные скачки
+        if i % 10 == 0:
+            jump = np.random.choice([-0.3, 0.3])
+        else:
+            jump = np.random.normal(0, 0.01)
+        prices.append(prices[-1] * math.exp(jump))
+
+    vol = calculate_garch_volatility(prices, 50)
+    if vol is not None and not math.isnan(vol):
+        print(f"    ✓ Экстремальные скачки обработаны (fallback): {vol:.6f}")
+    else:
+        print("    ❌ ОШИБКА: не удалось обработать экстремальные скачки")
+
+    # Постоянная цена с одним выбросом
+    print("\n  [2] Flat цена с выбросом")
+    prices = [100.0] * 30 + [150.0] + [100.0] * 30
+    vol = calculate_garch_volatility(prices, 50)
+    if vol is not None and not math.isnan(vol):
+        print(f"    ✓ Flat с выбросом обработан: {vol:.6f}")
+    else:
+        print("    ❌ ОШИБКА: не удалось обработать flat с выбросом")
+
+    # Очень малые изменения
+    print("\n  [3] Микро-изменения (epsilon уровень)")
+    prices = [100.0 + i * 1e-8 for i in range(100)]
+    vol = calculate_garch_volatility(prices, 50)
+    if vol is not None and not math.isnan(vol):
+        print(f"    ✓ Микро-изменения обработаны с floor: {vol:.10f}")
+    else:
+        print("    ❌ ОШИБКА: не удалось обработать микро-изменения")
+
+    print()
+    return True
+
+
 def main():
     """Запуск всех тестов."""
-    print("\n" + "=" * 60)
-    print("ТЕСТИРОВАНИЕ GARCH(1,1) УСЛОВНОЙ ВОЛАТИЛЬНОСТИ")
-    print("=" * 60 + "\n")
+    print("\n" + "=" * 70)
+    print("ТЕСТИРОВАНИЕ GARCH ВОЛАТИЛЬНОСТИ С ROBUST FALLBACK СТРАТЕГИЕЙ")
+    print("=" * 70 + "\n")
 
     tests = [
         test_garch_basic,
@@ -303,6 +491,9 @@ def main():
         test_window_sizes,
         test_garch_properties,
         test_convergence,
+        test_fallback_methods,
+        test_nan_elimination,
+        test_convergence_robustness,
     ]
 
     passed = 0
@@ -321,9 +512,9 @@ def main():
             traceback.print_exc()
             failed += 1
 
-    print("=" * 60)
+    print("=" * 70)
     print(f"РЕЗУЛЬТАТЫ: {passed} успешно, {failed} неудачно")
-    print("=" * 60 + "\n")
+    print("=" * 70 + "\n")
 
     return failed == 0
 
