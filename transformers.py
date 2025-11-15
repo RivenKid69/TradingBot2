@@ -736,6 +736,13 @@ class OnlineFeatureTransformer:
                 all_windows.extend(self.spec.cvd_windows)
             maxlen = max(all_windows) if all_windows else 100
 
+            # CRITICAL FIX: Momentum calculation requires window + 1 elements
+            # (need both current value and value from 'window' bars ago)
+            # Ensure maxlen is sufficient for all momentum windows
+            if self.spec.taker_buy_ratio_momentum:
+                max_momentum_window = max(self.spec.taker_buy_ratio_momentum)
+                maxlen = max(maxlen, max_momentum_window + 1)
+
             st = {
                 "prices": deque(maxlen=maxlen),  # type: deque[float]
                 "avg_gain": None,  # type: Optional[float]
@@ -1000,15 +1007,22 @@ class OnlineFeatureTransformer:
                         past = ratio_list[-(window + 1)]
 
                         # CRITICAL FIX: Используем ROC вместо абсолютной разницы
-                        # Защита от деления на ноль: если past = 0, используем абсолютную разницу
-                        if abs(past) > 1e-10:  # past != 0
+                        # Защита от деления на очень маленькие числа
+                        # Threshold 0.01 (1%) prevents extreme ROC values
+                        # For taker_buy_ratio in [0, 1], this is reasonable
+                        if abs(past) > 0.01:
                             # ROC (Rate of Change): процентное изменение
                             momentum = (current - past) / past
                         else:
-                            # Fallback для редкого случая past = 0
-                            # В этом случае: если current > 0, momentum = +infinity (используем +1.0)
-                            # если current = 0, momentum = 0
-                            momentum = 1.0 if current > 1e-10 else 0.0
+                            # Fallback для случая когда past очень маленькое (<1%)
+                            # Используем знак разницы без деления
+                            # +1.0 для роста, -1.0 для падения, 0 для неизменности
+                            if current > past + 0.001:  # Выросло значительно
+                                momentum = 1.0
+                            elif current < past - 0.001:  # Упало значительно
+                                momentum = -1.0
+                            else:  # Практически не изменилось
+                                momentum = 0.0
 
                         feats[feature_name] = float(momentum)
                     else:
