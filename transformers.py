@@ -964,7 +964,10 @@ class OnlineFeatureTransformer:
                     else:
                         feats[feature_name] = float("nan")
 
-            # Рассчитываем моментум (изменение за последние N периодов)
+            # Рассчитываем моментум (Rate of Change за последние N периодов)
+            # CRITICAL FIX: Используем ROC (Rate of Change) вместо абсолютной разницы
+            # ROC = (current - past) / past - это стандарт для momentum индикаторов
+            # Преимущества: учитывает базовый уровень, сопоставимо между периодами
             if self.spec.taker_buy_ratio_momentum:
                 # CRITICAL FIX #1: Используем исходные значения в минутах для именования, бары для индексирования
                 for i, window in enumerate(self.spec.taker_buy_ratio_momentum):
@@ -976,7 +979,18 @@ class OnlineFeatureTransformer:
                     if len(ratio_list) >= window + 1:
                         current = ratio_list[-1]
                         past = ratio_list[-(window + 1)]
-                        momentum = current - past
+
+                        # CRITICAL FIX: Используем ROC вместо абсолютной разницы
+                        # Защита от деления на ноль: если past = 0, используем абсолютную разницу
+                        if abs(past) > 1e-10:  # past != 0
+                            # ROC (Rate of Change): процентное изменение
+                            momentum = (current - past) / past
+                        else:
+                            # Fallback для редкого случая past = 0
+                            # В этом случае: если current > 0, momentum = +infinity (используем +1.0)
+                            # если current = 0, momentum = 0
+                            momentum = 1.0 if current > 1e-10 else 0.0
+
                         feats[feature_name] = float(momentum)
                     else:
                         feats[feature_name] = float("nan")
