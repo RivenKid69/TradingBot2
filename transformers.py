@@ -365,7 +365,14 @@ def _calculate_historical_volatility(prices: List[float], min_periods: int = 2) 
             return None
 
         # Вычисляем стандартное отклонение
-        volatility = np.std(log_returns, ddof=1)
+        # CRITICAL FIX: для 1 доходности (2 цены) используем ddof=0 вместо ddof=1
+        # ddof=1 при len=1 дает деление на 0 (nan)
+        if len(log_returns) == 1:
+            # Для единственной доходности: volatility = abs(return)
+            volatility = abs(log_returns[0])
+        else:
+            # Для >= 2 доходностей: используем стандартное отклонение с ddof=1
+            volatility = np.std(log_returns, ddof=1)
 
         if not np.isfinite(volatility) or volatility < 0:
             return None
@@ -477,8 +484,9 @@ def calculate_garch_volatility(prices: List[float], n: int) -> Optional[float]:
 
     # Попытка 2: EWMA - robust fallback для недостаточных данных или несходимости GARCH
     ewma_result = _calculate_ewma_volatility(prices, lambda_decay=0.94)
-    if ewma_result is not None and ewma_result >= VOLATILITY_FLOOR:
-        return ewma_result
+    if ewma_result is not None:
+        # Применяем minimum floor для flat markets
+        return float(max(ewma_result, VOLATILITY_FLOOR))
 
     # Попытка 3: Historical Volatility - финальный fallback
     hist_vol = _calculate_historical_volatility(prices, min_periods=MIN_EWMA_OBSERVATIONS)
