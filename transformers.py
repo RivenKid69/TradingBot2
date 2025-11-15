@@ -260,6 +260,7 @@ def calculate_parkinson_volatility(ohlc_bars: List[Dict[str, float]], n: int) ->
 
         # σ² = (1/(4n·ln(2))) · Σ(ln(H_i/L_i))²
         # Используем valid_bars (количество реально использованных данных) для корректной оценки
+        # Это стандартная статистическая практика: среднее = сумма / количество_слагаемых
         parkinson_var = sum_sq / (4 * valid_bars * math.log(2))
 
         # Возвращаем стандартное отклонение
