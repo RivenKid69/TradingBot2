@@ -1,4 +1,4 @@
-# sim/__init__.py
+# __init__.py
 from .quantizer import Quantizer, load_filters, SymbolFilters
 from .fees import FeesModel, FundingCalculator, FundingEvent
 from .slippage import (

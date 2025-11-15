@@ -1,4 +1,4 @@
-# scripts/ingest_klines.py
+# ingest_klines.py
 from __future__ import annotations
 
 import argparse

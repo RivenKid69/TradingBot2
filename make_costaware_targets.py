@@ -1,4 +1,4 @@
-# scripts/make_costaware_targets.py
+# make_costaware_targets.py
 from __future__ import annotations
 
 import argparse

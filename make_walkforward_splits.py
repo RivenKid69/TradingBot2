@@ -1,4 +1,4 @@
-# scripts/make_walkforward_splits.py
+# make_walkforward_splits.py
 from __future__ import annotations
 
 import argparse

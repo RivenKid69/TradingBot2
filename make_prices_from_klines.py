@@ -1,4 +1,4 @@
-# scripts/make_prices_from_klines.py
+# make_prices_from_klines.py
 from __future__ import annotations
 
 import argparse

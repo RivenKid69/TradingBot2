@@ -1,4 +1,4 @@
-# training/drift.py
+# drift.py
 from __future__ import annotations
 
 import json

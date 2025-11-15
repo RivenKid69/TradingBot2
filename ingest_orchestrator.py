@@ -1,4 +1,4 @@
-# scripts/ingest_orchestrator.py
+# ingest_orchestrator.py
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,4 @@
-# training/threshold_tuner.py
+# threshold_tuner.py
 from __future__ import annotations
 
 import math

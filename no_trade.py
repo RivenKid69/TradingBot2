@@ -1,4 +1,4 @@
-# training/no_trade.py
+# no_trade.py
 from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple

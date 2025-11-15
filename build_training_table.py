@@ -1,4 +1,4 @@
-# scripts/build_training_table.py
+# build_training_table.py
 from __future__ import annotations
 
 import argparse

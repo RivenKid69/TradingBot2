@@ -1,4 +1,4 @@
-# scripts/agg_klines.py
+# agg_klines.py
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,4 @@
-# data/binance_public.py
+# binance_public.py
 from __future__ import annotations
 
 import json

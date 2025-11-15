@@ -1,4 +1,4 @@
-# scripts/check_drift.py
+# check_drift.py
 from __future__ import annotations
 
 import argparse
