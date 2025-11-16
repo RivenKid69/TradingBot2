@@ -79,7 +79,12 @@ pnl:
   mark_to: "side"   # "side" = для лонга bid, для шорта ask; также поддерживаются "mid", "bid", "ask"
 
 leakguard:
-  decision_delay_ms: 0
+  # WARNING: decision_delay_ms=0 creates FORWARD-LOOKING BIAS in training!
+  # This config is LEGACY ONLY for backward compatibility with old experiments.
+  # DO NOT USE FOR NEW EXPERIMENTS!
+  # Recommended: decision_delay_ms >= 8000 (see configs/timing.yaml)
+  # Reference: de Prado (2018) "Advances in Financial Machine Learning" Ch. 7
+  decision_delay_ms: 0  # DANGER: ZERO DELAY - FORWARD-LOOKING BIAS!
   min_lookback_ms: 0
 
 labels:

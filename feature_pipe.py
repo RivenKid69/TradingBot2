@@ -322,7 +322,26 @@ class FeaturePipe:
             self.update(b)
 
     def update(self, bar: Bar, *, skip_metrics: bool = False) -> Mapping[str, Any]:
-        """Process a single bar and return computed features."""
+        """Process a single bar and return computed features.
+
+        CRITICAL: Only processes FINAL (closed) bars to prevent forward-looking bias.
+        Intermediate bar updates (is_final=False) are silently skipped.
+
+        This ensures:
+        1. Training: features computed on closed bars only
+        2. Inference: decisions made only on finalized prices
+        3. No train-inference mismatch
+
+        References:
+        - de Prado, M.L. (2018). "Advances in Financial Machine Learning", Ch. 7
+        - Bar.is_final: from Binance WebSocket "x" field (is kline closed)
+        """
+        # CRITICAL GUARD: Reject non-final (unclosed) bars
+        # Binance sends intermediate updates with is_final=False
+        # Using unclosed bars creates forward-looking bias!
+        if not getattr(bar, 'is_final', True):
+            return {}
+
         try:
             close_value = float(bar.close)
         except (TypeError, ValueError, InvalidOperation):

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -28,9 +29,37 @@ class LeakGuard:
       2) Вводится колонка decision_ts = ts_ms + decision_delay_ms — **только** начиная с этого времени
          можно смотреть на рынок для постановки ордеров и построения меток (labels).
       3) Метки рассчитываются только на отрезке [decision_ts, decision_ts + horizon].
+
+    CRITICAL: decision_delay_ms должен быть > 0 для предотвращения forward-looking bias!
+    References:
+    - de Prado, M.L. (2018). "Advances in Financial Machine Learning", Chapter 7
     """
     def __init__(self, cfg: Optional[LeakConfig] = None):
         self.cfg = cfg or LeakConfig()
+
+        # CRITICAL VALIDATION: Warn if decision_delay_ms == 0
+        # Zero delay creates forward-looking bias in training:
+        # - Features computed at ts_ms
+        # - Decisions at decision_ts = ts_ms + 0 = ts_ms
+        # - Target from ts_ms → model sees immediate future!
+        if self.cfg.decision_delay_ms == 0:
+            warnings.warn(
+                "CRITICAL: decision_delay_ms=0 creates FORWARD-LOOKING BIAS! "
+                "Features and targets are computed at the same timestamp, allowing "
+                "the model to 'see the future' during training. This leads to "
+                "overfitting and poor live performance. "
+                "Recommended: decision_delay_ms >= 8000 (8 seconds). "
+                "Reference: de Prado (2018) 'Advances in Financial Machine Learning', Ch. 7",
+                UserWarning,
+                stacklevel=2
+            )
+
+        # Validate decision_delay_ms is non-negative
+        if self.cfg.decision_delay_ms < 0:
+            raise ValueError(
+                f"decision_delay_ms must be >= 0, got {self.cfg.decision_delay_ms}. "
+                "Negative delay would create features from the future!"
+            )
 
     def attach_decision_time(self, df: pd.DataFrame, *, ts_col: str = "ts_ms") -> pd.DataFrame:
         if ts_col not in df.columns:
