@@ -912,14 +912,9 @@ class Mediator:
         return numeric
 
     @staticmethod
-    def _validate_critical_price(
-        value: Any,
-        param_name: str = "price",
-        prev_price: float | None = None,
-        max_spike_pct: float = 0.5
-    ) -> float:
+    def _validate_critical_price(value: Any, param_name: str = "price") -> float:
         """
-        Validate critical price parameter with strict requirements and spike detection.
+        Validate critical price parameter with strict requirements.
 
         This function enforces strict validation for price parameters where 0.0 is NOT
         an acceptable fallback. Used for mark_price, prev_price, and other critical
@@ -928,27 +923,23 @@ class Mediator:
         Args:
             value: The price value to validate
             param_name: Parameter name for error messages
-            prev_price: Previous price for spike detection (optional)
-            max_spike_pct: Maximum allowed price change percentage (default 0.5 = 50%)
 
         Returns:
             float: Validated price value (guaranteed to be positive and finite)
 
         Raises:
-            ValueError: If price is None, NaN, Inf, <= 0, or shows abnormal spike
+            ValueError: If price is None, NaN, Inf, or <= 0
 
         Best practices:
         - Financial data standards require positive, finite prices
         - Zero/negative prices indicate data corruption, not "no price"
         - NaN/Inf indicate upstream calculation errors that must be fixed
         - Fail-fast approach prevents silent data corruption
-        - Spike detection protects against flash crashes and data anomalies
 
         References:
         - "Best Practices for Ensuring Financial Data Accuracy" (Paystand)
         - "Investment Model Validation" (CFA Institute)
         - "Training ML Models with Financial Data" (EODHD)
-        - "Anomaly Detection in Financial Time Series" (Journal of Finance)
         """
         if value is None:
             raise ValueError(
@@ -991,25 +982,6 @@ class Mediator:
                 f"Zero or negative prices are invalid in trading systems. "
                 f"If this is intentional (e.g., testing), use a small positive value like 0.01."
             )
-
-        # Spike detection: Check for abnormal price changes
-        # This protects against flash crashes, data glitches, and extreme anomalies
-        # For 4h timeframe crypto: 50% change is extremely rare under normal conditions
-        if prev_price is not None and prev_price > 0.0:
-            relative_change = abs(numeric - prev_price) / prev_price
-            if relative_change > max_spike_pct:
-                pct_change = relative_change * 100.0
-                direction = "increase" if numeric > prev_price else "decrease"
-                raise ValueError(
-                    f"Invalid {param_name}: price spike detected. "
-                    f"Price changed by {pct_change:.2f}% ({direction}) in one bar. "
-                    f"Previous price: {prev_price:.2f}, Current price: {numeric:.2f}. "
-                    f"Maximum allowed change: {max_spike_pct * 100.0:.1f}%. "
-                    f"This may indicate: (1) flash crash/pump, (2) data error, "
-                    f"(3) missing bars, or (4) exchange outage. "
-                    f"Review data source and market conditions. "
-                    f"For legitimate extreme moves, adjust max_spike_pct parameter."
-                )
 
         return numeric
 
@@ -1066,11 +1038,10 @@ class Mediator:
         """
         Extract basic market data from row.
 
-        CRITICAL: Uses strict validation for price parameters with spike detection.
+        CRITICAL: Uses strict validation for price parameters.
         - mark_price and prev_price MUST be positive and finite
         - Will raise ValueError if invalid (fail-fast approach)
         - No fallback to 0.0 for prices (would corrupt observations)
-        - Spike detection: rejects prices with >50% change from previous bar
 
         Volume validation strategy:
         - P0: Raw volume data validated by _get_safe_float with min_value=0.0
@@ -1078,18 +1049,8 @@ class Mediator:
         - P2: Final validation at obs_builder.pyx wrapper before writing to observation
         """
         # CRITICAL: Strict validation for prices (no fallback to 0.0)
-        # Step 1: Validate prev_price first (needed as reference for spike detection)
+        price = self._validate_critical_price(mark_price, param_name="mark_price")
         prev = self._validate_critical_price(prev_price, param_name="prev_price")
-
-        # Step 2: Validate mark_price WITH spike detection against prev_price
-        # This catches flash crashes, data glitches, and extreme anomalies
-        # For 4h timeframe: 50% change is extremely rare under normal market conditions
-        price = self._validate_critical_price(
-            mark_price,
-            param_name="mark_price",
-            prev_price=prev,
-            max_spike_pct=0.5
-        )
 
         # Volume normalization (adapted for 4h timeframe)
         # 4h bars aggregate ~240x more volume than 1h bars, so we use 240e6 divisor

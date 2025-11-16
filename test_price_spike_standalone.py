@@ -1,7 +1,7 @@
 """
-Standalone test for price spike detection logic.
+Standalone test for price validation (basic checks only).
 
-This test validates the spike detection algorithm without importing mediator.py
+This test validates the basic validation logic without importing mediator.py
 to avoid dependency issues in test environment.
 """
 
@@ -9,12 +9,7 @@ import math
 from typing import Any
 
 
-def validate_critical_price(
-    value: Any,
-    param_name: str = "price",
-    prev_price: float | None = None,
-    max_spike_pct: float = 0.5
-) -> float:
+def validate_critical_price(value: Any, param_name: str = "price") -> float:
     """
     Standalone copy of _validate_critical_price for testing.
     This is the exact same logic as in mediator.py.
@@ -61,30 +56,13 @@ def validate_critical_price(
             f"If this is intentional (e.g., testing), use a small positive value like 0.01."
         )
 
-    # Spike detection: Check for abnormal price changes
-    if prev_price is not None and prev_price > 0.0:
-        relative_change = abs(numeric - prev_price) / prev_price
-        if relative_change > max_spike_pct:
-            pct_change = relative_change * 100.0
-            direction = "increase" if numeric > prev_price else "decrease"
-            raise ValueError(
-                f"Invalid {param_name}: price spike detected. "
-                f"Price changed by {pct_change:.2f}% ({direction}) in one bar. "
-                f"Previous price: {prev_price:.2f}, Current price: {numeric:.2f}. "
-                f"Maximum allowed change: {max_spike_pct * 100.0:.1f}%. "
-                f"This may indicate: (1) flash crash/pump, (2) data error, "
-                f"(3) missing bars, or (4) exchange outage. "
-                f"Review data source and market conditions. "
-                f"For legitimate extreme moves, adjust max_spike_pct parameter."
-            )
-
     return numeric
 
 
 def run_tests():
     """Run all tests and report results."""
     print("=" * 70)
-    print("Price Spike Detection - Standalone Tests")
+    print("Price Validation - Basic Checks")
     print("=" * 70)
     print()
 
@@ -119,133 +97,80 @@ def run_tests():
         print("✓ Test 3: NaN raises ValueError")
         passed += 1
 
-    # Test 4: Inf raises
+    # Test 4: Positive Inf raises
     try:
         validate_critical_price(float('inf'))
-        print("✗ Test 4 FAILED: Inf should raise ValueError")
+        print("✗ Test 4 FAILED: Positive Inf should raise ValueError")
         failed += 1
     except ValueError:
-        print("✓ Test 4: Inf raises ValueError")
+        print("✓ Test 4: Positive Inf raises ValueError")
         passed += 1
 
-    # Test 5: Zero raises
+    # Test 5: Negative Inf raises
+    try:
+        validate_critical_price(float('-inf'))
+        print("✗ Test 5 FAILED: Negative Inf should raise ValueError")
+        failed += 1
+    except ValueError:
+        print("✓ Test 5: Negative Inf raises ValueError")
+        passed += 1
+
+    # Test 6: Zero raises
     try:
         validate_critical_price(0.0)
-        print("✗ Test 5 FAILED: Zero should raise ValueError")
+        print("✗ Test 6 FAILED: Zero should raise ValueError")
         failed += 1
     except ValueError:
-        print("✓ Test 5: Zero raises ValueError")
+        print("✓ Test 6: Zero raises ValueError")
         passed += 1
 
-    # Test 6: Negative raises
+    # Test 7: Negative price raises
     try:
         validate_critical_price(-100.0)
-        print("✗ Test 6 FAILED: Negative should raise ValueError")
+        print("✗ Test 7 FAILED: Negative should raise ValueError")
         failed += 1
     except ValueError:
-        print("✓ Test 6: Negative raises ValueError")
+        print("✓ Test 7: Negative price raises ValueError")
         passed += 1
 
-    # Test 7: Normal change (30% increase)
+    # Test 8: Very small positive price
     try:
-        result = validate_critical_price(130.0, prev_price=100.0, max_spike_pct=0.5)
-        assert result == 130.0
-        print("✓ Test 7: Normal 30% increase passes")
-        passed += 1
-    except Exception as e:
-        print(f"✗ Test 7 FAILED: {e}")
-        failed += 1
-
-    # Test 8: Normal change (30% decrease)
-    try:
-        result = validate_critical_price(70.0, prev_price=100.0, max_spike_pct=0.5)
-        assert result == 70.0
-        print("✓ Test 8: Normal 30% decrease passes")
+        result = validate_critical_price(0.0001)
+        assert result == 0.0001
+        print("✓ Test 8: Very small positive price passes")
         passed += 1
     except Exception as e:
         print(f"✗ Test 8 FAILED: {e}")
         failed += 1
 
-    # Test 9: Spike detected (60% increase)
+    # Test 9: Large price
     try:
-        validate_critical_price(160.0, prev_price=100.0, max_spike_pct=0.5)
-        print("✗ Test 9 FAILED: 60% increase should raise ValueError")
-        failed += 1
-    except ValueError as e:
-        if "spike detected" in str(e) and "60.00%" in str(e):
-            print("✓ Test 9: 60% increase spike detected")
-            passed += 1
-        else:
-            print(f"✗ Test 9 FAILED: Wrong error message: {e}")
-            failed += 1
-
-    # Test 10: Spike detected (60% decrease)
-    try:
-        validate_critical_price(40.0, prev_price=100.0, max_spike_pct=0.5)
-        print("✗ Test 10 FAILED: 60% decrease should raise ValueError")
-        failed += 1
-    except ValueError as e:
-        if "spike detected" in str(e) and "60.00%" in str(e):
-            print("✓ Test 10: 60% decrease spike detected")
-            passed += 1
-        else:
-            print(f"✗ Test 10 FAILED: Wrong error message: {e}")
-            failed += 1
-
-    # Test 11: Flash crash (90% drop)
-    try:
-        validate_critical_price(5000.0, prev_price=50000.0, max_spike_pct=0.5)
-        print("✗ Test 11 FAILED: Flash crash should raise ValueError")
-        failed += 1
-    except ValueError as e:
-        if "spike detected" in str(e) and "90.00%" in str(e):
-            print("✓ Test 11: Flash crash (90% drop) detected")
-            passed += 1
-        else:
-            print(f"✗ Test 11 FAILED: Wrong error message: {e}")
-            failed += 1
-
-    # Test 12: Exactly at threshold (50%)
-    try:
-        result = validate_critical_price(150.0, prev_price=100.0, max_spike_pct=0.5)
-        assert result == 150.0
-        print("✓ Test 12: Exactly 50% change passes")
+        result = validate_critical_price(1000000.0)
+        assert result == 1000000.0
+        print("✓ Test 9: Large price passes")
         passed += 1
     except Exception as e:
-        print(f"✗ Test 12 FAILED: {e}")
+        print(f"✗ Test 9 FAILED: {e}")
         failed += 1
 
-    # Test 13: Barely over threshold (50.01%)
+    # Test 10: String that can be converted
     try:
-        validate_critical_price(150.01, prev_price=100.0, max_spike_pct=0.5)
-        print("✗ Test 13 FAILED: 50.01% should raise ValueError")
+        result = validate_critical_price("100.5")
+        assert result == 100.5
+        print("✓ Test 10: String conversion passes")
+        passed += 1
+    except Exception as e:
+        print(f"✗ Test 10 FAILED: {e}")
+        failed += 1
+
+    # Test 11: String that cannot be converted
+    try:
+        validate_critical_price("not_a_number")
+        print("✗ Test 11 FAILED: Invalid string should raise ValueError")
         failed += 1
     except ValueError:
-        print("✓ Test 13: Barely over threshold detected")
+        print("✓ Test 11: Invalid string raises ValueError")
         passed += 1
-
-    # Test 14: No prev_price skips spike check
-    try:
-        result = validate_critical_price(1000000.0, prev_price=None)
-        assert result == 1000000.0
-        print("✓ Test 14: No prev_price skips spike check")
-        passed += 1
-    except Exception as e:
-        print(f"✗ Test 14 FAILED: {e}")
-        failed += 1
-
-    # Test 15: Custom threshold (10%)
-    try:
-        validate_critical_price(115.0, prev_price=100.0, max_spike_pct=0.1)
-        print("✗ Test 15 FAILED: 15% increase with 10% threshold should raise")
-        failed += 1
-    except ValueError as e:
-        if "spike detected" in str(e) and "15.00%" in str(e):
-            print("✓ Test 15: Custom threshold respected")
-            passed += 1
-        else:
-            print(f"✗ Test 15 FAILED: Wrong error message: {e}")
-            failed += 1
 
     # Summary
     print()
