@@ -709,6 +709,35 @@ class OnlineFeatureTransformer:
       - RSI по Вайльдеру: скользящие avg_gain/avg_loss с периодом p
       - Yang-Zhang волатильность: комплексная OHLC-волатильность
       - Parkinson волатильность: волатильность диапазона High-Low
+
+    ВАЖНО: Семантика вычисления индикаторов (NO LOOK-AHEAD BIAS):
+    ======================================================================
+    update() вызывается после ЗАКРЫТИЯ бара с данными закрытого бара.
+    Все индикаторы вычисляются на основе данных, доступных ПОСЛЕ закрытия:
+
+    - SMA_n = среднее последних n ЗАКРЫТЫХ баров (включая текущий)
+      Пример: SMA_5 = (P_t + P_{t-1} + P_{t-2} + P_{t-3} + P_{t-4}) / 5
+      где P_t - цена закрытия текущего (только что закрытого) бара
+
+    - Returns = log(P_t / P_{t-n}), доходность от n баров назад к текущему
+
+    - RSI обновляется с учетом изменения от предыдущего к текущему закрытию
+
+    Защита от утечки данных:
+    - Признаки доступны ПОСЛЕ ts_ms (времени закрытия бара)
+    - Решения принимаются в момент decision_ts = ts_ms + decision_delay_ms
+    - Target вычисляется от decision_ts (см. LeakGuard, LabelBuilder)
+    - При правильной настройке decision_delay_ms > 0 нет look-ahead bias
+
+    Lag индикаторов (природный запаздывающий характер):
+    - SMA имеет lag ≈ window/2 (половина окна) - присуще индикатору
+    - Для SMA_5 lag ≈ 2.5 бара (Murphy, 1999: "Technical Analysis Indicators")
+    - Модель должна учитывать этот lag при интерпретации сигналов
+
+    Ссылки:
+    - Murphy, J.J. (1999). Technical Analysis of Financial Markets
+    - de Prado, M.L. (2018). "Advances in Financial Machine Learning"
+      Глава 7: The Dangers of Backtesting (look-ahead bias prevention)
     """
 
     def __init__(self, spec: FeatureSpec) -> None:
@@ -773,15 +802,44 @@ class OnlineFeatureTransformer:
         """
         Обновляет состояние трансформера новым баром и возвращает признаки.
 
+        ВАЖНО: Семантика вызова (NO LOOK-AHEAD BIAS):
+        ==============================================
+        Эта функция вызывается ПОСЛЕ закрытия бара с данными ЗАКРЫТОГО бара.
+        Возвращаемые признаки доступны ПОСЛЕ ts_ms и используются для решений
+        в момент decision_ts = ts_ms + decision_delay_ms (см. LeakGuard).
+
+        Временная последовательность:
+        1. Бар закрывается в момент ts_ms
+        2. update() вызывается с close, open, high, low закрытого бара
+        3. Признаки вычисляются на основе истории + текущий закрытый бар
+        4. Признаки доступны для решений в момент decision_ts >= ts_ms
+
+        Формулы индикаторов (на основе закрытых баров):
+        - SMA_n = (close_t + close_{t-1} + ... + close_{t-n+1}) / n
+        - Returns = log(close_t / close_{t-n})
+        - RSI использует изменение от close_{t-1} к close_t
+
         Args:
             symbol: символ торгового инструмента
-            ts_ms: временная метка в миллисекундах
-            close: цена закрытия
+            ts_ms: временная метка ЗАКРЫТИЯ бара в миллисекундах
+            close: цена закрытия ЗАКРЫТОГО бара
             open_price: цена открытия (опционально для Yang-Zhang)
             high: максимальная цена (опционально для Yang-Zhang)
             low: минимальная цена (опционально для Yang-Zhang)
             volume: объем торгов (опционально для Taker Buy Ratio)
             taker_buy_base: объем покупок taker (опционально для Taker Buy Ratio)
+
+        Returns:
+            Dict с признаками:
+            - ts_ms, symbol, ref_price (базовая информация)
+            - sma_*, ret_* (цена и доходность)
+            - rsi (momentum)
+            - yang_zhang_*, parkinson_*, garch_* (волатильность)
+            - taker_buy_ratio*, cvd_* (объемные индикаторы)
+
+        Note:
+            Lag индикаторов ~window/2 присущ SMA (Murphy, 1999).
+            Модель должна учитывать этот lag при интерпретации.
         """
         sym = str(symbol).upper()
         price = float(close)
