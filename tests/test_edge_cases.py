@@ -5,16 +5,19 @@ Tests all corner cases to ensure robustness.
 """
 
 import sys
+import pytest
 
 try:
     import torch
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    print("⚠️  PyTorch not available - skipping edge case tests")
-    sys.exit(0)
 
-from distributional_ppo import DistributionalPPO
+# Skip entire module if PyTorch is not available
+pytestmark = pytest.mark.skipif(not TORCH_AVAILABLE, reason="PyTorch not available")
+
+if TORCH_AVAILABLE:
+    from distributional_ppo import DistributionalPPO
 
 
 def test_edge_case_single_atom():

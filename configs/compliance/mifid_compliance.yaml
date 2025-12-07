@@ -1,12 +1,16 @@
 # MiFID II Compliance Configuration
 # Phase 1: Foundation (LEI, Clock Sync, Algorithm Registry)
+# Phase 2: Transaction Reporting (RTS 22)
 #
 # References:
 #   - MiFID II (Directive 2014/65/EU) Article 17
 #   - MiFIR (Regulation 600/2014) Articles 25-26
 #   - RTS 6 (Regulation 2017/589) - Algorithmic Trading
+#   - RTS 22 (Regulation 2017/590) - Transaction Reporting
 #   - RTS 25 (Regulation 2017/574) - Clock Synchronisation
 #   - ISO 17442 - Legal Entity Identifier (LEI)
+#   - ISO 6166 - ISIN (International Securities Identification Number)
+#   - ISO 10383 - MIC (Market Identifier Code)
 
 compliance:
   # Enable/disable MiFID II compliance checks
@@ -120,3 +124,107 @@ compliance:
     # Fat finger protection
     fat_finger_price_deviation_pct: 10.0
     fat_finger_volume_multiplier: 10.0
+
+  # ============================================================================
+  # Phase 2: Transaction Reporting (RTS 22)
+  # ============================================================================
+  # MiFIR Article 26 requires investment firms to report transactions to NCAs
+  # via Approved Reporting Mechanisms (ARMs) within T+1.
+
+  transaction_reporting:
+    # Enable transaction reporting
+    enabled: true
+
+    # Default currency for prices/amounts
+    default_currency: "EUR"
+
+    # Country code of the supervising branch (ISO 3166-1 alpha-2)
+    country_of_branch: ""
+
+    # Trading capacity for proprietary trading
+    # Options: DEAL (dealing on own account), MTCH (matched principal), AOTC (agency)
+    trading_capacity: "DEAL"
+
+    # ARM (Approved Reporting Mechanism) Configuration
+    arm:
+      # ARM provider
+      # Options: mock (testing), bloomberg_btrl, cme_trax, lseg_unavista, tradeweb
+      provider: "mock"
+
+      # Environment
+      # Options: production, uat, sandbox
+      environment: "sandbox"
+
+      # API credentials (required for production)
+      api_key: ""
+      api_secret: ""
+
+      # Custom API base URL (optional, overrides default)
+      base_url: ""
+
+      # Request timeout in seconds
+      timeout_seconds: 30.0
+
+      # Maximum retry attempts for failed submissions
+      max_retries: 3
+
+      # Rate limit (requests per minute)
+      rate_limit_per_minute: 60
+
+    # Reporting Pipeline Configuration
+    pipeline:
+      # Maximum reports per batch submission
+      batch_size: 100
+
+      # Maximum wait time before sending incomplete batch (seconds)
+      batch_interval_seconds: 60.0
+
+      # Delay between retry attempts (seconds)
+      retry_delay_seconds: 30.0
+
+      # Hours before T+1 deadline to trigger urgent flush
+      # Default: 20 hours (submit by 8pm for next working day deadline)
+      t_plus_one_deadline_hours: 20.0
+
+      # Enable local caching for disaster recovery
+      enable_local_cache: true
+
+      # Directory for cached reports (not yet submitted)
+      cache_directory: "state/compliance/report_cache"
+
+    # Validation Settings
+    validation:
+      # Strict ISIN validation (verify checksum)
+      strict_isin_validation: true
+
+      # Strict MIC validation (only accept known MICs)
+      strict_mic_validation: false
+
+      # Require counterparty LEI for all transactions
+      require_counterparty_lei: false
+
+  # ============================================================================
+  # Reference Data
+  # ============================================================================
+  # Static reference data for transaction reporting
+
+  reference_data:
+    # Known trading venues (MIC codes)
+    # Add your commonly used venues here for faster validation
+    known_venues:
+      - "XLON"  # London Stock Exchange
+      - "XPAR"  # Euronext Paris
+      - "XETR"  # Deutsche Börse Xetra
+      - "XAMS"  # Euronext Amsterdam
+      - "XMIL"  # Borsa Italiana
+      - "XMAD"  # BME Spanish Exchanges
+      - "XOFF"  # Off-exchange
+      - "XXXX"  # No venue (SI)
+
+    # Supported currencies for reporting
+    supported_currencies:
+      - "EUR"
+      - "USD"
+      - "GBP"
+      - "CHF"
+      - "JPY"

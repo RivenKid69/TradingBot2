@@ -42,8 +42,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
-__mifid_ii_compliance_phase__ = 1  # Current implementation phase
+__version__ = "2.0.0"
+__mifid_ii_compliance_phase__ = 2  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -84,10 +84,67 @@ from services.compliance.config import (
     AlgorithmRegistryConfig,
 )
 
+# Phase 2 exports (Transaction Reporting - RTS 22)
+from services.compliance.transaction_report import (
+    # Enums
+    BuySellIndicator,
+    TradingCapacity,
+    IdentifierType,
+    InstrumentIdentifierType,
+    PriceType,
+    QuantityType,
+    TransactionType,
+    ReportStatus,
+    # Validators
+    ISINValidator,
+    MICValidator,
+    CFIValidator,
+    # Data classes
+    TransactionReportParty,
+    TransactionReport,
+    # Builder
+    TransactionReportBuilder,
+)
+
+from services.compliance.arm_client import (
+    # Enums
+    ARMProvider,
+    ARMEnvironment,
+    SubmissionStatus,
+    ErrorCode,
+    # Data classes
+    ARMError,
+    SubmissionResult,
+    BatchSubmissionResult,
+    ARMClientConfig,
+    # Clients
+    ARMClient,
+    MockARMClient,
+    BloombergBTRLClient,
+    FileARMClient,
+    # Factory
+    create_arm_client,
+)
+
+from services.compliance.reporting_pipeline import (
+    # Enums
+    PipelineStatus,
+    ReportQueuePriority,
+    # Data classes
+    PipelineConfig,
+    QueuedReport,
+    PipelineMetrics,
+    # Main class
+    TransactionReportingPipeline,
+    # Factory
+    create_reporting_pipeline,
+)
+
 __all__ = [
     # Version info
     "__version__",
     "__mifid_ii_compliance_phase__",
+    # ==== Phase 1: Foundation ====
     # LEI Management
     "LEIRecord",
     "LEIStatus",
@@ -116,4 +173,44 @@ __all__ = [
     "LEIConfig",
     "ClockSyncComplianceConfig",
     "AlgorithmRegistryConfig",
+    # ==== Phase 2: Transaction Reporting (RTS 22) ====
+    # Transaction Report enums
+    "BuySellIndicator",
+    "TradingCapacity",
+    "IdentifierType",
+    "InstrumentIdentifierType",
+    "PriceType",
+    "QuantityType",
+    "TransactionType",
+    "ReportStatus",
+    # Validators
+    "ISINValidator",
+    "MICValidator",
+    "CFIValidator",
+    # Transaction Report
+    "TransactionReportParty",
+    "TransactionReport",
+    "TransactionReportBuilder",
+    # ARM Client
+    "ARMProvider",
+    "ARMEnvironment",
+    "SubmissionStatus",
+    "ErrorCode",
+    "ARMError",
+    "SubmissionResult",
+    "BatchSubmissionResult",
+    "ARMClientConfig",
+    "ARMClient",
+    "MockARMClient",
+    "BloombergBTRLClient",
+    "FileARMClient",
+    "create_arm_client",
+    # Reporting Pipeline
+    "PipelineStatus",
+    "ReportQueuePriority",
+    "PipelineConfig",
+    "QueuedReport",
+    "PipelineMetrics",
+    "TransactionReportingPipeline",
+    "create_reporting_pipeline",
 ]
