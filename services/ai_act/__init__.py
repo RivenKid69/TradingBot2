@@ -42,8 +42,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "2.0.0"
-__ai_act_compliance_phase__ = 2  # Current implementation phase
+__version__ = "3.0.0"
+__ai_act_compliance_phase__ = 3  # Current implementation phase
 
 # =============================================================================
 # Phase 1 exports (Foundation & Risk Management)
@@ -192,6 +192,120 @@ from services.ai_act.technical_documentation import (
 )
 
 # =============================================================================
+# Phase 3 exports (QMS & Testing)
+# =============================================================================
+
+from services.ai_act.qms import (
+    # Enums
+    QMSElementType,
+    ProcedureStatus,
+    AuditType,
+    AuditStatus,
+    FindingSeverity,
+    ChangeType,
+    ChangeImpact,
+    CAPAType,
+    CAPAStatus,
+    # Data structures
+    QMSProcedure,
+    AuditFinding,
+    QMSAudit,
+    DesignReview,
+    ChangeRequest,
+    CAPARecord,
+    ResourceRecord,
+    AccountabilityRecord,
+    # Configuration
+    QMSConfig,
+    # Main class
+    QualityManagementSystem,
+    # Factory functions
+    create_qms,
+    get_default_qms_procedures,
+)
+
+from services.ai_act.testing_framework import (
+    # Enums
+    TestCategory,
+    TestPriority,
+    TestStatus,
+    MetricType as TestMetricType,
+    ComparisonOperator,
+    VulnerableGroup,
+    # Data structures
+    TestMetric,
+    TestScenario,
+    TestExecution,
+    TestSuite,
+    RealWorldTestPlan,
+    # Configuration
+    TestingConfig,
+    # Main class
+    AIActTestingFramework,
+    # Factory functions
+    create_testing_framework,
+    get_default_test_metrics,
+)
+
+from services.ai_act.cybersecurity import (
+    # Enums
+    ThreatType,
+    ThreatSeverity,
+    ValidationStatus,
+    AccessLevel,
+    SecurityEventType,
+    # Data structures
+    SecurityThreat,
+    ValidationResult,
+    IntegrityRecord,
+    AccessRecord,
+    SecurityPolicy,
+    SecurityEvent,
+    # Configuration
+    CybersecurityConfig,
+    # Components
+    InputValidator,
+    ModelIntegrityVerifier,
+    AdversarialDetector,
+    DataPoisoningDetector,
+    AccessControlManager,
+    # Main class
+    AIActCybersecurity,
+    # Factory functions
+    create_cybersecurity,
+    get_default_security_policies,
+)
+
+from services.ai_act.post_market_monitoring import (
+    # Enums
+    MonitoringMetricType,
+    DriftType,
+    DriftSeverity,
+    IncidentSeverity,
+    IncidentStatus,
+    FeedbackType,
+    AlertPriority,
+    # Data structures
+    MonitoringMetric,
+    DriftDetectionResult,
+    Incident,
+    Feedback,
+    MonitoringAlert,
+    PeriodicReport,
+    # Configuration
+    PostMarketConfig,
+    # Components
+    PerformanceMonitor,
+    IncidentTracker,
+    FeedbackCollector,
+    # Main class
+    PostMarketMonitoringSystem,
+    # Factory functions
+    create_post_market_monitoring,
+    get_default_monitoring_metrics,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -315,4 +429,92 @@ __all__ = [
     "TechnicalDocumentationConfig",
     "TechnicalDocumentationGenerator",
     "create_technical_documentation_generator",
+
+    # =========================================================================
+    # Phase 3: QMS & Testing
+    # =========================================================================
+
+    # QMS (Article 17)
+    "QMSElementType",
+    "ProcedureStatus",
+    "AuditType",
+    "AuditStatus",
+    "FindingSeverity",
+    "ChangeType",
+    "ChangeImpact",
+    "CAPAType",
+    "CAPAStatus",
+    "QMSProcedure",
+    "AuditFinding",
+    "QMSAudit",
+    "DesignReview",
+    "ChangeRequest",
+    "CAPARecord",
+    "ResourceRecord",
+    "AccountabilityRecord",
+    "QMSConfig",
+    "QualityManagementSystem",
+    "create_qms",
+    "get_default_qms_procedures",
+
+    # Testing Framework (Article 9)
+    "TestCategory",
+    "TestPriority",
+    "TestStatus",
+    "TestMetricType",
+    "ComparisonOperator",
+    "VulnerableGroup",
+    "TestMetric",
+    "TestScenario",
+    "TestExecution",
+    "TestSuite",
+    "RealWorldTestPlan",
+    "TestingConfig",
+    "AIActTestingFramework",
+    "create_testing_framework",
+    "get_default_test_metrics",
+
+    # Cybersecurity (Article 15(5))
+    "ThreatType",
+    "ThreatSeverity",
+    "ValidationStatus",
+    "AccessLevel",
+    "SecurityEventType",
+    "SecurityThreat",
+    "ValidationResult",
+    "IntegrityRecord",
+    "AccessRecord",
+    "SecurityPolicy",
+    "SecurityEvent",
+    "CybersecurityConfig",
+    "InputValidator",
+    "ModelIntegrityVerifier",
+    "AdversarialDetector",
+    "DataPoisoningDetector",
+    "AccessControlManager",
+    "AIActCybersecurity",
+    "create_cybersecurity",
+    "get_default_security_policies",
+
+    # Post-Market Monitoring (Article 72)
+    "MonitoringMetricType",
+    "DriftType",
+    "DriftSeverity",
+    "IncidentSeverity",
+    "IncidentStatus",
+    "FeedbackType",
+    "AlertPriority",
+    "MonitoringMetric",
+    "DriftDetectionResult",
+    "Incident",
+    "Feedback",
+    "MonitoringAlert",
+    "PeriodicReport",
+    "PostMarketConfig",
+    "PerformanceMonitor",
+    "IncidentTracker",
+    "FeedbackCollector",
+    "PostMarketMonitoringSystem",
+    "create_post_market_monitoring",
+    "get_default_monitoring_metrics",
 ]
