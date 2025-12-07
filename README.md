@@ -83,7 +83,7 @@ Details: `docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md`
 | Traditional futures/options | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
 
 ## Guides
-- `CLAUDE.md` — complete project guide (RU).
+- `claude.md` — complete project guide (RU).
 - `ARCHITECTURE.md` — system architecture and module map.
 - `DOCS_INDEX.md` — documentation hub.
 - `QUICK_START_REFERENCE.md` — command cheat sheet.

@@ -123,3 +123,13 @@ nul
 # Removed artifacts and local-only dumps
 distributional_ppo.py.backup_before_bug_fixes
 ЛОГИ*.txt
+
+# AI assistants local config
+.gemini/
+
+# Runtime state (generated during execution)
+state/compliance/
+state/test_archive/
+
+# Test output files
+test_output.txt

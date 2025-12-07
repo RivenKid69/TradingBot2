@@ -90,8 +90,8 @@ dependencies = [
 no-trade-mask = "apply_no_trade_mask:main"
 
 [project.urls]
-Repository = "https://github.com/your-org/tradingbot2"
-Documentation = "https://github.com/your-org/tradingbot2/docs"
+Repository = "https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform"
+Documentation = "https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/blob/main/docs"
 
 # ============================================================================
 # Optional Dependencies
