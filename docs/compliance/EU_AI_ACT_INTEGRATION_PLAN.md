@@ -1,10 +1,20 @@
 # EU AI Act Integration Plan
 # План интеграции EU AI Act в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 1.0
+**Версия документа**: 1.1
 **Дата создания**: 2025-12-06
+**Последнее обновление**: 2025-12-08
 **Целевое соответствие**: Regulation (EU) 2024/1689 (AI Act)
 **Крайний срок полного compliance**: 2 августа 2026 (high-risk AI systems)
+
+### Progress Status
+
+| Phase | Status | Completion Date | Tests |
+|-------|--------|-----------------|-------|
+| **Phase 1: Foundation & Risk Management** | **COMPLETED** | 2025-12-08 | 372/372 passed |
+| Phase 2: Technical Documentation & Logging | Planned | - | - |
+| Phase 3: QMS & Testing | Planned | - | - |
+| Phase 4: Conformity Assessment | Planned | - | - |
 
 ---
 
@@ -39,13 +49,13 @@
 
 | Статья | Требование | Текущее состояние проекта | Приоритет |
 |--------|------------|---------------------------|-----------|
-| [Article 9](https://artificialintelligenceact.eu/article/9/) | Risk Management System | ✅ Частично (risk_guard.py, risk guards) | P0 |
+| [Article 9](https://artificialintelligenceact.eu/article/9/) | Risk Management System | **IMPLEMENTED** (services/ai_act/risk_management.py, risk_registry.py) | P0 |
 | [Article 10](https://artificialintelligenceact.eu/article/10/) | Data Governance | ⚠️ Частично (features_pipeline) | P0 |
 | [Article 11](https://artificialintelligenceact.eu/article/11/) | Technical Documentation | ❌ Требуется создание | P0 |
 | [Article 12](https://artificialintelligenceact.eu/article/12/) | Record-Keeping (Logging) | ⚠️ Частично (event_bus, monitoring) | P1 |
-| [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | ❌ Требуется создание | P1 |
-| [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | ⚠️ Частично (ops_kill_switch) | P0 |
-| [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | ⚠️ Частично (VGS, conformal) | P1 |
+| [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | **IMPLEMENTED** (services/ai_act/explainability.py) | P1 |
+| [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | **IMPLEMENTED** (services/ai_act/human_oversight.py) | P0 |
+| [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | **IMPLEMENTED** (services/ai_act/accuracy_metrics.py, robustness_testing.py) | P1 |
 | [Article 17](https://artificialintelligenceact.eu/article/17/) | Quality Management System | ❌ Требуется создание | P1 |
 | [Article 43](https://artificialintelligenceact.eu/article/43/) | Conformity Assessment | ❌ Требуется выполнение | P2 |
 

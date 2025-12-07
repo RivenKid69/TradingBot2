@@ -1,0 +1,301 @@
+# EU AI Act Article 15 - Accuracy Declarations
+# Reference: Regulation (EU) 2024/1689 Article 15 (Accuracy, Robustness, Cybersecurity)
+# System: TradingBot2
+
+version: "1.0.0"
+declaration_date: "2024-12-08"
+system_name: "TradingBot2"
+system_version: "1.0.0"
+
+# =============================================================================
+# ACCURACY METRICS DECLARATION
+# Per Article 15: "The levels of accuracy and the relevant accuracy metrics
+# shall be declared in the accompanying instructions of use"
+# =============================================================================
+
+declared_metrics:
+  # ---------------------------------------------------------------------------
+  # Performance Metrics
+  # ---------------------------------------------------------------------------
+  sharpe_ratio:
+    metric_type: "SHARPE_RATIO"
+    name: "Sharpe Ratio"
+    description: |
+      Risk-adjusted return metric. Ratio of excess returns to standard
+      deviation of returns. Measures return per unit of risk taken.
+      Industry standard metric for evaluating trading strategy performance.
+
+    # Declared thresholds
+    expected_value: 1.5
+    minimum_value: 0.5
+    critical_value: 0.0
+
+    # Measurement methodology
+    measurement_method: "Rolling calculation of (returns - risk_free_rate) / std(returns)"
+    measurement_window: "252 trading days"
+    unit: "ratio"
+    higher_is_better: true
+
+    # Assumptions
+    assumptions:
+      - "Risk-free rate assumed to be 0%"
+      - "Returns calculated on daily close-to-close basis"
+      - "Standard deviation uses sample formula (n-1 denominator)"
+
+  max_drawdown:
+    metric_type: "MAX_DRAWDOWN"
+    name: "Maximum Drawdown"
+    description: |
+      Maximum peak-to-trough decline in portfolio value. Measures the worst
+      historical loss from a peak before a new peak is achieved.
+      Critical risk metric for capital preservation assessment.
+
+    expected_value: 0.15    # 15%
+    minimum_value: 0.25     # 25%
+    critical_value: 0.35    # 35%
+
+    measurement_method: "Historical max (peak - trough) / peak"
+    measurement_window: "Since inception or specified period"
+    unit: "percentage"
+    higher_is_better: false
+
+    assumptions:
+      - "Calculated on end-of-day portfolio values"
+      - "Does not account for intraday drawdowns"
+
+  win_rate:
+    metric_type: "WIN_RATE"
+    name: "Win Rate"
+    description: |
+      Percentage of profitable trades. Number of winning trades divided by
+      total number of trades. Indicator of trade-level success rate.
+
+    expected_value: 0.55    # 55%
+    minimum_value: 0.45     # 45%
+    critical_value: 0.40    # 40%
+
+    measurement_method: "(Winning trades / Total trades) x 100"
+    measurement_window: "Rolling 100 trades or specified period"
+    unit: "percentage"
+    higher_is_better: true
+
+    assumptions:
+      - "Trade considered winning if gross P&L > 0"
+      - "Partially filled orders counted as single trade"
+
+  prediction_accuracy:
+    metric_type: "DIRECTION_ACCURACY"
+    name: "Prediction Accuracy (Direction)"
+    description: |
+      Accuracy of price direction predictions. Percentage of correct
+      directional forecasts (up/down). Core signal quality metric.
+
+    expected_value: 0.52    # 52%
+    minimum_value: 0.50     # 50%
+    critical_value: 0.48    # 48%
+
+    measurement_method: "(Correct direction predictions / Total predictions) x 100"
+    measurement_window: "Rolling 252 days"
+    unit: "percentage"
+    higher_is_better: true
+
+    assumptions:
+      - "Direction measured on close-to-close basis"
+      - "Neutral predictions excluded from accuracy calculation"
+      - "Minimum price change threshold: 0.01% to qualify as direction"
+
+  # ---------------------------------------------------------------------------
+  # Additional Risk-Adjusted Metrics
+  # ---------------------------------------------------------------------------
+  sortino_ratio:
+    metric_type: "SORTINO_RATIO"
+    name: "Sortino Ratio"
+    description: |
+      Risk-adjusted return using downside deviation instead of total volatility.
+      More appropriate than Sharpe for non-normal return distributions.
+
+    expected_value: 2.0
+    minimum_value: 1.0
+    critical_value: 0.5
+
+    measurement_method: "(returns - target_return) / downside_deviation"
+    measurement_window: "252 trading days"
+    unit: "ratio"
+    higher_is_better: true
+
+    assumptions:
+      - "Target return assumed to be 0%"
+      - "Downside deviation uses returns below target only"
+
+  profit_factor:
+    metric_type: "PROFIT_FACTOR"
+    name: "Profit Factor"
+    description: |
+      Ratio of gross profits to gross losses. Values above 1.0 indicate
+      profitable system. Key metric for profitability assessment.
+
+    expected_value: 1.5
+    minimum_value: 1.1
+    critical_value: 0.9
+
+    measurement_method: "Gross Profit / Gross Loss"
+    measurement_window: "Rolling 100 trades"
+    unit: "ratio"
+    higher_is_better: true
+
+    assumptions:
+      - "Calculated on realized P&L only"
+      - "Excludes unrealized positions"
+
+  cvar_95:
+    metric_type: "CVAR_95"
+    name: "Conditional Value at Risk (95%)"
+    description: |
+      Expected loss in the worst 5% of scenarios (Expected Shortfall).
+      Measures tail risk beyond VaR. Superior to VaR for tail risk assessment.
+
+    expected_value: 0.03    # 3%
+    minimum_value: 0.05     # 5%
+    critical_value: 0.10    # 10%
+
+    measurement_method: "Mean of losses beyond 95th percentile VaR"
+    measurement_window: "252 trading days"
+    unit: "percentage"
+    higher_is_better: false
+
+    assumptions:
+      - "Calculated using historical simulation method"
+      - "95% confidence level"
+
+  consistency_score:
+    metric_type: "CONSISTENCY_SCORE"
+    name: "Consistency Score"
+    description: |
+      Measure of return consistency across time periods. Percentage of
+      profitable rolling periods. Higher scores indicate more stable performance.
+
+    expected_value: 0.70    # 70%
+    minimum_value: 0.50     # 50%
+    critical_value: 0.30    # 30%
+
+    measurement_method: "Percentage of profitable rolling periods"
+    measurement_window: "Monthly over 12 months"
+    unit: "percentage"
+    higher_is_better: true
+
+    assumptions:
+      - "Rolling period is 21 trading days (1 month)"
+      - "Period profitable if cumulative return > 0"
+
+# =============================================================================
+# MEASUREMENT CONDITIONS
+# =============================================================================
+measurement_conditions:
+  description: |
+    Metrics are measured under standard market conditions. The following
+    conditions may affect accuracy measurements:
+
+  standard_conditions:
+    - "Normal market liquidity (bid-ask spread within historical norms)"
+    - "Trading hours: 24/7 for cryptocurrency markets"
+    - "Data source: Primary exchange APIs with < 1 second latency"
+    - "Position sizing within declared risk limits"
+
+  excluded_conditions:
+    - "Extreme volatility events (VIX equivalent > 80)"
+    - "Exchange outages or circuit breakers"
+    - "Force majeure events (regulatory halts, exchange failures)"
+    - "Network connectivity issues > 60 seconds"
+    - "Data feed interruptions > 30 seconds"
+
+  data_requirements:
+    - "Minimum 252 trading days of historical data"
+    - "Data completeness > 99%"
+    - "Price data timestamped to millisecond precision"
+
+# =============================================================================
+# KNOWN LIMITATIONS
+# =============================================================================
+known_limitations:
+  market_limitations:
+    - "Accuracy may degrade during extreme market volatility"
+    - "Performance affected by market regime changes"
+    - "Cryptocurrency markets may exhibit unique dynamics"
+    - "Liquidity constraints may affect execution accuracy"
+
+  model_limitations:
+    - "Past performance does not guarantee future results"
+    - "Model assumes normal market conditions"
+    - "Prediction accuracy lower during regime transitions"
+    - "Feature drift may reduce model effectiveness over time"
+
+  data_limitations:
+    - "Accuracy dependent on data quality from exchanges"
+    - "Historical data may not reflect future market conditions"
+    - "Data latency may affect real-time predictions"
+
+  operational_limitations:
+    - "Execution slippage may differ from backtested results"
+    - "System performance dependent on infrastructure reliability"
+    - "Human intervention may override model decisions"
+
+# =============================================================================
+# REGULATORY COMPLIANCE STATEMENT
+# =============================================================================
+regulatory_compliance:
+  statement: |
+    This accuracy declaration is provided in compliance with EU AI Act
+    Article 15 (Regulation (EU) 2024/1689). The declared accuracy levels
+    represent the expected performance of the AI system under specified
+    measurement conditions.
+
+    Key compliance points:
+    1. Accuracy levels are monitored continuously
+    2. Any significant degradation triggers appropriate alerts
+    3. System maintains audit trail of all accuracy measurements
+    4. Regular reporting to designated oversight personnel
+    5. Immediate notification if metrics fall below minimum thresholds
+
+  classification: "HIGH-RISK AI SYSTEM per Annex III (5)(b)"
+
+  responsible_party:
+    role: "AI System Operator"
+    obligations:
+      - "Monitor accuracy metrics continuously"
+      - "Report significant accuracy degradation"
+      - "Maintain accuracy measurement records for 7+ years"
+      - "Ensure human oversight of accuracy assessments"
+
+# =============================================================================
+# ACCURACY MONITORING SCHEDULE
+# =============================================================================
+monitoring_schedule:
+  real_time:
+    metrics:
+      - "win_rate"
+      - "prediction_accuracy"
+    update_frequency: "per_trade"
+
+  hourly:
+    metrics:
+      - "max_drawdown"
+      - "cvar_95"
+    report_threshold_breach: true
+
+  daily:
+    metrics:
+      - "sharpe_ratio"
+      - "sortino_ratio"
+      - "profit_factor"
+      - "consistency_score"
+    generate_report: true
+
+  weekly:
+    full_accuracy_assessment: true
+    trend_analysis: true
+    compliance_review: true
+
+  monthly:
+    comprehensive_audit: true
+    third_party_validation: false  # Optional
+    regulatory_report: true

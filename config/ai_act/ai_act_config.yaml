@@ -1,0 +1,308 @@
+# EU AI Act Compliance Configuration
+# Reference: Regulation (EU) 2024/1689 (EU AI Act)
+# System: TradingBot2 - Algorithmic Trading System
+
+version: "1.0.0"
+regulation_reference: "EU AI Act (Regulation (EU) 2024/1689)"
+last_updated: "2024-12-08"
+
+# =============================================================================
+# System Classification
+# =============================================================================
+system_classification:
+  name: "TradingBot2"
+  version: "1.0.0"
+  risk_category: "HIGH_RISK"  # Annex III - Financial Services
+
+  # Article 6 - Classification as High-Risk AI System
+  annex_iii_category: "5(b)"  # Credit institutions - trading systems
+  description: "AI-powered algorithmic trading system for cryptocurrency markets"
+
+  intended_purpose: |
+    Automated analysis of market data and execution of trading decisions
+    for cryptocurrency pairs on regulated exchanges.
+
+  # Deployer Information
+  deployer:
+    type: "financial_institution"
+    jurisdiction: "EU"
+    regulatory_authority: "National Financial Supervisory Authority"
+
+# =============================================================================
+# Article 9 - Risk Management System
+# =============================================================================
+risk_management:
+  enabled: true
+
+  # Risk assessment frequency
+  assessment_schedule:
+    continuous_monitoring: true
+    formal_review_frequency: "weekly"
+    comprehensive_audit_frequency: "quarterly"
+
+  # Risk severity thresholds
+  severity_thresholds:
+    critical:
+      max_drawdown: 0.35  # 35%
+      sharpe_ratio_min: 0.0
+      consecutive_losses: 10
+      daily_loss_limit: 0.10  # 10%
+
+    high:
+      max_drawdown: 0.25  # 25%
+      sharpe_ratio_min: 0.3
+      consecutive_losses: 7
+      daily_loss_limit: 0.07  # 7%
+
+    medium:
+      max_drawdown: 0.15  # 15%
+      sharpe_ratio_min: 0.5
+      consecutive_losses: 5
+      daily_loss_limit: 0.05  # 5%
+
+  # Automatic risk mitigation actions
+  mitigation_actions:
+    critical:
+      - halt_all_trading
+      - notify_compliance_officer
+      - generate_incident_report
+      - require_manual_review
+
+    high:
+      - reduce_position_sizes_50_percent
+      - increase_monitoring_frequency
+      - alert_risk_management_team
+
+    medium:
+      - reduce_position_sizes_25_percent
+      - log_warning
+      - review_within_24_hours
+
+# =============================================================================
+# Article 14 - Human Oversight
+# =============================================================================
+human_oversight:
+  enabled: true
+
+  # Oversight levels per Article 14(4)
+  oversight_levels:
+    - level: "FULL_HUMAN_CONTROL"
+      description: "Manual approval required for all trading decisions"
+      conditions:
+        - system_status: "CRITICAL"
+        - market_volatility: "EXTREME"
+        - regulatory_requirement: true
+
+    - level: "HUMAN_IN_THE_LOOP"
+      description: "Human approval required above thresholds"
+      conditions:
+        - position_size_exceeds: 0.1  # 10% of portfolio
+        - trade_value_exceeds: 50000  # USD
+        - new_asset_first_trade: true
+
+    - level: "HUMAN_ON_THE_LOOP"
+      description: "Human monitoring with intervention capability"
+      conditions:
+        - default_operating_mode: true
+        - normal_market_conditions: true
+
+    - level: "AUTONOMOUS"
+      description: "Limited autonomous operation within strict boundaries"
+      conditions:
+        - position_size_below: 0.02  # 2% of portfolio
+        - low_volatility_regime: true
+        - within_daily_limits: true
+
+  # Override capabilities
+  override_controls:
+    emergency_stop:
+      enabled: true
+      authorized_roles:
+        - compliance_officer
+        - risk_manager
+        - system_administrator
+      logging_required: true
+
+    manual_intervention:
+      enabled: true
+      max_response_time_seconds: 60
+      escalation_path:
+        - level_1: "trading_desk"
+        - level_2: "risk_management"
+        - level_3: "compliance_officer"
+
+  # Intervention logging
+  audit_logging:
+    log_all_interventions: true
+    log_all_overrides: true
+    log_decision_reasoning: true
+    retention_period_years: 7
+
+# =============================================================================
+# Article 15 - Accuracy, Robustness, Cybersecurity
+# =============================================================================
+accuracy_robustness:
+  enabled: true
+
+  # Declared accuracy metrics
+  declared_accuracy:
+    sharpe_ratio:
+      expected: 1.5
+      minimum: 0.5
+      critical: 0.0
+      measurement_window: "252_trading_days"
+
+    max_drawdown:
+      expected: 0.15  # 15%
+      minimum: 0.25  # 25%
+      critical: 0.35  # 35%
+
+    win_rate:
+      expected: 0.55  # 55%
+      minimum: 0.45  # 45%
+      critical: 0.40  # 40%
+
+    prediction_accuracy:
+      expected: 0.52  # 52%
+      minimum: 0.50  # 50%
+      critical: 0.48  # 48%
+
+  # Robustness testing requirements
+  robustness_testing:
+    adversarial_testing:
+      enabled: true
+      perturbation_epsilon: 0.01
+      num_perturbations: 10
+      minimum_score: 0.80
+
+    distribution_shift:
+      enabled: true
+      shift_magnitude: 0.5
+      regime_multipliers: [0.5, 1.5, 2.0, 3.0]
+      minimum_score: 0.70
+
+    failsafe_testing:
+      enabled: true
+      timeout_ms: 5000
+      minimum_score: 0.90
+
+    testing_schedule:
+      continuous: true
+      formal_audit: "monthly"
+
+  # Cybersecurity requirements
+  cybersecurity:
+    encryption_required: true
+    access_control: "role_based"
+    audit_logging: true
+    penetration_testing: "quarterly"
+
+# =============================================================================
+# Article 13 - Transparency (Explainability)
+# =============================================================================
+transparency:
+  enabled: true
+
+  # Explainability requirements
+  explainability:
+    feature_attribution: true
+    counterfactual_explanations: true
+    confidence_reporting: true
+
+    # Storage configuration
+    storage:
+      path: "logs/ai_act/explainability"
+      format: "jsonl"
+      retention_period_years: 7
+
+    # What to explain
+    explain_all_trades: true
+    minimum_explanation_detail: "feature_contributions"
+
+  # Information provision
+  information_provision:
+    user_instructions: true
+    declared_accuracy: true
+    known_limitations: true
+    intended_use: true
+
+# =============================================================================
+# Compliance Reporting
+# =============================================================================
+compliance_reporting:
+  enabled: true
+
+  # Report types and schedules
+  reports:
+    daily_operations:
+      enabled: true
+      format: "json"
+      retention_years: 7
+
+    weekly_risk_review:
+      enabled: true
+      format: "pdf"
+      retention_years: 7
+
+    monthly_accuracy_report:
+      enabled: true
+      format: "pdf"
+      retention_years: 7
+
+    quarterly_compliance_audit:
+      enabled: true
+      format: "pdf"
+      retention_years: 10
+
+  # Notification settings
+  notifications:
+    critical_events:
+      email: true
+      sms: true
+      dashboard: true
+
+    compliance_violations:
+      email: true
+      escalation_required: true
+
+# =============================================================================
+# Data Quality Requirements (Article 10)
+# =============================================================================
+data_quality:
+  enabled: true
+
+  # Data validation rules
+  validation:
+    completeness_threshold: 0.95  # 95%
+    freshness_max_delay_seconds: 60
+    outlier_detection: true
+    anomaly_threshold: 3.0  # Standard deviations
+
+  # Data governance
+  governance:
+    data_lineage_tracking: true
+    bias_monitoring: true
+    audit_trail: true
+
+# =============================================================================
+# Logging and Audit Trail
+# =============================================================================
+logging:
+  level: "INFO"
+
+  # Log retention
+  retention:
+    operational_logs: "1_year"
+    compliance_logs: "7_years"
+    incident_logs: "10_years"
+
+  # Log destinations
+  destinations:
+    file:
+      enabled: true
+      path: "logs/ai_act"
+      rotation: "daily"
+
+    database:
+      enabled: true
+      table: "ai_act_audit_log"

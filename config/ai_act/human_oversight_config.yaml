@@ -1,0 +1,428 @@
+# EU AI Act Article 14 - Human Oversight Configuration
+# Reference: Regulation (EU) 2024/1689 Article 14 (Human Oversight)
+# System: TradingBot2
+
+version: "1.0.0"
+last_updated: "2024-12-08"
+
+# =============================================================================
+# HUMAN OVERSIGHT REQUIREMENTS
+# Per Article 14: "High-risk AI systems shall be designed and developed in
+# such a way, including with appropriate human-machine interface tools,
+# that they can be effectively overseen by natural persons"
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Oversight Levels Definition
+# Per Article 14(4) - Measures for effective oversight
+# -----------------------------------------------------------------------------
+oversight_levels:
+  # Level 1: Full Human Control
+  FULL_HUMAN_CONTROL:
+    level: 1
+    name: "Full Human Control"
+    description: |
+      Complete human control over all AI system decisions.
+      Every action requires explicit human approval before execution.
+      Used during critical situations or regulatory requirements.
+
+    ai_autonomy: 0.0  # 0% AI autonomy
+    human_approval_required: true
+    approval_type: "explicit_per_action"
+
+    activation_triggers:
+      - condition: "system_risk_level"
+        value: "CRITICAL"
+      - condition: "regulatory_requirement"
+        value: true
+      - condition: "market_volatility_percentile"
+        value: 99
+      - condition: "manual_override_active"
+        value: true
+
+    required_actions:
+      - "Display all pending decisions to operator"
+      - "Require explicit approval for each action"
+      - "Log all approvals with timestamp and operator ID"
+      - "No timeout - wait indefinitely for human decision"
+
+  # Level 2: Human in the Loop
+  HUMAN_IN_THE_LOOP:
+    level: 2
+    name: "Human in the Loop"
+    description: |
+      Human approval required for significant decisions.
+      AI can make minor decisions autonomously within tight limits.
+      Standard mode for elevated risk conditions.
+
+    ai_autonomy: 0.3  # 30% AI autonomy
+    human_approval_required: true
+    approval_type: "threshold_based"
+
+    activation_triggers:
+      - condition: "system_risk_level"
+        value: "HIGH"
+      - condition: "position_size_percentage"
+        operator: ">"
+        value: 5.0
+      - condition: "trade_value_usd"
+        operator: ">"
+        value: 10000
+      - condition: "new_asset_trading"
+        value: true
+
+    approval_thresholds:
+      position_size_pct: 5.0       # Positions > 5% require approval
+      trade_value_usd: 10000       # Trades > $10k require approval
+      daily_trades_count: 50       # After 50 trades, require approval
+      drawdown_increase_pct: 2.0   # If drawdown increases > 2%
+
+    timeout_seconds: 300  # 5 minute timeout, then escalate
+    escalation_on_timeout: "FULL_HUMAN_CONTROL"
+
+  # Level 3: Human on the Loop
+  HUMAN_ON_THE_LOOP:
+    level: 3
+    name: "Human on the Loop"
+    description: |
+      Human monitoring with intervention capability.
+      AI operates autonomously within defined boundaries.
+      Human can intervene at any time. Default operating mode.
+
+    ai_autonomy: 0.7  # 70% AI autonomy
+    human_approval_required: false
+    approval_type: "intervention_based"
+
+    activation_triggers:
+      - condition: "system_risk_level"
+        value: "MEDIUM"
+      - condition: "default_mode"
+        value: true
+      - condition: "normal_market_conditions"
+        value: true
+
+    autonomous_limits:
+      max_position_size_pct: 5.0
+      max_trade_value_usd: 10000
+      max_daily_trades: 100
+      max_daily_loss_pct: 3.0
+
+    monitoring_requirements:
+      real_time_dashboard: true
+      alert_on_approach_limits: true
+      periodic_acknowledgment_hours: 8
+
+    intervention_capability:
+      emergency_stop: true
+      position_override: true
+      limit_adjustment: true
+
+  # Level 4: Supervised Autonomy
+  SUPERVISED_AUTONOMY:
+    level: 4
+    name: "Supervised Autonomy"
+    description: |
+      Higher AI autonomy with periodic supervision.
+      For low-risk, well-tested scenarios only.
+      Strict boundaries and automatic fallback mechanisms.
+
+    ai_autonomy: 0.9  # 90% AI autonomy
+    human_approval_required: false
+    approval_type: "periodic_review"
+
+    activation_triggers:
+      - condition: "system_risk_level"
+        value: "LOW"
+      - condition: "market_volatility_percentile"
+        operator: "<"
+        value: 30
+      - condition: "system_confidence"
+        operator: ">"
+        value: 0.9
+      - condition: "consecutive_profitable_days"
+        operator: ">"
+        value: 5
+
+    autonomous_limits:
+      max_position_size_pct: 2.0
+      max_trade_value_usd: 5000
+      max_daily_trades: 200
+      max_daily_loss_pct: 1.0
+
+    periodic_review:
+      frequency_hours: 4
+      require_acknowledgment: true
+      auto_escalate_if_no_ack: true
+
+    automatic_fallback:
+      trigger_on_limit_breach: true
+      fallback_level: "HUMAN_ON_THE_LOOP"
+
+# -----------------------------------------------------------------------------
+# Override Controls
+# Per Article 14(4)(d) - Ability to intervene or interrupt
+# -----------------------------------------------------------------------------
+override_controls:
+  emergency_stop:
+    enabled: true
+    description: "Immediately halt all AI system operations"
+
+    authorized_roles:
+      - "system_administrator"
+      - "risk_manager"
+      - "compliance_officer"
+      - "trading_supervisor"
+
+    activation_methods:
+      - type: "ui_button"
+        location: "dashboard_header"
+        confirmation_required: true
+      - type: "keyboard_shortcut"
+        shortcut: "Ctrl+Shift+X"
+        confirmation_required: false
+      - type: "api_endpoint"
+        endpoint: "/api/v1/emergency-stop"
+        authentication_required: true
+      - type: "voice_command"
+        phrase: "Emergency stop trading"
+        enabled: false
+
+    actions_on_activation:
+      - "Cancel all pending orders immediately"
+      - "Close all open positions (optional, configurable)"
+      - "Disable all automated trading"
+      - "Send immediate notification to all supervisors"
+      - "Generate incident report"
+      - "Log activation with full context"
+
+    recovery_procedure:
+      requires_role: "compliance_officer"
+      cooldown_minutes: 30
+      review_required: true
+      documentation_required: true
+
+  position_override:
+    enabled: true
+    description: "Manually override AI position decisions"
+
+    authorized_roles:
+      - "trading_supervisor"
+      - "risk_manager"
+      - "compliance_officer"
+
+    capabilities:
+      - "Close any position immediately"
+      - "Modify position size"
+      - "Set position limits"
+      - "Block specific assets"
+
+    logging_requirements:
+      - "Override reason (mandatory)"
+      - "Operator identification"
+      - "Pre-override state"
+      - "Post-override state"
+      - "Timestamp with millisecond precision"
+
+  parameter_adjustment:
+    enabled: true
+    description: "Adjust AI system parameters in real-time"
+
+    authorized_roles:
+      - "system_administrator"
+      - "risk_manager"
+
+    adjustable_parameters:
+      - name: "risk_tolerance"
+        min: 0.1
+        max: 1.0
+        requires_approval_above: 0.7
+      - name: "position_size_limit"
+        min: 0.01
+        max: 0.20
+        requires_approval_above: 0.10
+      - name: "max_daily_trades"
+        min: 10
+        max: 500
+        requires_approval_above: 200
+
+# -----------------------------------------------------------------------------
+# Monitoring and Alerts
+# Per Article 14(4)(a) - Fully understand capabilities and limitations
+# -----------------------------------------------------------------------------
+monitoring:
+  real_time_dashboard:
+    enabled: true
+    refresh_interval_seconds: 1
+
+    displayed_metrics:
+      - "current_positions"
+      - "unrealized_pnl"
+      - "realized_pnl_today"
+      - "current_drawdown"
+      - "system_confidence"
+      - "active_oversight_level"
+      - "pending_human_decisions"
+      - "recent_alerts"
+
+    visual_indicators:
+      risk_level:
+        low: "green"
+        medium: "yellow"
+        high: "orange"
+        critical: "red"
+
+  alerting:
+    enabled: true
+
+    alert_channels:
+      - type: "dashboard"
+        priority: "all"
+      - type: "email"
+        priority: ["high", "critical"]
+      - type: "sms"
+        priority: ["critical"]
+      - type: "slack"
+        priority: ["medium", "high", "critical"]
+
+    alert_types:
+      - name: "threshold_breach"
+        description: "Risk or performance threshold exceeded"
+        priority: "high"
+        requires_acknowledgment: true
+
+      - name: "model_drift_detected"
+        description: "Significant model performance degradation"
+        priority: "high"
+        requires_acknowledgment: true
+
+      - name: "oversight_timeout"
+        description: "Human response not received in time"
+        priority: "critical"
+        auto_escalate: true
+
+      - name: "anomaly_detected"
+        description: "Unusual system behavior detected"
+        priority: "medium"
+        requires_acknowledgment: true
+
+      - name: "periodic_review_due"
+        description: "Scheduled human review required"
+        priority: "low"
+        requires_acknowledgment: true
+
+  acknowledgment_requirements:
+    max_acknowledgment_time_minutes: 15
+    escalation_on_timeout: true
+    escalation_path:
+      - "trading_supervisor"
+      - "risk_manager"
+      - "compliance_officer"
+
+# -----------------------------------------------------------------------------
+# Audit Trail
+# Per Article 14(4) - Logging and traceability requirements
+# -----------------------------------------------------------------------------
+audit_trail:
+  enabled: true
+
+  logged_events:
+    - event_type: "oversight_level_change"
+      details: ["old_level", "new_level", "trigger_reason", "operator"]
+
+    - event_type: "human_decision"
+      details: ["decision_type", "decision_value", "reasoning", "operator"]
+
+    - event_type: "override_action"
+      details: ["override_type", "pre_state", "post_state", "reason", "operator"]
+
+    - event_type: "alert_generated"
+      details: ["alert_type", "alert_details", "priority"]
+
+    - event_type: "alert_acknowledged"
+      details: ["alert_id", "acknowledgment_time", "operator", "action_taken"]
+
+    - event_type: "emergency_stop"
+      details: ["trigger_method", "operator", "system_state", "positions_state"]
+
+  retention:
+    standard_logs: "7_years"
+    incident_logs: "10_years"
+    regulatory_reports: "10_years"
+
+  export_formats:
+    - "json"
+    - "csv"
+    - "pdf"
+
+  access_control:
+    read_access:
+      - "compliance_officer"
+      - "auditor"
+      - "regulator"
+    export_access:
+      - "compliance_officer"
+      - "auditor"
+
+# -----------------------------------------------------------------------------
+# Training Requirements
+# Per Article 14(4)(a) - Understanding system capabilities
+# -----------------------------------------------------------------------------
+training_requirements:
+  mandatory_training:
+    - course: "AI System Overview"
+      duration_hours: 4
+      renewal_frequency: "annual"
+      required_for: ["all_operators"]
+
+    - course: "Risk Management Procedures"
+      duration_hours: 8
+      renewal_frequency: "annual"
+      required_for: ["risk_manager", "trading_supervisor"]
+
+    - course: "Emergency Procedures"
+      duration_hours: 2
+      renewal_frequency: "semi_annual"
+      required_for: ["all_operators"]
+
+    - course: "EU AI Act Compliance"
+      duration_hours: 4
+      renewal_frequency: "annual"
+      required_for: ["compliance_officer", "risk_manager"]
+
+  competency_assessment:
+    required: true
+    passing_score: 80
+    max_attempts: 3
+    retest_after_days: 30
+
+# -----------------------------------------------------------------------------
+# Escalation Procedures
+# -----------------------------------------------------------------------------
+escalation_procedures:
+  standard_escalation:
+    level_1:
+      role: "trading_supervisor"
+      response_time_minutes: 15
+      notification: ["dashboard", "email"]
+
+    level_2:
+      role: "risk_manager"
+      response_time_minutes: 30
+      notification: ["dashboard", "email", "sms"]
+
+    level_3:
+      role: "compliance_officer"
+      response_time_minutes: 60
+      notification: ["dashboard", "email", "sms", "phone"]
+
+    level_4:
+      role: "executive_management"
+      response_time_minutes: 120
+      notification: ["phone", "emergency_broadcast"]
+
+  critical_escalation:
+    immediate_notification:
+      - "risk_manager"
+      - "compliance_officer"
+    response_time_minutes: 5
+    auto_escalate_to_executive: true

@@ -1,0 +1,295 @@
+# EU AI Act Risk Thresholds Configuration
+# Reference: Article 9 - Risk Management System
+# System: TradingBot2
+
+version: "1.0.0"
+last_updated: "2024-12-08"
+
+# =============================================================================
+# Risk Categories and Thresholds
+# Per EU AI Act Annex III Classification (High-Risk AI in Financial Services)
+# =============================================================================
+
+# Market Risk Thresholds
+market_risk:
+  category: "MARKET_STABILITY"
+  description: "Risks related to market movements and trading losses"
+
+  thresholds:
+    # Maximum Drawdown Limits
+    max_drawdown:
+      expected: 0.15      # 15% - Target operating level
+      warning: 0.20       # 20% - Trigger enhanced monitoring
+      minimum: 0.25       # 25% - Trigger position reduction
+      critical: 0.35      # 35% - Trigger trading halt
+
+    # Daily Loss Limits
+    daily_loss:
+      warning: 0.03       # 3% daily loss
+      alert: 0.05         # 5% daily loss
+      critical: 0.10      # 10% daily loss - halt trading
+
+    # Consecutive Losses
+    consecutive_losses:
+      warning: 5          # 5 consecutive losses
+      alert: 7            # 7 consecutive losses
+      critical: 10        # 10 consecutive losses
+
+    # Position Concentration
+    position_concentration:
+      warning: 0.20       # 20% in single asset
+      critical: 0.30      # 30% in single asset
+
+  mitigation_actions:
+    warning:
+      - log_warning
+      - increase_monitoring
+    alert:
+      - reduce_position_sizes
+      - notify_risk_team
+    critical:
+      - halt_trading
+      - notify_compliance
+      - generate_incident_report
+
+# Model Performance Risk
+model_risk:
+  category: "MODEL_ROBUSTNESS"
+  description: "Risks related to model accuracy and reliability"
+
+  thresholds:
+    # Sharpe Ratio
+    sharpe_ratio:
+      expected: 1.5
+      warning: 0.8
+      minimum: 0.5
+      critical: 0.0
+
+    # Win Rate
+    win_rate:
+      expected: 0.55
+      warning: 0.50
+      minimum: 0.45
+      critical: 0.40
+
+    # Prediction Accuracy
+    prediction_accuracy:
+      expected: 0.52
+      warning: 0.51
+      minimum: 0.50
+      critical: 0.48
+
+    # Model Drift Detection
+    model_drift:
+      psi_threshold: 0.2          # Population Stability Index
+      feature_drift_threshold: 0.1
+
+  mitigation_actions:
+    warning:
+      - log_performance_degradation
+      - schedule_model_review
+    minimum:
+      - reduce_position_sizes
+      - increase_human_oversight
+    critical:
+      - switch_to_conservative_mode
+      - require_manual_approval
+
+# Operational Risk
+operational_risk:
+  category: "SYSTEM_FAILURE"
+  description: "Risks related to system operations and infrastructure"
+
+  thresholds:
+    # Latency
+    execution_latency_ms:
+      expected: 100
+      warning: 500
+      critical: 2000
+
+    # Error Rate
+    error_rate:
+      expected: 0.001     # 0.1%
+      warning: 0.01       # 1%
+      critical: 0.05      # 5%
+
+    # System Availability
+    availability:
+      expected: 0.999     # 99.9%
+      minimum: 0.995      # 99.5%
+      critical: 0.99      # 99%
+
+    # Data Quality
+    data_completeness:
+      expected: 0.99      # 99%
+      warning: 0.95       # 95%
+      critical: 0.90      # 90%
+
+  mitigation_actions:
+    warning:
+      - alert_operations_team
+      - enable_fallback_systems
+    critical:
+      - switch_to_backup_systems
+      - halt_automated_trading
+
+# Data Quality Risk
+data_quality_risk:
+  category: "DATA_QUALITY"
+  description: "Risks related to data integrity and quality"
+
+  thresholds:
+    # Data Freshness
+    max_data_age_seconds:
+      expected: 10
+      warning: 30
+      critical: 60
+
+    # Outlier Detection
+    outlier_threshold_stddev:
+      warning: 3.0
+      critical: 5.0
+
+    # Missing Data
+    missing_data_rate:
+      expected: 0.001     # 0.1%
+      warning: 0.01       # 1%
+      critical: 0.05      # 5%
+
+  mitigation_actions:
+    warning:
+      - flag_data_quality_issue
+      - use_fallback_data_source
+    critical:
+      - halt_data_dependent_operations
+      - notify_data_team
+
+# Cybersecurity Risk
+cybersecurity_risk:
+  category: "CYBERSECURITY"
+  description: "Risks related to system security"
+
+  thresholds:
+    # Failed Authentication Attempts
+    failed_auth_attempts:
+      warning: 5
+      critical: 10
+      lockout: 15
+
+    # Anomalous API Requests
+    anomalous_requests_per_minute:
+      warning: 100
+      critical: 500
+
+    # Unauthorized Access Attempts
+    unauthorized_access:
+      alert_threshold: 1
+      critical_threshold: 3
+
+  mitigation_actions:
+    warning:
+      - log_security_event
+      - increase_monitoring
+    critical:
+      - lockout_account
+      - notify_security_team
+      - generate_security_incident
+
+# Human Oversight Risk
+human_oversight_risk:
+  category: "HUMAN_OVERSIGHT_FAILURE"
+  description: "Risks related to inadequate human supervision"
+
+  thresholds:
+    # Time Since Last Human Review
+    max_hours_without_review:
+      expected: 8
+      warning: 24
+      critical: 72
+
+    # Unacknowledged Alerts
+    unacknowledged_alerts:
+      warning: 3
+      critical: 5
+
+    # Override Response Time
+    max_override_response_seconds:
+      expected: 60
+      warning: 300
+      critical: 600
+
+  mitigation_actions:
+    warning:
+      - escalate_to_supervisor
+      - require_acknowledgment
+    critical:
+      - reduce_autonomous_operations
+      - require_manual_approval_all
+
+# Regulatory Compliance Risk
+compliance_risk:
+  category: "REGULATORY_COMPLIANCE"
+  description: "Risks related to regulatory requirements"
+
+  thresholds:
+    # Audit Log Completeness
+    audit_log_completeness:
+      expected: 1.0       # 100%
+      warning: 0.99       # 99%
+      critical: 0.95      # 95%
+
+    # Report Generation Delays
+    max_report_delay_hours:
+      expected: 1
+      warning: 24
+      critical: 48
+
+    # Compliance Check Failures
+    compliance_check_failure_rate:
+      expected: 0.0
+      warning: 0.01
+      critical: 0.05
+
+  mitigation_actions:
+    warning:
+      - log_compliance_concern
+      - schedule_review
+    critical:
+      - notify_compliance_officer
+      - halt_affected_operations
+
+# =============================================================================
+# Risk Score Calculation Weights
+# =============================================================================
+risk_score_weights:
+  market_risk: 0.25
+  model_risk: 0.20
+  operational_risk: 0.15
+  data_quality_risk: 0.15
+  cybersecurity_risk: 0.10
+  human_oversight_risk: 0.10
+  compliance_risk: 0.05
+
+# =============================================================================
+# Escalation Matrix
+# =============================================================================
+escalation_matrix:
+  level_1:
+    name: "Operations Team"
+    notification_channels: ["slack", "email"]
+    response_time_minutes: 15
+
+  level_2:
+    name: "Risk Management"
+    notification_channels: ["slack", "email", "sms"]
+    response_time_minutes: 30
+
+  level_3:
+    name: "Compliance Officer"
+    notification_channels: ["email", "sms", "phone"]
+    response_time_minutes: 60
+
+  level_4:
+    name: "Executive Management"
+    notification_channels: ["phone", "emergency_broadcast"]
+    response_time_minutes: 120
