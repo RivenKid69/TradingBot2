@@ -29,12 +29,18 @@ Phase 4 - Record Keeping & Audit Trail (MiFIR Article 25):
     - retention_policy: 5-7 Year Retention Policy Management
     - audit_trail_writer: Write-Once Audit Trail with Chain Verification
 
+Phase 5 - Best Execution (Article 27 MiFID II):
+    - best_execution: Best Execution Policy and Analyzer
+    - tca_compliance: Transaction Cost Analysis Compliance Wrapper
+    - venue_analysis: Venue Performance Analysis and Smart Order Routing
+    - execution_quality_report: Execution Quality Report Generator
+
 Classification:
     This system is classified as an ALGORITHMIC TRADING SYSTEM per
     Article 17 MiFID II and subject to RTS 6 requirements.
 
 Applicable Regulations:
-    - MiFID II (Directive 2014/65/EU) Article 17
+    - MiFID II (Directive 2014/65/EU) Article 17, Article 27
     - MiFIR (Regulation 600/2014) Articles 25-26
     - RTS 6 (Regulation 2017/589) - Algorithmic Trading
     - RTS 22 (Regulation 2017/590) - Transaction Reporting
@@ -45,13 +51,14 @@ References:
     - ESMA MiFID II Rulebook: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii
     - GLEIF LEI Lookup: https://www.gleif.org/en/lei-data/gleif-lei-look-up-api
     - Article 17 MiFID II: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-17-algorithmic-trading
+    - Article 27 MiFID II: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-27-obligation-execute-orders-terms-most-favourable-client
     - MiFIR Article 25: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifir/article-25-obligation-maintain-records
 """
 
 from __future__ import annotations
 
-__version__ = "4.0.0"
-__mifid_ii_compliance_phase__ = 4  # Current implementation phase
+__version__ = "5.0.0"
+__mifid_ii_compliance_phase__ = 5  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -280,6 +287,78 @@ from services.compliance.audit_trail_writer import (
     create_audit_trail_writer,
 )
 
+# Phase 5 exports (Best Execution - Article 27 MiFID II)
+from services.compliance.best_execution import (
+    # Enums
+    ExecutionFactor,
+    AssetClass,
+    VenueType,
+    ExecutionQualityLevel,
+    # Data classes
+    ExecutionVenue,
+    FactorWeights,
+    ExecutionAnalysis,
+    BestExecutionPolicyConfig,
+    # Main classes
+    BestExecutionPolicy,
+    BestExecutionAnalyzer,
+    # Factory functions
+    create_best_execution_policy,
+    create_best_execution_analyzer,
+    get_standard_eu_venues,
+)
+
+from services.compliance.tca_compliance import (
+    # Enums
+    TCAMetricType,
+    TCABenchmark,
+    ExecutionStrategy,
+    # Data classes
+    PreTradeEstimate,
+    PostTradeAnalysis,
+    TCAConfig,
+    TCAAggregateMetrics,
+    # Main class
+    TCAComplianceWrapper,
+    # Factory
+    create_tca_wrapper,
+)
+
+from services.compliance.venue_analysis import (
+    # Enums
+    VenueMetricType,
+    VenueSelectionReason,
+    VenueStatus,
+    # Data classes
+    VenueExecutionRecord,
+    VenuePerformanceMetrics,
+    VenueRoutingDecision,
+    VenueAnalysisConfig,
+    # Main classes
+    VenueAnalyzer,
+    SmartOrderRouter,
+    # Factory functions
+    create_venue_analyzer,
+    create_smart_order_router,
+)
+
+from services.compliance.execution_quality_report import (
+    # Enums
+    ReportPeriod,
+    ReportFormat,
+    ReportStatus,
+    # Data classes
+    VenueExecutionSummary,
+    AssetClassExecutionSummary,
+    ExecutionQualityReportMetadata,
+    ExecutionQualityReport,
+    ReportGeneratorConfig,
+    # Main class
+    ExecutionQualityReportGenerator,
+    # Factory
+    create_report_generator,
+)
+
 __all__ = [
     # Version info
     "__version__",
@@ -435,4 +514,52 @@ __all__ = [
     "WriterMetrics",
     "AuditTrailWriter",
     "create_audit_trail_writer",
+    # ==== Phase 5: Best Execution (Article 27 MiFID II) ====
+    # Best Execution Policy
+    "ExecutionFactor",
+    "AssetClass",
+    "VenueType",
+    "ExecutionQualityLevel",
+    "ExecutionVenue",
+    "FactorWeights",
+    "ExecutionAnalysis",
+    "BestExecutionPolicyConfig",
+    "BestExecutionPolicy",
+    "BestExecutionAnalyzer",
+    "create_best_execution_policy",
+    "create_best_execution_analyzer",
+    "get_standard_eu_venues",
+    # TCA Compliance
+    "TCAMetricType",
+    "TCABenchmark",
+    "ExecutionStrategy",
+    "PreTradeEstimate",
+    "PostTradeAnalysis",
+    "TCAConfig",
+    "TCAAggregateMetrics",
+    "TCAComplianceWrapper",
+    "create_tca_wrapper",
+    # Venue Analysis
+    "VenueMetricType",
+    "VenueSelectionReason",
+    "VenueStatus",
+    "VenueExecutionRecord",
+    "VenuePerformanceMetrics",
+    "VenueRoutingDecision",
+    "VenueAnalysisConfig",
+    "VenueAnalyzer",
+    "SmartOrderRouter",
+    "create_venue_analyzer",
+    "create_smart_order_router",
+    # Execution Quality Reports
+    "ReportPeriod",
+    "ReportFormat",
+    "ReportStatus",
+    "VenueExecutionSummary",
+    "AssetClassExecutionSummary",
+    "ExecutionQualityReportMetadata",
+    "ExecutionQualityReport",
+    "ReportGeneratorConfig",
+    "ExecutionQualityReportGenerator",
+    "create_report_generator",
 ]

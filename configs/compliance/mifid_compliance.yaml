@@ -498,3 +498,203 @@ compliance:
 
     # Maximum records per export file
     max_records_per_file: 100000
+
+  # ============================================================================
+  # Phase 5: Best Execution (MiFID II Article 27)
+  # ============================================================================
+  # MiFID II Article 27 requires investment firms to take "all sufficient steps"
+  # to obtain the best possible result for clients taking into account:
+  # price, costs, speed, likelihood of execution and settlement, size, nature,
+  # or any other consideration relevant to the execution of the order.
+
+  # Best Execution Policy Configuration
+  best_execution:
+    enabled: true
+
+    # Policy document settings
+    policy_version: "1.0.0"
+    policy_effective_date: ""  # Auto-set to today if empty
+    policy_review_frequency_days: 365  # Annual review per MiFID II
+
+    # Factor weights (must sum to 1.0)
+    # These define the relative importance of each execution factor
+    default_factor_weights:
+      price: 0.35          # Price achieved vs. reference
+      cost: 0.25           # Total cost (explicit + implicit)
+      speed: 0.15          # Execution latency
+      likelihood: 0.15     # Probability of fill
+      settlement: 0.05     # Settlement certainty
+      size: 0.03           # Ability to handle order size
+      nature: 0.02         # Order type considerations
+
+    # Asset class specific weight overrides (optional)
+    # Example: equity might prioritize price, FX might prioritize speed
+    asset_class_weights: {}
+
+    # Monitoring thresholds
+    price_improvement_threshold_bps: -10.0   # Alert if worse than -10bps
+    cost_threshold_bps: 50.0                 # Alert if cost exceeds 50bps
+    latency_threshold_ms: 1000.0             # Alert if latency > 1 second
+    fill_rate_threshold_pct: 90.0            # Alert if fill rate < 90%
+
+    # Execution quality scoring
+    price_score_scale_bps: 50.0              # ±50bps maps to ±1.0 score
+    cost_score_scale_bps: 100.0              # 100bps cost = 0 score
+    speed_score_scale_ms: 1000.0             # 1000ms latency = 0 score
+
+    # Quality level thresholds
+    excellent_threshold: 0.80                # >= 80% = excellent
+    good_threshold: 0.60                     # >= 60% = good
+    acceptable_threshold: 0.40               # >= 40% = acceptable
+    below_standard_threshold: 0.20           # >= 20% = below standard
+                                             # < 20% = poor
+
+  # Transaction Cost Analysis (TCA) Configuration
+  tca:
+    enabled: true
+
+    # Market impact model: "almgren_chriss", "linear", "square_root"
+    impact_model: "almgren_chriss"
+
+    # Almgren-Chriss model parameters
+    permanent_impact_coefficient: 0.1
+    temporary_impact_coefficient: 0.1
+    volatility_scaling: 1.0
+
+    # Alpha decay for timing cost
+    alpha_decay: 0.5
+
+    # Confidence level for cost estimates
+    default_confidence_level: 0.95
+
+    # Alert if cost exceeds estimate by this much
+    alert_threshold_bps: 50.0
+
+    # Strategy recommendation thresholds (participation rate)
+    low_urgency_participation_pct: 5.0
+    normal_urgency_participation_pct: 10.0
+    high_urgency_participation_pct: 20.0
+
+  # Venue Analysis Configuration
+  venue_analysis:
+    enabled: true
+
+    # Minimum samples for reliable metrics
+    min_samples: 30
+
+    # Rolling window for venue performance
+    rolling_window_days: 30
+
+    # Venue quality metric weights (must sum to 1.0)
+    metric_weights:
+      spread: 0.20
+      latency: 0.15
+      fill_rate: 0.20
+      price_improvement: 0.25
+      rejection_rate: 0.10
+      cost: 0.10
+
+    # Auto-update venue rankings based on performance
+    auto_update_rankings: true
+
+    # Include dark pools in routing
+    dark_pool_enabled: false
+
+    # Alert thresholds
+    spread_threshold_bps: 20.0
+    latency_threshold_ms: 500.0
+    rejection_rate_threshold_pct: 10.0
+
+  # Smart Order Routing (SOR) Configuration
+  smart_order_routing:
+    enabled: true
+
+    # Default routing mode: "smart", "direct", "split"
+    default_mode: "smart"
+
+    # Consider historical venue performance
+    use_historical_performance: true
+
+    # Real-time quote-based routing
+    use_realtime_quotes: true
+
+    # Log all routing decisions for audit
+    log_decisions: true
+
+    # Split order routing
+    max_split_venues: 3
+    min_split_size_pct: 10.0
+
+  # Execution Quality Reporting Configuration
+  execution_quality_reports:
+    enabled: true
+
+    # Report generation schedule
+    auto_generate_monthly: true
+    auto_generate_quarterly: true
+    auto_generate_annual: true
+
+    # Top N venues to include per asset class
+    top_venues_count: 5
+
+    # Include TCA metrics in reports
+    include_tca_metrics: true
+
+    # Include recommendations in reports
+    include_recommendations: true
+
+    # Output directory for reports
+    output_directory: "state/compliance/reports"
+
+    # Default report format: json, text, csv, html
+    default_format: "json"
+
+    # Compliance thresholds for flagging issues
+    min_execution_score: 50.0
+    max_avg_cost_bps: 100.0
+    min_fill_rate_pct: 90.0
+    max_latency_ms: 1000.0
+
+  # Execution Venue Configuration
+  execution_venues:
+    # Default venues for equity (can be overridden per instrument)
+    equity:
+      - mic: "XLON"
+        name: "London Stock Exchange"
+        type: "regulated_market"
+        country: "GB"
+        currency: "GBP"
+        ranking: 1
+      - mic: "XETR"
+        name: "Deutsche Börse Xetra"
+        type: "regulated_market"
+        country: "DE"
+        currency: "EUR"
+        ranking: 2
+      - mic: "XPAR"
+        name: "Euronext Paris"
+        type: "regulated_market"
+        country: "FR"
+        currency: "EUR"
+        ranking: 3
+      - mic: "XAMS"
+        name: "Euronext Amsterdam"
+        type: "regulated_market"
+        country: "NL"
+        currency: "EUR"
+        ranking: 4
+      - mic: "XMIL"
+        name: "Borsa Italiana"
+        type: "regulated_market"
+        country: "IT"
+        currency: "EUR"
+        ranking: 5
+
+    # Off-exchange / OTC
+    otc:
+      - mic: "XOFF"
+        name: "Off-Exchange"
+        type: "otc"
+        country: "XX"
+        currency: "EUR"
+        ranking: 99
