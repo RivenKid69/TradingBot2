@@ -1,7 +1,7 @@
 # EU AI Act Integration Plan
 # План интеграции EU AI Act в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 1.1
+**Версия документа**: 1.4
 **Дата создания**: 2025-12-06
 **Последнее обновление**: 2025-12-08
 **Целевое соответствие**: Regulation (EU) 2024/1689 (AI Act)
@@ -13,10 +13,17 @@
 |-------|--------|-----------------|-------|
 | **Phase 1: Foundation & Risk Management** | **COMPLETED** | 2025-12-08 | 372/372 passed |
 | **Phase 2: Technical Documentation & Logging** | **COMPLETED** | 2025-12-08 | 236/236 passed |
-| Phase 3: QMS & Testing | Planned | - | - |
-| Phase 4: Conformity Assessment | Planned | - | - |
+| **Phase 3: QMS & Testing** | **COMPLETED** | 2025-12-08 | 318/318 passed |
+| **Phase 4: Conformity Assessment** | **COMPLETED** | 2025-12-08 | 81/81 passed |
+| Phase 5: Ongoing Compliance Monitoring | Planned | - | - |
 
-**Total AI Act Tests: 608 passed**
+**Total AI Act Tests: 1007 passed**
+
+### Module Version
+
+| Module | Version | Phase |
+|--------|---------|-------|
+| `services/ai_act` | 4.0.0 | 4 |
 
 ---
 
@@ -58,24 +65,27 @@
 | [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | **IMPLEMENTED** (services/ai_act/explainability.py) | P1 |
 | [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | **IMPLEMENTED** (services/ai_act/human_oversight.py) | P0 |
 | [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | **IMPLEMENTED** (services/ai_act/accuracy_metrics.py, robustness_testing.py) | P1 |
-| [Article 17](https://artificialintelligenceact.eu/article/17/) | Quality Management System | ❌ Требуется создание | P1 |
-| [Article 43](https://artificialintelligenceact.eu/article/43/) | Conformity Assessment | ❌ Требуется выполнение | P2 |
+| [Article 17](https://artificialintelligenceact.eu/article/17/) | Quality Management System | **IMPLEMENTED** (services/ai_act/qms.py) | P1 |
+| [Article 43](https://artificialintelligenceact.eu/article/43/) | Conformity Assessment | **IMPLEMENTED** (services/ai_act/conformity_assessment.py) | P2 |
+| [Article 47](https://artificialintelligenceact.eu/article/47/) | EU Declaration of Conformity | **IMPLEMENTED** (conformity_assessment.py) | P2 |
+| [Article 49](https://artificialintelligenceact.eu/article/49/) | EU Database Registration | **IMPLEMENTED** (conformity_assessment.py) | P2 |
+| [Article 72](https://artificialintelligenceact.eu/article/72/) | Post-Market Monitoring | **IMPLEMENTED** (services/ai_act/post_market_monitoring.py) | P1 |
 
 ---
 
 ## 📅 Roadmap: Фазы интеграции
 
 ```
-2025-Q4          2026-Q1          2026-Q2          2026-Q3
-   │                │                │                │
-   ▼                ▼                ▼                ▼
-┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│ Phase 1  │   │ Phase 2  │   │ Phase 3  │   │ Phase 4  │
-│ Foundation│──▶│ Technical│──▶│ QMS &    │──▶│ Conformity│
-│ & Risk   │   │ Doc &    │   │ Testing  │   │ Assessment│
-│ Management│   │ Logging  │   │          │   │           │
-└──────────┘   └──────────┘   └──────────┘   └──────────┘
-  8-10 weeks     8-10 weeks     6-8 weeks      4-6 weeks
+2025-Q4          2025-Q4          2025-Q4          2025-Q4          2026-Q1
+   │                │                │                │                │
+   ▼                ▼                ▼                ▼                ▼
+┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+│ Phase 1  │   │ Phase 2  │   │ Phase 3  │   │ Phase 4  │   │ Phase 5  │
+│ Foundation│──▶│ Technical│──▶│ QMS &    │──▶│ Conformity│──▶│ Ongoing  │
+│ & Risk   │   │ Doc &    │   │ Testing  │   │ Assessment│   │ Monitoring│
+│ COMPLETED │   │ COMPLETED │   │ COMPLETED │   │ COMPLETED │   │ Planned  │
+└──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
+  372 tests      236 tests      318 tests      81 tests       TBD
 ```
 
 ---
@@ -1204,3 +1214,7 @@ TradingBot2/
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-12-06 | Claude | Initial comprehensive plan |
+| 1.1 | 2025-12-08 | Claude | Phase 1 completion (372 tests) |
+| 1.2 | 2025-12-08 | Claude | Phase 2 completion (236 tests) |
+| 1.3 | 2025-12-08 | Claude | Phase 3 completion (318 tests) |
+| 1.4 | 2025-12-08 | Claude | Phase 4 completion (81 tests) - Total: 1007 tests |

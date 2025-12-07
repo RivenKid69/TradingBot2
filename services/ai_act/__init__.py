@@ -25,6 +25,12 @@ Phase 3 - Quality Management System (Article 17):
     - cybersecurity: Cybersecurity Measures (Article 15)
     - post_market_monitoring: Post-Market Monitoring (Article 72)
 
+Phase 4 - Conformity Assessment & Deployment (Articles 43, 47, 49):
+    - conformity_assessment: Self-Assessment and Checklist (Article 43, Annex VI)
+    - EU Declaration of Conformity generation (Article 47)
+    - Instructions for Use generation (Article 13)
+    - EU Database Registration preparation (Article 49)
+
 Classification:
     This system is classified as HIGH-RISK AI SYSTEM per Annex III
     (algorithmic trading in financial services context).
@@ -38,12 +44,16 @@ References:
     - Article 12 (Record-Keeping): https://artificialintelligenceact.eu/article/12/
     - Article 14 (Human Oversight): https://artificialintelligenceact.eu/article/14/
     - Article 15 (Accuracy, Robustness, Cybersecurity): https://artificialintelligenceact.eu/article/15/
+    - Article 43 (Conformity Assessment): https://artificialintelligenceact.eu/article/43/
+    - Article 47 (EU Declaration of Conformity): https://artificialintelligenceact.eu/article/47/
+    - Article 49 (Registration): https://artificialintelligenceact.eu/article/49/
+    - Annex VI (Internal Control): https://artificialintelligenceact.eu/annex/6/
 """
 
 from __future__ import annotations
 
-__version__ = "3.0.0"
-__ai_act_compliance_phase__ = 3  # Current implementation phase
+__version__ = "4.0.0"
+__ai_act_compliance_phase__ = 4  # Current implementation phase
 
 # =============================================================================
 # Phase 1 exports (Foundation & Risk Management)
@@ -306,6 +316,33 @@ from services.ai_act.post_market_monitoring import (
 )
 
 # =============================================================================
+# Phase 4 exports (Conformity Assessment & Deployment)
+# =============================================================================
+
+from services.ai_act.conformity_assessment import (
+    # Enums
+    ConformityStatus,
+    ChecklistItemStatus,
+    RequirementCategory,
+    AssessmentPhase,
+    GapSeverity,
+    # Data structures
+    ChecklistItem,
+    ComplianceGap,
+    AssessmentReport,
+    EUDeclaration,
+    InstructionsForUse,
+    RegistrationInfo,
+    # Configuration
+    ConformityAssessmentConfig,
+    # Main class
+    ConformitySelfAssessment,
+    # Factory functions
+    create_conformity_assessment,
+    get_default_checklist,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -517,4 +554,25 @@ __all__ = [
     "PostMarketMonitoringSystem",
     "create_post_market_monitoring",
     "get_default_monitoring_metrics",
+
+    # =========================================================================
+    # Phase 4: Conformity Assessment & Deployment
+    # =========================================================================
+
+    # Conformity Assessment (Article 43, Annex VI)
+    "ConformityStatus",
+    "ChecklistItemStatus",
+    "RequirementCategory",
+    "AssessmentPhase",
+    "GapSeverity",
+    "ChecklistItem",
+    "ComplianceGap",
+    "AssessmentReport",
+    "EUDeclaration",
+    "InstructionsForUse",
+    "RegistrationInfo",
+    "ConformityAssessmentConfig",
+    "ConformitySelfAssessment",
+    "create_conformity_assessment",
+    "get_default_checklist",
 ]
