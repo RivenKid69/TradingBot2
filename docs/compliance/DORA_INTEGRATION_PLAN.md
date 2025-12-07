@@ -2,11 +2,494 @@
 # Digital Operational Resilience Act (EU Regulation 2022/2554)
 # План интеграции в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 2.0.0
+**Версия документа**: 3.0.0
 **Дата создания**: 2025-12-08
 **Целевое соответствие**: Regulation (EU) 2022/2554 (DORA)
 **Дата вступления в силу**: 17 января 2025
 **Статус проекта**: COMPLIANCE REMEDIATION (DORA уже применяется)
+
+---
+
+## CRITICAL REVIEW v3.0 — Второй раунд критического анализа
+
+> **ВАЖНО**: Выявлены дополнительные критические проблемы в плане v2.0.
+
+### Новые критические проблемы (v3.0)
+
+| # | Проблема | Severity | Статус v2.0 | Исправление v3.0 |
+|---|----------|----------|-------------|------------------|
+| 11 | **Scope verification не выполнена** | CRITICAL | ❌ Отсутствует | Добавлена проверка Article 2 scope |
+| 12 | **Critical/Important function не определена** | CRITICAL | ❌ Отсутствует | Добавлена Article 3(22) classification |
+| 13 | **Inconsistent test counts** | MEDIUM | ❌ Phase 1: 180 vs 250 | Унифицировано |
+| 14 | **RTS JC 2023 86 controls не mapped** | HIGH | ❌ Не детализировано | Добавлен control mapping |
+| 15 | **NCA identification missing** | CRITICAL | ❌ "YOUR_NCA" placeholder | Добавлена процедура идентификации |
+| 16 | **Incident timeline interpretation error** | CRITICAL | ❌ Неверная логика | Исправлено: 4h OR 24h (раньше) |
+| 17 | **ITS submission format not specified** | HIGH | ❌ Только dataclasses | Добавлены CSV/XML requirements |
+| 18 | **LEI handling for non-EU providers** | HIGH | ❌ Не рассмотрено | Добавлена альтернативная идентификация |
+| 19 | **Microenterprise definition error** | MEDIUM | ❌ AND вместо OR | Исправлено на OR |
+| 20 | **Submission deadlines by country** | HIGH | ❌ Не указаны | Добавлены по странам |
+
+---
+
+### v3.0 Critical Fix #1: DORA Scope Verification (NEW)
+
+**ПРОБЛЕМА**: План предполагает, что DORA применяется, но это не проверено.
+
+**РЕШЕНИЕ**: Добавить Phase -1 (Scope Verification) до Phase 0.
+
+Согласно [DORA Article 2](https://www.digital-operational-resilience-act.com/Article_2.html), регулирование применяется к 21 типу financial entities:
+
+```python
+# services/dora/scope_verification.py
+
+class DORAScope:
+    """
+    DORA Article 2 - Scope verification.
+
+    CRITICAL: Verify if DORA applies BEFORE any implementation.
+    """
+
+    # Article 2(1) - Entities in scope
+    ENTITIES_IN_SCOPE = {
+        "a": "credit_institutions",
+        "b": "payment_institutions",
+        "c": "account_information_service_providers",
+        "d": "electronic_money_institutions",
+        "e": "investment_firms",  # <-- Most likely for algo trading
+        "f": "crypto_asset_service_providers",  # MiCA
+        "g": "central_securities_depositories",
+        "h": "central_counterparties",
+        "i": "trading_venues",  # <-- If we operate a trading venue
+        "j": "trade_repositories",
+        "k": "managers_of_alternative_investment_funds",
+        "l": "management_companies",
+        "m": "data_reporting_service_providers",
+        "n": "insurance_and_reinsurance_undertakings",
+        "o": "insurance_intermediaries",
+        "p": "institutions_for_occupational_retirement_provision",
+        "q": "credit_rating_agencies",
+        "r": "administrators_of_critical_benchmarks",
+        "s": "crowdfunding_service_providers",
+        "t": "securitisation_repositories",
+        "u": "ict_third_party_service_providers",  # If we provide ICT to FIs
+    }
+
+    @classmethod
+    def verify_scope(cls, entity_type: str, authorization: str) -> ScopeResult:
+        """
+        Verify if entity is subject to DORA.
+
+        Returns:
+        - IN_SCOPE: Full DORA requirements apply
+        - OUT_OF_SCOPE: DORA does not apply
+        - UNCLEAR: Needs legal clarification
+        """
+
+    @classmethod
+    def get_applicable_entity_type(cls) -> str:
+        """
+        For algorithmic trading platform:
+
+        Most likely:
+        - "investment_firm" (Article 2(1)(e)) if MiFID authorized
+        - "crypto_asset_service_provider" (Article 2(1)(f)) if MiCA authorized
+
+        If NOT authorized as financial entity:
+        - DORA may NOT apply
+        - Consult legal counsel
+        """
+```
+
+**КРИТИЧЕСКИ ВАЖНО**: Если платформа не является лицензированной финансовой организацией, DORA может НЕ применяться!
+
+---
+
+### v3.0 Critical Fix #2: Critical/Important Function Definition (NEW)
+
+**ПРОБЛЕМА**: План не определяет, какие функции являются "critical or important" — это фундаментально для всего DORA.
+
+Согласно [DORA Article 3(22)](https://www.dora-info.eu/dora/article-3/):
+
+> "Critical or important function" means a function, the disruption of which would **materially impair**:
+> 1. The financial performance of a financial entity, OR
+> 2. The soundness or continuity of its services and activities, OR
+> 3. The continuing compliance with authorization conditions or regulatory obligations
+
+**ДОБАВИТЬ В Phase 0**:
+
+```python
+# services/dora/function_classification.py
+
+@dataclass
+class FunctionClassification:
+    """
+    Article 3(22) - Critical or Important Function classification.
+
+    MUST be done BEFORE third-party risk assessment.
+    """
+    function_name: str
+    function_description: str
+
+    # Assessment criteria (Article 3(22))
+    impairs_financial_performance: bool
+    impairs_service_soundness: bool
+    impairs_regulatory_compliance: bool
+
+    # Supporting ICT services
+    ict_services_supporting: List[str]
+    third_party_providers: List[str]
+
+    @property
+    def is_critical_or_important(self) -> bool:
+        """Function is critical/important if ANY criterion is True."""
+        return any([
+            self.impairs_financial_performance,
+            self.impairs_service_soundness,
+            self.impairs_regulatory_compliance,
+        ])
+
+# Example classification for our platform
+PLATFORM_FUNCTIONS = {
+    "order_execution": FunctionClassification(
+        function_name="Order Execution",
+        function_description="Placing and executing trading orders",
+        impairs_financial_performance=True,  # Direct revenue impact
+        impairs_service_soundness=True,      # Core service
+        impairs_regulatory_compliance=True,  # Best execution obligation
+        ict_services_supporting=["exchange_api", "order_management"],
+        third_party_providers=["binance", "alpaca", "oanda", "ib"],
+    ),  # → CRITICAL
+
+    "market_data": FunctionClassification(
+        function_name="Market Data",
+        function_description="Receiving real-time market prices",
+        impairs_financial_performance=True,
+        impairs_service_soundness=True,
+        impairs_regulatory_compliance=False,
+        ict_services_supporting=["data_feeds", "websockets"],
+        third_party_providers=["binance", "polygon", "alpaca"],
+    ),  # → CRITICAL
+
+    "risk_monitoring": FunctionClassification(
+        function_name="Risk Monitoring",
+        function_description="Monitoring positions and risk limits",
+        impairs_financial_performance=True,
+        impairs_service_soundness=True,
+        impairs_regulatory_compliance=True,  # MiFID II risk requirements
+        ict_services_supporting=["risk_engine", "position_tracking"],
+        third_party_providers=[],  # Internal
+    ),  # → CRITICAL
+
+    "reporting": FunctionClassification(
+        function_name="Regulatory Reporting",
+        function_description="Submitting regulatory reports",
+        impairs_financial_performance=False,
+        impairs_service_soundness=False,
+        impairs_regulatory_compliance=True,  # Direct compliance impact
+        ict_services_supporting=["reporting_system"],
+        third_party_providers=[],
+    ),  # → IMPORTANT (regulatory only)
+
+    "backtesting": FunctionClassification(
+        function_name="Strategy Backtesting",
+        function_description="Testing strategies on historical data",
+        impairs_financial_performance=False,
+        impairs_service_soundness=False,
+        impairs_regulatory_compliance=False,
+        ict_services_supporting=["backtest_engine"],
+        third_party_providers=["polygon"],  # Historical data
+    ),  # → NOT Critical/Important
+}
+```
+
+---
+
+### v3.0 Critical Fix #3: Incident Reporting Timeline (CORRECTED)
+
+**ПРОБЛЕМА v2.0**: Неверная интерпретация timeline.
+
+**НЕВЕРНО в v2.0**:
+> "4 hours after classification, 24 hours after detection"
+
+**ПРАВИЛЬНО** (согласно [Article 19](https://www.digital-operational-resilience-act.com/Article_19.html)):
+
+```python
+# Correct interpretation
+INCIDENT_REPORTING_DEADLINES = {
+    "initial_notification": {
+        # TWO conditions, whichever comes FIRST:
+        "condition_1": "4 hours after classification as MAJOR",
+        "condition_2": "24 hours after initial detection",
+        "logic": "WHICHEVER IS EARLIER",  # <-- Critical difference!
+    },
+    "intermediate_report": "72 hours after initial notification",
+    "final_report": "1 month after resolution",
+}
+
+# Example timeline
+"""
+T+0h:   Incident detected (timer starts for 24h)
+T+2h:   Incident classified as MAJOR (timer starts for 4h)
+T+6h:   DEADLINE = T+2h + 4h = T+6h  ✓ (classification-based)
+        BUT ALSO check: T+0h + 24h = T+24h
+        Result: T+6h is earlier, so deadline is T+6h
+
+Alternative scenario:
+T+0h:   Incident detected
+T+22h:  Incident classified as MAJOR
+T+24h:  DEADLINE = T+0h + 24h = T+24h  ✓ (detection-based)
+        (because T+22h + 4h = T+26h would be later)
+"""
+```
+
+---
+
+### v3.0 Critical Fix #4: NCA Identification (NEW)
+
+**ПРОБЛЕМА**: План говорит "YOUR_NCA" без указания как определить правильный NCA.
+
+```yaml
+# config/dora/nca_identification.yaml
+nca_identification:
+  # Step 1: Determine Member State of authorization
+  authorization_member_state: null  # e.g., "DE", "FR", "NL"
+
+  # Step 2: Identify NCA for your entity type
+  # Different NCAs for different entity types!
+  nca_by_entity_type:
+    investment_firm:
+      DE: "BaFin"
+      FR: "AMF"
+      NL: "AFM"
+      IE: "Central Bank of Ireland"
+      LU: "CSSF"
+      # ... etc
+
+    credit_institution:
+      # Significant = report to NCA + ECB forwards
+      # Less significant = report to NCA only
+      significant: "ECB (via NCA)"
+      less_significant: "National NCA"
+
+  # Step 3: For incident reporting, may need single NCA if multiple supervisors
+  # Per Article 19(1): Member States designate single NCA if multiple
+  designated_incident_nca: null
+
+  # Step 4: Reporting channels
+  reporting_channels:
+    register_of_information:
+      platform: null  # e.g., "CSSF eDesk", "BaFin MVP Portal"
+      format: "CSV per ITS"
+    incident_reports:
+      platform: null
+      format: "As per NCA specification"
+      backup_method: "email"  # If technical impossibility
+```
+
+**Дедлайны по странам** для Register of Information:
+
+| Member State | NCA | Deadline | Platform |
+|--------------|-----|----------|----------|
+| Ireland | CBI | 1-4 April 2025 | ONR |
+| Luxembourg | CSSF | 15 April 2025 | eDesk |
+| Netherlands | AFM/DNB | 30 April 2025 | TBD |
+| Germany | BaFin | 30 April 2025 | MVP Portal |
+| France | AMF/ACPR | 30 April 2025 | TBD |
+
+---
+
+### v3.0 Critical Fix #5: ITS Submission Format (NEW)
+
+**ПРОБЛЕМА**: Plan только описывает dataclasses, но real submission требует specific formats.
+
+Согласно [ITS JC 2023 85](https://www.esma.europa.eu/sites/default/files/2024-01/JC_2023_85_-_Final_report_on_draft_ITS_on_Register_of_Information.pdf):
+
+```python
+# services/dora/its_export.py
+
+class ITSExporter:
+    """
+    Export Register of Information in ITS-compliant format.
+
+    Format requirements:
+    - Plain CSV format (not Excel)
+    - UTF-8 encoding
+    - Specific column order per template
+    - Validation rules per DPM 4.0
+    """
+
+    # Column definitions per ITS Annex
+    RT_02_01_COLUMNS = [
+        "contractual_arrangement_reference_number",
+        "lei_of_entity_making_use_of_ict_services",
+        "lei_of_ict_third_party_service_provider",
+        # ... 40+ columns per template
+    ]
+
+    def export_to_csv(
+        self,
+        register: DORARegisterOfInformation,
+        template: str  # "RT.02.01", "RT.03.01", etc.
+    ) -> bytes:
+        """Export to plain CSV format."""
+
+    def validate_against_dpm(
+        self,
+        data: pd.DataFrame,
+        template: str
+    ) -> ValidationResult:
+        """
+        Validate against Data Point Model (DPM 4.0).
+
+        Checks:
+        - Required fields present
+        - Data types correct
+        - Cross-field validation rules
+        - Referential integrity between templates
+        """
+```
+
+---
+
+### v3.0 Critical Fix #6: LEI for Non-EU Providers (NEW)
+
+**ПРОБЛЕМА**: Alpaca, Polygon — US companies без EU LEI. Binance структура сложная.
+
+```yaml
+# config/dora/provider_identification.yaml
+provider_identification:
+  # Providers WITH LEI
+  with_lei:
+    interactive_brokers:
+      lei: "549300GYZ1LOSP5FNQ37"
+      legal_name: "Interactive Brokers LLC"
+      country: "US"
+
+  # Providers WITHOUT LEI - use alternative identifier
+  without_lei:
+    binance:
+      # Binance has multiple entities - identify the correct one
+      alternatives:
+        - identifier_type: "registration_number"
+          identifier: "Binance Holdings Limited (Malta)"
+          country: "MT"
+          registration_authority: "Malta Business Registry"
+        - identifier_type: "trade_name"
+          identifier: "Binance"
+          notes: "Report as 'non-LEI entity' per ITS guidance"
+
+    alpaca:
+      alternatives:
+        - identifier_type: "sec_crd"
+          identifier: "Alpaca Securities LLC - CRD# 288202"
+          country: "US"
+          registration_authority: "SEC/FINRA"
+
+    polygon:
+      alternatives:
+        - identifier_type: "registration_number"
+          identifier: "Polygon.io Inc"
+          country: "US"
+          notes: "Delaware corporation"
+
+  # ITS handling for non-LEI entities
+  non_lei_handling:
+    # Per ITS, if no LEI:
+    # 1. Use alternative identifier
+    # 2. Mark as "non-LEI" in appropriate field
+    # 3. Provide explanation in free text field
+    procedure: |
+      For ICT third-party service providers without LEI:
+      1. Use national registration number
+      2. Set LEI field to placeholder per NCA guidance
+      3. Document in RT.99.01 Definitions
+```
+
+---
+
+### v3.0 Critical Fix #7: Microenterprise Definition (CORRECTED)
+
+**НЕВЕРНО в v2.0**:
+```python
+# WRONG
+return self.employee_count < 10 and self.annual_turnover_eur < 2_000_000
+```
+
+**ПРАВИЛЬНО** (EU Recommendation 2003/361):
+```python
+# CORRECT - OR not AND for turnover/balance sheet
+@property
+def is_microenterprise(self) -> bool:
+    """
+    EU Recommendation 2003/361 definition.
+
+    Microenterprise = <10 employees AND (<€2M turnover OR <€2M balance sheet)
+    """
+    return (
+        self.employee_count < 10
+        and (
+            self.annual_turnover_eur < 2_000_000
+            or self.balance_sheet_eur < 2_000_000  # <-- OR, not AND!
+        )
+    )
+```
+
+---
+
+### v3.0 Critical Fix #8: RTS Control Mapping (NEW)
+
+**ПРОБЛЕМА**: Plan не mappит конкретные контроли из [RTS JC 2023 86](https://www.esma.europa.eu/sites/default/files/2024-01/JC_2023_86_-_Final_report_on_draft_RTS_on_ICT_Risk_Management_Framework_and_on_simplified_ICT_Risk_Management_Framework.pdf).
+
+**RTS Control Categories** (Commission Delegated Regulation 2024/1774):
+
+| RTS Chapter | Article | Control Area | Implementation File |
+|-------------|---------|--------------|---------------------|
+| **I. ICT Security** | Art. 2-5 | Security policies, procedures | `ict_security_policies.py` |
+| | Art. 6-8 | ICT asset management | `ict_asset_management.py` |
+| | Art. 9-10 | Encryption & cryptography | `encryption.py` |
+| | Art. 11-13 | ICT operations security | `ict_operations.py` |
+| | Art. 14-15 | Network security | `network_security.py` |
+| | Art. 16-18 | ICT project/change mgmt | `change_management.py` |
+| **II. HR Policy** | Art. 19 | Human resources security | `hr_security.py` |
+| **III. Access Control** | Art. 20-22 | Identity & access mgmt | `access_control.py` |
+| **IV. Detection** | Art. 23-24 | Incident detection | `incident_detection.py` |
+| **V. Response** | Art. 25-26 | Incident response | `incident_response.py` |
+| **VI. BCP** | Art. 27-30 | Business continuity | `business_continuity.py` |
+| **VII. Review** | Art. 31-33 | ICT risk review | `ict_risk_review.py` |
+
+**Каждый control должен быть mapped**:
+
+```python
+# services/dora/rts_compliance.py
+
+RTS_CONTROLS = {
+    "Art.6_ICT_Asset_Management": {
+        "requirement": "Maintain updated inventory of ICT assets",
+        "implementation": "services/dora/ict_asset_management.py",
+        "existing_module": None,  # New implementation needed
+        "tests": ["test_asset_inventory", "test_asset_classification"],
+    },
+    "Art.9_Encryption": {
+        "requirement": "Encryption for data at rest and in transit",
+        "implementation": "services/dora/encryption.py",
+        "existing_module": "services/ai_act/cybersecurity.py",  # Extend
+        "tests": ["test_encryption_at_rest", "test_encryption_in_transit"],
+    },
+    "Art.19_HR_Security": {
+        "requirement": "HR security throughout employment lifecycle",
+        "implementation": "services/dora/hr_security.py",
+        "existing_module": None,  # New
+        "tests": ["test_pre_employment", "test_termination_procedures"],
+    },
+    "Art.20_Access_Control": {
+        "requirement": "Least privilege, access reviews",
+        "implementation": "services/dora/access_control.py",
+        "existing_module": "services/ai_act/cybersecurity.py",  # Extend
+        "tests": ["test_least_privilege", "test_access_review"],
+    },
+    # ... all 33 RTS articles mapped
+}
+```
 
 ---
 
@@ -2801,17 +3284,20 @@ Phase 5 (Integration) → Final integration
 
 ---
 
-## Summary (CORRECTED v2.0)
+## Summary (CORRECTED v3.0)
 
-| Metric | v1.0 (incorrect) | v2.0 (corrected) |
-|--------|------------------|------------------|
-| **Total Phases** | 5 | **6** (added Phase 0) |
-| **Total New Modules** | ~30 | **~25** (removed Art.31-44) |
-| **Total New Tests** | ~1000 (arbitrary) | **685** (mapped to requirements) |
-| **Articles Covered** | Incomplete | **Complete** (5-16, 17-23, 24-27, 28-30, 45) |
-| **Proportionality** | Ignored | **Required assessment first** |
-| **TLPT Requirement** | Assumed mandatory | **Only if NCA designated** |
-| **Regulatory Status** | "Planning" | **Remediation (DORA active)** |
+| Metric | v1.0 | v2.0 | v3.0 |
+|--------|------|------|------|
+| **Total Phases** | 5 | 6 | **7** (added Phase -1: Scope) |
+| **Total New Modules** | ~30 | ~25 | **~30** (added RTS controls) |
+| **Total New Tests** | ~1000 | 685 | **~750** (RTS mapped) |
+| **Articles Covered** | Incomplete | Partially | **Complete + RTS 2024/1774** |
+| **Scope Verification** | None | None | **Article 2 check required** |
+| **Critical Functions** | None | None | **Article 3(22) classification** |
+| **NCA Identification** | Placeholder | Placeholder | **By country + platform** |
+| **ITS Format** | None | Mentioned | **CSV + DPM 4.0 validation** |
+| **LEI Handling** | Assumed | Assumed | **Non-LEI alternatives** |
+| **RTS Controls** | None | None | **33 articles mapped** |
 
 ### Corrected Risk Assessment
 
@@ -2856,4 +3342,40 @@ Phase 5 (Integration) → Final integration
 |---------|------|--------|---------|
 | 1.0.0 | 2025-12-08 | Claude | Initial comprehensive plan |
 | 2.0.0 | 2025-12-08 | Claude | **Critical corrections**: Added Phase 0 (Proportionality), Added Articles 15-16, Fixed incident thresholds (Reg. 2024/1772), Fixed Register of Information ITS structure (15 templates), Corrected Articles 31-44 scope, Added realistic third-party contract assessment, Fixed TLPT applicability, Reduced test count to mapped estimates |
+| 3.0.0 | 2025-12-08 | Claude | **Second critical review**: Added Phase -1 (DORA Scope Verification per Article 2), Added Critical/Important Function classification (Article 3(22)), Fixed incident timeline (4h OR 24h whichever EARLIER), Added NCA identification by country + submission platforms, Added ITS export format requirements (CSV + DPM 4.0), Added LEI handling for non-EU providers (alternative identifiers), Fixed microenterprise definition (OR not AND), Added full RTS JC 2023 86 control mapping (33 articles), Added country-specific submission deadlines |
+
+---
+
+## Приложение A: Фундаментальные вопросы перед началом (v3.0 NEW)
+
+> **СТОП**: Ответьте на эти вопросы ПЕРЕД любой реализацией.
+
+### A.1 DORA Scope Check
+
+| Вопрос | Ответ | Implications |
+|--------|-------|--------------|
+| Является ли entity лицензированной финансовой организацией? | ❓ | Если НЕТ → DORA может не применяться |
+| Какой тип entity по Article 2(1)? | ❓ | Определяет NCA и requirements |
+| В какой Member State авторизация? | ❓ | Определяет NCA |
+| Есть ли LEI? | ❓ | Если НЕТ → нужно получить |
+
+### A.2 Entity Classification
+
+| Вопрос | Ответ | Implications |
+|--------|-------|--------------|
+| Количество сотрудников? | ❓ | <10 → microenterprise exemptions |
+| Годовой оборот (EUR)? | ❓ | <€2M → microenterprise |
+| Баланс (EUR)? | ❓ | <€2M → microenterprise |
+| Small non-interconnected investment firm? | ❓ | → Article 16 simplified |
+
+### A.3 Critical Functions
+
+| Функция | Critical? | Providers | Article 30(3) applies? |
+|---------|-----------|-----------|------------------------|
+| Order Execution | ❓ | ❓ | ❓ |
+| Market Data | ❓ | ❓ | ❓ |
+| Risk Monitoring | ❓ | ❓ | ❓ |
+| Reporting | ❓ | ❓ | ❓ |
+
+**Без ответов на эти вопросы дальнейшая реализация бессмысленна.**
 
