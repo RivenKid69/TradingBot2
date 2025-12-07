@@ -206,7 +206,7 @@ python scripts/quickstart.py run cme_index
 
 ```
 TradingBot2/
-├── tests/              # 633 test files, 12,879 test functions
+├── tests/              # 654 test files, 13,065 test functions
 │   ├── test_*.py       # All test files
 │   └── conftest.py     # Pytest fixtures
 ├── tools/              # 34 utility scripts (moved from root)
@@ -6971,7 +6971,7 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ### ✅ Production Ready
 
-Все критические исправления применены и протестированы. **633 test files, 12,879 tests** с 97%+ pass rate.
+Все критические исправления применены и протестированы. **654 test files, 13,065 tests** с 97%+ pass rate.
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7514,13 +7514,13 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 ---
 
 **Последнее обновление**: 2025-12-07
-**Версия документации**: 11.15 (Test Coverage Update)
-**Статус**: ✅ Production Ready (633 test files, 12,879 tests | Futures Integration complete, Options Phase 1+2+2B complete)
+**Версия документации**: 11.16 (Test Coverage Update 13,065+)
+**Статус**: ✅ Production Ready (654 test files, 13,065 tests | Futures Integration complete, Options Phase 1+2+2B complete)
 
 ### Изменения в 11.15:
 - **Обновлён счётчик тестов** -- актуализированы данные о покрытии тестами
-  - Test files: 597 → 633 (+36 файлов)
-  - Test functions: 11,063 → 12,879 (+1,816 тестов)
+  - Test files: 633 → 654 (+21 файлов)
+  - Test functions: 12,879 → 13,065 (+186 тестов)
   - Обновлены: README.md, PRODUCT_OVERVIEW.md, DOCS_INDEX.md, claude.md
 
 ### Изменения в 11.14:
