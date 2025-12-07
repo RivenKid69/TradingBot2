@@ -41,6 +41,12 @@ Phase 6 - Governance & Documentation (RTS 6 Articles 3, 9):
     - governance: Policy Documents Manager
     - compliance_policies: MiFID II Policy Templates
 
+Phase 7 - Testing & Certification (RTS 6 Article 5):
+    - conformance_testing: Conformance Testing Framework
+    - test_scenarios: Standard Test Scenarios
+    - certification: Conformance Certificates
+    - nca_notification: NCA Notification (Article 17(2))
+
 Classification:
     This system is classified as an ALGORITHMIC TRADING SYSTEM per
     Article 17 MiFID II and subject to RTS 6 requirements.
@@ -63,8 +69,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "6.0.0"
-__mifid_ii_compliance_phase__ = 6  # Current implementation phase
+__version__ = "7.0.0"
+__mifid_ii_compliance_phase__ = 7  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -431,6 +437,82 @@ from services.compliance.compliance_policies import (
     create_all_standard_policies,
 )
 
+# Phase 7 exports (Testing & Certification - RTS 6 Article 5)
+from services.compliance.conformance_testing import (
+    # Enums
+    TestResult,
+    TestCategory,
+    TestPriority,
+    TestEnvironment,
+    ConformanceSuiteStatus,
+    CertificationStatus as ConformanceCertificationStatus,
+    # Data classes
+    TestEvidence,
+    ConformanceTest,
+    ConformanceTestSuite,
+    # Runner
+    TestExecutorConfig,
+    ConformanceTestRunner,
+    # Factory functions
+    create_conformance_suite,
+    create_test_runner,
+    get_standard_conformance_tests,
+)
+
+from services.compliance.test_scenarios import (
+    # Enums
+    ScenarioType,
+    ScenarioSeverity,
+    ExecutionPhase,
+    ScenarioStatus,
+    # Data classes
+    ScenarioStep,
+    TestScenario,
+    # Executor
+    ScenarioExecutor,
+    # Factory functions
+    create_test_scenario,
+    create_scenario_executor,
+    # Standard scenarios
+    get_kill_switch_scenarios,
+    get_pre_trade_scenarios,
+    get_stress_test_scenarios,
+    get_business_continuity_scenarios,
+    get_all_standard_scenarios,
+)
+
+from services.compliance.certification import (
+    # Enums
+    CertificateStatus,
+    CertificateType,
+    DeploymentApproval,
+    # Data classes
+    CertificateCondition,
+    ConformanceCertificate,
+    # Manager
+    CertificateManager,
+    # Factory functions
+    create_certificate,
+    create_certificate_manager,
+)
+
+from services.compliance.nca_notification import (
+    # Enums
+    NCAJurisdiction,
+    NotificationType,
+    NotificationStatus,
+    AlgorithmCategory,
+    # Data classes
+    NCAContact,
+    AlgorithmDescription,
+    NCANotification,
+    # Manager
+    NCANotificationManager,
+    # Factory functions
+    create_algorithm_description,
+    create_nca_notification_manager,
+)
+
 __all__ = [
     # Version info
     "__version__",
@@ -682,4 +764,55 @@ __all__ = [
     "create_market_abuse_prevention_policy",
     "create_business_continuity_policy",
     "create_all_standard_policies",
+    # ==== Phase 7: Testing & Certification (RTS 6 Article 5) ====
+    # Conformance Testing
+    "TestResult",
+    "TestCategory",
+    "TestPriority",
+    "TestEnvironment",
+    "ConformanceSuiteStatus",
+    "ConformanceCertificationStatus",
+    "TestEvidence",
+    "ConformanceTest",
+    "ConformanceTestSuite",
+    "TestExecutorConfig",
+    "ConformanceTestRunner",
+    "create_conformance_suite",
+    "create_test_runner",
+    "get_standard_conformance_tests",
+    # Test Scenarios
+    "ScenarioType",
+    "ScenarioSeverity",
+    "ExecutionPhase",
+    "ScenarioStatus",
+    "ScenarioStep",
+    "TestScenario",
+    "ScenarioExecutor",
+    "create_test_scenario",
+    "create_scenario_executor",
+    "get_kill_switch_scenarios",
+    "get_pre_trade_scenarios",
+    "get_stress_test_scenarios",
+    "get_business_continuity_scenarios",
+    "get_all_standard_scenarios",
+    # Certification
+    "CertificateStatus",
+    "CertificateType",
+    "DeploymentApproval",
+    "CertificateCondition",
+    "ConformanceCertificate",
+    "CertificateManager",
+    "create_certificate",
+    "create_certificate_manager",
+    # NCA Notification
+    "NCAJurisdiction",
+    "NotificationType",
+    "NotificationStatus",
+    "AlgorithmCategory",
+    "NCAContact",
+    "AlgorithmDescription",
+    "NCANotification",
+    "NCANotificationManager",
+    "create_algorithm_description",
+    "create_nca_notification_manager",
 ]

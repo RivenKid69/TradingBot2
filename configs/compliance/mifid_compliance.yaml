@@ -866,3 +866,126 @@ compliance:
     # Export settings
     export_format: "json"                # json, pdf, docx
     export_path: "state/compliance/policy_exports"
+
+  # ============================================================================
+  # Phase 7: Testing & Certification (RTS 6 Article 5)
+  # ============================================================================
+  # RTS 6 Article 5 requires conformance testing before algorithm deployment
+  # RTS 6 Article 7 requires approval before go-live
+  # Article 17(2) requires NCA notification of algorithmic trading activities
+
+  # Conformance Testing Configuration (RTS 6 Article 5)
+  # "Investment firms shall test trading algorithms prior to deployment"
+  conformance_testing:
+    enabled: true
+
+    # Test suite settings
+    default_test_environment: "uat"      # sandbox, uat, staging, production_replica
+    stop_on_critical_failure: true       # Stop suite if critical test fails
+    collect_evidence: true               # Collect evidence for each test
+    parallel_execution: false            # Run tests in parallel
+    max_parallel_tests: 4
+
+    # Test timeout settings (seconds)
+    default_test_timeout: 60
+    suite_timeout: 3600                  # 1 hour max for full suite
+
+    # Required test categories for certification
+    required_categories:
+      - kill_switch
+      - pre_trade
+      - clock_sync
+      - record_keeping
+
+    # Critical test thresholds
+    critical_pass_rate_pct: 100.0        # Must pass 100% critical tests
+    overall_pass_rate_pct: 90.0          # Must pass 90% overall
+
+    # Retry settings
+    retry_failed_tests: true
+    max_retries: 2
+
+    # Evidence storage
+    evidence_storage_path: "state/compliance/test_evidence"
+    retain_evidence_days: 365
+
+  # Test Scenarios Configuration
+  test_scenarios:
+    enabled: true
+
+    # Scenario execution settings
+    default_timeout_seconds: 300         # 5 minutes per scenario
+    stop_on_step_failure: true
+
+    # Scenario categories to include
+    enabled_scenario_types:
+      - functional
+      - stress
+      - integration
+      - negative
+      - disaster_recovery
+
+    # Storage
+    scenario_storage_path: "state/compliance/test_scenarios"
+
+  # Certification Configuration (RTS 6 Article 7)
+  # "Investment firms shall not deploy an algorithm until certified"
+  certification:
+    enabled: true
+
+    # Certificate validity
+    default_validity_days: 365           # 1 year certificate validity
+    expiry_warning_days: 30              # Warn 30 days before expiry
+    auto_expire_certificates: true       # Auto-mark expired certificates
+
+    # Approval requirements
+    require_compliance_approval: true    # Compliance officer must approve
+    require_dual_approval: false         # Require 2 approvers
+    approval_timeout_days: 7             # Max days to approve
+
+    # Recertification triggers
+    recertify_on_version_change: true    # New version needs certification
+    recertify_on_material_change: true   # Material change needs recert
+    annual_recertification: true         # Annual recertification required
+
+    # Certificate storage
+    certificate_storage_path: "state/compliance/certificates"
+
+    # Deployment requirements
+    deployment_requires_certificate: true
+    deployment_requires_all_conditions: true
+
+  # NCA Notification Configuration (MiFID II Article 17(2))
+  # "Investment firms shall notify the competent authority"
+  nca_notification:
+    enabled: true
+
+    # Default NCA jurisdiction
+    # Options: fca, bafin, amf, afm, consob, cnmv, cssf, fsma, cbi
+    default_jurisdiction: ""             # Set to your NCA
+
+    # Firm identification (required for notifications)
+    firm_lei: ""                         # Firm's LEI
+    firm_name: ""                        # Legal name
+    firm_address: ""                     # Registered address
+    authorized_person: ""                # Contact person
+    authorized_email: ""                 # Contact email
+    authorized_phone: ""                 # Contact phone
+
+    # Notification requirements
+    notify_before_new_algorithm: true    # Notify NCA before new algo
+    notify_on_material_change: true      # Notify on material changes
+    notify_on_decommission: true         # Notify when decommissioning
+    annual_review_notification: true     # Annual review notification
+
+    # Approval workflow
+    require_internal_review: true        # Internal compliance review
+    require_senior_approval: true        # Senior management approval
+    approval_timeout_days: 5
+
+    # Storage
+    notification_storage_path: "state/compliance/nca_notifications"
+
+    # Document generation
+    generate_xml_format: true            # Generate XML for e-submission
+    generate_pdf_format: false           # Generate PDF for manual submission
