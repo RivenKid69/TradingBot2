@@ -48,6 +48,8 @@ def config():
         max_messages_per_second=50,
         max_messages_per_minute=1000,
         require_trader_authorization=True,
+        require_instrument_authorization=True,
+        require_venue_authorization=True,
         max_daily_loss_eur=Decimal("10000"),
     )
 

@@ -367,9 +367,9 @@ class PreTradeControls:
             # 2. Authorization checks
             lambda: self._check_trader_authorization(trader_id, instrument_isin, venue),
 
-            # 3. Price controls
-            lambda: self._check_price_collar(price, reference_price),
+            # 3. Price controls (fat finger first - catches extreme errors)
             lambda: self._check_fat_finger_price(price, reference_price),
+            lambda: self._check_price_collar(price, reference_price),
 
             # 4. Value/Volume controls
             lambda: self._check_max_order_value(order_value, venue, trader_id),
@@ -602,6 +602,16 @@ class PreTradeControls:
         """
         if not self._config.fat_finger_enabled:
             return PreTradeCheckResult(allowed=True)
+
+        # Check for zero/negative price first
+        if order_price <= 0:
+            return PreTradeCheckResult(
+                allowed=False,
+                rejection_reason=RejectionReason.ZERO_OR_NEGATIVE_PRICE,
+                severity=ControlSeverity.HARD_REJECT,
+                message="Order price must be positive",
+                details={"order_price": str(order_price)},
+            )
 
         if reference_price is None or reference_price <= 0:
             return PreTradeCheckResult(allowed=True)

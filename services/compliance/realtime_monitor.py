@@ -502,6 +502,7 @@ class RealTimeMonitor:
                 p99_latency_ms=self._calculate_p99_latency(),
                 cpu_usage_pct=self._metrics.cpu_usage_pct,
                 memory_usage_pct=self._metrics.memory_usage_pct,
+                disk_usage_pct=self._metrics.disk_usage_pct,
                 clock_offset_ms=self._metrics.clock_offset_ms,
                 clock_synced=self._metrics.clock_synced,
             )
@@ -1106,9 +1107,8 @@ class RealTimeMonitor:
     # =========================================================================
 
     def get_current_metrics(self) -> MonitoringMetrics:
-        """Get current metrics snapshot."""
-        with self._lock:
-            return self._metrics
+        """Get current metrics snapshot with calculated values."""
+        return self._get_current_metrics()
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get monitoring statistics."""

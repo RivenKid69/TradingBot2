@@ -125,27 +125,27 @@ class TestMonitoringMetrics:
     def test_metrics_creation(self):
         """Test creating metrics snapshot."""
         metrics = MonitoringMetrics(
-            otr_current=15.0,
+            order_to_trade_ratio=15.0,
             daily_pnl=Decimal("-5000"),
             daily_pnl_limit=Decimal("10000"),
             position_utilization_pct=75.0,
         )
 
-        assert metrics.otr_current == 15.0
+        assert metrics.order_to_trade_ratio == 15.0
         assert metrics.daily_pnl == Decimal("-5000")
         assert metrics.position_utilization_pct == 75.0
 
     def test_metrics_to_dict(self):
         """Test metrics serialization."""
         metrics = MonitoringMetrics(
-            otr_current=10.0,
+            order_to_trade_ratio=10.0,
             messages_per_second=50.0,
             avg_latency_ms=25.5,
         )
 
         data = metrics.to_dict()
 
-        assert data["otr_current"] == 10.0
+        assert data["order_to_trade_ratio"] == 10.0
         assert data["messages_per_second"] == 50.0
         assert data["avg_latency_ms"] == 25.5
 
