@@ -52,7 +52,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**13,065+ automated tests** | **MiFID II 100% compliant** | **Production Ready**
+**14,000+ automated tests** | **MiFID II 100%** | **EU AI Act 100%** | **Production Ready**
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
@@ -63,7 +63,8 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Regulatory Compliance
 
-MiFID II (Directive 2014/65/EU) compliance - all 7 phases complete:
+### MiFID II (Directive 2014/65/EU)
+All 7 phases complete:
 - Kill Switch & Pre-Trade Controls (RTS 6)
 - Transaction Reporting (RTS 22)
 - Record Keeping & Audit Trail (5-7 years retention)
@@ -71,6 +72,16 @@ MiFID II (Directive 2014/65/EU) compliance - all 7 phases complete:
 - Governance & Self-Assessment
 
 Details: `docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md`
+
+### EU AI Act (Regulation 2024/1689)
+High-Risk AI System compliance - all 4 phases complete (1,007 tests):
+- Risk Management System (Article 9)
+- Data Governance & Technical Documentation (Article 10, 11)
+- Human Oversight & Transparency (Article 13, 14)
+- Quality Management System (Article 17)
+- Conformity Assessment & EU Declaration (Article 43, 47)
+
+Details: `docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md`
 
 ## Supported Exchanges
 | Asset class | Vendor(s) | Path | Modes | Status |

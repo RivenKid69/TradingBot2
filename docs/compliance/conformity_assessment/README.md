@@ -1,0 +1,67 @@
+# Conformity Assessment (Article 43)
+
+This directory contains documents for the EU AI Act conformity assessment process.
+
+---
+
+## Overview
+
+As a high-risk AI system classified under the EU AI Act, TradingBot2 undergoes conformity assessment per Article 43 using the **internal control procedure** (Annex VI).
+
+---
+
+## Assessment Documents
+
+### Checklist
+- [checklist.md](checklist.md) - Complete conformity assessment checklist per Annex VI requirements
+
+### Supporting Documents
+- [EU_DECLARATION_OF_CONFORMITY.md](../EU_DECLARATION_OF_CONFORMITY.md) - EU Declaration of Conformity (Article 47)
+- [INSTRUCTIONS_FOR_USE.md](../INSTRUCTIONS_FOR_USE.md) - Instructions for Use (Article 13)
+
+---
+
+## Assessment Process
+
+### 1. Pre-Assessment
+1. Verify quality management system (Article 17)
+2. Examine technical documentation (Article 11)
+3. Complete checklist.md
+
+### 2. Conformity Verification
+1. Verify conformity with Articles 8-15
+2. Review test results against defined metrics
+3. Validate risk management measures
+
+### 3. Documentation
+1. Affix CE marking (Article 48)
+2. Draw up EU declaration of conformity (Article 47)
+3. Register in EU database (Article 49)
+
+---
+
+## Automated Assessment Tool
+
+Run the conformity self-assessment tool:
+
+```python
+from services.ai_act import ConformityAssessmentTool
+
+tool = ConformityAssessmentTool()
+result = tool.run_full_assessment()
+print(f"Compliance Score: {result.compliance_percentage}%")
+print(f"Status: {result.assessment_decision}")
+```
+
+---
+
+## Phase 4 Implementation
+
+The conformity assessment module was implemented in Phase 4:
+- [EU_AI_ACT_PHASE4_COMPLETION_REPORT.md](../EU_AI_ACT_PHASE4_COMPLETION_REPORT.md)
+- Implementation: `services/ai_act/conformity_assessment.py`
+- Tests: 81/81 passed
+
+---
+
+**Last Updated**: 2025-12-08
