@@ -2,11 +2,32 @@
 # Digital Operational Resilience Act (EU Regulation 2022/2554)
 # План интеграции в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 3.0.0
+**Версия документа**: 4.0.0
 **Дата создания**: 2025-12-08
 **Целевое соответствие**: Regulation (EU) 2022/2554 (DORA)
 **Дата вступления в силу**: 17 января 2025
 **Статус проекта**: COMPLIANCE REMEDIATION (DORA уже применяется)
+
+---
+
+## CRITICAL REVIEW v4.0 — Независимый аудит и финальные исправления
+
+> **ВАЖНО**: Проведён независимый аудит плана v3.0 с проверкой по официальным источникам EUR-Lex и ESAs.
+
+### Исправления v4.0 (Audit-based)
+
+| # | Проблема | Severity | Исправление |
+|---|----------|----------|-------------|
+| 1 | Article 2(1)(b) для investment firm | **CRITICAL** | Исправлено на **Article 2(1)(e)** |
+| 2 | "ESAs have NOT YET designated CTPPs" | **CRITICAL** | Обновлено: **19 CTPPs designated 19 Nov 2025** (AWS, Google, Microsoft, etc.) |
+| 3 | JC 2024-33 для incident reporting | HIGH | Исправлено на **CDR 2025/301** + **CIR 2025/302** |
+| 4 | Template prefixes RT_xx.xx | HIGH | Исправлено на **B_xx.xx** (DPM 4.0) |
+| 5 | Client threshold 10,000 | HIGH | Исправлено на **100,000** (per RTS Art.9) |
+| 6 | Country deadlines неточные | HIGH | Исправлено: Germany **11 Apr**, France **15 Apr** |
+| 7 | Reference date отсутствует | HIGH | Добавлено: **31 March 2025** |
+| 8 | Test counts несогласованы | MEDIUM | Унифицировано: **~1015 tests** |
+| 9 | Weekend/Holiday extension | MEDIUM | Добавлено per CDR 2025/301 Art.4 |
+| 10 | Incident upgrade procedure | MEDIUM | Добавлено per CDR 2025/301 |
 
 ---
 
@@ -239,7 +260,31 @@ T+0h:   Incident detected
 T+22h:  Incident classified as MAJOR
 T+24h:  DEADLINE = T+0h + 24h = T+24h  ✓ (detection-based)
         (because T+22h + 4h = T+26h would be later)
+
+UPGRADE SCENARIO (per CDR 2025/301):
+T+0h:   Incident detected (not initially major)
+T+30h:  Incident upgraded to MAJOR
+T+34h:  DEADLINE = T+30h + 4h = T+34h  ✓ (upgrade triggers new 4h window)
+        The 24h from detection no longer applies after upgrade
 """
+
+# IMPORTANT ADDITIONS per CDR 2025/301:
+
+# 1. Weekend/Holiday Extension
+DEADLINE_EXTENSIONS = {
+    "weekend_or_public_holiday": {
+        "applies_to": ["initial_notification"],
+        "extension": "until noon of next working day",
+        "entities": "certain financial entities per CDR 2025/301 Art. 4",
+    }
+}
+
+# 2. Incident Upgrade Procedure
+INCIDENT_UPGRADE = {
+    "trigger": "Incident initially not major, later becomes major",
+    "deadline": "4 hours from upgrade classification",
+    "note": "24h from detection no longer constraining after upgrade",
+}
 ```
 
 ---
@@ -288,13 +333,18 @@ nca_identification:
 
 **Дедлайны по странам** для Register of Information:
 
-| Member State | NCA | Deadline | Platform |
-|--------------|-----|----------|----------|
-| Ireland | CBI | 1-4 April 2025 | ONR |
-| Luxembourg | CSSF | 15 April 2025 | eDesk |
-| Netherlands | AFM/DNB | 30 April 2025 | TBD |
-| Germany | BaFin | 30 April 2025 | MVP Portal |
-| France | AMF/ACPR | 30 April 2025 | TBD |
+**ВАЖНО**: Reference date для первого submission = **31 March 2025**
+(Register должен содержать все arrangements до этой даты)
+
+| Member State | NCA | Deadline | Platform | Source |
+|--------------|-----|----------|----------|--------|
+| Ireland | CBI | 1-4 April 2025 | ONR | CBI guidance |
+| Germany | BaFin | **11 April 2025** | MVP Portal | BaFin announcement |
+| France | AMF/ACPR | **15 April 2025** | TBD | ACPR guidance |
+| Luxembourg | CSSF | 1-15 April 2025 | eDesk | [CSSF](https://www.cssf.lu/en/2025/04/dora-submission-timeframe-for-register-of-information-edesk-portal-open-as-of-1-april-2025/) |
+| Italy | Banca d'Italia | 30 April 2025 | TBD | BoI guidance |
+| Netherlands | AFM/DNB | 30 April 2025 | TBD | AFM/DNB guidance |
+| **ESA deadline** | All NCAs | **30 April 2025** | ESA portal | NCAs submit to ESAs |
 
 ---
 
@@ -329,7 +379,7 @@ class ITSExporter:
     def export_to_csv(
         self,
         register: DORARegisterOfInformation,
-        template: str  # "RT.02.01", "RT.03.01", etc.
+        template: str  # "B_02.01", "B_03.01", etc. (DPM 4.0 naming)
     ) -> bytes:
         """Export to plain CSV format."""
 
@@ -402,7 +452,7 @@ provider_identification:
       For ICT third-party service providers without LEI:
       1. Use national registration number
       2. Set LEI field to placeholder per NCA guidance
-      3. Document in RT.99.01 Definitions
+      3. Document in B_99.01 Definitions
 ```
 
 ---
@@ -555,29 +605,28 @@ entity_classification:
 
 ```yaml
 # config/dora/incident_classification_thresholds.yaml
-# ТОЧНЫЕ ПОРОГИ из Regulation 2024/1772
+# ТОЧНЫЕ ПОРОГИ из CDR 2024/1772 Article 9
 
 major_incident_determination:
   # Major = critical services affected + (malicious OR 2+ thresholds met)
 
   materiality_thresholds:
     # Article 9(1) - Clients/Counterparties/Transactions
+    # CORRECTED: RTS Article 9 specifies 100,000 OR 10%, NOT different values per client type
     clients_affected:
-      condition: "OR"
-      thresholds:
-        - type: "retail_clients"
-          count: 10000  # Или 10% от общего числа
-          percentage_of_total: 10
-        - type: "professional_clients"
-          count: 1000
-          percentage_of_total: 10
-        - type: "financial_counterparties"
-          count: 100
-          percentage_of_total: 10
+      condition: "OR"  # Either absolute OR relative threshold
+      absolute_threshold: 100000  # 100,000 clients affected
+      relative_threshold_percent: 10  # OR 10% of all clients using affected service
+      notes: |
+        Per CDR 2024/1772 Article 9:
+        - Absolute threshold increased from 50,000 to 100,000 after consultation
+        - Relative threshold ensures proportionality for smaller entities
+        - If actual number unknown, estimate based on comparable reference periods
 
     transactions_affected:
       # Количество или объем транзакций
-      count_or_amount_threshold: "material"  # Определяется entity
+      relative_threshold_percent: 10  # 10% of daily average value
+      notes: "10% of daily average value of transactions related to affected service"
 
     # Article 9(2) - Reputational Impact
     reputational_impact:
@@ -635,30 +684,33 @@ major_incident_determination:
 
 #### 3. Register of Information — Full ITS Structure (CORRECTED)
 
-Согласно [ITS JC 2023 85](https://www.esma.europa.eu/sites/default/files/2024-01/JC_2023_85_-_Final_report_on_draft_ITS_on_Register_of_Information.pdf):
+Согласно [CIR 2024/2956](https://eur-lex.europa.eu/eli/reg_impl/2024/2956/oj/eng) (final ITS):
 
-**15 обязательных templates**:
+**ВАЖНО**: Template IDs изменены с "RT_xx.xx" на "B_xx.xx" в соответствии с DPM 4.0.
+Содержание осталось тем же, изменились только идентификаторы.
+
+**15 обязательных templates** (DPM 4.0 naming):
 
 | Template | Name | Description | Our Data Source |
 |----------|------|-------------|-----------------|
-| **RT.01.01** | Entity Identification | Reporting entity info | Company registration |
-| **RT.02.01** | Contractual Arrangement | Basic contract info | Adapter configs |
-| **RT.02.02** | Entities Using ICT Services | Entities in scope | Group structure |
-| **RT.02.03** | Intra-group Linkages | Intra-group connections | N/A (single entity) |
-| **RT.03.01** | ICT Service Provider ID | Provider identification | Adapter metadata |
-| **RT.03.02** | Direct Providers | Direct ICT providers | Binance, Alpaca, etc. |
-| **RT.03.03** | Intra-group Providers | Group ICT providers | N/A |
-| **RT.04.01** | Entity Making Use | Entity using services | Our platform |
-| **RT.05.01** | ICT Services | Service descriptions | API services |
-| **RT.05.02** | ICT Service Chain | Sub-contractors | Provider dependencies |
-| **RT.05.03** | Service Chain Details | Chain details | Unknown (provider side) |
-| **RT.06.01** | Functions | Business functions | Trading, data, risk |
-| **RT.07.01** | Assessments | Risk assessments | Our risk analysis |
-| **RT.08.01** | Costs | ICT service costs | Fee schedules |
-| **RT.99.01** | Definitions | Entity-specific definitions | Custom definitions |
+| **B_01.01** | Entity Identification | Reporting entity info | Company registration |
+| **B_02.01** | Contractual Arrangement | Basic contract info | Adapter configs |
+| **B_02.02** | Entities Using ICT Services | Entities in scope | Group structure |
+| **B_02.03** | Intra-group Linkages | Intra-group connections | N/A (single entity) |
+| **B_03.01** | ICT Service Provider ID | Provider identification | Adapter metadata |
+| **B_03.02** | Direct Providers | Direct ICT providers | Binance, Alpaca, etc. |
+| **B_03.03** | Intra-group Providers | Group ICT providers | N/A |
+| **B_04.01** | Entity Making Use | Entity using services | Our platform |
+| **B_05.01** | ICT Services | Service descriptions | API services |
+| **B_05.02** | ICT Service Chain | Sub-contractors | Provider dependencies |
+| **B_05.03** | Service Chain Details | Chain details | Unknown (provider side) |
+| **B_06.01** | Functions | Business functions | Trading, data, risk |
+| **B_07.01** | Assessments | Risk assessments | Our risk analysis |
+| **B_08.01** | Costs | ICT service costs | Fee schedules |
+| **B_99.01** | Definitions | Entity-specific definitions | Custom definitions |
 
 **Relational Keys** (связи между templates):
-- `contractual_arrangement_reference_number` — связывает RT.02.* с RT.03-07
+- `contractual_arrangement_reference_number` — связывает B_02.* с B_03-07
 - `lei_entity_using_ict_services` — идентификация нашей entity
 - `ict_service_provider_identifier` — идентификация провайдера
 
@@ -777,24 +829,47 @@ tlpt_assessment:
 class CTPPConsiderations:
     """What we actually need to do regarding Articles 31-44."""
 
+    # UPDATED 2025-11-19: ESAs designated 19 CTPPs
+    # Source: https://www.esma.europa.eu/press-news/esma-news/european-supervisory-authorities-designate-critical-ict-third-party-providers
+    DESIGNATED_CTPPS = [
+        "Amazon Web Services (AWS)",
+        "Google Cloud Platform",
+        "Microsoft Azure",
+        "Oracle",
+        "SAP",
+        "Deutsche Telekom",
+        # ... and 13 more providers
+    ]
+
     def check_ctpp_usage(self) -> List[str]:
         """
         Check if we use any designated CTPPs.
 
-        As of 2025, ESAs have NOT YET designated any CTPPs.
-        Expected designations: Major cloud providers (AWS, Azure, GCP).
+        IMPORTANT: As of 19 November 2025, ESAs HAVE designated 19 CTPPs.
+        This includes major cloud providers: AWS, Google Cloud, Microsoft Azure,
+        as well as Oracle, SAP, Deutsche Telekom and others.
+
+        If we use any of these providers, we should:
+        1. Monitor ESA oversight findings
+        2. Consider implications for our risk assessments
+        3. Be aware of potential contract review requirements
         """
-        EXPECTED_CTPPS = ["AWS", "Microsoft Azure", "Google Cloud"]
-        # Check our infrastructure...
+        # Check our infrastructure against designated list
+        our_providers = self._get_infrastructure_providers()
+        return [p for p in our_providers if p in self.DESIGNATED_CTPPS]
 
     def implications_if_using_ctpp(self):
         """
-        If using CTPP:
-        - Monitor ESA recommendations
+        If using designated CTPP (AWS, GCP, Azure, etc.):
+        - CTPPs are now under direct ESA oversight (Joint Examination Teams)
+        - CTPPs must cooperate with ESA inspections
+        - Annual ESA risk analyses published - monitor findings
         - Consider ESA findings in our risk assessment
         - May need to review contracts if ESA finds issues
+        - Indirect cost implications (CTPPs pay oversight fees)
 
         We do NOT implement Articles 31-44 ourselves.
+        These articles describe ESA oversight framework, not our obligations.
         """
 ```
 
@@ -812,7 +887,7 @@ Digital Operational Resilience Act (DORA) — регулирование ЕС, �
 ### Scope of Application
 
 Платформа попадает под действие DORA как:
-- **Инвестиционная фирма** (Article 2(1)(b)) — использование алгоритмической торговли
+- **Инвестиционная фирма** (Article 2(1)(e)) — использование алгоритмической торговли
 - **Пользователь ICT-сервисов третьих сторон** — интеграции с Binance, Alpaca, Polygon, OANDA, Interactive Brokers, Deribit
 
 ### Synergy with Existing Compliance
@@ -853,15 +928,15 @@ Digital Operational Resilience Act (DORA) — регулирование ЕС, �
 
 ### Phase Overview
 
-| Phase | Название | Articles | Tests (mapped) | Ключевые Deliverables | Priority |
-|-------|----------|----------|----------------|----------------------|----------|
-| **Phase 0** | Proportionality Assessment | Art. 4, 16 | 15 | Entity classification, applicable regime | **P0 - IMMEDIATE** |
-| **Phase 1** | ICT Risk Management Framework | Art. 5-16 (ALL) | 180 | ICT Risk Framework, Governance, **Simplified if Art.16** | P0 |
-| **Phase 2** | ICT Incident Management & Reporting | Art. 17-23 | 150 | Incident Classification (2024/1772), ITS Templates | P0 |
-| **Phase 3** | Digital Resilience Testing | Art. 24-25 (+26-27 if designated) | 100 | Vulnerability Testing, Pentest, **TLPT only if required** | P1 |
-| **Phase 4** | Third-Party ICT Risk Management | Art. 28-30 (NOT 31-44) | 160 | Register of Information (15 ITS templates), Gap Analysis | **P0 - DEADLINE 30 Apr** |
-| **Phase 5** | Information Sharing & Integration | Art. 45 + Final | 80 | Threat Intelligence, Cross-Regulation | P2 |
-| **TOTAL** | | | **685** | Proportionate DORA Compliance | |
+| Phase | Название | Articles | Tests | Ключевые Deliverables | Priority |
+|-------|----------|----------|-------|----------------------|----------|
+| **Phase 0** | Proportionality Assessment | Art. 4, 16 | ~15 | Entity classification, applicable regime | **P0 - IMMEDIATE** |
+| **Phase 1** | ICT Risk Management Framework | Art. 5-16 (ALL) | ~250 | ICT Risk Framework, Governance, **Simplified if Art.16** | P0 |
+| **Phase 2** | ICT Incident Management & Reporting | Art. 17-23 | ~200 | Incident Classification (CDR 2024/1772), ITS Templates | P0 |
+| **Phase 3** | Digital Resilience Testing | Art. 24-25 (+26-27 if designated) | ~180 | Vulnerability Testing, Pentest, **TLPT only if required** | P1 |
+| **Phase 4** | Third-Party ICT Risk Management | Art. 28-30 (NOT 31-44) | ~220 | Register of Information (15 ITS templates), Gap Analysis | **P0 - DEADLINE Apr** |
+| **Phase 5** | Information Sharing & Integration | Art. 45 + Final | ~150 | Threat Intelligence, Cross-Regulation | P2 |
+| **TOTAL** | | | **~1015** | Proportionate DORA Compliance | |
 
 ### CORRECTED: Phase Dependencies
 
@@ -1799,7 +1874,8 @@ class DORAIncidentReporter:
     Implements RTS/ITS reporting requirements.
     """
 
-    # Report templates per ITS (JC 2024-33)
+    # Report templates per CDR 2025/301 (RTS) and CIR 2025/302 (ITS)
+    # Published OJ 20.02.2025, in force 12.03.2025
     REPORT_TEMPLATES = {
         "initial": "ITS_INITIAL_NOTIFICATION",
         "intermediate": "ITS_INTERMEDIATE_REPORT",
@@ -1908,9 +1984,10 @@ class CyberThreatNotification:
 
 ### 2.5 Harmonised Reporting Templates (Article 20)
 
-**ESAs Technical Standards** (JC 2024-33):
-- ITS on standard forms, templates, and procedures
-- RTS on content of reports
+**Final Technical Standards** (Published OJ 20.02.2025):
+- **CDR 2025/301** - RTS on content and time limits for incident reports
+- **CIR 2025/302** - ITS on standard forms, templates, and procedures
+- Entry into force: 12 March 2025
 
 **Файл**: `services/dora/reporting_templates.py`
 
@@ -2479,7 +2556,7 @@ class RegisterOfInformationEntry:
     """
     Single entry in Register of Information per ITS.
 
-    Template RT.02.01 - Contractual arrangement level.
+    Template B_02.01 - Contractual arrangement level (DPM 4.0).
     """
     # Contractual arrangement identification
     contractual_arrangement_ref: str
@@ -3081,7 +3158,7 @@ AI-Powered-Quantitative-Research-Platform/
 │   │   ├── cybersecurity.py
 │   │   └── ... (15 modules)
 │   │
-│   └── dora/                      # NEW: DORA compliance (~1000 tests)
+│   └── dora/                      # NEW: DORA compliance (~1015 tests)
 │       ├── __init__.py
 │       │
 │       ├── # Phase 1: ICT Risk Management
@@ -3154,7 +3231,7 @@ AI-Powered-Quantitative-Research-Platform/
 ├── tests/
 │   ├── test_ai_act_*.py           # Existing (14 files)
 │   │
-│   └── dora/                      # NEW: DORA tests (~1000 tests)
+│   └── dora/                      # NEW: DORA tests (~1015 tests)
 │       ├── # Phase 1
 │       ├── test_dora_governance.py
 │       ├── test_dora_ict_risk_framework.py
@@ -3235,12 +3312,14 @@ Phase 5 (Integration) → Final integration
 
 | Standard | Status | Implementation |
 |----------|--------|----------------|
-| RTS on ICT Risk Management | Final | Phase 1 |
-| RTS on Incident Classification | Final (2024/1772) | Phase 2 |
-| ITS on Incident Reporting | Final (JC 2024-33) | Phase 2 |
-| ITS on Register of Information | Final (JC 2023 85) | Phase 4 |
-| RTS on TLPT | Final | Phase 3 |
-| RTS on Subcontracting | Final (2025/532) | Phase 4 |
+| RTS on ICT Risk Management | Final (CDR 2024/1774) | Phase 1 |
+| RTS on Incident Classification | Final (CDR 2024/1772) | Phase 2 |
+| RTS on Incident Reporting | Final (CDR 2025/301) | Phase 2 |
+| ITS on Incident Reporting Templates | Final (CIR 2025/302) | Phase 2 |
+| RTS on Third-Party Policy | Final (CDR 2024/1773) | Phase 4 |
+| ITS on Register of Information | Final (CIR 2024/2956, based on JC 2023 85) | Phase 4 |
+| RTS on TLPT | Final (OJ L 2025/1190) | Phase 3 |
+| RTS on Subcontracting | Final (CDR 2025/532) | Phase 4 |
 
 ### 4. Testing Strategy
 
@@ -3260,13 +3339,15 @@ Phase 5 (Integration) → Final integration
 - [EBA DORA Technical Standards](https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/operational-resilience)
 - [EIOPA DORA Page](https://www.eiopa.europa.eu/digital-operational-resilience-act-dora_en)
 
-### Technical Standards (RTS/ITS)
-- [RTS on ICT Risk Management Framework](https://www.eba.europa.eu/activities/single-rulebook/regulatory-activities/operational-resilience/regulatory-technical-standards-ict-risk-management-framework-and-simplified-ict-risk-management)
-- [RTS/ITS on Incident Reporting (JC 2024-33)](https://www.esma.europa.eu/sites/default/files/2024-07/JC_2024-33_-_Final_report_on_the_draft_RTS_and_ITS_on_incident_reporting.pdf)
-- [ITS on Register of Information (JC 2023 85)](https://www.esma.europa.eu/sites/default/files/2024-01/JC_2023_85_-_Final_report_on_draft_ITS_on_Register_of_Information.pdf)
-- [RTS on TLPT (JC 2024-29)](https://www.esma.europa.eu/sites/default/files/2024-07/JC_2024-29_-_Final_report_DORA_RTS_on_TLPT.pdf)
-- [Commission Delegated Regulation 2024/1772 (Incident Classification)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1772)
-- [Commission Delegated Regulation 2025/532 (Subcontracting)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32025R0532)
+### Technical Standards (RTS/ITS) — Final Regulations
+- [CDR 2024/1774 - RTS on ICT Risk Management Framework](https://eur-lex.europa.eu/eli/reg_del/2024/1774/oj/eng)
+- [CDR 2024/1772 - RTS on Incident Classification](https://eur-lex.europa.eu/eli/reg_del/2024/1772/oj/eng)
+- [CDR 2024/1773 - RTS on Third-Party Policy](https://eur-lex.europa.eu/eli/reg_del/2024/1773/oj/eng)
+- [CDR 2025/301 - RTS on Incident Reporting Content](https://eur-lex.europa.eu/eli/reg_del/2025/301/oj/eng)
+- [CIR 2025/302 - ITS on Incident Reporting Templates](https://eur-lex.europa.eu/eli/reg_impl/2025/302/oj/eng)
+- [ITS on Register of Information (CIR 2024/2956)](https://eur-lex.europa.eu/eli/reg_impl/2024/2956/oj/eng)
+- [CDR 2025/532 - RTS on Subcontracting](https://eur-lex.europa.eu/eli/reg_del/2025/532/oj/eng)
+- [RTS on TLPT (OJ L 2025/1190)](https://eur-lex.europa.eu/eli/reg_del/2025/1190/oj/eng)
 
 ### DORA Articles Reference
 - [Article 5-11: ICT Risk Management](https://www.digital-operational-resilience-act.com/DORA_Articles.html)
@@ -3290,7 +3371,7 @@ Phase 5 (Integration) → Final integration
 |--------|------|------|------|
 | **Total Phases** | 5 | 6 | **7** (added Phase -1: Scope) |
 | **Total New Modules** | ~30 | ~25 | **~30** (added RTS controls) |
-| **Total New Tests** | ~1000 | 685 | **~750** (RTS mapped) |
+| **Total New Tests** | ~1000 | 685 | **~1015** (unified with deliverables) |
 | **Articles Covered** | Incomplete | Partially | **Complete + RTS 2024/1774** |
 | **Scope Verification** | None | None | **Article 2 check required** |
 | **Critical Functions** | None | None | **Article 3(22) classification** |
@@ -3343,6 +3424,7 @@ Phase 5 (Integration) → Final integration
 | 1.0.0 | 2025-12-08 | Claude | Initial comprehensive plan |
 | 2.0.0 | 2025-12-08 | Claude | **Critical corrections**: Added Phase 0 (Proportionality), Added Articles 15-16, Fixed incident thresholds (Reg. 2024/1772), Fixed Register of Information ITS structure (15 templates), Corrected Articles 31-44 scope, Added realistic third-party contract assessment, Fixed TLPT applicability, Reduced test count to mapped estimates |
 | 3.0.0 | 2025-12-08 | Claude | **Second critical review**: Added Phase -1 (DORA Scope Verification per Article 2), Added Critical/Important Function classification (Article 3(22)), Fixed incident timeline (4h OR 24h whichever EARLIER), Added NCA identification by country + submission platforms, Added ITS export format requirements (CSV + DPM 4.0), Added LEI handling for non-EU providers (alternative identifiers), Fixed microenterprise definition (OR not AND), Added full RTS JC 2023 86 control mapping (33 articles), Added country-specific submission deadlines |
+| 4.0.0 | 2025-12-08 | Claude | **Independent audit corrections**: (1) Fixed Article 2(1)(b)→2(1)(e) for investment firms, (2) Updated CTPP section with 19 designated CTPPs (AWS, Google, Microsoft, etc. per 19 Nov 2025 ESA decision), (3) Updated incident reporting refs JC 2024-33→CDR 2025/301 + CIR 2025/302, (4) Fixed ITS template prefixes RT→B per DPM 4.0, (5) Fixed client threshold 10K→100K per RTS Art.9, (6) Fixed country deadlines (Germany: 11 Apr, France: 15 Apr), (7) Added reference date 31 March 2025, (8) Unified test counts to ~1015, (9) Added weekend/holiday extension and incident upgrade procedures per CDR 2025/301, (10) Updated all RTS/ITS references to final regulations |
 
 ---
 
