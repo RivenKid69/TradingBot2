@@ -285,7 +285,9 @@ py-modules = [
 # ============================================================================
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
+norecursedirs = [".git", "__pycache__", "*.egg-info", ".tox", ".nox", "node_modules"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [

@@ -1,0 +1,122 @@
+# MiFID II Compliance Configuration
+# Phase 1: Foundation (LEI, Clock Sync, Algorithm Registry)
+#
+# References:
+#   - MiFID II (Directive 2014/65/EU) Article 17
+#   - MiFIR (Regulation 600/2014) Articles 25-26
+#   - RTS 6 (Regulation 2017/589) - Algorithmic Trading
+#   - RTS 25 (Regulation 2017/574) - Clock Synchronisation
+#   - ISO 17442 - Legal Entity Identifier (LEI)
+
+compliance:
+  # Enable/disable MiFID II compliance checks
+  enabled: true
+
+  # Compliance mode: production, testing, or disabled
+  # Production mode requires LEI and NCA jurisdiction
+  mode: testing
+
+  # Path for compliance audit log
+  audit_log_path: "logs/compliance/mifid_audit.log"
+
+  # LEI Configuration (ISO 17442)
+  # "No LEI, No Trade" - Required for transaction reporting
+  lei:
+    # Your firm's LEI (20 characters)
+    # Format: 18 alphanumeric + 2 check digits
+    # Get LEI: https://www.gleif.org/en/about-lei/get-an-lei-find-lei-issuing-organizations
+    own_lei: ""
+
+    # GLEIF API for LEI verification
+    gleif_api_url: "https://api.gleif.org/api/v1"
+
+    # Cache TTL for GLEIF API responses (hours)
+    cache_ttl_hours: 24
+
+    # Verify LEI status before each trade
+    verify_before_trade: true
+
+    # Days before LEI expiry to generate warning
+    renewal_warning_days: 30
+
+    # Allow trading with PENDING_TRANSFER/PENDING_ARCHIVAL status
+    allow_pending_status: true
+
+  # Clock Synchronisation (RTS 25)
+  # Per RTS 25, algo trading systems must maintain clocks synchronized to UTC
+  clock:
+    # NTP servers for synchronisation (priority order)
+    ntp_servers:
+      - "time.google.com"
+      - "pool.ntp.org"
+      - "time.windows.com"
+      - "time.cloudflare.com"
+
+    # Maximum allowed clock offset in milliseconds
+    # RTS 25 requirements:
+    #   - HFT systems: ±100 microseconds
+    #   - Algorithmic trading: ±1 millisecond
+    #   - Voice trading: ±1 second
+    max_offset_ms: 100.0
+
+    # Interval between NTP sync attempts (seconds)
+    sync_interval_seconds: 60
+
+    # Clock drift thresholds (milliseconds)
+    warning_threshold_ms: 50.0
+    critical_threshold_ms: 100.0
+    kill_switch_threshold_ms: 1000.0
+
+    # Timestamp precision for audit trail
+    # Options: nanosecond, microsecond, millisecond
+    timestamp_precision: "nanosecond"
+
+    # Use system clock if all NTP servers fail
+    fallback_to_system: true
+
+    # Maximum acceptable NTP stratum level
+    stratum_max: 3
+
+  # Algorithm Registry (Article 17(2) MiFID II)
+  # Investment firms must notify NCA of algorithmic trading activities
+  algorithm_registry:
+    # Path to persist algorithm registry
+    registry_path: "state/compliance/algorithm_registry.json"
+
+    # Automatically register new algorithms on first use
+    auto_register: true
+
+    # Require responsible person for production algorithms
+    require_responsible_person: true
+
+    # Auto-increment version on parameter modifications
+    version_on_modification: true
+
+    # National Competent Authority jurisdiction code
+    # Examples: FCA (UK), BaFin (Germany), AMF (France), CONSOB (Italy)
+    nca_jurisdiction: ""
+
+    # Legal name of the investment firm
+    firm_name: ""
+
+    # Contact information for algorithm inquiries
+    contact_email: ""
+    contact_phone: ""
+
+  # Pre-Trade Risk Controls (RTS 6 Article 15)
+  pre_trade_controls:
+    # Maximum price deviation from reference price (%)
+    price_collar_pct: 5.0
+
+    # Maximum single order value in EUR equivalent
+    max_order_value_eur: 1000000.0
+
+    # Maximum single order volume (units)
+    max_order_volume: 10000.0
+
+    # Maximum messages per second per venue
+    max_messages_per_second: 100
+
+    # Fat finger protection
+    fat_finger_price_deviation_pct: 10.0
+    fat_finger_volume_multiplier: 10.0
