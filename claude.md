@@ -206,7 +206,7 @@ python scripts/quickstart.py run cme_index
 
 ```
 TradingBot2/
-├── tests/              # 597 test files, 11,063 test functions
+├── tests/              # 633 test files, 12,879 test functions
 │   ├── test_*.py       # All test files
 │   └── conftest.py     # Pytest fixtures
 ├── tools/              # 34 utility scripts (moved from root)
@@ -6967,11 +6967,11 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ---
 
-## 📊 СТАТУС ПРОЕКТА (2025-12-03)
+## 📊 СТАТУС ПРОЕКТА (2025-12-07)
 
 ### ✅ Production Ready
 
-Все критические исправления применены и протестированы. **597 test files, 11,063 tests** с 97%+ pass rate.
+Все критические исправления применены и протестированы. **633 test files, 12,879 tests** с 97%+ pass rate.
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7513,9 +7513,15 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 ---
 
-**Последнее обновление**: 2025-12-05
-**Версия документации**: 11.14 (Customer Evidence & Social Proof)
-**Статус**: ✅ Production Ready (597 test files, 11,063 tests | Futures Integration complete, Options Phase 1+2+2B complete)
+**Последнее обновление**: 2025-12-07
+**Версия документации**: 11.15 (Test Coverage Update)
+**Статус**: ✅ Production Ready (633 test files, 12,879 tests | Futures Integration complete, Options Phase 1+2+2B complete)
+
+### Изменения в 11.15:
+- **Обновлён счётчик тестов** -- актуализированы данные о покрытии тестами
+  - Test files: 597 → 633 (+36 файлов)
+  - Test functions: 11,063 → 12,879 (+1,816 тестов)
+  - Обновлены: README.md, PRODUCT_OVERVIEW.md, DOCS_INDEX.md, claude.md
 
 ### Изменения в 11.14:
 - **Customer Evidence Documentation** -- Документация для закрытия gap в социальном доказательстве

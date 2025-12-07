@@ -52,7 +52,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**11,063+ automated tests** | **MiFID II 100% compliant** | **Production Ready**
+**12,879+ automated tests** | **MiFID II 100% compliant** | **Production Ready**
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
