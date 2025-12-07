@@ -1,12 +1,15 @@
 # MiFID II Compliance Configuration
 # Phase 1: Foundation (LEI, Clock Sync, Algorithm Registry)
 # Phase 2: Transaction Reporting (RTS 22)
+# Phase 3: Algorithmic Trading Controls (RTS 6)
+# Phase 4: Record Keeping & Audit Trail (MiFIR Article 25)
 #
 # References:
 #   - MiFID II (Directive 2014/65/EU) Article 17
 #   - MiFIR (Regulation 600/2014) Articles 25-26
 #   - RTS 6 (Regulation 2017/589) - Algorithmic Trading
 #   - RTS 22 (Regulation 2017/590) - Transaction Reporting
+#   - RTS 24 (Regulation 2017/580) - Order Book Data
 #   - RTS 25 (Regulation 2017/574) - Clock Synchronisation
 #   - ISO 17442 - Legal Entity Identifier (LEI)
 #   - ISO 6166 - ISIN (International Securities Identification Number)
@@ -395,3 +398,103 @@ compliance:
     log_all_events: false
     persist_breach_events: true
     breach_log_path: "state/compliance/otr_breaches.jsonl"
+
+  # ============================================================================
+  # Phase 4: Record Keeping & Audit Trail (MiFIR Article 25)
+  # ============================================================================
+  # MiFIR Article 25 requires investment firms to keep records for 5 years
+  # (7 years on NCA request). Records must be tamper-proof and retrievable.
+
+  # Audit Trail Configuration
+  audit_trail:
+    enabled: true
+
+    # Writer mode: sync, async, batch
+    # - sync: Synchronous writes (lowest latency, highest overhead)
+    # - async: Asynchronous with background worker (recommended)
+    # - batch: Batch writes for high throughput
+    writer_mode: "async"
+
+    # Batch mode settings
+    batch_size: 100                      # Records per batch
+    batch_interval_ms: 1000              # Max wait before flushing batch
+
+    # Queue settings (for async/batch modes)
+    queue_size: 10000                    # Max pending records
+
+    # Verification settings
+    verify_on_write: false               # Verify hash after each write
+    auto_sequence: true                  # Auto-increment sequence numbers
+
+  # Storage Backend Configuration
+  audit_storage:
+    # Backend type: memory, sqlite, file, postgresql
+    backend_type: "sqlite"
+
+    # SQLite settings
+    database_path: "state/compliance/audit_trail.db"
+    table_name: "audit_trail"
+
+    # PostgreSQL settings (if using postgresql backend)
+    database_url: ""                     # postgresql://user:pass@host:port/db
+
+    # Performance settings
+    sync_mode: "normal"                  # off, normal, full
+    max_batch_size: 1000                 # Max records per batch write
+
+    # Integrity settings
+    integrity_check_on_read: false       # Verify hash on every read
+    compression_enabled: false           # Compress archived records
+
+    # Backup settings
+    backup_enabled: true
+    backup_path: "state/compliance/audit_backup"
+
+  # Retention Policy Configuration (MiFIR Article 25)
+  retention_policy:
+    # Standard retention: 5 years per MiFIR Article 25
+    default_retention_years: 5
+
+    # Extended retention: 7 years on NCA request
+    extended_retention_years: 7
+
+    # Archive to cold storage after N days
+    archive_after_days: 365
+
+    # Cold storage path
+    cold_storage_path: "state/compliance/audit_archive"
+
+    # Compression for archived records
+    enable_compression: true
+
+    # Require manual approval for deletions
+    deletion_requires_approval: true
+
+    # Automatically extend retention on NCA request
+    auto_extend_on_nca_request: true
+
+    # Log all deletion operations
+    deletion_audit_enabled: true
+
+    # Number of overwrite passes for secure deletion
+    secure_deletion_passes: 3
+
+    # Background check interval (hours)
+    check_interval_hours: 24
+
+  # NCA (National Competent Authority) Export Settings
+  nca_export:
+    # Default export format: json, csv, xml
+    default_format: "json"
+
+    # Include chain verification in exports
+    include_chain_verification: true
+
+    # Export directory
+    export_directory: "state/compliance/nca_exports"
+
+    # Compress exports
+    compress_exports: true
+
+    # Maximum records per export file
+    max_records_per_file: 100000

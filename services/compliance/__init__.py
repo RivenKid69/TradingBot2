@@ -23,6 +23,12 @@ Phase 3 - Algorithmic Trading Controls (RTS 6):
     - realtime_monitor: RTS 6 Article 17 Real-Time Monitoring
     - otr_monitor: Order-to-Trade Ratio Monitoring
 
+Phase 4 - Record Keeping & Audit Trail (MiFIR Article 25):
+    - audit_models: Audit Record Data Models
+    - audit_storage: Storage Backends (SQLite, File, Memory)
+    - retention_policy: 5-7 Year Retention Policy Management
+    - audit_trail_writer: Write-Once Audit Trail with Chain Verification
+
 Classification:
     This system is classified as an ALGORITHMIC TRADING SYSTEM per
     Article 17 MiFID II and subject to RTS 6 requirements.
@@ -32,18 +38,20 @@ Applicable Regulations:
     - MiFIR (Regulation 600/2014) Articles 25-26
     - RTS 6 (Regulation 2017/589) - Algorithmic Trading
     - RTS 22 (Regulation 2017/590) - Transaction Reporting
+    - RTS 24 (Regulation 2017/580) - Order Book Data
     - RTS 25 (Regulation 2017/574) - Clock Synchronisation
 
 References:
     - ESMA MiFID II Rulebook: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii
     - GLEIF LEI Lookup: https://www.gleif.org/en/lei-data/gleif-lei-look-up-api
     - Article 17 MiFID II: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-17-algorithmic-trading
+    - MiFIR Article 25: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifir/article-25-obligation-maintain-records
 """
 
 from __future__ import annotations
 
-__version__ = "3.0.0"
-__mifid_ii_compliance_phase__ = 3  # Current implementation phase
+__version__ = "4.0.0"
+__mifid_ii_compliance_phase__ = 4  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -203,6 +211,75 @@ from services.compliance.otr_monitor import (
     create_otr_monitor,
 )
 
+# Phase 4 exports (Record Keeping & Audit Trail - MiFIR Article 25)
+from services.compliance.audit_models import (
+    # Enums
+    AuditEventType,
+    AuditRecordPriority,
+    AuditRecordStatus,
+    OrderSide,
+    # Data classes
+    AuditRecord,
+    AuditRecordBuilder,
+    AuditChainStatus,
+    AuditExportRequest,
+    AuditExportResult,
+    # Factory functions
+    create_order_submitted_record,
+    create_order_filled_record,
+    create_risk_event_record,
+    create_system_event_record,
+)
+
+from services.compliance.audit_storage import (
+    # Enums
+    StorageBackendType,
+    StorageState,
+    # Config
+    AuditStorageConfig,
+    StorageMetrics,
+    # Base class
+    AuditStorageBackend,
+    # Implementations
+    MemoryAuditStorage,
+    SQLiteAuditStorage,
+    FileAuditStorage,
+    # Factory
+    create_audit_storage,
+)
+
+from services.compliance.retention_policy import (
+    # Enums
+    RetentionPeriod,
+    ArchiveStatus,
+    NCARequestType,
+    # Config
+    RetentionPolicyConfig,
+    # Data classes
+    NCARequest,
+    RetentionRecord,
+    RetentionMetrics,
+    ArchiveOperation,
+    # Main class
+    RetentionManager,
+    # Factory
+    create_retention_manager,
+)
+
+from services.compliance.audit_trail_writer import (
+    # Enums
+    WriterMode,
+    WriterState,
+    # Config
+    AuditTrailWriterConfig,
+    # Metrics
+    WriterMetrics,
+    # Main class
+    AuditTrailWriter,
+    # Factory
+    create_audit_trail_writer,
+)
+
 __all__ = [
     # Version info
     "__version__",
@@ -315,4 +392,47 @@ __all__ = [
     "PerAlgorithmOTR",
     "OTRMonitor",
     "create_otr_monitor",
+    # ==== Phase 4: Record Keeping & Audit Trail (MiFIR Article 25) ====
+    # Audit Models
+    "AuditEventType",
+    "AuditRecordPriority",
+    "AuditRecordStatus",
+    "OrderSide",
+    "AuditRecord",
+    "AuditRecordBuilder",
+    "AuditChainStatus",
+    "AuditExportRequest",
+    "AuditExportResult",
+    "create_order_submitted_record",
+    "create_order_filled_record",
+    "create_risk_event_record",
+    "create_system_event_record",
+    # Audit Storage
+    "StorageBackendType",
+    "StorageState",
+    "AuditStorageConfig",
+    "StorageMetrics",
+    "AuditStorageBackend",
+    "MemoryAuditStorage",
+    "SQLiteAuditStorage",
+    "FileAuditStorage",
+    "create_audit_storage",
+    # Retention Policy
+    "RetentionPeriod",
+    "ArchiveStatus",
+    "NCARequestType",
+    "RetentionPolicyConfig",
+    "NCARequest",
+    "RetentionRecord",
+    "RetentionMetrics",
+    "ArchiveOperation",
+    "RetentionManager",
+    "create_retention_manager",
+    # Audit Trail Writer
+    "WriterMode",
+    "WriterState",
+    "AuditTrailWriterConfig",
+    "WriterMetrics",
+    "AuditTrailWriter",
+    "create_audit_trail_writer",
 ]
