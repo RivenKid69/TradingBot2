@@ -34,16 +34,21 @@ Compliance Deadline: August 2, 2026
 References:
     - EU AI Act: https://artificialintelligenceact.eu/
     - Article 9 (Risk Management): https://artificialintelligenceact.eu/article/9/
+    - Article 10 (Data Governance): https://artificialintelligenceact.eu/article/10/
+    - Article 12 (Record-Keeping): https://artificialintelligenceact.eu/article/12/
     - Article 14 (Human Oversight): https://artificialintelligenceact.eu/article/14/
     - Article 15 (Accuracy, Robustness, Cybersecurity): https://artificialintelligenceact.eu/article/15/
 """
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
-__ai_act_compliance_phase__ = 1  # Current implementation phase
+__version__ = "2.0.0"
+__ai_act_compliance_phase__ = 2  # Current implementation phase
 
+# =============================================================================
 # Phase 1 exports (Foundation & Risk Management)
+# =============================================================================
+
 from services.ai_act.risk_management import (
     AIActRiskCategory,
     AIActRiskSeverity,
@@ -103,10 +108,102 @@ from services.ai_act.robustness_testing import (
     create_robustness_test_suite,
 )
 
+# =============================================================================
+# Phase 2 exports (Technical Documentation & Logging)
+# =============================================================================
+
+from services.ai_act.logging_system import (
+    # Event types
+    AIActLogEventType,
+    AIActLogCategory,
+    # Data structures
+    AIActLogEvent,
+    LogSession,
+    # Configuration
+    AIActLoggingConfig,
+    # Main classes
+    AIActLogger,
+    LogRetentionManager,
+    LogIntegrityVerifier,
+    AIActEventBus,
+    # Factory functions
+    create_ai_act_logger,
+    create_ai_act_event_bus,
+)
+
+from services.ai_act.data_governance import (
+    # Enums
+    DataQualityDimension,
+    BiasType,
+    DataGapType,
+    DatasetRole,
+    # Data structures
+    QualityCheckResult,
+    BiasCheckResult,
+    DataGap,
+    DataQualityReport,
+    DatasetMetadata,
+    # Configuration
+    DataGovernanceConfig,
+    # Main classes
+    DataQualityAssessor,
+    BiasDetector,
+    DataGapAnalyzer,
+    DataValidator,
+    DataGovernanceFramework,
+    # Factory functions
+    create_data_governance_framework,
+    create_bias_detector,
+)
+
+from services.ai_act.data_lineage import (
+    # Enums
+    DataNodeType,
+    TransformationType,
+    # Data structures
+    DataNode,
+    DataTransformation,
+    LineageEdge,
+    # Configuration
+    DataLineageConfig,
+    # Main classes
+    LineageGraph,
+    DataLineageTracker,
+    # Factory functions
+    create_data_lineage_tracker,
+)
+
+from services.ai_act.technical_documentation import (
+    # Enums
+    DocumentationSectionType,
+    ComplianceStatus,
+    ExportFormat,
+    # Data structures
+    DocumentationMetadata,
+    ComplianceEvidence,
+    DocumentationSection,
+    ChangeRecord,
+    # Configuration
+    TechnicalDocumentationConfig,
+    # Main class
+    TechnicalDocumentationGenerator,
+    # Factory function
+    create_technical_documentation_generator,
+)
+
+# =============================================================================
+# __all__ exports
+# =============================================================================
+
 __all__ = [
     # Version info
     "__version__",
     "__ai_act_compliance_phase__",
+
+    # =========================================================================
+    # Phase 1: Foundation & Risk Management
+    # =========================================================================
+
     # Risk Management (Article 9)
     "AIActRiskCategory",
     "AIActRiskSeverity",
@@ -117,12 +214,14 @@ __all__ = [
     "AIActRiskManager",
     "AIActRiskConfig",
     "create_risk_manager",
+
     # Risk Registry
     "RiskEntry",
     "RiskStatus",
     "RiskRegistry",
     "create_risk_registry",
     "get_default_trading_risks",
+
     # Human Oversight (Article 14)
     "OversightLevel",
     "OversightCapability",
@@ -132,6 +231,7 @@ __all__ = [
     "ManualOverrideController",
     "AutomationBiasMonitor",
     "create_human_oversight_system",
+
     # Explainability
     "ExplanationType",
     "FeatureContribution",
@@ -139,6 +239,7 @@ __all__ = [
     "CounterfactualExplanation",
     "DecisionExplainer",
     "create_decision_explainer",
+
     # Accuracy Metrics (Article 15)
     "MetricType",
     "AccuracyMetric",
@@ -146,6 +247,7 @@ __all__ = [
     "AccuracyMonitor",
     "create_accuracy_monitor",
     "get_default_trading_metrics",
+
     # Robustness Testing (Article 15)
     "RobustnessTestType",
     "RobustnessTestResult",
@@ -154,4 +256,63 @@ __all__ = [
     "DistributionShiftTester",
     "FailsafeTester",
     "create_robustness_test_suite",
+
+    # =========================================================================
+    # Phase 2: Technical Documentation & Logging
+    # =========================================================================
+
+    # Logging System (Article 12)
+    "AIActLogEventType",
+    "AIActLogCategory",
+    "AIActLogEvent",
+    "LogSession",
+    "AIActLoggingConfig",
+    "AIActLogger",
+    "LogRetentionManager",
+    "LogIntegrityVerifier",
+    "AIActEventBus",
+    "create_ai_act_logger",
+    "create_ai_act_event_bus",
+
+    # Data Governance (Article 10)
+    "DataQualityDimension",
+    "BiasType",
+    "DataGapType",
+    "DatasetRole",
+    "QualityCheckResult",
+    "BiasCheckResult",
+    "DataGap",
+    "DataQualityReport",
+    "DatasetMetadata",
+    "DataGovernanceConfig",
+    "DataQualityAssessor",
+    "BiasDetector",
+    "DataGapAnalyzer",
+    "DataValidator",
+    "DataGovernanceFramework",
+    "create_data_governance_framework",
+    "create_bias_detector",
+
+    # Data Lineage
+    "DataNodeType",
+    "TransformationType",
+    "DataNode",
+    "DataTransformation",
+    "LineageEdge",
+    "DataLineageConfig",
+    "LineageGraph",
+    "DataLineageTracker",
+    "create_data_lineage_tracker",
+
+    # Technical Documentation (Article 11, Annex IV)
+    "DocumentationSectionType",
+    "ComplianceStatus",
+    "ExportFormat",
+    "DocumentationMetadata",
+    "ComplianceEvidence",
+    "DocumentationSection",
+    "ChangeRecord",
+    "TechnicalDocumentationConfig",
+    "TechnicalDocumentationGenerator",
+    "create_technical_documentation_generator",
 ]

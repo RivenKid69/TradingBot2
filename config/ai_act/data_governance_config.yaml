@@ -1,0 +1,236 @@
+# EU AI Act Data Governance Configuration (Article 10)
+#
+# This configuration file defines settings for data governance
+# per Article 10 (Data and Data Governance).
+#
+# Reference: https://artificialintelligenceact.eu/article/10/
+
+# Data Governance Framework Configuration
+data_governance:
+  # Version
+  version: "1.0.0"
+
+  # Enable data governance checks
+  enabled: true
+
+# Quality Assessment Thresholds (Article 10(3))
+quality:
+  # Completeness threshold (0-1)
+  # Data must be complete per Article 10(3)
+  completeness_threshold: 0.95
+
+  # Accuracy threshold (0-1)
+  # Data must be free of errors per Article 10(3)
+  accuracy_threshold: 0.95
+
+  # Consistency threshold (0-1)
+  consistency_threshold: 0.99
+
+  # Timeliness settings
+  timeliness:
+    # Maximum data staleness in hours
+    max_staleness_hours: 24.0
+
+    # Time gap detection threshold (multiple of median gap)
+    gap_detection_multiplier: 10
+
+  # Statistical requirements (Article 10(4))
+  statistical:
+    # Require checking for normality
+    require_normal_distribution: false
+
+    # Outlier detection threshold (standard deviations)
+    outlier_threshold_sigma: 3.0
+
+    # Minimum unique values ratio to detect low-variance features
+    min_unique_values_ratio: 0.01
+
+    # Maximum acceptable skewness
+    max_acceptable_skewness: 3.0
+
+    # Maximum acceptable kurtosis
+    max_acceptable_kurtosis: 10.0
+
+  # Winsorization settings (from features_pipeline)
+  winsorization:
+    # Enable winsorization for outlier handling
+    enabled: true
+
+    # Lower percentile bound
+    lower_percentile: 1.0
+
+    # Upper percentile bound
+    upper_percentile: 99.0
+
+# Bias Detection Settings (Article 10(2)(e))
+bias_detection:
+  # Enable bias detection
+  enabled: true
+
+  # Temporal bias threshold (0-1)
+  # Higher = more tolerance for temporal imbalance
+  temporal_bias_threshold: 0.3
+
+  # Asset bias threshold (0-1)
+  # Based on Gini coefficient of asset distribution
+  asset_bias_threshold: 0.3
+
+  # Regime bias threshold (0-1)
+  # Volatility regime imbalance tolerance
+  regime_bias_threshold: 0.3
+
+  # Survivorship bias check
+  survivorship_bias:
+    # Enable survivorship bias detection
+    enabled: true
+
+    # Warning if no delisted assets detected
+    warn_on_no_delisted: true
+
+  # Look-ahead bias detection
+  look_ahead_bias:
+    # Enable structural look-ahead bias checks
+    enabled: true
+
+    # Suspicious column name keywords
+    suspicious_keywords:
+      - future
+      - forward
+      - next
+      - tomorrow
+      - predict
+      - target
+
+# Data Gap Analysis (Article 10(2)(f))
+gap_analysis:
+  # Enable gap analysis
+  enabled: true
+
+  # Minimum records per asset
+  min_records_per_asset: 1000
+
+  # Minimum time coverage in days
+  min_time_coverage_days: 365
+
+  # Missing value threshold for feature warning
+  missing_value_warning_threshold: 0.1
+
+  # Geographic/contextual factors (Article 10(5))
+  contextual_factors:
+    # Required geographic coverage (if applicable)
+    geographic_scope: []
+
+    # Market hours consideration
+    consider_market_hours: true
+
+    # Timezone handling
+    default_timezone: "UTC"
+
+# Dataset Requirements
+dataset_requirements:
+  # Training data
+  training:
+    # Minimum records
+    min_records: 10000
+
+    # Maximum missing value ratio
+    max_missing_ratio: 0.05
+
+    # Required columns
+    required_columns:
+      - timestamp
+      - open
+      - high
+      - low
+      - close
+      - volume
+
+  # Validation data
+  validation:
+    # Minimum records
+    min_records: 2000
+
+    # Must be temporally after training
+    require_temporal_ordering: true
+
+  # Testing data
+  testing:
+    # Minimum records
+    min_records: 2000
+
+    # Must be temporally after validation
+    require_temporal_ordering: true
+
+# Data Lineage Settings
+lineage:
+  # Enable data lineage tracking
+  enabled: true
+
+  # Storage path for lineage data
+  storage_path: "logs/ai_act/data_lineage"
+
+  # Enable persistence to disk
+  enable_persistence: true
+
+  # Content hashing
+  content_hashing:
+    # Enable content hashing for change detection
+    enabled: true
+
+    # Sample size for large datasets
+    sample_size: 10000
+
+  # Transformation validation
+  validation:
+    # Enable transformation validation
+    enabled: true
+
+    # Validate row count changes
+    validate_row_counts: true
+
+    # Validate column preservation
+    validate_columns: true
+
+  # Maximum lineage depth to traverse
+  max_depth: 100
+
+# Logging
+logging:
+  # Log path for data governance
+  log_path: "logs/ai_act/data_governance"
+
+  # Log all quality assessments
+  log_all_assessments: true
+
+  # Log bias detection results
+  log_bias_detections: true
+
+  # Log gap analysis results
+  log_gap_analysis: true
+
+# Report Generation
+reporting:
+  # Auto-generate reports on assessment
+  auto_generate_reports: true
+
+  # Report output path
+  report_path: "docs/compliance/data_governance"
+
+  # Include detailed statistics in reports
+  include_detailed_stats: true
+
+  # Include recommendations
+  include_recommendations: true
+
+# Critical Thresholds (trigger alerts)
+alerts:
+  # Quality score below this triggers alert
+  min_quality_score: 0.8
+
+  # Bias score above this triggers alert
+  max_bias_score: 0.5
+
+  # Gap severity levels to alert on
+  gap_alert_severities:
+    - high
+    - critical

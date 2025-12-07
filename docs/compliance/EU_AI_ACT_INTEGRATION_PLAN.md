@@ -12,9 +12,11 @@
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
 | **Phase 1: Foundation & Risk Management** | **COMPLETED** | 2025-12-08 | 372/372 passed |
-| Phase 2: Technical Documentation & Logging | Planned | - | - |
+| **Phase 2: Technical Documentation & Logging** | **COMPLETED** | 2025-12-08 | 236/236 passed |
 | Phase 3: QMS & Testing | Planned | - | - |
 | Phase 4: Conformity Assessment | Planned | - | - |
+
+**Total AI Act Tests: 608 passed**
 
 ---
 
@@ -50,9 +52,9 @@
 | Статья | Требование | Текущее состояние проекта | Приоритет |
 |--------|------------|---------------------------|-----------|
 | [Article 9](https://artificialintelligenceact.eu/article/9/) | Risk Management System | **IMPLEMENTED** (services/ai_act/risk_management.py, risk_registry.py) | P0 |
-| [Article 10](https://artificialintelligenceact.eu/article/10/) | Data Governance | ⚠️ Частично (features_pipeline) | P0 |
-| [Article 11](https://artificialintelligenceact.eu/article/11/) | Technical Documentation | ❌ Требуется создание | P0 |
-| [Article 12](https://artificialintelligenceact.eu/article/12/) | Record-Keeping (Logging) | ⚠️ Частично (event_bus, monitoring) | P1 |
+| [Article 10](https://artificialintelligenceact.eu/article/10/) | Data Governance | **IMPLEMENTED** (services/ai_act/data_governance.py, data_lineage.py) | P0 |
+| [Article 11](https://artificialintelligenceact.eu/article/11/) | Technical Documentation | **IMPLEMENTED** (services/ai_act/technical_documentation.py) | P0 |
+| [Article 12](https://artificialintelligenceact.eu/article/12/) | Record-Keeping (Logging) | **IMPLEMENTED** (services/ai_act/logging_system.py) | P1 |
 | [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | **IMPLEMENTED** (services/ai_act/explainability.py) | P1 |
 | [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | **IMPLEMENTED** (services/ai_act/human_oversight.py) | P0 |
 | [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | **IMPLEMENTED** (services/ai_act/accuracy_metrics.py, robustness_testing.py) | P1 |

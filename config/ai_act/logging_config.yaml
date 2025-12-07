@@ -1,0 +1,198 @@
+# EU AI Act Logging Configuration (Article 12)
+#
+# This configuration file defines settings for the AI Act compliant
+# logging system per Article 12 (Record-Keeping).
+#
+# Reference: https://artificialintelligenceact.eu/article/12/
+
+# Logging System Configuration
+logging:
+  # Base path for log storage
+  log_path: "logs/ai_act"
+
+  # Retention Policy (Article 19: minimum 6 months)
+  retention:
+    # Minimum retention period in days (180 = 6 months per Article 19)
+    retention_days: 180
+
+    # Enable automatic compression of old logs
+    enable_compression: true
+
+    # Days before compressing logs
+    compression_after_days: 7
+
+    # Enable secure deletion of expired logs
+    enable_secure_deletion: true
+
+  # Storage Settings
+  storage:
+    # Maximum size per log file in MB
+    max_log_file_size_mb: 100
+
+    # Enable async logging for performance
+    enable_async_logging: true
+
+    # Event buffer size for async logging
+    buffer_size: 1000
+
+    # Flush interval in seconds
+    flush_interval_seconds: 5.0
+
+    # Enable log encryption at rest
+    enable_encryption: false
+
+    # Encryption key identifier (if encryption enabled)
+    encryption_key_id: null
+
+  # Integrity Verification
+  integrity:
+    # Enable tamper-evident storage
+    enable_integrity_verification: true
+
+    # Hash algorithm for integrity checks
+    hash_algorithm: "sha256"
+
+    # Chain hash for tamper detection
+    enable_chain_hashing: true
+
+# Event Logging Settings
+events:
+  # Decision Events
+  decisions:
+    # Log all trading decisions
+    log_all_decisions: true
+
+    # Include input data summary
+    include_inputs: true
+
+    # Include confidence metrics
+    include_confidence_metrics: true
+
+    # Include feature attributions
+    include_feature_attributions: true
+
+    # Maximum input data size to log (bytes)
+    max_input_size_bytes: 10000
+
+  # Risk Events
+  risk:
+    # Log all risk events
+    log_all_risk_events: true
+
+    # Risk severity levels to log
+    log_severity_levels:
+      - critical
+      - high
+      - medium
+      - low
+
+    # Enable immediate notification for critical events
+    notify_on_critical: true
+
+  # Human Oversight Events (Article 14 integration)
+  oversight:
+    # Log all oversight events
+    log_all_oversight_events: true
+
+    # Track operator identification (Article 12(2)(d))
+    track_operator_id: true
+
+    # Log all manual overrides
+    log_manual_overrides: true
+
+    # Log all alerts and acknowledgments
+    log_alerts: true
+
+  # Data Events
+  data:
+    # Log data input events
+    log_data_inputs: true
+
+    # Log data quality checks
+    log_quality_checks: true
+
+    # Log data anomalies
+    log_anomalies: true
+
+    # Track data source changes
+    track_source_changes: true
+
+  # System Events
+  system:
+    # Log system events
+    log_system_events: true
+
+    # Log configuration changes
+    log_config_changes: true
+
+    # Log health checks
+    log_health_checks: true
+
+    # Health check interval (seconds)
+    health_check_interval_seconds: 60
+
+# Session Management (Article 12(2)(a))
+session:
+  # Enable session tracking for "period of use"
+  enable_session_tracking: true
+
+  # Auto-start session on system startup
+  auto_start_session: true
+
+  # Session timeout (hours) - end session after inactivity
+  session_timeout_hours: 24
+
+# Correlation Tracking
+correlation:
+  # Enable correlation IDs for event tracing
+  enable_correlation_tracking: true
+
+  # Enable causation tracking (which event caused this one)
+  enable_causation_tracking: true
+
+  # Auto-generate correlation IDs
+  auto_generate_correlation_ids: true
+
+# Export Settings (Article 12(4) - deployer access)
+export:
+  # Enable log export functionality
+  enable_export: true
+
+  # Supported export formats
+  supported_formats:
+    - jsonl
+    - json
+    - csv
+
+  # Maximum export date range (days)
+  max_export_range_days: 365
+
+  # Require audit logging for exports
+  audit_exports: true
+
+# Callbacks and Notifications
+callbacks:
+  # Critical event callback
+  on_critical_event:
+    enabled: true
+    notify_channels:
+      - log
+      - metrics
+
+  # Kill switch callback
+  on_kill_switch:
+    enabled: true
+    notify_channels:
+      - log
+      - alert
+
+# Performance Settings
+performance:
+  # Maximum events per second to log
+  max_events_per_second: 10000
+
+  # Enable sampling for high-volume events
+  enable_sampling: false
+
+  # Sampling rate (if enabled)
+  sampling_rate: 1.0
