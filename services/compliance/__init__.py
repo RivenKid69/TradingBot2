@@ -42,8 +42,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "2.0.0"
-__mifid_ii_compliance_phase__ = 2  # Current implementation phase
+__version__ = "3.0.0"
+__mifid_ii_compliance_phase__ = 3  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -140,6 +140,69 @@ from services.compliance.reporting_pipeline import (
     create_reporting_pipeline,
 )
 
+# Phase 3 exports (Algorithmic Trading Controls - RTS 6)
+from services.compliance.enhanced_kill_switch import (
+    # Enums
+    KillSwitchScope,
+    KillSwitchTriggerReason,
+    KillSwitchState,
+    # Data classes
+    KillSwitchEvent,
+    KillSwitchConfig,
+    EmergencyContact,
+    # Main class
+    EnhancedKillSwitch,
+    # Factory
+    create_enhanced_kill_switch,
+)
+
+from services.compliance.pre_trade_controls import (
+    # Enums
+    RejectionReason,
+    ControlSeverity,
+    # Data classes
+    PreTradeCheckResult,
+    PreTradeControlsConfig,
+    TraderAuthorization,
+    MessageRateWindow,
+    # Main class
+    PreTradeControls,
+    # Factory
+    create_pre_trade_controls,
+)
+
+from services.compliance.realtime_monitor import (
+    # Enums
+    AlertSeverity,
+    AlertCategory,
+    # Data classes
+    ComplianceAlert,
+    MonitoringThreshold,
+    RealTimeMonitorConfig,
+    MonitoringMetrics,
+    # Main class
+    RealTimeMonitor,
+    # Factory
+    create_realtime_monitor,
+)
+
+from services.compliance.otr_monitor import (
+    # Enums
+    OrderEvent,
+    OTRLevel,
+    # Data classes
+    OTRBucket,
+    OTRMetrics,
+    OTRBreachEvent,
+    OTRMonitorConfig,
+    PerVenueOTR,
+    PerAlgorithmOTR,
+    # Main class
+    OTRMonitor,
+    # Factory
+    create_otr_monitor,
+)
+
 __all__ = [
     # Version info
     "__version__",
@@ -213,4 +276,43 @@ __all__ = [
     "PipelineMetrics",
     "TransactionReportingPipeline",
     "create_reporting_pipeline",
+    # ==== Phase 3: Algorithmic Trading Controls (RTS 6) ====
+    # Enhanced Kill Switch (Article 12)
+    "KillSwitchScope",
+    "KillSwitchTriggerReason",
+    "KillSwitchState",
+    "KillSwitchEvent",
+    "KillSwitchConfig",
+    "EmergencyContact",
+    "EnhancedKillSwitch",
+    "create_enhanced_kill_switch",
+    # Pre-Trade Controls (Article 15)
+    "RejectionReason",
+    "ControlSeverity",
+    "PreTradeCheckResult",
+    "PreTradeControlsConfig",
+    "TraderAuthorization",
+    "MessageRateWindow",
+    "PreTradeControls",
+    "create_pre_trade_controls",
+    # Real-Time Monitoring (Article 17)
+    "AlertSeverity",
+    "AlertCategory",
+    "ComplianceAlert",
+    "MonitoringThreshold",
+    "RealTimeMonitorConfig",
+    "MonitoringMetrics",
+    "RealTimeMonitor",
+    "create_realtime_monitor",
+    # OTR Monitoring
+    "OrderEvent",
+    "OTRLevel",
+    "OTRBucket",
+    "OTRMetrics",
+    "OTRBreachEvent",
+    "OTRMonitorConfig",
+    "PerVenueOTR",
+    "PerAlgorithmOTR",
+    "OTRMonitor",
+    "create_otr_monitor",
 ]

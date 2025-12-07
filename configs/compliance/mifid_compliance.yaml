@@ -228,3 +228,170 @@ compliance:
       - "GBP"
       - "CHF"
       - "JPY"
+
+  # ============================================================================
+  # Phase 3: Algorithmic Trading Controls (RTS 6)
+  # ============================================================================
+  # RTS 6 (Regulation 2017/589) defines requirements for algorithmic trading:
+  # - Article 12: Kill switch / emergency cancellation
+  # - Article 15: Pre-trade risk controls
+  # - Article 17: Real-time monitoring
+
+  # Enhanced Kill Switch Configuration (RTS 6 Article 12)
+  # "Cancel immediately, as an emergency measure, any or all unexecuted orders"
+  kill_switch:
+    enabled: true
+
+    # Contact Information (required per RTS 6 Article 12)
+    # Compliance staff must be able to contact person who can cancel
+    primary_contact_name: ""
+    primary_contact_email: ""
+    primary_contact_phone: ""
+    escalation_contact_name: ""
+    escalation_contact_email: ""
+    escalation_contact_phone: ""
+    out_of_hours_phone: ""
+
+    # Timing settings
+    cooldown_seconds: 300.0              # Cooldown after trigger (5 minutes)
+    auto_recovery_enabled: false         # Auto-recover after cooldown
+    max_triggers_per_hour: 10            # Rate limit on triggers
+
+    # Automatic trigger thresholds
+    error_threshold_rest: 100            # REST API errors before trigger
+    error_threshold_ws: 50               # WebSocket errors before trigger
+    position_limit_pct: 95.0             # % of max position before trigger
+    capital_threshold_pct: 90.0          # % of capital used before warning
+
+    # Integration settings
+    notify_venues: true                  # Send cancel to venues
+    notify_compliance: true              # Notify compliance team
+    persist_events: true                 # Persist events to disk
+    event_log_path: "state/compliance/kill_switch_events.jsonl"
+
+  # Pre-Trade Risk Controls Configuration (RTS 6 Article 15)
+  # All orders must pass these checks before submission
+  pre_trade_controls_v2:
+    enabled: true
+
+    # Price Collars (Article 15(1))
+    price_collar_pct: 5.0                # Max deviation from reference (%)
+    price_collar_enabled: true
+    fat_finger_price_deviation_pct: 10.0 # Fat finger protection
+    fat_finger_enabled: true
+
+    # Maximum Order Values (Article 15(2))
+    max_order_value_eur: 1000000.0       # EUR 1M default
+    max_order_value_enabled: true
+    min_order_value_eur: 0.0
+
+    # Maximum Order Volumes (Article 15(3))
+    max_order_volume: 10000.0            # Units
+    max_order_volume_enabled: true
+    max_volume_vs_adv_pct: 10.0          # Max % of ADV per order
+    adv_check_enabled: true
+
+    # Message Rate Limits (Article 15(4))
+    max_messages_per_second: 100
+    max_messages_per_minute: 3000
+    burst_window_ms: 100
+    max_burst_messages: 10
+    message_rate_enabled: true
+
+    # Authorization Controls (Article 15(5))
+    require_trader_authorization: true
+    require_instrument_authorization: false
+    require_venue_authorization: false
+
+    # Position/Risk Limits
+    max_position_pct_of_limit: 95.0
+    max_daily_loss_eur: 100000.0
+    daily_loss_check_enabled: true
+    max_notional_per_instrument: 5000000.0
+    max_concentration_pct: 25.0          # Max % of portfolio in one position
+
+  # Real-Time Monitoring Configuration (RTS 6 Article 17)
+  # "Alerts shall be generated within 5 seconds after the relevant event"
+  realtime_monitoring:
+    enabled: true
+
+    # RTS 6 Article 17 requirement: alerts within 5 seconds
+    max_alert_delay_seconds: 5.0
+
+    # Monitoring intervals
+    check_interval_seconds: 1.0
+    aggregation_window_seconds: 60.0
+
+    # Order-to-Trade Ratio thresholds
+    otr_warning_threshold: 50.0          # 50:1
+    otr_critical_threshold: 100.0        # 100:1
+    otr_emergency_threshold: 200.0       # 200:1 - trigger kill switch
+
+    # P&L thresholds (as % of daily limit)
+    pnl_warning_pct: 50.0
+    pnl_critical_pct: 75.0
+    pnl_emergency_pct: 90.0
+
+    # Position limit thresholds (as % of max)
+    position_warning_pct: 80.0
+    position_critical_pct: 90.0
+    position_emergency_pct: 95.0
+
+    # Message rate thresholds (as % of max)
+    message_rate_warning_pct: 70.0
+    message_rate_critical_pct: 90.0
+
+    # Latency thresholds (milliseconds)
+    latency_warning_ms: 100.0
+    latency_critical_ms: 500.0
+    latency_emergency_ms: 1000.0
+
+    # Clock drift thresholds (milliseconds per RTS 25)
+    clock_drift_warning_ms: 50.0
+    clock_drift_critical_ms: 100.0
+    clock_drift_emergency_ms: 1000.0
+
+    # System capacity thresholds
+    cpu_warning_pct: 70.0
+    cpu_critical_pct: 90.0
+    memory_warning_pct: 80.0
+    memory_critical_pct: 95.0
+
+    # Alert management
+    max_alerts_per_category_per_minute: 10
+    alert_deduplication_window_seconds: 60.0
+    persist_alerts: true
+    alert_log_path: "logs/compliance/realtime_alerts.jsonl"
+
+  # Order-to-Trade Ratio (OTR) Monitoring
+  # Per RTS 6 and RTS 9 requirements
+  otr_monitoring:
+    enabled: true
+
+    # OTR thresholds (orders per trade)
+    otr_normal_max: 10.0                 # Normal: up to 10:1
+    otr_elevated_threshold: 20.0         # Elevated: 20:1
+    otr_warning_threshold: 50.0          # Warning: 50:1
+    otr_critical_threshold: 100.0        # Critical: 100:1
+    otr_breach_threshold: 200.0          # Breach: 200:1
+
+    # Monitoring windows
+    bucket_size_seconds: 1
+    window_1min: 60
+    window_5min: 300
+    window_1hour: 3600
+
+    # Cancellation rate thresholds
+    cancellation_warning_pct: 50.0
+    cancellation_critical_pct: 80.0
+
+    # Response actions
+    throttle_on_warning: true
+    throttle_delay_ms: 100
+    block_on_critical: true
+    trigger_kill_switch_on_breach: true
+
+    # Logging
+    log_all_events: false
+    persist_breach_events: true
+    breach_log_path: "state/compliance/otr_breaches.jsonl"
