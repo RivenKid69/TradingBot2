@@ -35,6 +35,12 @@ Phase 5 - Best Execution (Article 27 MiFID II):
     - venue_analysis: Venue Performance Analysis and Smart Order Routing
     - execution_quality_report: Execution Quality Report Generator
 
+Phase 6 - Governance & Documentation (RTS 6 Articles 3, 9):
+    - self_assessment: Annual Self-Assessment (RTS 6 Article 9)
+    - bcp: Business Continuity Plan (RTS 6 Article 3)
+    - governance: Policy Documents Manager
+    - compliance_policies: MiFID II Policy Templates
+
 Classification:
     This system is classified as an ALGORITHMIC TRADING SYSTEM per
     Article 17 MiFID II and subject to RTS 6 requirements.
@@ -57,8 +63,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "5.0.0"
-__mifid_ii_compliance_phase__ = 5  # Current implementation phase
+__version__ = "6.0.0"
+__mifid_ii_compliance_phase__ = 6  # Current implementation phase
 
 # Phase 1 exports (Foundation)
 from services.compliance.lei_manager import (
@@ -359,6 +365,72 @@ from services.compliance.execution_quality_report import (
     create_report_generator,
 )
 
+# Phase 6 exports (Governance & Documentation - RTS 6 Articles 3, 9)
+from services.compliance.self_assessment import (
+    # Enums
+    AssessmentCategory,
+    ComplianceStatus,
+    RemediationPriority,
+    AssessmentStatus,
+    # Data classes
+    Evidence,
+    RemediationAction,
+    SelfAssessmentQuestion,
+    AnnualSelfAssessment,
+    # Factory functions
+    create_annual_assessment,
+    get_rts6_assessment_template,
+)
+
+from services.compliance.bcp import (
+    # Enums
+    ScenarioCategory,
+    ImpactLevel,
+    LikelihoodLevel,
+    RecoveryStatus,
+    AlertLevel,
+    # Data classes
+    EmergencyContact as BCPEmergencyContact,
+    RecoveryStep,
+    RecoveryProcedure,
+    BCPScenario,
+    BCPIncident,
+    BusinessContinuityPlan,
+    # Factory functions
+    create_business_continuity_plan,
+    get_standard_bcp_scenarios,
+)
+
+from services.compliance.governance import (
+    # Enums
+    PolicyType,
+    PolicyStatus,
+    ApprovalLevel,
+    ReviewFrequency,
+    # Data classes
+    PolicyVersion,
+    PolicySection,
+    PolicyDocument,
+    GovernanceFramework,
+    # Factory functions
+    create_governance_framework,
+    create_algorithmic_trading_policy,
+    create_risk_management_policy,
+    create_record_keeping_policy,
+)
+
+from services.compliance.compliance_policies import (
+    # Policy template functions
+    create_best_execution_policy as create_best_execution_policy_template,
+    create_order_handling_policy,
+    create_conflicts_of_interest_policy,
+    create_kill_switch_policy,
+    create_transaction_reporting_policy,
+    create_market_abuse_prevention_policy,
+    create_business_continuity_policy,
+    create_all_standard_policies,
+)
+
 __all__ = [
     # Version info
     "__version__",
@@ -562,4 +634,52 @@ __all__ = [
     "ReportGeneratorConfig",
     "ExecutionQualityReportGenerator",
     "create_report_generator",
+    # ==== Phase 6: Governance & Documentation (RTS 6 Articles 3, 9) ====
+    # Self-Assessment (RTS 6 Article 9)
+    "AssessmentCategory",
+    "ComplianceStatus",
+    "RemediationPriority",
+    "AssessmentStatus",
+    "Evidence",
+    "RemediationAction",
+    "SelfAssessmentQuestion",
+    "AnnualSelfAssessment",
+    "create_annual_assessment",
+    "get_rts6_assessment_template",
+    # Business Continuity Plan (RTS 6 Article 3)
+    "ScenarioCategory",
+    "ImpactLevel",
+    "LikelihoodLevel",
+    "RecoveryStatus",
+    "AlertLevel",
+    "BCPEmergencyContact",
+    "RecoveryStep",
+    "RecoveryProcedure",
+    "BCPScenario",
+    "BCPIncident",
+    "BusinessContinuityPlan",
+    "create_business_continuity_plan",
+    "get_standard_bcp_scenarios",
+    # Governance Framework
+    "PolicyType",
+    "PolicyStatus",
+    "ApprovalLevel",
+    "ReviewFrequency",
+    "PolicyVersion",
+    "PolicySection",
+    "PolicyDocument",
+    "GovernanceFramework",
+    "create_governance_framework",
+    "create_algorithmic_trading_policy",
+    "create_risk_management_policy",
+    "create_record_keeping_policy",
+    # Compliance Policy Templates
+    "create_best_execution_policy_template",
+    "create_order_handling_policy",
+    "create_conflicts_of_interest_policy",
+    "create_kill_switch_policy",
+    "create_transaction_reporting_policy",
+    "create_market_abuse_prevention_policy",
+    "create_business_continuity_policy",
+    "create_all_standard_policies",
 ]
