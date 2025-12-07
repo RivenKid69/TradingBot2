@@ -511,27 +511,29 @@ class PreTradeControls:
                     details={"trader_id": trader_id, "expired": str(auth.valid_until)},
                 )
 
-            # Check instrument authorization
-            if instrument and "*" not in auth.authorized_instruments:
-                if instrument not in auth.authorized_instruments:
-                    return PreTradeCheckResult(
-                        allowed=False,
-                        rejection_reason=RejectionReason.UNAUTHORIZED_INSTRUMENT,
-                        severity=ControlSeverity.HARD_REJECT,
-                        message=f"Trader {trader_id} not authorized for {instrument}",
-                        details={"trader_id": trader_id, "instrument": instrument},
-                    )
+            # Check instrument authorization (only if enabled in config)
+            if self._config.require_instrument_authorization:
+                if instrument and "*" not in auth.authorized_instruments:
+                    if instrument not in auth.authorized_instruments:
+                        return PreTradeCheckResult(
+                            allowed=False,
+                            rejection_reason=RejectionReason.UNAUTHORIZED_INSTRUMENT,
+                            severity=ControlSeverity.HARD_REJECT,
+                            message=f"Trader {trader_id} not authorized for {instrument}",
+                            details={"trader_id": trader_id, "instrument": instrument},
+                        )
 
-            # Check venue authorization
-            if venue and "*" not in auth.authorized_venues:
-                if venue not in auth.authorized_venues:
-                    return PreTradeCheckResult(
-                        allowed=False,
-                        rejection_reason=RejectionReason.UNAUTHORIZED_VENUE,
-                        severity=ControlSeverity.HARD_REJECT,
-                        message=f"Trader {trader_id} not authorized for venue {venue}",
-                        details={"trader_id": trader_id, "venue": venue},
-                    )
+            # Check venue authorization (only if enabled in config)
+            if self._config.require_venue_authorization:
+                if venue and "*" not in auth.authorized_venues:
+                    if venue not in auth.authorized_venues:
+                        return PreTradeCheckResult(
+                            allowed=False,
+                            rejection_reason=RejectionReason.UNAUTHORIZED_VENUE,
+                            severity=ControlSeverity.HARD_REJECT,
+                            message=f"Trader {trader_id} not authorized for venue {venue}",
+                            details={"trader_id": trader_id, "venue": venue},
+                        )
 
         return PreTradeCheckResult(allowed=True)
 
