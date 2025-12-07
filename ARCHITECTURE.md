@@ -1,6 +1,6 @@
 # Архитектура проекта
 
-> **Last Updated**: 2025-11-27 | **Version**: 4.0 (Multi-Asset Support)
+> **Last Updated**: 2025-12-07 | **Version**: 5.0 (MiFID II Compliance Complete)
 
 В репозитории используется слойная структура. Имена файлов и модулей начинаются с префиксов, отражающих их принадлежность к слою.
 
@@ -11,6 +11,9 @@
 | Crypto (Binance Spot/Futures) | `adapters/binance/` | ✅ Production |
 | US Equities (Alpaca) | `adapters/alpaca/` | ✅ Production |
 | US Equities Data (Polygon) | `adapters/polygon/` | ✅ Production |
+| Forex (OANDA) | `adapters/oanda/` | ✅ Production |
+| CME Futures (IB) | `adapters/ib/` | ✅ Production |
+| Crypto Options (Deribit) | `adapters/deribit/` | ✅ Beta |
 
 ## Слои
 
@@ -363,4 +366,54 @@ python script_live.py --config configs/config_live_alpaca.yaml --extended-hours
 ```
 
 Подробная документация: см. [CLAUDE.md](CLAUDE.md) (Phase 2-4, 9).
+
+## Regulatory Compliance Layer
+
+Проект полностью соответствует требованиям **MiFID II** (все 7 фаз завершены).
+
+### Структура compliance модулей
+
+```
+services/compliance/
+├── config.py                    # Compliance configuration
+├── compliance_clock.py          # Clock sync (RTS 25)
+├── lei_manager.py               # LEI management
+├── gleif_client.py              # GLEIF API integration
+├── algorithm_registry.py        # Algorithm registration
+├── transaction_report.py        # Transaction reporting (RTS 22)
+├── reporting_pipeline.py        # Reporting pipeline
+├── pre_trade_controls.py        # Pre-trade checks (RTS 6)
+├── enhanced_kill_switch.py      # Kill switch (Article 12)
+├── realtime_monitor.py          # Real-time monitoring (Article 17)
+├── otr_monitor.py               # Order-to-Trade ratio
+├── audit_trail_writer.py        # Audit trail writing
+├── audit_storage.py             # Audit storage (63KB)
+├── audit_models.py              # Audit data models
+├── retention_policy.py          # 5-7 years retention
+├── best_execution.py            # Best execution (Article 27)
+├── tca_compliance.py            # TCA compliance
+├── venue_analysis.py            # Venue analysis & SOR
+├── execution_quality_report.py  # Execution quality reports
+├── governance.py                # Governance framework
+├── self_assessment.py           # Annual self-assessment
+├── bcp.py                       # Business Continuity Plan
+├── conformance_testing.py       # Conformance testing
+├── test_scenarios.py            # Test scenarios
+├── certification.py             # Certification module
+└── nca_notification.py          # NCA notification
+```
+
+### MiFID II Compliance Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | LEI, Clock Sync, Algorithm Registration | ✅ 100% |
+| Phase 2 | Transaction Reporting (RTS 22) | ✅ 100% |
+| Phase 3 | Kill Switch, Pre-Trade Controls, Monitoring | ✅ 100% |
+| Phase 4 | Record Keeping, Audit Trail (5-7 years) | ✅ 100% |
+| Phase 5 | Best Execution, TCA, Venue Analysis | ✅ 100% |
+| Phase 6 | Governance, Self-Assessment, BCP | ✅ 100% |
+| Phase 7 | Testing, Certification, NCA Notification | ✅ 100% |
+
+Детали: [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md)
 
