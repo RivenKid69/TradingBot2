@@ -245,6 +245,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 |------------|--------|----------|
 | MiFID II | 100% Complete | All 7 phases implemented |
 | EU AI Act | 100% Complete | All 4 phases + 1,007 tests |
+| DORA | 100% Complete | All 5 phases + ~1,015 tests |
 
 **MiFID II (Directive 2014/65/EU):**
 - Kill Switch & Pre-Trade Controls (RTS 6)
@@ -257,6 +258,13 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 - Technical Documentation (Article 11)
 - Human Oversight (Article 14)
 - Conformity Assessment (Article 43)
+
+**DORA (Regulation 2022/2554):**
+- ICT Risk Management Framework (Articles 5-16)
+- ICT Incident Management & Reporting (Articles 17-23)
+- Digital Resilience Testing / TLPT (Articles 24-27)
+- Third-Party ICT Risk Management (Articles 28-44)
+- Information Sharing & Unified Reporting (Article 45)
 
 **Business Impact**: Pre-certified for EU regulated markets, reducing time-to-market for institutional deployment by 6-12 months.
 
@@ -312,6 +320,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 - [x] 14,000+ automated tests
 - [x] MiFID II Compliance (7/7 phases)
 - [x] EU AI Act Compliance (4/4 phases)
+- [x] DORA Compliance (5/5 phases)
 
 ### In Progress (Q1 2026)
 - [ ] Web-based dashboard

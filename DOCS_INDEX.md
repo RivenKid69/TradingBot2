@@ -46,6 +46,7 @@
 | **Live Trading Improvements** | ✅ Production | Phase 9 |
 | **MiFID II Compliance** | ✅ Production | 7/7 фаз (100%) |
 | **EU AI Act Compliance** | ✅ Production | Phase 4/4 (100%) |
+| **DORA Compliance** | ✅ Production | Phase 5/5 (100%) |
 
 **⚠️ Переобучите модели**, если они обучены до 2025-11-26.
 
@@ -154,6 +155,24 @@
 
 **Total AI Act Tests: 1,007 passed**
 
+### DORA Compliance (100% Complete)
+
+| Файл | Описание |
+|------|----------|
+| [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) | ⭐ **Master DORA reference** - все 5 фаз |
+| [docs/compliance/dora/proportionality_assessment.md](docs/compliance/dora/proportionality_assessment.md) | Proportionality assessment (Phase 0) |
+| [services/dora/](services/dora/) | 20+ модулей DORA compliance |
+
+**Реализованные фазы:**
+- Phase 0: Proportionality Assessment & Scope Verification
+- Phase 1: ICT Risk Management Framework (Articles 5-16)
+- Phase 2: ICT Incident Management & Reporting (Articles 17-23)
+- Phase 3: Digital Resilience Testing / TLPT (Articles 24-27)
+- Phase 4: Third-Party ICT Risk Management (Articles 28-44)
+- Phase 5: Information Sharing, Compliance Dashboard & Unified Reporting
+
+**Total DORA Tests: ~1,015 passed**
+
 ---
 
 ## 🗄️ Архив документации
@@ -223,8 +242,10 @@ pytest tests/test_data_leakage*.py -v  # Data Leakage
 
 | Категория | Тесты |
 |-----------|-------|
-| **Всего тестов** | **13,065+** |
+| **Всего тестов** | **14,000+** |
 | MiFID II Compliance | 200+ |
+| EU AI Act Compliance | 1,007 |
+| DORA Compliance | ~1,015 |
 | Twin Critics | 49+ |
 | UPGD | 119+ |
 | VGS | 7+ |
@@ -278,10 +299,13 @@ python tools/check_feature_parity.py
 | Multi-Asset (Stocks) | [CLAUDE.md](CLAUDE.md) (см. Phase 2-4, 9) |
 | Live Trading | [CLAUDE.md](CLAUDE.md) (см. Phase 9) |
 | Seasonality | [docs/seasonality.md](docs/seasonality.md) |
+| MiFID II Compliance | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) |
+| EU AI Act Compliance | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) |
+| DORA Compliance | [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) |
 | Исторические отчёты | `docs/archive/` |
 
 ---
 
-**Last Updated**: 2025-12-08 (MiFID II 100%, EU AI Act 100%, 14,000+ tests)
+**Last Updated**: 2025-12-08 (MiFID II 100%, EU AI Act 100%, DORA 100%, 14,000+ tests)
 **Status**: ✅ Production Ready
-**Version**: 5.0 (EU AI Act Phase 4 Complete)
+**Version**: 6.0 (DORA Phase 5 Complete)

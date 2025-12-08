@@ -9,7 +9,7 @@
 
 **TradingBot2** is a production-grade quantitative trading platform supporting **5 asset classes**: Crypto (Binance), US Equities (Alpaca), Forex (OANDA), CME Futures (IB), and Options (Deribit/IB). It features a sophisticated Reinforcement Learning (RL) engine based on **Distributional PPO** with several advanced modifications.
 
-**Key Metrics**: 14,000+ tests | MiFID II 100% | EU AI Act 100% | Production Ready
+**Key Metrics**: 14,000+ tests | MiFID II 100% | EU AI Act 100% | DORA 100% | Production Ready
 
 ### Key Technologies
 - **RL Algorithm**: Distributional PPO (Quantile/Categorical) with Twin Critics.
@@ -17,7 +17,7 @@
 - **Scheduler**: Population-Based Training (PBT) with adversarial exploitation.
 - **Scaling**: Variance Gradient Scaler (VGS) v3.2 - *Custom implementation*.
 - **Simulation**: Full Order Book (LOB) simulation, not just OHLCV.
-- **Compliance**: MiFID II (7/7 phases), EU AI Act (4/4 phases) - *Production ready*.
+- **Compliance**: MiFID II (7/7 phases), EU AI Act (4/4 phases), DORA (5/5 phases) - *Production ready*.
 
 ---
 
@@ -82,5 +82,5 @@ The project uses a custom DI container (`Container`).
 
 ---
 
-**Last Updated**: 2025-12-01
-**Version**: 1.0
+**Last Updated**: 2025-12-08
+**Version**: 1.1

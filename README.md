@@ -52,7 +52,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**14,000+ automated tests** | **MiFID II 100%** | **EU AI Act 100%** | **Production Ready**
+**14,000+ automated tests** | **MiFID II 100%** | **EU AI Act 100%** | **DORA 100%** | **Production Ready**
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
@@ -82,6 +82,16 @@ High-Risk AI System compliance - all 4 phases complete (1,007 tests):
 - Conformity Assessment & EU Declaration (Article 43, 47)
 
 Details: `docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md`
+
+### DORA (Regulation 2022/2554)
+Digital Operational Resilience Act - all 5 phases complete (~1,015 tests):
+- Phase 1: ICT Risk Management Framework (Articles 5-16)
+- Phase 2: ICT Incident Management & Reporting (Articles 17-23)
+- Phase 3: Digital Resilience Testing (Articles 24-27)
+- Phase 4: Third-Party ICT Risk Management (Articles 28-44)
+- Phase 5: Information Sharing, Dashboard & Unified Reporting
+
+Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
 
 ## Supported Exchanges
 | Asset class | Vendor(s) | Path | Modes | Status |

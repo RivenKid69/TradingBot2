@@ -206,7 +206,7 @@ python scripts/quickstart.py run cme_index
 
 ```
 TradingBot2/
-├── tests/              # 654 test files, 13,065 test functions
+├── tests/              # 654+ test files, 14,000+ test functions
 │   ├── test_*.py       # All test files
 │   └── conftest.py     # Pytest fixtures
 ├── tools/              # 34 utility scripts (moved from root)
@@ -6967,11 +6967,11 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ---
 
-## 📊 СТАТУС ПРОЕКТА (2025-12-07)
+## 📊 СТАТУС ПРОЕКТА (2025-12-08)
 
 ### ✅ Production Ready
 
-Все критические исправления применены и протестированы. **654 test files, 13,065 tests** с 97%+ pass rate.
+Все критические исправления применены и протестированы. **654+ test files, 14,000+ tests** с 97%+ pass rate. MiFID II 100%, EU AI Act 100%, DORA 100%.
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7513,9 +7513,20 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 ---
 
-**Последнее обновление**: 2025-12-07
-**Версия документации**: 11.16 (Test Coverage Update 13,065+)
-**Статус**: ✅ Production Ready (654 test files, 13,065 tests | Futures Integration complete, Options Phase 1+2+2B complete)
+**Последнее обновление**: 2025-12-08
+**Версия документации**: 12.0 (DORA Compliance Complete)
+**Статус**: ✅ Production Ready (654+ test files, 14,000+ tests | MiFID II 100%, EU AI Act 100%, DORA 100%)
+
+### Изменения в 12.0:
+- **DORA Compliance** -- Добавлен полный Digital Operational Resilience Act (EU 2022/2554)
+  - Phase 0: Proportionality Assessment & Scope Verification
+  - Phase 1: ICT Risk Management Framework (Articles 5-16)
+  - Phase 2: ICT Incident Management & Reporting (Articles 17-23)
+  - Phase 3: Digital Resilience Testing / TLPT (Articles 24-27)
+  - Phase 4: Third-Party ICT Risk Management (Articles 28-44)
+  - Phase 5: Information Sharing, Dashboard & Unified Reporting
+  - ~1,015 новых тестов DORA compliance
+  - 20+ модулей в `services/dora/`
 
 ### Изменения в 11.15:
 - **Обновлён счётчик тестов** -- актуализированы данные о покрытии тестами
