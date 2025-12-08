@@ -3,9 +3,9 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 1.0
-**Date**: December 2024
-**Status**: Implementation Ready
+**Version**: 1.6
+**Date**: December 2025
+**Status**: Implementation Ready (Post-Comprehensive Audit)
 
 ---
 
@@ -25,6 +25,7 @@ The platform processes:
 
 | Article | Description | Priority | Notes |
 |---------|-------------|----------|-------|
+| **3** | Territorial Scope | **Critical** | **NEW v1.6** - Determines GDPR applicability |
 | **4** | Definitions (controller, processor, personal data) | Critical | Foundation for all processing |
 | **5-6** | Processing Principles & Lawful Basis | Critical | Core compliance |
 | **7** | Consent Management | High | Where consent is lawful basis |
@@ -72,6 +73,7 @@ services/
     __init__.py                    # Module exports
 
     # Phase 0: Core Definitions & Processor Framework
+    territorial_scope.py           # Article 3 territorial applicability (NEW v1.6)
     definitions.py                 # Article 4 GDPR definitions
     processor_management.py        # Article 28 processor contracts
     sub_processor_registry.py      # Sub-processor tracking
@@ -85,6 +87,7 @@ services/
     special_categories.py          # Article 9 special category handling
     accountability.py              # Article 24 controller responsibility (NEW)
     restrictions.py                # Article 23 restrictions framework (NEW)
+    member_state_derogations.py    # Opening clauses per jurisdiction (NEW v1.6)
 
     # Phase 2a: Consent & Transparency
     consent_manager.py             # Article 7 consent management
@@ -164,6 +167,7 @@ adapters/                    → Data flow tracking
 ### 0.1 Objectives
 
 Establish foundational GDPR infrastructure including:
+- **Article 3 territorial scope assessment** - NEW v1.6
 - Article 4 definitions and role classification
 - Article 28 processor management
 - Article 26 joint controller agreements
@@ -172,7 +176,190 @@ Establish foundational GDPR infrastructure including:
 
 ### 0.2 Components to Implement
 
-#### 0.2.1 GDPRDefinitions (definitions.py)
+#### 0.2.1 TerritorialScope (territorial_scope.py) - NEW v1.6
+
+**Article 3 - Territorial Scope**
+
+Per [GDPR Article 3](https://gdpr-info.eu/art-3-gdpr/), GDPR applies in three scenarios. This module determines applicability and manages representative requirements.
+
+```
+Enum TerritorialBasis:
+    ESTABLISHMENT = "establishment"           # Art. 3(1) - EU establishment
+    OFFERING_SERVICES = "offering_services"   # Art. 3(2)(a) - Offering to EU subjects
+    MONITORING_BEHAVIOUR = "monitoring"       # Art. 3(2)(b) - Monitoring EU subjects
+
+Dataclass EstablishmentAssessment:
+    """Article 3(1) - Processing in context of EU establishment"""
+    assessment_id: str
+    entity_name: str
+
+    # EU presence analysis
+    eu_establishments: List[EUEstablishment]
+    has_eu_establishment: bool
+    main_establishment_country: Optional[str]  # For lead SA determination
+
+    # Processing connection
+    processing_in_context_of_establishment: bool
+    connection_analysis: str
+
+    # Conclusion
+    art_3_1_applies: bool
+
+Dataclass OfferingServicesAssessment:
+    """Article 3(2)(a) - Offering goods/services to EU data subjects"""
+    assessment_id: str
+
+    # Targeting indicators (per EDPB Guidelines 3/2018)
+    eu_languages_used: bool                    # Other than controller's country
+    eu_currencies_accepted: bool               # EUR, etc.
+    eu_domain_names: bool                      # .eu, .de, .fr, etc.
+    eu_delivery_available: bool
+    eu_customer_references: bool
+    eu_marketing_campaigns: bool
+    international_dialing_codes: bool
+
+    # Analysis
+    targeting_indicators_found: List[str]
+    manifestly_envisages_eu: bool
+
+    # Conclusion
+    art_3_2_a_applies: bool
+
+Dataclass MonitoringAssessment:
+    """Article 3(2)(b) - Monitoring behaviour in EU"""
+    assessment_id: str
+
+    # Monitoring indicators (per Recital 24)
+    tracks_internet_behaviour: bool
+    uses_profiling: bool
+    uses_cookies_tracking: bool
+    behavioural_advertising: bool
+    location_tracking: bool
+    health_tracking: bool
+
+    # Platform-specific monitoring
+    trading_pattern_analysis: bool             # Algorithmic analysis
+    risk_profiling: bool                       # Financial risk assessment
+
+    # Analysis
+    monitoring_indicators_found: List[str]
+    monitors_eu_subjects: bool
+
+    # Conclusion
+    art_3_2_b_applies: bool
+
+Dataclass RepresentativeRequirement:
+    """Article 27 - Representative of non-EU controllers"""
+    requires_representative: bool              # Art. 27(1)
+    exemption_applies: bool                    # Art. 27(2)
+    exemption_reason: Optional[str]
+    representative_appointed: bool
+    representative_name: Optional[str]
+    representative_country: Optional[str]
+    representative_contact: Optional[str]
+
+Dataclass TerritorialAssessment:
+    """Complete Article 3 territorial assessment"""
+    assessment_id: str
+    assessment_date: datetime
+    entity_name: str
+
+    # Individual assessments
+    establishment_assessment: EstablishmentAssessment
+    offering_services_assessment: OfferingServicesAssessment
+    monitoring_assessment: MonitoringAssessment
+
+    # Overall conclusion
+    gdpr_applies: bool
+    applicable_bases: List[TerritorialBasis]
+    primary_basis: TerritorialBasis
+
+    # Lead SA determination (for cross-border processing)
+    main_establishment: Optional[str]
+    lead_sa: Optional[str]
+    concerned_sas: List[str]
+
+    # Representative
+    representative_requirement: RepresentativeRequirement
+
+    # Documentation
+    assessment_rationale: str
+    evidence_documents: List[str]
+    next_review_date: datetime
+
+Class TerritorialScopeAssessor:
+    """
+    Article 3 territorial scope assessment.
+
+    Per EDPB Guidelines 3/2018 on territorial scope:
+    https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-32018-territorial-scope-gdpr-article-3_en
+    """
+
+    # Assessment
+    - assess_establishment(entity: EntityInfo) -> EstablishmentAssessment
+    - assess_offering_services(service_info: ServiceInfo) -> OfferingServicesAssessment
+    - assess_monitoring(processing_info: ProcessingInfo) -> MonitoringAssessment
+    - perform_full_assessment(entity: EntityInfo) -> TerritorialAssessment
+
+    # Lead SA determination (Art. 56)
+    - determine_main_establishment(establishments: List[EUEstablishment]) -> str
+    - determine_lead_sa(main_establishment: str) -> str
+    - identify_concerned_sas(processing_locations: List[str]) -> List[str]
+
+    # Representative (Art. 27)
+    - check_representative_requirement(assessment: TerritorialAssessment) -> RepresentativeRequirement
+    - register_representative(representative: Representative) -> str
+
+    # Ongoing compliance
+    - schedule_reassessment(assessment_id: str, interval_months: int)
+    - check_for_changes(assessment_id: str) -> List[ChangeIndicator]
+```
+
+**Platform-Specific Territorial Analysis:**
+
+| Factor | Platform Status | GDPR Impact |
+|--------|----------------|-------------|
+| EU incorporation | YES (assumed) | Art. 3(1) applies directly |
+| EU users | YES | Full GDPR rights |
+| Non-EU users accessing EU markets | YES | Art. 3(2)(b) monitoring may apply |
+| Trading pattern analysis | YES | Monitoring → Art. 3(2)(b) |
+| EU currency (EUR) pairs | YES | Offering services indicator |
+
+**Cross-Border Processing & One-Stop-Shop:**
+
+```
+Dataclass CrossBorderProcessing:
+    """Article 4(23) - Cross-border processing definition"""
+    processing_id: str
+
+    # Cross-border indicators
+    processing_in_multiple_ms: bool            # Art. 4(23)(a)
+    substantially_affects_multiple_ms: bool    # Art. 4(23)(b)
+
+    # Establishments involved
+    establishments: List[EUEstablishment]
+    main_establishment: str
+
+    # SA coordination
+    lead_sa: str
+    concerned_sas: List[str]
+    one_stop_shop_applicable: bool
+
+Class CrossBorderHandler:
+    """
+    One-Stop-Shop mechanism per Articles 56, 60-62.
+
+    For cross-border processing, only the lead SA has competence,
+    except for local processing (Art. 56(2)).
+    """
+
+    - determine_cross_border_status(processing: ProcessingActivity) -> CrossBorderProcessing
+    - apply_one_stop_shop(cross_border: CrossBorderProcessing) -> OSSApplication
+    - coordinate_with_concerned_sas(case_id: str) -> CoordinationRecord
+    - handle_local_complaint(complaint: SAComplaint) -> RoutingDecision
+```
+
+#### 0.2.2 GDPRDefinitions (definitions.py)
 
 Article 4 key definitions mapped to platform context:
 
@@ -306,9 +493,11 @@ Class ProcessorManager:
     - generate_processor_report() -> ProcessorReport
 ```
 
-#### 0.2.3 SubProcessorRegistry (sub_processor_registry.py)
+#### 0.2.3 SubProcessorRegistry (sub_processor_registry.py) - ENHANCED v1.6
 
-Article 28(2)(4) sub-processor tracking:
+**Article 28(2)(4) Sub-Processor Tracking with Audit Cascade**
+
+Per Article 28(4): "Where a processor engages another processor... the same data protection obligations as set out in the contract... shall be imposed on that other processor..."
 
 ```
 Dataclass SubProcessorNotification:
@@ -322,12 +511,115 @@ Dataclass SubProcessorNotification:
     objection_reason: Optional[str]
     resolution: Optional[str]
 
+# NEW v1.6 - Audit Cascade
+Dataclass SubProcessorAuditRecord:
+    """Tracks audit rights cascade through processor chain"""
+    audit_id: str
+    processor_chain: List[str]              # [controller -> processor -> sub-processor -> ...]
+    depth_level: int                        # 0=processor, 1=sub-processor, 2=sub-sub-processor
+    audit_rights_verified: bool
+    contract_mirrors_art28: bool            # Does sub-processor contract match Art. 28 requirements?
+    incident_notification_chain: bool       # Can incidents propagate up the chain?
+    data_deletion_cascade: bool             # Will deletion requests propagate?
+    last_audit_date: Optional[datetime]
+    audit_findings: List[str]
+    remediation_required: List[str]
+
+Dataclass SubProcessorContractCheck:
+    """Verifies sub-processor contracts mirror Article 28 requirements"""
+    check_id: str
+    sub_processor_id: str
+
+    # Article 28(3) mandatory provisions - must cascade
+    documented_instructions_clause: bool    # (a)
+    confidentiality_clause: bool            # (b)
+    security_measures_clause: bool          # (c)
+    sub_sub_processing_clause: bool         # (d)
+    dsar_assistance_clause: bool            # (e)
+    compliance_assistance_clause: bool      # (f)
+    deletion_return_clause: bool            # (g)
+    audit_rights_clause: bool               # (h)
+
+    # Cascade-specific checks
+    controller_audit_rights_included: bool  # Can controller (not just processor) audit?
+    breach_notification_to_controller: bool # Direct notification path to controller?
+    liability_pass_through: bool            # Does processor remain liable?
+
+    # Overall assessment
+    contract_compliant: bool
+    gaps_identified: List[str]
+    remediation_deadline: Optional[datetime]
+
 Class SubProcessorRegistry:
+    """
+    Sub-processor management with audit cascade verification (v1.6).
+
+    CRITICAL: Per Article 28(4), the processor remains fully liable
+    to the controller for performance of sub-processor obligations.
+    """
+
+    # Registration
     - register_sub_processor(processor_id: str, sub_processor: ProcessorRecord)
     - process_notification(notification: SubProcessorNotification)
     - object_to_sub_processor(notification_id: str, reason: str)
     - get_sub_processor_chain(processor_id: str) -> List[ProcessorRecord]
-    - verify_sub_processor_contracts(processor_id: str) -> VerificationResult
+
+    # Contract verification (NEW v1.6)
+    - verify_sub_processor_contract(sub_processor_id: str) -> SubProcessorContractCheck
+    - verify_art28_cascade(processor_id: str) -> CascadeVerificationResult
+    - check_controller_audit_rights(sub_processor_id: str) -> bool
+    - verify_incident_notification_chain(processor_id: str) -> ChainVerification
+
+    # Audit cascade (NEW v1.6)
+    - conduct_cascade_audit(processor_id: str) -> SubProcessorAuditRecord
+    - audit_entire_chain(processor_id: str) -> List[SubProcessorAuditRecord]
+    - request_audit_evidence(sub_processor_id: str) -> AuditEvidenceRequest
+    - process_audit_response(audit_id: str, evidence: Dict) -> AuditAssessment
+
+    # Incident management
+    - propagate_incident_notification(incident: Incident, chain: List[str])
+    - track_incident_acknowledgments(incident_id: str) -> List[Acknowledgment]
+
+    # Deletion cascade
+    - initiate_deletion_cascade(data_subject_id: str, processor_id: str) -> DeletionCascade
+    - verify_cascade_deletion(cascade_id: str) -> DeletionVerification
+
+    # Reporting
+    - generate_chain_compliance_report(processor_id: str) -> ChainComplianceReport
+    - get_non_compliant_sub_processors() -> List[ProcessorRecord]
+```
+
+**Sub-Processor Audit Cascade Requirements:**
+
+| Requirement | Article 28 Reference | Must Cascade? | Verification Method |
+|-------------|---------------------|---------------|---------------------|
+| Documented instructions | Art. 28(3)(a) | YES | Contract review |
+| Confidentiality | Art. 28(3)(b) | YES | NDA + contract |
+| Security measures | Art. 28(3)(c) | YES | Security assessment |
+| Sub-sub-processing | Art. 28(3)(d) | YES | Contract + registry |
+| DSAR assistance | Art. 28(3)(e) | YES | SLA review |
+| Compliance assistance | Art. 28(3)(f) | YES | Contract + capability |
+| Deletion/return | Art. 28(3)(g) | YES | Procedure review |
+| **Audit rights** | Art. 28(3)(h) | **YES** | **Contract must allow controller audit** |
+
+**Critical: Controller Audit Rights Over Sub-Processors**
+
+Per Article 28(3)(h), the processor must "make available to the controller all information necessary to demonstrate compliance." This right MUST cascade to sub-processors.
+
+```python
+# Example: Verifying controller can audit sub-processor
+def verify_controller_audit_rights(sub_processor_contract: Dict) -> bool:
+    """
+    Controller must have audit rights even over sub-processors.
+    This is often missed in practice - the processor-sub-processor
+    contract must allow the CONTROLLER (not just processor) to audit.
+    """
+    required_clauses = [
+        "controller_audit_right",           # Controller can request audit
+        "controller_access_to_records",     # Controller can access compliance records
+        "third_party_audit_acceptance"      # Sub-processor accepts third-party auditors
+    ]
+    return all(clause in sub_processor_contract for clause in required_clauses)
 ```
 
 #### 0.2.4 JointControllerAgreement (joint_controller.py)
@@ -569,6 +861,19 @@ Pre-configured processor relationships for the platform:
 
 ```
 test_gdpr_phase0_core_processor.py:
+├── test_territorial_scope/   # NEW v1.6 - Article 3
+│   ├── test_establishment_assessment
+│   ├── test_offering_services_indicators
+│   ├── test_monitoring_behaviour_detection
+│   ├── test_territorial_assessment_combination
+│   ├── test_non_eu_user_gdpr_applicability
+│   ├── test_representative_requirement_check
+│   ├── test_lead_sa_determination
+│   ├── test_main_establishment_identification
+│   ├── test_cross_border_processing_status
+│   ├── test_one_stop_shop_application
+│   ├── test_concerned_sa_identification
+│   └── test_territorial_reassessment_scheduling
 ├── test_definitions/
 │   ├── test_role_classification
 │   ├── test_personal_data_categories
@@ -587,7 +892,14 @@ test_gdpr_phase0_core_processor.py:
 │   ├── test_notification_workflow
 │   ├── test_objection_handling
 │   ├── test_chain_verification
-│   └── test_contract_cascade
+│   ├── test_contract_cascade
+│   ├── test_audit_cascade_verification       # NEW v1.6
+│   ├── test_controller_audit_rights_check    # NEW v1.6
+│   ├── test_art28_clause_cascade             # NEW v1.6
+│   ├── test_incident_notification_chain      # NEW v1.6
+│   ├── test_deletion_cascade_initiation      # NEW v1.6
+│   ├── test_chain_compliance_report          # NEW v1.6
+│   └── test_non_compliant_sub_processor_detection  # NEW v1.6
 ├── test_joint_controller/
 │   ├── test_arrangement_creation
 │   ├── test_responsibility_allocation
@@ -619,7 +931,7 @@ test_gdpr_phase0_core_processor.py:
     └── test_full_processor_onboarding_workflow
 ```
 
-**Expected test count**: ~70-90 tests
+**Expected test count**: ~85-105 tests (increased for territorial scope and audit cascade)
 
 ---
 
@@ -635,6 +947,7 @@ Establish the core GDPR framework including:
 - Processing principles enforcement (Article 5)
 - Lawful basis management (Article 6)
 - Special categories handling (Article 9)
+- **Member State derogations handling** - NEW v1.6
 - Configuration and base infrastructure
 
 ### 1.2 Components to Implement
@@ -761,7 +1074,200 @@ Platform-specific special category considerations:
 
 **Important**: For algorithmic trading platforms, special category data should be **avoided by design**. If unavoidable, explicit consent and DPIA are mandatory.
 
-#### 1.2.4 AccountabilityFramework (accountability.py) - NEW
+#### 1.2.5 MemberStateDerogations (member_state_derogations.py) - NEW v1.6
+
+**GDPR Opening Clauses & National Variations**
+
+GDPR contains approximately **50 opening clauses** allowing Member States to specify or derogate from certain provisions. This module manages per-jurisdiction variations critical for cross-border compliance.
+
+Per [GDPR Article 23](https://gdpr-info.eu/art-23-gdpr/) and multiple other articles, Member States may adopt specific measures. This creates compliance complexity for platforms operating across multiple EU jurisdictions.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Key Derogations for Trading Platforms
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass MemberStateDerogation:
+    """Record of national GDPR implementation variation"""
+    derogation_id: str
+    member_state: str                    # ISO 3166-1 alpha-2 (DE, FR, IE, etc.)
+    gdpr_article: str                    # Article being derogated
+    national_law_reference: str          # e.g., "BDSG §26" for Germany
+    derogation_type: str                 # "specification", "restriction", "extension"
+    description: str
+    effective_date: datetime
+    expiry_date: Optional[datetime]
+    platform_impact: str                 # How this affects platform operations
+    compliance_action_required: str
+
+# Critical derogations per Member State
+MEMBER_STATE_DEROGATIONS = {
+    "DE": {  # Germany - BDSG (Bundesdatenschutzgesetz)
+        "name": "Bundesdatenschutzgesetz (BDSG)",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "16 years (GDPR default applies)",
+                "platform_impact": "Verify age 16+ for German users"
+            },
+            {
+                "article": "Art. 22",
+                "topic": "Automated decisions in employment",
+                "national_rule": "BDSG §37 - additional protections for employees",
+                "platform_impact": "N/A unless processing employee data"
+            },
+            {
+                "article": "Art. 83",
+                "topic": "Fines for public bodies",
+                "national_rule": "BDSG §43 - limited fines for public bodies",
+                "platform_impact": "N/A for private companies"
+            },
+            {
+                "article": "Art. 9",
+                "topic": "Health data for insurance",
+                "national_rule": "BDSG §22 - specific rules for insurance",
+                "platform_impact": "If processing health-related trading data"
+            }
+        ]
+    },
+    "FR": {  # France - Loi Informatique et Libertés
+        "name": "Loi Informatique et Libertés (modified)",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "15 years",
+                "platform_impact": "Verify age 15+ for French users"
+            },
+            {
+                "article": "Art. 85",
+                "topic": "Journalism exemption",
+                "national_rule": "Extensive press freedom protections",
+                "platform_impact": "If publishing market analysis"
+            }
+        ]
+    },
+    "ES": {  # Spain - LOPDGDD
+        "name": "Ley Orgánica de Protección de Datos (LOPDGDD)",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "14 years",
+                "platform_impact": "Verify age 14+ for Spanish users"
+            },
+            {
+                "article": "Art. 17",
+                "topic": "Digital testament",
+                "national_rule": "Specific rules for deceased persons' data",
+                "platform_impact": "Apply Spanish rules for deceased users"
+            }
+        ]
+    },
+    "IE": {  # Ireland - Data Protection Act 2018
+        "name": "Data Protection Act 2018",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "16 years (GDPR default)",
+                "platform_impact": "Verify age 16+ for Irish users"
+            },
+            {
+                "article": "Art. 23",
+                "topic": "Restrictions for legal proceedings",
+                "national_rule": "Section 60 - legal proceedings exemption",
+                "platform_impact": "May restrict DSAR if litigation pending"
+            }
+        ]
+    },
+    "NL": {  # Netherlands - UAVG
+        "name": "Uitvoeringswet AVG (UAVG)",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "16 years (GDPR default)",
+                "platform_impact": "Verify age 16+ for Dutch users"
+            }
+        ]
+    },
+    "IT": {  # Italy - Codice Privacy (as amended)
+        "name": "Codice in materia di protezione dei dati personali",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "14 years",
+                "platform_impact": "Verify age 14+ for Italian users"
+            }
+        ]
+    },
+    "UK": {  # UK - Data Protection Act 2018 (post-Brexit)
+        "name": "Data Protection Act 2018 / UK GDPR",
+        "derogations": [
+            {
+                "article": "Art. 8(1)",
+                "topic": "Child consent age",
+                "national_rule": "13 years",
+                "platform_impact": "Verify age 13+ for UK users"
+            },
+            {
+                "article": "Art. 22",
+                "topic": "Automated decisions",
+                "national_rule": "Data (Use and Access) Act 2025 changes pending",
+                "platform_impact": "Monitor UK law developments"
+            }
+        ]
+    }
+}
+
+# Child consent age summary (Article 8)
+CHILD_CONSENT_AGES = {
+    "AT": 14, "BE": 13, "BG": 14, "CY": 14, "CZ": 15, "DE": 16,
+    "DK": 13, "EE": 13, "ES": 14, "FI": 13, "FR": 15, "GR": 15,
+    "HR": 16, "HU": 16, "IE": 16, "IT": 14, "LT": 14, "LU": 16,
+    "LV": 13, "MT": 13, "NL": 16, "PL": 16, "PT": 13, "RO": 16,
+    "SE": 13, "SI": 15, "SK": 16, "UK": 13  # Note: UK no longer EU
+}
+
+Class MemberStateDerogationsManager:
+    """
+    Manages GDPR variations across EU/EEA Member States.
+
+    CRITICAL: Always check applicable derogations when processing
+    data subjects from different jurisdictions.
+    """
+
+    # Derogation lookup
+    - get_derogations_for_country(country: str) -> List[MemberStateDerogation]
+    - get_derogation_for_article(country: str, article: str) -> Optional[MemberStateDerogation]
+    - get_child_consent_age(country: str) -> int
+    - get_applicable_derogations(data_subject_country: str, processing_type: str) -> List[MemberStateDerogation]
+
+    # Compliance checking
+    - check_age_compliance(user_age: int, user_country: str) -> AgeComplianceResult
+    - get_country_specific_requirements(country: str) -> List[Requirement]
+    - validate_processing_against_national_law(processing: ProcessingActivity, country: str) -> ValidationResult
+
+    # Updates
+    - update_derogation(derogation: MemberStateDerogation) -> str
+    - check_for_law_changes() -> List[LawChange]
+    - subscribe_to_national_updates(countries: List[str]) -> Subscription
+```
+
+**Platform Implementation:**
+
+| User Country | Age Check | Specific Requirements | Notes |
+|--------------|-----------|----------------------|-------|
+| Germany (DE) | 16+ | Full BDSG compliance | Stricter employee data rules |
+| France (FR) | 15+ | Loi Informatique | Journalism exemptions |
+| Spain (ES) | 14+ | LOPDGDD | Digital testament rules |
+| Ireland (IE) | 16+ | DPA 2018 | Legal proceedings restrictions |
+| UK | 13+ | UK GDPR + DPA 2018 | Monitor post-Brexit changes |
+
+#### 1.2.6 AccountabilityFramework (accountability.py) - NEW
 
 **Article 24 - Responsibility of the Controller**
 
@@ -995,6 +1501,17 @@ test_gdpr_phase1_foundation.py:
 │   ├── test_biometric_data_handling
 │   ├── test_health_data_avoidance
 │   └── test_political_data_aggregation
+├── test_member_state_derogations/   # NEW v1.6
+│   ├── test_derogation_lookup_by_country
+│   ├── test_child_consent_age_germany_16
+│   ├── test_child_consent_age_france_15
+│   ├── test_child_consent_age_spain_14
+│   ├── test_child_consent_age_uk_13
+│   ├── test_age_compliance_check
+│   ├── test_country_specific_requirements
+│   ├── test_processing_validation_against_national_law
+│   ├── test_derogation_update_mechanism
+│   └── test_law_change_monitoring
 └── test_integration/
     ├── test_audit_trail_integration
     ├── test_secure_logging_integration
@@ -1313,32 +1830,126 @@ Key features:
 - Deletion verification
 - Audit trail preservation (anonymized)
 
-#### 2.2.4 PortabilityManager (portability_manager.py)
+#### 2.2.4 PortabilityManager (portability_manager.py) - ENHANCED v1.6
 
-Article 20 data portability:
+**Article 20 Data Portability**
+
+Per [EDPB Guidelines on Portability](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-portability_en), portable data must be in a "structured, commonly used and machine-readable format."
 
 ```
-Supported formats:
-- JSON (structured, machine-readable)
-- CSV (tabular data)
-- XML (optional)
+# Supported formats (Article 20(1))
+Enum PortabilityFormat:
+    JSON = "application/json"       # Primary - structured, machine-readable
+    CSV = "text/csv"                # Tabular data
+    XML = "application/xml"         # Optional
+    FIX = "application/fix"         # NEW v1.6 - Financial trading standard (FIX Protocol)
+    FPML = "application/fpml"       # NEW v1.6 - Financial products markup
 
 Dataclass PortabilityRequest:
     request_id: str
     data_subject_id: str
     requested_at: datetime
-    format: str
-    destination: Optional[str]  # Direct transfer to another controller
+    format: PortabilityFormat
+    destination_controller: Optional[str]  # For direct transfer (Art. 20(2))
+    destination_api_endpoint: Optional[str]  # NEW v1.6 - Direct API transfer
     data_categories: List[str]
+    date_range: Optional[Tuple[datetime, datetime]]  # Optional filtering
     status: str
+
+# Trading platform specific portable data
+Dataclass TradingDataPortabilityPackage:
+    """Portable trading data per Article 20"""
+    package_id: str
+    data_subject_id: str
+    export_date: datetime
+    format: PortabilityFormat
+
+    # User-provided data (Art. 20 scope)
+    profile_data: Dict[str, Any]           # Account settings, preferences
+    trading_history: List[Dict]             # Orders, trades, positions
+    strategy_configurations: List[Dict]     # User-configured strategies
+    watchlists: List[Dict]                  # User-created watchlists
+    alerts: List[Dict]                      # User-configured alerts
+
+    # Metadata
+    data_categories_included: List[str]
+    date_range: Tuple[datetime, datetime]
+    record_count: int
+    checksum: str                           # Data integrity verification
+
+    # NOT included (inferred/derived data not subject to portability)
+    # - Platform-generated risk scores
+    # - ML model outputs
+    # - Algorithmic recommendations
+
+Class PortabilityManager:
+    """
+    Article 20 data portability with direct transfer API (v1.6).
+
+    IMPORTANT: Per EDPB guidelines, portability only applies to:
+    1. Data provided by the data subject
+    2. Data observed about the data subject
+    NOT: Derived/inferred data (e.g., risk scores, profile analyses)
+    """
+
+    # Format generation
+    - export_to_json(data_subject_id: str, categories: List[str]) -> bytes
+    - export_to_csv(data_subject_id: str, categories: List[str]) -> bytes
+    - export_to_fix(data_subject_id: str) -> bytes  # NEW v1.6 - Trading data
+    - generate_portable_package(request: PortabilityRequest) -> TradingDataPortabilityPackage
+
+    # Direct transfer API (Article 20(2)) - NEW v1.6
+    - initiate_direct_transfer(request: PortabilityRequest) -> TransferInitiation
+    - validate_destination_controller(controller_id: str, api_endpoint: str) -> ValidationResult
+    - execute_api_transfer(package: TradingDataPortabilityPackage, endpoint: str) -> TransferResult
+    - verify_transfer_receipt(transfer_id: str) -> ReceiptConfirmation
+
+    # API endpoint for receiving transfers
+    - receive_transfer_request(source_controller: str, data: Dict) -> ReceiveResult
+    - validate_incoming_data(data: Dict) -> ValidationResult
+    - import_portable_data(data: Dict, target_user_id: str) -> ImportResult
+
+    # Compliance
+    - check_portability_scope(data_category: str) -> ScopeResult  # Is it portable?
+    - log_portability_request(request: PortabilityRequest) -> str
+    - get_portability_statistics() -> PortabilityStats
 ```
 
-Key features:
-- Machine-readable format generation
-- Direct controller-to-controller transfer support
-- Selective data category export
-- Metadata inclusion
-- **Only applies to**: automated processing AND (consent OR contract basis)
+**Direct Transfer API (Article 20(2)):**
+
+```
+# API Endpoint for direct controller-to-controller transfer
+POST /api/gdpr/portability/transfer
+Authorization: Bearer <controller_api_key>
+Content-Type: application/json
+
+{
+    "source_controller": "source.example.com",
+    "destination_controller": "destination.example.com",
+    "data_subject_consent_reference": "consent_id_12345",
+    "data_package": { ... },
+    "checksum": "sha256:..."
+}
+
+Response:
+{
+    "transfer_id": "xfer_12345",
+    "status": "received",
+    "receipt_timestamp": "2025-12-09T12:00:00Z"
+}
+```
+
+**Portability Scope for Trading Platform:**
+
+| Data Category | Portable (Art. 20) | Reason |
+|---------------|-------------------|--------|
+| Profile data | YES | User provided |
+| Trading history | YES | User-initiated transactions |
+| Strategy configs | YES | User provided |
+| Watchlists | YES | User created |
+| Risk scores | **NO** | Platform derived/inferred |
+| ML predictions | **NO** | Platform derived |
+| Compliance flags | **NO** | Platform derived |
 
 #### 2b.2.5 AutomatedDecisionManager (automated_decisions.py)
 
@@ -1499,9 +2110,101 @@ Enum Article22Applicability:
 | **Strategy Recommendations** | Recommendation | **NO** | Human makes final decision | Transparency only |
 | **Position Sizing** (user-configured params) | Fully Automated | **NO** | User defined parameters | Transparency only |
 | **Position Sizing** (platform-determined) | Fully Automated | **YES** | Platform decides without user input | Full Art. 22(3) safeguards |
+| **Risk Score → Third Party** (NEW v1.6) | Profiling | **REQUIRES ANALYSIS** | See SCHUFA scenario below | Case-by-case per CJEU |
 
 > **Key Principle**: If the user initiated and parameterized the action, Article 22 generally does NOT apply.
 > If the platform autonomously makes a decision that significantly affects the user without their specific instruction, Article 22 DOES apply.
+
+---
+
+#### SCHUFA Scenario - Third-Party Score Reliance (NEW v1.6)
+
+**⚠️ CRITICAL: CJEU Judgment C-634/21 (SCHUFA, December 2023)**
+
+Per the [CJEU SCHUFA ruling](https://curia.europa.eu/juris/document/document.jsf?docid=280426&mode=lst&pageIndex=0&dir=&occ=first&part=1&text=&doclang=EN&cid=1234567), Article 22 GDPR can apply to **scoring** operations even when:
+1. The score provider (e.g., this platform) does not make the final decision
+2. A third party (e.g., broker, lender) makes the actual decision
+
+**The Test (per CJEU):**
+> Article 22(1) applies if the third party "draws strongly" on the score, meaning the score plays a **determining role** in the decision.
+
+**Platform-Specific SCHUFA Scenarios:**
+
+```
+Dataclass ThirdPartyScoreReliance:
+    """Assessment of third-party reliance on platform-generated scores"""
+    score_id: str
+    score_type: str                      # "risk_score", "creditworthiness", "trading_pattern"
+    third_party_name: str
+    third_party_purpose: str             # "lending_decision", "account_approval", etc.
+
+    # SCHUFA Test Factors
+    score_is_determinative: bool         # Does third party "draw strongly" on score?
+    third_party_applies_own_judgment: bool  # Meaningful human assessment?
+    score_can_be_overridden: bool        # Can third party deviate from score?
+    override_frequency: float            # % of decisions that deviate from score
+
+    # Article 22 Determination
+    article_22_applies_to_scoring: bool  # TRUE if determinative
+    joint_responsibility: bool           # Platform + third party may be jointly responsible
+
+Enum ScoreRelianceLevel:
+    DETERMINATIVE = "determinative"      # Score is sole/primary factor → Art. 22 applies
+    SIGNIFICANT = "significant"          # Score is major factor → likely Art. 22 applies
+    ADVISORY = "advisory"                # Score is one of many factors → Art. 22 unlikely
+    INFORMATIONAL = "informational"      # Score is background info → Art. 22 does not apply
+```
+
+**SCHUFA Scenario Assessment Table:**
+
+| Scenario | Score Use | Reliance Level | Article 22 | Action Required |
+|----------|-----------|----------------|------------|-----------------|
+| Platform provides risk score to broker | Broker auto-approves/denies based on score | **DETERMINATIVE** | **YES** | Full Art. 22(3) safeguards |
+| Platform provides risk score to broker | Broker uses score as input to human review | **ADVISORY** | **NO** | Transparency only |
+| Platform provides trading pattern analysis to regulator | Regulator uses for investigation | **INFORMATIONAL** | **NO** | Transparency only |
+| Platform provides creditworthiness score to lender | Lender auto-denies below threshold | **DETERMINATIVE** | **YES** | Full Art. 22(3) safeguards |
+| Platform risk score triggers margin call at external broker | Margin call is automatic | **DETERMINATIVE** | **YES** | Full Art. 22(3) safeguards |
+
+**Implementation Requirements for SCHUFA Scenario:**
+
+```
+Class ThirdPartyScoreComplianceManager:
+    """
+    Manages Article 22 compliance when platform scores are used by third parties.
+
+    Per CJEU SCHUFA: If third party "draws strongly" on score, platform may
+    need to ensure Art. 22 safeguards are available through third party.
+    """
+
+    # Assessment
+    - assess_third_party_reliance(score_id: str, third_party: str) -> ScoreRelianceAssessment
+    - determine_article_22_applicability(reliance: ScoreRelianceLevel) -> bool
+
+    # Contractual safeguards (require in agreements with score recipients)
+    - verify_third_party_safeguards(third_party_id: str) -> SafeguardVerification
+    - require_human_review_clause(agreement_id: str) -> bool
+    - require_override_capability(agreement_id: str) -> bool
+
+    # Data subject rights passthrough
+    - ensure_contestation_right(score_id: str, third_party_id: str) -> bool
+    - ensure_explanation_right(score_id: str, third_party_id: str) -> bool
+
+    # Documentation
+    - document_third_party_use(score_id: str, third_party_id: str, use_details: Dict)
+    - generate_schufa_compliance_report() -> Report
+```
+
+**Contractual Requirements for Score Recipients:**
+
+When providing scores to third parties, contracts MUST include:
+
+1. **Use limitation**: Score cannot be sole basis for legal/significant decisions
+2. **Human review obligation**: Recipient must have meaningful human involvement
+3. **Override capability**: Recipient must be able to deviate from score
+4. **Passthrough rights**: Data subjects can contest through recipient OR platform
+5. **Audit rights**: Platform can verify compliance with above
+
+---
 
 **CRITICAL Implementation Notes:**
 
@@ -2389,6 +3092,121 @@ Enum DPIATrigger:
     NEW_TECHNOLOGY = "new_technology"
     PROFILING = "profiling"
     AUTOMATED_DECISIONS = "automated_decisions"
+    DPA_BLACKLIST = "dpa_blacklist"  # NEW v1.6 - Article 35(4) national list
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 35(4) - DPA Blacklists (NEW v1.6)
+# ═══════════════════════════════════════════════════════════════════
+# Per Article 35(4), each supervisory authority publishes a list of
+# processing operations requiring DPIA. These are MANDATORY triggers.
+#
+# References:
+# - Irish DPC: https://www.dataprotection.ie/en/dpc-guidance/dpia
+# - German BfDI: https://www.bfdi.bund.de/
+# - French CNIL: https://www.cnil.fr/en/dpia
+# - Spanish AEPD: https://www.aepd.es/
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass DPABlacklistEntry:
+    """Entry from national DPA's Article 35(4) list"""
+    entry_id: str
+    dpa_country: str                    # ISO 3166-1 alpha-2
+    dpa_name: str
+    processing_description: str
+    trigger_criteria: List[str]
+    official_reference: str             # Link to official list
+    last_updated: datetime
+
+# Sample DPA Blacklists (non-exhaustive - check official sources)
+DPA_DPIA_BLACKLISTS = {
+    "IE": {  # Ireland - DPC
+        "name": "Data Protection Commission",
+        "url": "https://www.dataprotection.ie/en/dpc-guidance/dpia",
+        "triggers": [
+            "large_scale_profiling",
+            "systematic_monitoring_employees",
+            "automated_decision_significant_effect",
+            "large_scale_genetic_biometric",
+            "combining_datasets",
+            "vulnerable_individuals_data",
+            "innovative_technology",
+            "cross_border_transfer_outside_adequacy",
+            "preventing_data_subjects_exercising_rights",
+        ]
+    },
+    "DE": {  # Germany - BfDI (federal) + state authorities
+        "name": "Bundesbeauftragter für den Datenschutz",
+        "url": "https://www.bfdi.bund.de/",
+        "triggers": [
+            "employee_monitoring",
+            "video_surveillance_public",
+            "profiling_creditworthiness",
+            "location_tracking",
+            "large_scale_special_categories",
+            "biometric_identification",
+            "ai_based_decision_making",
+        ]
+    },
+    "FR": {  # France - CNIL
+        "name": "Commission Nationale de l'Informatique et des Libertés",
+        "url": "https://www.cnil.fr/en/dpia",
+        "triggers": [
+            "health_data_large_scale",
+            "genetic_biometric_identification",
+            "systematic_employee_monitoring",
+            "social_scoring",
+            "automated_decisions_legal_effects",
+            "profiling_vulnerable_persons",
+            "innovative_technology_personal_data",
+        ]
+    },
+    "NL": {  # Netherlands - Autoriteit Persoonsgegevens
+        "name": "Autoriteit Persoonsgegevens",
+        "url": "https://autoriteitpersoonsgegevens.nl/",
+        "triggers": [
+            "covert_investigation",
+            "biometric_data_identification",
+            "genetic_data_profiling",
+            "blacklists",
+            "tracking_location_behaviour",
+            "profiling_for_risk_assessment",
+        ]
+    },
+    "ES": {  # Spain - AEPD
+        "name": "Agencia Española de Protección de Datos",
+        "url": "https://www.aepd.es/",
+        "triggers": [
+            "profiling_financial_solvency",
+            "massive_processing_biometric",
+            "geolocation_tracking_continuous",
+            "video_surveillance_workplace",
+            "automated_credit_decisions",
+        ]
+    }
+}
+
+Class DPABlacklistChecker:
+    """
+    Checks processing activities against national DPA blacklists.
+
+    Per Article 35(4), DPIA is MANDATORY if processing appears on
+    the supervisory authority's list, regardless of other factors.
+    """
+
+    - load_blacklists() -> Dict[str, DPABlacklist]
+    - check_against_blacklist(processing: ProcessingActivity, jurisdiction: str) -> BlacklistResult
+    - check_against_all_applicable(processing: ProcessingActivity, establishments: List[str]) -> List[BlacklistResult]
+    - get_blacklist_triggers(jurisdiction: str) -> List[str]
+    - is_dpia_mandatory(processing: ProcessingActivity, jurisdictions: List[str]) -> bool
+    - update_blacklists_from_source() -> UpdateResult  # Periodic refresh
+
+Dataclass BlacklistResult:
+    """Result of blacklist check"""
+    jurisdiction: str
+    dpia_mandatory: bool
+    matched_triggers: List[str]
+    official_reference: str
+    recommendation: str
 
 Dataclass DPIARecord:
     dpia_id: str
@@ -2399,6 +3217,11 @@ Dataclass DPIARecord:
     trigger_criteria: List[DPIATrigger]
     dpia_required: bool
     screening_rationale: str
+
+    # DPA Blacklist check (NEW v1.6)
+    blacklist_check_performed: bool
+    blacklist_matches: List[BlacklistResult]
+    mandatory_due_to_blacklist: bool
 
     # Article 35(7) minimum contents
     systematic_description: str
@@ -2433,7 +3256,20 @@ Dataclass RiskItem:
     residual_risk: str
 
 Class DPIAManager:
-    - screen_for_dpia(project: Dict) -> DPIAScreeningResult
+    """
+    DPIA management with Article 35(4) blacklist integration.
+
+    IMPORTANT: Blacklist check is MANDATORY before any DPIA screening.
+    If processing matches a national DPA blacklist, DPIA is REQUIRED
+    regardless of other risk factors.
+    """
+
+    # Blacklist integration (NEW v1.6)
+    - check_dpa_blacklists(project: Dict, jurisdictions: List[str]) -> List[BlacklistResult]
+    - is_dpia_mandatory_per_blacklist(project: Dict) -> bool
+
+    # Standard DPIA workflow
+    - screen_for_dpia(project: Dict) -> DPIAScreeningResult  # Now includes blacklist check
     - create_dpia(project_name: str) -> DPIARecord
     - assess_risks(dpia_id: str) -> List[RiskItem]
     - add_mitigation(dpia_id: str, mitigation: MitigationMeasure)
@@ -2442,6 +3278,16 @@ Class DPIAManager:
     - schedule_review(dpia_id: str, interval_months: int)
     - generate_dpia_report(dpia_id: str, format: str) -> bytes
 ```
+
+**Trading Platform DPIA Triggers (with Blacklist):**
+
+| Processing Activity | Art. 35(3) Trigger | DPA Blacklist Match | DPIA Required |
+|--------------------|-------------------|---------------------|---------------|
+| Algorithmic Trading | Automated decisions | DE: ai_based_decision_making | **YES** |
+| Risk Scoring | Profiling | IE: large_scale_profiling, NL: profiling_for_risk_assessment | **YES** |
+| ML Model Training | New technology | IE: innovative_technology | **YES** |
+| User Analytics | Profiling | Multiple | **YES** |
+| Audit Logging | Legal obligation | None | Screening needed |
 
 #### 6.2.2 DPOInterface (dpo_interface.py) - ENHANCED
 
@@ -2801,19 +3647,30 @@ Class InternationalTransferManager:
     - generate_transfer_map() -> TransferMap
 ```
 
-#### 6.2.4 UKAdequacyContingency (uk_adequacy_contingency.py) - NEW
+#### 6.2.4 UKAdequacyContingency (uk_adequacy_contingency.py) - UPDATED v1.6
 
-**Critical: UK Adequacy Sunset Handling**
+**🚨 CRITICAL: UK Adequacy Sunset - IMMINENT ACTION REQUIRED**
 
-Per [European Commission announcement (July 2025)](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en), the UK adequacy decision expires **27 December 2025**. This module provides automated contingency management.
+Per [European Commission](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en) and [EDPB](https://www.edpb.europa.eu/news/news/2024/edpb-meets-adequate-countries_en), the UK adequacy decision expires **27 December 2025**.
+
+> **⚠️ STATUS AS OF DECEMBER 2025**: The deadline is IMMINENT. Organizations MUST have SCCs ready to activate. Check `get_current_adequacy_status()` for real-time status.
+
+**Key Updates (December 2025):**
+- UK Data (Use and Access) Act entered into force 19 June 2025 ([ICO](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/))
+- EDPB and EC reviewing UK data protection framework
+- New adequacy decision NOT YET adopted (as of document date)
+- **CONTINGENCY ACTIVATION MAY BE REQUIRED BY 28 DEC 2025**
 
 ```
 Dataclass UKContingencyStatus:
     adequacy_expiry_date: datetime = datetime(2025, 12, 27)
     preparation_start_date: datetime = datetime(2025, 9, 1)  # Q3 2025
-    current_status: str  # "monitoring", "preparing", "contingency_active"
+    current_status: str  # "monitoring", "preparing", "contingency_active", "adequacy_renewed"
     new_adequacy_adopted: Optional[bool]
+    new_adequacy_adoption_date: Optional[datetime]
     last_ec_communication_date: Optional[datetime]
+    days_until_sunset: int  # Dynamically calculated
+    contingency_required: bool  # True if sunset passed without new adequacy
 
 Dataclass UKProcessor:
     processor_id: str
@@ -2845,19 +3702,23 @@ Class UKAdequacyContingency:
     Manages UK adequacy decision sunset and contingency planning.
 
     Timeline:
-    - Q3 2025: Begin preparation (SCCs, TIAs)
-    - Q4 2025: Complete all preparations, test mechanisms
-    - 27 Dec 2025: If no new adequacy, activate contingency
+    - Q3 2025: Begin preparation (SCCs, TIAs) ✅ SHOULD BE COMPLETE
+    - Q4 2025: Complete all preparations, test mechanisms ✅ SHOULD BE COMPLETE
+    - 27 Dec 2025: If no new adequacy, activate contingency ⚠️ IMMINENT
+    - 28 Dec 2025+: SCCs MUST be in place if no new adequacy
     """
 
     SUNSET_DATE = datetime(2025, 12, 27)
     PREPARATION_START = datetime(2025, 9, 1)
     FINAL_PREPARATION = datetime(2025, 11, 1)
 
-    # Status monitoring
+    # Real-time status monitoring (v1.6)
+    - get_current_adequacy_status() -> AdequacyStatus  # NEW - fetch live status
     - check_ec_announcements() -> ECAnnouncementStatus
     - get_contingency_status() -> UKContingencyStatus
     - should_start_preparation() -> bool
+    - is_contingency_required() -> bool  # NEW - returns True if sunset passed without renewal
+    - get_days_until_sunset() -> int  # NEW - negative if passed
 
     # Processor management
     - identify_uk_processors() -> List[UKProcessor]
@@ -2878,17 +3739,28 @@ Class UKAdequacyContingency:
     - generate_dpo_briefing() -> DPOBriefing
 ```
 
-**Automated Alerts:**
+**Automated Alerts (Updated v1.6):**
 
-| Trigger | Alert | Action Required |
-|---------|-------|-----------------|
-| Q3 2025 begins | "UK contingency preparation required" | Start SCC/TIA preparation |
-| 60 days before sunset | "UK adequacy expiring soon" | Verify all preparations complete |
-| 30 days before sunset | "Final UK preparation check" | Test mechanism switch |
-| EC new adequacy adopted | "UK adequacy renewed" | Cancel contingency |
-| Sunset with no adequacy | "UK contingency activated" | Switch to SCCs |
+| Trigger | Alert | Action Required | Status (Dec 2025) |
+|---------|-------|-----------------|-------------------|
+| Q3 2025 begins | "UK contingency preparation required" | Start SCC/TIA preparation | ✅ PASSED |
+| 60 days before sunset | "UK adequacy expiring soon" | Verify all preparations complete | ✅ PASSED |
+| 30 days before sunset | "Final UK preparation check" | Test mechanism switch | ✅ PASSED |
+| 7 days before sunset | "🚨 UK adequacy expiring in 7 days" | Final readiness check | ⚠️ ACTIVE NOW |
+| EC new adequacy adopted | "UK adequacy renewed" | Cancel contingency | ⏳ PENDING EC DECISION |
+| Sunset with no adequacy | "🚨 UK contingency activated" | **SWITCH TO SCCs IMMEDIATELY** | ⏳ 27 DEC 2025 |
+| Post-sunset check (daily) | "Verify SCC compliance" | Audit all UK transfers | ⏳ FROM 28 DEC 2025 |
 
-Adequacy decisions list (as of December 2024):
+**Emergency Fallback Procedure (if adequacy expires):**
+```
+1. IMMEDIATELY activate SCCs for all UK processors
+2. Notify affected data subjects within 72 hours (if significant change)
+3. Update ROPA to reflect new transfer mechanism
+4. Log activation in compliance dashboard
+5. Schedule 30-day post-activation audit
+```
+
+Adequacy decisions list (as of December 2025 - UPDATED v1.6):
 - Andorra, Argentina, Canada (PIPEDA commercial orgs), Faroe Islands
 - Guernsey, Israel, Isle of Man, Japan, Jersey
 - New Zealand, Republic of Korea, Switzerland, Uruguay
@@ -3894,6 +4766,79 @@ TIA Components:
 
 ---
 
+## Appendix C: GDPR Recitals Integration (NEW v1.6)
+
+The GDPR contains **173 Recitals** that provide critical interpretive context for the Articles. While not legally binding on their own, Recitals are essential for proper implementation.
+
+### Critical Recitals for Trading Platforms
+
+| Recital | Topic | Article(s) | Platform Relevance | Implementation Impact |
+|---------|-------|-----------|-------------------|----------------------|
+| **Recital 26** | Identifiability | Art. 4 | Pseudonymized trading data | Data is personal if reasonably identifiable |
+| **Recital 47** | Legitimate Interest | Art. 6(1)(f) | Risk management, fraud prevention | LIA required; direct marketing generally allowed |
+| **Recital 50** | Purpose Limitation | Art. 5(1)(b) | New analytics on trading data | Compatible purposes may not need new basis |
+| **Recital 71** | Automated Decisions | Art. 22 | Algorithmic trading, risk scoring | Human intervention must be meaningful |
+| **Recital 75** | Risk Definition | Art. 24 | Breach assessment | Defines what constitutes risk to rights |
+| **Recital 76** | Risk Likelihood | Art. 35 | DPIA thresholds | Objective risk assessment criteria |
+| **Recital 78** | Privacy by Design | Art. 25 | Technical measures | Specific examples of PbD measures |
+| **Recital 91** | DPIA Scope | Art. 35 | When DPIA required | DPIA not required for every processing |
+| **Recital 101** | International Transfers | Art. 44-49 | Cross-border data flows | Context for adequacy assessment |
+| **Recital 108** | Adequacy | Art. 45 | Third country transfers | Factors for adequacy decisions |
+| **Recital 111** | Derogations | Art. 49 | Occasional transfers | When derogations apply |
+| **Recital 148** | Penalties | Art. 83 | Fine calculations | Factors for fine severity |
+| **Recital 149** | National Penalties | Art. 84 | Member State rules | Criminal penalties scope |
+
+### Recital-Guided Implementation
+
+```
+Dataclass RecitalGuidance:
+    """Maps GDPR Articles to interpretive Recitals"""
+    article: str
+    applicable_recitals: List[int]
+    interpretation_summary: str
+    implementation_guidance: str
+    case_law_references: List[str]  # CJEU decisions
+
+# Key recital mappings for implementation
+RECITAL_GUIDANCE = {
+    "Art. 6(1)(f)": {
+        "recitals": [47, 48, 49],
+        "summary": "Legitimate interest requires balancing test",
+        "platform_guidance": "Document LIA for each LI-based processing; direct marketing is valid but must offer opt-out"
+    },
+    "Art. 22": {
+        "recitals": [71, 72],
+        "summary": "Safeguards must include right to human intervention",
+        "platform_guidance": "For automated trading decisions affecting users, provide meaningful human review option"
+    },
+    "Art. 35": {
+        "recitals": [75, 76, 84, 89, 90, 91, 92, 93, 94, 95],
+        "summary": "DPIA when 'likely high risk'; not required for every processing",
+        "platform_guidance": "Apply two-out-of-nine EDPB criteria test; use DPA blacklist"
+    },
+    "Art. 25": {
+        "recitals": [78],
+        "summary": "Technical and organizational measures proportionate to risk",
+        "platform_guidance": "Pseudonymization, encryption, access controls as baseline"
+    }
+}
+
+Class RecitalIntegrator:
+    """
+    Integrates GDPR Recitals into compliance implementation.
+
+    Recitals provide interpretive context essential for
+    correct implementation of GDPR Articles.
+    """
+
+    - get_recitals_for_article(article: str) -> List[RecitalGuidance]
+    - get_interpretation(article: str, recital: int) -> str
+    - map_implementation_to_recital(implementation: str) -> List[int]
+    - validate_implementation_against_recitals(article: str, implementation: Dict) -> ValidationResult
+```
+
+---
+
 ## References
 
 ### Official Sources
@@ -3972,18 +4917,20 @@ TIA Components:
 | 1.3 | Dec 2024 | AI-Generated | Added adequacy decisions 2024-2025, UK sunset warning, cross-regulation alignment |
 | 1.4 | Dec 2024 | AI-Generated (Audit) | **Comprehensive audit and fixes**: Fixed Art. 22 classification for trading decisions, added missing Arts. 8, 10, 11, 23, 24, 27; corrected DORA-GDPR breach timeline (classification vs detection); added EPO to adequacy list; added UK contingency workflow (Art. 46 fallback); added AccountabilityFramework (Art. 24); added RestrictionsFramework (Art. 23); added AutoErasureScheduler for MiFID II expiry; expanded test specifications with edge cases; updated EDPB 2025 strategic priorities |
 | **1.5** | **Dec 2024** | **AI-Generated (Critical Audit)** | **Major updates based on critical audit**: (1) Added Article 29 (processing under authority) with full implementation; (2) Added Chapter VIII (Articles 77-84) - Remedies, Liability, Penalties with LiabilityFramework; (3) Added ePrivacy Directive integration with cookie/tracking compliance; (4) Added AMLD6 integration with KYC/AML data handling and SAR tipping-off prevention; (5) Enhanced DPO Interface with full Articles 37-39 implementation; (6) Split Phase 2b into 3 sub-phases for practical implementation; (7) Added 25+ new edge case tests including stress tests; (8) Updated EDPB references with 2025 guidelines; (9) Updated test count to 775-935 total tests |
+| **1.6** | **Dec 2025** | **AI-Generated (Comprehensive Audit)** | **Comprehensive audit addressing critical gaps**: (1) **Added Article 3 (Territorial Scope)** with TerritorialScopeAssessor, CrossBorderHandler, and One-Stop-Shop mechanism; (2) **Actualized UK adequacy status** - deadline imminent (27 Dec 2025), added emergency fallback procedure; (3) **Added DPA blacklists (Art. 35(4))** for mandatory DPIA triggers from IE, DE, FR, NL, ES; (4) **Added SCHUFA scenario** for Article 22 third-party score reliance per CJEU C-634/21; (5) **Added Member State derogations** with CHILD_CONSENT_AGES and per-country requirements; (6) **Added Recitals integration** mapping critical recitals to implementation; (7) **Enhanced Data Portability (Art. 20)** with direct transfer API endpoint and FIX/FpML formats; (8) **Enhanced Sub-processor registry** with audit cascade verification; (9) Added 30+ new edge case tests; (10) Updated article coverage to 56+ articles |
 
 ---
 
-## Appendix A: GDPR Article Coverage Matrix
+## Appendix A: GDPR Article Coverage Matrix (Updated v1.6)
 
 | Article | Description | Phase | Implementation Status |
 |---------|-------------|-------|----------------------|
+| ~~**3**~~ | ~~**Territorial Scope**~~ | 0 | `territorial_scope.py` **NEW v1.6** |
 | 4 | Definitions | 0 | `definitions.py` |
 | 5 | Processing Principles | 1 | `processing_principles.py` |
 | 6 | Lawful Basis | 1 | `legal_basis.py` |
 | 7 | Consent Conditions | 2a | `consent_manager.py` |
-| **8** | **Child Consent** | 2a | `consent_manager.py` |
+| **8** | **Child Consent** | 2a | `consent_manager.py`, `member_state_derogations.py` **ENHANCED v1.6** |
 | 9 | Special Categories | 1 | `special_categories.py` |
 | **10** | **Criminal Data** | 1 | `special_categories.py` |
 | **11** | **No Identification Required** | 2b.1 | `no_identification_handler.py` |
@@ -3995,27 +4942,28 @@ TIA Components:
 | 17 | Right to Erasure | 2b.1 | `erasure_manager.py`, `auto_erasure_scheduler.py` |
 | 18 | Right to Restriction | 2b.1 | `restriction_manager.py` |
 | **19** | **Notification Obligation** | 2b.1 | `recipient_notification.py` |
-| 20 | Right to Portability | 2b.2 | `portability_manager.py` |
+| 20 | Right to Portability | 2b.2 | `portability_manager.py` **ENHANCED v1.6** (API endpoint) |
 | 21 | Right to Object | 2b.2 | `objection_handler.py` |
-| 22 | Automated Decisions | **2b.3** | `automated_decisions.py` |
+| 22 | Automated Decisions | **2b.3** | `automated_decisions.py` **ENHANCED v1.6** (SCHUFA scenario) |
 | **23** | **Restrictions** | 2b.1 | `restrictions.py` |
 | **24** | **Controller Accountability** | 3 | `accountability.py` |
 | 25 | Privacy by Design | 4 | `privacy_by_design.py` |
 | 26 | Joint Controllers | 0 | `joint_controller.py` |
-| **27** | **EU Representative** | 0 | `definitions.py` |
-| 28 | Processor | 0 | `processor_management.py` |
+| **27** | **EU Representative** | 0 | `territorial_scope.py` **ENHANCED v1.6** |
+| 28 | Processor | 0 | `processor_management.py`, `sub_processor_registry.py` **ENHANCED v1.6** (audit cascade) |
 | ***29*** | ***Processing under Authority*** | 0 | `authorized_processing.py` **NEW v1.5** |
 | 30 | ROPA | 3 | `ropa.py` |
 | 31 | SA Cooperation | 3 | `sa_cooperation.py` |
 | 32 | Security | 4 | `privacy_by_design.py` |
 | 33 | Breach Notification SA | 5 | `breach_notification.py` |
 | 34 | Breach Notification DS | 5 | `breach_notification.py` |
-| 35 | DPIA | 6 | `dpia.py` |
+| 35 | DPIA | 6 | `dpia.py` **ENHANCED v1.6** (DPA blacklists) |
 | 36 | Prior Consultation | 6 | `prior_consultation.py` |
 | **37** | **DPO Designation** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
 | **38** | **DPO Position** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
 | **39** | **DPO Tasks** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
-| 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` |
+| 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` **UPDATED v1.6** |
+| ~~**56**~~ | ~~**Lead SA (One-Stop-Shop)**~~ | 0 | `territorial_scope.py` **NEW v1.6** |
 | ***77*** | ***Right to Complaint*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***78-79*** | ***Judicial Remedies*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***82*** | ***Right to Compensation*** | 6 | `liability_framework.py` **NEW v1.5** |
@@ -4025,7 +4973,10 @@ TIA Components:
 > **Legend**:
 > - **Bold** = added in v1.4 audit
 > - ***Bold Italic*** = added in v1.5 critical audit
-> - Total article coverage: **50+ articles** (increased from 40+)
+> - ~~**Strikethrough Bold**~~ = added in v1.6 comprehensive audit
+> - Total article coverage: **56+ articles** (increased from 50+)
+> - Member State derogations tracked in `member_state_derogations.py`
+> - Recitals integration via `RecitalIntegrator` class
 
 ---
 
@@ -4042,4 +4993,16 @@ TIA Components:
 
 ---
 
-*This plan provides a comprehensive roadmap for GDPR compliance integration. Each phase (including sub-phases) is designed to be implementable in a single focused development session with complete test coverage. Regular review against EDPB guidelines is recommended. Version 1.5 addresses all critical audit findings.*
+*This plan provides a comprehensive roadmap for GDPR compliance integration. Each phase (including sub-phases) is designed to be implementable in a single focused development session with complete test coverage. Regular review against EDPB guidelines is recommended.*
+
+**Version 1.6 addresses all comprehensive audit findings including:**
+- Article 3 territorial scope with One-Stop-Shop mechanism
+- UK adequacy contingency with emergency fallback procedure
+- DPA blacklists for mandatory DPIA triggers
+- SCHUFA scenario for third-party score reliance (CJEU C-634/21)
+- Member State derogations with child consent age variations
+- GDPR Recitals integration for proper interpretation
+- Enhanced Data Portability with direct transfer API
+- Sub-processor audit cascade verification
+
+**Total estimated tests: 850-1000 tests (updated for v1.6 additions)**
