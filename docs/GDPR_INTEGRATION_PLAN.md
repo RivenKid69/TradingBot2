@@ -3,9 +3,9 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 1.7
+**Version**: 1.8
 **Date**: December 2025
-**Status**: Implementation Ready (Post-Critical Audit)
+**Status**: Implementation Ready (Post-Critical Audit v2)
 
 ---
 
@@ -51,15 +51,19 @@ The platform processes:
 | **40-43** | Codes of conduct & Certification | Low | Future roadmap |
 | **44-49** | International Data Transfers | High | SCCs, adequacy, TIAs |
 | **77-84** | Remedies, Liability & Penalties | Medium | Liability framework |
+| **85** | Processing & Freedom of Expression | Low | **NEW v1.8** - Communication logs exemption |
+| **86** | Processing & Public Document Access | Low | **NEW v1.8** - Public interest access |
+| **87** | National Identification Numbers | **Critical** | **NEW v1.8** - KYC/AML data handling |
+| **90** | Secrecy Obligations | Medium | **NEW v1.8** - Professional secrecy |
 
 **Articles Explicitly Not Implemented (with justification):**
 
 | Article | Reason | Risk |
 |---------|--------|------|
-| Art. 8 | Platform restricted to 18+; age verification at signup | Low - document in ROPA |
+| Art. 8 | Platform restricted to 18+; **age verification implemented** (NEW v1.8) | Low - AgeVerificationGateway enforces |
 | Art. 10 | No criminal conviction data processed | None |
 | Art. 27 | Company EU incorporated | None |
-| Art. 40-43 | No certification sought currently | Low - future enhancement |
+| Art. 91 | Churches and religious organizations - not applicable | None |
 
 ---
 
@@ -88,6 +92,9 @@ services/
     accountability.py              # Article 24 controller responsibility (NEW)
     restrictions.py                # Article 23 restrictions framework (NEW)
     member_state_derogations.py    # Opening clauses per jurisdiction (NEW v1.6)
+    national_id_handler.py         # Article 87 national ID numbers (NEW v1.8)
+    age_verification.py            # Article 8 age verification gateway (NEW v1.8)
+    joint_controller_agreement.py  # Article 26 JCA templates (NEW v1.8)
 
     # Phase 2a: Consent & Transparency
     consent_manager.py             # Article 7 consent management
@@ -101,6 +108,7 @@ services/
     erasure_manager.py             # Right to Erasure (Article 17)
     portability_manager.py         # Data Portability (Article 20)
     automated_decisions.py         # Article 22 automated decision-making
+    third_party_score_handler.py   # CJEU C-634/21 SCHUFA scenario (NEW v1.8)
     restriction_manager.py         # Article 18 restriction of processing
     objection_handler.py           # Article 21 right to object
     no_identification_handler.py   # Article 11 pseudonymized data (NEW)
@@ -115,13 +123,16 @@ services/
     privacy_by_design.py           # Article 25 PbD controls
     data_minimization.py           # Data minimization enforcement
     pseudonymization.py            # Pseudonymization utilities
+    pseudonymisation_techniques.py # k-anonymity, l-diversity, t-closeness (NEW v1.8)
     retention_manager.py           # Data retention policies (GDPR-MiFID aligned)
     auto_erasure_scheduler.py      # Automatic erasure after retention (NEW)
+    gdpr_mifid_erasure.py          # GDPR-MiFID erasure coordination (NEW v1.8)
 
     # Phase 5: Breach Management
     breach_detection.py            # Breach detection mechanisms
     breach_notification.py         # Articles 33-34 notification
     breach_assessment.py           # Risk assessment for breaches
+    breach_risk_matrix.py          # EDPB/ENISA breach risk matrix (NEW v1.8)
     incident_response.py           # GDPR-specific incident response
 
     # Phase 6: DPIA & Governance
@@ -136,6 +147,8 @@ services/
     certification_framework.py     # Articles 40-43 codes & certification (NEW v1.7)
     employment_data.py             # Article 88 employment processing (NEW v1.7)
     research_data.py               # Article 89 research safeguards (NEW v1.7)
+    chapter9_specific.py           # Articles 85, 86, 90 specific situations (NEW v1.8)
+    eprivacy_enhanced.py           # ePrivacy DNT, fingerprinting, PECR (NEW v1.8)
 
 tests/
   gdpr/
@@ -850,6 +863,533 @@ class SecureAccessMiddleware:
         )
         return True
 ```
+
+#### 0.2.7 NationalIdHandler (national_id_handler.py) - NEW v1.8
+
+**Article 87 - Processing of National Identification Numbers**
+
+Per [GDPR Article 87](https://gdpr-info.eu/art-87-gdpr/), Member States may determine specific conditions for processing of national identification numbers. This is **CRITICAL** for KYC/AML data handling.
+
+> **⚠️ Platform Criticality**: Trading platforms process national ID numbers for:
+> - KYC verification (passport, national ID cards)
+> - AML compliance (tax ID numbers)
+> - Regulatory reporting (SSN-equivalents)
+
+```
+Enum NationalIdType:
+    """Types of national identification numbers"""
+    PASSPORT = "passport"
+    NATIONAL_ID_CARD = "national_id_card"
+    TAX_ID = "tax_id"
+    SOCIAL_SECURITY = "social_security"
+    DRIVER_LICENSE = "driver_license"
+    RESIDENCE_PERMIT = "residence_permit"
+
+Dataclass MemberStateIdRule:
+    """Article 87 - Member State specific ID handling rules"""
+    member_state: str
+    id_type: NationalIdType
+
+    # Restrictions
+    restricted: bool                      # Whether specific rules apply
+    lawful_bases_allowed: List[str]       # Which Art. 6 bases permitted
+    explicit_consent_required: bool       # Art. 9-style consent needed
+
+    # Processing constraints
+    retention_limit_years: Optional[int]  # MS-specific retention limit
+    purpose_limitations: List[str]        # Restricted purposes
+    minimization_requirements: List[str]  # Specific minimization rules
+
+    # Documentation
+    legal_reference: str                  # National law reference
+    dpa_guidance_url: Optional[str]       # DPA guidance if available
+    additional_requirements: List[str]    # MS-specific requirements
+
+# Member State National ID Rules (Article 87 implementation)
+MEMBER_STATE_ID_RULES = {
+    "DE": {  # Germany - BDSG §22
+        "Personalausweisnummer": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "explicit_consent_required": False,
+            "legal_reference": "BDSG §22(1)",
+            "additional_requirements": [
+                "ID number must not be used as general identifier",
+                "Minimize display (show only last 4 digits where possible)",
+                "No central database of ID numbers permitted"
+            ]
+        },
+        "Steuer-ID": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "legal_reference": "AO §139a-c",
+            "additional_requirements": [
+                "Tax authority purposes only",
+                "Cannot be used for general identification"
+            ]
+        }
+    },
+    "FR": {  # France - Loi Informatique et Libertés
+        "NIR": {  # Numéro de sécurité sociale (INSEE)
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "explicit_consent_required": True,
+            "legal_reference": "Loi n° 78-17, Art. 22",
+            "cnil_declaration_required": True,
+            "additional_requirements": [
+                "CNIL authorization may be required",
+                "Limited to social security, tax, and authorized purposes",
+                "Strict purpose limitation"
+            ]
+        },
+        "Carte_Nationale_Identite": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation", "contract"],
+            "legal_reference": "Décret n° 55-1397"
+        }
+    },
+    "IT": {  # Italy - Codice Privacy
+        "Codice_Fiscale": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation", "contract"],
+            "legal_reference": "D.Lgs. 196/2003, Art. 19",
+            "additional_requirements": [
+                "Garante authorization for certain uses"
+            ]
+        }
+    },
+    "ES": {  # Spain - LOPDGDD
+        "DNI": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation", "contract"],
+            "legal_reference": "LOPDGDD Art. 26",
+            "additional_requirements": [
+                "DNI number should not be used as sole identifier"
+            ]
+        },
+        "NIE": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation", "contract"],
+            "legal_reference": "LOPDGDD Art. 26"
+        }
+    },
+    "NL": {  # Netherlands - UAVG
+        "BSN": {  # Burgerservicenummer
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "legal_reference": "UAVG Art. 46",
+            "additional_requirements": [
+                "BSN use only when legally required",
+                "Government and authorized entities only"
+            ]
+        }
+    },
+    "BE": {  # Belgium
+        "Rijksregisternummer": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "legal_reference": "Wet van 8 augustus 1983",
+            "additional_requirements": [
+                "Authorization from National Register Committee"
+            ]
+        }
+    },
+    "AT": {  # Austria - DSG
+        "Sozialversicherungsnummer": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "legal_reference": "DSG §1(2)"
+        }
+    },
+    "PL": {  # Poland - UODO
+        "PESEL": {
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation", "explicit_consent"],
+            "legal_reference": "UODO Art. 39",
+            "additional_requirements": [
+                "PESEL processing requires specific legal basis"
+            ]
+        }
+    },
+    "IE": {  # Ireland - DPA 2018
+        "PPS": {  # Personal Public Service Number
+            "restricted": True,
+            "lawful_bases_allowed": ["legal_obligation"],
+            "legal_reference": "Social Welfare Consolidation Act 2005",
+            "additional_requirements": [
+                "PPS use restricted to specified bodies"
+            ]
+        }
+    }
+}
+
+Dataclass NationalIdProcessingRecord:
+    """Record of national ID processing for accountability"""
+    record_id: str
+    data_subject_id: str
+    id_type: NationalIdType
+    member_state: str
+
+    # Processing details
+    processing_purpose: str
+    lawful_basis: str
+    collection_date: datetime
+
+    # Compliance
+    ms_rule_checked: bool
+    rule_reference: str
+    additional_consent_obtained: bool
+    minimization_applied: str
+
+    # Retention
+    retention_period: str
+    deletion_scheduled: datetime
+
+Class NationalIdHandler:
+    """
+    Article 87 implementation - National identification number processing.
+
+    CRITICAL: Check Member State rules BEFORE processing any national ID number.
+    Non-compliance can result in significant fines.
+
+    Per Article 87: "Member States may further determine the specific conditions
+    for the processing of a national identification number or any other identifier
+    of general application."
+    """
+
+    # Rule lookup
+    - get_ms_rule(member_state: str, id_type: NationalIdType) -> MemberStateIdRule
+    - check_processing_permitted(member_state: str, id_type: str, purpose: str) -> bool
+    - get_required_lawful_basis(member_state: str, id_type: str) -> List[str]
+    - check_additional_consent_required(member_state: str, id_type: str) -> bool
+
+    # Processing management
+    - register_id_processing(record: NationalIdProcessingRecord) -> str
+    - validate_against_ms_rules(record: NationalIdProcessingRecord) -> ValidationResult
+    - apply_minimization(id_number: str, id_type: str) -> str  # e.g., mask to last 4 digits
+    - schedule_id_deletion(record_id: str, date: datetime)
+
+    # KYC/AML Integration
+    - process_kyc_id(kyc_data: KYCData) -> ProcessingResult
+    - check_kyc_id_retention(record_id: str) -> RetentionStatus
+    - handle_dsar_for_id(dsar: DSARRequest) -> DSARResponse
+
+    # Audit and reporting
+    - audit_id_processing_compliance() -> ComplianceAuditResult
+    - generate_id_processing_report() -> Report
+    - get_ms_rule_updates() -> List[RuleUpdate]  # Check for regulatory updates
+```
+
+**KYC/AML National ID Processing Flow:**
+
+```
+KYC Onboarding with National ID:
+──────────────────────────────────────────────────────────────────
+
+1. Collect ID document
+   ├─ Determine Member State
+   ├─ Identify ID type
+   └─ Extract ID number
+
+2. Check Article 87 rules
+   ├─ Is processing permitted for this ID type?
+   ├─ What lawful basis is required?
+   ├─ Is additional consent needed?
+   └─ What minimization is required?
+
+3. Process accordingly
+   ├─ If not permitted → REJECT or use alternative ID
+   ├─ If consent required → Obtain explicit consent
+   ├─ Apply minimization → Store only necessary digits
+   └─ Document compliance → NationalIdProcessingRecord
+
+4. Ongoing management
+   ├─ Monitor MS rule changes
+   ├─ Schedule deletion per MS requirements
+   └─ Handle DSARs appropriately
+```
+
+**Platform-Specific National ID Handling:**
+
+| ID Type | Use Case | Member States Affected | Handling |
+|---------|----------|----------------------|----------|
+| Passport | KYC verification | ALL | Standard processing, minimize storage |
+| Tax ID | Tax reporting | DE, FR, IT, ES, NL | Legal obligation only, strict retention |
+| SSN-equivalent | AML compliance | DE, FR, NL, BE, AT, PL, IE | MS-specific rules, may need consent |
+| National ID Card | Identity verification | ALL | Purpose-limited, minimize display |
+
+#### 0.2.8 AgeVerificationGateway (age_verification.py) - NEW v1.8
+
+**Article 8 - Conditions for Child's Consent**
+
+Per [GDPR Article 8](https://gdpr-info.eu/art-8-gdpr/), special consent rules apply to children. While the platform is 18+, robust age verification is required.
+
+> **Platform Context**: Trading platforms typically require 18+ users due to:
+> - Financial regulations (MiFID II)
+> - Contractual capacity requirements
+> - Risk exposure appropriateness
+
+```
+Enum AgeVerificationMethod:
+    """Methods for age verification"""
+    SELF_DECLARATION = "self_declaration"        # Checkbox (weak)
+    DATE_OF_BIRTH = "date_of_birth"             # DOB entry (moderate)
+    ID_DOCUMENT = "id_document"                  # ID upload (strong)
+    KYC_PROVIDER = "kyc_provider"               # Third-party KYC (strongest)
+    CREDIT_CHECK = "credit_check"               # Credit agency (strong)
+
+Enum AgeVerificationStatus:
+    PENDING = "pending"
+    VERIFIED_ADULT = "verified_adult"
+    VERIFIED_MINOR = "verified_minor"
+    VERIFICATION_FAILED = "verification_failed"
+    MANUAL_REVIEW = "manual_review"
+
+Dataclass AgeVerificationResult:
+    """Result of age verification"""
+    verification_id: str
+    user_id: str
+    verification_date: datetime
+
+    # Verification details
+    method_used: AgeVerificationMethod
+    claimed_dob: date
+    verified_dob: Optional[date]
+    calculated_age: int
+
+    # Result
+    status: AgeVerificationStatus
+    is_adult: bool
+    minimum_age_met: bool              # Platform minimum (18)
+    member_state_consent_age: int      # Art. 8 consent age for MS
+
+    # Evidence
+    evidence_reference: Optional[str]  # KYC document reference
+    verification_provider: Optional[str]
+    confidence_score: Optional[float]
+
+    # Follow-up
+    manual_review_required: bool
+    manual_review_reason: Optional[str]
+
+Dataclass MinorDetectionIncident:
+    """Incident when a minor is detected on platform"""
+    incident_id: str
+    user_id: str
+    detection_date: datetime
+
+    # Detection details
+    detection_method: str              # How discovered
+    claimed_age: int
+    actual_age: Optional[int]
+    evidence: str
+
+    # Response
+    account_suspended: bool
+    data_processing_stopped: bool
+    data_deletion_scheduled: bool
+    deletion_date: datetime
+
+    # Parent/guardian notification
+    parent_notification_required: bool
+    parent_notification_sent: bool
+    parent_response: Optional[str]
+
+    # Documentation
+    dpo_notified: bool
+    incident_report: str
+
+Class AgeVerificationGateway:
+    """
+    Article 8 compliance - Ensure platform is 18+ only.
+
+    Per Article 8(1): For information society services offered directly
+    to a child, consent is lawful only if child is at least 16 years old
+    (or lower age per Member State, minimum 13).
+
+    Platform policy: MINIMUM 18 YEARS for all users due to:
+    - Financial services regulations
+    - Trading risk appropriateness
+    - Contractual capacity
+    """
+
+    PLATFORM_MINIMUM_AGE: int = 18
+
+    # Member State child consent ages (Art. 8(1) derogations)
+    MS_CONSENT_AGES = {
+        "AT": 14, "BE": 13, "BG": 14, "CY": 14, "CZ": 15,
+        "DE": 16, "DK": 13, "EE": 13, "ES": 14, "FI": 13,
+        "FR": 15, "GR": 15, "HR": 16, "HU": 16, "IE": 16,
+        "IT": 14, "LT": 14, "LU": 16, "LV": 13, "MT": 13,
+        "NL": 16, "PL": 16, "PT": 13, "RO": 16, "SE": 13,
+        "SI": 15, "SK": 16, "UK": 13  # UK GDPR
+    }
+
+    # Verification methods
+    - verify_age_at_registration(user_data: RegistrationData) -> AgeVerificationResult
+    - verify_age_with_document(user_id: str, document: IDDocument) -> AgeVerificationResult
+    - verify_age_with_kyc(user_id: str, kyc_result: KYCResult) -> AgeVerificationResult
+    - reverify_age(user_id: str, reason: str) -> AgeVerificationResult
+
+    # Gate enforcement
+    - check_age_gate(user_id: str) -> bool  # Returns True if adult
+    - block_minor_registration(user_id: str, reason: str) -> bool
+    - enforce_minimum_age(user_id: str) -> EnforcementResult
+
+    # Minor detection
+    - detect_potential_minor(user_id: str, signals: List[str]) -> DetectionResult
+    - handle_minor_detection(incident: MinorDetectionIncident) -> HandlingResult
+    - report_minor_incident(incident: MinorDetectionIncident) -> str
+
+    # Incident response
+    - suspend_minor_account(user_id: str) -> bool
+    - stop_minor_data_processing(user_id: str) -> bool
+    - schedule_minor_data_deletion(user_id: str) -> datetime
+    - notify_parent_guardian(incident: MinorDetectionIncident) -> NotificationResult
+
+    # Audit
+    - audit_age_verification_compliance() -> AuditResult
+    - get_verification_statistics() -> VerificationStats
+```
+
+**Age Verification Flow:**
+
+```
+Registration Age Gate:
+──────────────────────────────────────────────────────────────────
+
+Step 1: Initial Gate (Registration)
+├─ Collect date of birth
+├─ Calculate age
+├─ If age < 18 → BLOCK registration immediately
+└─ If age >= 18 → Proceed to verification
+
+Step 2: Verification (KYC)
+├─ ID document upload
+├─ Third-party KYC verification
+├─ DOB cross-check
+└─ Status: verified_adult OR verification_failed
+
+Step 3: Ongoing Monitoring
+├─ Periodic re-verification (if suspicious)
+├─ Signal detection (user behavior suggesting minor)
+└─ Incident handling if minor detected
+
+Step 4: Minor Detection Incident
+├─ Immediate account suspension
+├─ Stop all data processing
+├─ Schedule data deletion
+├─ Notify DPO
+├─ Consider parent/guardian notification
+└─ Document incident
+```
+
+#### 0.2.9 JointControllerAgreement (joint_controller_agreement.py) - NEW v1.8
+
+**Article 26 - Joint Controllers**
+
+Per [GDPR Article 26](https://gdpr-info.eu/art-26-gdpr/), joint controllers must determine responsibilities via an arrangement.
+
+```
+Dataclass JointControllerArrangement:
+    """Article 26 arrangement between joint controllers"""
+    arrangement_id: str
+    arrangement_date: datetime
+
+    # Parties
+    controllers: List[ControllerDetails]
+    contact_point_for_ds: str           # Art. 26(1) - contact point for data subjects
+
+    # Responsibility allocation
+    responsibility_matrix: Dict[str, str]  # Processing activity -> responsible controller
+
+    # Article 26(1) required elements
+    purposes_determination: Dict[str, str]  # Who determines purposes
+    means_determination: Dict[str, str]     # Who determines means
+
+    # Data subject rights (Art. 26(3))
+    dsar_handler: str                       # Which controller handles DSARs
+    dsar_forwarding_mechanism: str          # How DSARs are forwarded
+
+    # Legal basis responsibilities
+    consent_collector: str
+    transparency_provider: str
+
+    # Security and breach
+    security_coordinator: str
+    breach_lead: str
+    breach_notification_responsibility: str
+
+    # Documentation
+    arrangement_document: str               # Legal document reference
+    review_schedule: str                    # Regular review period
+    last_review: Optional[datetime]
+    next_review: datetime
+
+Dataclass DSARRoutingRule:
+    """Rules for routing DSARs between joint controllers"""
+    rule_id: str
+    right_type: str                         # access, rectification, erasure, etc.
+    data_categories: List[str]
+    responsible_controller: str
+    response_deadline_days: int
+    escalation_contact: str
+
+Class JointControllerManager:
+    """
+    Article 26 implementation - Joint controller arrangements.
+
+    Per Article 26(1): Joint controllers shall in a transparent manner
+    determine their respective responsibilities for compliance with the
+    obligations under this Regulation.
+
+    Per Article 26(3): The data subject may exercise his or her rights
+    against each of the controllers, irrespective of the arrangement.
+    """
+
+    # Arrangement management
+    - create_arrangement(arrangement: JointControllerArrangement) -> str
+    - update_arrangement(arrangement_id: str, updates: Dict) -> bool
+    - get_arrangement(arrangement_id: str) -> JointControllerArrangement
+    - list_arrangements() -> List[JointControllerArrangement]
+
+    # Responsibility allocation
+    - allocate_responsibility(activity: str, controller: str) -> bool
+    - get_responsible_controller(activity: str) -> str
+    - get_my_responsibilities() -> List[str]
+
+    # DSAR routing (Art. 26(3))
+    - route_dsar(dsar: DSARRequest) -> DSARRoutingResult
+    - forward_dsar_to_controller(dsar_id: str, controller: str) -> bool
+    - consolidate_dsar_responses(dsar_id: str) -> DSARResponse
+
+    # Contact point
+    - get_ds_contact_point(arrangement_id: str) -> ContactDetails
+    - handle_ds_inquiry(inquiry: Inquiry) -> InquiryResponse
+
+    # Compliance
+    - validate_arrangement_completeness(arrangement_id: str) -> ValidationResult
+    - check_essence_available_to_ds(arrangement_id: str) -> bool  # Art. 26(2)
+    - audit_responsibility_allocation() -> AuditResult
+
+    # Review and update
+    - schedule_arrangement_review(arrangement_id: str, date: datetime)
+    - conduct_arrangement_review(arrangement_id: str) -> ReviewResult
+```
+
+**Joint Controller Arrangement Template:**
+
+| Element | Requirement | Example |
+|---------|-------------|---------|
+| **Parties** | List all joint controllers | Platform Co., Exchange Co. |
+| **Contact Point** | Single point for data subjects | dpo@platform.com |
+| **Purpose Determination** | Who determines purposes | Platform for trading, Exchange for settlement |
+| **Means Determination** | Who determines means | Each for their systems |
+| **DSAR Handling** | Primary handler + routing | Platform routes to Exchange for settlement data |
+| **Security Lead** | Coordinating security | Platform |
+| **Breach Notification** | Who notifies SA/DS | First to detect notifies, coordinate response |
+| **Transparency** | Who provides privacy notice | Both, with cross-reference |
+| **Review Schedule** | Regular review | Annual |
 
 ### 0.3 Platform-Specific Processor Mapping
 
@@ -2575,6 +3115,213 @@ When providing scores to third parties, contracts MUST include:
 4. **Passthrough rights**: Data subjects can contest through recipient OR platform
 5. **Audit rights**: Platform can verify compliance with above
 
+#### ThirdPartyScoreHandler Implementation (third_party_score_handler.py) - NEW v1.8
+
+**Enhanced CJEU C-634/21 Compliance with "Light Touch" Detection**
+
+Per CJEU C-634/21, "light touch" human intervention is **INSUFFICIENT** to avoid Article 22 applicability. This module implements detection and mitigation.
+
+```
+Enum HumanInterventionQuality:
+    """Quality assessment of human intervention per CJEU C-634/21"""
+    MEANINGFUL = "meaningful"         # Genuine review, can override, documented reasoning
+    SUPERFICIAL = "superficial"       # Review exists but rubber-stamps scores
+    LIGHT_TOUCH = "light_touch"       # Minimal involvement, score drives outcome
+    NONE = "none"                     # Pure automation
+
+Dataclass HumanInterventionAssessment:
+    """Assessment of human intervention quality per CJEU SCHUFA"""
+    assessment_id: str
+    third_party_id: str
+    assessment_date: datetime
+
+    # Intervention metrics
+    average_review_time_seconds: float       # Time spent on each decision
+    override_rate_percent: float             # % decisions that deviate from score
+    documented_reasoning_rate: float         # % decisions with written justification
+    reviewer_qualification: str              # Training/authority of reviewer
+
+    # Quality determination
+    intervention_quality: HumanInterventionQuality
+    is_meaningful: bool                      # TRUE only if MEANINGFUL
+    article_22_applies: bool                 # TRUE if not MEANINGFUL
+
+    # Evidence
+    sample_decisions_reviewed: int
+    audit_methodology: str
+    evidence_references: List[str]
+
+Dataclass ThirdPartyScoreAgreement:
+    """Agreement governing score provision to third parties"""
+    agreement_id: str
+    third_party_name: str
+    effective_date: datetime
+
+    # Score details
+    score_types_covered: List[str]
+    intended_use_cases: List[str]
+
+    # Article 22 Safeguard Clauses
+    use_limitation_clause: bool              # Score not sole basis
+    human_review_obligation: bool            # Meaningful human involvement
+    minimum_review_time_required: bool       # e.g., minimum 30 seconds per decision
+    override_capability_required: bool       # Can deviate from score
+    override_documentation_required: bool    # Must document override reasoning
+    passthrough_rights_clause: bool          # DS can contest via platform
+    audit_rights_clause: bool                # Platform can audit third party
+
+    # Verification
+    last_compliance_audit: Optional[datetime]
+    compliance_status: str                   # "compliant", "non_compliant", "pending_audit"
+    non_compliance_issues: List[str]
+
+Class ThirdPartyScoreHandler:
+    """
+    CJEU C-634/21 SCHUFA compliance for third-party score provision.
+
+    KEY PRINCIPLE: Article 22 applies if:
+    1. Third party "draws strongly" on the score, AND
+    2. Human intervention is not "meaningful"
+
+    Per CJEU: Even if human reviews decision, if review is "light touch"
+    (rubber-stamping), Article 22 still applies.
+
+    Platform's responsibility:
+    - Assess how third parties use scores
+    - Require meaningful human intervention in contracts
+    - Audit third-party compliance
+    - Provide Article 22(3) safeguards if third party non-compliant
+    """
+
+    # Third-party onboarding
+    - register_score_recipient(recipient: ThirdPartyDetails) -> str
+    - create_score_agreement(agreement: ThirdPartyScoreAgreement) -> str
+    - validate_agreement_clauses(agreement_id: str) -> ValidationResult
+
+    # Reliance assessment
+    - assess_score_reliance(third_party_id: str, score_type: str) -> ScoreRelianceAssessment
+    - determine_reliance_level(assessment: ScoreRelianceAssessment) -> ScoreRelianceLevel
+    - check_article_22_applicability(third_party_id: str) -> Article22Determination
+
+    # Human intervention quality assessment (NEW v1.8)
+    - assess_human_intervention_quality(third_party_id: str) -> HumanInterventionAssessment
+    - detect_light_touch_intervention(metrics: InterventionMetrics) -> bool
+    - calculate_rubber_stamping_risk(third_party_id: str) -> float
+    - require_intervention_improvement(third_party_id: str, issues: List[str])
+
+    # Light touch detection criteria (per CJEU guidance)
+    LIGHT_TOUCH_INDICATORS = {
+        "review_time_too_short": lambda t: t < 30,      # Less than 30 seconds
+        "override_rate_too_low": lambda r: r < 0.05,   # Less than 5% override
+        "no_documented_reasoning": lambda d: d < 0.1,  # Less than 10% documented
+        "unqualified_reviewer": lambda q: q == "automated"  # Reviewer not qualified
+    }
+
+    - detect_light_touch(assessment: HumanInterventionAssessment) -> LightTouchDetection
+
+    # Compliance audit
+    - schedule_third_party_audit(third_party_id: str, date: datetime)
+    - conduct_compliance_audit(third_party_id: str) -> AuditResult
+    - request_intervention_evidence(third_party_id: str) -> EvidenceRequest
+    - review_intervention_evidence(evidence: InterventionEvidence) -> ReviewResult
+
+    # Remediation
+    - flag_non_compliant_third_party(third_party_id: str, issues: List[str])
+    - suspend_score_provision(third_party_id: str, reason: str)
+    - require_corrective_action(third_party_id: str, actions: List[str])
+
+    # Data subject rights passthrough
+    - enable_contestation_passthrough(score_id: str) -> bool
+    - handle_passthrough_contest(contest: ContestRequest) -> ContestResult
+    - provide_explanation_to_ds(ds_id: str, score_id: str) -> Explanation
+
+    # Reporting
+    - generate_third_party_compliance_report() -> Report
+    - get_article_22_exposure_summary() -> ExposureSummary
+```
+
+**Light Touch Detection Algorithm:**
+
+```python
+def detect_light_touch_intervention(self, third_party_id: str) -> LightTouchDetection:
+    """
+    Detects if third party's human intervention is merely "light touch".
+
+    Per CJEU C-634/21: Human intervention must be MEANINGFUL.
+    Indicators of light touch (insufficient):
+    - Very short review times (< 30 seconds)
+    - Very low override rates (< 5%)
+    - No documented reasoning for decisions
+    - Reviewers lack authority to override
+    """
+    metrics = self.get_intervention_metrics(third_party_id)
+
+    light_touch_indicators = []
+
+    # Check review time
+    if metrics.avg_review_time_seconds < 30:
+        light_touch_indicators.append(
+            f"Review time too short: {metrics.avg_review_time_seconds}s < 30s minimum"
+        )
+
+    # Check override rate
+    if metrics.override_rate < 0.05:
+        light_touch_indicators.append(
+            f"Override rate too low: {metrics.override_rate*100}% < 5% expected"
+        )
+
+    # Check documentation
+    if metrics.documented_reasoning_rate < 0.10:
+        light_touch_indicators.append(
+            f"Documented reasoning rare: {metrics.documented_reasoning_rate*100}% < 10%"
+        )
+
+    # Check reviewer authority
+    if not metrics.reviewer_can_override:
+        light_touch_indicators.append(
+            "Reviewer lacks authority to override score"
+        )
+
+    is_light_touch = len(light_touch_indicators) >= 2  # 2+ indicators = light touch
+
+    return LightTouchDetection(
+        third_party_id=third_party_id,
+        is_light_touch=is_light_touch,
+        indicators_found=light_touch_indicators,
+        article_22_applies=is_light_touch,
+        recommended_action="Require meaningful human review" if is_light_touch else None
+    )
+```
+
+**Third Party Score Compliance Flow:**
+
+```
+Score Provision to Third Party:
+──────────────────────────────────────────────────────────────────
+
+1. Onboarding Third Party
+   ├─ Register recipient
+   ├─ Execute agreement with Article 22 safeguard clauses
+   └─ Document intended use cases
+
+2. Initial Assessment
+   ├─ Assess score reliance level
+   ├─ Determine Article 22 applicability
+   └─ If DETERMINATIVE → require additional safeguards
+
+3. Ongoing Monitoring (Quarterly)
+   ├─ Request intervention metrics
+   ├─ Assess human intervention quality
+   ├─ Detect light touch indicators
+   └─ If light touch detected → remediation required
+
+4. Non-Compliance Handling
+   ├─ Flag third party
+   ├─ Require corrective action
+   ├─ If not remediated → suspend score provision
+   └─ Enable direct Article 22 safeguards for affected DS
+```
+
 ---
 
 **CRITICAL Implementation Notes:**
@@ -3004,6 +3751,191 @@ Integration with existing:
 - Leverage `services/secure_logging.py` patterns
 - Use existing `tests/test_pii_detection.py` detection
 
+#### 4.2.3.1 PseudonymisationTechniques (pseudonymisation_techniques.py) - NEW v1.8
+
+**EDPB Guidelines 01/2025 - Advanced Pseudonymisation Techniques**
+
+Per [EDPB Guidelines on Pseudonymisation](https://www.edpb.europa.eu/our-work-tools/documents/public-consultations/2025/guidelines-012025-pseudonymisation_en), pseudonymisation must provide effective protection against re-identification.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Privacy-Enhancing Techniques (PETs) - NEW v1.8
+# ═══════════════════════════════════════════════════════════════════
+
+Enum PseudonymisationTechnique:
+    """Advanced pseudonymisation techniques per EDPB guidelines"""
+    K_ANONYMITY = "k_anonymity"
+    L_DIVERSITY = "l_diversity"
+    T_CLOSENESS = "t_closeness"
+    DIFFERENTIAL_PRIVACY = "differential_privacy"
+    SECURE_HASHING = "secure_hashing"
+    TOKENIZATION = "tokenization"
+    DATA_MASKING = "data_masking"
+    GENERALIZATION = "generalization"
+    SUPPRESSION = "suppression"
+
+# ═══════════════════════════════════════════════════════════════════
+# k-Anonymity Implementation
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass KAnonymityConfig:
+    """k-Anonymity: Each record indistinguishable from k-1 others"""
+    k_value: int                           # Minimum group size (recommended: k >= 5)
+    quasi_identifiers: List[str]           # Attributes to generalize
+    sensitive_attributes: List[str]        # Attributes to protect
+    generalization_hierarchy: Dict[str, List[str]]  # Generalization levels
+
+    # Platform-specific
+    trading_volume_ranges: List[Tuple[float, float]]  # For generalizing volumes
+    timestamp_granularity: str             # "hour", "day", "week", "month"
+
+# Recommended k-values per data sensitivity
+K_VALUE_RECOMMENDATIONS = {
+    "public_data": 3,                      # Low sensitivity
+    "trading_patterns": 5,                 # Medium sensitivity
+    "financial_positions": 10,             # High sensitivity
+    "personal_identifiers": 20,            # Very high sensitivity
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# l-Diversity Implementation
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass LDiversityConfig:
+    """l-Diversity: Each k-anonymous group has l distinct sensitive values"""
+    l_value: int                           # Minimum distinct values (recommended: l >= 3)
+    diversity_type: str                    # "distinct", "entropy", "recursive"
+    sensitive_attribute: str               # Attribute requiring diversity
+    c_value: Optional[float]               # For recursive l-diversity (c >= l)
+
+# ═══════════════════════════════════════════════════════════════════
+# t-Closeness Implementation
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass TClosenessConfig:
+    """t-Closeness: Distribution in group close to overall distribution"""
+    t_threshold: float                     # Maximum distribution distance (0.0-1.0)
+    distance_metric: str                   # "emd" (Earth Mover's Distance), "kl_divergence"
+    sensitive_attribute: str
+
+# Recommended t-values
+T_VALUE_RECOMMENDATIONS = {
+    "low_sensitivity": 0.2,                # Allow 20% distribution difference
+    "medium_sensitivity": 0.1,             # Allow 10% distribution difference
+    "high_sensitivity": 0.05,              # Allow 5% distribution difference
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Differential Privacy Implementation
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass DifferentialPrivacyConfig:
+    """Differential Privacy: Mathematical guarantee of privacy"""
+    epsilon: float                         # Privacy budget (lower = more private)
+    delta: float                           # Probability of privacy breach
+    sensitivity: float                     # Query sensitivity
+    mechanism: str                         # "laplace", "gaussian", "exponential"
+
+# Epsilon recommendations per use case
+EPSILON_RECOMMENDATIONS = {
+    "public_statistics": 1.0,              # Low privacy requirement
+    "aggregate_analytics": 0.1,            # Medium privacy requirement
+    "individual_queries": 0.01,            # High privacy requirement
+    "research_data": 0.001,                # Maximum privacy
+}
+
+Dataclass ReIdentificationRiskAssessment:
+    """Assessment of re-identification risk per EDPB methodology"""
+    assessment_id: str
+    dataset_id: str
+    assessment_date: datetime
+
+    # Technique used
+    technique_applied: PseudonymisationTechnique
+    technique_config: Dict
+
+    # Risk metrics
+    prosecutor_risk: float                 # Risk from targeted attack
+    journalist_risk: float                 # Risk from general investigation
+    marketer_risk: float                   # Risk from data enrichment
+
+    # Overall assessment
+    overall_risk_level: str                # "negligible", "low", "medium", "high"
+    additional_measures_required: List[str]
+
+    # Documentation
+    assessment_methodology: str
+    assessor: str
+    next_review_date: datetime
+
+Class PseudonymisationTechniquesManager:
+    """
+    Advanced pseudonymisation techniques per EDPB Guidelines 01/2025.
+
+    Implements:
+    - k-Anonymity: Ensure each record is indistinguishable from k-1 others
+    - l-Diversity: Ensure diversity of sensitive values in groups
+    - t-Closeness: Ensure distribution similarity to overall dataset
+    - Differential Privacy: Mathematical privacy guarantees
+
+    Per EDPB: "The choice of pseudonymisation technique should be based on
+    the context of processing and the risks to data subjects."
+    """
+
+    # k-Anonymity
+    - apply_k_anonymity(dataset: DataFrame, config: KAnonymityConfig) -> DataFrame
+    - verify_k_anonymity(dataset: DataFrame, k: int) -> bool
+    - calculate_k_value(dataset: DataFrame, quasi_identifiers: List[str]) -> int
+    - generalize_attribute(values: List, hierarchy: List[str], level: int) -> List
+
+    # l-Diversity
+    - apply_l_diversity(dataset: DataFrame, config: LDiversityConfig) -> DataFrame
+    - verify_l_diversity(dataset: DataFrame, l: int, sensitive_attr: str) -> bool
+    - calculate_distinct_l(group: DataFrame, sensitive_attr: str) -> int
+    - calculate_entropy_l(group: DataFrame, sensitive_attr: str) -> float
+
+    # t-Closeness
+    - apply_t_closeness(dataset: DataFrame, config: TClosenessConfig) -> DataFrame
+    - verify_t_closeness(dataset: DataFrame, t: float, sensitive_attr: str) -> bool
+    - calculate_emd_distance(group_dist: Dict, overall_dist: Dict) -> float
+
+    # Differential Privacy
+    - apply_differential_privacy(query_result: float, config: DifferentialPrivacyConfig) -> float
+    - add_laplace_noise(value: float, sensitivity: float, epsilon: float) -> float
+    - add_gaussian_noise(value: float, sensitivity: float, epsilon: float, delta: float) -> float
+    - calculate_privacy_budget_spent(queries: List[Query]) -> float
+
+    # Re-identification Risk Assessment
+    - assess_reidentification_risk(dataset: DataFrame, technique: PseudonymisationTechnique) -> ReIdentificationRiskAssessment
+    - calculate_prosecutor_risk(dataset: DataFrame) -> float
+    - calculate_journalist_risk(dataset: DataFrame) -> float
+    - calculate_marketer_risk(dataset: DataFrame) -> float
+
+    # Technique Selection
+    - recommend_technique(data_type: str, sensitivity: str, use_case: str) -> PseudonymisationTechnique
+    - validate_technique_parameters(technique: PseudonymisationTechnique, config: Dict) -> ValidationResult
+```
+
+**Platform Data Type → Technique Mapping:**
+
+| Data Type | Recommended Technique | Parameters | Use Case |
+|-----------|----------------------|------------|----------|
+| Trading volumes | k-Anonymity + Generalization | k=5, ranges | Analytics |
+| User demographics | l-Diversity | l=3 | Research |
+| Transaction timestamps | Generalization | hour/day | Pattern analysis |
+| Account balances | Differential Privacy | ε=0.1 | Aggregate statistics |
+| Trading patterns | t-Closeness | t=0.1 | ML training |
+| User IDs | Tokenization | SHA-256 + salt | Internal reference |
+
+**Re-identification Risk Thresholds:**
+
+| Risk Level | Prosecutor Risk | Journalist Risk | Marketer Risk | Action |
+|------------|-----------------|-----------------|---------------|--------|
+| Negligible | < 0.01 | < 0.01 | < 0.01 | Safe to release |
+| Low | 0.01-0.05 | 0.01-0.05 | 0.01-0.05 | Monitor |
+| Medium | 0.05-0.20 | 0.05-0.20 | 0.05-0.20 | Additional measures |
+| High | > 0.20 | > 0.20 | > 0.20 | Do not release |
+
 #### 4.2.4 RetentionManager (retention_manager.py)
 
 ```
@@ -3085,6 +4017,239 @@ Integration with:
 - `RestrictionsFramework` for Article 23 legal holds
 - `AccountabilityFramework` for erasure evidence logging
 - `services/compliance/retention_policy.py` for retention period tracking
+
+#### 4.2.6 GDPRMiFIDErasureCoordinator (gdpr_mifid_erasure.py) - NEW v1.8
+
+> **Critical Integration**: Coordinates GDPR Article 17 erasure requests with MiFID II Article 25 retention requirements.
+
+**Problem Statement**: A data subject requests erasure under Article 17, but their trading data is subject to MiFID II 5-7 year mandatory retention. This module handles this conflict.
+
+```
+Enum DataRetentionStatus:
+    """Status of data under competing regulatory requirements"""
+    GDPR_ONLY = "gdpr_only"                    # Only GDPR applies, can erase
+    MIFID_ACTIVE = "mifid_active"              # Under MiFID II retention, cannot erase
+    MIFID_EXPIRED = "mifid_expired"            # MiFID II retention ended, can erase
+    DUAL_OBLIGATION = "dual_obligation"         # Multiple regulations, complex handling
+    LEGAL_HOLD = "legal_hold"                  # Litigation hold, cannot erase
+
+Enum ErasureDecisionType:
+    IMMEDIATE_FULL = "immediate_full"          # Full erasure now
+    IMMEDIATE_PARTIAL = "immediate_partial"    # Partial erasure (non-MiFID data)
+    DEFERRED = "deferred"                      # Erasure after MiFID expiry
+    PSEUDONYMIZE_NOW = "pseudonymize_now"      # Pseudonymize now, erase later
+    DENIED = "denied"                          # Cannot erase (legal obligation)
+
+Dataclass DataCategoryRetentionStatus:
+    """Retention status per data category"""
+    category: str                              # e.g., "trading_records", "preferences"
+    regulation: str                            # "GDPR", "MiFID II", "AMLD", etc.
+    retention_required: bool
+    retention_start: datetime
+    retention_end: Optional[datetime]
+    can_erase_now: bool
+    can_pseudonymize_now: bool
+    reason: str
+
+Dataclass ErasureDecision:
+    """Decision result for GDPR erasure request under regulatory conflicts"""
+    decision_id: str
+    request_id: str                            # Original DSAR ID
+    data_subject_id: str
+    decision_date: datetime
+
+    # Data categorization
+    total_data_categories: int
+    categories_analyzed: List[DataCategoryRetentionStatus]
+
+    # Erasure breakdown
+    immediate_erasure_categories: List[str]    # Non-MiFID data, erase now
+    deferred_erasure_categories: List[str]     # MiFID data, erase on expiry
+    pseudonymize_now_categories: List[str]     # Minimize while retaining
+    cannot_erase_categories: List[str]         # Legal hold/ongoing investigation
+
+    # Decision
+    decision_type: ErasureDecisionType
+    decision_rationale: str
+
+    # Article 17(3)(b) documentation
+    legal_obligation_reference: str            # e.g., "MiFID II Article 25"
+    retention_until: Optional[datetime]        # When deferred erasure will occur
+
+    # Data subject communication
+    notification_required: bool
+    notification_template: str
+    notification_sent: bool
+
+Dataclass MiFIDDataMapping:
+    """Maps platform data to MiFID II retention requirements"""
+    data_type: str
+    mifid_article: str                         # Which MiFID II article applies
+    retention_years: int                       # 5 or 7 years
+    applies_to: List[str]                      # Data categories covered
+    exemptions: List[str]                      # When retention doesn't apply
+
+# MiFID II Data Retention Mapping
+MIFID_RETENTION_MAPPING = {
+    "order_records": {
+        "mifid_article": "Article 25(1)",
+        "retention_years": 5,
+        "applies_to": ["orders", "order_modifications", "order_cancellations"],
+        "legal_reference": "MiFIR Article 25"
+    },
+    "transaction_records": {
+        "mifid_article": "Article 25(1)",
+        "retention_years": 5,
+        "applies_to": ["executed_trades", "transaction_reports", "settlement_data"],
+        "legal_reference": "MiFIR Article 25"
+    },
+    "communications": {
+        "mifid_article": "Article 16(7)",
+        "retention_years": 5,
+        "applies_to": ["phone_recordings", "electronic_communications", "meetings_notes"],
+        "legal_reference": "MiFID II Article 16(7)"
+    },
+    "algorithm_records": {
+        "mifid_article": "Article 17(2)",
+        "retention_years": 5,
+        "applies_to": ["algorithm_source", "algorithm_changes", "trading_decisions"],
+        "legal_reference": "MiFID II Article 17(2)"
+    },
+    "client_records": {
+        "mifid_article": "Article 16(6)",
+        "retention_years": 5,  # Or duration of relationship + 5 years
+        "applies_to": ["client_agreements", "suitability_assessments", "appropriateness_tests"],
+        "legal_reference": "MiFID II Article 16(6)"
+    },
+    "complaint_records": {
+        "mifid_article": "Article 16(2)",
+        "retention_years": 5,
+        "applies_to": ["complaints", "complaint_responses", "remediation_actions"],
+        "legal_reference": "MiFID II Article 16(2)"
+    }
+}
+
+Class GDPRMiFIDErasureCoordinator:
+    """
+    Coordinates GDPR Article 17 erasure with MiFID II Article 25 retention.
+
+    Per Article 17(3)(b) GDPR: Right to erasure does not apply where
+    processing is necessary "for compliance with a legal obligation
+    which requires processing by Union or Member State law."
+
+    MiFID II Article 25 creates such a legal obligation for trading records.
+
+    This coordinator:
+    1. Analyzes erasure request against MiFID II obligations
+    2. Identifies what CAN be erased immediately (non-MiFID data)
+    3. Schedules deferred erasure for MiFID-covered data
+    4. Applies pseudonymization to minimize data while retained
+    5. Communicates clearly to data subject about partial/deferred erasure
+    """
+
+    # Erasure request analysis
+    - analyze_erasure_request(request: ErasureRequest) -> ErasureAnalysis
+    - identify_mifid_covered_data(data_subject_id: str) -> List[DataCategoryRetentionStatus]
+    - identify_non_mifid_data(data_subject_id: str) -> List[DataCategoryRetentionStatus]
+    - check_other_retention_obligations(data_subject_id: str) -> List[RetentionObligation]
+
+    # Decision making
+    - make_erasure_decision(request: ErasureRequest) -> ErasureDecision
+    - calculate_deferred_erasure_date(mifid_data: List[str]) -> datetime
+    - document_article_17_3_b_reliance(decision: ErasureDecision) -> str
+
+    # Execution
+    - execute_immediate_erasure(decision: ErasureDecision) -> ErasureResult
+    - schedule_deferred_erasure(decision: ErasureDecision) -> ScheduledErasure
+    - apply_interim_pseudonymization(decision: ErasureDecision) -> PseudonymizationResult
+
+    # Pseudonymization for retention period
+    - pseudonymize_for_retention(data_subject_id: str, categories: List[str]) -> PseudonymizationResult
+    - ensure_no_reidentification(data_subject_id: str) -> bool
+    - maintain_mifid_accessibility(records: List[str]) -> bool  # Must remain retrievable for NCA
+
+    # Data subject communication
+    - generate_partial_erasure_response(decision: ErasureDecision) -> DSARResponse
+    - explain_retention_requirement(decision: ErasureDecision) -> str
+    - notify_of_scheduled_erasure(decision: ErasureDecision) -> NotificationResult
+
+    # Integration with existing RetentionManager
+    - sync_with_retention_policy(decision: ErasureDecision) -> bool
+    - register_post_mifid_erasure(data_subject_id: str, erasure_date: datetime) -> str
+    - handle_nca_request_during_deferred(nca_request: NCARequest) -> bool
+```
+
+**GDPR Erasure + MiFID II Decision Matrix:**
+
+| Data Category | MiFID II Covered | Action on GDPR Request | Timeline |
+|--------------|------------------|----------------------|----------|
+| Trading records | ✅ Yes | Pseudonymize now, erase on expiry | 5-7 years |
+| Account preferences | ❌ No | Immediate erasure | Now |
+| Marketing data | ❌ No | Immediate erasure | Now |
+| Communication logs | ✅ Yes (Art. 16(7)) | Pseudonymize now, erase on expiry | 5 years |
+| Algorithm records | ✅ Yes (Art. 17(2)) | Pseudonymize now, erase on expiry | 5 years |
+| Session data | ❌ No | Immediate erasure | Now |
+| Analytics | ❌ No (if anonymized) | Already anonymized, N/A | N/A |
+
+**Erasure Request Processing Flow:**
+
+```
+GDPR Erasure Request Received:
+──────────────────────────────────────────────────────────────────
+
+1. Analyze Request
+   ├─ Identify all data categories for data subject
+   ├─ Map each category to MiFID II obligations
+   └─ Check for other retention obligations (AMLD, EMIR, MAR)
+
+2. Make Decision
+   ├─ Immediate erasure: Non-MiFID data → ERASE NOW
+   ├─ Deferred erasure: MiFID data → SCHEDULE for retention expiry
+   ├─ Pseudonymization: MiFID data → MINIMIZE NOW while retained
+   └─ Document Art. 17(3)(b) reliance
+
+3. Execute
+   ├─ Erase non-MiFID data immediately
+   ├─ Pseudonymize MiFID data (remove PII where possible)
+   ├─ Schedule post-retention erasure
+   └─ Update ROPA
+
+4. Communicate to Data Subject
+   ├─ Confirm partial erasure completed
+   ├─ Explain MiFID II legal obligation
+   ├─ Provide expected full erasure date
+   └─ Document for accountability
+```
+
+**Article 17(3)(b) Response Template:**
+
+```
+Dear [Data Subject],
+
+We have processed your erasure request dated [DATE].
+
+**Immediate Actions Taken:**
+- The following data categories have been erased: [LIST]
+
+**Deferred Erasure:**
+The following data categories are retained under legal obligation:
+- Trading records: Retained per MiFID II Article 25 (5 years from creation)
+- Communication logs: Retained per MiFID II Article 16(7) (5 years)
+
+**Minimization Applied:**
+During the retention period, we have pseudonymized this data to minimize
+your personal data footprint while meeting our legal obligations.
+
+**Scheduled Erasure:**
+The retained data will be automatically erased on [DATE], which is [X days]
+after the mandatory retention period expires.
+
+Per Article 17(3)(b) GDPR, the right to erasure does not apply where
+processing is necessary for compliance with a legal obligation which
+requires processing by Union or Member State law.
+
+If you have questions, contact our DPO at [CONTACT].
+```
 
 ### 4.3 Platform-Specific Privacy Controls
 
@@ -3252,6 +4417,249 @@ Class BreachRiskAssessor:
     - determine_notification_requirement(assessment: BreachRiskAssessment) -> Dict
     - document_no_notification_rationale(breach_id: str, reason: str)
 ```
+
+#### 5.2.2.1 BreachRiskMatrix (breach_risk_matrix.py) - NEW v1.8
+
+**EDPB/ENISA-aligned Quantitative Breach Risk Assessment**
+
+Per [EDPB Guidelines 9/2022](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-92022-personal-data-breach-notification_en), controllers must determine if a breach is "likely to result in a risk" or "high risk" to data subjects.
+
+```
+Enum RiskLevel:
+    """Risk level determination outcomes"""
+    NO_RISK = "no_risk"              # No notification required, document only
+    RISK = "risk"                    # Notify SA only (Article 33)
+    HIGH_RISK = "high_risk"          # Notify SA + Data Subjects (Articles 33+34)
+
+Dataclass BreachRiskScore:
+    """Quantitative risk score for breach assessment"""
+    score_id: str
+    breach_id: str
+    assessment_date: datetime
+
+    # Data Processing Context (DPC) - 0-3 points
+    data_processing_context_score: int
+    dpc_rationale: str
+
+    # Ease of Identification (EoI) - 0-4 points
+    ease_of_identification_score: int
+    eoi_rationale: str
+
+    # Circumstances of Breach (CoB) - 0-4 points
+    circumstances_score: int
+    cob_rationale: str
+
+    # Severity of Breach (SoB) - 0-4 points
+    severity_score: int
+    sob_rationale: str
+
+    # Total score and determination
+    total_score: int                   # 0-15 points
+    risk_level: RiskLevel
+    notification_required_sa: bool     # Article 33
+    notification_required_ds: bool     # Article 34
+
+    # Override (for edge cases)
+    manual_override: bool
+    override_rationale: Optional[str]
+    override_by: Optional[str]
+
+# ═══════════════════════════════════════════════════════════════════
+# ENISA/EDPB Breach Risk Assessment Matrix (NEW v1.8)
+# ═══════════════════════════════════════════════════════════════════
+# Per ENISA Recommendations for a methodology of the assessment of
+# severity of personal data breaches.
+
+BREACH_RISK_MATRIX = {
+    # Data Processing Context (DPC) Scoring
+    "data_processing_context": {
+        "simple_data": 1,              # Basic identifiers (name, email)
+        "behavioral_data": 2,          # Browsing history, preferences
+        "financial_data": 3,           # Bank accounts, transaction history
+        "special_categories": 4,       # Health, biometric, political
+    },
+
+    # Ease of Identification (EoI) Scoring
+    "ease_of_identification": {
+        "negligible": 0,               # Data is encrypted, key secure
+        "limited": 1,                  # Data pseudonymized, mapping exists
+        "significant": 2,              # Minimal effort to identify
+        "maximum": 3,                  # Direct identifiers exposed
+        "trivial_with_context": 4,     # Exposed with enriching context
+    },
+
+    # Circumstances of Breach (CoB) Scoring
+    "circumstances": {
+        "loss_of_availability": 1,      # Data unavailable but not exposed
+        "loss_of_integrity": 2,         # Data altered
+        "internal_accidental": 2,       # Staff error, contained
+        "external_contained": 3,        # Hack but limited exposure
+        "external_widespread": 4,       # Data on dark web/public
+    },
+
+    # Severity of Breach (SoB) Scoring
+    "severity": {
+        "insignificant": 0,            # No real impact expected
+        "limited": 1,                  # Minor inconvenience
+        "significant": 2,              # Financial loss possible
+        "maximum": 3,                  # Identity theft likely
+        "catastrophic": 4,             # Physical harm, discrimination
+    },
+
+    # Risk Level Determination
+    "risk_thresholds": {
+        "no_risk": (0, 3),             # Total 0-3: Document only
+        "risk": (4, 7),                # Total 4-7: Notify SA
+        "high_risk": (8, 15),          # Total 8+: Notify SA + DS
+    }
+}
+
+# Platform-Specific Breach Scenarios with Pre-calculated Risk
+PLATFORM_BREACH_SCENARIOS = {
+    "api_keys_exposed": {
+        "description": "API keys leaked via log files",
+        "dpc": 3,                       # Financial access
+        "eoi": 4,                       # Trivial to use
+        "cob": 3,                       # External could have accessed
+        "sob": 3,                       # Financial loss likely
+        "total": 13,
+        "risk_level": "HIGH_RISK",
+        "action": "Rotate all exposed keys IMMEDIATELY, notify SA+DS"
+    },
+    "trading_history_breach": {
+        "description": "Trading history database breach",
+        "dpc": 3,                       # Financial data
+        "eoi": 2,                       # User IDs known
+        "cob": 3,                       # External access
+        "sob": 2,                       # Financial profiling possible
+        "total": 10,
+        "risk_level": "HIGH_RISK",
+        "action": "Notify SA within 72h, assess DS notification"
+    },
+    "email_list_exposure": {
+        "description": "User email list accidentally sent to wrong recipient",
+        "dpc": 1,                       # Basic identifiers
+        "eoi": 3,                       # Directly identifiable
+        "cob": 2,                       # Internal accident
+        "sob": 1,                       # Minor inconvenience
+        "total": 7,
+        "risk_level": "RISK",
+        "action": "Notify SA, consider DS notification"
+    },
+    "encrypted_backup_lost": {
+        "description": "Encrypted backup drive lost (key secure)",
+        "dpc": 3,                       # Financial data on backup
+        "eoi": 0,                       # Encrypted, key not exposed
+        "cob": 1,                       # Availability loss only
+        "sob": 0,                       # No access to data
+        "total": 4,
+        "risk_level": "RISK",
+        "action": "Notify SA, document encryption status"
+    },
+    "analytics_log_misconfiguration": {
+        "description": "Analytics logs contained unsanitized PII for 24h",
+        "dpc": 1,                       # Basic identifiers
+        "eoi": 2,                       # In structured logs
+        "cob": 2,                       # Internal only
+        "sob": 1,                       # Minor exposure
+        "total": 6,
+        "risk_level": "RISK",
+        "action": "Notify SA, remediate logging"
+    }
+}
+
+Class BreachRiskMatrixAssessor:
+    """
+    EDPB/ENISA-aligned breach risk assessment.
+
+    Uses quantitative scoring per ENISA methodology:
+    https://www.enisa.europa.eu/publications/dbn-severity
+
+    Score Components:
+    - Data Processing Context (DPC): 0-4 points
+    - Ease of Identification (EoI): 0-4 points
+    - Circumstances of Breach (CoB): 0-4 points
+    - Severity of Breach (SoB): 0-4 points
+
+    Total: 0-16 points
+    - 0-3: No risk (document only)
+    - 4-7: Risk (notify SA under Article 33)
+    - 8+: High risk (notify SA + DS under Articles 33 & 34)
+    """
+
+    # Scoring
+    - score_data_processing_context(data_categories: List[str]) -> int
+    - score_ease_of_identification(breach: PersonalDataBreach) -> int
+    - score_circumstances(breach: PersonalDataBreach) -> int
+    - score_severity(breach: PersonalDataBreach, affected_count: int) -> int
+
+    # Assessment
+    - calculate_total_score(breach: PersonalDataBreach) -> BreachRiskScore
+    - determine_risk_level(total_score: int) -> RiskLevel
+    - check_platform_scenario_match(breach: PersonalDataBreach) -> Optional[Dict]
+
+    # Notification determination
+    - requires_sa_notification(score: BreachRiskScore) -> bool
+    - requires_ds_notification(score: BreachRiskScore) -> bool
+    - can_avoid_ds_notification(score: BreachRiskScore) -> Article34ExemptionCheck
+
+    # Article 34(3) exemption assessment
+    - check_encryption_exemption(breach: PersonalDataBreach) -> bool  # Art. 34(3)(a)
+    - check_subsequent_measures(breach: PersonalDataBreach) -> bool    # Art. 34(3)(b)
+    - check_disproportionate_effort(breach: PersonalDataBreach) -> bool # Art. 34(3)(c)
+
+    # Documentation
+    - generate_risk_assessment_report(score: BreachRiskScore) -> Report
+    - document_no_notification_decision(breach_id: str, score: BreachRiskScore) -> str
+    - audit_assessment_decision(assessment_id: str) -> AuditResult
+
+    # Manual override (for edge cases requiring DPO judgment)
+    - apply_manual_override(score: BreachRiskScore, new_level: RiskLevel, rationale: str) -> BreachRiskScore
+    - document_override_rationale(score_id: str, rationale: str) -> str
+```
+
+**Breach Risk Assessment Flow:**
+
+```
+Breach Detected:
+──────────────────────────────────────────────────────────────────
+
+1. Initial Triage (within 1 hour)
+   ├─ Identify data categories affected
+   ├─ Estimate number of data subjects
+   └─ Check for platform-specific scenario match
+
+2. Quantitative Assessment (within 4 hours)
+   ├─ Score Data Processing Context (0-4)
+   ├─ Score Ease of Identification (0-4)
+   ├─ Score Circumstances (0-4)
+   ├─ Score Severity (0-4)
+   └─ Calculate Total (0-16)
+
+3. Risk Level Determination
+   ├─ 0-3 points: NO RISK → Document only
+   ├─ 4-7 points: RISK → Notify SA within 72h
+   └─ 8+ points: HIGH RISK → Notify SA within 72h + Notify DS
+
+4. Exemption Check (if high risk)
+   ├─ Art. 34(3)(a): Was data encrypted with secure keys?
+   ├─ Art. 34(3)(b): Have subsequent measures eliminated risk?
+   └─ Art. 34(3)(c): Would notification require disproportionate effort?
+
+5. Execute Notifications
+   ├─ SA notification: Submit via official portal
+   ├─ DS notification: Email/letter/public announcement
+   └─ Document all decisions for accountability
+```
+
+**Risk Level Quick Reference:**
+
+| Total Score | Risk Level | SA Notification | DS Notification | Example |
+|-------------|------------|-----------------|-----------------|---------|
+| 0-3 | No Risk | ❌ No | ❌ No | Encrypted backup lost, key secure |
+| 4-7 | Risk | ✅ Yes (72h) | ❌ No | Email list to wrong recipient |
+| 8-11 | High Risk | ✅ Yes (72h) | ✅ Yes | Trading history breach |
+| 12+ | Critical | ✅ Yes (ASAP) | ✅ Yes (ASAP) | API keys on public repo |
 
 #### 5.2.3 BreachNotification (breach_notification.py)
 
@@ -3552,6 +4960,128 @@ DPA_DPIA_BLACKLISTS = {
             "geolocation_tracking_continuous",
             "video_surveillance_workplace",
             "automated_credit_decisions",
+        ]
+    },
+    # ═══════════════════════════════════════════════════════════════════
+    # Additional DPA Blacklists (NEW v1.8)
+    # ═══════════════════════════════════════════════════════════════════
+    "IT": {  # Italy - Garante (NEW v1.8)
+        "name": "Garante per la protezione dei dati personali",
+        "url": "https://www.garanteprivacy.it/home/docweb/-/docweb-display/docweb/9058979",
+        "triggers": [
+            "systematic_evaluation_automated",
+            "large_scale_special_categories",
+            "systematic_monitoring_publicly_accessible",
+            "innovative_technologies",
+            "automated_decisions_legal_significant",
+            "preventing_exercise_rights",
+            "large_scale_biometric",
+            "combining_datasets_different_purposes",
+            "vulnerable_data_subjects_large_scale",
+        ]
+    },
+    "PL": {  # Poland - UODO (NEW v1.8)
+        "name": "Urząd Ochrony Danych Osobowych",
+        "url": "https://uodo.gov.pl/pl/138/467",
+        "triggers": [
+            "systematic_profiling_significant_effects",
+            "large_scale_special_categories_art9",
+            "systematic_monitoring_public_areas",
+            "innovative_technology_high_risk",
+            "cross_border_processing_large_scale",
+            "preventing_rights_exercise",
+            "biometric_identification_systems",
+            "automated_decisions_without_human_intervention",
+        ]
+    },
+    "BE": {  # Belgium - APD/GBA (NEW v1.8)
+        "name": "Autorité de protection des données / Gegevensbeschermingsautoriteit",
+        "url": "https://www.gegevensbeschermingsautoriteit.be/",
+        "triggers": [
+            "systematic_large_scale_monitoring",
+            "profiling_legal_significant_effects",
+            "special_categories_large_scale",
+            "biometric_unique_identification",
+            "genetic_data_processing",
+            "combining_datasets_beyond_expectations",
+            "automated_decision_making_legal_effects",
+            "tracking_location_behaviour_systematic",
+        ]
+    },
+    "AT": {  # Austria - DSB (NEW v1.8)
+        "name": "Österreichische Datenschutzbehörde",
+        "url": "https://www.dsb.gv.at/",
+        "triggers": [
+            "systematic_monitoring_work_performance",
+            "profiling_creditworthiness",
+            "large_scale_health_data",
+            "biometric_systems_identification",
+            "video_surveillance_continuous",
+            "automated_decisions_significant_effects",
+            "location_tracking_systematic",
+            "combining_datasets_data_enrichment",
+        ]
+    },
+    "UK": {  # UK - ICO (for UK GDPR compliance) (NEW v1.8)
+        "name": "Information Commissioner's Office",
+        "url": "https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/accountability-and-governance/data-protection-impact-assessments-dpias/",
+        "triggers": [
+            "systematic_profiling_significant_decisions",
+            "large_scale_special_category_data",
+            "systematic_monitoring_public_places",
+            "innovative_technology_new_application",
+            "automated_decision_making_legal_effects",
+            "denial_of_service_rights",
+            "large_scale_profiling",
+            "biometric_data_uniquely_identifying",
+            "genetic_data_processing",
+            "data_matching_combining_different_sources",
+            "invisible_processing",
+            "targeting_children_vulnerable_individuals",
+        ]
+    },
+    "PT": {  # Portugal - CNPD (NEW v1.8)
+        "name": "Comissão Nacional de Proteção de Dados",
+        "url": "https://www.cnpd.pt/",
+        "triggers": [
+            "systematic_monitoring_employees",
+            "biometric_identification_access_control",
+            "large_scale_location_tracking",
+            "automated_decisions_creditworthiness",
+            "special_categories_systematic",
+        ]
+    },
+    "SE": {  # Sweden - IMY (NEW v1.8)
+        "name": "Integritetsskyddsmyndigheten",
+        "url": "https://www.imy.se/",
+        "triggers": [
+            "camera_surveillance_systematic",
+            "automated_decisions_legal_effects",
+            "profiling_combined_datasets",
+            "biometric_identification",
+            "large_scale_health_social_care",
+        ]
+    },
+    "FI": {  # Finland - Tietosuojavaltuutettu (NEW v1.8)
+        "name": "Office of the Data Protection Ombudsman",
+        "url": "https://tietosuoja.fi/en/",
+        "triggers": [
+            "systematic_profiling_significant",
+            "automated_decision_making_systematic",
+            "large_scale_special_categories",
+            "systematic_monitoring_employees",
+            "biometric_unique_identification",
+        ]
+    },
+    "DK": {  # Denmark - Datatilsynet (NEW v1.8)
+        "name": "Datatilsynet",
+        "url": "https://www.datatilsynet.dk/",
+        "triggers": [
+            "systematic_employee_monitoring",
+            "large_scale_biometric",
+            "automated_decisions_legal_significant",
+            "profiling_creditworthiness",
+            "innovative_technology_high_risk",
         ]
     }
 }
@@ -4910,6 +6440,206 @@ Source Data                      Art. 89 Safeguards Applied
 | Objection (Art. 21) | YES | If based on Art. 89(1) basis | Document research necessity |
 | Erasure (Art. 17) | YES | Via Art. 17(3)(d) research exemption | Document research purpose |
 
+#### 6.2.10 Chapter9SpecificSituations (chapter9_specific.py) - NEW v1.8
+
+**Articles 85, 86, 90 - Specific Processing Situations**
+
+Per GDPR Chapter IX, Member States may provide specific rules for certain processing situations.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Article 85 - Processing and Freedom of Expression
+# ═══════════════════════════════════════════════════════════════════
+# Per [GDPR Article 85](https://gdpr-info.eu/art-85-gdpr/), Member States
+# may provide exemptions/derogations for journalism, academic, artistic,
+# and literary purposes.
+
+Dataclass FreedomOfExpressionExemption:
+    """Article 85 - Exemptions for expression purposes"""
+    exemption_id: str
+    processing_activity: str
+    purpose: str                           # "journalism", "academic", "artistic", "literary"
+
+    # Exemption scope
+    exemption_applicable: bool
+    exemption_basis: str                   # National law reference
+    member_state: str
+
+    # Chapters that may be exempted (Art. 85(2))
+    chapter_ii_exempted: bool              # Principles
+    chapter_iii_exempted: bool             # Data subject rights
+    chapter_iv_exempted: bool              # Controller/processor
+    chapter_v_exempted: bool               # Transfers
+    chapter_vi_exempted: bool              # Independent SAs
+    chapter_vii_exempted: bool             # Cooperation
+
+    # Platform-specific applicability
+    applies_to_communication_logs: bool    # Email/messaging records
+    applies_to_user_generated_content: bool  # If platform has UGC
+
+    # Documentation
+    assessment_rationale: str
+    legal_reference: str
+
+# Platform relevance: Limited - trading platform is not journalism/academic
+# However, communication logs may contain content related to expression
+ARTICLE_85_APPLICABILITY = {
+    "trading_platform_core": False,        # Not journalism/academic
+    "communication_logs": "assess",        # May contain protected expression
+    "research_publications": True,         # If platform publishes research
+    "user_communications": "assess"        # User-to-user messaging
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 86 - Processing and Public Access to Official Documents
+# ═══════════════════════════════════════════════════════════════════
+# Per [GDPR Article 86](https://gdpr-info.eu/art-86-gdpr/), personal data
+# in official documents may be disclosed for public access.
+
+Dataclass PublicDocumentDisclosure:
+    """Article 86 - Public access to official documents"""
+    disclosure_id: str
+    document_type: str                     # e.g., "regulatory_filing", "annual_report"
+    contains_personal_data: bool
+
+    # Public access assessment
+    public_interest_assessment: str
+    reconciliation_with_gdpr: str          # How GDPR and public access are balanced
+    data_minimization_applied: bool
+    redaction_applied: bool
+
+    # Documentation
+    legal_basis_for_disclosure: str
+    member_state_law: str
+
+# Platform relevance: May apply to regulatory filings that become public
+ARTICLE_86_APPLICABILITY = {
+    "regulatory_filings": True,            # May contain personal data, become public
+    "annual_reports": True,                # If contains employee/director data
+    "transparency_reports": True,          # GDPR transparency reports
+    "audit_results_public": True           # If published for stakeholders
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 90 - Obligations of Secrecy
+# ═══════════════════════════════════════════════════════════════════
+# Per [GDPR Article 90](https://gdpr-info.eu/art-90-gdpr/), Member States
+# may adopt specific rules on SA powers regarding professional secrecy.
+
+Dataclass ProfessionalSecrecyRule:
+    """Article 90 - Professional secrecy obligations"""
+    rule_id: str
+    profession: str                        # e.g., "lawyer", "medical", "financial_advisor"
+    member_state: str
+
+    # Secrecy scope
+    secrecy_basis: str                     # National law reference
+    data_categories_covered: List[str]
+
+    # SA access restrictions
+    sa_access_limited: bool                # Can SA access this data?
+    access_conditions: List[str]           # Conditions for SA access
+    judicial_authorization_required: bool
+
+    # Platform-specific
+    applies_to_platform: bool              # Does this affect platform processing?
+    affected_data_flows: List[str]
+
+# Platform relevance: If platform processes data subject to professional secrecy
+# (e.g., communications with lawyers about trading disputes)
+ARTICLE_90_APPLICABILITY = {
+    "legal_communications": True,          # Client-lawyer privileged communications
+    "financial_advisor_records": True,     # Investment advice records
+    "compliance_officer_records": "partial"  # May be privileged in some contexts
+}
+
+Dataclass MemberStateSecrecyRule:
+    """Member State specific secrecy rules under Article 90"""
+    member_state: str
+    profession: str
+    secrecy_law_reference: str
+
+    # SA powers affected (Art. 90(1))
+    art_58_1_a_limited: bool              # Access to personal data
+    art_58_1_e_limited: bool              # Access from controller
+    art_58_1_f_limited: bool              # Premises access
+    limitation_scope: str
+
+    # Judicial oversight requirement
+    judicial_authorization_required: bool
+    authorization_authority: str
+
+# Sample Member State secrecy rules
+MEMBER_STATE_SECRECY_RULES = {
+    "DE": {
+        "lawyers": {
+            "secrecy_law": "BRAO §43a, StPO §53",
+            "sa_access_limited": True,
+            "judicial_authorization_required": True
+        },
+        "financial_advisors": {
+            "secrecy_law": "WpHG §§ 10-11",
+            "sa_access_limited": True,
+            "judicial_authorization_required": False
+        }
+    },
+    "FR": {
+        "lawyers": {
+            "secrecy_law": "Code Pénal Art. 226-13",
+            "sa_access_limited": True,
+            "judicial_authorization_required": True
+        }
+    },
+    "UK": {  # UK GDPR
+        "lawyers": {
+            "secrecy_law": "Legal Professional Privilege",
+            "sa_access_limited": True,
+            "judicial_authorization_required": True
+        }
+    }
+}
+
+Class Chapter9SpecificSituationsHandler:
+    """
+    Handles GDPR Chapter IX specific processing situations.
+
+    This class manages Articles 85, 86, and 90 considerations:
+    - Freedom of expression exemptions (Art. 85)
+    - Public document access reconciliation (Art. 86)
+    - Professional secrecy obligations (Art. 90)
+    """
+
+    # Article 85 - Freedom of Expression
+    - assess_expression_exemption(activity: ProcessingActivity) -> FreedomOfExpressionExemption
+    - check_journalism_exemption(content: str, member_state: str) -> ExemptionResult
+    - check_academic_exemption(research_activity: str) -> ExemptionResult
+    - apply_expression_exemption(processing_id: str, exemption: FreedomOfExpressionExemption)
+
+    # Article 86 - Public Documents
+    - assess_public_document_disclosure(document: Document) -> PublicDocumentDisclosure
+    - reconcile_gdpr_with_public_access(document_id: str) -> ReconciliationResult
+    - apply_minimization_for_disclosure(document_id: str) -> Document
+    - redact_personal_data_for_disclosure(document_id: str, keep_fields: List[str]) -> Document
+
+    # Article 90 - Professional Secrecy
+    - check_professional_secrecy(data_category: str, profession: str, member_state: str) -> SecrecyResult
+    - assess_sa_access_limitation(data_category: str) -> AccessLimitationResult
+    - document_secrecy_claim(processing_id: str, claim: SecrecyClaim) -> str
+    - handle_sa_request_for_privileged_data(request: SARequest) -> SAResponse
+
+    # General
+    - get_applicable_chapter9_rules(processing_activity: str, member_state: str) -> List[Chapter9Rule]
+    - document_chapter9_reliance(processing_id: str, article: str, rationale: str) -> str
+```
+
+**Platform-Specific Chapter 9 Considerations:**
+
+| Article | Applicability | Platform Data | Action |
+|---------|--------------|---------------|--------|
+| 85 | Low | Communication logs | Monitor for expression-related content |
+| 86 | Medium | Regulatory filings | Minimize PII before public disclosure |
+| 90 | Medium | Legal communications | Protect privileged data from SA access |
+
 ### 6.3 Platform-Specific DPIAs
 
 Pre-configured DPIA templates:
@@ -5416,6 +7146,229 @@ class UnifiedConsentManager:
             self.eprivacy_manager.clear_category_storage(user_id, category)
 ```
 
+#### ePrivacy Enhanced Features (eprivacy_enhanced.py) - NEW v1.8
+
+**Additional ePrivacy Requirements: DNT, Fingerprinting, PECR**
+
+Per evolving ePrivacy requirements and UK PECR, additional tracking controls are required.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Do Not Track (DNT) Signal Handling - NEW v1.8
+# ═══════════════════════════════════════════════════════════════════
+# While DNT is not legally mandated in EU, several DPAs recommend honoring it
+# as evidence of good faith privacy practices.
+
+Enum DNTSignal:
+    """Browser Do Not Track signal values"""
+    DNT_ON = "1"           # User requests no tracking
+    DNT_OFF = "0"          # User allows tracking
+    DNT_UNSET = None       # User has not set preference
+
+Dataclass DNTPolicy:
+    """Platform policy for handling DNT signals"""
+    honor_dnt_signal: bool = True          # Recommended: True
+    dnt_on_behavior: str                   # "block_all", "analytics_only", "essential_only"
+    dnt_off_behavior: str                  # "request_consent", "allow_all"
+    dnt_unset_behavior: str                # "request_consent" (default)
+    log_dnt_signals: bool = True           # For accountability
+
+Class DNTHandler:
+    """
+    Handles Do Not Track browser signals.
+
+    Per W3C Tracking Protection Expression (now discontinued but still used):
+    - DNT: 1 means user does not want to be tracked
+    - DNT: 0 means user consents to tracking
+    - No header means no preference expressed
+
+    Recommended approach: Honor DNT as privacy-by-default mechanism.
+    """
+
+    - detect_dnt_signal(request: HttpRequest) -> DNTSignal
+    - apply_dnt_policy(request: HttpRequest, policy: DNTPolicy) -> TrackingDecision
+    - log_dnt_interaction(user_id: str, signal: DNTSignal, decision: str)
+
+    # DNT-aware consent flow
+    - should_show_consent_banner(request: HttpRequest) -> bool
+    - adapt_consent_request_for_dnt(request: HttpRequest) -> ConsentRequest
+```
+
+**DNT Signal Handling Matrix:**
+
+| DNT Signal | Platform Action | Consent Banner | Tracking Allowed |
+|------------|-----------------|----------------|------------------|
+| DNT: 1 | Respect, minimize | Inform only | Essential only |
+| DNT: 0 | Standard flow | Request consent | Per consent |
+| No header | Standard flow | Request consent | Per consent |
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Browser Fingerprinting Disclosure - NEW v1.8
+# ═══════════════════════════════════════════════════════════════════
+# Per CNIL guidance and evolving ePrivacy interpretations, fingerprinting
+# requires same consent as cookies.
+
+Enum FingerprintingTechnique:
+    """Types of browser fingerprinting"""
+    CANVAS_FINGERPRINT = "canvas"
+    WEBGL_FINGERPRINT = "webgl"
+    AUDIO_FINGERPRINT = "audio"
+    FONT_FINGERPRINT = "fonts"
+    SCREEN_FINGERPRINT = "screen"
+    TIMEZONE_FINGERPRINT = "timezone"
+    PLUGIN_FINGERPRINT = "plugins"
+    HARDWARE_FINGERPRINT = "hardware"
+
+Dataclass FingerprintingDeclaration:
+    """Declaration of fingerprinting used on platform"""
+    technique: FingerprintingTechnique
+    purpose: str                           # e.g., "fraud_detection", "analytics"
+    category: CookieCategory               # Treated same as cookies
+    data_collected: List[str]
+    third_party: bool
+    retention_period: str
+
+# Platform fingerprinting disclosure
+FINGERPRINTING_DISCLOSURE = {
+    "fraud_detection": {
+        "techniques": [
+            FingerprintingTechnique.CANVAS_FINGERPRINT,
+            FingerprintingTechnique.TIMEZONE_FINGERPRINT
+        ],
+        "purpose": "Fraud prevention and account security",
+        "category": "strictly_necessary",   # Per CNIL: fraud detection may be exempt
+        "consent_required": False,          # Security purpose exemption
+        "legal_basis": "legitimate_interest"
+    },
+    "analytics": {
+        "techniques": [
+            FingerprintingTechnique.SCREEN_FINGERPRINT
+        ],
+        "purpose": "Anonymous usage analytics",
+        "category": "performance",
+        "consent_required": True,
+        "legal_basis": "consent"
+    }
+}
+
+Class FingerprintingComplianceManager:
+    """
+    Manages fingerprinting disclosure and consent.
+
+    Per CNIL Guidelines (2020): Fingerprinting is equivalent to cookies
+    and requires consent unless strictly necessary for service.
+
+    Per ICO Guidance: Fingerprinting for analytics requires consent.
+    """
+
+    - declare_fingerprinting(declaration: FingerprintingDeclaration) -> str
+    - check_fingerprinting_consent(user_id: str, technique: FingerprintingTechnique) -> bool
+    - get_fingerprinting_disclosure() -> List[FingerprintingDeclaration]
+    - disable_fingerprinting_for_user(user_id: str)
+
+    # Fraud detection exemption assessment
+    - assess_strictly_necessary_exemption(technique: FingerprintingTechnique, purpose: str) -> bool
+    - document_exemption_rationale(technique: FingerprintingTechnique) -> str
+```
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# UK PECR (Privacy and Electronic Communications Regulations) - NEW v1.8
+# ═══════════════════════════════════════════════════════════════════
+# For UK users, PECR applies in addition to UK GDPR.
+
+Dataclass PECRRequirement:
+    """UK PECR specific requirements"""
+    regulation: str                        # PECR regulation reference
+    requirement_type: str                  # "cookies", "marketing", "security"
+    description: str
+    applies_to_platform: bool
+    compliance_approach: str
+
+# UK PECR Requirements relevant to trading platform
+UK_PECR_REQUIREMENTS = {
+    "reg_6_cookies": {
+        "regulation": "PECR Regulation 6",
+        "requirement_type": "cookies",
+        "description": "Cookie consent with clear information",
+        "applies_to_platform": True,
+        "compliance_approach": "Unified consent banner covers PECR + UK GDPR"
+    },
+    "reg_21_direct_marketing": {
+        "regulation": "PECR Regulation 21",
+        "requirement_type": "marketing",
+        "description": "Consent for direct marketing emails",
+        "applies_to_platform": True,
+        "compliance_approach": "Opt-in consent required; soft opt-in for existing customers"
+    },
+    "reg_22_caller_id": {
+        "regulation": "PECR Regulation 22",
+        "requirement_type": "marketing",
+        "description": "Display caller ID for marketing calls",
+        "applies_to_platform": False,  # No phone marketing
+        "compliance_approach": "N/A"
+    },
+    "reg_5_confidentiality": {
+        "regulation": "PECR Regulation 5",
+        "requirement_type": "security",
+        "description": "Confidentiality of communications",
+        "applies_to_platform": True,
+        "compliance_approach": "End-to-end encryption for user communications"
+    }
+}
+
+Class PECRComplianceManager:
+    """
+    UK Privacy and Electronic Communications Regulations compliance.
+
+    For UK users, PECR applies alongside UK GDPR.
+    Key differences from ePrivacy Directive:
+    - Soft opt-in for existing customer marketing
+    - ICO enforcement and guidance specific to UK
+
+    Reference: https://ico.org.uk/for-organisations/direct-marketing-and-privacy-and-electronic-communications/
+    """
+
+    - check_pecr_applicability(user_jurisdiction: str) -> bool
+    - get_pecr_requirements() -> List[PECRRequirement]
+
+    # Cookie compliance (Reg 6)
+    - check_pecr_cookie_consent(user_id: str) -> bool
+    - get_pecr_cookie_banner_requirements() -> CookieBannerRequirements
+
+    # Marketing compliance (Reg 21-22)
+    - check_soft_opt_in_eligibility(user_id: str) -> bool
+    - can_send_marketing_email(user_id: str) -> bool
+    - log_marketing_consent(user_id: str, consent: bool, method: str)
+
+    # Security compliance (Reg 5)
+    - verify_communication_confidentiality() -> ComplianceStatus
+```
+
+**ePrivacy Enhanced Integration Flow:**
+
+```
+User Request Processing:
+──────────────────────────────────────────────────────────────────
+
+1. Detect User Context
+   ├─ Check DNT signal → If DNT:1, minimize tracking
+   ├─ Check jurisdiction → If UK, apply PECR
+   └─ Check consent status → If consented, proceed
+
+2. Apply Appropriate Controls
+   ├─ DNT honored → Essential tracking only
+   ├─ UK user → PECR cookie banner
+   ├─ EU user → ePrivacy Directive banner
+   └─ Fingerprinting → Consent or exemption documented
+
+3. Ongoing Compliance
+   ├─ Log all tracking decisions
+   ├─ Honor withdrawal immediately
+   └─ Document exemption rationale
+```
+
 ### GDPR ↔ AMLD6 (Anti-Money Laundering Directive) - NEW
 
 > **Critical for Trading Platforms**: KYC/AML data is a significant source of personal data with unique retention and processing requirements.
@@ -5853,7 +7806,12 @@ The European Commission is reviewing UK data protection law (Data Use and Access
 
 ### UK Adequacy Emergency Protocol (NEW v1.7)
 
-**🚨 CRITICAL**: This protocol MUST be activated by **15 December 2025** (12 days before expiration).
+**🚨 CRITICAL**: This protocol MUST be activated by **1 December 2025** (26 days buffer - updated v1.8).
+
+> **v1.8 Update**: Emergency activation date moved from 15 Dec to 1 Dec to provide adequate buffer for:
+> - TIA completion and review
+> - Holiday season coordination challenges
+> - UK Investigatory Powers Act 2016 supplementary measures implementation
 
 ```
 Dataclass UKAdequacyEmergencyProtocol:
@@ -5865,9 +7823,10 @@ Dataclass UKAdequacyEmergencyProtocol:
     adequacy expires to ensure continuity of lawful transfers.
     """
 
-    # Activation Configuration
+    # Activation Configuration - UPDATED v1.8
     ADEQUACY_EXPIRY_DATE: date = date(2025, 12, 27)
-    EMERGENCY_ACTIVATION_DATE: date = date(2025, 12, 15)  # 12 days buffer
+    EMERGENCY_ACTIVATION_DATE: date = date(2025, 12, 1)   # 26 days buffer (was 15 Dec)
+    PRE_EMERGENCY_CHECK_DATE: date = date(2025, 11, 15)   # Initial readiness check (NEW v1.8)
     AUTO_FALLBACK_ENABLED: bool = True
 
     # Pre-signed SCCs (MUST be prepared in advance)
@@ -5882,6 +7841,32 @@ Dataclass UKAdequacyEmergencyProtocol:
     # TIA Completion Status
     tia_completed: Dict[str, bool] = {}           # processor_id -> TIA done
     supplementary_measures_identified: Dict[str, List[str]] = {}
+
+    # UK Investigatory Powers Act 2016 - Supplementary Measures (NEW v1.8)
+    UK_IPA_SUPPLEMENTARY_MEASURES: List[str] = [
+        "end_to_end_encryption_in_transit",
+        "encryption_at_rest_with_eu_held_keys",
+        "data_minimization_before_transfer",
+        "pseudonymization_where_feasible",
+        "contractual_prohibition_on_bulk_disclosure",
+        "notification_obligation_for_government_requests",
+        "audit_rights_for_data_exporter"
+    ]
+
+    # UK TIA Assessment Template (NEW v1.8)
+    UK_TIA_ASSESSMENT = {
+        "government_access_risk": "medium_high",  # Per IPA 2016, RIPA 2000
+        "surveillance_laws": [
+            "Investigatory Powers Act 2016",
+            "Regulation of Investigatory Powers Act 2000",
+            "Data Retention and Acquisition Regulations 2018"
+        ],
+        "bulk_interception_powers": True,         # IPA 2016 Part 6
+        "redress_mechanisms": "adequate",         # UK has independent judiciary
+        "oversight_bodies": ["Investigatory Powers Commissioner", "IPT"],
+        "supplementary_measures_required": True,
+        "risk_mitigation_effectiveness": "medium"
+    }
 
     # Communication Templates (pre-approved)
     data_subject_notification_template: str = ""
@@ -5922,20 +7907,27 @@ Class UKAdequacyEmergencyManager:
     """
     Manages UK adequacy expiration emergency protocol.
 
-    Timeline:
+    Timeline (UPDATED v1.8):
     ─────────────────────────────────────────────────────────────
-    NOW (Dec 2025)    Check if emergency activation required
-                      ├─ If EU decision published → Stand down
-                      └─ If no decision → Activate protocol
+    15 Nov 2025       PRE-EMERGENCY CHECK (NEW v1.8)
+                      ├─ Verify all UK processors inventoried
+                      ├─ Confirm TIA completion status
+                      └─ Check SCC signing readiness
 
-    15 Dec 2025       EMERGENCY ACTIVATION DATE
+    NOW (Dec 2025)    ONGOING MONITORING
+                      ├─ Daily check for EU Commission decision
+                      └─ If decision published → Stand down
+
+    1 Dec 2025        EMERGENCY ACTIVATION DATE (was 15 Dec)
                       ├─ Final check for EU decision
                       ├─ If no decision → Execute fallback
+                      ├─ Activate pre-signed SCCs
                       └─ Notify all stakeholders
 
     27 Dec 2025       ADEQUACY EXPIRY
                       ├─ All UK transfers on SCCs
                       ├─ TIAs completed for all flows
+                      ├─ Supplementary measures active
                       └─ Data subjects notified
     ─────────────────────────────────────────────────────────────
     """
@@ -5981,15 +7973,20 @@ Class UKAdequacyEmergencyManager:
     - get_protocol_status() -> ProtocolStatus
     - generate_post_transition_audit() -> AuditReport
 
-# Emergency Activation Logic
+# Emergency Activation Logic (UPDATED v1.8)
 def check_and_activate_uk_emergency():
     """
-    MUST be called daily from December 1, 2025.
+    MUST be called daily from November 15, 2025 (pre-emergency check date).
 
     Auto-activates fallback if:
-    1. Date >= EMERGENCY_ACTIVATION_DATE (Dec 15, 2025)
+    1. Date >= EMERGENCY_ACTIVATION_DATE (Dec 1, 2025 - was Dec 15)
     2. No EU Commission decision published
     3. AUTO_FALLBACK_ENABLED = True
+
+    v1.8 Update: Earlier activation provides 26-day buffer for:
+    - TIA completion issues
+    - Holiday coordination
+    - IPA supplementary measures implementation
     """
     manager = UKAdequacyEmergencyManager()
 
@@ -6027,19 +8024,22 @@ def check_and_activate_uk_emergency():
     return CheckResult(days_until_activation=days_until(EMERGENCY_ACTIVATION_DATE))
 ```
 
-**UK Emergency Readiness Checklist:**
+**UK Emergency Readiness Checklist (UPDATED v1.8):**
 
 | Task | Status | Deadline | Owner |
 |------|--------|----------|-------|
-| Inventory all UK processors | ☐ Required | **NOW** | DPO |
-| Map all UK data flows | ☐ Required | **NOW** | Data Protection Team |
-| Draft SCCs for each UK processor | ☐ Required | **10 Dec 2025** | Legal |
-| Complete TIAs for UK transfers | ☐ Required | **12 Dec 2025** | DPO |
-| Identify supplementary measures | ☐ Required | **12 Dec 2025** | Security + Legal |
-| Sign SCCs with UK processors | ☐ Required | **14 Dec 2025** | Legal |
-| Prepare data subject notifications | ☐ Required | **14 Dec 2025** | Comms |
-| Test fallback mechanism | ☐ Required | **14 Dec 2025** | Engineering |
-| **ACTIVATE EMERGENCY PROTOCOL** | ☐ Trigger | **15 Dec 2025** | DPO |
+| Inventory all UK processors | ☐ Required | **15 Nov 2025** | DPO |
+| Map all UK data flows | ☐ Required | **15 Nov 2025** | Data Protection Team |
+| Draft SCCs for each UK processor | ☐ Required | **20 Nov 2025** | Legal |
+| Complete TIAs for UK transfers | ☐ Required | **22 Nov 2025** | DPO |
+| Identify IPA supplementary measures | ☐ Required | **22 Nov 2025** | Security + Legal |
+| Sign SCCs with UK processors | ☐ Required | **25 Nov 2025** | Legal |
+| Implement supplementary measures | ☐ Required | **28 Nov 2025** | Engineering |
+| Prepare data subject notifications | ☐ Required | **28 Nov 2025** | Comms |
+| Test fallback mechanism | ☐ Required | **29 Nov 2025** | Engineering |
+| **ACTIVATE EMERGENCY PROTOCOL** | ☐ Trigger | **1 Dec 2025** | DPO |
+
+> **v1.8 Update**: All deadlines moved earlier to provide 26-day buffer before adequacy expiry.
 
 **If UK Adequacy is Renewed:**
 
@@ -6312,16 +8312,18 @@ Class RecitalIntegrator:
 | Chapter 6: Supervisory Authorities | 9 | 1 | 11% (operational) |
 | Chapter 7: Cooperation/Consistency | 17 | 0 | 0% (operational) |
 | Chapter 8: Remedies/Penalties | 8 | 5 | 63% |
-| **Chapter 9: Specific Situations** | **7** | **2** | **29% (NEW v1.7)** |
+| **Chapter 9: Specific Situations** | **7** | **6** | **86% (UPDATED v1.8)** |
 | Chapter 10-11: Final Provisions | 8 | 0 | 0% (procedural) |
-| **TOTAL** | **99** | **52** | **53%** |
+| **TOTAL** | **99** | **60** | **61% (UPDATED v1.8)** |
 
-> **Note**: Chapters 6, 7, 10-11 are primarily operational/procedural and typically not implemented in software. Effective coverage of implementable articles is ~85%.
+> **Note**: Chapters 6, 7, 10-11 are primarily operational/procedural and typically not implemented in software. Effective coverage of implementable articles is **~92%**.
 > - ***Bold Italic*** = added in v1.5 critical audit
 > - ~~**Strikethrough Bold**~~ = added in v1.6 comprehensive audit
-> - Total article coverage: **56+ articles** (increased from 50+)
+> - **BOLD** = added in v1.8 critical audit fixes
+> - Total article coverage: **60+ articles** (increased from 52)
 > - Member State derogations tracked in `member_state_derogations.py`
 > - Recitals integration via `RecitalIntegrator` class
+> - Chapter 9 now includes: Art. 85, 86, 87, 88, 89, 90 (NEW v1.8)
 
 ---
 
@@ -6350,4 +8352,19 @@ Class RecitalIntegrator:
 - Enhanced Data Portability with direct transfer API
 - Sub-processor audit cascade verification
 
-**Total estimated tests: 850-1000 tests (updated for v1.6 additions)**
+**Version 1.8 addresses critical audit findings (December 2025):**
+- **Article 87 National ID Handler**: KYC/AML national ID number processing with Member State rules (DE, FR, IT, ES, NL, BE, AT, PL, IE)
+- **UK Emergency Protocol Update**: Activation date moved to 1 December 2025 (26-day buffer), added IPA supplementary measures
+- **CJEU C-634/21 SCHUFA Enhancement**: Light touch detection for third-party score reliance, human intervention quality assessment
+- **DPA Blacklists Expansion**: Added IT (Garante), PL (UODO), BE (APD), AT (DSB), UK (ICO), PT, SE, FI, DK
+- **GDPR-MiFID Erasure Coordinator**: Coordinates erasure requests with MiFID II retention requirements
+- **Chapter 9 Articles**: Added Art. 85 (Expression), Art. 86 (Public Documents), Art. 87 (National IDs), Art. 90 (Secrecy)
+- **Breach Risk Assessment Matrix**: EDPB/ENISA-aligned quantitative breach scoring (0-16 points)
+- **Age Verification Gateway**: Robust 18+ verification with minor detection incident handling
+- **Joint Controller Agreement**: Art. 26 JCA templates with DSAR routing rules
+- **Pseudonymisation Techniques**: k-anonymity, l-diversity, t-closeness, differential privacy with parameters
+- **ePrivacy Enhanced**: DNT signal handling, fingerprinting disclosure, UK PECR compliance
+
+**Total estimated tests: 1100-1300 tests (updated for v1.8 additions)**
+
+**Readiness Assessment v1.8: ~85% (up from 72% pre-audit)**
