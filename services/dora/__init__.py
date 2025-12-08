@@ -74,8 +74,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "0.5.0"
-__dora_compliance_phase__ = 4  # Current implementation phase
+__version__ = "1.0.0"
+__dora_compliance_phase__ = 5  # Current implementation phase
 
 # =============================================================================
 # Phase 0 exports (Proportionality Assessment)
@@ -846,6 +846,59 @@ from services.dora.ctpp_oversight import (
 )
 
 # =============================================================================
+# Phase 5 exports (Information Sharing & Integration - Article 45)
+# =============================================================================
+
+from services.dora.information_sharing import (
+    # Constants
+    SHAREABLE_INFORMATION,
+    # Enums
+    CommunityType,
+    SharingChannel,
+    SharingSensitivity,
+    MembershipStatus,
+    SharingOutcome,
+    # Data structures
+    SharingCommunity,
+    InformationSharingPolicy,
+    CyberThreat,
+    ThreatIntelligence,
+    ThreatSharingRecord,
+    # Main class
+    DORAInformationSharing,
+)
+
+from services.dora.cross_regulation import (
+    Regulation,
+    ReportingRequirement,
+    IncidentAlignmentResult,
+    RiskFrameworkAlignment,
+    LoggingAlignmentResult,
+    DORARegulationIntegration,
+)
+
+from services.dora.compliance_dashboard import (
+    IssueSeverity,
+    IssueStatus,
+    DeadlineStatus,
+    ComplianceIssue,
+    Deadline,
+    ComplianceStatus,
+    DORAComplianceReport,
+    DORAComplianceDashboard,
+)
+
+from services.dora.unified_reporting import (
+    ReportType,
+    ReportStatus,
+    ReportChannel,
+    ReportDestination,
+    UnifiedReport,
+    SubmissionPackage,
+    UnifiedReportingManager,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -1423,4 +1476,49 @@ __all__ = [
     "get_designated_ctpps_list",
     "get_ctpp_requirements",
     "get_ctpp_contract_requirements",
+
+    # =========================================================================
+    # Phase 5: Information Sharing & Integration (Article 45)
+    # =========================================================================
+
+    # Information Sharing (Article 45)
+    "SHAREABLE_INFORMATION",
+    "CommunityType",
+    "SharingChannel",
+    "SharingSensitivity",
+    "MembershipStatus",
+    "SharingOutcome",
+    "SharingCommunity",
+    "InformationSharingPolicy",
+    "CyberThreat",
+    "ThreatIntelligence",
+    "ThreatSharingRecord",
+    "DORAInformationSharing",
+
+    # Cross Regulation Integration
+    "Regulation",
+    "ReportingRequirement",
+    "IncidentAlignmentResult",
+    "RiskFrameworkAlignment",
+    "LoggingAlignmentResult",
+    "DORARegulationIntegration",
+
+    # Compliance Dashboard
+    "IssueSeverity",
+    "IssueStatus",
+    "DeadlineStatus",
+    "ComplianceIssue",
+    "Deadline",
+    "ComplianceStatus",
+    "DORAComplianceReport",
+    "DORAComplianceDashboard",
+
+    # Unified Reporting
+    "ReportType",
+    "ReportStatus",
+    "ReportChannel",
+    "ReportDestination",
+    "UnifiedReport",
+    "SubmissionPackage",
+    "UnifiedReportingManager",
 ]

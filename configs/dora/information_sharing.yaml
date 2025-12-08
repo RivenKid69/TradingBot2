@@ -1,0 +1,61 @@
+# DORA Article 45 - Information Sharing Configuration
+#
+# Defines trusted communities, sharing policies, and safeguards to comply with
+# GDPR and competition law while participating in cyber threat intelligence
+# exchanges (e.g., FS-ISAC, national CSIRTs, CERT-EU).
+
+# Default policy applied by services.dora.information_sharing.InformationSharingPolicy
+policy:
+  allowed_information_types:
+    - indicators_of_compromise
+    - tactics_techniques_procedures
+    - cybersecurity_alerts
+    - configuration_tools
+    - threat_actor_profiles
+  restricted_keywords:
+    - client_name
+    - pricing
+    - trade_id
+  require_gdpr_review: true
+  require_competition_review: true
+  allowed_sensitivity: tlp_amber
+  default_channel: portal
+
+# Trusted information sharing communities
+communities:
+  - name: "FS-ISAC"
+    community_type: fs_isac
+    country: "US"
+    contact_email: "membership@fsisac.com"
+    trust_level: 90
+    requires_anonymization: true
+    allowed_channels:
+      - portal
+      - api
+
+  - name: "CERT-EU"
+    community_type: cert
+    country: "EU"
+    contact_email: "info@cert.europa.eu"
+    trust_level: 85
+    requires_anonymization: true
+    allowed_channels:
+      - email
+      - portal
+
+  - name: "National CSIRT"
+    community_type: csirt
+    country: "DE"
+    contact_email: "csirt@bsi.bund.de"
+    trust_level: 80
+    requires_anonymization: false
+    allowed_channels:
+      - email
+      - portal
+
+# Safeguards and audit settings
+safeguards:
+  gdpr_officer: "dpo@example.com"
+  nca_contact: "nca@example-regulator.eu"
+  purge_after_days: 365
+  tlp_default: tlp_amber
