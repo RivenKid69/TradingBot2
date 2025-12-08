@@ -72,8 +72,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "0.3.0"
-__dora_compliance_phase__ = 2  # Current implementation phase
+__version__ = "0.4.0"
+__dora_compliance_phase__ = 3  # Current implementation phase
 
 # =============================================================================
 # Phase 0 exports (Proportionality Assessment)
@@ -556,6 +556,134 @@ from services.dora.third_party_incidents import (
 )
 
 # =============================================================================
+# Phase 3 exports (Digital Resilience Testing - Articles 24-27)
+# =============================================================================
+
+# Article 24 - Digital Operational Resilience Testing Programme
+from services.dora.resilience_testing import (
+    # Enums
+    TestCategory,
+    TestFrequency,
+    TestStatus as ResilienceTestStatus,
+    TestResult as ResilienceTestResult,
+    FindingSeverity,
+    FindingStatus,
+    TesterType as ResilienceTesterType,
+    SystemCriticality as ResilienceSystemCriticality,
+    # Data structures
+    TestScope,
+    TestDefinition,
+    TestExecution,
+    TestFinding,
+    TestingProgramme,
+    TestingCycle,
+    ResilienceTestingConfig,
+    # Main class
+    DORAResilienceTestingProgramme,
+    # Factory functions
+    create_resilience_testing_programme,
+)
+
+# Article 25 - Testing of ICT Tools and Systems
+from services.dora.ict_testing import (
+    # Enums
+    ICTSystemType,
+    SystemCriticality as ICTSystemCriticality,
+    TestingPriority,
+    VulnerabilitySeverity as ICTVulnerabilitySeverity,
+    VulnerabilityStatus,
+    TestType as ICTTestType,
+    TestStatus as ICTTestStatus,
+    TestResult as ICTTestResult,
+    RemediationStatus,
+    # Data structures
+    ICTSystemProfile,
+    SystemTestPlan,
+    SystemTest,
+    Vulnerability,
+    RemediationPlan,
+    ThirdPartyInterfaceTest,
+    ICTTestingConfig,
+    # Main class
+    DORAICTSystemTesting,
+    # Factory functions
+    create_ict_system_testing,
+)
+
+# Article 26 - Threat-Led Penetration Testing (TLPT)
+from services.dora.tlpt import (
+    # Enums
+    TLPTPhase,
+    TLPTStatus,
+    ThreatActorType as TLPTThreatActorType,
+    ThreatActorCapability,
+    AttackTechnique,
+    AttackOutcome,
+    TLPTFindingSeverity,
+    FindingCategory,
+    # Data structures
+    TLPTScope,
+    ThreatIntelligenceReport,
+    RedTeamScenario,
+    AttackAction,
+    TLPTFinding,
+    PurpleTeamSession,
+    TLPTEngagement,
+    TLPTAttestation,
+    TLPTConfig,
+    # Main class
+    DORAThreadLedPenetrationTesting,
+    # Factory functions
+    create_tlpt,
+)
+
+# Article 27 - Requirements for Testers
+from services.dora.tester_management import (
+    # Enums
+    TesterType as TLPTTesterType,
+    TesterRole,
+    CertificationCategory,
+    QualificationStatus,
+    ConflictCheckResult,
+    # Data structures
+    SecurityCertification,
+    TesterExpertise,
+    ConflictOfInterestDeclaration,
+    ProfessionalIndemnityInsurance,
+    TLPTTester,
+    TesterOrganization,
+    TesterQualificationAssessment,
+    InternalTesterApproval,
+    TesterManagementConfig,
+    # Main class
+    DORATestermanagement,
+    # Factory functions
+    create_tester_management,
+)
+
+# Article 26(3) - Pooled TLPT
+from services.dora.pooled_testing import (
+    # Enums
+    PooledTestStatus,
+    ParticipantRole,
+    ParticipantStatus,
+    CostSharingModel,
+    ProviderCriticality,
+    # Data structures
+    SharedProvider,
+    PooledTestingParticipant,
+    PooledTestingScope,
+    CostSharingAgreement,
+    PooledTestingEngagement,
+    PooledTestingResults,
+    PooledTestingConfig,
+    # Main class
+    DORAPooledTesting,
+    # Factory functions
+    create_pooled_testing,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -912,4 +1040,102 @@ __all__ = [
     "ThirdPartyPostIncidentReview",
     "DORAThirdPartyIncidents",
     "create_third_party_incidents",
+
+    # =========================================================================
+    # Phase 3: Digital Resilience Testing (Articles 24-27)
+    # =========================================================================
+
+    # Digital Operational Resilience Testing Programme (Article 24)
+    "TestCategory",
+    "TestFrequency",
+    "ResilienceTestStatus",
+    "ResilienceTestResult",
+    "FindingSeverity",
+    "FindingStatus",
+    "ResilienceTesterType",
+    "ResilienceSystemCriticality",
+    "TestScope",
+    "TestDefinition",
+    "TestExecution",
+    "TestFinding",
+    "TestingProgramme",
+    "TestingCycle",
+    "ResilienceTestingConfig",
+    "DORAResilienceTestingProgramme",
+    "create_resilience_testing_programme",
+
+    # Testing of ICT Tools and Systems (Article 25)
+    "ICTSystemType",
+    "ICTSystemCriticality",
+    "TestingPriority",
+    "ICTVulnerabilitySeverity",
+    "VulnerabilityStatus",
+    "ICTTestType",
+    "ICTTestStatus",
+    "ICTTestResult",
+    "RemediationStatus",
+    "ICTSystemProfile",
+    "SystemTestPlan",
+    "SystemTest",
+    "Vulnerability",
+    "RemediationPlan",
+    "ThirdPartyInterfaceTest",
+    "ICTTestingConfig",
+    "DORAICTSystemTesting",
+    "create_ict_system_testing",
+
+    # Threat-Led Penetration Testing (Article 26)
+    "TLPTPhase",
+    "TLPTStatus",
+    "TLPTThreatActorType",
+    "ThreatActorCapability",
+    "AttackTechnique",
+    "AttackOutcome",
+    "TLPTFindingSeverity",
+    "FindingCategory",
+    "TLPTScope",
+    "ThreatIntelligenceReport",
+    "RedTeamScenario",
+    "AttackAction",
+    "TLPTFinding",
+    "PurpleTeamSession",
+    "TLPTEngagement",
+    "TLPTAttestation",
+    "TLPTConfig",
+    "DORAThreadLedPenetrationTesting",
+    "create_tlpt",
+
+    # Requirements for Testers (Article 27)
+    "TLPTTesterType",
+    "TesterRole",
+    "CertificationCategory",
+    "QualificationStatus",
+    "ConflictCheckResult",
+    "SecurityCertification",
+    "TesterExpertise",
+    "ConflictOfInterestDeclaration",
+    "ProfessionalIndemnityInsurance",
+    "TLPTTester",
+    "TesterOrganization",
+    "TesterQualificationAssessment",
+    "InternalTesterApproval",
+    "TesterManagementConfig",
+    "DORATestermanagement",
+    "create_tester_management",
+
+    # Pooled TLPT (Article 26(3))
+    "PooledTestStatus",
+    "ParticipantRole",
+    "ParticipantStatus",
+    "CostSharingModel",
+    "ProviderCriticality",
+    "SharedProvider",
+    "PooledTestingParticipant",
+    "PooledTestingScope",
+    "CostSharingAgreement",
+    "PooledTestingEngagement",
+    "PooledTestingResults",
+    "PooledTestingConfig",
+    "DORAPooledTesting",
+    "create_pooled_testing",
 ]
