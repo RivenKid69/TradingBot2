@@ -15,13 +15,15 @@ Phase 1 - ICT Risk Management Framework (Articles 5-16):
     - governance: Management Body Oversight and ICT Governance (Article 5)
     - ict_risk_framework: ICT Risk Management Framework (Article 6)
     - ict_systems: ICT Systems, Protocols and Tools (Article 7)
-    - identification: ICT Risk Identification (Article 8)
+    - ict_identification: ICT Risk Identification (Article 8)
     - protection: Protection and Prevention (Article 9)
     - detection: Anomaly Detection (Article 10)
     - response_recovery: Response and Recovery (Article 11)
-    - backup: Backup and Recovery (Article 12)
+    - backup_recovery: Backup and Recovery (Article 12)
     - learning: Learning and Evolving (Article 13)
     - communication: Crisis Communication (Article 14)
+    - ict_business_continuity: ICT Business Continuity (Article 15)
+    - simplified_framework: Simplified Framework for Smaller Entities (Article 16)
 
 Phase 2 - ICT Incident Management & Reporting (Articles 17-23):
     - incident_classification: Incident Classification (CDR 2024/1772)
@@ -70,8 +72,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
-__dora_compliance_phase__ = 0  # Current implementation phase
+__version__ = "0.2.0"
+__dora_compliance_phase__ = 1  # Current implementation phase
 
 # =============================================================================
 # Phase 0 exports (Proportionality Assessment)
@@ -123,6 +125,275 @@ from services.dora.proportionality import (
 )
 
 # =============================================================================
+# Phase 1 exports (ICT Risk Management Framework - Articles 5-16)
+# =============================================================================
+
+# Article 5 - Governance
+from services.dora.governance import (
+    # Enums
+    GovernanceRole,
+    DefenceLine,
+    TrainingStatus,
+    ApprovalStatus,
+    # Data structures
+    GovernanceRoleAssignment,
+    ICTTrainingRecord,
+    FrameworkApproval,
+    AuditFinding,
+    ICTBudgetAllocation,
+    # Main class
+    DORAGovernanceFramework,
+    # Factory functions
+    create_governance_framework,
+    # Constants
+    MANDATORY_TRAINING_TOPICS,
+)
+
+# Article 6 - ICT Risk Management Framework
+from services.dora.ict_risk_framework import (
+    # Enums
+    PolicyCategory,
+    ControlDomain,
+    ControlType,
+    RiskLevel as ICTRiskLevel,
+    # Data structures
+    RiskPolicy,
+    RiskProcedure,
+    ICTControl,
+    FrameworkReview,
+    ICTRisk,
+    # Main class
+    DORAICTRiskFramework,
+    # Factory functions
+    create_ict_risk_framework,
+)
+
+# Article 7 - ICT Systems
+from services.dora.ict_systems import (
+    # Enums
+    SystemCriticality,
+    SystemType,
+    SystemStatus,
+    CapacityStatus,
+    AutomationLevel,
+    # Data structures
+    ICTSystem,
+    CapacityMetric,
+    ReliabilityMetric,
+    AutomationCapability,
+    SystemUpgrade,
+    # Main class
+    DORAICTSystemsManager,
+    # Factory functions
+    create_ict_systems_manager,
+)
+
+# Article 8 - ICT Identification
+from services.dora.ict_identification import (
+    # Enums
+    AssetType,
+    AssetClassification,
+    RiskSourceCategory,
+    ThreatCategory,
+    VulnerabilitySeverity,
+    # Data structures
+    ICTAsset,
+    RiskSource,
+    CyberThreat,
+    ICTVulnerability,
+    ICTDependency,
+    BusinessFunction,
+    # Main class
+    DORAICTIdentification,
+    # Factory functions
+    create_ict_identification,
+)
+
+# Article 9 - Protection and Prevention
+from services.dora.protection import (
+    # Enums
+    SecurityControlCategory,
+    AccessControlType,
+    AuthenticationType,
+    EncryptionType,
+    NetworkZone,
+    # Data structures
+    SecurityControl,
+    AccessPolicy,
+    EncryptionStandard,
+    NetworkSecurityRule,
+    DataProtectionPolicy,
+    # Main class
+    DORAProtection,
+    # Factory functions
+    create_protection,
+)
+
+# Article 10 - Detection
+from services.dora.detection import (
+    # Enums
+    AnomalyType,
+    AlertSeverity,
+    AlertStatus,
+    DetectionMethod,
+    MonitoringStatus,
+    # Data structures
+    DetectionRule,
+    DetectionAlert,
+    PerformanceMetric,
+    SinglePointOfFailure,
+    # Main class
+    DORADetection,
+    # Factory functions
+    create_detection,
+)
+
+# Article 11 - Response and Recovery
+from services.dora.response_recovery import (
+    # Enums
+    IncidentSeverity,
+    IncidentStatus,
+    IncidentCategory,
+    EscalationLevel,
+    CrisisStatus,
+    # Data structures
+    ICTIncident,
+    ResponseProcedure,
+    EscalationRule,
+    CrisisEvent as ResponseCrisisEvent,
+    RecoveryAction,
+    # Main class
+    DORAResponseRecovery,
+    # Factory functions
+    create_response_recovery,
+)
+
+# Article 12 - Backup and Recovery
+from services.dora.backup_recovery import (
+    # Enums
+    BackupType,
+    BackupFrequency,
+    BackupStatus,
+    RecoveryTestType,
+    RecoveryTestResult,
+    LocationType,
+    # Data structures
+    BackupPolicy,
+    BackupJob,
+    BackupLocation,
+    RecoveryTest,
+    RestorationProcedure,
+    # Main class
+    DORABackupRecovery,
+    # Factory functions
+    create_backup_recovery,
+)
+
+# Article 13 - Learning and Evolving
+from services.dora.learning import (
+    # Enums
+    ReviewType,
+    LessonCategory,
+    LessonPriority,
+    LessonStatus,
+    ImprovementType,
+    ImprovementStatus,
+    KnowledgeType,
+    # Data structures
+    PostIncidentReview,
+    LessonLearned,
+    ImprovementInitiative,
+    KnowledgeArticle,
+    TrainingNeed,
+    TrendAnalysis,
+    InformationShare,
+    # Main class
+    DORALearning,
+    # Factory functions
+    create_dora_learning,
+)
+
+# Article 14 - Communication
+from services.dora.communication import (
+    # Enums
+    CommunicationType,
+    CommunicationChannel,
+    CommunicationPriority,
+    CommunicationStatus,
+    NotificationType,
+    StakeholderType,
+    EscalationTrigger,
+    # Data structures
+    CommunicationPolicy,
+    Stakeholder,
+    CommunicationTemplate,
+    Communication,
+    EscalationRule as CommunicationEscalationRule,
+    CrisisCommunicationPlan,
+    RegulatoryNotification,
+    CommunicationLog,
+    # Main class
+    DORACommunication,
+    # Factory functions
+    create_dora_communication,
+)
+
+# Article 15 - ICT Business Continuity
+from services.dora.ict_business_continuity import (
+    # Enums
+    ContinuityStatus,
+    CriticalityLevel,
+    ImpactCategory,
+    ImpactSeverity,
+    TestType as ContinuityTestType,
+    TestResult as ContinuityTestResult,
+    ScenarioType,
+    RecoveryStrategy,
+    # Data structures
+    ICTBusinessContinuityPolicy,
+    BusinessFunction as ContinuityBusinessFunction,
+    BusinessImpactAssessment,
+    RecoveryObjective,
+    ContinuityPlan,
+    DisruptionScenario,
+    ContinuityTest,
+    CrisisEvent as ContinuityCrisisEvent,
+    AlternativeArrangement,
+    # Main class
+    DORAICTBusinessContinuity,
+    # Factory functions
+    create_dora_ict_business_continuity,
+)
+
+# Article 16 - Simplified Framework
+from services.dora.simplified_framework import (
+    # Enums
+    EntitySize,
+    SimplifiedControlCategory,
+    ControlStatus,
+    RiskLevel as SimplifiedRiskLevel,
+    IncidentPriority as SimplifiedIncidentPriority,
+    IncidentStatus as SimplifiedIncidentStatus,
+    TestType as SimplifiedTestType,
+    # Data structures
+    EligibilityCriteria,
+    SimplifiedControl,
+    SimplifiedRiskAssessment,
+    SimplifiedIncident,
+    SimplifiedBackup,
+    SimplifiedThirdParty,
+    SimplifiedTest,
+    SimplifiedAwarenessTraining,
+    AnnualReview,
+    # Constants
+    ESSENTIAL_CONTROLS,
+    # Main class
+    DORASimplifiedFramework,
+    # Factory functions
+    create_dora_simplified_framework,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -164,4 +435,199 @@ __all__ = [
     "ProportionalityAssessor",
     "create_proportionality_assessor",
     "assess_entity_proportionality",
+
+    # =========================================================================
+    # Phase 1: ICT Risk Management Framework (Articles 5-16)
+    # =========================================================================
+
+    # Governance (Article 5)
+    "GovernanceRole",
+    "DefenceLine",
+    "TrainingStatus",
+    "ApprovalStatus",
+    "GovernanceRoleAssignment",
+    "ICTTrainingRecord",
+    "FrameworkApproval",
+    "AuditFinding",
+    "ICTBudgetAllocation",
+    "DORAGovernanceFramework",
+    "create_governance_framework",
+    "MANDATORY_TRAINING_TOPICS",
+
+    # ICT Risk Management Framework (Article 6)
+    "PolicyCategory",
+    "ControlDomain",
+    "ControlType",
+    "ICTRiskLevel",
+    "RiskPolicy",
+    "RiskProcedure",
+    "ICTControl",
+    "FrameworkReview",
+    "ICTRisk",
+    "DORAICTRiskFramework",
+    "create_ict_risk_framework",
+
+    # ICT Systems (Article 7)
+    "SystemCriticality",
+    "SystemType",
+    "SystemStatus",
+    "CapacityStatus",
+    "AutomationLevel",
+    "ICTSystem",
+    "CapacityMetric",
+    "ReliabilityMetric",
+    "AutomationCapability",
+    "SystemUpgrade",
+    "DORAICTSystemsManager",
+    "create_ict_systems_manager",
+
+    # ICT Identification (Article 8)
+    "AssetType",
+    "AssetClassification",
+    "RiskSourceCategory",
+    "ThreatCategory",
+    "VulnerabilitySeverity",
+    "ICTAsset",
+    "RiskSource",
+    "CyberThreat",
+    "ICTVulnerability",
+    "ICTDependency",
+    "BusinessFunction",
+    "DORAICTIdentification",
+    "create_ict_identification",
+
+    # Protection and Prevention (Article 9)
+    "SecurityControlCategory",
+    "AccessControlType",
+    "AuthenticationType",
+    "EncryptionType",
+    "NetworkZone",
+    "SecurityControl",
+    "AccessPolicy",
+    "EncryptionStandard",
+    "NetworkSecurityRule",
+    "DataProtectionPolicy",
+    "DORAProtection",
+    "create_protection",
+
+    # Detection (Article 10)
+    "AnomalyType",
+    "AlertSeverity",
+    "AlertStatus",
+    "DetectionMethod",
+    "MonitoringStatus",
+    "DetectionRule",
+    "DetectionAlert",
+    "PerformanceMetric",
+    "SinglePointOfFailure",
+    "DORADetection",
+    "create_detection",
+
+    # Response and Recovery (Article 11)
+    "IncidentSeverity",
+    "IncidentStatus",
+    "IncidentCategory",
+    "EscalationLevel",
+    "CrisisStatus",
+    "ICTIncident",
+    "ResponseProcedure",
+    "EscalationRule",
+    "ResponseCrisisEvent",
+    "RecoveryAction",
+    "DORAResponseRecovery",
+    "create_response_recovery",
+
+    # Backup and Recovery (Article 12)
+    "BackupType",
+    "BackupFrequency",
+    "BackupStatus",
+    "RecoveryTestType",
+    "RecoveryTestResult",
+    "LocationType",
+    "BackupPolicy",
+    "BackupJob",
+    "BackupLocation",
+    "RecoveryTest",
+    "RestorationProcedure",
+    "DORABackupRecovery",
+    "create_backup_recovery",
+
+    # Learning and Evolving (Article 13)
+    "ReviewType",
+    "LessonCategory",
+    "LessonPriority",
+    "LessonStatus",
+    "ImprovementType",
+    "ImprovementStatus",
+    "KnowledgeType",
+    "PostIncidentReview",
+    "LessonLearned",
+    "ImprovementInitiative",
+    "KnowledgeArticle",
+    "TrainingNeed",
+    "TrendAnalysis",
+    "InformationShare",
+    "DORALearning",
+    "create_dora_learning",
+
+    # Communication (Article 14)
+    "CommunicationType",
+    "CommunicationChannel",
+    "CommunicationPriority",
+    "CommunicationStatus",
+    "NotificationType",
+    "StakeholderType",
+    "EscalationTrigger",
+    "CommunicationPolicy",
+    "Stakeholder",
+    "CommunicationTemplate",
+    "Communication",
+    "CommunicationEscalationRule",
+    "CrisisCommunicationPlan",
+    "RegulatoryNotification",
+    "CommunicationLog",
+    "DORACommunication",
+    "create_dora_communication",
+
+    # ICT Business Continuity (Article 15)
+    "ContinuityStatus",
+    "CriticalityLevel",
+    "ImpactCategory",
+    "ImpactSeverity",
+    "ContinuityTestType",
+    "ContinuityTestResult",
+    "ScenarioType",
+    "RecoveryStrategy",
+    "ICTBusinessContinuityPolicy",
+    "ContinuityBusinessFunction",
+    "BusinessImpactAssessment",
+    "RecoveryObjective",
+    "ContinuityPlan",
+    "DisruptionScenario",
+    "ContinuityTest",
+    "ContinuityCrisisEvent",
+    "AlternativeArrangement",
+    "DORAICTBusinessContinuity",
+    "create_dora_ict_business_continuity",
+
+    # Simplified Framework (Article 16)
+    "EntitySize",
+    "SimplifiedControlCategory",
+    "ControlStatus",
+    "SimplifiedRiskLevel",
+    "SimplifiedIncidentPriority",
+    "SimplifiedIncidentStatus",
+    "SimplifiedTestType",
+    "EligibilityCriteria",
+    "SimplifiedControl",
+    "SimplifiedRiskAssessment",
+    "SimplifiedIncident",
+    "SimplifiedBackup",
+    "SimplifiedThirdParty",
+    "SimplifiedTest",
+    "SimplifiedAwarenessTraining",
+    "AnnualReview",
+    "ESSENTIAL_CONTROLS",
+    "DORASimplifiedFramework",
+    "create_dora_simplified_framework",
 ]
