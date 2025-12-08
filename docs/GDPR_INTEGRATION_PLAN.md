@@ -167,6 +167,7 @@ Establish foundational GDPR infrastructure including:
 - Article 4 definitions and role classification
 - Article 28 processor management
 - Article 26 joint controller agreements
+- **Article 29 processing under authority** - NEW
 - Data Processing Agreement (DPA) generation
 
 ### 0.2 Components to Implement
@@ -399,6 +400,160 @@ Class DPAGenerator:
     - get_template(template_type: str) -> DPATemplate
 ```
 
+#### 0.2.6 AuthorizedProcessing (authorized_processing.py) - NEW
+
+**Article 29 - Processing under the authority of the controller or processor**
+
+Per [GDPR Article 29](https://gdpr-info.eu/art-29-gdpr/), any person acting under the authority of the controller or processor who has access to personal data shall not process those data except on instructions from the controller.
+
+```
+Enum AuthorizationStatus:
+    PENDING_TRAINING = "pending_training"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    REVOKED = "revoked"
+
+Dataclass AuthorizedPerson:
+    person_id: str
+    name: str
+    role: str
+    department: str
+
+    # Authorization details
+    authorization_date: datetime
+    authorized_by: str
+    authorization_scope: List[str]  # Data categories authorized to access
+    processing_purposes: List[str]  # Purposes authorized for
+
+    # Compliance requirements
+    confidentiality_agreement_signed: bool
+    confidentiality_agreement_date: Optional[datetime]
+    training_completed: bool
+    training_completion_date: Optional[datetime]
+    training_expiry_date: Optional[datetime]
+
+    # Access controls
+    system_access_granted: List[str]  # Systems with access
+    access_level: str  # "read", "read_write", "admin"
+
+    # Status tracking
+    status: AuthorizationStatus
+    last_review_date: Optional[datetime]
+    next_review_date: datetime
+
+Dataclass ProcessingInstruction:
+    instruction_id: str
+    instruction_date: datetime
+    issued_by: str  # Controller representative
+
+    # Instruction details
+    processing_activity: str
+    data_categories: List[str]
+    purpose: str
+    legal_basis: str
+
+    # Constraints
+    duration: Optional[str]
+    geographic_scope: Optional[List[str]]
+    special_conditions: List[str]
+
+    # Documentation
+    instruction_document: str
+    version: str
+    acknowledged_by: List[str]
+    acknowledgment_dates: Dict[str, datetime]
+
+Dataclass InstructionViolation:
+    violation_id: str
+    person_id: str
+    instruction_id: str
+    violation_date: datetime
+
+    # Details
+    description: str
+    severity: str  # "minor", "moderate", "serious", "critical"
+    data_subjects_affected: int
+
+    # Response
+    detected_by: str
+    reported_to_dpo: bool
+    remediation_actions: List[str]
+    disciplinary_action: Optional[str]
+
+Class AuthorizedProcessingManager:
+    """
+    Article 29 compliance - ensure all persons process data only per instructions.
+
+    Per GDPR Article 29:
+    'The processor and any person acting under the authority of the controller
+    or of the processor, who has access to personal data, shall not process
+    those data except on instructions from the controller, unless required
+    to do so by Union or Member State law.'
+    """
+
+    # Authorization management
+    - authorize_person(person: AuthorizedPerson) -> str
+    - revoke_authorization(person_id: str, reason: str)
+    - suspend_authorization(person_id: str, reason: str, duration: Optional[int])
+    - renew_authorization(person_id: str, new_expiry: datetime)
+
+    # Training management
+    - assign_training(person_id: str, training_modules: List[str])
+    - record_training_completion(person_id: str, module: str, score: float)
+    - check_training_currency(person_id: str) -> TrainingStatus
+    - get_training_due() -> List[AuthorizedPerson]
+
+    # Instruction management
+    - issue_instruction(instruction: ProcessingInstruction) -> str
+    - update_instruction(instruction_id: str, updates: Dict)
+    - revoke_instruction(instruction_id: str, reason: str)
+    - get_active_instructions(person_id: str) -> List[ProcessingInstruction]
+    - require_acknowledgment(instruction_id: str, person_ids: List[str])
+
+    # Compliance monitoring
+    - check_processing_authorized(person_id: str, activity: str) -> bool
+    - log_processing_activity(person_id: str, activity: str, data_categories: List[str])
+    - detect_unauthorized_processing() -> List[InstructionViolation]
+    - report_violation(violation: InstructionViolation) -> str
+
+    # Audit and reporting
+    - generate_authorization_report() -> AuthorizationReport
+    - get_access_log(person_id: str, date_range: Tuple[datetime, datetime]) -> AccessLog
+    - audit_compliance() -> ComplianceAuditResult
+```
+
+**Platform-Specific Authorization Matrix:**
+
+| Role | Data Access | Processing Scope | Training Required |
+|------|-------------|------------------|-------------------|
+| Trading Operator | Trading data, own credentials | Order execution, monitoring | GDPR Basics, Trading Compliance |
+| Compliance Officer | All audit logs, user data | Compliance monitoring, DSAR processing | GDPR Advanced, MiFID II |
+| System Administrator | All system data | System maintenance, incident response | GDPR Advanced, Security |
+| Data Analyst | Aggregated/anonymized data | Analytics, reporting | GDPR Basics, Data Minimization |
+| DPO | All data (oversight) | All processing (oversight) | GDPR Expert, All regulations |
+
+**Integration with Access Control:**
+
+```python
+# Example integration with platform authentication
+class SecureAccessMiddleware:
+    def check_access(self, user_id: str, resource: str, action: str) -> bool:
+        # Verify authorization under Article 29
+        if not self.auth_manager.check_processing_authorized(user_id, action):
+            self.auth_manager.log_unauthorized_attempt(user_id, resource, action)
+            raise UnauthorizedProcessingError(
+                f"Processing not authorized under Article 29: {action}"
+            )
+
+        # Log authorized processing
+        self.auth_manager.log_processing_activity(
+            person_id=user_id,
+            activity=action,
+            data_categories=self.get_data_categories(resource)
+        )
+        return True
+```
+
 ### 0.3 Platform-Specific Processor Mapping
 
 Pre-configured processor relationships for the platform:
@@ -444,6 +599,20 @@ test_gdpr_phase0_core_processor.py:
 │   ├── test_article_28_clause_inclusion
 │   ├── test_scc_appendix
 │   └── test_multi_language_support
+├── test_authorized_processing/   # NEW - Article 29
+│   ├── test_person_authorization
+│   ├── test_authorization_revocation
+│   ├── test_training_assignment
+│   ├── test_training_completion_tracking
+│   ├── test_training_expiry_alerting
+│   ├── test_instruction_issuance
+│   ├── test_instruction_acknowledgment
+│   ├── test_processing_authorization_check
+│   ├── test_unauthorized_processing_detection
+│   ├── test_violation_reporting
+│   ├── test_access_logging
+│   ├── test_confidentiality_agreement_enforcement
+│   └── test_authorization_audit_report
 └── test_integration/
     ├── test_exchange_processor_setup
     ├── test_cloud_provider_assessment
@@ -1020,24 +1189,63 @@ test_gdpr_phase2a_consent_transparency.py:
 
 ---
 
-## Phase 2b: Data Subject Rights
+## Phase 2b: Data Subject Rights (Split into Sub-Phases)
 
-**Estimated Complexity**: High
+> **IMPORTANT**: Due to complexity, Phase 2b is split into three sub-phases for practical implementation.
+
+---
+
+### Phase 2b.1: Basic Rights (Articles 15-18)
+
+**Estimated Complexity**: Medium-High
 **Dependencies**: Phase 2a
 **Test Coverage Target**: 100%
 
-### 2b.1 Objectives
+#### 2b.1.1 Objectives
 
-Implement comprehensive data subject rights management:
+Implement foundational data subject rights:
 - Right of access / DSAR (Article 15)
 - Right to rectification (Article 16)
 - Right to erasure (Article 17)
 - Right to restriction (Article 18)
+- **Article 19 - Notification obligation** (notify recipients of rectification/erasure/restriction)
+
+---
+
+### Phase 2b.2: Advanced Rights (Articles 19-21)
+
+**Estimated Complexity**: Medium
+**Dependencies**: Phase 2b.1
+**Test Coverage Target**: 100%
+
+#### 2b.2.1 Objectives
+
+Implement additional data subject rights:
 - Right to data portability (Article 20)
 - Right to object (Article 21)
-- **Automated decision-making rights (Article 22)** - CRITICAL for algorithmic trading
+- Integration with notification obligations
 
-### 2b.2 Components to Implement
+---
+
+### Phase 2b.3: Automated Decision-Making (Article 22)
+
+**Estimated Complexity**: High
+**Dependencies**: Phase 2b.2
+**Test Coverage Target**: 100%
+
+#### 2b.3.1 Objectives
+
+**CRITICAL FOR ALGORITHMIC TRADING PLATFORM**
+
+Implement automated decision-making rights:
+- **Automated decision-making rights (Article 22)** - with full trading platform classification
+- Human intervention mechanisms
+- Decision explainability
+- Integration with EU AI Act requirements
+
+---
+
+### 2b (Combined) Components to Implement
 
 #### 2b.2.1 DSARHandler (dsar_handler.py)
 
@@ -1396,30 +1604,48 @@ test_gdpr_phase2b_data_subject_rights.py:
 │   ├── test_position_sizing_explanation
 │   ├── test_article_22_with_special_categories
 │   └── test_compliance_report_generation
-├── test_edge_cases/
+├── test_edge_cases/   # EXPANDED with critical scenarios
 │   ├── test_erasure_with_active_legal_claim
 │   ├── test_erasure_during_litigation_hold
+│   ├── test_erasure_during_nca_investigation  # NEW - regulatory investigation
 │   ├── test_dsar_excessive_requests_handling
 │   ├── test_dsar_manifestly_unfounded_rejection
+│   ├── test_dsar_from_unverified_subject  # NEW - identity spoofing prevention
+│   ├── test_dsar_multi_jurisdiction_sa  # NEW - cross-border with different SAs
 │   ├── test_consent_withdrawal_mid_batch_processing
+│   ├── test_consent_withdrawal_data_already_sent_to_processor  # NEW
 │   ├── test_erasure_backup_rotation_timing
 │   ├── test_erasure_processor_notification_chain
+│   ├── test_erasure_after_mifid_7year_exactly  # NEW - boundary test
 │   ├── test_portability_large_dataset_streaming
+│   ├── test_portability_to_competitor_controller  # NEW - direct transfer
 │   ├── test_intervention_timeout_escalation
 │   ├── test_contested_decision_compensation
 │   ├── test_concurrent_dsar_and_erasure
 │   ├── test_cross_border_dsar_handling
-│   └── test_deceased_person_data_handling
+│   ├── test_deceased_person_data_handling
+│   ├── test_child_data_subject_age_verification  # NEW - Article 8
+│   ├── test_parental_consent_for_minor  # NEW - Article 8
+│   ├── test_article_19_recipient_notification_chain  # NEW
+│   ├── test_amld_sar_exclusion_from_dsar  # NEW - tipping-off prevention
+│   └── test_rectification_propagation_to_third_parties  # NEW
+├── test_stress/   # NEW - performance edge cases
+│   ├── test_concurrent_1000_dsar_requests
+│   ├── test_erasure_cascade_across_10_processors
+│   ├── test_high_frequency_consent_withdrawal
+│   └── test_article_22_decision_volume_tracking
 └── test_integration/
     ├── test_rights_dashboard_complete
     ├── test_cross_rights_workflow
     ├── test_audit_trail_completeness
     ├── test_article_22_with_ai_act_alignment
     ├── test_dsar_with_mifid_retention_conflict
-    └── test_erasure_with_dora_incident_retention
+    ├── test_erasure_with_dora_incident_retention
+    ├── test_amld_kyc_data_erasure_timeline  # NEW
+    └── test_eprivacy_cookie_consent_withdrawal  # NEW
 ```
 
-**Expected test count**: ~100-120 tests
+**Expected test count**: ~120-140 tests (increased for new edge cases)
 
 ---
 
@@ -2217,13 +2443,199 @@ Class DPIAManager:
     - generate_dpia_report(dpia_id: str, format: str) -> bytes
 ```
 
-#### 6.2.2 DPOInterface (dpo_interface.py)
+#### 6.2.2 DPOInterface (dpo_interface.py) - ENHANCED
 
-Tools for Data Protection Officer:
+**Articles 37-39 - Data Protection Officer (DPO)**
+
+Per [GDPR Articles 37-39](https://gdpr-info.eu/art-37-gdpr/), this module implements comprehensive DPO support including designation, position requirements, and task management.
 
 ```
+# ═══════════════════════════════════════════════════════════════════
+# Article 37 - Designation of the DPO
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass DPODesignation:
+    designation_id: str
+    dpo_name: str
+    dpo_email: str
+    dpo_phone: str
+
+    # Article 37(5) - Professional qualities
+    qualifications: List[str]
+    expert_knowledge_data_protection: str
+    expert_knowledge_data_practices: str
+    certifications: List[str]  # CIPP/E, CIPM, etc.
+
+    # Designation details
+    designation_date: datetime
+    designated_by: str  # Board/management
+    contract_type: str  # "employee", "external_service_contract"
+    external_provider: Optional[str]
+
+    # Article 37(7) - Publication
+    published_to_sa: bool
+    sa_notification_date: Optional[datetime]
+    published_to_data_subjects: bool
+    publication_location: str  # Website, privacy notice
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 38 - Position of the DPO
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass DPOIndependence:
+    """
+    Article 38(3) - DPO shall not receive any instructions
+    regarding the exercise of tasks.
+    """
+    assessment_id: str
+    assessment_date: datetime
+
+    # Independence indicators
+    reports_to_highest_management: bool
+    no_instructions_on_tasks: bool
+    no_dismissal_for_task_performance: bool
+    no_penalisation_for_task_performance: bool
+
+    # Conflict of interest check (Art. 38(6))
+    other_tasks_duties: List[str]
+    conflict_of_interest_assessment: str
+    conflicts_identified: List[str]
+    mitigation_measures: List[str]
+
+    # Resources (Art. 38(2))
+    adequate_resources: bool
+    resource_details: str
+    access_to_personal_data: bool
+    access_to_processing_operations: bool
+
+    # Assessment outcome
+    independence_confirmed: bool
+    concerns: List[str]
+    recommendations: List[str]
+
+Dataclass DPOConfidentiality:
+    """
+    Article 38(5) - DPO bound by secrecy/confidentiality.
+    """
+    agreement_id: str
+    dpo_id: str
+    agreement_date: datetime
+    confidentiality_scope: str
+    secrecy_obligations: List[str]
+    post_employment_obligations: str
+    agreement_document: str
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 39 - Tasks of the DPO
+# ═══════════════════════════════════════════════════════════════════
+
+Enum DPOTaskType:
+    # Article 39(1)(a) - Inform and advise
+    INFORM_ADVISE_CONTROLLER = "inform_advise_controller"
+    INFORM_ADVISE_PROCESSOR = "inform_advise_processor"
+    INFORM_ADVISE_EMPLOYEES = "inform_advise_employees"
+
+    # Article 39(1)(b) - Monitor compliance
+    MONITOR_COMPLIANCE = "monitor_compliance"
+    MONITOR_POLICIES = "monitor_policies"
+    MONITOR_AWARENESS = "monitor_awareness"
+    MONITOR_TRAINING = "monitor_training"
+    MONITOR_AUDITS = "monitor_audits"
+
+    # Article 39(1)(c) - DPIA advice
+    DPIA_ADVICE = "dpia_advice"
+    DPIA_MONITORING = "dpia_monitoring"
+
+    # Article 39(1)(d) - SA cooperation
+    SA_COOPERATION = "sa_cooperation"
+
+    # Article 39(1)(e) - SA contact point
+    SA_CONTACT_POINT = "sa_contact_point"
+
+Dataclass DPOTask:
+    task_id: str
+    task_type: DPOTaskType
+    description: str
+    created_date: datetime
+    due_date: Optional[datetime]
+    priority: str  # "critical", "high", "medium", "low"
+    status: str  # "pending", "in_progress", "completed", "deferred"
+    related_processing: Optional[str]
+    outcome: Optional[str]
+    time_spent_hours: float
+
+Dataclass DPOAdvice:
+    """
+    Article 39(1)(a) - Advice to controller/processor.
+    """
+    advice_id: str
+    requester: str
+    request_date: datetime
+    topic: str
+    processing_activity: Optional[str]
+
+    # Advice details
+    advice_content: str
+    legal_references: List[str]
+    risk_assessment: str
+    recommendations: List[str]
+
+    # Follow-up
+    advice_accepted: bool
+    implementation_status: str
+    deviation_documented: bool  # If advice not followed
+    deviation_justification: Optional[str]
+
+Dataclass ComplianceMonitoringActivity:
+    """
+    Article 39(1)(b) - Monitoring compliance.
+    """
+    activity_id: str
+    activity_type: str  # "audit", "review", "spot_check", "training_verification"
+    scope: str
+    scheduled_date: datetime
+    completed_date: Optional[datetime]
+
+    # Findings
+    findings: List[str]
+    compliance_gaps: List[str]
+    recommendations: List[str]
+
+    # Action tracking
+    remediation_required: bool
+    remediation_actions: List[str]
+    remediation_deadline: Optional[datetime]
+    remediation_verified: bool
+
+Dataclass AwarenessTraining:
+    """
+    Article 39(1)(b) - Awareness raising and training.
+    """
+    training_id: str
+    training_name: str
+    training_type: str  # "induction", "annual_refresh", "role_specific", "incident_response"
+    target_audience: List[str]
+
+    # Content
+    topics_covered: List[str]
+    gdpr_articles_covered: List[str]
+    duration_hours: float
+    delivery_method: str  # "in_person", "online", "hybrid"
+
+    # Tracking
+    scheduled_date: datetime
+    attendees_required: int
+    attendees_completed: int
+    completion_rate: float
+    assessment_required: bool
+    pass_rate: Optional[float]
+
+# ═══════════════════════════════════════════════════════════════════
+# Enhanced Dashboard and Toolkit
+# ═══════════════════════════════════════════════════════════════════
+
 Dataclass DPODashboard:
-    # Overview
+    # Overview metrics
     active_dpias: int
     pending_dsars: int
     open_breaches: int
@@ -2235,19 +2647,102 @@ Dataclass DPODashboard:
     policies_current: bool
     training_complete: bool
 
+    # Article 39(1)(b) - Monitoring metrics
+    last_compliance_audit_date: datetime
+    audit_findings_open: int
+    training_completion_rate: float
+    policy_review_due: List[str]
+
+    # Article 39(1)(d-e) - SA interaction
+    sa_inquiries_open: int
+    sa_last_contact: Optional[datetime]
+
+    # Resource utilization
+    tasks_pending: int
+    advice_requests_pending: int
+
     # Alerts
     critical_alerts: List[Alert]
 
+    # Independence indicators
+    independence_last_assessed: datetime
+    independence_concerns: bool
+
 Class DPOToolkit:
+    """
+    Comprehensive DPO toolkit implementing Articles 37-39.
+    """
+
+    # Dashboard
     - get_dashboard() -> DPODashboard
+
+    # Article 37 - Designation management
+    - record_designation(designation: DPODesignation) -> str
+    - notify_supervisory_authority(designation_id: str) -> NotificationRecord
+    - update_dpo_contact_details(designation_id: str, updates: Dict)
+    - publish_dpo_details(designation_id: str, location: str)
+
+    # Article 38(3) - Independence
+    - assess_independence() -> DPOIndependence
+    - report_independence_concern(concern: str) -> ConcernRecord
+    - document_no_instructions_policy() -> PolicyDocument
+
+    # Article 38(5) - Confidentiality
+    - record_confidentiality_agreement(agreement: DPOConfidentiality) -> str
+
+    # Article 38(6) - Conflict of interest
+    - assess_conflict_of_interest(other_duties: List[str]) -> ConflictAssessment
+    - document_conflict_mitigation(conflict_id: str, measures: List[str])
+
+    # Article 39(1)(a) - Inform and advise
+    - provide_advice(request: AdviceRequest) -> DPOAdvice
+    - track_advice_implementation(advice_id: str) -> ImplementationStatus
+    - document_advice_deviation(advice_id: str, justification: str)
+
+    # Article 39(1)(b) - Monitor compliance
+    - schedule_compliance_audit(scope: str, date: datetime) -> str
+    - record_audit_findings(activity_id: str, findings: List[str])
+    - track_remediation(finding_id: str) -> RemediationStatus
+    - schedule_training(training: AwarenessTraining) -> str
+    - track_training_completion(training_id: str) -> CompletionReport
+    - verify_staff_awareness(department: str) -> AwarenessAssessment
+
+    # Article 39(1)(c) - DPIA
     - review_dpia(dpia_id: str, decision: str, comments: str)
-    - approve_dsar_response(dsar_id: str)
-    - advise_on_processing(processing_id: str, advice: str)
+    - provide_dpia_advice(dpia_id: str, advice: str)
+    - monitor_dpia_implementation(dpia_id: str) -> MonitoringReport
+
+    # Article 39(1)(d) - SA cooperation
+    - communicate_with_sa(message: str, attachments: List) -> CommunicationRecord
+    - respond_to_sa_inquiry(inquiry_id: str, response: str)
+    - track_sa_communications() -> List[CommunicationRecord]
+
+    # Article 39(1)(e) - Contact point
+    - handle_sa_contact(contact: SAContact) -> ResponseRecord
+    - log_sa_interaction(interaction: SAInteraction) -> str
+
+    # Data subject queries (Art. 38(4))
+    - handle_data_subject_query(query: DSQuery) -> QueryResponse
+    - escalate_complex_query(query_id: str, notes: str)
+
+    # Reporting
     - generate_compliance_report(period: str) -> Report
-    - schedule_audit(area: str, date: datetime)
-    - manage_training(training_id: str, action: str)
-    - communicate_with_sa(message: str, attachments: List)
+    - generate_dpo_annual_report() -> AnnualReport
+    - prepare_for_sa_audit() -> AuditPackage
+    - generate_training_report() -> TrainingReport
 ```
+
+**DPO Independence Checklist (Article 38):**
+
+| Requirement | Check | Evidence Required |
+|-------------|-------|-------------------|
+| Reports to highest management level | ☐ | Org chart, reporting line documentation |
+| No instructions on task exercise | ☐ | Policy document, board minutes |
+| Not dismissed/penalized for tasks | ☐ | Employment contract, policy |
+| No conflict of interest | ☐ | Role assessment, segregation measures |
+| Adequate resources | ☐ | Budget allocation, staff support |
+| Access to personal data/operations | ☐ | System access logs, authorization records |
+| Professional secrecy bound | ☐ | Confidentiality agreement |
 
 #### 6.2.3 InternationalTransfers (international_transfers.py)
 
@@ -2435,6 +2930,347 @@ Class GDPRComplianceDashboard:
     - integrate_with_mifid_dashboard() -> UnifiedView
 ```
 
+#### 6.2.6 LiabilityFramework (liability_framework.py) - NEW
+
+**Chapter VIII - Remedies, Liability and Penalties (Articles 77-84)**
+
+Per [GDPR Chapter VIII](https://gdpr-info.eu/chapter-8/), this module implements comprehensive remedies, liability management, and penalty assessment for GDPR compliance.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Article 77 - Right to lodge a complaint with a supervisory authority
+# ═══════════════════════════════════════════════════════════════════
+
+Enum ComplaintStatus:
+    RECEIVED = "received"
+    ACKNOWLEDGED = "acknowledged"
+    UNDER_INVESTIGATION = "under_investigation"
+    RESPONSE_SUBMITTED = "response_submitted"
+    RESOLVED = "resolved"
+    ESCALATED = "escalated"
+
+Dataclass SAComplaint:
+    complaint_id: str
+    supervisory_authority: str
+    sa_reference_number: Optional[str]
+
+    # Complainant details
+    data_subject_id: str
+    complaint_date: datetime
+    complaint_grounds: List[str]  # Articles allegedly violated
+
+    # Processing details
+    processing_activity_concerned: str
+    data_categories_concerned: List[str]
+
+    # Response management
+    status: ComplaintStatus
+    acknowledged_at: Optional[datetime]
+    response_deadline: Optional[datetime]
+    response_submitted_at: Optional[datetime]
+    response_content: Optional[str]
+
+    # Resolution
+    sa_decision: Optional[str]
+    decision_date: Optional[datetime]
+    remediation_required: List[str]
+    appeal_deadline: Optional[datetime]
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 78 - Right to effective judicial remedy against SA
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass JudicialProceeding:
+    proceeding_id: str
+    proceeding_type: str  # "against_sa", "against_controller_processor"
+    court: str
+    jurisdiction: str
+
+    # Case details
+    case_reference: str
+    filing_date: datetime
+    plaintiff: str
+    defendant: str
+    grounds: List[str]
+
+    # Legal representation
+    legal_counsel: str
+    counsel_contact: str
+
+    # Proceedings
+    status: str  # "filed", "discovery", "hearing", "judgment", "appeal"
+    hearing_dates: List[datetime]
+    evidence_submitted: List[str]
+
+    # Outcome
+    judgment_date: Optional[datetime]
+    judgment_summary: Optional[str]
+    damages_awarded: Optional[float]
+    injunctions_issued: List[str]
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 82 - Right to compensation and liability
+# ═══════════════════════════════════════════════════════════════════
+
+Enum DamageType:
+    MATERIAL = "material"      # Financial loss, economic damage
+    NON_MATERIAL = "non_material"  # Distress, reputational harm
+
+Enum LiabilityRole:
+    CONTROLLER = "controller"
+    PROCESSOR = "processor"
+    JOINT_LIABILITY = "joint_liability"
+
+Dataclass CompensationClaim:
+    claim_id: str
+    claimant_id: str
+    claim_date: datetime
+
+    # Damage details
+    damage_type: DamageType
+    damage_description: str
+    estimated_amount: Optional[float]
+    evidence: List[str]
+
+    # Cause
+    infringement_articles: List[str]  # GDPR articles violated
+    processing_activity: str
+    incident_date: datetime
+    incident_description: str
+
+    # Liability assessment
+    liability_role: LiabilityRole
+    joint_parties: List[str]  # If joint liability
+    processor_fault: Optional[str]  # If processor exceeded instructions
+
+    # Processing
+    status: str  # "received", "under_review", "accepted", "rejected", "settled", "litigated"
+    assigned_to: str
+    review_deadline: datetime
+
+Dataclass LiabilityAssessment:
+    assessment_id: str
+    claim_id: str
+    assessor: str
+    assessment_date: datetime
+
+    # Analysis
+    infringement_confirmed: bool
+    infringement_details: str
+
+    # Article 82(2) - Controller liability
+    controller_liability: bool
+    controller_exemption_grounds: Optional[str]  # "not responsible for damage"
+
+    # Article 82(2) - Processor liability
+    processor_liability: bool
+    processor_acted_outside_instructions: bool
+    processor_contrary_to_law: bool
+
+    # Article 82(3) - Exemption assessment
+    exemption_claimed: bool
+    exemption_grounds: str  # "not in any way responsible for event giving rise to damage"
+    exemption_evidence: List[str]
+    exemption_accepted: bool
+
+    # Article 82(4) - Joint and several liability
+    joint_liability_applicable: bool
+    apportionment: Dict[str, float]  # party -> percentage
+
+    # Recommendation
+    recommended_action: str  # "reject", "negotiate", "settle", "defend"
+    recommended_amount: Optional[float]
+    reasoning: str
+
+Dataclass CompensationSettlement:
+    settlement_id: str
+    claim_id: str
+    settlement_date: datetime
+
+    # Terms
+    amount: float
+    payment_schedule: List[Dict[str, Any]]
+    non_monetary_remedies: List[str]
+    confidentiality_clause: bool
+    release_of_claims: bool
+
+    # Contribution (Article 82(5))
+    contribution_from_processors: Dict[str, float]
+    contribution_agreements: List[str]
+
+    # Documentation
+    settlement_agreement_doc: str
+    signed_by: List[str]
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 83 - Administrative fines
+# ═══════════════════════════════════════════════════════════════════
+
+Enum FineCategory:
+    LOWER_TIER = "lower_tier"    # Up to €10M or 2% turnover (Art. 83(4))
+    UPPER_TIER = "upper_tier"    # Up to €20M or 4% turnover (Art. 83(5))
+
+Dataclass FineRiskAssessment:
+    assessment_id: str
+    infringement_type: str
+    assessment_date: datetime
+    assessor: str
+
+    # Infringement classification
+    fine_category: FineCategory
+    articles_violated: List[str]
+
+    # Article 83(2) factors
+    nature_gravity_duration: str          # (a)
+    intentional_negligent: str            # (b)
+    mitigation_actions: List[str]         # (c)
+    degree_of_responsibility: str         # (d) - technical/org measures
+    previous_infringements: List[str]     # (e)
+    cooperation_with_sa: str              # (f)
+    data_categories_affected: List[str]   # (g)
+    notification_of_breach: bool          # (h)
+    certification_adherence: bool         # (i)
+    aggravating_mitigating: List[str]     # (j), (k)
+
+    # Financial assessment
+    annual_turnover: float
+    maximum_fine_amount: float  # Calculated per category
+    estimated_fine_range: Tuple[float, float]
+    fine_probability: str  # "low", "medium", "high", "very_high"
+
+    # Risk mitigation recommendations
+    risk_mitigation_actions: List[str]
+    priority: str
+
+Dataclass AdministrativeFine:
+    fine_id: str
+    sa_reference: str
+    supervisory_authority: str
+
+    # Fine details
+    fine_date: datetime
+    fine_amount: float
+    fine_category: FineCategory
+    articles_violated: List[str]
+    infringement_description: str
+
+    # Payment
+    payment_deadline: datetime
+    payment_status: str  # "pending", "paid", "appealed", "reduced_on_appeal"
+    payment_date: Optional[datetime]
+
+    # Appeal
+    appeal_filed: bool
+    appeal_deadline: datetime
+    appeal_grounds: Optional[str]
+    appeal_outcome: Optional[str]
+
+# ═══════════════════════════════════════════════════════════════════
+# Article 84 - Penalties
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass MemberStatePenalty:
+    penalty_id: str
+    member_state: str
+    legal_reference: str  # National law implementing Art. 84
+
+    # Penalty details
+    penalty_type: str  # "criminal", "administrative", "other"
+    applicable_violations: List[str]
+    maximum_penalty: str
+    penalty_procedure: str
+
+    # Platform relevance
+    relevance_to_platform: str
+    risk_level: str
+
+# ═══════════════════════════════════════════════════════════════════
+# Combined Liability Framework Manager
+# ═══════════════════════════════════════════════════════════════════
+
+Class LiabilityFramework:
+    """
+    Chapter VIII implementation - Remedies, Liability, and Penalties.
+
+    Manages:
+    - SA complaint handling (Art. 77)
+    - Judicial proceedings tracking (Art. 78-79)
+    - Compensation claims (Art. 82)
+    - Fine risk assessment (Art. 83)
+    - Member State penalty tracking (Art. 84)
+    """
+
+    # SA Complaint Management (Article 77)
+    - receive_sa_complaint(complaint: SAComplaint) -> str
+    - acknowledge_complaint(complaint_id: str) -> AcknowledgmentRecord
+    - prepare_response(complaint_id: str) -> ResponseDraft
+    - submit_response(complaint_id: str, response: str)
+    - track_complaint_status(complaint_id: str) -> ComplaintStatus
+    - implement_remediation(complaint_id: str, actions: List[str])
+
+    # Judicial Proceedings (Articles 78-79)
+    - register_proceeding(proceeding: JudicialProceeding) -> str
+    - update_proceeding_status(proceeding_id: str, status: str, details: Dict)
+    - track_deadlines(proceeding_id: str) -> List[Deadline]
+    - coordinate_with_legal(proceeding_id: str, action: str)
+
+    # Compensation Management (Article 82)
+    - receive_compensation_claim(claim: CompensationClaim) -> str
+    - assess_liability(claim_id: str) -> LiabilityAssessment
+    - evaluate_exemption(claim_id: str) -> ExemptionResult
+    - calculate_apportionment(claim_id: str) -> Dict[str, float]
+    - negotiate_settlement(claim_id: str) -> SettlementNegotiation
+    - finalize_settlement(settlement: CompensationSettlement) -> str
+    - claim_contribution(settlement_id: str, from_party: str) -> ContributionClaim
+
+    # Fine Risk Assessment (Article 83)
+    - assess_fine_risk(infringement: str) -> FineRiskAssessment
+    - calculate_maximum_fine(category: FineCategory, turnover: float) -> float
+    - evaluate_article_83_2_factors(assessment_id: str) -> FactorEvaluation
+    - recommend_risk_mitigation(assessment_id: str) -> List[Recommendation]
+    - track_administrative_fine(fine: AdministrativeFine) -> str
+    - manage_fine_appeal(fine_id: str, grounds: str) -> AppealRecord
+
+    # Penalty Tracking (Article 84)
+    - register_member_state_penalties(penalties: List[MemberStatePenalty])
+    - assess_penalty_exposure(member_state: str) -> ExposureAssessment
+    - monitor_penalty_developments() -> List[Update]
+
+    # Reporting
+    - generate_liability_report() -> LiabilityReport
+    - get_outstanding_claims() -> List[CompensationClaim]
+    - get_fine_risk_dashboard() -> FineRiskDashboard
+    - calculate_total_exposure() -> ExposureSummary
+```
+
+**Article 83 Fine Categories Reference:**
+
+| Category | Maximum Fine | Applicable Articles | Platform Examples |
+|----------|--------------|---------------------|-------------------|
+| **Lower Tier** (Art. 83(4)) | €10M or 2% annual turnover | Art. 8, 11, 25-39, 42-43 | DPIA failures, processor violations, ROPA gaps |
+| **Upper Tier** (Art. 83(5)) | €20M or 4% annual turnover | Art. 5-7, 9, 12-22, 44-49 | Unlawful processing, consent violations, transfer violations |
+
+**Liability Risk Matrix for Trading Platform:**
+
+| Scenario | Likely Fine Tier | Art. 83(2) Key Factors | Risk Mitigation |
+|----------|------------------|------------------------|-----------------|
+| Inadequate consent | Upper | Intentional, ongoing | Robust consent management |
+| DSAR response delay | Lower | Negligent, limited harm | Automated deadline tracking |
+| Data breach (unencrypted) | Upper | Negligent, significant harm | Encryption by default |
+| Missing DPIA | Lower | Negligent, no actual harm | DPIA screening automation |
+| Unlawful transfer | Upper | Duration, data volume | TIA + SCCs implementation |
+| Processor breach | Lower/Upper | Degree of oversight | Regular audits, DPA enforcement |
+
+**Integration with Insurance:**
+
+```python
+# Recommended: Cyber/GDPR insurance integration
+class InsuranceIntegration:
+    def notify_insurer_of_claim(self, claim: CompensationClaim) -> NotificationRecord
+    def check_coverage(self, claim_id: str) -> CoverageAssessment
+    def coordinate_defense(self, proceeding_id: str) -> DefenseCoordination
+```
+
 ### 6.3 Platform-Specific DPIAs
 
 Pre-configured DPIA templates:
@@ -2462,14 +3298,37 @@ test_gdpr_phase6_dpia_governance.py:
 │   ├── test_dpia_review_scheduling
 │   ├── test_report_generation
 │   └── test_algorithmic_trading_dpia
-├── test_dpo_interface/
+├── test_dpo_interface/   # ENHANCED - Articles 37-39
+│   ├── test_article_37_designation/
+│   │   ├── test_dpo_designation_recording
+│   │   ├── test_sa_notification_of_dpo
+│   │   ├── test_dpo_publication_to_data_subjects
+│   │   └── test_dpo_contact_update
+│   ├── test_article_38_position/
+│   │   ├── test_independence_assessment
+│   │   ├── test_independence_concern_reporting
+│   │   ├── test_conflict_of_interest_check
+│   │   ├── test_conflict_mitigation_documentation
+│   │   ├── test_confidentiality_agreement
+│   │   ├── test_adequate_resources_verification
+│   │   └── test_access_to_operations
+│   ├── test_article_39_tasks/
+│   │   ├── test_advice_provision
+│   │   ├── test_advice_implementation_tracking
+│   │   ├── test_advice_deviation_documentation
+│   │   ├── test_compliance_audit_scheduling
+│   │   ├── test_audit_findings_recording
+│   │   ├── test_remediation_tracking
+│   │   ├── test_training_scheduling
+│   │   ├── test_training_completion_tracking
+│   │   ├── test_awareness_verification
+│   │   ├── test_dpia_review_workflow
+│   │   ├── test_sa_cooperation
+│   │   └── test_sa_contact_handling
 │   ├── test_dashboard_metrics
-│   ├── test_dpia_review
-│   ├── test_dsar_approval
 │   ├── test_compliance_reporting
-│   ├── test_audit_scheduling
-│   ├── test_sa_communication
-│   └── test_alert_management
+│   ├── test_alert_management
+│   └── test_annual_report_generation
 ├── test_international_transfers/
 │   ├── test_transfer_registration
 │   ├── test_adequacy_check
@@ -2500,6 +3359,42 @@ test_gdpr_phase6_dpia_governance.py:
 │   ├── test_deadline_tracking
 │   ├── test_trend_comparison
 │   └── test_report_generation
+├── test_liability_framework/   # NEW - Chapter VIII
+│   ├── test_sa_complaint/
+│   │   ├── test_complaint_receipt
+│   │   ├── test_complaint_acknowledgment_deadline
+│   │   ├── test_response_preparation
+│   │   ├── test_response_submission
+│   │   ├── test_remediation_tracking
+│   │   └── test_complaint_audit_trail
+│   ├── test_judicial_proceedings/
+│   │   ├── test_proceeding_registration
+│   │   ├── test_deadline_tracking
+│   │   ├── test_evidence_management
+│   │   └── test_judgment_recording
+│   ├── test_compensation_claims/
+│   │   ├── test_claim_receipt
+│   │   ├── test_liability_assessment
+│   │   ├── test_exemption_evaluation_art_82_3
+│   │   ├── test_joint_liability_apportionment
+│   │   ├── test_processor_contribution_art_82_5
+│   │   ├── test_settlement_negotiation
+│   │   └── test_settlement_finalization
+│   ├── test_fine_risk_assessment/
+│   │   ├── test_fine_category_classification
+│   │   ├── test_art_83_2_factor_evaluation
+│   │   ├── test_maximum_fine_calculation
+│   │   ├── test_fine_probability_assessment
+│   │   ├── test_risk_mitigation_recommendations
+│   │   └── test_fine_appeal_management
+│   ├── test_member_state_penalties/
+│   │   ├── test_penalty_registration
+│   │   ├── test_exposure_assessment
+│   │   └── test_penalty_monitoring
+│   └── test_integration/
+│       ├── test_insurance_notification
+│       ├── test_dpo_escalation_on_claim
+│       └── test_liability_report_generation
 └── test_cross_regulation/
     ├── test_dora_dashboard_integration
     ├── test_mifid_dashboard_integration
@@ -2507,24 +3402,28 @@ test_gdpr_phase6_dpia_governance.py:
     └── test_unified_compliance_view
 ```
 
-**Expected test count**: ~115-135 tests
+**Expected test count**: ~140-160 tests (increased for Chapter VIII)
 
 ---
 
 ## Implementation Timeline
 
-| Phase | Description | Est. Tests | Dependencies |
-|-------|-------------|------------|--------------|
-| 0 | Core Definitions & Processor Framework | 70-90 | None |
-| 1 | Foundation & Legal Framework | 90-110 | Phase 0 |
-| 2a | Consent & Transparency | 60-70 | Phase 1 |
-| 2b | Data Subject Rights | 100-120 | Phase 2a |
-| 3 | ROPA & Documentation | 80-100 | Phases 0, 1, 2a, 2b |
-| 4 | Privacy Engineering | 100-120 | Phases 1-3 |
-| 5 | Breach Management | 100-120 | Phases 1, 2b, 4 |
-| 6 | DPIA & Governance | 90-110 | All previous |
+| Phase | Description | Est. Tests | Dependencies | Complexity |
+|-------|-------------|------------|--------------|------------|
+| 0 | Core Definitions & Processor Framework | 85-105 | None | Medium |
+| 1 | Foundation & Legal Framework | 90-110 | Phase 0 | Medium-High |
+| 2a | Consent & Transparency | 60-70 | Phase 1 | Medium |
+| **2b.1** | **Basic Rights (Art. 15-18, 19)** | 45-55 | Phase 2a | Medium-High |
+| **2b.2** | **Advanced Rights (Art. 20-21)** | 30-40 | Phase 2b.1 | Medium |
+| **2b.3** | **Automated Decisions (Art. 22)** | 45-55 | Phase 2b.2 | **High** |
+| 3 | ROPA & Documentation | 80-100 | Phases 0, 1, 2a, 2b | Medium |
+| 4 | Privacy Engineering | 100-120 | Phases 1-3 | High |
+| 5 | Breach Management | 100-120 | Phases 1, 2b, 4 | High |
+| 6 | DPIA & Governance | 140-160 | All previous | Medium-High |
 
-**Total estimated tests**: ~690-840 tests
+**Total estimated tests**: ~775-935 tests (updated for all additions)
+
+> **Phase 2b Sub-Phase Rationale**: Article 22 (automated decisions) requires separate focus due to trading platform complexity, AI Act alignment, and explainability requirements.
 
 ---
 
@@ -2649,6 +3548,198 @@ If classified as high-risk:
 | Security (Art. 32) | Art. 21 security measures | NIS2 is sector-specific, broader scope. Implement NIS2, subset covers GDPR Art. 32. |
 | Breach notification | Incident notification (24h) | If personal data involved in NIS2 incident → dual notification. |
 | Supply chain | Supply chain security | Processor assessment includes NIS2 supply chain requirements. |
+
+### GDPR ↔ ePrivacy Directive (2002/58/EC) - NEW
+
+> **Critical for Trading Platforms**: Any web/mobile interface must comply with both GDPR AND ePrivacy. The ePrivacy Regulation (when adopted) will replace the Directive but maintain similar principles.
+
+Per [ePrivacy Directive](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32002L0058) (as amended by 2009/136/EC), the following additional requirements apply:
+
+| GDPR Requirement | ePrivacy Requirement | Integration Approach |
+|------------------|---------------------|---------------------|
+| Consent (Art. 7) | Cookie consent (Art. 5(3)) | **Unified consent banner**: GDPR-compliant consent must meet ePrivacy "clear and comprehensive information" standard. |
+| Legal basis (Art. 6) | Strictly necessary exemption | ePrivacy Art. 5(3) exempts "strictly necessary" cookies/storage. Document which fall under exemption vs. consent. |
+| Transparency (Art. 13-14) | Cookie information | Privacy notice must include ePrivacy-specific cookie/tracking disclosure. |
+| Retention (Art. 5(1)(e)) | Communication retention | Electronic communications metadata: retain per ePrivacy, delete per GDPR when retention expires. |
+| Security (Art. 32) | Confidentiality (Art. 5) | ePrivacy requires confidentiality of communications; GDPR security measures must ensure this. |
+
+**Platform Cookie/Tracking Categories:**
+
+```
+Enum CookieCategory:
+    STRICTLY_NECESSARY = "strictly_necessary"     # No consent required
+    PERFORMANCE_ANALYTICS = "performance"          # Consent required
+    FUNCTIONALITY = "functionality"                # Consent required
+    TARGETING_ADVERTISING = "targeting"            # Consent required (if any)
+
+Dataclass CookieDeclaration:
+    cookie_name: str
+    provider: str
+    purpose: str
+    category: CookieCategory
+    duration: str
+    data_collected: List[str]
+    third_party: bool
+
+Class ePrivacyComplianceManager:
+    """
+    ePrivacy Directive compliance for web/mobile interfaces.
+
+    Integrates with GDPR ConsentManager for unified consent handling.
+    """
+
+    - declare_cookie(cookie: CookieDeclaration) -> str
+    - get_strictly_necessary_cookies() -> List[CookieDeclaration]
+    - get_consent_required_cookies() -> List[CookieDeclaration]
+    - check_consent_before_setting(cookie_name: str, user_id: str) -> bool
+    - generate_cookie_banner_content() -> CookieBannerContent
+    - log_cookie_consent(user_id: str, consents: Dict[CookieCategory, bool])
+    - handle_consent_withdrawal(user_id: str, category: CookieCategory)
+```
+
+**Trading Platform ePrivacy Considerations:**
+
+| Feature | Cookies/Storage Used | Category | Consent Required |
+|---------|---------------------|----------|------------------|
+| Session authentication | Session cookie | Strictly necessary | NO |
+| Remember login | Persistent auth cookie | Functionality | YES |
+| Trading preferences | Local storage | Functionality | YES |
+| Analytics (internal) | Analytics cookies | Performance | YES |
+| Third-party analytics | Google Analytics, etc. | Performance/Targeting | YES |
+| API session tokens | Session storage | Strictly necessary | NO |
+
+**Integration with GDPR Consent:**
+
+```python
+class UnifiedConsentManager:
+    """
+    Combined GDPR + ePrivacy consent management.
+    """
+
+    def request_consent(self, user_id: str, purpose: str) -> ConsentRequest:
+        consent_request = ConsentRequest(
+            gdpr_purposes=[purpose],
+            eprivacy_categories=self.map_purpose_to_cookie_categories(purpose),
+            bundled=False,  # GDPR Art. 7(2) - must be distinguishable
+            pre_ticked=False  # ePrivacy - no pre-ticked boxes
+        )
+        return consent_request
+
+    def withdraw_consent(self, user_id: str, purpose: str):
+        # Withdraw GDPR consent
+        self.gdpr_consent_manager.withdraw(user_id, purpose)
+
+        # Remove associated cookies/storage
+        categories = self.map_purpose_to_cookie_categories(purpose)
+        for category in categories:
+            self.eprivacy_manager.clear_category_storage(user_id, category)
+```
+
+### GDPR ↔ AMLD6 (Anti-Money Laundering Directive) - NEW
+
+> **Critical for Trading Platforms**: KYC/AML data is a significant source of personal data with unique retention and processing requirements.
+
+Per [AMLD6 (Directive 2018/1673)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32018L1673) and [AMLD5 (Directive 2018/843)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32018L0843):
+
+| GDPR Requirement | AMLD Requirement | Resolution Approach |
+|------------------|------------------|---------------------|
+| **Purpose limitation (Art. 5(1)(b))** | AML screening, reporting | Document AML as explicit, legitimate purpose. No repurposing KYC data for marketing. |
+| **Erasure (Art. 17)** | 5-year retention (Art. 40 AMLD5) | Erasure request suspended during AMLD retention. **Legal obligation** basis (Art. 6(1)(c)). |
+| **Data minimization (Art. 5(1)(c))** | Enhanced due diligence (EDD) | Collect only what's necessary for risk assessment. Document necessity for each data point. |
+| **Transparency (Art. 13-14)** | Suspicious activity reporting (SAR) | **Exception**: Do NOT disclose SAR filing to data subject (tipping-off prohibition, Art. 39 AMLD4). |
+| **Access rights (Art. 15)** | SAR confidentiality | DSAR response may **exclude** SAR-related data under Art. 23(1)(d) GDPR (criminal prevention). |
+| **Lawful basis (Art. 6)** | Customer due diligence (CDD) | Legal obligation (Art. 6(1)(c)) for CDD. May also be contract (Art. 6(1)(b)) for account opening. |
+
+**KYC/AML Data Categories:**
+
+```
+Enum AMLDataCategory:
+    IDENTIFICATION = "identification"       # Passport, ID card
+    PROOF_OF_ADDRESS = "proof_of_address"   # Utility bills, bank statements
+    SOURCE_OF_FUNDS = "source_of_funds"     # Employment, inheritance
+    BENEFICIAL_OWNERSHIP = "beneficial_ownership"  # UBO information
+    TRANSACTION_MONITORING = "transaction_monitoring"  # Patterns, alerts
+    RISK_ASSESSMENT = "risk_assessment"     # CDD/EDD scores
+    SAR_DATA = "sar_data"                   # Suspicious activity reports
+
+Dataclass AMLRetentionRecord:
+    record_id: str
+    data_category: AMLDataCategory
+    collection_date: datetime
+    retention_end_date: datetime  # 5 years from business relationship end
+    legal_basis: str = "legal_obligation"  # Art. 6(1)(c)
+    amld_article_reference: str = "AMLD5 Art. 40"
+    erasure_scheduled: bool = False
+    sar_related: bool = False  # If true, special handling for DSAR
+
+Class AMLGDPRResolver:
+    """
+    Resolves GDPR-AMLD conflicts for KYC/AML data.
+    """
+
+    - check_amld_retention_applies(data_category: str) -> bool
+    - calculate_retention_end(business_relationship_end: datetime) -> datetime
+    - handle_dsar_for_aml_data(dsar: DSARRequest) -> DSARResponse
+    - exclude_sar_from_dsar(dsar_id: str) -> ExclusionRecord
+    - document_tipping_off_prevention(dsar_id: str) -> Documentation
+    - schedule_post_amld_erasure(record_id: str)
+```
+
+**SAR Tipping-Off Prevention (Critical):**
+
+```python
+class SARProtection:
+    """
+    Prevent tipping-off in DSAR responses.
+
+    Per AMLD4 Art. 39: Disclosure of SAR filing to data subject is PROHIBITED.
+    Per GDPR Art. 23(1)(d): Rights may be restricted for criminal prevention.
+    """
+
+    def filter_dsar_response(self, dsar: DSARRequest) -> FilteredResponse:
+        response_data = self.collect_all_data(dsar.data_subject_id)
+
+        # Check for SAR-related data
+        sar_records = self.get_sar_related_records(dsar.data_subject_id)
+
+        if sar_records:
+            # Apply Art. 23 GDPR restriction
+            response_data = self.exclude_sar_data(response_data, sar_records)
+
+            # Document restriction (internally only)
+            self.document_restriction(
+                dsar_id=dsar.request_id,
+                restriction_type="article_23_criminal_prevention",
+                legal_reference="AMLD4 Art. 39, GDPR Art. 23(1)(d)",
+                # Do NOT disclose reason to data subject
+                data_subject_notification="Certain data may be restricted under applicable law"
+            )
+
+        return FilteredResponse(data=response_data, restrictions_applied=bool(sar_records))
+```
+
+**AML Data Retention Timeline:**
+
+```
+Business Relationship Active
+│
+├─ T+0: Customer onboarding (CDD performed)
+│       ├─ GDPR: Purpose = account opening + AML compliance
+│       └─ AMLD: CDD obligation triggered
+│
+├─ T+X: Transaction monitoring ongoing
+│       ├─ GDPR: Legal obligation basis
+│       └─ AMLD: Ongoing monitoring per Art. 13 AMLD4
+│
+├─ T+End: Business relationship ends
+│       ├─ AMLD retention period STARTS (5 years)
+│       └─ GDPR erasure request → SUSPENDED
+│
+└─ T+End+5y: AMLD retention expires
+        ├─ AutoErasureScheduler triggers
+        ├─ Pseudonymize → then delete
+        └─ Log for accountability
+```
 
 ### Cross-Regulation Priority Matrix
 
@@ -2812,19 +3903,30 @@ TIA Components:
 - [Article 30 Guidance - DPC Ireland](https://www.dataprotection.ie/en/dpc-guidance/records-of-processing-article-30-guidance)
 - [DPIA Guidance - European Commission](https://commission.europa.eu/law/law-topic/data-protection/rules-business-and-organisations/obligations/when-data-protection-impact-assessment-dpia-required_en)
 
-### EDPB Guidelines 2024-2025
+### EDPB Guidelines 2024-2025 (Updated)
 
 **Critical Guidelines to Implement:**
 
-| Guideline | Date | Relevance to Platform |
-|-----------|------|----------------------|
-| [Guidelines on Legitimate Interest](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-12024-processing-personal-data-based_en) | Oct 2024 | Risk management processing basis |
-| [Guidelines 02/2024 on Article 48](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-022024-article-48-gdpr_en) | June 2025 | Foreign authority data requests |
-| [Joint DMA-GDPR Guidelines](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/joint-guidelines-interplay-between-dma-and-gdpr_en) | 2025 | If platform reaches DMA thresholds |
-| [Right of Access CEF Report](https://www.edpb.europa.eu/our-work-tools/our-documents/report/coordinated-enforcement-action-right-access_en) | Jan 2025 | DSAR implementation best practices |
-| [Guidelines on Data Breach Notification](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-92022-personal-data-breach-notification_en) | 2023 (v2.0) | Breach assessment and notification |
-| [EDPB Work Programme 2024-2025](https://www.edpb.europa.eu/system/files/2024-10/edpb_work_programme_2024-2025_en.pdf) | Oct 2024 | Strategic priorities |
-| [Guidelines on Pseudonymisation](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-012025-pseudonymisation_en) | 2025 | Privacy engineering techniques |
+| Guideline | Date | Relevance to Platform | Status |
+|-----------|------|----------------------|--------|
+| [Guidelines on Legitimate Interest](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-12024-processing-personal-data-based_en) | Oct 2024 | Risk management processing basis | **Final** |
+| [Guidelines 02/2024 on Article 48](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-022024-article-48-gdpr_en) | June 2025 | Foreign authority data requests | **Final v2.1** |
+| [Guidelines 01/2025 on Pseudonymisation](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-012025-pseudonymisation_en) | Jan 2025 | Privacy engineering techniques | **Final** |
+| [Joint DMA-GDPR Guidelines](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/joint-guidelines-interplay-between-dma-and-gdpr_en) | 2025 | If platform reaches DMA thresholds | Draft |
+| [Right of Access CEF Report](https://www.edpb.europa.eu/our-work-tools/our-documents/report/coordinated-enforcement-action-right-access_en) | Jan 2025 | DSAR implementation best practices | **Final** |
+| [Guidelines on Data Breach Notification](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-92022-personal-data-breach-notification_en) | 2023 (v2.0) | Breach assessment and notification | **Final** |
+| [EDPB Work Programme 2024-2025](https://www.edpb.europa.eu/system/files/2024-10/edpb_work_programme_2024-2025_en.pdf) | Oct 2024 | Strategic priorities | Published |
+| [EDPB Annual Report 2024](https://www.edpb.europa.eu/news/news/2025/edpb-annual-report-2024-protecting-personal-data-changing-landscape_en) | 2025 | Strategic overview | **NEW** |
+| [Guidelines on Automated Decision-Making](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/automated-decision-making-and-profiling_en) | 2018 (updated) | Article 22 implementation | **Final** |
+
+**Additional Resources (2024-2025):**
+
+| Resource | URL | Purpose |
+|----------|-----|---------|
+| EDPB Opinions on BCRs | [BCR Opinions](https://www.edpb.europa.eu/our-work-tools/our-documents/topic/binding-corporate-rules_en) | International transfers |
+| AI & Data Protection Training | [EDPB SPE Training](https://www.edpb.europa.eu/news/news/2025/edpb-publishes-final-version-guidelines-data-transfers-third-country-authorities-and_en) | AI Act alignment |
+| ePrivacy Regulation Status | [EUR-Lex ePrivacy](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A52017PC0010) | Cookie/tracking compliance |
+| AMLD5/6 Guidance | [EBA AML Guidelines](https://www.eba.europa.eu/regulation-and-policy/anti-money-laundering-and-countering-financing-terrorism) | KYC data compliance |
 
 **2025 EDPB Strategic Priorities:**
 
@@ -2869,6 +3971,7 @@ TIA Components:
 | 1.2 | Dec 2024 | AI-Generated | Split Phase 2 into 2a/2b, fixed MiFID II interpretation, added EDPB 2024-2025 guidelines |
 | 1.3 | Dec 2024 | AI-Generated | Added adequacy decisions 2024-2025, UK sunset warning, cross-regulation alignment |
 | 1.4 | Dec 2024 | AI-Generated (Audit) | **Comprehensive audit and fixes**: Fixed Art. 22 classification for trading decisions, added missing Arts. 8, 10, 11, 23, 24, 27; corrected DORA-GDPR breach timeline (classification vs detection); added EPO to adequacy list; added UK contingency workflow (Art. 46 fallback); added AccountabilityFramework (Art. 24); added RestrictionsFramework (Art. 23); added AutoErasureScheduler for MiFID II expiry; expanded test specifications with edge cases; updated EDPB 2025 strategic priorities |
+| **1.5** | **Dec 2024** | **AI-Generated (Critical Audit)** | **Major updates based on critical audit**: (1) Added Article 29 (processing under authority) with full implementation; (2) Added Chapter VIII (Articles 77-84) - Remedies, Liability, Penalties with LiabilityFramework; (3) Added ePrivacy Directive integration with cookie/tracking compliance; (4) Added AMLD6 integration with KYC/AML data handling and SAR tipping-off prevention; (5) Enhanced DPO Interface with full Articles 37-39 implementation; (6) Split Phase 2b into 3 sub-phases for practical implementation; (7) Added 25+ new edge case tests including stress tests; (8) Updated EDPB references with 2025 guidelines; (9) Updated test count to 775-935 total tests |
 
 ---
 
@@ -2883,24 +3986,25 @@ TIA Components:
 | **8** | **Child Consent** | 2a | `consent_manager.py` |
 | 9 | Special Categories | 1 | `special_categories.py` |
 | **10** | **Criminal Data** | 1 | `special_categories.py` |
-| **11** | **No Identification Required** | 2b | `no_identification_handler.py` |
+| **11** | **No Identification Required** | 2b.1 | `no_identification_handler.py` |
 | 12 | Transparent Communication | 2a | `transparency_notices.py` |
 | 13 | Information at Collection | 2a | `information_provision.py` |
 | 14 | Information Not From Subject | 2a | `information_provision.py` |
-| 15 | Right of Access | 2b | `dsar_handler.py` |
-| 16 | Right to Rectification | 2b | `data_subject_rights.py` |
-| 17 | Right to Erasure | 2b | `erasure_manager.py`, `auto_erasure_scheduler.py` |
-| 18 | Right to Restriction | 2b | `restriction_manager.py` |
-| 19 | Notification Obligation | 2b | `data_subject_rights.py` |
-| 20 | Right to Portability | 2b | `portability_manager.py` |
-| 21 | Right to Object | 2b | `objection_handler.py` |
-| 22 | Automated Decisions | 2b | `automated_decisions.py` |
-| **23** | **Restrictions** | 2b | `restrictions.py` |
+| 15 | Right of Access | 2b.1 | `dsar_handler.py` |
+| 16 | Right to Rectification | 2b.1 | `data_subject_rights.py` |
+| 17 | Right to Erasure | 2b.1 | `erasure_manager.py`, `auto_erasure_scheduler.py` |
+| 18 | Right to Restriction | 2b.1 | `restriction_manager.py` |
+| **19** | **Notification Obligation** | 2b.1 | `recipient_notification.py` |
+| 20 | Right to Portability | 2b.2 | `portability_manager.py` |
+| 21 | Right to Object | 2b.2 | `objection_handler.py` |
+| 22 | Automated Decisions | **2b.3** | `automated_decisions.py` |
+| **23** | **Restrictions** | 2b.1 | `restrictions.py` |
 | **24** | **Controller Accountability** | 3 | `accountability.py` |
 | 25 | Privacy by Design | 4 | `privacy_by_design.py` |
 | 26 | Joint Controllers | 0 | `joint_controller.py` |
 | **27** | **EU Representative** | 0 | `definitions.py` |
 | 28 | Processor | 0 | `processor_management.py` |
+| ***29*** | ***Processing under Authority*** | 0 | `authorized_processing.py` **NEW v1.5** |
 | 30 | ROPA | 3 | `ropa.py` |
 | 31 | SA Cooperation | 3 | `sa_cooperation.py` |
 | 32 | Security | 4 | `privacy_by_design.py` |
@@ -2908,12 +4012,34 @@ TIA Components:
 | 34 | Breach Notification DS | 5 | `breach_notification.py` |
 | 35 | DPIA | 6 | `dpia.py` |
 | 36 | Prior Consultation | 6 | `prior_consultation.py` |
-| 37-39 | DPO | 6 | `dpo_interface.py` |
+| **37** | **DPO Designation** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
+| **38** | **DPO Position** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
+| **39** | **DPO Tasks** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
 | 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` |
-| 77-84 | Remedies & Liability | 6 | `liability_framework.py` |
+| ***77*** | ***Right to Complaint*** | 6 | `liability_framework.py` **NEW v1.5** |
+| ***78-79*** | ***Judicial Remedies*** | 6 | `liability_framework.py` **NEW v1.5** |
+| ***82*** | ***Right to Compensation*** | 6 | `liability_framework.py` **NEW v1.5** |
+| ***83*** | ***Administrative Fines*** | 6 | `liability_framework.py` **NEW v1.5** |
+| ***84*** | ***Penalties*** | 6 | `liability_framework.py` **NEW v1.5** |
 
-> **Note**: Articles in **bold** were added in v1.4 audit. Total article coverage: 40+ articles.
+> **Legend**:
+> - **Bold** = added in v1.4 audit
+> - ***Bold Italic*** = added in v1.5 critical audit
+> - Total article coverage: **50+ articles** (increased from 40+)
 
 ---
 
-*This plan provides a comprehensive roadmap for GDPR compliance integration. Each phase is designed to be implementable in a single development session with complete test coverage. Regular review against EDPB guidelines is recommended.*
+## Appendix B: Cross-Regulation Summary
+
+| Regulation | Integration Module | Key Conflicts | Resolution |
+|------------|-------------------|---------------|------------|
+| **MiFID II** | Cross-Regulation Alignment | Retention vs Erasure | Legal obligation basis, auto-erasure on expiry |
+| **DORA** | `incident_reporting.py` | Breach timelines | DORA 4h from classification, GDPR 72h from detection |
+| **EU AI Act** | `data_governance.py` | Article 22 + Article 14 | Combined human oversight |
+| **NIS2** | Cross-Regulation Alignment | Security + Breach | NIS2 supersedes Art. 32 specifics |
+| **ePrivacy** | `eprivacy_compliance.py` **NEW v1.5** | Cookies, communications | Unified consent, strictly necessary exemption |
+| **AMLD6** | `aml_gdpr_resolver.py` **NEW v1.5** | KYC retention, SAR protection | Art. 23 restriction for SAR, 5-year retention |
+
+---
+
+*This plan provides a comprehensive roadmap for GDPR compliance integration. Each phase (including sub-phases) is designed to be implementable in a single focused development session with complete test coverage. Regular review against EDPB guidelines is recommended. Version 1.5 addresses all critical audit findings.*
