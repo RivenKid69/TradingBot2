@@ -3,9 +3,9 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 1.6
+**Version**: 1.7
 **Date**: December 2025
-**Status**: Implementation Ready (Post-Comprehensive Audit)
+**Status**: Implementation Ready (Post-Critical Audit)
 
 ---
 
@@ -91,6 +91,7 @@ services/
 
     # Phase 2a: Consent & Transparency
     consent_manager.py             # Article 7 consent management
+    unified_consent.py             # UnifiedConsentOrchestrator (NEW v1.7)
     transparency_notices.py        # Articles 12-14 privacy notices
     information_provision.py       # Layered notice approach
 
@@ -129,8 +130,12 @@ services/
     dpo_interface.py               # DPO tools and interface
     international_transfers.py     # Articles 44-49 transfers
     uk_adequacy_contingency.py     # UK adequacy sunset handling (NEW)
+    uk_adequacy_emergency.py       # UK Emergency Protocol (NEW v1.7)
     compliance_dashboard.py        # GDPR compliance overview
     liability_framework.py         # Articles 77-84 remedies & liability
+    certification_framework.py     # Articles 40-43 codes & certification (NEW v1.7)
+    employment_data.py             # Article 88 employment processing (NEW v1.7)
+    research_data.py               # Article 89 research safeguards (NEW v1.7)
 
 tests/
   gdpr/
@@ -1702,7 +1707,184 @@ test_gdpr_phase2a_consent_transparency.py:
     └── test_consent_record_for_legal_basis
 ```
 
-**Expected test count**: ~60-70 tests
+#### 2a.2.4 UnifiedConsentOrchestrator (unified_consent.py) - NEW v1.7
+
+**🚨 CRITICAL ARCHITECTURE COMPONENT**: Single source of truth for all consent states across regulations.
+
+Per audit findings, the plan describes multiple consent managers:
+- `ConsentManager` (GDPR Article 7)
+- `ePrivacyComplianceManager` (ePrivacy cookies/tracking)
+- `AMLGDPRResolver` (AMLD-GDPR coordination)
+
+Without a unified orchestrator, this creates risk of:
+- Inconsistent consent states across systems
+- Race conditions during consent withdrawal
+- Audit trail gaps
+- Conflicting decisions between managers
+
+```
+Class UnifiedConsentOrchestrator:
+    """
+    Single source of truth for all consent states.
+
+    Coordinates between:
+    - GDPR ConsentManager (Article 7)
+    - ePrivacy cookie consent
+    - PSD2 SCA consent
+    - Marketing consent preferences
+
+    CRITICAL: All consent queries should go through this orchestrator,
+    not directly to individual managers.
+    """
+
+    # Component Managers
+    gdpr_manager: ConsentManager
+    eprivacy_manager: ePrivacyComplianceManager
+    aml_resolver: AMLGDPRResolver
+    psd2_resolver: Optional[PSD2GDPRResolver]
+
+    # Unified State
+    - get_effective_consent(user_id: str, purpose: str) -> EffectiveConsentState
+    - get_all_consents(user_id: str) -> UnifiedConsentRecord
+    - check_processing_allowed(user_id: str, processing: str) -> ProcessingDecision
+
+    # Consent Operations (Atomic)
+    - grant_consent(user_id: str, consent: ConsentGrant) -> ConsentResult
+    - withdraw_consent(user_id: str, consent_id: str) -> WithdrawalResult
+    - refresh_consent(user_id: str, purpose: str) -> RefreshResult
+
+    # Cross-Regulation Coordination
+    - sync_consent_state(user_id: str) -> SyncResult
+    - resolve_consent_conflict(user_id: str, conflict: ConsentConflict) -> Resolution
+    - check_eprivacy_gdpr_alignment(user_id: str) -> AlignmentStatus
+
+    # Atomic Withdrawal (Critical)
+    - atomic_withdrawal(user_id: str, purposes: List[str]) -> AtomicResult
+    - rollback_partial_withdrawal(transaction_id: str) -> RollbackResult
+
+    # Audit
+    - get_consent_audit_trail(user_id: str) -> AuditTrail
+    - generate_consent_report(user_id: str) -> ConsentReport
+
+Dataclass EffectiveConsentState:
+    """Aggregated consent state considering all regulations"""
+    user_id: str
+    purpose: str
+    timestamp: datetime
+
+    # Individual States
+    gdpr_consent: Optional[bool]
+    eprivacy_consent: Optional[bool]
+    psd2_consent: Optional[bool]
+
+    # Effective Decision
+    effective_consent: bool           # Final decision
+    decision_rationale: str           # Why this decision
+    applicable_regulations: List[str] # Which regulations apply
+
+    # Overrides
+    legal_basis_override: Optional[str]  # e.g., "contract" overrides need for consent
+    legitimate_interest_applies: bool
+    legal_obligation_applies: bool
+
+Dataclass ConsentConflict:
+    """Conflict between consent states in different systems"""
+    user_id: str
+    purpose: str
+    detected_at: datetime
+
+    # Conflicting States
+    gdpr_state: bool
+    eprivacy_state: bool
+    conflict_type: str  # "gdpr_yes_eprivacy_no", "stale_sync", etc.
+
+    # Resolution
+    resolution_strategy: str
+    resolved_state: bool
+    resolution_rationale: str
+
+Class AtomicConsentTransaction:
+    """
+    Ensures consent changes are atomic across all systems.
+
+    CRITICAL: Consent withdrawal must be atomic - if one system
+    fails to process withdrawal, all must rollback.
+    """
+
+    def execute_withdrawal(self, user_id: str, purposes: List[str]) -> AtomicResult:
+        """
+        Atomic consent withdrawal across all systems.
+
+        Steps:
+        1. Begin transaction
+        2. Withdraw from GDPR ConsentManager
+        3. Withdraw from ePrivacy (cookies, tracking)
+        4. Update processing systems
+        5. Commit transaction
+
+        If any step fails:
+        - Rollback all previous steps
+        - Log failure for DPO review
+        - Notify user of partial failure
+        """
+        transaction = self.begin_transaction()
+
+        try:
+            # Step 1: GDPR withdrawal
+            gdpr_result = self.gdpr_manager.withdraw(user_id, purposes)
+            transaction.add_step("gdpr", gdpr_result)
+
+            # Step 2: ePrivacy withdrawal
+            eprivacy_result = self.eprivacy_manager.withdraw_consent(user_id, purposes)
+            transaction.add_step("eprivacy", eprivacy_result)
+
+            # Step 3: Stop active processing
+            processing_result = self.stop_processing(user_id, purposes)
+            transaction.add_step("processing", processing_result)
+
+            # Commit if all successful
+            transaction.commit()
+            return AtomicResult(success=True, transaction_id=transaction.id)
+
+        except Exception as e:
+            # Rollback all steps
+            transaction.rollback()
+            self.dpo_alert(f"Consent withdrawal failed for {user_id}: {e}")
+            return AtomicResult(success=False, error=str(e), transaction_id=transaction.id)
+```
+
+**Integration Points:**
+
+```
+UnifiedConsentOrchestrator Integration:
+──────────────────────────────────────────────────────────────
+
+User Action                 Orchestrator                    Systems
+───────────                ────────────                    ───────
+Grant consent      ──►     validate_all()         ──►     GDPR + ePrivacy + PSD2
+                           check_conflicts()
+                           atomic_grant()
+
+Withdraw consent   ──►     begin_transaction()    ──►     GDPR ConsentManager
+                           withdraw_all()         ──►     ePrivacy Manager
+                           stop_processing()      ──►     Processing Systems
+                           commit_or_rollback()
+
+Query consent      ──►     get_effective_consent() ──►    Single truth response
+                           (aggregates all sources)
+```
+
+**Why This Matters:**
+
+| Without Orchestrator | With Orchestrator |
+|---------------------|-------------------|
+| User withdraws GDPR consent | Atomic withdrawal from all systems |
+| ePrivacy cookies still track | Cookies immediately disabled |
+| Race condition: processing continues | Processing stops atomically |
+| Audit gap: which system is truth? | Single audit trail |
+| Conflicting states possible | Conflicts detected and resolved |
+
+**Expected test count**: ~70-80 tests (increased for UnifiedConsentOrchestrator)
 
 ---
 
@@ -2114,6 +2296,195 @@ Enum Article22Applicability:
 
 > **Key Principle**: If the user initiated and parameterized the action, Article 22 generally does NOT apply.
 > If the platform autonomously makes a decision that significantly affects the user without their specific instruction, Article 22 DOES apply.
+
+---
+
+#### Trading Platform Article 22 Scenarios - Extended (NEW v1.7)
+
+**Critical Trading-Specific Automated Decisions:**
+
+Per audit findings, the following scenarios require explicit Article 22 handling but were previously under-specified:
+
+```
+Enum TradingPlatformArt22Decision:
+    """
+    Exhaustive classification of automated decisions on trading platforms.
+
+    Per EDPB Guidelines on Automated Decision-Making, each must be assessed for:
+    1. Is it solely automated? (no meaningful human involvement)
+    2. Does it produce legal effects or similarly significantly affect?
+    """
+
+    # HIGH PRIORITY - Full Article 22(3) safeguards required
+    MARGIN_CALL_LIQUIDATION = "margin_call_liquidation"
+    LEVERAGE_LIMIT_REDUCTION = "leverage_limit_reduction"
+    TRADING_SUSPENSION = "trading_suspension"
+    ACCOUNT_TERMINATION = "account_termination"
+    CLIENT_RISK_RECLASSIFICATION = "client_reclassification"
+
+    # MEDIUM PRIORITY - Requires analysis
+    AML_TRANSACTION_BLOCKING = "aml_transaction_blocking"
+    POSITION_LIMIT_ENFORCEMENT = "position_limit_enforcement"
+    WITHDRAWAL_RESTRICTION = "withdrawal_restriction"
+    API_ACCESS_REVOCATION = "api_access_revocation"
+
+    # LOW PRIORITY - Generally exempt but document
+    STRATEGY_RECOMMENDATION = "strategy_recommendation"
+    RISK_ALERT_NOTIFICATION = "risk_alert_notification"
+    PERFORMANCE_REPORTING = "performance_reporting"
+
+Dataclass TradingDecisionArt22Assessment:
+    """Assessment record for trading platform automated decisions"""
+    assessment_id: str
+    decision_type: TradingPlatformArt22Decision
+    timestamp: datetime
+
+    # Article 22(1) Test
+    solely_automated: bool
+    human_review_before_execution: bool
+    human_review_timeframe: Optional[str]  # e.g., "24h", "immediate"
+
+    # Significant Effect Assessment
+    affects_financial_position: bool
+    magnitude_of_effect: str  # "minimal", "moderate", "significant", "severe"
+    reversibility: str        # "immediate", "within_24h", "complex", "irreversible"
+
+    # Legal Effects
+    affects_legal_rights: bool
+    affects_contract_terms: bool
+    affects_service_access: bool
+
+    # Article 22 Determination
+    article_22_applies: bool
+    legal_basis: Optional[str]  # Art 22(2)(a), (b), or (c)
+    safeguards_required: List[str]
+
+    # Documentation
+    assessment_rationale: str
+    reviewed_by: str
+    next_review_date: datetime
+```
+
+**Detailed Scenario Analysis:**
+
+| Scenario | Solely Automated | Significant Effect | Art. 22 Applies | Legal Basis | Required Safeguards |
+|----------|-----------------|-------------------|-----------------|-------------|---------------------|
+| **Margin Call → Forced Liquidation** | YES (typically) | YES - direct financial loss | **YES** | Art. 22(2)(a) contract OR Art. 22(2)(b) MiFID II | Human intervention right, explanation, contestation |
+| **Leverage Reduction** | YES | YES - reduces trading capacity | **YES** | Art. 22(2)(a) contract | Notification, explanation, appeal process |
+| **Trading Suspension** | YES | YES - blocks service access | **YES** | Art. 22(2)(b) MAR/AML | Prior notification where possible, explanation |
+| **Account Termination** | Varies | YES - legal effect | **YES** | Depends on reason | Full Art. 22(3) safeguards |
+| **Client Risk Reclassification** | YES | YES - affects available products | **YES** | Art. 22(2)(a) MiFID II suitability | Notification, explanation, human review |
+| **AML Transaction Block** | YES | YES - freezes funds | **ANALYSIS** | Art. 22(2)(b) AMLD + Art. 23 restriction | Limited transparency (tipping-off), internal review |
+| **Position Limit Enforcement** | YES | Moderate | **ANALYSIS** | Art. 22(2)(b) regulatory | Case-by-case based on effect magnitude |
+| **Withdrawal Restriction** | YES | YES - access to funds | **YES** | Depends (AML/fraud/risk) | Depends on basis - AML may limit transparency |
+| **API Access Revocation** | YES | Moderate-High | **ANALYSIS** | Security/contract | Notification, explanation, reinstatement process |
+
+**Implementation Requirements per Scenario:**
+
+```
+Class TradingArt22Handler:
+    """
+    Handles Article 22 compliance for trading platform decisions.
+
+    CRITICAL: Every decision in HIGH PRIORITY category must:
+    1. Be logged with full Article 22 assessment
+    2. Trigger notification to data subject (unless exemption applies)
+    3. Provide meaningful explanation
+    4. Enable human intervention request
+    """
+
+    # Margin Call / Forced Liquidation
+    - assess_margin_call_decision(position_id: str) -> Art22Assessment
+    - notify_of_pending_liquidation(user_id: str, timeframe: str)
+    - allow_intervention_before_liquidation(user_id: str, deadline: datetime) -> bool
+    - execute_liquidation_with_logging(position_id: str) -> LiquidationRecord
+    - handle_liquidation_contestation(contestation: Contestation) -> Resolution
+
+    # Leverage Reduction
+    - assess_leverage_decision(user_id: str, old_leverage: float, new_leverage: float)
+    - notify_leverage_change(user_id: str, explanation: str)
+    - process_leverage_appeal(appeal_id: str) -> AppealResult
+
+    # Trading Suspension
+    - assess_suspension_decision(user_id: str, reason: str) -> Art22Assessment
+    - check_suspension_exemption(reason: str) -> bool  # AML/MAR may exempt
+    - notify_suspension(user_id: str, reason: str, appeal_info: str)
+    - process_suspension_review(review_id: str) -> ReviewResult
+
+    # Client Reclassification
+    - assess_reclassification(user_id: str, old_class: str, new_class: str)
+    - explain_reclassification_factors(user_id: str) -> Explanation
+    - request_reclassification_review(user_id: str) -> str
+    - process_reclassification_appeal(appeal_id: str) -> AppealResult
+
+    # AML Transaction Blocking (Special handling - Art. 23 restrictions apply)
+    - assess_aml_block(transaction_id: str) -> Art22Assessment
+    - check_tipping_off_restrictions(user_id: str) -> bool
+    - notify_with_restricted_info(user_id: str)  # Limited disclosure per AMLD
+    - internal_aml_review(transaction_id: str) -> ReviewResult
+
+    # Reporting
+    - get_art22_decisions_for_user(user_id: str) -> List[Art22Decision]
+    - generate_art22_compliance_report() -> Report
+    - audit_art22_safeguards() -> AuditResult
+```
+
+**Margin Call Specific Safeguards:**
+
+Per [ESMA Guidelines on MiFID II suitability requirements](https://www.esma.europa.eu/press-news/esma-news/esma-publishes-final-guidelines-mifid-ii-suitability-requirements) and GDPR Article 22:
+
+```
+Margin Call Article 22 Compliance Flow:
+──────────────────────────────────────────────────────────────
+
+T-24h    MARGIN WARNING NOTIFICATION
+         ├─ Alert user of approaching margin threshold
+         ├─ Explain current margin level and requirements
+         └─ Provide options to avoid liquidation
+
+T-0      MARGIN BREACH DETECTED
+         ├─ Log as potential Article 22 decision
+         ├─ Check for human intervention request
+         └─ Apply grace period if configured (platform policy)
+
+T+Grace  LIQUIDATION DECISION
+         ├─ If no human intervention → proceed to liquidation
+         ├─ Log decision with full Article 22 record
+         ├─ Execute liquidation
+         └─ Notify user with:
+             • What happened (decision outcome)
+             • Why (factors considered)
+             • Right to contest
+             • Right to human review
+             • Compensation claim process if error
+
+T+30d    CONTESTATION WINDOW
+         ├─ Accept contestation within 30 days
+         ├─ Human review of liquidation decision
+         └─ Resolution with explanation
+```
+
+**AML Block - Balancing GDPR and AMLD:**
+
+```
+AML Transaction Block Decision Tree:
+──────────────────────────────────────────────────────────────
+
+Transaction Flagged by AML System
+         │
+         ├─► Is SAR filed or pending?
+         │   └─ YES → Art. 23(1)(d) GDPR restriction applies
+         │           ├─ Do NOT disclose SAR to user (tipping-off)
+         │           ├─ Provide generic "regulatory review" notice
+         │           ├─ Internal Art. 22 assessment still required
+         │           └─ Document restriction per Art. 23(2)
+         │
+         └─► NO SAR filed, risk-based block
+             ├─ Standard Art. 22 assessment applies
+             ├─ Notify user of block with explanation
+             ├─ Provide human intervention right
+             └─ Process appeal within Article 12(3) timeline
+```
 
 ---
 
@@ -4143,6 +4514,402 @@ class InsuranceIntegration:
     def coordinate_defense(self, proceeding_id: str) -> DefenseCoordination
 ```
 
+#### 6.2.7 CertificationFramework (certification_framework.py) - NEW v1.7
+
+**Articles 40-43 - Codes of Conduct and Certification**
+
+Per [GDPR Articles 40-43](https://gdpr-info.eu/art-40-gdpr/), this module manages codes of conduct adherence and certification mechanisms for demonstrating GDPR compliance.
+
+> **Platform Relevance**: For financial services platforms, certification (e.g., ISO 27701, EUROPRIVACY) provides evidence of compliance useful for:
+> - Client due diligence
+> - Regulatory audits
+> - Processor selection (Art. 28(5))
+> - DPIA risk mitigation (Art. 35(8))
+
+```
+Enum CertificationType:
+    """Types of GDPR-relevant certifications"""
+    ISO_27701 = "iso_27701"              # Privacy Information Management
+    EUROPRIVACY = "europrivacy"          # EU GDPR certification scheme
+    SOC2_TYPE2 = "soc2_type2"            # SOC 2 with privacy criteria
+    GDPR_CARPA = "gdpr_carpa"            # CNIL approved mechanism
+    CUSTOM = "custom"                     # Organization-specific certification
+
+Enum CodeOfConductStatus:
+    IDENTIFIED = "identified"            # Code applicable to sector
+    ASSESSING = "assessing"              # Evaluating adherence
+    ADHERING = "adhering"                # Formally adhering
+    MONITORED = "monitored"              # Under monitoring body review
+    SUSPENDED = "suspended"              # Adherence suspended
+
+Dataclass Certification:
+    """Article 42 certification record"""
+    certification_id: str
+    certification_type: CertificationType
+    issuing_body: str                    # Accredited certification body (Art. 43)
+    accreditation_reference: str         # Body's accreditation
+
+    # Validity
+    issue_date: datetime
+    expiry_date: datetime
+    scope: List[str]                     # Processing activities covered
+    scope_limitations: List[str]
+
+    # Status
+    status: str  # "valid", "expiring", "expired", "suspended", "withdrawn"
+    last_audit_date: Optional[datetime]
+    next_audit_date: datetime
+
+    # Documentation
+    certificate_document: str            # Path/reference to certificate
+    audit_reports: List[str]
+
+Dataclass CodeOfConductAdherence:
+    """Article 40-41 code of conduct adherence"""
+    adherence_id: str
+    code_name: str
+    code_reference: str                  # Official reference
+    approving_sa: str                    # Supervisory Authority that approved code
+
+    # Adherence
+    adherence_date: datetime
+    monitoring_body: str                 # Per Article 41
+    monitoring_body_accreditation: str
+
+    # Status
+    status: CodeOfConductStatus
+    last_monitoring_review: Optional[datetime]
+    compliance_issues: List[str]
+    remediation_actions: List[str]
+
+Class CertificationFramework:
+    """
+    Articles 40-43 implementation - Codes of Conduct and Certification.
+
+    Per Article 42(1): Certification mechanisms shall be established for
+    the purpose of demonstrating compliance with this Regulation.
+
+    Per Article 28(5): Adherence to an approved code of conduct or
+    certification mechanism may be used as an element to demonstrate
+    sufficient guarantees for processor selection.
+    """
+
+    # Certification Management (Articles 42-43)
+    - register_certification(cert: Certification) -> str
+    - update_certification_status(cert_id: str, status: str)
+    - check_certification_validity(cert_id: str) -> ValidityStatus
+    - schedule_renewal_audit(cert_id: str, date: datetime)
+    - track_certification_expiry() -> List[ExpiringCertification]
+
+    # Code of Conduct (Articles 40-41)
+    - identify_applicable_codes(sector: str) -> List[CodeOfConduct]
+    - register_code_adherence(adherence: CodeOfConductAdherence) -> str
+    - update_adherence_status(adherence_id: str, status: CodeOfConductStatus)
+    - record_monitoring_review(adherence_id: str, review: MonitoringReview)
+    - handle_adherence_suspension(adherence_id: str, reason: str)
+
+    # Integration with other GDPR modules
+    - use_certification_for_dpia(dpia_id: str, cert_id: str) -> DPIAMitigation
+    - use_certification_for_processor_selection(processor_id: str) -> ProcessorGuarantee
+    - generate_certification_evidence_pack() -> EvidencePack
+
+    # Reporting
+    - get_certification_dashboard() -> CertificationDashboard
+    - generate_certification_report() -> CertificationReport
+    - list_expiring_certifications(days: int) -> List[Certification]
+```
+
+**Certification Applicability for Trading Platforms:**
+
+| Certification | Applicability | Benefits | Considerations |
+|--------------|---------------|----------|----------------|
+| **ISO 27701** | HIGH | Privacy management system; recognized globally | Requires ISO 27001 base; annual surveillance |
+| **EUROPRIVACY** | MEDIUM | EU-specific; GDPR-aligned | Limited availability; fewer accredited bodies |
+| **SOC 2 Type 2** | HIGH | Common for financial services; client expectation | US-origin; covers security controls broadly |
+| **GDPR-CARPA** | LOW | CNIL-specific certification | French market focus |
+
+**Financial Services Codes of Conduct:**
+
+| Code | Sector | Status | Monitoring Body |
+|------|--------|--------|-----------------|
+| Cloud Infrastructure Providers (CISPE) | Cloud | Approved | Scope Europe |
+| Direct Marketing Code | Marketing | Approved | Various national |
+| **Financial Services (proposed)** | Financial | **Pending** | TBD |
+
+#### 6.2.8 EmploymentDataHandler (employment_data.py) - NEW v1.7
+
+**Article 88 - Processing in the Context of Employment**
+
+Per [GDPR Article 88](https://gdpr-info.eu/art-88-gdpr/), Member States may provide more specific rules for processing employee data. This is **CRITICAL** for any trading platform that has employees.
+
+> **⚠️ Platform Relevance**: Trading platforms process significant employee data:
+> - Access logs and audit trails
+> - Performance monitoring
+> - Trading activity surveillance (MAR compliance)
+> - Background checks
+> - Training records
+
+```
+Enum EmployeeDataCategory:
+    """Categories of employee personal data"""
+    RECRUITMENT = "recruitment"           # CV, interview notes
+    CONTRACT = "contract"                 # Employment contract, terms
+    PAYROLL = "payroll"                   # Salary, bank details
+    PERFORMANCE = "performance"           # Reviews, KPIs
+    ACCESS_LOGS = "access_logs"           # System access, trading logs
+    SURVEILLANCE = "surveillance"         # MAR monitoring data
+    TRAINING = "training"                 # Certifications, training records
+    DISCIPLINARY = "disciplinary"         # Warnings, investigations
+    HEALTH = "health"                     # Sick leave, occupational health
+
+Dataclass MemberStateEmploymentRule:
+    """Article 88(1) - More specific rules per Member State"""
+    member_state: str
+    rule_reference: str                   # National law reference
+    data_categories_affected: List[EmployeeDataCategory]
+    specific_requirements: List[str]
+    derogations_from_gdpr: List[str]
+    additional_protections: List[str]
+
+# Common Member State Employment Derogations
+MEMBER_STATE_EMPLOYMENT_RULES = {
+    "DE": {  # Germany - BDSG §26
+        "rule_reference": "BDSG §26",
+        "specific_requirements": [
+            "Collective bargaining agreements may authorize processing",
+            "Works council consultation required for monitoring",
+            "Special consent requirements for employee data"
+        ],
+        "consent_validity": "Generally NOT valid basis for employment data",
+        "monitoring_restrictions": "Works council must agree to monitoring systems"
+    },
+    "FR": {  # France - Code du Travail
+        "rule_reference": "Code du Travail L.1121-1, L.1222-4",
+        "specific_requirements": [
+            "Proportionality test for any monitoring",
+            "Prior employee notification required",
+            "CNIL declaration for certain processing"
+        ],
+        "monitoring_restrictions": "Employee must be informed of monitoring"
+    },
+    "NL": {  # Netherlands - UAVG
+        "rule_reference": "UAVG Art. 30",
+        "specific_requirements": [
+            "Works council consent for monitoring policies",
+            "Strict limits on health data processing"
+        ]
+    },
+    "IE": {  # Ireland - Data Protection Act 2018
+        "rule_reference": "DPA 2018 Section 41",
+        "specific_requirements": [
+            "Processing must be necessary for employment purposes"
+        ]
+    }
+}
+
+Class EmploymentDataHandler:
+    """
+    Article 88 implementation - Employment context processing.
+
+    Per Article 88(1): Member States may provide more specific rules
+    for processing in the employment context.
+
+    CRITICAL: Always check applicable Member State rules before
+    processing employee data.
+    """
+
+    # Member State Rule Management
+    - get_applicable_ms_rules(member_state: str) -> MemberStateEmploymentRule
+    - check_processing_permitted(category: EmployeeDataCategory, ms: str) -> bool
+    - get_additional_requirements(processing: str, ms: str) -> List[str]
+
+    # Employee Processing
+    - register_employee_processing(activity: ProcessingActivity) -> str
+    - validate_against_ms_rules(activity_id: str) -> ValidationResult
+    - check_works_council_requirement(activity: str, ms: str) -> bool
+    - document_works_council_consultation(activity_id: str, consultation: str)
+
+    # Employee Rights (Enhanced per Art. 88(2))
+    - handle_employee_dsar(dsar: DSARRequest) -> DSARResponse
+    - assess_employee_consent_validity(consent: Consent, ms: str) -> ValidityAssessment
+    - process_employee_objection(objection: Objection) -> ObjectionResult
+
+    # Monitoring (Trading Platform Specific)
+    - assess_monitoring_lawfulness(monitoring_type: str, ms: str) -> LawfulnessAssessment
+    - document_monitoring_notification(employee_id: str, notification: str)
+    - handle_surveillance_data_request(employee_id: str) -> SurveillanceDataResponse
+
+    # Reporting
+    - generate_employee_processing_report() -> Report
+    - audit_ms_compliance(member_state: str) -> AuditResult
+```
+
+**Trading Platform Employee Monitoring Considerations:**
+
+| Monitoring Type | Lawful Basis | Key Requirements | MS Variations |
+|-----------------|--------------|------------------|---------------|
+| **System access logs** | Legal obligation (MAR) | Notify employees; retention limits | DE: Works council |
+| **Trading activity surveillance** | Legal obligation (MAR, MiFID II) | Part of compliance function | Generally permitted |
+| **Email monitoring** | Legitimate interest (rarely) | Proportionality; notification | DE: Very restricted |
+| **Performance tracking** | Contract/LI | Clear criteria; transparency | FR: Prior notification |
+| **Background checks** | Contract/Legal | Minimize scope; relevance test | Varies significantly |
+
+#### 6.2.9 ResearchDataFramework (research_data.py) - NEW v1.7
+
+**Article 89 - Safeguards for Research and Statistics**
+
+Per [GDPR Article 89](https://gdpr-info.eu/art-89-gdpr/), processing for archiving, research, or statistics requires appropriate safeguards.
+
+> **⚠️ Platform Relevance**: Trading platforms use data for:
+> - ML model training and validation
+> - Backtesting strategies
+> - Market research
+> - Statistical analysis for risk management
+
+```
+Enum ResearchPurpose:
+    """Article 89 research categories"""
+    SCIENTIFIC_RESEARCH = "scientific"      # Art. 89(1)
+    HISTORICAL_RESEARCH = "historical"      # Art. 89(1)
+    STATISTICAL_PURPOSES = "statistical"    # Art. 89(1)
+    ARCHIVING_PUBLIC_INTEREST = "archiving" # Art. 89(1)
+    INTERNAL_ANALYTICS = "internal"         # May use Art. 89 safeguards
+
+Dataclass Article89Safeguards:
+    """
+    Required safeguards for Art. 89 processing.
+
+    Per Art. 89(1): Processing shall be subject to appropriate
+    safeguards ensuring technical and organizational measures
+    are in place, in particular to ensure respect for
+    data minimisation (pseudonymisation where possible).
+    """
+    processing_id: str
+    research_purpose: ResearchPurpose
+
+    # Technical Measures
+    pseudonymisation_applied: bool
+    pseudonymisation_technique: str        # e.g., "k-anonymity", "tokenization"
+    re_identification_risk_assessment: str
+    encryption_applied: bool
+    access_controls: List[str]
+
+    # Organizational Measures
+    research_protocol_documented: bool
+    ethics_review_conducted: bool          # If applicable
+    data_minimisation_documented: str
+    retention_limited: bool
+    retention_period: str
+    purpose_limitation_enforced: bool
+
+    # Legal Basis
+    legal_basis: str                       # Typically Art. 6(1)(f) or MS derogation
+    ms_derogation_reference: Optional[str] # Art. 89(2) Member State law
+
+Dataclass ResearchDataset:
+    """Dataset prepared for research purposes"""
+    dataset_id: str
+    source_processing_id: str
+    research_purpose: ResearchPurpose
+    creation_date: datetime
+
+    # Safeguards Applied
+    safeguards: Article89Safeguards
+
+    # Data Minimization (Art. 89(1))
+    original_record_count: int
+    minimized_record_count: int
+    fields_removed: List[str]
+    fields_pseudonymised: List[str]
+    fields_aggregated: List[str]
+
+    # Access Control
+    authorized_researchers: List[str]
+    access_environment: str                # "secure_enclave", "on_premise", etc.
+    export_allowed: bool
+
+Class ResearchDataFramework:
+    """
+    Article 89 implementation - Safeguards for research/statistics.
+
+    Integrates with AI Act DataGovernanceFramework for ML training data.
+
+    Per Article 89(1): Processing for archiving purposes in the public
+    interest, scientific or historical research purposes or statistical
+    purposes, shall be subject to appropriate safeguards.
+    """
+
+    # Dataset Preparation
+    - create_research_dataset(source: str, purpose: ResearchPurpose) -> ResearchDataset
+    - apply_pseudonymisation(dataset_id: str, technique: str) -> bool
+    - assess_re_identification_risk(dataset_id: str) -> RiskAssessment
+    - apply_k_anonymity(dataset_id: str, k: int) -> bool
+    - aggregate_data(dataset_id: str, aggregation_level: str) -> bool
+
+    # Safeguards Documentation
+    - document_safeguards(dataset_id: str, safeguards: Article89Safeguards) -> str
+    - validate_safeguards(dataset_id: str) -> ValidationResult
+    - generate_safeguards_report(dataset_id: str) -> SafeguardsReport
+
+    # Access Control
+    - grant_research_access(dataset_id: str, researcher: str) -> AccessGrant
+    - revoke_research_access(dataset_id: str, researcher: str) -> bool
+    - audit_research_access(dataset_id: str) -> AccessAudit
+
+    # Integration with AI Act Data Governance
+    - link_to_ai_act_governance(dataset_id: str, ai_act_dataset_id: str)
+    - validate_ai_act_compliance(dataset_id: str) -> AIActValidation
+
+    # Data Subject Rights (Art. 89(2) derogations may apply)
+    - check_rights_derogation(dataset_id: str, right: str) -> DerogationAssessment
+    - apply_derogation(dataset_id: str, right: str, ms_reference: str)
+
+    # Reporting
+    - generate_research_data_inventory() -> Inventory
+    - audit_research_processing() -> AuditReport
+```
+
+**ML Training Data - Art. 89 + AI Act Integration:**
+
+```
+ML Training Data Compliance Flow:
+──────────────────────────────────────────────────────────────
+
+Source Data                      Art. 89 Safeguards Applied
+│                                │
+├─ Trading data                  ├─ Pseudonymize user IDs
+├─ User behavior                 ├─ Remove direct identifiers
+└─ Market patterns               ├─ Apply k-anonymity where feasible
+                                 ├─ Document minimization rationale
+                                 └─ Limit retention period
+                                         │
+                                         ▼
+                         AI Act Data Governance (Art. 10)
+                                         │
+                         ├─ Quality assessment
+                         ├─ Bias detection
+                         ├─ Gap analysis
+                         └─ Technical documentation
+                                         │
+                                         ▼
+                              ML Model Training
+                                         │
+                         ├─ Lawful basis: Art. 6(1)(f) + Art. 89
+                         ├─ Art. 89 safeguards documented
+                         ├─ AI Act Art. 10 compliance
+                         └─ DPIA completed if high-risk AI
+```
+
+**Article 89(2) Derogations - Rights Restrictions:**
+
+| Right | Can Be Restricted? | Condition | Documentation |
+|-------|-------------------|-----------|---------------|
+| Access (Art. 15) | YES | Would render research impossible | Document impossibility |
+| Rectification (Art. 16) | YES | Research requires accuracy record | Document research need |
+| Restriction (Art. 18) | YES | Would seriously impair research | Document serious impairment |
+| Objection (Art. 21) | YES | If based on Art. 89(1) basis | Document research necessity |
+| Erasure (Art. 17) | YES | Via Art. 17(3)(d) research exemption | Document research purpose |
+
 ### 6.3 Platform-Specific DPIAs
 
 Pre-configured DPIA templates:
@@ -4267,14 +5034,156 @@ test_gdpr_phase6_dpia_governance.py:
 │       ├── test_insurance_notification
 │       ├── test_dpo_escalation_on_claim
 │       └── test_liability_report_generation
-└── test_cross_regulation/
-    ├── test_dora_dashboard_integration
-    ├── test_mifid_dashboard_integration
-    ├── test_ai_act_alignment
-    └── test_unified_compliance_view
+├── test_cross_regulation/
+│   ├── test_dora_dashboard_integration
+│   ├── test_mifid_dashboard_integration
+│   ├── test_ai_act_alignment
+│   └── test_unified_compliance_view
+├── test_certification_framework/   # NEW v1.7 - Articles 40-43
+│   ├── test_certification_registration
+│   ├── test_certification_validity_check
+│   ├── test_certification_expiry_tracking
+│   ├── test_code_of_conduct_adherence
+│   ├── test_monitoring_body_review
+│   └── test_certification_for_processor_selection
+├── test_employment_data/           # NEW v1.7 - Article 88
+│   ├── test_member_state_rule_lookup
+│   ├── test_works_council_requirement_check
+│   ├── test_employee_dsar_handling
+│   ├── test_monitoring_lawfulness_assessment
+│   └── test_employee_consent_validity
+├── test_research_data/             # NEW v1.7 - Article 89
+│   ├── test_research_dataset_creation
+│   ├── test_pseudonymisation_application
+│   ├── test_re_identification_risk_assessment
+│   ├── test_safeguards_documentation
+│   ├── test_rights_derogation_check
+│   └── test_ai_act_integration
+└── test_psd2_emir_mar/             # NEW v1.7 - Cross-regulation
+    ├── test_psd2_gdpr_mapping
+    ├── test_emir_data_handling
+    ├── test_mar_restriction_assessment
+    └── test_stor_dsar_handling
 ```
 
-**Expected test count**: ~140-160 tests (increased for Chapter VIII)
+### 6.5 Stress Tests & Negative Tests (NEW v1.7)
+
+**🚨 Critical for Production Readiness**: These tests ensure the system handles edge cases and high-load scenarios correctly.
+
+```
+test_gdpr_stress_and_negative.py:
+├── test_stress/
+│   ├── test_concurrent_dsar_flood/
+│   │   ├── test_100_concurrent_dsars              # 100+ simultaneous DSARs
+│   │   ├── test_dsar_queue_ordering               # FIFO processing maintained
+│   │   ├── test_dsar_deadline_tracking_under_load # No deadline misses
+│   │   ├── test_resource_exhaustion_handling      # Graceful degradation
+│   │   └── test_dsar_rate_limiting                # Rate limit enforcement
+│   │
+│   ├── test_breach_during_dsar/
+│   │   ├── test_breach_notification_priority      # Breach takes priority
+│   │   ├── test_dsar_pause_during_breach          # DSAR paused appropriately
+│   │   ├── test_dsar_resume_after_breach          # DSAR resumes correctly
+│   │   └── test_breach_disclosure_in_dsar         # Breach included in response
+│   │
+│   ├── test_multi_regulation_conflict/
+│   │   ├── test_gdpr_mifid_emir_mar_conflict      # 4-way regulation conflict
+│   │   ├── test_priority_matrix_application       # Correct priority applied
+│   │   ├── test_audit_trail_for_conflicts         # All conflicts logged
+│   │   └── test_dpo_escalation_on_conflict        # DPO notified correctly
+│   │
+│   ├── test_cross_border_sa_investigation/
+│   │   ├── test_multi_sa_coordination             # Multiple SAs involved
+│   │   ├── test_lead_sa_determination_dispute     # Lead SA disagreement
+│   │   ├── test_one_stop_shop_mechanism           # OSS functioning
+│   │   └── test_sa_request_prioritization         # Correct SA handling
+│   │
+│   ├── test_processor_chain_failure/
+│   │   ├── test_sub_processor_unavailable         # Sub-processor down
+│   │   ├── test_processor_breach_cascade          # Breach affects chain
+│   │   ├── test_dsar_routing_failure              # DSAR routing broken
+│   │   └── test_fallback_processor_activation     # Backup processor used
+│   │
+│   └── test_uk_adequacy_midnight_cutover/
+│       ├── test_midnight_scc_activation           # Exact cutover timing
+│       ├── test_in_flight_transfer_handling       # Transfers mid-expiry
+│       ├── test_notification_during_cutover       # Notifications sent
+│       ├── test_ropa_update_atomicity             # ROPA update atomic
+│       └── test_rollback_if_renewal_announced     # Handle late renewal
+│
+├── test_negative/
+│   ├── test_dsar_from_non_data_subject/
+│   │   ├── test_identity_verification_failure     # Wrong identity
+│   │   ├── test_unauthorized_representative       # No valid mandate
+│   │   ├── test_manifestly_unfounded_request      # Abusive request
+│   │   ├── test_excessive_request_rejection       # Too many requests
+│   │   └── test_rejection_documentation           # Rejection recorded
+│   │
+│   ├── test_consent_withdrawal_during_trade/
+│   │   ├── test_consent_withdrawal_mid_order      # Order in flight
+│   │   ├── test_legal_basis_fallback              # Contract basis applies
+│   │   ├── test_processing_continuation           # Trade completes
+│   │   └── test_post_trade_data_handling          # Data handled correctly
+│   │
+│   ├── test_erasure_during_active_investigation/
+│   │   ├── test_mifid_investigation_block         # MiFID II blocks erasure
+│   │   ├── test_mar_investigation_block           # MAR blocks erasure
+│   │   ├── test_aml_investigation_block           # AML blocks erasure
+│   │   ├── test_investigation_end_triggers_erasure # Erasure on investigation end
+│   │   └── test_partial_erasure_allowed           # Non-investigation data erased
+│   │
+│   ├── test_portability_to_non_gdpr_country/
+│   │   ├── test_portability_to_us_provider        # US recipient
+│   │   ├── test_transfer_mechanism_application    # SCCs/consent applied
+│   │   ├── test_data_subject_risk_notification    # Risk disclosed
+│   │   └── test_portability_refusal_grounds       # When to refuse
+│   │
+│   ├── test_breach_notification_sa_unreachable/
+│   │   ├── test_sa_portal_down                    # Technical failure
+│   │   ├── test_alternative_notification_method   # Email/phone fallback
+│   │   ├── test_notification_retry_mechanism      # Automatic retry
+│   │   ├── test_72h_deadline_extension_documentation # Document attempts
+│   │   └── test_successful_eventual_notification  # Eventually succeeds
+│   │
+│   ├── test_invalid_consent/
+│   │   ├── test_bundled_consent_rejection         # Bundled consent invalid
+│   │   ├── test_pre_ticked_consent_rejection      # Pre-ticked invalid
+│   │   ├── test_forced_consent_rejection          # Consent under duress
+│   │   ├── test_unclear_consent_rejection         # Ambiguous language
+│   │   └── test_child_consent_without_parental    # Minor without guardian
+│   │
+│   └── test_automated_decision_errors/
+│       ├── test_margin_call_false_positive        # Incorrect liquidation
+│       ├── test_risk_score_calculation_error      # Wrong risk level
+│       ├── test_automated_decision_reversal       # Decision reversed
+│       ├── test_compensation_calculation          # Damages calculated
+│       └── test_human_intervention_override       # Human overrides system
+│
+└── test_integration_stress/
+    ├── test_full_compliance_cycle_under_load/
+    │   ├── test_1000_users_10_dsars_per_second    # High throughput
+    │   ├── test_breach_during_high_load           # Breach + load
+    │   └── test_system_recovery_after_overload    # Recovery testing
+    │
+    └── test_disaster_recovery/
+        ├── test_database_failover_dsar_continuity # DB failover
+        ├── test_backup_restoration_compliance     # Backup restore
+        └── test_gdpr_data_in_recovery_scenario    # Recovery compliance
+```
+
+**Expected additional test count**: ~80-100 stress/negative tests
+
+**Test Environment Requirements:**
+
+| Requirement | Specification | Rationale |
+|-------------|---------------|-----------|
+| Concurrent users | 100+ simulated | DSAR flood testing |
+| Database size | 1M+ records | Performance testing |
+| Network latency simulation | 50-500ms | SA communication testing |
+| Failure injection | Chaos engineering | Resilience testing |
+| Time manipulation | Controllable clock | Deadline testing |
+
+**Expected test count**: ~220-260 tests (increased for stress/negative + new articles)
 
 ---
 
@@ -4613,6 +5522,215 @@ Business Relationship Active
         └─ Log for accountability
 ```
 
+### GDPR ↔ PSD2/PSD3 (Payment Services Directive) - NEW v1.7
+
+> **Critical for Trading Platforms**: If the platform processes payments or holds client funds, PSD2 applies alongside GDPR.
+
+Per [PSD2 (Directive 2015/2366)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32015L2366):
+
+| GDPR Requirement | PSD2 Requirement | Resolution Approach |
+|------------------|------------------|---------------------|
+| **Consent (Art. 7)** | Strong Customer Authentication (SCA) | SCA consent is separate from GDPR consent; GDPR consent for processing still required |
+| **Purpose limitation (Art. 5(1)(b))** | Payment initiation/account info | Document PSD2 services as explicit purpose; no repurposing of payment data |
+| **Data minimization (Art. 5(1)(c))** | Transaction data for fraud | Collect only necessary data; fraud prevention is legitimate interest |
+| **Retention (Art. 5(1)(e))** | Payment records retention | Legal obligation basis (Art. 6(1)(c)); typically 5-7 years |
+| **Security (Art. 32)** | Operational & security risk (Art. 95) | PSD2 security requirements often exceed Art. 32 minimum |
+| **Breach notification** | Incident reporting to NCA | PSD2 requires immediate notification to NCA; coordinate with GDPR 72h timeline |
+
+**PSD2 Data Categories and GDPR Treatment:**
+
+```
+Enum PSD2DataCategory:
+    SCA_DATA = "sca_data"                      # Biometric, OTP, etc.
+    PAYMENT_ACCOUNT_DATA = "payment_account"   # IBAN, balance
+    TRANSACTION_DATA = "transaction"           # Payment history
+    PAYER_DATA = "payer"                       # Personal identifiers
+    FRAUD_INDICATORS = "fraud_indicators"      # Risk scores
+
+Dataclass PSD2GDPRMapping:
+    """Maps PSD2 data requirements to GDPR compliance"""
+    data_category: PSD2DataCategory
+    gdpr_lawful_basis: str
+    retention_period: str
+    special_category: bool
+    dsar_implications: str
+
+PSD2_GDPR_MAPPINGS = [
+    PSD2GDPRMapping(
+        data_category=PSD2DataCategory.SCA_DATA,
+        gdpr_lawful_basis="contract",  # Art. 6(1)(b)
+        retention_period="duration_of_service",
+        special_category=True if biometric else False,  # Art. 9 if biometric
+        dsar_implications="Must provide; no SCA secrets"
+    ),
+    PSD2GDPRMapping(
+        data_category=PSD2DataCategory.FRAUD_INDICATORS,
+        gdpr_lawful_basis="legitimate_interest",  # Art. 6(1)(f)
+        retention_period="as_per_fraud_analysis_needs",
+        special_category=False,
+        dsar_implications="Provide if requested; may restrict per Art. 23(1)(d)"
+    ),
+]
+
+Class PSD2GDPRResolver:
+    """Resolves GDPR-PSD2 conflicts"""
+    - map_psd2_to_gdpr_basis(data_category: str) -> str
+    - handle_sca_data_dsar(dsar: DSARRequest) -> DSARResponse
+    - coordinate_breach_notifications(breach: Breach) -> NotificationPlan
+```
+
+### GDPR ↔ EMIR (European Market Infrastructure Regulation) - NEW v1.7
+
+> **Critical for Derivatives Trading**: If platform trades derivatives (CFDs, futures, options), EMIR reporting requirements apply.
+
+Per [EMIR (Regulation 648/2012)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32012R0648) and [EMIR Refit](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32019R0834):
+
+| GDPR Requirement | EMIR Requirement | Resolution Approach |
+|------------------|------------------|---------------------|
+| **Purpose limitation** | Trade reporting to Trade Repositories | EMIR reporting is legal obligation; document in ROPA |
+| **Data minimization** | Full counterparty details required | Minimum fields per EMIR RTS; pseudonymize where not required |
+| **Erasure (Art. 17)** | 5+ year retention of trade reports | Erasure suspended during EMIR retention; Art. 17(3)(b) applies |
+| **Access rights (Art. 15)** | Trade Repository data | DSAR must include TR-reported data; coordinate with TR |
+| **International transfers** | TR may be in third country | TIA required if TR outside EU; supplementary measures |
+
+**EMIR Data Handling:**
+
+```
+Dataclass EMIRTradeReport:
+    """Trade data reported to Trade Repository"""
+    report_id: str
+    counterparty_lei: str
+    counterparty_name: str              # Personal if individual
+    trade_id: str
+    reporting_timestamp: datetime
+
+    # GDPR considerations
+    contains_personal_data: bool        # TRUE for natural person counterparties
+    gdpr_lawful_basis: str = "legal_obligation"  # EMIR Art. 9
+    retention_end_date: datetime        # 5 years from contract termination
+
+    # Trade Repository
+    tr_name: str
+    tr_country: str
+    third_country_transfer: bool
+
+Class EMIRGDPRCoordinator:
+    """Coordinates EMIR reporting with GDPR compliance"""
+
+    - assess_personal_data_in_report(trade: Trade) -> bool
+    - handle_dsar_for_emir_data(dsar: DSARRequest) -> DSARResponse
+    - coordinate_with_trade_repository(request: str) -> TRResponse
+    - calculate_emir_retention_expiry(contract_end: datetime) -> datetime
+    - schedule_post_emir_erasure(report_id: str)
+```
+
+### GDPR ↔ MAR (Market Abuse Regulation) - NEW v1.7
+
+> **Critical for Trading Platforms**: MAR surveillance requirements create significant tension with GDPR data subject rights.
+
+Per [MAR (Regulation 596/2014)](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32014R0596):
+
+| GDPR Requirement | MAR Requirement | Resolution Approach |
+|------------------|------------------|---------------------|
+| **Purpose limitation** | Market surveillance data | MAR surveillance is legal obligation; document explicitly |
+| **Transparency (Art. 13-14)** | Insider lists, PDMR transactions | Privacy notice must disclose MAR processing |
+| **Access rights (Art. 15)** | Surveillance data | **RESTRICT per Art. 23(1)(d)** - may compromise detection |
+| **Erasure (Art. 17)** | STOR records, surveillance logs | Suspended during MAR retention; minimum 5 years |
+| **Data minimization** | Detailed trading pattern analysis | Collect per MAR requirements; minimize beyond that |
+
+**MAR-GDPR Conflict Resolution:**
+
+```
+⚠️ CRITICAL: MAR surveillance data MUST be restricted from DSARs
+   per Art. 23(1)(d) - criminal investigation prevention
+```
+
+```
+Dataclass MARSurveillanceRecord:
+    """Market surveillance data subject to MAR requirements"""
+    record_id: str
+    subject_id: str
+    record_type: str  # "order_pattern", "communication", "insider_list"
+    created_at: datetime
+
+    # MAR classification
+    related_to_ongoing_investigation: bool
+    stor_filed: bool                    # Suspicious Transaction/Order Report
+    stor_reference: Optional[str]
+
+    # GDPR handling
+    gdpr_restricted: bool = True        # Almost always restricted
+    restriction_basis: str = "art_23_1_d"
+    dsar_disclosure_allowed: bool = False
+
+    # Retention
+    retention_period_years: int = 5     # Minimum per MAR
+
+Class MARGDPRResolver:
+    """
+    Resolves MAR-GDPR conflicts.
+
+    KEY PRINCIPLE: MAR surveillance takes precedence for market integrity,
+    but GDPR restrictions must be formally documented.
+    """
+
+    - assess_mar_restriction(record_type: str) -> RestrictionAssessment
+    - handle_dsar_for_mar_data(dsar: DSARRequest) -> DSARResponse
+    - document_restriction(dsar_id: str, restriction: Restriction)
+    - handle_stor_related_dsar(dsar: DSARRequest) -> FilteredResponse
+    - schedule_post_mar_disclosure(record_id: str)  # After investigation closes
+
+    def handle_dsar_for_mar_data(self, dsar: DSARRequest) -> DSARResponse:
+        """
+        MAR data is almost always restricted from DSAR.
+
+        Per Art. 23(1)(d): Rights may be restricted to safeguard
+        "the prevention, investigation, detection or prosecution of
+        criminal offences or the execution of criminal penalties"
+
+        Market abuse is a criminal offence in most Member States.
+        """
+        mar_records = self.get_mar_records(dsar.data_subject_id)
+
+        if any(r.stor_filed or r.related_to_ongoing_investigation for r in mar_records):
+            # Full restriction - do not even acknowledge existence
+            return DSARResponse(
+                data=self.get_non_mar_data(dsar.data_subject_id),
+                restrictions_applied=True,
+                restriction_notice="Certain data may be restricted under applicable law",
+                # DO NOT specify it's MAR data - tipping off risk
+            )
+
+        # If no active investigation, may provide historical surveillance summary
+        return DSARResponse(
+            data=self.get_non_sensitive_mar_summary(dsar.data_subject_id),
+            restrictions_applied=True,
+            restriction_notice="Some surveillance data retained per regulatory requirements"
+        )
+```
+
+**MAR Insider List GDPR Handling:**
+
+```
+Insider List (MAR Art. 18) - GDPR Considerations:
+──────────────────────────────────────────────────────────────
+
+Personal Data Collected:
+├─ Name, birth date, national ID
+├─ Professional and personal contact details
+├─ Reason for being on list
+├─ Date of access to inside information
+└─ Date ceased being insider
+
+GDPR Requirements:
+├─ Privacy notice must mention insider list possibility
+├─ Art. 6(1)(c) legal obligation is lawful basis
+├─ Retention: 5 years after creation/update per MAR
+├─ DSAR: Can disclose own insider list inclusion
+│   └─ EXCEPT if ongoing investigation uses the list
+└─ Erasure: Only after MAR retention expires
+```
+
 ### Cross-Regulation Priority Matrix
 
 When regulations conflict, apply this priority:
@@ -4721,7 +5839,9 @@ As of December 2024, the European Commission recognizes the following countries/
 
 ### Critical: UK Adequacy Decision
 
-**⚠️ WARNING**: The UK adequacy decision expires **27 December 2025**.
+**🚨 EMERGENCY STATUS**: The UK adequacy decision expires **27 December 2025**.
+
+> **As of December 2025**: The deadline is **IMMINENT**. Emergency procedures must be activated.
 
 The European Commission is reviewing UK data protection law (Data Use and Access Act) and will decide whether to adopt a new adequacy decision. If no new decision is adopted:
 
@@ -4729,7 +5849,205 @@ The European Commission is reviewing UK data protection law (Data Use and Access
 1. Prepare Standard Contractual Clauses (SCCs) for UK transfers
 2. Conduct Transfer Impact Assessments (TIAs) for UK data flows
 3. Identify UK processors and prepare alternative transfer mechanisms
-4. Set calendar reminder: **Q3 2025** - finalize UK transfer strategy
+4. ~~Set calendar reminder: **Q3 2025** - finalize UK transfer strategy~~ **DEADLINE PASSED**
+
+### UK Adequacy Emergency Protocol (NEW v1.7)
+
+**🚨 CRITICAL**: This protocol MUST be activated by **15 December 2025** (12 days before expiration).
+
+```
+Dataclass UKAdequacyEmergencyProtocol:
+    """
+    Emergency fallback procedure for UK adequacy expiration.
+
+    Per EDPB Recommendations 01/2020 on supplementary measures,
+    organizations must have transfer mechanisms in place BEFORE
+    adequacy expires to ensure continuity of lawful transfers.
+    """
+
+    # Activation Configuration
+    ADEQUACY_EXPIRY_DATE: date = date(2025, 12, 27)
+    EMERGENCY_ACTIVATION_DATE: date = date(2025, 12, 15)  # 12 days buffer
+    AUTO_FALLBACK_ENABLED: bool = True
+
+    # Pre-signed SCCs (MUST be prepared in advance)
+    pre_signed_sccs: Dict[str, SCCPackage] = {}  # processor_id -> SCC package
+    scc_module_mapping: Dict[str, str] = {}       # processor_id -> module (1/2/3/4)
+
+    # UK Processor Inventory
+    uk_processors: List[UKProcessorRecord] = []
+    uk_data_flows: List[UKDataFlow] = []
+    total_uk_transfers_volume: int = 0
+
+    # TIA Completion Status
+    tia_completed: Dict[str, bool] = {}           # processor_id -> TIA done
+    supplementary_measures_identified: Dict[str, List[str]] = {}
+
+    # Communication Templates (pre-approved)
+    data_subject_notification_template: str = ""
+    processor_notification_template: str = ""
+    sa_notification_template: str = ""
+
+    # Status Tracking
+    protocol_status: str = "standby"  # standby, activated, fallback_executed, resolved
+    activation_timestamp: Optional[datetime] = None
+    fallback_execution_timestamp: Optional[datetime] = None
+
+Dataclass UKProcessorRecord:
+    """UK processor inventory for emergency transition"""
+    processor_id: str
+    processor_name: str
+    uk_registration_number: str
+    services_provided: List[str]
+    personal_data_categories: List[str]
+    data_volume_monthly: int
+    criticality: str  # "critical", "high", "medium", "low"
+    scc_status: str   # "not_started", "draft", "signed", "active"
+    tia_status: str   # "not_started", "in_progress", "completed"
+    alternative_eu_processor: Optional[str] = None
+
+Dataclass UKDataFlow:
+    """Individual data flow to UK"""
+    flow_id: str
+    source_system: str
+    destination_processor: str
+    data_categories: List[str]
+    legal_basis_current: str = "adequacy"
+    legal_basis_fallback: str = "sccs"
+    scc_module: str = "module_2"  # Controller -> Processor
+    tia_risk_level: str = "medium"
+    supplementary_measures: List[str] = []
+
+Class UKAdequacyEmergencyManager:
+    """
+    Manages UK adequacy expiration emergency protocol.
+
+    Timeline:
+    ─────────────────────────────────────────────────────────────
+    NOW (Dec 2025)    Check if emergency activation required
+                      ├─ If EU decision published → Stand down
+                      └─ If no decision → Activate protocol
+
+    15 Dec 2025       EMERGENCY ACTIVATION DATE
+                      ├─ Final check for EU decision
+                      ├─ If no decision → Execute fallback
+                      └─ Notify all stakeholders
+
+    27 Dec 2025       ADEQUACY EXPIRY
+                      ├─ All UK transfers on SCCs
+                      ├─ TIAs completed for all flows
+                      └─ Data subjects notified
+    ─────────────────────────────────────────────────────────────
+    """
+
+    # Monitoring
+    - check_eu_commission_decision() -> DecisionStatus
+    - monitor_uk_adequacy_news() -> List[NewsItem]
+    - get_days_until_expiry() -> int
+
+    # Inventory Management
+    - register_uk_processor(processor: UKProcessorRecord) -> str
+    - register_uk_data_flow(flow: UKDataFlow) -> str
+    - get_uk_processor_inventory() -> List[UKProcessorRecord]
+    - assess_uk_transfer_criticality() -> CriticalityAssessment
+
+    # SCC Preparation
+    - prepare_scc_package(processor_id: str, module: str) -> SCCPackage
+    - validate_scc_completeness(processor_id: str) -> ValidationResult
+    - get_unsigned_sccs() -> List[str]
+    - bulk_sign_sccs(processor_ids: List[str]) -> SigningResult
+
+    # TIA Management
+    - initiate_tia(processor_id: str) -> str
+    - complete_tia(tia_id: str, assessment: TIAAssessment) -> bool
+    - identify_supplementary_measures(tia_id: str) -> List[SupplementaryMeasure]
+    - get_pending_tias() -> List[str]
+
+    # Emergency Activation
+    - check_activation_required() -> bool
+    - activate_emergency_protocol() -> ActivationResult
+    - execute_fallback() -> FallbackExecutionResult
+
+    # Fallback Execution
+    - switch_to_sccs(processor_id: str) -> bool
+    - switch_all_uk_transfers_to_sccs() -> BulkSwitchResult
+    - update_ropa_transfer_mechanisms() -> bool
+    - notify_data_subjects_of_change() -> NotificationResult
+    - notify_processors_of_scc_activation() -> NotificationResult
+    - notify_supervisory_authority() -> SANotificationResult
+
+    # Reporting
+    - generate_uk_readiness_report() -> ReadinessReport
+    - get_protocol_status() -> ProtocolStatus
+    - generate_post_transition_audit() -> AuditReport
+
+# Emergency Activation Logic
+def check_and_activate_uk_emergency():
+    """
+    MUST be called daily from December 1, 2025.
+
+    Auto-activates fallback if:
+    1. Date >= EMERGENCY_ACTIVATION_DATE (Dec 15, 2025)
+    2. No EU Commission decision published
+    3. AUTO_FALLBACK_ENABLED = True
+    """
+    manager = UKAdequacyEmergencyManager()
+
+    if date.today() >= EMERGENCY_ACTIVATION_DATE:
+        decision = manager.check_eu_commission_decision()
+
+        if decision.status == "not_published":
+            logger.critical("UK adequacy expiry imminent - activating emergency protocol")
+
+            # 1. Activate all pre-signed SCCs
+            result = manager.switch_all_uk_transfers_to_sccs()
+
+            # 2. Update ROPA with new transfer mechanisms
+            manager.update_ropa_transfer_mechanisms()
+
+            # 3. Notify data subjects (GDPR transparency)
+            manager.notify_data_subjects_of_change()
+
+            # 4. Notify processors
+            manager.notify_processors_of_scc_activation()
+
+            # 5. Log for accountability (Article 5(2))
+            logger.info(f"UK fallback executed: {result.processors_switched} processors switched to SCCs")
+
+            return FallbackExecutionResult(
+                success=result.all_successful,
+                processors_switched=result.processors_switched,
+                failures=result.failures
+            )
+
+        elif decision.status == "renewal_published":
+            logger.info("UK adequacy renewed - standing down emergency protocol")
+            return StandDownResult(reason="adequacy_renewed")
+
+    return CheckResult(days_until_activation=days_until(EMERGENCY_ACTIVATION_DATE))
+```
+
+**UK Emergency Readiness Checklist:**
+
+| Task | Status | Deadline | Owner |
+|------|--------|----------|-------|
+| Inventory all UK processors | ☐ Required | **NOW** | DPO |
+| Map all UK data flows | ☐ Required | **NOW** | Data Protection Team |
+| Draft SCCs for each UK processor | ☐ Required | **10 Dec 2025** | Legal |
+| Complete TIAs for UK transfers | ☐ Required | **12 Dec 2025** | DPO |
+| Identify supplementary measures | ☐ Required | **12 Dec 2025** | Security + Legal |
+| Sign SCCs with UK processors | ☐ Required | **14 Dec 2025** | Legal |
+| Prepare data subject notifications | ☐ Required | **14 Dec 2025** | Comms |
+| Test fallback mechanism | ☐ Required | **14 Dec 2025** | Engineering |
+| **ACTIVATE EMERGENCY PROTOCOL** | ☐ Trigger | **15 Dec 2025** | DPO |
+
+**If UK Adequacy is Renewed:**
+
+If the European Commission adopts a new adequacy decision before 27 December 2025:
+1. Stand down emergency protocol
+2. Retain signed SCCs as backup mechanism
+3. Document the contingency planning for accountability
+4. Update this section with new sunset date
 
 ### Alternative Transfer Mechanisms
 
@@ -4918,10 +6236,11 @@ Class RecitalIntegrator:
 | 1.4 | Dec 2024 | AI-Generated (Audit) | **Comprehensive audit and fixes**: Fixed Art. 22 classification for trading decisions, added missing Arts. 8, 10, 11, 23, 24, 27; corrected DORA-GDPR breach timeline (classification vs detection); added EPO to adequacy list; added UK contingency workflow (Art. 46 fallback); added AccountabilityFramework (Art. 24); added RestrictionsFramework (Art. 23); added AutoErasureScheduler for MiFID II expiry; expanded test specifications with edge cases; updated EDPB 2025 strategic priorities |
 | **1.5** | **Dec 2024** | **AI-Generated (Critical Audit)** | **Major updates based on critical audit**: (1) Added Article 29 (processing under authority) with full implementation; (2) Added Chapter VIII (Articles 77-84) - Remedies, Liability, Penalties with LiabilityFramework; (3) Added ePrivacy Directive integration with cookie/tracking compliance; (4) Added AMLD6 integration with KYC/AML data handling and SAR tipping-off prevention; (5) Enhanced DPO Interface with full Articles 37-39 implementation; (6) Split Phase 2b into 3 sub-phases for practical implementation; (7) Added 25+ new edge case tests including stress tests; (8) Updated EDPB references with 2025 guidelines; (9) Updated test count to 775-935 total tests |
 | **1.6** | **Dec 2025** | **AI-Generated (Comprehensive Audit)** | **Comprehensive audit addressing critical gaps**: (1) **Added Article 3 (Territorial Scope)** with TerritorialScopeAssessor, CrossBorderHandler, and One-Stop-Shop mechanism; (2) **Actualized UK adequacy status** - deadline imminent (27 Dec 2025), added emergency fallback procedure; (3) **Added DPA blacklists (Art. 35(4))** for mandatory DPIA triggers from IE, DE, FR, NL, ES; (4) **Added SCHUFA scenario** for Article 22 third-party score reliance per CJEU C-634/21; (5) **Added Member State derogations** with CHILD_CONSENT_AGES and per-country requirements; (6) **Added Recitals integration** mapping critical recitals to implementation; (7) **Enhanced Data Portability (Art. 20)** with direct transfer API endpoint and FIX/FpML formats; (8) **Enhanced Sub-processor registry** with audit cascade verification; (9) Added 30+ new edge case tests; (10) Updated article coverage to 56+ articles |
+| **1.7** | **Dec 2025** | **AI-Generated (Critical Audit v2)** | **Critical audit addressing blockers and gaps**: (1) **🚨 UK Adequacy Emergency Protocol** - added UKAdequacyEmergencyManager with pre-signed SCCs, TIA tracking, auto-fallback activation on 15 Dec 2025 deadline; (2) **Articles 40-43 (Certification)** - added CertificationFramework for codes of conduct and certification management; (3) **Article 88 (Employment)** - added EmploymentDataHandler with Member State derogations (DE, FR, NL, IE); (4) **Article 89 (Research Safeguards)** - added ResearchDataFramework with AI Act integration for ML training data; (5) **Article 22 Trading Scenarios** - extended with margin call, leverage, suspension, AML blocking scenarios; (6) **Cross-Regulation Extensions** - added PSD2, EMIR, MAR integration with conflict resolution; (7) **UnifiedConsentOrchestrator** - single source of truth for all consent states with atomic withdrawal; (8) **Stress Tests & Negative Tests** - added ~80-100 new tests for DSAR flood, multi-regulation conflict, UK cutover, etc.; (9) Updated article coverage to **52 articles (53% of 99)** with effective implementable coverage ~85%; (10) Updated total test count to ~1000+ tests |
 
 ---
 
-## Appendix A: GDPR Article Coverage Matrix (Updated v1.6)
+## Appendix A: GDPR Article Coverage Matrix (Updated v1.7)
 
 | Article | Description | Phase | Implementation Status |
 |---------|-------------|-------|----------------------|
@@ -4929,7 +6248,7 @@ Class RecitalIntegrator:
 | 4 | Definitions | 0 | `definitions.py` |
 | 5 | Processing Principles | 1 | `processing_principles.py` |
 | 6 | Lawful Basis | 1 | `legal_basis.py` |
-| 7 | Consent Conditions | 2a | `consent_manager.py` |
+| 7 | Consent Conditions | 2a | `consent_manager.py`, `unified_consent.py` **ENHANCED v1.7** |
 | **8** | **Child Consent** | 2a | `consent_manager.py`, `member_state_derogations.py` **ENHANCED v1.6** |
 | 9 | Special Categories | 1 | `special_categories.py` |
 | **10** | **Criminal Data** | 1 | `special_categories.py` |
@@ -4944,7 +6263,7 @@ Class RecitalIntegrator:
 | **19** | **Notification Obligation** | 2b.1 | `recipient_notification.py` |
 | 20 | Right to Portability | 2b.2 | `portability_manager.py` **ENHANCED v1.6** (API endpoint) |
 | 21 | Right to Object | 2b.2 | `objection_handler.py` |
-| 22 | Automated Decisions | **2b.3** | `automated_decisions.py` **ENHANCED v1.6** (SCHUFA scenario) |
+| 22 | Automated Decisions | **2b.3** | `automated_decisions.py` **ENHANCED v1.7** (Trading scenarios) |
 | **23** | **Restrictions** | 2b.1 | `restrictions.py` |
 | **24** | **Controller Accountability** | 3 | `accountability.py` |
 | 25 | Privacy by Design | 4 | `privacy_by_design.py` |
@@ -4962,16 +6281,42 @@ Class RecitalIntegrator:
 | **37** | **DPO Designation** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
 | **38** | **DPO Position** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
 | **39** | **DPO Tasks** | 6 | `dpo_interface.py` **ENHANCED v1.5** |
-| 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` **UPDATED v1.6** |
+| ***40*** | ***Codes of Conduct*** | 6 | `certification_framework.py` **NEW v1.7** |
+| ***41*** | ***Monitoring of Codes*** | 6 | `certification_framework.py` **NEW v1.7** |
+| ***42*** | ***Certification*** | 6 | `certification_framework.py` **NEW v1.7** |
+| ***43*** | ***Certification Bodies*** | 6 | `certification_framework.py` **NEW v1.7** |
+| 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` **ENHANCED v1.7** (Emergency Protocol) |
 | ~~**56**~~ | ~~**Lead SA (One-Stop-Shop)**~~ | 0 | `territorial_scope.py` **NEW v1.6** |
 | ***77*** | ***Right to Complaint*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***78-79*** | ***Judicial Remedies*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***82*** | ***Right to Compensation*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***83*** | ***Administrative Fines*** | 6 | `liability_framework.py` **NEW v1.5** |
 | ***84*** | ***Penalties*** | 6 | `liability_framework.py` **NEW v1.5** |
+| ***88*** | ***Employment Processing*** | 6 | `employment_data.py` **NEW v1.7** |
+| ***89*** | ***Research Safeguards*** | 6 | `research_data.py` **NEW v1.7** |
 
 > **Legend**:
 > - **Bold** = added in v1.4 audit
+> - ***Italic Bold*** = added in v1.5/v1.7 audit
+> - ~~Strikethrough~~ = previously missing, now covered
+
+**Article Coverage Summary (v1.7):**
+
+| Chapter | Total Articles | Covered | Coverage |
+|---------|---------------|---------|----------|
+| Chapter 1: General Provisions | 4 | 2 | 50% (Art. 1-2 definitional) |
+| Chapter 2: Principles | 7 | 7 | **100%** |
+| Chapter 3: Data Subject Rights | 12 | 12 | **100%** |
+| Chapter 4: Controller/Processor | 20 | 17 | 85% |
+| Chapter 5: International Transfers | 7 | 6 | 86% |
+| Chapter 6: Supervisory Authorities | 9 | 1 | 11% (operational) |
+| Chapter 7: Cooperation/Consistency | 17 | 0 | 0% (operational) |
+| Chapter 8: Remedies/Penalties | 8 | 5 | 63% |
+| **Chapter 9: Specific Situations** | **7** | **2** | **29% (NEW v1.7)** |
+| Chapter 10-11: Final Provisions | 8 | 0 | 0% (procedural) |
+| **TOTAL** | **99** | **52** | **53%** |
+
+> **Note**: Chapters 6, 7, 10-11 are primarily operational/procedural and typically not implemented in software. Effective coverage of implementable articles is ~85%.
 > - ***Bold Italic*** = added in v1.5 critical audit
 > - ~~**Strikethrough Bold**~~ = added in v1.6 comprehensive audit
 > - Total article coverage: **56+ articles** (increased from 50+)
