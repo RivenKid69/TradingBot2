@@ -72,8 +72,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "0.2.0"
-__dora_compliance_phase__ = 1  # Current implementation phase
+__version__ = "0.3.0"
+__dora_compliance_phase__ = 2  # Current implementation phase
 
 # =============================================================================
 # Phase 0 exports (Proportionality Assessment)
@@ -394,6 +394,168 @@ from services.dora.simplified_framework import (
 )
 
 # =============================================================================
+# Phase 2 exports (ICT Incident Management & Reporting - Articles 17-23)
+# =============================================================================
+
+# Article 17 - Incident Management
+from services.dora.incident_management import (
+    # Enums
+    ICTEventType,
+    IncidentPhase,
+    IncidentPriority as IncidentMgmtPriority,
+    IncidentStatus as IncidentMgmtStatus,
+    EscalationLevel as IncidentMgmtEscalationLevel,
+    EarlyWarningType,
+    # Data structures
+    ICTEvent,
+    DORAIncident,
+    EarlyWarningIndicator,
+    IncidentAction,
+    EscalationRule,
+    IncidentManagementConfig,
+    # Main class
+    DORAIncidentManagement,
+    # Factory functions
+    create_incident_management,
+)
+
+# Article 18 - Incident Classification
+from services.dora.incident_classification import (
+    # Enums
+    IncidentClassificationType,
+    ClientType,
+    DataType as ClassificationDataType,
+    CriticalServiceType,
+    MajorIncidentTrigger,
+    ReputationalImpactLevel,
+    # Data structures
+    ClassificationThresholds,
+    ClientImpactAssessment,
+    DurationAssessment,
+    GeographicAssessment,
+    DataLossAssessment,
+    CriticalServiceAssessment,
+    EconomicImpactAssessment,
+    ReputationalAssessment,
+    RecurringIncidentAssessment,
+    MaliciousAccessAssessment,
+    IncidentClassificationResult,
+    IncidentClassificationConfig,
+    # Main class
+    DORAIncidentClassification,
+    # Factory functions
+    create_incident_classification,
+)
+
+# Article 19 - Incident Reporting
+from services.dora.incident_reporting import (
+    # Enums
+    ReportType,
+    ReportStatus,
+    IncidentTypeCode,
+    RootCauseCategory,
+    CompetentAuthorityType,
+    # Data structures
+    CompetentAuthority as ReportingCompetentAuthority,
+    InitialNotificationReport,
+    IntermediateReport,
+    FinalReport,
+    ReportSubmission,
+    IncidentReportingConfig,
+    # Main class
+    DORAIncidentReporter,
+    # Factory functions
+    create_incident_reporter,
+)
+
+# Article 19(4) - Cyber Threat Notification
+from services.dora.cyber_threat_notification import (
+    # Enums
+    ThreatCategory,
+    ThreatSeverity,
+    ThreatStatus,
+    ThreatActorType,
+    ThreatSignificance,
+    NotificationStatus as ThreatNotificationStatus,
+    # Data structures
+    ThreatIndicator,
+    CyberThreat,
+    ThreatSignificanceAssessment,
+    ThreatNotification,
+    CyberThreatNotificationConfig,
+    # Main class
+    CyberThreatNotificationService,
+    # Factory functions
+    create_cyber_threat_notification_service,
+)
+
+# Article 20 - Reporting Templates
+from services.dora.reporting_templates import (
+    # Enums
+    IncidentTypeCode as TemplateIncidentTypeCode,
+    DataTypeCode,
+    ClientTypeCode,
+    ServiceTypeCode,
+    ResponseEffectivenessCode,
+    # Data structures
+    TimelineEvent,
+    ITSInitialNotificationTemplate,
+    ITSIntermediateReportTemplate,
+    ITSFinalReportTemplate,
+    # Main class
+    DORAReportingTemplates,
+    # Factory functions
+    create_reporting_templates,
+)
+
+# Article 22 - Supervisory Feedback
+from services.dora.supervisory_feedback import (
+    # Enums
+    FeedbackType,
+    FeedbackPriority,
+    FeedbackStatus,
+    CorrectiveActionType,
+    ResponseType,
+    # Data structures
+    CompetentAuthority as FeedbackCompetentAuthority,
+    SupervisoryFeedback,
+    CorrectiveAction,
+    FeedbackResponse,
+    FeedbackAuditEntry,
+    AnonymisedInsight,
+    # Main class
+    DORASupervisioryFeedback,
+    # Factory functions
+    create_supervisory_feedback,
+)
+
+# Article 23 - Third-Party Incidents
+from services.dora.third_party_incidents import (
+    # Enums
+    ThirdPartyProviderType,
+    ThirdPartyCriticality,
+    ThirdPartyIncidentType,
+    IncidentSeverity as ThirdPartyIncidentSeverity,
+    IncidentStatus as ThirdPartyIncidentStatus,
+    ContractualSLAStatus,
+    EscalationLevel as ThirdPartyEscalationLevel,
+    CommunicationChannel as ThirdPartyCommunicationChannel,
+    # Data structures
+    ThirdPartyProvider as ThirdPartyProviderRecord,
+    AffectedService,
+    SLAAssessment,
+    CommunicationRecord,
+    EscalationRecord,
+    MitigationAction,
+    ThirdPartyIncident,
+    PostIncidentReview as ThirdPartyPostIncidentReview,
+    # Main class
+    DORAThirdPartyIncidents,
+    # Factory functions
+    create_third_party_incidents,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -630,4 +792,124 @@ __all__ = [
     "ESSENTIAL_CONTROLS",
     "DORASimplifiedFramework",
     "create_dora_simplified_framework",
+
+    # =========================================================================
+    # Phase 2: ICT Incident Management & Reporting (Articles 17-23)
+    # =========================================================================
+
+    # Incident Management (Article 17)
+    "ICTEventType",
+    "IncidentPhase",
+    "IncidentMgmtPriority",
+    "IncidentMgmtStatus",
+    "IncidentMgmtEscalationLevel",
+    "EarlyWarningType",
+    "ICTEvent",
+    "DORAIncident",
+    "EarlyWarningIndicator",
+    "IncidentAction",
+    "EscalationRule",
+    "IncidentManagementConfig",
+    "DORAIncidentManagement",
+    "create_incident_management",
+
+    # Incident Classification (Article 18)
+    "IncidentClassificationType",
+    "ClientType",
+    "ClassificationDataType",
+    "CriticalServiceType",
+    "MajorIncidentTrigger",
+    "ReputationalImpactLevel",
+    "ClassificationThresholds",
+    "ClientImpactAssessment",
+    "DurationAssessment",
+    "GeographicAssessment",
+    "DataLossAssessment",
+    "CriticalServiceAssessment",
+    "EconomicImpactAssessment",
+    "ReputationalAssessment",
+    "RecurringIncidentAssessment",
+    "MaliciousAccessAssessment",
+    "IncidentClassificationResult",
+    "IncidentClassificationConfig",
+    "DORAIncidentClassification",
+    "create_incident_classification",
+
+    # Incident Reporting (Article 19)
+    "ReportType",
+    "ReportStatus",
+    "IncidentTypeCode",
+    "RootCauseCategory",
+    "CompetentAuthorityType",
+    "ReportingCompetentAuthority",
+    "InitialNotificationReport",
+    "IntermediateReport",
+    "FinalReport",
+    "ReportSubmission",
+    "IncidentReportingConfig",
+    "DORAIncidentReporter",
+    "create_incident_reporter",
+
+    # Cyber Threat Notification (Article 19(4))
+    "ThreatCategory",
+    "ThreatSeverity",
+    "ThreatStatus",
+    "ThreatActorType",
+    "ThreatSignificance",
+    "ThreatNotificationStatus",
+    "ThreatIndicator",
+    "CyberThreat",
+    "ThreatSignificanceAssessment",
+    "ThreatNotification",
+    "CyberThreatNotificationConfig",
+    "CyberThreatNotificationService",
+    "create_cyber_threat_notification_service",
+
+    # Reporting Templates (Article 20)
+    "TemplateIncidentTypeCode",
+    "DataTypeCode",
+    "ClientTypeCode",
+    "ServiceTypeCode",
+    "ResponseEffectivenessCode",
+    "TimelineEvent",
+    "ITSInitialNotificationTemplate",
+    "ITSIntermediateReportTemplate",
+    "ITSFinalReportTemplate",
+    "DORAReportingTemplates",
+    "create_reporting_templates",
+
+    # Supervisory Feedback (Article 22)
+    "FeedbackType",
+    "FeedbackPriority",
+    "FeedbackStatus",
+    "CorrectiveActionType",
+    "ResponseType",
+    "FeedbackCompetentAuthority",
+    "SupervisoryFeedback",
+    "CorrectiveAction",
+    "FeedbackResponse",
+    "FeedbackAuditEntry",
+    "AnonymisedInsight",
+    "DORASupervisioryFeedback",
+    "create_supervisory_feedback",
+
+    # Third-Party Incidents (Article 23)
+    "ThirdPartyProviderType",
+    "ThirdPartyCriticality",
+    "ThirdPartyIncidentType",
+    "ThirdPartyIncidentSeverity",
+    "ThirdPartyIncidentStatus",
+    "ContractualSLAStatus",
+    "ThirdPartyEscalationLevel",
+    "ThirdPartyCommunicationChannel",
+    "ThirdPartyProviderRecord",
+    "AffectedService",
+    "SLAAssessment",
+    "CommunicationRecord",
+    "EscalationRecord",
+    "MitigationAction",
+    "ThirdPartyIncident",
+    "ThirdPartyPostIncidentReview",
+    "DORAThirdPartyIncidents",
+    "create_third_party_incidents",
 ]

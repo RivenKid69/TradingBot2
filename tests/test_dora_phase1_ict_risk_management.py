@@ -1052,8 +1052,8 @@ class TestPhase1Integration:
             DORAICTBusinessContinuity,
             DORASimplifiedFramework,
         )
-        assert __version__ == "0.2.0"
-        assert __dora_compliance_phase__ == 1
+        assert __version__ == "0.3.0"
+        assert __dora_compliance_phase__ == 2
 
     def test_factory_functions_work(self):
         """Test all factory functions create valid instances."""
