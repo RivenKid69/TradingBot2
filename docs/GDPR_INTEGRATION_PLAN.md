@@ -23,27 +23,42 @@ The platform processes:
 
 ### Key GDPR Articles to Implement
 
-| Article | Description | Priority |
-|---------|-------------|----------|
-| **4** | Definitions (controller, processor, personal data) | Critical |
-| **5-6** | Processing Principles & Lawful Basis | Critical |
-| **7** | Consent Management | High |
-| **9** | Special Categories of Personal Data | Critical |
-| **12-14** | Transparency & Information Notices | Critical |
-| **15-22** | Data Subject Rights (DSAR) | Critical |
-| **22** | Automated Decision-Making & Profiling | Critical |
-| **23** | Restrictions (financial services exemptions) | Medium |
-| **25** | Privacy by Design & Default | High |
-| **26** | Joint Controllers | Medium |
-| **28-29** | Processor & Sub-processor Requirements | Critical |
-| **30** | Records of Processing Activities (ROPA) | Critical |
-| **31** | Cooperation with Supervisory Authority | Medium |
-| **32** | Security of Processing | High |
-| **33-34** | Data Breach Notification | Critical |
-| **35-36** | DPIA & Prior Consultation | High |
-| **37-39** | Data Protection Officer | Medium |
-| **44-49** | International Data Transfers | High |
-| **77-84** | Remedies, Liability & Penalties | Medium |
+| Article | Description | Priority | Notes |
+|---------|-------------|----------|-------|
+| **4** | Definitions (controller, processor, personal data) | Critical | Foundation for all processing |
+| **5-6** | Processing Principles & Lawful Basis | Critical | Core compliance |
+| **7** | Consent Management | High | Where consent is lawful basis |
+| **8** | Child's consent (information society services) | Low | Platform is 18+ only; verify at signup |
+| **9** | Special Categories of Personal Data | Critical | Biometric 2FA considerations |
+| **10** | Criminal convictions data | Low | Not applicable to trading platform |
+| **11** | Processing not requiring identification | Medium | **NEW** - For pseudonymized data handling |
+| **12-14** | Transparency & Information Notices | Critical | Layered privacy notices |
+| **15-22** | Data Subject Rights (DSAR) | Critical | Full rights implementation |
+| **22** | Automated Decision-Making & Profiling | Critical | See detailed classification above |
+| **23** | Restrictions (financial services exemptions) | **High** | **CRITICAL** - MiFID II legal basis |
+| **24** | Responsibility of the controller | **High** | **NEW** - Accountability framework |
+| **25** | Privacy by Design & Default | High | Technical & organizational measures |
+| **26** | Joint Controllers | Medium | If applicable |
+| **27** | Representatives of non-EU controllers | Low | EU incorporated - N/A |
+| **28-29** | Processor & Sub-processor Requirements | Critical | Exchange APIs, cloud providers |
+| **30** | Records of Processing Activities (ROPA) | Critical | Mandatory documentation |
+| **31** | Cooperation with Supervisory Authority | Medium | SA interaction protocols |
+| **32** | Security of Processing | High | Aligns with DORA ICT security |
+| **33-34** | Data Breach Notification | Critical | 72h SA, high-risk DS notification |
+| **35-36** | DPIA & Prior Consultation | High | Algo trading requires DPIA |
+| **37-39** | Data Protection Officer | Medium | DPO tools and interface |
+| **40-43** | Codes of conduct & Certification | Low | Future roadmap |
+| **44-49** | International Data Transfers | High | SCCs, adequacy, TIAs |
+| **77-84** | Remedies, Liability & Penalties | Medium | Liability framework |
+
+**Articles Explicitly Not Implemented (with justification):**
+
+| Article | Reason | Risk |
+|---------|--------|------|
+| Art. 8 | Platform restricted to 18+; age verification at signup | Low - document in ROPA |
+| Art. 10 | No criminal conviction data processed | None |
+| Art. 27 | Company EU incorporated | None |
+| Art. 40-43 | No certification sought currently | Low - future enhancement |
 
 ---
 
@@ -68,6 +83,8 @@ services/
     legal_basis.py                 # Article 6 lawful basis management
     processing_principles.py       # Article 5 principles enforcement
     special_categories.py          # Article 9 special category handling
+    accountability.py              # Article 24 controller responsibility (NEW)
+    restrictions.py                # Article 23 restrictions framework (NEW)
 
     # Phase 2a: Consent & Transparency
     consent_manager.py             # Article 7 consent management
@@ -82,6 +99,7 @@ services/
     automated_decisions.py         # Article 22 automated decision-making
     restriction_manager.py         # Article 18 restriction of processing
     objection_handler.py           # Article 21 right to object
+    no_identification_handler.py   # Article 11 pseudonymized data (NEW)
 
     # Phase 3: ROPA & Documentation
     ropa.py                        # Records of Processing Activities
@@ -94,6 +112,7 @@ services/
     data_minimization.py           # Data minimization enforcement
     pseudonymization.py            # Pseudonymization utilities
     retention_manager.py           # Data retention policies (GDPR-MiFID aligned)
+    auto_erasure_scheduler.py      # Automatic erasure after retention (NEW)
 
     # Phase 5: Breach Management
     breach_detection.py            # Breach detection mechanisms
@@ -106,6 +125,7 @@ services/
     prior_consultation.py          # Article 36 prior consultation
     dpo_interface.py               # DPO tools and interface
     international_transfers.py     # Articles 44-49 transfers
+    uk_adequacy_contingency.py     # UK adequacy sunset handling (NEW)
     compliance_dashboard.py        # GDPR compliance overview
     liability_framework.py         # Articles 77-84 remedies & liability
 
@@ -572,6 +592,187 @@ Platform-specific special category considerations:
 
 **Important**: For algorithmic trading platforms, special category data should be **avoided by design**. If unavoidable, explicit consent and DPIA are mandatory.
 
+#### 1.2.4 AccountabilityFramework (accountability.py) - NEW
+
+**Article 24 - Responsibility of the Controller**
+
+Per [GDPR Article 24](https://gdpr-info.eu/art-24-gdpr/), the controller must implement appropriate technical and organizational measures to ensure and demonstrate compliance.
+
+```
+Dataclass ComplianceEvidence:
+    evidence_id: str
+    article_reference: str
+    measure_type: str  # "technical", "organizational", "policy"
+    measure_description: str
+    implementation_date: datetime
+    last_review_date: datetime
+    next_review_date: datetime
+    responsible_party: str
+    evidence_documentation: List[str]  # Links to policies, configs, logs
+    effectiveness_assessment: str
+
+Dataclass PolicyRecord:
+    policy_id: str
+    policy_name: str
+    policy_type: str  # "data_protection", "security", "retention", "breach"
+    version: str
+    effective_date: datetime
+    review_schedule_months: int
+    owner: str
+    approved_by: str
+    document_url: str
+
+Class AccountabilityFramework:
+    """
+    Article 24 compliance - demonstrate processing compliance.
+
+    Implements the 'accountability principle' from Article 5(2):
+    'The controller shall be responsible for, and be able to
+    demonstrate compliance with, paragraph 1 ('accountability').'
+    """
+
+    # Evidence management
+    - register_compliance_measure(measure: ComplianceEvidence) -> str
+    - update_measure_effectiveness(evidence_id: str, assessment: str)
+    - schedule_measure_review(evidence_id: str, review_date: datetime)
+    - get_evidence_for_article(article: str) -> List[ComplianceEvidence]
+
+    # Policy management
+    - register_policy(policy: PolicyRecord) -> str
+    - review_policy(policy_id: str, reviewer: str, outcome: str)
+    - get_policies_due_for_review() -> List[PolicyRecord]
+
+    # Demonstration of compliance
+    - generate_accountability_report() -> AccountabilityReport
+    - prepare_for_audit(scope: List[str]) -> AuditPackage
+    - demonstrate_article_5_compliance() -> ComplianceStatement
+
+    # Technical measures verification
+    - verify_technical_measures() -> TechnicalMeasureAudit
+    - verify_organizational_measures() -> OrgMeasureAudit
+```
+
+**Platform-Specific Accountability Measures:**
+
+| Article | Measure Type | Evidence | Review Frequency |
+|---------|--------------|----------|------------------|
+| Art. 5 | Policy | Processing principles policy | Annual |
+| Art. 6 | Technical | Legal basis documentation in code | Per feature |
+| Art. 7 | Technical | Consent management system logs | Continuous |
+| Art. 25 | Technical | Privacy by design checklist | Per release |
+| Art. 30 | Documentation | ROPA exports | Quarterly |
+| Art. 32 | Technical + Policy | Security controls + policies | Annual |
+
+#### 1.2.5 RestrictionsFramework (restrictions.py) - NEW
+
+**Article 23 - Restrictions**
+
+Per [GDPR Article 23](https://gdpr-info.eu/art-23-gdpr/), EU or Member State law may restrict data subject rights and controller obligations for important objectives including financial interests and regulatory compliance.
+
+```
+Enum RestrictionType:
+    NATIONAL_SECURITY = "national_security"          # Art. 23(1)(a)
+    DEFENCE = "defence"                              # Art. 23(1)(b)
+    PUBLIC_SECURITY = "public_security"              # Art. 23(1)(c)
+    CRIMINAL_PREVENTION = "criminal_prevention"      # Art. 23(1)(d)
+    PUBLIC_INTEREST = "public_interest"              # Art. 23(1)(e)
+    JUDICIAL_PROTECTION = "judicial_protection"      # Art. 23(1)(f)
+    REGULATORY_ENFORCEMENT = "regulatory_enforcement" # Art. 23(1)(h)
+    RIGHTS_PROTECTION = "rights_protection"          # Art. 23(1)(i)
+    CIVIL_CLAIMS = "civil_claims"                    # Art. 23(1)(j)
+
+Dataclass LegalRestriction:
+    restriction_id: str
+    legal_basis: str  # e.g., "MiFID II Article 16", "MAR Article 11"
+    restriction_type: RestrictionType
+    articles_restricted: List[str]  # e.g., ["Art. 15", "Art. 17"]
+    scope_of_restriction: str
+    duration: Optional[str]  # e.g., "7 years retention period"
+    documentation: str
+
+Dataclass RestrictionApplication:
+    application_id: str
+    restriction_id: str
+    data_subject_id: str
+    request_type: str  # "erasure", "access", etc.
+    request_date: datetime
+    restriction_applied: bool
+    justification: str
+    notified_data_subject: bool
+    notification_content: str
+    review_date: Optional[datetime]  # When restriction expires
+
+Class RestrictionsFramework:
+    """
+    Article 23 - Manage legal restrictions on GDPR rights.
+
+    Critical for financial services where MiFID II, MAR, and other
+    regulations require retention that restricts GDPR erasure rights.
+    """
+
+    # Restriction registry
+    - register_legal_restriction(restriction: LegalRestriction) -> str
+    - get_applicable_restrictions(request_type: str, context: Dict) -> List[LegalRestriction]
+
+    # Application
+    - apply_restriction(
+          data_subject_id: str,
+          request_type: str,
+          restriction: LegalRestriction
+      ) -> RestrictionApplication
+
+    # Notification (Art. 23(2)(h) - inform data subject of restriction)
+    - notify_restriction(application_id: str) -> NotificationResult
+
+    # Review and expiry
+    - schedule_restriction_expiry(application_id: str, expiry: datetime)
+    - process_expired_restrictions() -> List[str]  # Returns released request IDs
+```
+
+**Financial Services Restrictions (Pre-Configured):**
+
+| Regulation | Restricts | Duration | GDPR Articles Affected |
+|------------|-----------|----------|----------------------|
+| MiFID II Art. 16(7) | Erasure of transaction records | 5-7 years | Art. 17 (erasure) |
+| MiFIR Art. 25 | Erasure of trading data | 5 years | Art. 17 (erasure) |
+| MAR Art. 11 | Access during investigation | Variable | Art. 15 (access) |
+| MAD Art. 16 | Deletion of suspicious activity reports | 5 years | Art. 17 (erasure) |
+| AMLD Art. 40 | AML records | 5 years | Art. 17 (erasure) |
+
+**Integration with Erasure Manager:**
+
+```python
+# In erasure_manager.py
+class ErasureManager:
+    def process_erasure_request(self, request: ErasureRequest) -> ErasureDecision:
+        # Check for applicable restrictions
+        restrictions = self.restrictions_framework.get_applicable_restrictions(
+            request_type="erasure",
+            context={"data_categories": request.data_categories}
+        )
+
+        if restrictions:
+            # Apply restriction, schedule future erasure
+            for restriction in restrictions:
+                self.restrictions_framework.apply_restriction(
+                    data_subject_id=request.data_subject_id,
+                    request_type="erasure",
+                    restriction=restriction
+                )
+
+            # Calculate when ALL restrictions expire
+            latest_expiry = max(r.duration for r in restrictions)
+
+            return ErasureDecision(
+                action="RESTRICTED",
+                reason=f"Legal obligation: {restrictions[0].legal_basis}",
+                article_23_applied=True,
+                scheduled_erasure_date=latest_expiry,
+                pseudonymize_now=True,  # GDPR minimization still applies!
+                data_subject_notified=True
+            )
+```
+
 ### 1.3 Implementation Requirements
 
 1. **Integration with existing audit system**
@@ -935,7 +1136,13 @@ Key features:
 
 **Article 22 - CRITICAL FOR ALGORITHMIC TRADING PLATFORMS**
 
-This is mandatory for any platform making automated trading decisions that affect users:
+> ⚠️ **IMPORTANT LEGAL CLARIFICATION**: Article 22 does NOT apply to ALL automated trading decisions.
+> Per [EDPB Guidelines on Automated Decision-Making](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/automated-decision-making-and-profiling_en),
+> Article 22(1) only applies when a decision is:
+> 1. **Solely based on automated processing** (no meaningful human involvement), AND
+> 2. **Produces legal effects** concerning the data subject OR **similarly significantly affects** them
+
+**Article 22 Applicability for Trading Platform:**
 
 ```
 Enum DecisionType:
@@ -1061,16 +1268,32 @@ Class AutomatedDecisionManager:
     - generate_article_22_compliance_report() -> Report
 ```
 
-**Platform-Specific Article 22 Considerations:**
+**Platform-Specific Article 22 Classification:**
 
-| Processing Activity | Decision Type | Article 22 Applies | Safeguards Required |
-|--------------------|---------------|-------------------|---------------------|
-| Automated Trade Execution | Fully Automated | **YES** if affects user financially | Human intervention, explanation |
-| Risk Score Calculation | Profiling | Yes if affects limits/access | Explanation, right to contest |
-| Position Sizing | Fully Automated | **YES** | Full Article 22(3) safeguards |
-| Stop-Loss Triggers | Fully Automated | **YES** | Real-time intervention option |
-| Account Approval/Denial | Fully Automated | **YES** (legal effect) | Human review mandatory |
-| Strategy Recommendations | Recommendation | No (human decides) | Transparency only |
+```
+Enum Article22Applicability:
+    NOT_APPLICABLE = "not_applicable"     # User-initiated, no significant effect
+    REQUIRES_ANALYSIS = "requires_analysis"  # Case-by-case assessment needed
+    APPLICABLE = "applicable"             # Full Article 22 safeguards required
+```
+
+| Processing Activity | Decision Type | Article 22 Applies | Rationale | Safeguards Required |
+|--------------------|---------------|-------------------|-----------|---------------------|
+| **User-Initiated Order Execution** | Fully Automated | **NO** | User made the decision; platform only executes | Transparency only |
+| **User-Configured Stop-Loss** | Fully Automated | **NO** | User set parameters; platform follows instructions | Transparency only |
+| **Market Data Display/Analysis** | N/A | **NO** | No decision about user | None |
+| **Algorithmic Strategy Execution** (user-selected) | Fully Automated | **REQUIRES ANALYSIS** | Depends on user control level | Case-by-case |
+| **Risk Score → Access Denial** | Profiling + Decision | **YES** | Significantly affects access to services | Full Art. 22(3) safeguards |
+| **Risk Score → Limit Reduction** | Profiling + Decision | **YES** | Significantly affects financial capacity | Full Art. 22(3) safeguards |
+| **Forced Liquidation (Margin Call)** | Fully Automated | **YES** | Significant financial effect without user consent | Full Art. 22(3) safeguards |
+| **Account Approval/Denial** | Fully Automated | **YES** | Legal effect (contract denial) | Human review mandatory |
+| **Auto-Termination of Strategy** | Fully Automated | **YES** if significant loss | May significantly affect financially | Case-by-case |
+| **Strategy Recommendations** | Recommendation | **NO** | Human makes final decision | Transparency only |
+| **Position Sizing** (user-configured params) | Fully Automated | **NO** | User defined parameters | Transparency only |
+| **Position Sizing** (platform-determined) | Fully Automated | **YES** | Platform decides without user input | Full Art. 22(3) safeguards |
+
+> **Key Principle**: If the user initiated and parameterized the action, Article 22 generally does NOT apply.
+> If the platform autonomously makes a decision that significantly affects the user without their specific instruction, Article 22 DOES apply.
 
 **CRITICAL Implementation Notes:**
 
@@ -1515,6 +1738,54 @@ Integration with:
 - `services/compliance/retention_policy.py` (MiFID II)
 - Storage limitation principle enforcement
 
+#### 4.2.5 AutoErasureScheduler (auto_erasure_scheduler.py)
+
+> **Article 17 Compliance**: Automatic erasure trigger mechanism after MiFID II retention periods expire.
+
+```
+Enum ErasureTrigger:
+    MIFID_EXPIRY = "mifid_expiry"           # 5-7 year retention ended
+    CONSENT_WITHDRAWAL = "consent_withdrawal" # User withdrew consent
+    PURPOSE_FULFILLED = "purpose_fulfilled"   # Processing purpose completed
+    MANUAL_REQUEST = "manual_request"         # Article 17 erasure request
+
+Dataclass ScheduledErasure:
+    erasure_id: str              # UUID
+    data_subject_id: str         # Pseudonymized subject ID
+    data_categories: List[str]   # Categories to erase
+    trigger: ErasureTrigger      # What triggered erasure
+    original_retention_end: datetime  # When retention period ended
+    scheduled_erasure_date: datetime  # When erasure will execute
+    grace_period_days: int = 30  # Buffer for legal holds
+    legal_hold_active: bool = False  # Pause if litigation pending
+    status: str = "pending"      # pending/executing/completed/blocked
+
+Class AutoErasureScheduler:
+    - schedule_post_retention_erasure(data_id: str, retention_end: datetime) -> ScheduledErasure
+    - check_legal_holds(erasure_id: str) -> bool
+    - execute_scheduled_erasure(erasure_id: str) -> ErasureResult
+    - apply_grace_period(erasure_id: str, reason: str) -> ScheduledErasure
+    - get_pending_erasures() -> List[ScheduledErasure]
+    - integrate_with_restrictions(erasure_id: str, restriction: LegalRestriction) -> bool
+```
+
+**MiFID II → GDPR Transition Logic:**
+```
+T+0         Data collected (trading record created)
+T+5y        MiFID II minimum retention reached
+T+5y+30d    Grace period for audit/legal holds
+T+5y+31d    AUTO-ERASURE TRIGGERED (if no holds)
+            ├─ Check RestrictionsFramework for Art. 23 blocks
+            ├─ Verify no pending litigation
+            ├─ Execute pseudonymized deletion
+            └─ Log erasure for accountability (Art. 24)
+```
+
+Integration with:
+- `RestrictionsFramework` for Article 23 legal holds
+- `AccountabilityFramework` for erasure evidence logging
+- `services/compliance/retention_policy.py` for retention period tracking
+
 ### 4.3 Platform-Specific Privacy Controls
 
 | System Component | Privacy Controls | Implementation |
@@ -1562,13 +1833,25 @@ test_gdpr_phase4_privacy_engineering.py:
 │   ├── test_retention_extension
 │   ├── test_mifid_retention_override
 │   └── test_compliance_check
+├── test_auto_erasure/
+│   ├── test_mifid_expiry_trigger
+│   ├── test_grace_period_application
+│   ├── test_legal_hold_blocks_erasure
+│   ├── test_restrictions_framework_integration
+│   └── test_accountability_logging
+├── test_edge_cases/
+│   ├── test_erasure_during_active_investigation
+│   ├── test_concurrent_retention_extension_and_erasure
+│   ├── test_mifid_7year_vs_5year_retention_conflict
+│   ├── test_partial_erasure_with_linked_records
+│   └── test_erasure_request_during_grace_period
 └── test_integration/
     ├── test_pii_detection_integration
     ├── test_secure_logging_integration
     └── test_mifid_retention_integration
 ```
 
-**Expected test count**: ~100-120 tests
+**Expected test count**: ~120-140 tests
 
 ---
 
@@ -1826,13 +2109,21 @@ test_gdpr_phase5_breach_management.py:
 │   ├── test_dpo_escalation
 │   ├── test_post_incident_review
 │   └── test_lessons_learned_integration
+├── test_edge_cases/
+│   ├── test_dora_classification_before_gdpr_72h
+│   ├── test_classification_delayed_past_detection_24h
+│   ├── test_dual_trigger_earliest_deadline
+│   ├── test_nis2_ai_act_concurrent_notifications
+│   ├── test_breach_without_personal_data_dora_only
+│   ├── test_personal_data_breach_without_ict_gdpr_only
+│   └── test_cross_border_breach_multi_sa_notification
 └── test_integration/
     ├── test_dora_incident_mapping
     ├── test_dora_reporting_alignment
     └── test_unified_incident_dashboard
 ```
 
-**Expected test count**: ~100-120 tests
+**Expected test count**: ~120-140 tests
 
 ---
 
@@ -2015,11 +2306,100 @@ Class InternationalTransferManager:
     - generate_transfer_map() -> TransferMap
 ```
 
-Adequacy decisions list (as of 2024):
-- Andorra, Argentina, Canada (commercial), Faroe Islands
+#### 6.2.4 UKAdequacyContingency (uk_adequacy_contingency.py) - NEW
+
+**Critical: UK Adequacy Sunset Handling**
+
+Per [European Commission announcement (July 2025)](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en), the UK adequacy decision expires **27 December 2025**. This module provides automated contingency management.
+
+```
+Dataclass UKContingencyStatus:
+    adequacy_expiry_date: datetime = datetime(2025, 12, 27)
+    preparation_start_date: datetime = datetime(2025, 9, 1)  # Q3 2025
+    current_status: str  # "monitoring", "preparing", "contingency_active"
+    new_adequacy_adopted: Optional[bool]
+    last_ec_communication_date: Optional[datetime]
+
+Dataclass UKProcessor:
+    processor_id: str
+    processor_name: str
+    services_provided: List[str]
+    data_categories_transferred: List[str]
+    current_mechanism: str  # "adequacy"
+    scc_prepared: bool
+    scc_document_id: Optional[str]
+    tia_completed: bool
+    tia_document_id: Optional[str]
+    contingency_ready: bool
+
+Dataclass UKContingencyPlan:
+    plan_id: str
+    created_at: datetime
+    uk_processors: List[UKProcessor]
+    total_data_subjects_affected: int
+    sccs_required: int
+    sccs_prepared: int
+    tias_required: int
+    tias_completed: int
+    data_subject_notification_required: bool
+    notification_template_id: Optional[str]
+    go_live_date: datetime  # When to switch mechanisms
+
+Class UKAdequacyContingency:
+    """
+    Manages UK adequacy decision sunset and contingency planning.
+
+    Timeline:
+    - Q3 2025: Begin preparation (SCCs, TIAs)
+    - Q4 2025: Complete all preparations, test mechanisms
+    - 27 Dec 2025: If no new adequacy, activate contingency
+    """
+
+    SUNSET_DATE = datetime(2025, 12, 27)
+    PREPARATION_START = datetime(2025, 9, 1)
+    FINAL_PREPARATION = datetime(2025, 11, 1)
+
+    # Status monitoring
+    - check_ec_announcements() -> ECAnnouncementStatus
+    - get_contingency_status() -> UKContingencyStatus
+    - should_start_preparation() -> bool
+
+    # Processor management
+    - identify_uk_processors() -> List[UKProcessor]
+    - prepare_sccs_for_processor(processor_id: str) -> SCCDocument
+    - conduct_uk_tia(processor_id: str) -> TransferImpactAssessment
+
+    # Contingency activation
+    - generate_contingency_plan() -> UKContingencyPlan
+    - validate_contingency_readiness() -> ReadinessReport
+    - activate_contingency() -> ActivationResult
+
+    # Data subject notification (if mechanism changes)
+    - prepare_ds_notification() -> NotificationTemplate
+    - notify_affected_data_subjects() -> NotificationResult
+
+    # Reporting
+    - get_uk_transfer_summary() -> UKTransferSummary
+    - generate_dpo_briefing() -> DPOBriefing
+```
+
+**Automated Alerts:**
+
+| Trigger | Alert | Action Required |
+|---------|-------|-----------------|
+| Q3 2025 begins | "UK contingency preparation required" | Start SCC/TIA preparation |
+| 60 days before sunset | "UK adequacy expiring soon" | Verify all preparations complete |
+| 30 days before sunset | "Final UK preparation check" | Test mechanism switch |
+| EC new adequacy adopted | "UK adequacy renewed" | Cancel contingency |
+| Sunset with no adequacy | "UK contingency activated" | Switch to SCCs |
+
+Adequacy decisions list (as of December 2024):
+- Andorra, Argentina, Canada (PIPEDA commercial orgs), Faroe Islands
 - Guernsey, Israel, Isle of Man, Japan, Jersey
-- New Zealand, Republic of Korea, Switzerland, UK, Uruguay
-- EU-US Data Privacy Framework
+- New Zealand, Republic of Korea, Switzerland, Uruguay
+- **United Kingdom** (⚠️ SUNSET: 27 Dec 2025 - see contingency below)
+- **EU-US Data Privacy Framework** (DPF participants only)
+- **European Patent Organisation (EPO)** - NEW in 2024
 
 #### 6.2.4 ComplianceDashboard (compliance_dashboard.py)
 
@@ -2099,6 +2479,20 @@ test_gdpr_phase6_dpia_governance.py:
 │   ├── test_transfer_suspension
 │   ├── test_transfer_map_generation
 │   └── test_eu_us_dpf_handling
+├── test_uk_adequacy_contingency/
+│   ├── test_sunset_date_monitoring
+│   ├── test_auto_fallback_to_scc
+│   ├── test_uk_processor_inventory
+│   ├── test_pre_deadline_alert_90_days
+│   ├── test_contingency_plan_activation
+│   ├── test_extension_scenario_handling
+│   └── test_manual_override_mechanism
+├── test_edge_cases/
+│   ├── test_adequacy_revocation_mid_transfer
+│   ├── test_dual_legal_basis_transfers
+│   ├── test_onward_transfer_chain_validation
+│   ├── test_third_country_government_access_risk
+│   └── test_bcr_vs_scc_selection_criteria
 ├── test_compliance_dashboard/
 │   ├── test_status_calculation
 │   ├── test_gap_identification
@@ -2113,7 +2507,7 @@ test_gdpr_phase6_dpia_governance.py:
     └── test_unified_compliance_view
 ```
 
-**Expected test count**: ~90-110 tests
+**Expected test count**: ~115-135 tests
 
 ---
 
@@ -2176,14 +2570,50 @@ class MiFIDGDPRRetentionResolver:
 | Incident logging | Incident register | Unified `IncidentRegistry` with both GDPR and DORA fields. |
 
 **Breach Timeline Coordination:**
+
+> ⚠️ **IMPORTANT**: DORA deadlines are triggered by **classification as major incident**, not by detection.
+> Per [Commission Delegated Regulation (EU) 2024/1772](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32024R1772),
+> DORA Article 19 requires initial notification within 4 hours of **classification** or 24 hours of **detection**, whichever is earlier.
+
 ```
-T+0    Breach detected
-T+4h   DORA initial notification (if major ICT incident)
-T+24h  Internal GDPR assessment completed
-T+72h  GDPR supervisory authority notification
-       DORA intermediate report (same submission if data breach)
-T+30d  DORA final report + GDPR follow-up if required
+Breach/Incident Timeline (Corrected):
+──────────────────────────────────────────────────────────────────
+
+T+0         Breach/Incident DETECTED
+            ├─ Start GDPR 72h clock
+            ├─ Start internal assessment
+            └─ Log in unified incident registry
+
+T+Xh        Incident CLASSIFIED as major (DORA assessment)
+            ├─ If X ≤ 20h: DORA deadline = T+24h (from detection)
+            └─ If X > 20h: DORA deadline = classification + 4h
+
+T+4h from   DORA Initial Notification (if major ICT incident)
+classification ├─ OR T+24h from detection (whichever is EARLIER)
+            ├─ If breach involves personal data: flag for GDPR
+            └─ Required: incident_id, classification, services_affected
+
+T+24h       Internal GDPR Assessment COMPLETED
+            ├─ Determine if personal data breach
+            ├─ Assess risk to data subjects
+            └─ Decision: notify SA? notify data subjects?
+
+T+72h       GDPR Supervisory Authority Notification (if required)
+            ├─ Per Article 33(1): "without undue delay and, where feasible,
+            │   not later than 72 hours after having become aware"
+            ├─ Document any delay reasons per Art. 33(1)
+            └─ DORA intermediate report (can be combined if data breach)
+
+T+30d       Final Reports
+            ├─ DORA final report (Article 19)
+            ├─ GDPR follow-up to SA if additional info available
+            └─ Post-incident review
 ```
+
+**Critical Distinction:**
+- **GDPR 72h** starts from **becoming aware** of breach (detection)
+- **DORA 4h** starts from **classification** as major incident (or 24h from detection)
+- For incidents involving personal data: BOTH timelines run concurrently
 
 ### GDPR ↔ EU AI Act
 
@@ -2394,10 +2824,28 @@ TIA Components:
 | [Right of Access CEF Report](https://www.edpb.europa.eu/our-work-tools/our-documents/report/coordinated-enforcement-action-right-access_en) | Jan 2025 | DSAR implementation best practices |
 | [Guidelines on Data Breach Notification](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-92022-personal-data-breach-notification_en) | 2023 (v2.0) | Breach assessment and notification |
 | [EDPB Work Programme 2024-2025](https://www.edpb.europa.eu/system/files/2024-10/edpb_work_programme_2024-2025_en.pdf) | Oct 2024 | Strategic priorities |
+| [Guidelines on Pseudonymisation](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-012025-pseudonymisation_en) | 2025 | Privacy engineering techniques |
+
+**2025 EDPB Strategic Priorities:**
+
+| Priority Area | Deadline | Action Required |
+|--------------|----------|-----------------|
+| **Right to Erasure (CEF 2025)** | H1 2025 | Coordinated enforcement - audit erasure workflows |
+| **AI Act Alignment** | Aug 2025 | GDPR-AI Act interplay for high-risk AI systems |
+| **Cross-Border Processing** | Ongoing | One-stop-shop mechanism compliance |
+| **International Transfers** | Dec 2025 | UK adequacy review, EPO implementation |
 
 **2025 Coordinated Enforcement Focus**: Right to Erasure (Article 17)
 - Expect increased scrutiny on erasure request handling
 - Prioritize robust erasure workflows and documentation
+- Implement AutoErasureScheduler for MiFID II retention expiry
+- Document all erasure refusals with legal basis (Art. 17(3))
+
+**Financial Services Specific Focus (2025):**
+- Algorithmic trading DPIA requirements
+- Cross-regulation reporting (DORA-GDPR-MiFID II)
+- High-frequency trading data minimization
+- Client profiling transparency obligations
 
 ### Implementation Guides
 - [GDPR Compliance Checklist - Bitsight](https://www.bitsight.com/learn/gdpr-compliance-checklist)
@@ -2420,6 +2868,7 @@ TIA Components:
 | 1.1 | Dec 2024 | AI-Generated | Added Phase 0 (Art. 4, 28, 26), Art. 9 Special Categories, Art. 22 for algo trading |
 | 1.2 | Dec 2024 | AI-Generated | Split Phase 2 into 2a/2b, fixed MiFID II interpretation, added EDPB 2024-2025 guidelines |
 | 1.3 | Dec 2024 | AI-Generated | Added adequacy decisions 2024-2025, UK sunset warning, cross-regulation alignment |
+| 1.4 | Dec 2024 | AI-Generated (Audit) | **Comprehensive audit and fixes**: Fixed Art. 22 classification for trading decisions, added missing Arts. 8, 10, 11, 23, 24, 27; corrected DORA-GDPR breach timeline (classification vs detection); added EPO to adequacy list; added UK contingency workflow (Art. 46 fallback); added AccountabilityFramework (Art. 24); added RestrictionsFramework (Art. 23); added AutoErasureScheduler for MiFID II expiry; expanded test specifications with edge cases; updated EDPB 2025 strategic priorities |
 
 ---
 
@@ -2431,20 +2880,26 @@ TIA Components:
 | 5 | Processing Principles | 1 | `processing_principles.py` |
 | 6 | Lawful Basis | 1 | `legal_basis.py` |
 | 7 | Consent Conditions | 2a | `consent_manager.py` |
+| **8** | **Child Consent** | 2a | `consent_manager.py` |
 | 9 | Special Categories | 1 | `special_categories.py` |
+| **10** | **Criminal Data** | 1 | `special_categories.py` |
+| **11** | **No Identification Required** | 2b | `no_identification_handler.py` |
 | 12 | Transparent Communication | 2a | `transparency_notices.py` |
 | 13 | Information at Collection | 2a | `information_provision.py` |
 | 14 | Information Not From Subject | 2a | `information_provision.py` |
 | 15 | Right of Access | 2b | `dsar_handler.py` |
 | 16 | Right to Rectification | 2b | `data_subject_rights.py` |
-| 17 | Right to Erasure | 2b | `erasure_manager.py` |
+| 17 | Right to Erasure | 2b | `erasure_manager.py`, `auto_erasure_scheduler.py` |
 | 18 | Right to Restriction | 2b | `restriction_manager.py` |
 | 19 | Notification Obligation | 2b | `data_subject_rights.py` |
 | 20 | Right to Portability | 2b | `portability_manager.py` |
 | 21 | Right to Object | 2b | `objection_handler.py` |
 | 22 | Automated Decisions | 2b | `automated_decisions.py` |
+| **23** | **Restrictions** | 2b | `restrictions.py` |
+| **24** | **Controller Accountability** | 3 | `accountability.py` |
 | 25 | Privacy by Design | 4 | `privacy_by_design.py` |
 | 26 | Joint Controllers | 0 | `joint_controller.py` |
+| **27** | **EU Representative** | 0 | `definitions.py` |
 | 28 | Processor | 0 | `processor_management.py` |
 | 30 | ROPA | 3 | `ropa.py` |
 | 31 | SA Cooperation | 3 | `sa_cooperation.py` |
@@ -2454,8 +2909,10 @@ TIA Components:
 | 35 | DPIA | 6 | `dpia.py` |
 | 36 | Prior Consultation | 6 | `prior_consultation.py` |
 | 37-39 | DPO | 6 | `dpo_interface.py` |
-| 44-49 | International Transfers | 6 | `international_transfers.py` |
+| 44-49 | International Transfers | 6 | `international_transfers.py`, `uk_adequacy_contingency.py` |
 | 77-84 | Remedies & Liability | 6 | `liability_framework.py` |
+
+> **Note**: Articles in **bold** were added in v1.4 audit. Total article coverage: 40+ articles.
 
 ---
 
