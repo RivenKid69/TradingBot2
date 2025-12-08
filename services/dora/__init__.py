@@ -36,11 +36,13 @@ Phase 3 - Digital Resilience Testing (Articles 24-27):
     - penetration_testing: Penetration Testing (Article 24)
     - tlpt: Threat-Led Penetration Testing (Article 26) - if designated
 
-Phase 4 - Third-Party ICT Risk Management (Articles 28-30):
-    - register_of_information: Register of Information (Article 28)
+Phase 4 - Third-Party ICT Risk Management (Articles 28-44):
     - third_party_risk: Third-Party Risk Assessment (Article 28)
-    - contract_requirements: Contractual Arrangements (Article 30)
-    - its_export: ITS Export (CIR 2024/2956)
+    - register_of_information: Register of Information (Article 28(3))
+    - contractual_requirements: Contractual Arrangements (Article 30)
+    - exit_strategies: Exit Strategies (Article 28(8))
+    - concentration_risk: ICT Concentration Risk (Article 29)
+    - ctpp_oversight: Critical Third-Party Provider Oversight (Articles 31-44)
 
 Phase 5 - Information Sharing & Integration (Article 45):
     - threat_intelligence: Threat Intelligence Sharing
@@ -72,8 +74,8 @@ References:
 
 from __future__ import annotations
 
-__version__ = "0.4.0"
-__dora_compliance_phase__ = 3  # Current implementation phase
+__version__ = "0.5.0"
+__dora_compliance_phase__ = 4  # Current implementation phase
 
 # =============================================================================
 # Phase 0 exports (Proportionality Assessment)
@@ -684,6 +686,166 @@ from services.dora.pooled_testing import (
 )
 
 # =============================================================================
+# Phase 4 exports (Third-Party ICT Risk Management - Articles 28-44)
+# =============================================================================
+
+# Article 28 - Third-Party Risk Management
+from services.dora.third_party_risk import (
+    # Enums
+    ProviderType,
+    ProviderCriticality,
+    ProviderStatus,
+    RiskCategory,
+    RiskLevel,
+    ServiceCriticality,
+    DueDiligenceStatus,
+    AssessmentType,
+    SubstitutabilityLevel as TPRSubstitutabilityLevel,
+    # Data structures
+    ICTService as ThirdPartyICTService,
+    ICTProvider,
+    ThirdPartyRisk,
+    ThirdPartyRiskAssessment,
+    DueDiligenceCheck,
+    ProviderRelationshipEvent,
+    ThirdPartyRiskConfig,
+    # Main class
+    DORAThirdPartyRiskManagement,
+    # Factory functions
+    create_third_party_risk_management,
+)
+
+# Article 28(3) - Register of Information
+from services.dora.register_of_information import (
+    # Enums
+    ContractType,
+    ServiceType,
+    FunctionType as ROIFunctionType,
+    DataLocation,
+    ProviderLocationType,
+    SubcontractingLevel,
+    RegisterStatus,
+    ExportFormat,
+    # Data structures
+    EntityInformation,
+    BranchInformation,
+    ContractualArrangement,
+    ContractualArrangementFunction,
+    ICTServiceProvider,
+    SubcontractorEntry,
+    ICTServiceRecord,
+    RegisterSubmission,
+    RegisterOfInformationConfig,
+    # Main class
+    DORARegisterOfInformation,
+    # Factory functions
+    create_register_of_information,
+)
+
+# Article 30 - Contractual Arrangements
+from services.dora.contractual_requirements import (
+    # Enums
+    RequirementType,
+    RequirementCategory,
+    ComplianceStatus,
+    GapSeverity,
+    RemediationStatus,
+    ContractStatus,
+    # Data structures
+    ContractualRequirement,
+    ContractProvision,
+    ContractAssessment,
+    ContractGap,
+    ContractAmendment,
+    SLADefinition,
+    ICTContract,
+    ContractualRequirementsConfig,
+    # Main class
+    DORAContractualRequirements,
+    # Factory functions
+    create_contractual_requirements,
+)
+
+# Article 28(8) - Exit Strategies
+from services.dora.exit_strategies import (
+    # Enums
+    ExitTrigger,
+    ExitPhase,
+    ExitPlanStatus,
+    TransitionType,
+    ReadinessLevel,
+    AlternativeProviderStatus,
+    RiskLevel as ExitRiskLevel,
+    # Data structures
+    AlternativeProvider,
+    DataMigrationPlan,
+    TransitionTask,
+    ExitRisk,
+    ExitCostEstimate,
+    ExitPlan,
+    ExitExecution,
+    ExitReadinessAssessment,
+    ExitStrategiesConfig,
+    # Main class
+    DORAExitStrategies,
+    # Factory functions
+    create_exit_strategies,
+)
+
+# Article 29 - Concentration Risk
+from services.dora.concentration_risk import (
+    # Enums
+    ConcentrationType,
+    RiskLevel as ConcentrationRiskLevel,
+    MitigationStatus,
+    AssessmentScope,
+    SubstitutabilityLevel,
+    # Data structures
+    ProviderDependency,
+    ConcentrationMetric,
+    ConcentrationRisk,
+    MitigationMeasure,
+    ConcentrationAssessment,
+    DependencyMap,
+    ConcentrationRiskConfig,
+    # Main class
+    DORAConcentrationRisk,
+    # Factory functions
+    create_concentration_risk,
+    get_concentration_types,
+    get_substitutability_levels,
+)
+
+# Articles 31-44 - CTPP Oversight
+from services.dora.ctpp_oversight import (
+    # Enums
+    LeadOverseer,
+    CTPPStatus,
+    OversightRecommendationType,
+    RecommendationStatus,
+    ComplianceLevel,
+    OversightExerciseType,
+    # Data structures
+    CTPPDesignation,
+    OversightRecommendation,
+    OversightExercise,
+    CTPPRiskAssessment,
+    CTPPContractRequirement,
+    EntityCTPPRelationship,
+    CTPPOversightConfig,
+    # Constants
+    DESIGNATED_CTPPS_2025,
+    # Main class
+    DORACtppOversight,
+    # Factory functions
+    create_ctpp_oversight,
+    get_lead_overseers,
+    get_designated_ctpps_list,
+    get_ctpp_requirements,
+    get_ctpp_contract_requirements,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -1138,4 +1300,127 @@ __all__ = [
     "PooledTestingConfig",
     "DORAPooledTesting",
     "create_pooled_testing",
+
+    # =========================================================================
+    # Phase 4: Third-Party ICT Risk Management (Articles 28-44)
+    # =========================================================================
+
+    # Third-Party Risk Management (Article 28)
+    "ProviderType",
+    "ProviderCriticality",
+    "ProviderStatus",
+    "RiskCategory",
+    "RiskLevel",
+    "ServiceCriticality",
+    "DueDiligenceStatus",
+    "AssessmentType",
+    "TPRSubstitutabilityLevel",
+    "ThirdPartyICTService",
+    "ICTProvider",
+    "ThirdPartyRisk",
+    "ThirdPartyRiskAssessment",
+    "DueDiligenceCheck",
+    "ProviderRelationshipEvent",
+    "ThirdPartyRiskConfig",
+    "DORAThirdPartyRiskManagement",
+    "create_third_party_risk_management",
+
+    # Register of Information (Article 28(3))
+    "ContractType",
+    "ServiceType",
+    "ROIFunctionType",
+    "DataLocation",
+    "ProviderLocationType",
+    "SubcontractingLevel",
+    "RegisterStatus",
+    "ExportFormat",
+    "EntityInformation",
+    "BranchInformation",
+    "ContractualArrangement",
+    "ContractualArrangementFunction",
+    "ICTServiceProvider",
+    "SubcontractorEntry",
+    "ICTServiceRecord",
+    "RegisterSubmission",
+    "RegisterOfInformationConfig",
+    "DORARegisterOfInformation",
+    "create_register_of_information",
+
+    # Contractual Arrangements (Article 30)
+    "RequirementType",
+    "RequirementCategory",
+    "ComplianceStatus",
+    "GapSeverity",
+    "RemediationStatus",
+    "ContractStatus",
+    "ContractualRequirement",
+    "ContractProvision",
+    "ContractAssessment",
+    "ContractGap",
+    "ContractAmendment",
+    "SLADefinition",
+    "ICTContract",
+    "ContractualRequirementsConfig",
+    "DORAContractualRequirements",
+    "create_contractual_requirements",
+
+    # Exit Strategies (Article 28(8))
+    "ExitTrigger",
+    "ExitPhase",
+    "ExitPlanStatus",
+    "TransitionType",
+    "ReadinessLevel",
+    "AlternativeProviderStatus",
+    "ExitRiskLevel",
+    "AlternativeProvider",
+    "DataMigrationPlan",
+    "TransitionTask",
+    "ExitRisk",
+    "ExitCostEstimate",
+    "ExitPlan",
+    "ExitExecution",
+    "ExitReadinessAssessment",
+    "ExitStrategiesConfig",
+    "DORAExitStrategies",
+    "create_exit_strategies",
+
+    # Concentration Risk (Article 29)
+    "ConcentrationType",
+    "ConcentrationRiskLevel",
+    "MitigationStatus",
+    "AssessmentScope",
+    "SubstitutabilityLevel",
+    "ProviderDependency",
+    "ConcentrationMetric",
+    "ConcentrationRisk",
+    "MitigationMeasure",
+    "ConcentrationAssessment",
+    "DependencyMap",
+    "ConcentrationRiskConfig",
+    "DORAConcentrationRisk",
+    "create_concentration_risk",
+    "get_concentration_types",
+    "get_substitutability_levels",
+
+    # CTPP Oversight (Articles 31-44)
+    "LeadOverseer",
+    "CTPPStatus",
+    "OversightRecommendationType",
+    "RecommendationStatus",
+    "ComplianceLevel",
+    "OversightExerciseType",
+    "CTPPDesignation",
+    "OversightRecommendation",
+    "OversightExercise",
+    "CTPPRiskAssessment",
+    "CTPPContractRequirement",
+    "EntityCTPPRelationship",
+    "CTPPOversightConfig",
+    "DESIGNATED_CTPPS_2025",
+    "DORACtppOversight",
+    "create_ctpp_oversight",
+    "get_lead_overseers",
+    "get_designated_ctpps_list",
+    "get_ctpp_requirements",
+    "get_ctpp_contract_requirements",
 ]
