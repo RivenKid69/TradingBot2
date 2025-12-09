@@ -3,9 +3,29 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 1.8
+**Version**: 2.0
 **Date**: December 2025
-**Status**: Implementation Ready (Post-Critical Audit v2)
+**Status**: Implementation Ready (Critical Audit Complete)
+
+---
+
+### Version 2.0 Changelog
+
+| Change | Description | Audit Finding Addressed |
+|--------|-------------|-------------------------|
+| **Article 81** | Added proceeding suspension/coordination module | Missing judicial coordination |
+| **Article 10** | Full criminal data handling for AML/KYC | Was marked "not applicable" incorrectly |
+| **Articles 60-67** | Extended SA cooperation module | Minimal Chapter VII coverage |
+| **Article 47** | BCR management module | Incomplete transfer mechanisms |
+| **FRIA** | Fundamental Rights Impact Assessment for AI | Missing EU AI Act integration |
+| **EU-US DPF Risk** | Political risk handling with mandatory TIA | DPF vulnerability not addressed |
+| **UK Adequacy** | Real EC decision check implementation | Relied on "proposed" extension |
+| **Protocol Definitions** | Base protocols for all GDPR modules | Architecture improvement |
+| **Performance Benchmarks** | API/concurrency/throughput tests | Missing performance validation |
+
+**Coverage Update**: ~72 of 99 GDPR articles now covered (73%)
+- Previous: 62 articles (63%)
+- Added: Article 10, Article 47, Article 81, Articles 60-67
 
 ---
 
@@ -31,7 +51,7 @@ The platform processes:
 | **7** | Consent Management | High | Where consent is lawful basis |
 | **8** | Child's consent (information society services) | Low | Platform is 18+ only; verify at signup |
 | **9** | Special Categories of Personal Data | Critical | Biometric 2FA considerations |
-| **10** | Criminal convictions data | Low | Not applicable to trading platform |
+| **10** | Criminal convictions data | **High** | **CRITICAL for AML/KYC** - PEP checks, sanctions screening (NEW v2.0) |
 | **11** | Processing not requiring identification | Medium | **NEW** - For pseudonymized data handling |
 | **12-14** | Transparency & Information Notices | Critical | Layered privacy notices |
 | **15-22** | Data Subject Rights (DSAR) | Critical | Full rights implementation |
@@ -61,13 +81,224 @@ The platform processes:
 | Article | Reason | Risk |
 |---------|--------|------|
 | Art. 8 | Platform restricted to 18+; **age verification implemented** (NEW v1.8) | Low - AgeVerificationGateway enforces |
-| Art. 10 | No criminal conviction data processed | None |
+| ~~Art. 10~~ | ~~No criminal conviction data processed~~ | **REMOVED v2.0** - Art. 10 NOW IMPLEMENTED for AML/KYC |
 | Art. 27 | Company EU incorporated | None |
 | Art. 91 | Churches and religious organizations - not applicable | None |
 
 ---
 
 ## Architecture Integration
+
+### Core Protocol Definitions (NEW v2.0)
+
+To ensure flexible and testable architecture, all GDPR modules should implement these base protocols:
+
+```python
+from typing import Protocol, List, Dict, Optional, Any
+from datetime import datetime
+from dataclasses import dataclass
+
+# ═══════════════════════════════════════════════════════════════════
+# Base Protocols for GDPR Module Architecture
+# ═══════════════════════════════════════════════════════════════════
+
+class GDPRRightHandler(Protocol):
+    """
+    Base protocol for all data subject rights handlers.
+
+    Implementing classes: AccessRightHandler, ErasureManager,
+    PortabilityManager, RectificationHandler, etc.
+    """
+
+    def validate_request(self, request: 'DSARRequest') -> 'ValidationResult':
+        """Validate incoming DSAR request"""
+        ...
+
+    def verify_identity(self, request_id: str) -> 'IdentityVerification':
+        """Verify data subject identity before processing"""
+        ...
+
+    def process_request(self, request: 'DSARRequest') -> 'ProcessingResult':
+        """Execute the right request"""
+        ...
+
+    def track_deadline(self, request_id: str) -> 'DeadlineStatus':
+        """Track response deadline (30 days / 90 days extended)"""
+        ...
+
+    def generate_response(self, request_id: str) -> 'DSARResponse':
+        """Generate response to data subject"""
+        ...
+
+
+class GDPRComplianceChecker(Protocol):
+    """
+    Base protocol for compliance checking components.
+
+    Implementing classes: ProcessingPrinciplesChecker, LegalBasisValidator,
+    ConsentValidator, TransferComplianceChecker, etc.
+    """
+
+    def check_compliance(self, processing: 'ProcessingActivity') -> 'ComplianceResult':
+        """Check if processing activity is compliant"""
+        ...
+
+    def get_violations(self, processing_id: str) -> List['Violation']:
+        """Get list of violations for a processing activity"""
+        ...
+
+    def recommend_remediation(self, violation_id: str) -> List['Remediation']:
+        """Recommend remediation actions for a violation"""
+        ...
+
+    def audit(self, scope: str) -> 'AuditResult':
+        """Perform compliance audit"""
+        ...
+
+
+class GDPRRecordKeeper(Protocol):
+    """
+    Base protocol for record-keeping components.
+
+    Implementing classes: ROPAManager, ConsentRecordManager,
+    BreachRecordManager, DPIARecordManager, etc.
+    """
+
+    def create_record(self, record: Any) -> str:
+        """Create a new record, return ID"""
+        ...
+
+    def update_record(self, record_id: str, updates: Dict[str, Any]) -> bool:
+        """Update an existing record"""
+        ...
+
+    def get_record(self, record_id: str) -> Optional[Any]:
+        """Retrieve a record by ID"""
+        ...
+
+    def search_records(self, criteria: Dict[str, Any]) -> List[Any]:
+        """Search records by criteria"""
+        ...
+
+    def export_records(self, format: str) -> bytes:
+        """Export records for SA submission"""
+        ...
+
+
+class GDPRNotifier(Protocol):
+    """
+    Base protocol for notification components.
+
+    Implementing classes: BreachNotifier, DSARNotifier,
+    ConsentUpdateNotifier, TransparencyNotifier, etc.
+    """
+
+    def notify_data_subject(self, subject_id: str, notification: 'Notification') -> 'NotificationResult':
+        """Notify a data subject"""
+        ...
+
+    def notify_supervisory_authority(self, sa_code: str, notification: 'SANotification') -> 'NotificationResult':
+        """Notify supervisory authority"""
+        ...
+
+    def schedule_notification(self, notification: 'Notification', when: datetime) -> str:
+        """Schedule a future notification"""
+        ...
+
+    def track_notification_status(self, notification_id: str) -> 'NotificationStatus':
+        """Track notification delivery status"""
+        ...
+
+
+class GDPRRiskAssessor(Protocol):
+    """
+    Base protocol for risk assessment components.
+
+    Implementing classes: DPIAManager, FRIAManager, TIAManager,
+    BreachRiskAssessor, etc.
+    """
+
+    def assess_risk(self, subject: Any) -> 'RiskAssessment':
+        """Perform risk assessment"""
+        ...
+
+    def calculate_risk_score(self, assessment_id: str) -> float:
+        """Calculate numerical risk score"""
+        ...
+
+    def identify_mitigations(self, assessment_id: str) -> List['Mitigation']:
+        """Identify risk mitigation measures"""
+        ...
+
+    def evaluate_residual_risk(self, assessment_id: str) -> 'ResidualRisk':
+        """Evaluate residual risk after mitigations"""
+        ...
+
+    def requires_consultation(self, assessment_id: str) -> bool:
+        """Check if prior consultation with SA is required (Art. 36)"""
+        ...
+
+
+class GDPRTransferMechanism(Protocol):
+    """
+    Base protocol for international transfer mechanisms.
+
+    Implementing classes: SCCManager, BCRManager, AdequacyChecker,
+    DerogationHandler, etc.
+    """
+
+    def validate_transfer(self, transfer: 'InternationalTransfer') -> 'TransferValidation':
+        """Validate if transfer is lawful"""
+        ...
+
+    def get_applicable_mechanism(self, destination: str) -> 'TransferMechanism':
+        """Get applicable transfer mechanism for destination"""
+        ...
+
+    def conduct_tia(self, transfer_id: str) -> 'TIAResult':
+        """Conduct Transfer Impact Assessment"""
+        ...
+
+    def apply_supplementary_measures(self, transfer_id: str, measures: List[str]) -> bool:
+        """Apply supplementary measures per Schrems II"""
+        ...
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Common Result Types
+# ═══════════════════════════════════════════════════════════════════
+
+@dataclass
+class ValidationResult:
+    """Standard validation result"""
+    valid: bool
+    errors: List[str]
+    warnings: List[str]
+
+@dataclass
+class ComplianceResult:
+    """Standard compliance check result"""
+    compliant: bool
+    violations: List['Violation']
+    recommendations: List[str]
+    confidence: float  # 0-1
+
+@dataclass
+class ProcessingResult:
+    """Standard processing result"""
+    success: bool
+    result_id: str
+    message: str
+    details: Dict[str, Any]
+
+@dataclass
+class NotificationResult:
+    """Standard notification result"""
+    sent: bool
+    notification_id: str
+    delivery_status: str
+    timestamp: datetime
+```
 
 ### Directory Structure
 
@@ -89,12 +320,15 @@ services/
     legal_basis.py                 # Article 6 lawful basis management
     processing_principles.py       # Article 5 principles enforcement
     special_categories.py          # Article 9 special category handling
+    criminal_data.py               # Article 10 criminal convictions data (NEW v2.0)
     accountability.py              # Article 24 controller responsibility (NEW)
     restrictions.py                # Article 23 restrictions framework (NEW)
     member_state_derogations.py    # Opening clauses per jurisdiction (NEW v1.6)
     national_id_handler.py         # Article 87 national ID numbers (NEW v1.8)
     age_verification.py            # Article 8 age verification gateway (NEW v1.8)
     joint_controller_agreement.py  # Article 26 JCA templates (NEW v1.8)
+    sa_cooperation_extended.py     # Articles 60-67 SA cooperation (NEW v2.0)
+    bcr_manager.py                 # Article 47 Binding Corporate Rules (NEW v2.0)
 
     # Phase 2a: Consent & Transparency
     consent_manager.py             # Article 7 consent management
@@ -137,6 +371,7 @@ services/
 
     # Phase 6: DPIA & Governance
     dpia.py                        # Data Protection Impact Assessment
+    fria.py                        # Fundamental Rights Impact Assessment for AI (NEW v2.0)
     prior_consultation.py          # Article 36 prior consultation
     dpo_interface.py               # DPO tools and interface
     international_transfers.py     # Articles 44-49 transfers
@@ -1761,6 +1996,235 @@ User Requests Biometric 2FA
             ├─ Access controls
             └─ Deletion on consent withdrawal
 ```
+
+#### 1.2.4a CriminalDataHandler (criminal_data.py) - NEW v2.0
+
+**Article 10 - Processing of Criminal Convictions Data**
+
+Per [GDPR Article 10](https://gdpr-info.eu/art-10-gdpr/), processing of personal data relating to criminal convictions and offences shall be carried out only under the control of official authority or when the processing is authorised by Union or Member State law.
+
+> **⚠️ CRITICAL FOR TRADING PLATFORMS**
+>
+> Article 10 IS applicable to trading platforms through:
+> 1. **AML/KYC Checks**: AMLD6 requires PEP (Politically Exposed Persons) screening
+> 2. **Sanctions Screening**: OFAC, EU sanctions lists may indicate criminal history
+> 3. **Fitness & Probity Checks**: MiFID II may require background checks
+> 4. **Third-party AML Providers**: Processors may provide criminal history data
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Article 10 - Criminal Convictions and Offences Data
+# ═══════════════════════════════════════════════════════════════════
+
+Enum CriminalDataSource:
+    """Sources of criminal conviction data"""
+    SANCTIONS_LIST = "sanctions_list"          # OFAC, EU, UN sanctions
+    PEP_DATABASE = "pep_database"              # Politically Exposed Persons
+    ADVERSE_MEDIA = "adverse_media"            # News/media screening
+    OFFICIAL_REGISTER = "official_register"    # Official criminal records
+    THIRD_PARTY_PROVIDER = "third_party"       # AML service providers
+    COURT_RECORDS = "court_records"            # Public court records
+
+Enum Article10LegalBasis:
+    """Legal bases for Article 10 processing"""
+    OFFICIAL_AUTHORITY = "official_authority"   # Under control of official authority
+    EU_LAW_AUTHORISED = "eu_law"                # Authorised by EU law (AMLD6)
+    MEMBER_STATE_LAW = "member_state_law"       # Authorised by MS law
+    NOT_APPLICABLE = "not_applicable"           # Data doesn't fall under Art. 10
+
+Dataclass CriminalDataRecord:
+    """Record of criminal conviction/offence data processing"""
+    record_id: str
+    data_subject_id: str
+    data_source: CriminalDataSource
+
+    # Data content
+    data_type: str                              # "conviction", "allegation", "sanction", "pep"
+    jurisdiction: str                           # Country of origin
+    data_content_summary: str                   # Never store raw criminal records
+
+    # Legal basis - MANDATORY
+    legal_basis: Article10LegalBasis
+    authorising_law: str                        # e.g., "AMLD6 Art. 13", "MiFID II Art. 9"
+    official_authority_reference: Optional[str] # If under official authority
+
+    # Safeguards - MANDATORY
+    safeguards_applied: List[str]               # Access control, encryption, etc.
+    access_restricted_to: List[str]             # Roles with access
+    logging_enabled: bool = True
+
+    # Retention
+    retention_period: str
+    deletion_date: datetime
+
+    # Processing record
+    processing_purpose: str
+    processing_date: datetime
+    processing_outcome: str                     # "cleared", "flagged", "referred"
+
+Dataclass AMLScreeningResult:
+    """AML/KYC screening result potentially containing Art. 10 data"""
+    screening_id: str
+    user_id: str
+    screening_date: datetime
+
+    # Screening components
+    pep_check_performed: bool
+    pep_match_found: bool
+    sanctions_check_performed: bool
+    sanctions_match_found: bool
+    adverse_media_check_performed: bool
+    adverse_media_match_found: bool
+
+    # Article 10 classification
+    contains_article_10_data: bool
+    article_10_data_types: List[str]            # "conviction", "offence", "allegation"
+
+    # Legal compliance
+    legal_basis_documented: bool
+    authorising_law: str
+    safeguards_verified: bool
+
+    # Processing decision
+    risk_level: str                             # "low", "medium", "high", "pep", "sanctioned"
+    decision: str                               # "approved", "enhanced_due_diligence", "rejected"
+    decision_rationale: str
+
+# Member State Article 10 Authorisation Map
+MEMBER_STATE_ARTICLE_10_LAWS = {
+    "DE": {
+        "national_law": "BDSG §26(4)",
+        "scope": "Employment background checks with consent",
+        "aml_law": "GwG (Geldwäschegesetz)",
+        "restrictions": "Strict purpose limitation"
+    },
+    "FR": {
+        "national_law": "Code pénal Art. 776",
+        "scope": "Limited access to criminal records",
+        "aml_law": "CMF Art. L561-5",
+        "restrictions": "Bulletin No. 3 only for employers"
+    },
+    "IE": {
+        "national_law": "Data Protection Act 2018 §55",
+        "scope": "Authorised by law or official authority",
+        "aml_law": "Criminal Justice (Money Laundering) Act 2010",
+        "restrictions": "Must demonstrate necessity"
+    },
+    "NL": {
+        "national_law": "UAVG Art. 29",
+        "scope": "Criminal data under supervisory authority",
+        "aml_law": "Wwft",
+        "restrictions": "Certificate of Good Conduct (VOG) required"
+    },
+    "ES": {
+        "national_law": "LOPDGDD Art. 10",
+        "scope": "Comprehensive criminal data register system",
+        "aml_law": "Ley 10/2010",
+        "restrictions": "Strict necessity test"
+    }
+}
+
+Class CriminalDataHandler:
+    """
+    Article 10 implementation - Criminal convictions and offences.
+
+    CRITICAL REQUIREMENTS:
+    1. Processing ONLY under official authority OR authorised by law
+    2. Member State law may specify additional safeguards
+    3. Register of criminal convictions only under official authority
+    4. Must apply suitable safeguards (Art. 9(1) protection level)
+
+    TRADING PLATFORM SCOPE:
+    - AML/KYC screening via third-party providers
+    - PEP and sanctions screening
+    - Adverse media monitoring
+    - Fitness & probity checks (if required by regulation)
+    """
+
+    # Classification
+    - classify_as_article_10(data_type: str, content: str) -> Article10Classification
+    - assess_criminal_data_source(source: CriminalDataSource) -> SourceAssessment
+    - determine_legal_basis(source: CriminalDataSource, member_state: str) -> Article10LegalBasis
+
+    # AML/KYC Integration
+    - process_aml_screening(user_id: str, screening_data: Dict) -> AMLScreeningResult
+    - extract_article_10_elements(screening_result: AMLScreeningResult) -> List[CriminalDataRecord]
+    - validate_aml_provider_compliance(provider_id: str) -> ComplianceStatus
+
+    # Legal Basis Verification
+    - verify_authorising_law(legal_basis: Article10LegalBasis, member_state: str) -> VerificationResult
+    - check_official_authority_requirement(data_type: str) -> bool
+    - document_legal_basis(record_id: str, basis: Article10LegalBasis, law: str) -> str
+
+    # Safeguards (MANDATORY)
+    - apply_article_10_safeguards(record_id: str) -> SafeguardsResult
+    - restrict_access(record_id: str, authorised_roles: List[str]) -> bool
+    - enable_enhanced_logging(record_id: str) -> bool
+    - encrypt_criminal_data(record_id: str) -> bool
+
+    # Processing
+    - record_article_10_processing(record: CriminalDataRecord) -> str
+    - validate_processing_lawfulness(record_id: str) -> ValidationResult
+    - log_access(record_id: str, accessor: str, purpose: str) -> str
+
+    # Retention
+    - set_retention_period(record_id: str, period: str) -> bool
+    - schedule_deletion(record_id: str) -> datetime
+    - verify_deletion_completed(record_id: str) -> bool
+
+    # DSAR handling (limited per Art. 10)
+    - handle_article_10_dsar(user_id: str, request: DSARRequest) -> DSARResponse
+    - assess_disclosure_restrictions(record_id: str) -> RestrictionAssessment
+
+    # Audit
+    - audit_article_10_compliance() -> AuditResult
+    - generate_article_10_report() -> Report
+    - verify_third_party_provider_compliance(provider_id: str) -> ComplianceResult
+```
+
+**Article 10 Decision Tree:**
+
+```
+Data Received from AML/KYC Check
+            │
+            ├─► Does data relate to criminal convictions/offences?
+            │   │
+            │   ├─ NO ──► Standard GDPR processing (Art. 6)
+            │   │
+            │   └─ YES ──► Article 10 applies
+            │             │
+            │             ├─► Is processing under official authority?
+            │             │   │
+            │             │   ├─ YES ──► Proceed with safeguards
+            │             │   │
+            │             │   └─ NO ──► Is processing authorised by EU/MS law?
+            │             │             │
+            │             │             ├─ YES ──► Document legal basis, proceed
+            │             │             │         └─ Check MS-specific requirements
+            │             │             │
+            │             │             └─ NO ──► STOP: No legal basis
+            │             │                       └─ Cannot process Art. 10 data
+            │             │
+            │             └─► Apply Article 10 safeguards:
+            │                 ├─ Access restriction (need-to-know)
+            │                 ├─ Enhanced encryption
+            │                 ├─ Detailed audit logging
+            │                 ├─ Strict retention limits
+            │                 └─ Purpose limitation (AML only)
+```
+
+**Trading Platform Article 10 Scenarios:**
+
+| Scenario | Article 10 Applies | Legal Basis | Action Required |
+|----------|-------------------|-------------|-----------------|
+| PEP status check | MAYBE | AMLD6 Art. 13 | PEP status alone may not be Art. 10; associated criminal links are |
+| Sanctions match (criminal) | YES | AMLD6, EU Regulations | Document EU law basis, apply safeguards |
+| Adverse media (conviction) | YES | AMLD6 + legitimate interest | Strict necessity test, enhanced safeguards |
+| Background check (employment) | YES | MS employment law | Check MS-specific authorisation |
+| Fraud database check | LIKELY | Varies by source | Assess if "conviction/offence" data present |
+| Court judgment (public) | YES | May vary | Even public data requires legal basis |
+
+> **IMPORTANT**: Third-party AML providers processing Article 10 data must be assessed for compliance. Include Art. 10 requirements in DPA with AML processors.
 
 #### 1.2.5 MemberStateDerogations (member_state_derogations.py) - NEW v1.6
 
@@ -5333,6 +5797,293 @@ Class DPIAManager:
 | User Analytics | Profiling | Multiple | **YES** |
 | Audit Logging | Legal obligation | None | Screening needed |
 
+#### 6.2.1a AI/ML Fundamental Rights Impact Assessment (fria.py) - NEW v2.0
+
+**FRIA for High-Risk AI Systems (EU AI Act + GDPR Integration)**
+
+Per [EU AI Act Article 27](https://artificialintelligenceact.eu/article/27/) and GDPR Article 35, deployers of high-risk AI systems must conduct a Fundamental Rights Impact Assessment. This module integrates FRIA with GDPR DPIA for comprehensive AI compliance.
+
+> **⚠️ MANDATORY FOR TRADING PLATFORMS**
+>
+> AI systems in financial services may be classified as high-risk under EU AI Act Annex III:
+> - **5(b)**: AI for creditworthiness assessment
+> - **5(c)**: AI for risk assessment and pricing
+> - **8**: AI affecting access to essential services
+>
+> Combined DPIA + FRIA is REQUIRED for such systems.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Fundamental Rights Impact Assessment (FRIA) - NEW v2.0
+# ═══════════════════════════════════════════════════════════════════
+
+Enum FundamentalRight:
+    """Charter of Fundamental Rights of the EU - relevant rights"""
+    DIGNITY = "dignity"                        # Art. 1 - Human dignity
+    INTEGRITY = "integrity"                    # Art. 3 - Right to integrity
+    LIBERTY = "liberty"                        # Art. 6 - Right to liberty
+    PRIVACY = "privacy"                        # Art. 7 - Private life
+    DATA_PROTECTION = "data_protection"        # Art. 8 - Personal data protection
+    NON_DISCRIMINATION = "non_discrimination"  # Art. 21 - Non-discrimination
+    EQUALITY = "equality"                      # Art. 20 - Equality before law
+    PROPERTY = "property"                      # Art. 17 - Right to property
+    CONSUMER_PROTECTION = "consumer"           # Art. 38 - Consumer protection
+    EFFECTIVE_REMEDY = "remedy"                # Art. 47 - Effective remedy
+
+Enum AIActRiskLevel:
+    """EU AI Act risk classification"""
+    UNACCEPTABLE = "unacceptable"             # Art. 5 - Prohibited practices
+    HIGH_RISK = "high_risk"                    # Annex III - High-risk systems
+    LIMITED_RISK = "limited_risk"              # Art. 50 - Transparency obligations
+    MINIMAL_RISK = "minimal_risk"              # No specific requirements
+
+Dataclass HighRiskAIAssessment:
+    """EU AI Act Annex III classification for AI system"""
+    assessment_id: str
+    ai_system_id: str
+    ai_system_name: str
+
+    # Annex III classification
+    annex_iii_category: Optional[str]          # e.g., "5(b)", "5(c)", "8"
+    classification_rationale: str
+
+    # Risk level determination
+    risk_level: AIActRiskLevel
+    risk_factors: List[str]
+
+    # Financial services specific
+    is_creditworthiness_assessment: bool       # 5(b)
+    is_risk_assessment_pricing: bool           # 5(c)
+    affects_access_to_services: bool           # 8
+
+    # Conclusion
+    high_risk_confirmed: bool
+    fria_required: bool
+
+Dataclass FundamentalRightsImpact:
+    """Impact assessment for a specific fundamental right"""
+    right: FundamentalRight
+    impact_description: str
+    affected_groups: List[str]                 # Groups most affected
+    severity: str                              # "low", "medium", "high", "critical"
+    likelihood: str                            # "unlikely", "possible", "likely", "almost_certain"
+    impact_score: float                        # 0-10
+
+    # Discrimination analysis (Art. 21 Charter)
+    protected_characteristics_affected: List[str]  # Age, gender, race, disability, etc.
+    discrimination_risk: str
+    bias_assessment_performed: bool
+    bias_mitigation_measures: List[str]
+
+    # Mitigation
+    mitigation_measures: List[str]
+    residual_impact: str
+    residual_score: float
+
+Dataclass FRIARecord:
+    """Complete Fundamental Rights Impact Assessment"""
+    fria_id: str
+    ai_system_id: str
+    ai_system_name: str
+    fria_date: datetime
+
+    # EU AI Act Classification
+    ai_act_assessment: HighRiskAIAssessment
+
+    # Linked DPIA (GDPR)
+    linked_dpia_id: Optional[str]              # Combined assessment
+    gdpr_dpia_completed: bool
+
+    # Processing description (AI Act Art. 27(1)(a))
+    intended_purpose: str
+    deployer_description: str
+    geographical_scope: str
+    temporal_scope: str                        # Duration of deployment
+
+    # Affected persons (Art. 27(1)(b))
+    affected_categories: List[str]             # Categories of persons
+    affected_groups: List[str]                 # Specific groups
+    estimated_number_affected: int
+    vulnerable_groups_affected: List[str]
+
+    # Fundamental rights impacts (Art. 27(1)(c))
+    rights_impacts: List[FundamentalRightsImpact]
+    overall_impact_assessment: str
+
+    # Specific risks (Art. 27(1)(d))
+    specific_risks_identified: List[str]
+    risk_to_health: bool
+    risk_to_safety: bool
+    risk_to_fundamental_rights: bool
+
+    # Human oversight (Art. 27(1)(e))
+    human_oversight_measures: List[str]
+    oversight_personnel: List[str]
+    escalation_procedures: str
+
+    # Complaint mechanisms (Art. 27(1)(f))
+    complaint_mechanism_description: str
+    redress_procedures: str
+    appeal_mechanism: str
+
+    # Consultation
+    data_subjects_consulted: bool
+    stakeholders_consulted: List[str]
+    consultation_outcomes: str
+
+    # Status
+    status: str                                # "draft", "under_review", "approved", "rejected"
+    approved_by: Optional[str]
+    approval_date: Optional[datetime]
+    next_review_date: datetime
+
+# Trading Platform AI Systems requiring FRIA
+TRADING_AI_FRIA_REQUIREMENTS = {
+    "algorithmic_trading_decisions": {
+        "ai_act_category": "possible_8",       # May affect access to services
+        "fria_required": True,
+        "key_rights": [
+            FundamentalRight.PROPERTY,
+            FundamentalRight.NON_DISCRIMINATION,
+            FundamentalRight.EFFECTIVE_REMEDY
+        ],
+        "bias_risks": ["wealth_based_discrimination", "geographical_discrimination"],
+        "human_oversight": "trader_approval_required"
+    },
+    "risk_scoring_engine": {
+        "ai_act_category": "5(c)",             # Risk assessment/pricing
+        "fria_required": True,
+        "key_rights": [
+            FundamentalRight.NON_DISCRIMINATION,
+            FundamentalRight.DATA_PROTECTION,
+            FundamentalRight.CONSUMER_PROTECTION
+        ],
+        "bias_risks": ["age_discrimination", "gender_discrimination", "racial_bias"],
+        "human_oversight": "compliance_officer_review"
+    },
+    "kyc_aml_screening": {
+        "ai_act_category": "5(c)",             # Risk assessment
+        "fria_required": True,
+        "key_rights": [
+            FundamentalRight.NON_DISCRIMINATION,
+            FundamentalRight.PRIVACY,
+            FundamentalRight.EFFECTIVE_REMEDY
+        ],
+        "bias_risks": ["nationality_discrimination", "name_based_bias"],
+        "human_oversight": "manual_review_flagged_cases"
+    },
+    "market_analysis_ml": {
+        "ai_act_category": "minimal",
+        "fria_required": False,                # No personal data decisions
+        "key_rights": [],
+        "bias_risks": [],
+        "human_oversight": "none_required"
+    }
+}
+
+Class FundamentalRightsImpactAssessmentManager:
+    """
+    FRIA implementation per EU AI Act Article 27.
+
+    INTEGRATION WITH GDPR DPIA:
+    - For AI systems processing personal data, FRIA must be combined with DPIA
+    - DPIA covers data protection aspects (Art. 8 Charter)
+    - FRIA covers broader fundamental rights (Arts. 1-50 Charter)
+    - Combined assessment = comprehensive AI compliance
+
+    MANDATORY for deployers of high-risk AI in:
+    - Financial services (Annex III 5(b), 5(c))
+    - Essential services access (Annex III 8)
+    """
+
+    # AI Act Classification
+    - classify_ai_system(system: Dict) -> HighRiskAIAssessment
+    - check_annex_iii_applicability(system: Dict) -> AnnexIIIResult
+    - determine_fria_requirement(system: Dict) -> bool
+
+    # FRIA Creation
+    - initiate_fria(ai_system_id: str) -> FRIARecord
+    - link_to_dpia(fria_id: str, dpia_id: str) -> bool
+    - document_affected_persons(fria_id: str, categories: List[str]) -> bool
+
+    # Rights Impact Assessment
+    - assess_right_impact(fria_id: str, right: FundamentalRight) -> FundamentalRightsImpact
+    - assess_discrimination_risk(fria_id: str) -> DiscriminationAssessment
+    - perform_bias_audit(fria_id: str) -> BiasAuditResult
+    - assess_vulnerable_groups_impact(fria_id: str) -> VulnerableGroupsAssessment
+
+    # Mitigation
+    - identify_mitigation_measures(fria_id: str) -> List[MitigationMeasure]
+    - document_human_oversight(fria_id: str, measures: List[str]) -> bool
+    - document_complaint_mechanism(fria_id: str, mechanism: str) -> bool
+
+    # Consultation
+    - consult_affected_persons(fria_id: str, method: str) -> ConsultationResult
+    - consult_stakeholders(fria_id: str, stakeholders: List[str]) -> ConsultationResult
+
+    # Approval and Review
+    - submit_for_review(fria_id: str) -> bool
+    - approve_fria(fria_id: str, approver: str) -> bool
+    - schedule_review(fria_id: str, interval_months: int) -> datetime
+    - update_fria(fria_id: str, changes: Dict) -> UpdateResult
+
+    # Reporting
+    - generate_fria_report(fria_id: str, format: str) -> bytes
+    - generate_combined_dpia_fria_report(dpia_id: str, fria_id: str) -> bytes
+    - get_fria_summary_for_market_surveillance(fria_id: str) -> Summary
+
+    # Registry
+    - register_with_eu_database(fria_id: str) -> RegistrationResult  # AI Act Art. 49
+    - update_registry_entry(fria_id: str, changes: Dict) -> bool
+```
+
+**Combined DPIA + FRIA Workflow:**
+
+```
+AI System Development:
+──────────────────────────────────────────────────────────────────
+
+1. INITIAL CLASSIFICATION
+   ├─ Does system process personal data? → DPIA screening
+   ├─ Is system high-risk under AI Act? → FRIA required
+   └─ Both? → Combined assessment required
+
+2. COMBINED ASSESSMENT STEPS
+   ├─ Step 1: AI Act classification (Annex III check)
+   ├─ Step 2: GDPR DPIA screening (Art. 35(3) + DPA blacklists)
+   ├─ Step 3: Fundamental rights mapping (Charter Arts. 1-50)
+   ├─ Step 4: Discrimination/bias assessment
+   ├─ Step 5: Human oversight design
+   ├─ Step 6: Complaint mechanism design
+   ├─ Step 7: Combined risk assessment
+   └─ Step 8: Mitigation measures
+
+3. DOCUMENTATION
+   ├─ DPIA Record (GDPR Art. 35(7))
+   ├─ FRIA Record (AI Act Art. 27)
+   ├─ Combined Report
+   └─ EU Database registration (if required)
+
+4. ONGOING MONITORING
+   ├─ Regular review (at least annually)
+   ├─ Update on significant changes
+   ├─ Bias monitoring
+   └─ Complaint analysis
+```
+
+**Trading Platform FRIA Scenarios:**
+
+| AI System | High-Risk | FRIA Required | Key Rights | Bias Risks |
+|-----------|-----------|---------------|------------|------------|
+| Algo trading bot | POSSIBLE | YES | Property, Remedy | Wealth, Geography |
+| Client risk scorer | YES (5(c)) | **YES** | Non-discrimination | Age, Gender, Race |
+| KYC/AML screening | YES (5(c)) | **YES** | Non-discrimination, Privacy | Name, Nationality |
+| Fraud detection | YES (5(c)) | **YES** | Non-discrimination, Liberty | Profiling bias |
+| Market prediction | NO | No | N/A | N/A |
+| Portfolio optimizer | POSSIBLE | Maybe | Property, Consumer | Risk tolerance bias |
+
+> **IMPORTANT**: For trading platforms, any AI system that affects client access to services, account status, or risk-based pricing is likely HIGH-RISK under AI Act and requires FRIA.
+
 #### 6.2.2 DPOInterface (dpo_interface.py) - ENHANCED
 
 **Articles 37-39 - Data Protection Officer (DPO)**
@@ -6023,8 +6774,223 @@ Adequacy decisions list (as of December 2025 - UPDATED v1.6):
 - Guernsey, Israel, Isle of Man, Japan, Jersey
 - New Zealand, Republic of Korea, Switzerland, Uruguay
 - **United Kingdom** (⚠️ SUNSET: 27 Dec 2025 - see contingency below)
-- **EU-US Data Privacy Framework** (DPF participants only)
+- **EU-US Data Privacy Framework** (DPF participants only) - ⚠️ **POLITICAL RISK** (see below)
 - **European Patent Organisation (EPO)** - NEW in 2024
+
+---
+
+#### 6.2.3.1 EU-US Data Privacy Framework Risk Management (NEW v2.0)
+
+> **⚠️ CRITICAL POLITICAL RISK WARNING**
+>
+> The EU-US Data Privacy Framework (DPF) is subject to significant political uncertainty:
+> 1. **Schrems III Challenge**: Privacy advocates (including NOYB) have challenged the DPF
+> 2. **US Administration Change**: 2025 administration may alter US surveillance practices
+> 3. **FISA Section 702 Renewal**: Key surveillance authority expires periodically
+> 4. **Executive Order Vulnerability**: DPF relies on EO 14086 which can be revoked
+>
+> **Per Schrems II (C-311/18)**: Even with adequacy, TIA is recommended for US transfers.
+
+```
+Enum USTransferRiskLevel:
+    """US transfer risk assessment levels"""
+    LOW = "low"                # DPF participant, minimal sensitive data
+    MEDIUM = "medium"          # DPF participant, some sensitive data
+    HIGH = "high"              # Non-DPF, or significant sensitive data
+    CRITICAL = "critical"      # Financial/trading data subject to FISA
+
+Dataclass USTransferRiskAssessment:
+    """Per Schrems II, assess risk even with DPF adequacy"""
+    assessment_id: str
+    transfer_id: str
+    assessment_date: datetime
+
+    # Recipient assessment
+    us_recipient: str
+    dpf_participant: bool
+    dpf_registration_number: Optional[str]
+    dpf_verified_date: Optional[datetime]
+
+    # Data sensitivity
+    data_categories: List[str]
+    includes_financial_data: bool
+    includes_trading_data: bool
+    volume_of_data: str                    # "low", "medium", "high"
+
+    # FISA 702 exposure assessment
+    us_provider_type: str                  # "cloud", "financial_service", "other"
+    likely_fisa_702_scope: bool            # Is recipient likely subject to FISA 702?
+    eo_14086_protections_adequate: bool    # Are EO protections sufficient for this data?
+
+    # Risk determination
+    risk_level: USTransferRiskLevel
+    risk_factors: List[str]
+    mitigations_applied: List[str]
+
+    # Recommendation
+    transfer_approved: bool
+    conditions: List[str]
+    reassessment_date: datetime            # Regular reassessment required
+
+Dataclass DPFContingencyPlan:
+    """Contingency plan for DPF invalidation"""
+    plan_id: str
+    created_date: datetime
+    last_reviewed: datetime
+
+    # US recipients inventory
+    us_recipients: List[str]
+    transfer_volumes: Dict[str, int]       # recipient -> monthly volume
+    data_categories_by_recipient: Dict[str, List[str]]
+
+    # Alternative mechanisms
+    sccs_prepared: Dict[str, bool]         # recipient -> SCC ready
+    supplementary_measures: Dict[str, List[str]]
+
+    # Trigger conditions
+    invalidation_triggers: List[str]       # Events that trigger fallback
+    monitoring_frequency: str              # "daily", "weekly"
+
+    # Fallback timeline
+    activation_timeline_hours: int         # Time to switch to SCCs
+    notification_plan: str
+
+# US Surveillance Laws Risk Matrix (per Schrems II analysis)
+US_SURVEILLANCE_RISK_MATRIX = {
+    "cloud_providers": {
+        "fisa_702_scope": True,
+        "eo_12333_scope": True,
+        "nsl_scope": True,
+        "risk_level": "high",
+        "supplementary_measures": [
+            "client_side_encryption",
+            "split_key_management",
+            "data_minimization",
+            "pseudonymization"
+        ]
+    },
+    "financial_institutions": {
+        "fisa_702_scope": True,
+        "irs_summons_scope": True,
+        "sec_subpoena_scope": True,
+        "risk_level": "high",
+        "supplementary_measures": [
+            "data_localization_where_possible",
+            "encryption_eu_held_keys",
+            "notification_clause"
+        ]
+    },
+    "trading_platforms": {
+        "fisa_702_scope": True,
+        "cftc_scope": True,
+        "sec_scope": True,
+        "finra_scope": True,
+        "risk_level": "critical",
+        "supplementary_measures": [
+            "minimize_pii_in_transfers",
+            "pseudonymize_user_identifiers",
+            "contractual_challenge_obligations",
+            "audit_rights"
+        ]
+    }
+}
+
+Class USTransferRiskManager:
+    """
+    EU-US transfer risk management per Schrems II requirements.
+
+    CRITICAL: Even with DPF adequacy, assessment is REQUIRED for:
+    1. High-volume transfers
+    2. Financial/trading data
+    3. Data likely subject to FISA 702
+
+    Per EDPB Recommendations 01/2020, exporters must:
+    - Know their transfers
+    - Verify the transfer tool used
+    - Assess third country law
+    - Identify and implement supplementary measures
+    - Re-evaluate at appropriate intervals
+    """
+
+    # DPF Verification
+    - verify_dpf_participation(us_recipient: str) -> DPFVerificationResult
+    - check_dpf_status_current(registration_number: str) -> bool
+    - get_dpf_registration_details(us_recipient: str) -> DPFRegistration
+
+    # Risk Assessment (MANDATORY for trading platforms)
+    - assess_us_transfer_risk(transfer_id: str) -> USTransferRiskAssessment
+    - determine_fisa_702_exposure(us_recipient: str) -> FISAExposureAssessment
+    - evaluate_eo_14086_adequacy(data_categories: List[str]) -> EOAdequacyAssessment
+
+    # Supplementary Measures
+    - identify_supplementary_measures(assessment: USTransferRiskAssessment) -> List[str]
+    - implement_supplementary_measures(transfer_id: str, measures: List[str]) -> ImplementationResult
+    - verify_measure_effectiveness(transfer_id: str) -> EffectivenessVerification
+
+    # DPF Invalidation Contingency
+    - create_dpf_contingency_plan() -> DPFContingencyPlan
+    - monitor_dpf_status() -> DPFStatusUpdate
+    - detect_invalidation_trigger(event: str) -> bool
+    - activate_contingency(reason: str) -> ContingencyActivationResult
+
+    # Schrems III Monitoring
+    - monitor_schrems_iii_proceedings() -> ProceedingStatus
+    - assess_invalidation_likelihood() -> LikelihoodAssessment
+    - prepare_immediate_fallback() -> FallbackPreparation
+
+    # Reporting
+    - generate_us_transfer_risk_report() -> Report
+    - get_dpf_dependent_transfers() -> List[str]
+    - calculate_dpf_invalidation_impact() -> ImpactAssessment
+```
+
+**US Transfer Decision Matrix:**
+
+| Recipient Type | DPF Participant | Data Type | Risk Level | Action Required |
+|----------------|-----------------|-----------|------------|-----------------|
+| Cloud provider | YES | Non-financial | MEDIUM | DPF + supplementary measures |
+| Cloud provider | NO | Any | HIGH | SCCs + TIA + supplementary measures |
+| Trading platform | YES | Trading data | HIGH | DPF + mandatory TIA + supplementary measures |
+| Trading platform | NO | Trading data | CRITICAL | SCCs + TIA + maximum supplementary measures |
+| Financial service | YES | Account data | HIGH | DPF + TIA + supplementary measures |
+| Financial service | NO | Account data | CRITICAL | Consider EU alternative |
+
+**DPF Invalidation Contingency Timeline:**
+
+```
+DPF Invalidation Event Detected:
+──────────────────────────────────────────────────────────────────
+
+T+0h        CJEU JUDGMENT or US POLICY CHANGE
+            ├─ Detect invalidation trigger
+            ├─ Alert DPO and legal team
+            └─ Begin contingency activation
+
+T+4h        INITIAL ASSESSMENT
+            ├─ Confirm DPF status invalid/suspended
+            ├─ Inventory all DPF-dependent transfers
+            └─ Prioritize by criticality
+
+T+24h       IMMEDIATE ACTIONS
+            ├─ Suspend non-essential US transfers
+            ├─ Activate pre-signed SCCs where available
+            └─ Implement enhanced supplementary measures
+
+T+72h       FULL CONTINGENCY
+            ├─ All US transfers on SCCs
+            ├─ TIAs completed for all flows
+            ├─ Data subjects notified if significant change
+            └─ ROPA updated
+
+T+30d       STABILIZATION
+            ├─ Review all US data flows
+            ├─ Consider EU alternatives for high-risk transfers
+            └─ Long-term strategy determination
+```
+
+> **IMPORTANT**: For trading platforms, **TIA is MANDATORY** for all US transfers regardless of DPF status due to FISA 702 and financial regulation exposure.
+
+---
 
 #### 6.2.4 ComplianceDashboard (compliance_dashboard.py)
 
@@ -6341,6 +7307,203 @@ Class Article80Manager:
     - alert_on_high_risk_ngo_action(action_id: str) -> Alert
 
 # ═══════════════════════════════════════════════════════════════════
+# Article 81 - Suspension of Proceedings (NEW v2.0)
+# ═══════════════════════════════════════════════════════════════════
+
+# Per [GDPR Article 81](https://gdpr-info.eu/art-81-gdpr/), courts may suspend
+# proceedings when cases involving the same subject matter are pending in
+# another Member State court or when a supervisory authority has the matter.
+#
+# CRITICAL FOR TRADING PLATFORMS: Multi-jurisdiction operations may face
+# parallel proceedings in multiple Member States.
+
+Enum ProceedingSuspensionGround:
+    """Grounds for suspension under Article 81"""
+    PARALLEL_COURT_PROCEEDING = "parallel_court"           # Art. 81(1) - Same matter in another MS court
+    SA_PROCEEDING_PENDING = "sa_proceeding"                # Art. 81(2) - SA has matter
+    EDPB_CONSISTENCY_PENDING = "edpb_consistency"          # Art. 81(3) - EDPB opinion pending
+    RELATED_PROCEEDING = "related_proceeding"              # Related but not identical matter
+
+Enum ProceedingStatus:
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    RESUMED = "resumed"
+    CLOSED = "closed"
+    TRANSFERRED = "transferred"
+
+Dataclass ParallelProceeding:
+    """Record of a parallel proceeding in another jurisdiction"""
+    proceeding_id: str
+    our_case_id: str                                       # Our related case
+
+    # Parallel proceeding details
+    parallel_court: str                                    # Court in other MS
+    parallel_case_reference: str
+    member_state: str                                      # ISO 3166-1 alpha-2
+    filing_date: datetime
+    subject_matter: str
+
+    # Overlap assessment
+    same_subject_matter: bool
+    same_parties: bool
+    same_infringement: bool
+    overlap_assessment: str
+
+    # Status
+    parallel_status: str                                   # "pending", "decided", "appealed"
+    parallel_outcome: Optional[str]
+
+Dataclass SuspensionDecision:
+    """Decision to suspend or continue proceedings"""
+    decision_id: str
+    case_id: str
+    decision_date: datetime
+
+    # Suspension details
+    suspension_requested: bool
+    suspension_ground: ProceedingSuspensionGround
+    requesting_party: str                                  # "controller", "claimant", "court_own_motion"
+
+    # Assessment
+    court_assessment: str
+    parallel_proceeding_id: Optional[str]
+    sa_case_reference: Optional[str]
+
+    # Decision
+    suspension_granted: bool
+    suspension_duration: Optional[str]                     # "until_parallel_decided", "specific_date", "indefinite"
+    conditions_for_resumption: List[str]
+
+    # Appeal
+    decision_appealable: bool
+    appeal_deadline: Optional[datetime]
+    appealed: bool
+
+Dataclass CrossBorderProceedingCoordination:
+    """Coordination record for multi-jurisdiction proceedings"""
+    coordination_id: str
+
+    # Related proceedings
+    proceedings: List[str]                                 # List of proceeding_ids
+    jurisdictions: List[str]                               # Member States involved
+
+    # Lead proceeding (if determined)
+    lead_proceeding_id: Optional[str]
+    lead_jurisdiction: Optional[str]
+    lead_determination_basis: Optional[str]                # "first_filed", "most_appropriate", "agreement"
+
+    # Coordination mechanism
+    coordination_type: str                                 # "informal", "formal_suspension", "transfer"
+    coordination_agreement: Optional[str]
+
+    # Communication
+    communications_log: List[Dict[str, Any]]
+    last_communication_date: Optional[datetime]
+
+Class Article81ProceedingCoordinator:
+    """
+    Article 81 implementation - Suspension of proceedings.
+
+    CRITICAL FOR MULTI-JURISDICTION TRADING PLATFORMS:
+    - Parallel GDPR claims may be filed in multiple Member States
+    - Data subjects can choose forum (Art. 79(2))
+    - Same matter may be before SA and court simultaneously
+    - Coordination prevents conflicting judgments
+
+    Per Article 81:
+    (1) Court may suspend if same matter pending in another MS court
+    (2) Court may suspend if SA is handling the matter
+    (3) Court may suspend if EDPB is handling under consistency mechanism
+    """
+
+    # Parallel proceeding detection
+    - register_our_proceeding(proceeding: JudicialProceeding) -> str
+    - register_parallel_proceeding(parallel: ParallelProceeding) -> str
+    - detect_parallel_proceedings(case_id: str) -> List[ParallelProceeding]
+    - assess_subject_matter_overlap(case_id: str, parallel_id: str) -> OverlapAssessment
+
+    # SA proceeding tracking
+    - check_sa_has_matter(subject_matter: str) -> SAMatterCheck
+    - register_sa_proceeding(sa_reference: str, matter: str) -> str
+    - check_edpb_consistency_pending(matter: str) -> bool
+
+    # Suspension management
+    - request_suspension(case_id: str, ground: ProceedingSuspensionGround, evidence: Dict) -> SuspensionRequest
+    - receive_suspension_request(case_id: str, request: SuspensionRequest) -> str
+    - assess_suspension_request(request_id: str) -> SuspensionAssessment
+    - grant_suspension(case_id: str, decision: SuspensionDecision) -> bool
+    - deny_suspension(case_id: str, reasons: List[str]) -> bool
+    - track_suspension_status(case_id: str) -> SuspensionStatus
+
+    # Resumption
+    - check_resumption_conditions(case_id: str) -> ConditionCheck
+    - resume_proceeding(case_id: str, reason: str) -> ResumptionResult
+    - notify_resumption(case_id: str, parties: List[str]) -> NotificationResult
+
+    # Cross-border coordination
+    - initiate_coordination(proceedings: List[str]) -> CrossBorderProceedingCoordination
+    - communicate_with_parallel_court(coordination_id: str, message: str) -> CommunicationResult
+    - request_information_from_parallel(coordination_id: str, info_needed: List[str]) -> InformationRequest
+    - agree_on_lead_proceeding(coordination_id: str) -> LeadDetermination
+
+    # Conflict prevention
+    - assess_judgment_conflict_risk(case_id: str) -> ConflictRiskAssessment
+    - recommend_coordination_action(case_id: str) -> Recommendation
+    - document_coordination_efforts(coordination_id: str) -> Documentation
+
+    # Integration with LiabilityFramework
+    - notify_liability_framework(suspension_decision: SuspensionDecision) -> bool
+    - update_proceeding_timeline(case_id: str, suspension: SuspensionDecision) -> bool
+
+    # Reporting
+    - get_suspended_proceedings() -> List[str]
+    - get_cross_border_coordinations() -> List[CrossBorderProceedingCoordination]
+    - generate_article_81_report() -> Report
+
+**Article 81 Decision Flow:**
+
+```
+Parallel Proceeding Detected:
+──────────────────────────────────────────────────────────────────
+
+1. Detection
+   ├─ Our proceeding registered
+   ├─ Parallel proceeding in another MS detected
+   └─ Subject matter overlap assessed
+
+2. Assessment (Article 81(1))
+   ├─ Is the parallel proceeding concerning same matter?
+   ├─ Was parallel proceeding filed first?
+   ├─ Is there risk of conflicting judgments?
+   └─ Would suspension serve justice?
+
+3. SA/EDPB Check (Article 81(2)-(3))
+   ├─ Is SA handling this matter?
+   ├─ Is EDPB issuing opinion under Art. 64/65?
+   └─ If yes → Suspension generally appropriate
+
+4. Decision
+   ├─ Suspend: Grant suspension with conditions
+   ├─ Continue: Document reasons, monitor parallel
+   └─ Transfer: If more appropriate forum exists
+
+5. Monitoring
+   ├─ Track parallel proceeding status
+   ├─ Check resumption conditions regularly
+   └─ Communicate with parallel court as needed
+```
+
+**Platform-Specific Article 81 Scenarios:**
+
+| Scenario | Suspension Likely | Rationale | Action |
+|----------|-------------------|-----------|--------|
+| Same DSAR claim filed in DE and FR courts | YES | Art. 81(1) - same matter | Request suspension in later-filed |
+| Court proceeding while SA investigates | LIKELY | Art. 81(2) - SA has matter | Inform court of SA proceeding |
+| EDPB handling consistency mechanism | YES | Art. 81(3) - EDPB pending | Automatic suspension appropriate |
+| Related but different claims in multiple MS | MAYBE | Overlap assessment needed | Case-by-case analysis |
+| Class action in one MS, individual in another | DEPENDS | Subject matter overlap | Assess if truly same matter |
+
+# ═══════════════════════════════════════════════════════════════════
 # Article 82 - Right to compensation and liability
 # ═══════════════════════════════════════════════════════════════════
 
@@ -6527,6 +7690,8 @@ Class LiabilityFramework:
     Manages:
     - SA complaint handling (Art. 77)
     - Judicial proceedings tracking (Art. 78-79)
+    - **NGO representation (Art. 80)** - NEW v1.9
+    - **Proceeding suspension/coordination (Art. 81)** - NEW v2.0
     - Compensation claims (Art. 82)
     - Fine risk assessment (Art. 83)
     - Member State penalty tracking (Art. 84)
@@ -6545,6 +7710,19 @@ Class LiabilityFramework:
     - update_proceeding_status(proceeding_id: str, status: str, details: Dict)
     - track_deadlines(proceeding_id: str) -> List[Deadline]
     - coordinate_with_legal(proceeding_id: str, action: str)
+
+    # NGO Representation (Article 80) - NEW v1.9
+    - receive_ngo_complaint(complaint: Article80Complaint) -> str
+    - verify_ngo_mandate(complaint_id: str) -> MandateVerification
+    - track_collective_action(action: Article80CollectiveAction) -> str
+    - coordinate_ngo_response(complaint_id: str) -> ResponsePlan
+
+    # Proceeding Suspension (Article 81) - NEW v2.0
+    - detect_parallel_proceedings(case_id: str) -> List[ParallelProceeding]
+    - request_suspension(case_id: str, ground: ProceedingSuspensionGround) -> SuspensionRequest
+    - track_suspension_status(case_id: str) -> SuspensionStatus
+    - coordinate_cross_border(proceedings: List[str]) -> CrossBorderProceedingCoordination
+    - resume_suspended_proceeding(case_id: str) -> ResumptionResult
 
     # Compensation Management (Article 82)
     - receive_compensation_claim(claim: CompensationClaim) -> str
@@ -6724,6 +7902,451 @@ Class CertificationFramework:
 | Cloud Infrastructure Providers (CISPE) | Cloud | Approved | Scope Europe |
 | Direct Marketing Code | Marketing | Approved | Various national |
 | **Financial Services (proposed)** | Financial | **Pending** | TBD |
+
+#### 6.2.7a SupervisoryAuthorityCooperationExtended (sa_cooperation_extended.py) - NEW v2.0
+
+**Articles 60-67 - Cooperation and Consistency Mechanism**
+
+Per [GDPR Chapter VII](https://gdpr-info.eu/chapter-7/), supervisory authorities must cooperate on cross-border processing. This module extends the basic Article 31 cooperation to cover the full cooperation and consistency mechanism.
+
+> **⚠️ CRITICAL FOR MULTI-JURISDICTION PLATFORMS**
+>
+> Trading platforms operating across multiple EU Member States must understand:
+> 1. **One-Stop-Shop (Art. 56)**: Lead SA handles cross-border processing
+> 2. **Cooperation Obligation (Art. 60)**: SAs must cooperate on cross-border cases
+> 3. **Mutual Assistance (Art. 61)**: SAs can request assistance from each other
+> 4. **Consistency Mechanism (Art. 63-65)**: EDPB ensures consistent application
+> 5. **Urgency Procedure (Art. 66)**: Emergency measures in exceptional cases
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Chapter VII - Cooperation and Consistency (Articles 60-67)
+# ═══════════════════════════════════════════════════════════════════
+
+Enum CooperationMechanism:
+    """Types of SA cooperation mechanisms"""
+    LEAD_SA_PROCEDURE = "lead_sa"               # Art. 56, 60 - Standard cross-border
+    MUTUAL_ASSISTANCE = "mutual_assistance"     # Art. 61 - Request for assistance
+    JOINT_OPERATIONS = "joint_operations"       # Art. 62 - Joint enforcement
+    CONSISTENCY_MECHANISM = "consistency"       # Art. 63-65 - EDPB referral
+    URGENCY_PROCEDURE = "urgency"               # Art. 66 - Emergency measures
+
+Enum ConsistencyReferralType:
+    """Types of EDPB consistency referrals"""
+    OPINION_REQUEST = "opinion"                 # Art. 64 - Voluntary opinion
+    DISPUTE_RESOLUTION = "dispute"              # Art. 65 - Mandatory binding decision
+    CROSS_BORDER_SIGNIFICANCE = "cross_border"  # Art. 64(2) - Significant cross-border impact
+
+Dataclass CrossBorderCase:
+    """Cross-border processing case requiring SA cooperation"""
+    case_id: str
+    matter_type: str                            # "complaint", "investigation", "enforcement"
+
+    # Establishments involved
+    controller_main_establishment: str          # MS code
+    controller_other_establishments: List[str]  # Other MS where established
+    processing_locations: List[str]             # MS where processing occurs
+
+    # Data subjects affected
+    data_subjects_member_states: List[str]      # MS where data subjects reside
+    estimated_data_subjects: Dict[str, int]     # MS -> count
+
+    # Lead SA determination (Art. 56)
+    lead_sa: str                                # Determined lead SA
+    concerned_sas: List[str]                    # Other involved SAs
+    lead_sa_determination_basis: str            # Reasoning for lead SA selection
+
+    # Status
+    case_status: str
+    cooperation_status: str                     # "pending", "in_cooperation", "resolved"
+    edpb_referral: Optional[str]                # If referred to EDPB
+
+Dataclass MutualAssistanceRequest:
+    """Article 61 - Mutual assistance between SAs"""
+    request_id: str
+    requesting_sa: str
+    requested_sa: str
+    request_date: datetime
+
+    # Request details
+    request_type: str                           # "information", "investigation", "enforcement"
+    matter_reference: str
+    information_needed: List[str]
+    urgency_level: str                          # "normal", "urgent"
+
+    # Response
+    response_deadline: datetime                 # 1 month (Art. 61(2))
+    response_status: str                        # "pending", "fulfilled", "refused"
+    refusal_reasons: Optional[List[str]]        # Art. 61(4) grounds
+
+    # Platform involvement
+    platform_action_required: str               # What platform must do
+
+Dataclass JointOperation:
+    """Article 62 - Joint operations of supervisory authorities"""
+    operation_id: str
+    lead_sa: str
+    participating_sas: List[str]
+    operation_type: str                         # "investigation", "audit", "enforcement"
+
+    # Scope
+    controller_processor: str
+    processing_activities: List[str]
+    member_states: List[str]
+
+    # Participation
+    staff_seconded: Dict[str, List[str]]        # SA -> staff members
+    investigative_powers_granted: Dict[str, List[str]]
+
+    # Status
+    start_date: datetime
+    end_date: Optional[datetime]
+    findings: Optional[str]
+    joint_decision: Optional[str]
+
+Dataclass EDPBReferral:
+    """Articles 64-65 - EDPB Consistency Mechanism Referral"""
+    referral_id: str
+    referral_type: ConsistencyReferralType
+    referring_sa: str
+    referral_date: datetime
+
+    # Matter details
+    case_reference: str
+    draft_decision: str                         # Art. 60(3) draft submitted
+    objections_raised: List[str]                # Art. 60(4) objections
+
+    # EDPB handling
+    edpb_case_reference: Optional[str]
+    edpb_opinion_date: Optional[datetime]
+    edpb_decision: Optional[str]
+    binding: bool                               # Art. 65 decisions are binding
+
+    # Impact
+    platform_implications: str
+
+Dataclass UrgencyMeasure:
+    """Article 66 - Urgency procedure"""
+    measure_id: str
+    issuing_sa: str
+    measure_date: datetime
+
+    # Urgency justification
+    urgency_justification: str                  # Need to protect data subject rights
+    exceptional_circumstances: str
+
+    # Measure details
+    measure_type: str                           # "provisional", "final" (only provisional allowed)
+    measure_content: str
+    duration: str                               # Max 3 months (Art. 66(1))
+    territorial_scope: str                      # Only issuing SA's territory
+
+    # EDPB notification
+    edpb_notified: bool
+    edpb_opinion_requested: bool
+    edpb_opinion: Optional[str]
+
+    # Platform compliance
+    compliance_deadline: datetime
+    compliance_status: str
+
+Class SupervisoryAuthorityCooperationExtended:
+    """
+    Chapter VII implementation - Cooperation and Consistency.
+
+    CRITICAL for multi-jurisdiction trading platforms:
+    - Understand which SA is lead for your processing
+    - Prepare for coordinated investigations
+    - Know how to respond to cross-border enforcement
+    - Understand EDPB escalation paths
+
+    Per GDPR Articles 60-67, this module handles:
+    - Lead SA cooperation procedures
+    - Mutual assistance requests
+    - Joint operations participation
+    - Consistency mechanism tracking
+    - Urgency procedure response
+    """
+
+    # Lead SA Determination (Article 56)
+    - determine_lead_sa(processing: Dict) -> LeadSADetermination
+    - identify_concerned_sas(processing: Dict) -> List[str]
+    - challenge_lead_sa_determination(case_id: str, grounds: str) -> ChallengeResult
+
+    # Cross-Border Case Management
+    - register_cross_border_case(case: CrossBorderCase) -> str
+    - track_cooperation_status(case_id: str) -> CooperationStatus
+    - respond_to_sa_draft_decision(case_id: str, response: str) -> ResponseResult
+    - raise_objection(case_id: str, objection: str) -> ObjectionResult
+
+    # Mutual Assistance (Article 61)
+    - receive_mutual_assistance_request(request: MutualAssistanceRequest) -> str
+    - assess_assistance_request(request_id: str) -> AssistanceAssessment
+    - fulfill_assistance_request(request_id: str, response: Dict) -> FulfillmentResult
+    - refuse_assistance_request(request_id: str, grounds: List[str]) -> RefusalResult
+    - track_assistance_deadline(request_id: str) -> DeadlineStatus
+
+    # Joint Operations (Article 62)
+    - receive_joint_operation_notification(operation: JointOperation) -> str
+    - participate_in_joint_operation(operation_id: str) -> ParticipationResult
+    - provide_operation_access(operation_id: str, access_scope: Dict) -> AccessResult
+    - receive_seconded_staff(operation_id: str, staff: List[str]) -> ReceptionResult
+
+    # Consistency Mechanism (Articles 63-65)
+    - track_edpb_referral(referral: EDPBReferral) -> str
+    - assess_referral_implications(referral_id: str) -> ImplicationAssessment
+    - prepare_for_binding_decision(referral_id: str) -> PreparationPlan
+    - implement_edpb_decision(referral_id: str, decision: str) -> ImplementationResult
+
+    # Urgency Procedure (Article 66)
+    - receive_urgency_measure(measure: UrgencyMeasure) -> str
+    - assess_urgency_measure_validity(measure_id: str) -> ValidityAssessment
+    - comply_with_urgency_measure(measure_id: str) -> ComplianceResult
+    - request_edpb_opinion_on_urgency(measure_id: str) -> OpinionRequest
+
+    # Reporting
+    - get_cross_border_cases() -> List[CrossBorderCase]
+    - get_sa_cooperation_dashboard() -> CooperationDashboard
+    - generate_cooperation_report() -> Report
+```
+
+**Lead SA Identification for Trading Platform:**
+
+```
+Platform Cross-Border Analysis:
+──────────────────────────────────────────────────────────────────
+
+1. Main Establishment (Art. 4(16))
+   └─ Where is central administration?
+      OR Where are decisions about processing made?
+   → This determines Lead SA
+
+2. Example for Trading Platform:
+   ├─ Central HQ: Ireland
+   ├─ Tech Development: Germany
+   ├─ Customer Support: Spain
+   └─ Data Processing: Netherlands
+
+   Lead SA Determination:
+   ├─ If central admin in IE → DPC Ireland is Lead SA
+   ├─ If processing decisions in DE → BfDI is Lead SA
+   └─ Document reasoning clearly
+
+3. Concerned SAs (Art. 4(22))
+   SAs of MS where:
+   ├─ Establishments located (DE, ES, NL)
+   ├─ Data subjects substantially affected
+   └─ Processing activities occur
+
+4. Response Obligations:
+   ├─ Cooperate with Lead SA (Art. 60)
+   ├─ Respond to draft decisions within deadline
+   ├─ Implement Lead SA decisions
+   └─ Escalate objections through proper channels
+```
+
+#### 6.2.7b BCRManager (bcr_manager.py) - NEW v2.0
+
+**Article 47 - Binding Corporate Rules**
+
+Per [GDPR Article 47](https://gdpr-info.eu/art-47-gdpr/), Binding Corporate Rules (BCRs) are internal data protection policies for multinational groups to enable international transfers within the group.
+
+> **Relevance for Trading Platforms**:
+> - Groups with entities outside EEA
+> - Intra-group data flows (parent/subsidiary)
+> - Alternative to SCCs for group transfers
+> - Demonstrates accountability (Art. 5(2))
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Article 47 - Binding Corporate Rules
+# ═══════════════════════════════════════════════════════════════════
+
+Enum BCRType:
+    """Types of Binding Corporate Rules"""
+    BCR_C = "bcr_controller"           # Art. 47 - Controller rules
+    BCR_P = "bcr_processor"            # Art. 47 - Processor rules
+
+Enum BCRStatus:
+    DRAFTING = "drafting"
+    SUBMITTED = "submitted"
+    UNDER_REVIEW = "under_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    SUSPENDED = "suspended"
+    WITHDRAWN = "withdrawn"
+
+Dataclass BCRApplication:
+    """BCR approval application to Lead SA"""
+    application_id: str
+    applicant_group: str                        # Corporate group name
+    bcr_type: BCRType
+    application_date: datetime
+
+    # Group structure
+    group_entities: List[BCRGroupEntity]
+    lead_applicant: str                         # Entity leading application
+    third_country_entities: List[str]           # Entities outside EEA
+
+    # BCR content (Art. 47(2) requirements)
+    bcr_document: str                           # Reference to BCR document
+    group_structure_description: str
+    data_transfers_covered: List[str]
+    data_categories: List[str]
+    processing_operations: List[str]
+    legal_basis_for_transfers: str
+
+    # Lead SA and cooperation
+    lead_sa: str                                # BCR Lead SA (Art. 47(1))
+    concerned_sas: List[str]
+    cooperation_procedure_status: str
+
+    # Status
+    status: BCRStatus
+    approval_date: Optional[datetime]
+    approval_reference: Optional[str]
+
+Dataclass BCRGroupEntity:
+    """Entity bound by BCRs"""
+    entity_id: str
+    entity_name: str
+    country: str                                # ISO code
+    is_eea: bool
+    role: str                                   # "controller", "processor"
+    binding_mechanism: str                      # How entity is bound to BCRs
+
+Dataclass BCRRequirements:
+    """Article 47(2) mandatory BCR elements"""
+    # (a) Structure and contact details
+    group_structure: str
+    contact_details: str
+
+    # (b) Data transfers
+    data_transfers_description: str
+    categories_of_personal_data: List[str]
+    type_of_processing: List[str]
+    purposes: List[str]
+    affected_countries: List[str]
+
+    # (c) Legally binding nature
+    legally_binding_internal: bool
+    legally_binding_external: bool
+    enforcement_mechanism: str
+
+    # (d) Data protection principles
+    purpose_limitation_applied: bool
+    data_minimisation_applied: bool
+    storage_limitation_applied: bool
+    data_quality_measures: str
+    legal_basis_documented: bool
+    special_categories_safeguards: str
+    security_measures: str
+
+    # (e) Data subject rights
+    rights_mechanism: str                       # How data subjects exercise rights
+    third_party_beneficiary: bool               # Art. 47(1)(b) - third party beneficiary rights
+
+    # (f) Acceptance of liability
+    liability_acceptance: str                   # Art. 47(2)(f) liability
+
+    # (g) Information to data subjects
+    data_subject_information: str
+
+    # (h) DPO tasks
+    dpo_bcr_responsibilities: str
+
+    # (i) Complaint procedure
+    complaint_procedure: str
+
+    # (j) Verification mechanism
+    compliance_verification: str
+    audit_mechanisms: str
+
+    # (k) Reporting mechanism
+    change_reporting: str
+    sa_notification: str
+
+    # (l) Cooperation mechanism
+    sa_cooperation: str
+    query_response: str
+
+    # (m) Training
+    training_programs: str
+
+Class BCRManager:
+    """
+    Article 47 implementation - Binding Corporate Rules.
+
+    BCRs are an alternative to SCCs for intra-group international transfers.
+
+    Benefits:
+    - Single approval covers entire group
+    - Demonstrates strong accountability
+    - Flexible for complex group structures
+    - Long-term solution (vs. per-transfer SCCs)
+
+    Challenges:
+    - Lengthy approval process (12-18 months)
+    - Significant documentation requirements
+    - Ongoing compliance obligations
+    - Regular reviews required
+    """
+
+    # BCR Development
+    - assess_bcr_suitability(group_structure: Dict) -> SuitabilityAssessment
+    - initiate_bcr_application(bcr_type: BCRType) -> BCRApplication
+    - document_art47_requirements(application_id: str) -> BCRRequirements
+    - generate_bcr_template(group_structure: Dict) -> BCRDocument
+
+    # Application Management
+    - submit_bcr_to_lead_sa(application_id: str) -> SubmissionResult
+    - respond_to_sa_queries(application_id: str, queries: List[str]) -> ResponseResult
+    - update_bcr_document(application_id: str, changes: Dict) -> UpdateResult
+    - track_approval_status(application_id: str) -> ApprovalStatus
+
+    # Post-Approval Management
+    - register_approved_bcr(bcr: ApprovedBCR) -> str
+    - add_group_entity(bcr_id: str, entity: BCRGroupEntity) -> bool
+    - remove_group_entity(bcr_id: str, entity_id: str) -> bool
+    - update_bcr_scope(bcr_id: str, changes: Dict) -> UpdateResult
+
+    # Compliance
+    - verify_bcr_compliance(bcr_id: str) -> ComplianceVerification
+    - conduct_bcr_audit(bcr_id: str) -> AuditResult
+    - train_bcr_staff(bcr_id: str) -> TrainingResult
+    - handle_bcr_complaint(bcr_id: str, complaint: Complaint) -> ComplaintResult
+
+    # Reporting
+    - report_bcr_changes_to_sa(bcr_id: str, changes: Dict) -> ReportResult
+    - generate_bcr_compliance_report(bcr_id: str) -> Report
+    - notify_sa_of_breach(bcr_id: str, breach: Breach) -> NotificationResult
+
+    # Integration
+    - use_bcr_for_transfer(transfer: InternationalTransfer) -> BCRCoverage
+    - document_bcr_transfer(transfer_id: str, bcr_id: str) -> Documentation
+    - verify_recipient_bound(bcr_id: str, recipient: str) -> BindingVerification
+```
+
+**BCR vs SCC Decision Matrix:**
+
+| Factor | BCRs | SCCs | Recommendation |
+|--------|------|------|----------------|
+| **Group size** | Large multi-entity | Small/few entities | BCR for 5+ entities |
+| **Approval time** | 12-18 months | Immediate (self-execute) | SCC for urgent needs |
+| **Maintenance** | Centralized, ongoing | Per-transfer updates | BCR for long-term |
+| **Third-party transfers** | NOT covered | Covered | SCC for external |
+| **Cost** | High initial, low ongoing | Low initial, moderate ongoing | BCR for frequent transfers |
+| **Demonstrable compliance** | Strong evidence | Standard compliance | BCR for accountability |
+
+**Trading Platform BCR Considerations:**
+
+| Scenario | BCR Applicable | Notes |
+|----------|----------------|-------|
+| Parent company in US, subsidiaries in EU | YES | BCR-C for group-wide policy |
+| Single EU entity, multiple US processors | NO | Use SCCs (processor-controller) |
+| EU group with UK subsidiary | POSSIBLE | Consider post-adequacy; BCR as backup |
+| Multiple EU entities sharing data | NO | Intra-EEA; GDPR applies directly |
+| EU controller, US parent processor | YES | BCR-P for processor services |
 
 #### 6.2.8 EmploymentDataHandler (employment_data.py) - NEW v1.7
 
@@ -7550,7 +9173,167 @@ test_gdpr_v19_additions.py:
     └── test_fallback_standdown_on_renewal
 ```
 
-**Expected additional test count**: ~80-100 stress/negative tests + ~70-90 v1.9 addition tests
+### 6.7 Version 2.0 Test Additions (NEW v2.0)
+
+**Tests for Article 81, SA Cooperation, BCR, FRIA, Criminal Data, and US Transfer Risk:**
+
+```
+test_gdpr_v20_additions.py:
+├── test_article_81_proceeding_suspension/         # NEW v2.0
+│   ├── test_parallel_proceeding_detection
+│   ├── test_subject_matter_overlap_assessment
+│   ├── test_suspension_request_handling
+│   ├── test_sa_has_matter_check
+│   ├── test_edpb_consistency_pending_check
+│   ├── test_suspension_grant_conditions
+│   ├── test_resumption_condition_monitoring
+│   ├── test_cross_border_coordination_initiation
+│   ├── test_conflict_risk_assessment
+│   └── test_integration_with_liability_framework
+│
+├── test_article_10_criminal_data/                 # NEW v2.0
+│   ├── test_criminal_data_classification
+│   ├── test_aml_screening_art10_extraction
+│   ├── test_sanctions_match_art10_handling
+│   ├── test_pep_data_boundary_determination
+│   ├── test_legal_basis_verification_official_authority
+│   ├── test_legal_basis_verification_eu_law
+│   ├── test_member_state_law_check
+│   ├── test_article_10_safeguards_application
+│   ├── test_access_restriction_enforcement
+│   ├── test_enhanced_logging_art10
+│   ├── test_dsar_with_art10_data
+│   └── test_third_party_aml_provider_compliance
+│
+├── test_sa_cooperation_extended/                  # NEW v2.0 - Articles 60-67
+│   ├── test_lead_sa_determination
+│   ├── test_concerned_sa_identification
+│   ├── test_cross_border_case_registration
+│   ├── test_mutual_assistance_request_handling
+│   ├── test_mutual_assistance_deadline_tracking
+│   ├── test_assistance_refusal_grounds
+│   ├── test_joint_operation_participation
+│   ├── test_edpb_referral_tracking
+│   ├── test_binding_decision_implementation
+│   ├── test_urgency_measure_reception
+│   ├── test_urgency_compliance_deadline
+│   └── test_cooperation_dashboard_metrics
+│
+├── test_bcr_management/                           # NEW v2.0 - Article 47
+│   ├── test_bcr_suitability_assessment
+│   ├── test_bcr_application_initiation
+│   ├── test_art47_2_requirements_documentation
+│   ├── test_bcr_submission_to_lead_sa
+│   ├── test_bcr_approval_tracking
+│   ├── test_group_entity_management
+│   ├── test_bcr_compliance_verification
+│   ├── test_bcr_audit_execution
+│   ├── test_bcr_transfer_coverage_check
+│   └── test_bcr_vs_scc_decision_support
+│
+├── test_fria_ai_systems/                          # NEW v2.0 - FRIA
+│   ├── test_ai_act_classification
+│   ├── test_annex_iii_applicability_check
+│   ├── test_fria_requirement_determination
+│   ├── test_fria_dpia_linkage
+│   ├── test_fundamental_right_impact_assessment
+│   ├── test_discrimination_risk_analysis
+│   ├── test_bias_audit_execution
+│   ├── test_vulnerable_groups_assessment
+│   ├── test_human_oversight_documentation
+│   ├── test_complaint_mechanism_documentation
+│   ├── test_combined_dpia_fria_report
+│   ├── test_eu_database_registration
+│   └── test_trading_ai_classification_scenarios
+│
+├── test_us_transfer_risk_management/              # NEW v2.0 - EU-US DPF
+│   ├── test_dpf_participation_verification
+│   ├── test_dpf_status_check
+│   ├── test_us_transfer_risk_assessment
+│   ├── test_fisa_702_exposure_determination
+│   ├── test_eo_14086_adequacy_evaluation
+│   ├── test_supplementary_measures_identification
+│   ├── test_dpf_contingency_plan_creation
+│   ├── test_dpf_invalidation_trigger_detection
+│   ├── test_contingency_activation
+│   ├── test_schrems_iii_monitoring
+│   ├── test_trading_platform_us_transfer_classification
+│   └── test_mandatory_tia_enforcement
+│
+├── test_uk_adequacy_emergency_enhanced/           # NEW v2.0
+│   ├── test_ec_decision_check_real_implementation
+│   ├── test_eurlex_verification
+│   ├── test_adequacy_page_parsing
+│   ├── test_emergency_activation_threshold
+│   ├── test_pre_emergency_check_execution
+│   └── test_fallback_execution_with_real_check
+│
+└── test_performance_benchmarks/                   # NEW v2.0
+    ├── test_api_performance/
+    │   ├── test_dsar_response_under_1000ms
+    │   ├── test_consent_update_under_500ms
+    │   ├── test_compliance_check_under_200ms
+    │   └── test_transfer_validation_under_300ms
+    │
+    ├── test_concurrency/
+    │   ├── test_100_concurrent_dsar_requests
+    │   ├── test_100_concurrent_consent_updates
+    │   ├── test_50_concurrent_breach_assessments
+    │   └── test_database_connection_pool_exhaustion
+    │
+    ├── test_throughput/
+    │   ├── test_1000_dsars_per_hour
+    │   ├── test_10000_consent_changes_per_hour
+    │   └── test_bulk_ropa_export_under_30s
+    │
+    └── test_latency/
+        ├── test_breach_detection_latency_under_60s
+        ├── test_notification_delivery_latency
+        ├── test_deadline_alert_latency
+        └── test_cross_service_communication_latency
+```
+
+**Regulatory Arbitrage Tests (NEW v2.0):**
+
+```
+test_regulatory_arbitrage.py:
+├── test_multi_regulation_conflicts/
+│   ├── test_mifid_gdpr_amld_triple_conflict      # 3-way conflict resolution
+│   ├── test_dora_gdpr_breach_timing_coordination # Concurrent timelines
+│   ├── test_ai_act_gdpr_dpia_fria_combined       # Combined assessments
+│   └── test_eprivacy_gdpr_consent_unification    # Unified consent
+│
+├── test_user_exploitation_scenarios/
+│   ├── test_user_exploits_dsar_timing            # Gaming system
+│   ├── test_erasure_during_aml_investigation     # AML block erasure
+│   ├── test_portability_to_avoid_restrictions    # Portability gaming
+│   └── test_consent_withdrawal_mid_trade         # Contract basis fallback
+│
+├── test_sa_investigation_scenarios/
+│   ├── test_erasure_request_during_investigation # Investigation block
+│   ├── test_sa_parallel_investigation_handling   # Multiple SAs
+│   └── test_edpb_decision_during_local_case      # EDPB override
+│
+└── test_cross_jurisdiction/
+    ├── test_dsar_routing_failure_recovery        # OSS failure
+    ├── test_multi_ms_establishment_conflict      # Multiple establishments
+    └── test_third_country_transfer_during_breach # Transfer during breach
+```
+
+**Expected additional test count v2.0**: ~120-150 tests
+
+**Performance Benchmark Requirements:**
+
+| Metric | Target | Rationale |
+|--------|--------|-----------|
+| DSAR API response | < 1000ms | User experience |
+| Consent update | < 500ms | Real-time trading |
+| Compliance check | < 200ms | Per-request validation |
+| Breach detection | < 60s | DORA classification deadline |
+| Concurrent DSARs | 100+ | CEF 2025 flood risk |
+| Hourly throughput | 1000+ DSARs | Large-scale compliance |
+
+**Expected additional test count**: ~80-100 stress/negative tests + ~70-90 v1.9 addition tests + ~120-150 v2.0 addition tests
 
 **Test Environment Requirements:**
 
@@ -8593,10 +10376,94 @@ Class UKAdequacyEmergencyManager:
     ─────────────────────────────────────────────────────────────
     """
 
-    # Monitoring
+    # Monitoring - ENHANCED v2.0 with real EC decision check
     - check_eu_commission_decision() -> DecisionStatus
     - monitor_uk_adequacy_news() -> List[NewsItem]
     - get_days_until_expiry() -> int
+    - verify_ec_decision_published() -> ECDecisionVerification  # NEW v2.0
+
+    # Real EC Decision Check Implementation (NEW v2.0)
+    """
+    CRITICAL: Real implementation MUST check official EC sources:
+
+    Primary Source:
+    https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en
+
+    Secondary Sources:
+    - EUR-Lex for official decisions
+    - EDPB opinions on adequacy
+    - Official Journal of the EU
+
+    Implementation:
+    ```python
+    import requests
+    from bs4 import BeautifulSoup
+    from datetime import datetime
+
+    class ECDecisionChecker:
+        '''
+        Real-time check for EC adequacy decisions.
+
+        MUST be run daily during critical period (Nov-Dec 2025).
+        '''
+
+        EC_ADEQUACY_URL = "https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/adequacy-decisions_en"
+        EURLEX_SEARCH_URL = "https://eur-lex.europa.eu/search.html"
+
+        def check_uk_adequacy_renewal(self) -> ECDecisionStatus:
+            '''
+            Check if UK adequacy has been renewed.
+
+            Returns:
+                ECDecisionStatus with:
+                - status: "renewed" | "pending" | "expired" | "error"
+                - decision_date: datetime if renewed
+                - new_sunset_date: datetime if renewed
+                - official_reference: str (OJ reference)
+            '''
+            try:
+                # Step 1: Check EC adequacy page
+                response = requests.get(self.EC_ADEQUACY_URL, timeout=30)
+                soup = BeautifulSoup(response.content, 'html.parser')
+
+                # Step 2: Look for UK in adequacy list
+                uk_entry = self._find_uk_entry(soup)
+
+                if uk_entry:
+                    # Step 3: Check if date has been updated
+                    if self._is_renewed(uk_entry):
+                        return ECDecisionStatus(
+                            status="renewed",
+                            decision_date=self._extract_decision_date(uk_entry),
+                            new_sunset_date=self._extract_sunset_date(uk_entry),
+                            official_reference=self._extract_oj_reference(uk_entry)
+                        )
+                    else:
+                        return ECDecisionStatus(
+                            status="pending",
+                            current_sunset_date=date(2025, 12, 27)
+                        )
+
+                return ECDecisionStatus(status="expired")
+
+            except Exception as e:
+                logger.error(f"EC decision check failed: {e}")
+                return ECDecisionStatus(status="error", error=str(e))
+
+        def _find_uk_entry(self, soup) -> Optional[Element]:
+            # Implementation to find UK entry in adequacy table
+            pass
+
+        def _is_renewed(self, entry) -> bool:
+            # Check if sunset date is after current date
+            pass
+
+        def verify_with_eurlex(self, decision_reference: str) -> bool:
+            '''Verify decision exists in EUR-Lex'''
+            # Cross-reference with EUR-Lex for official publication
+            pass
+    ```
+    """
 
     # Inventory Management
     - register_uk_processor(processor: UKProcessorRecord) -> str
