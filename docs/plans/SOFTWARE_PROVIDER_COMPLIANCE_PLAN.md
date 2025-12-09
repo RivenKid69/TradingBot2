@@ -617,6 +617,195 @@ class TestBacktestDisclaimer:
 
 ---
 
+### 1.6 Broker API Compatibility Check
+
+**Location:** `services/broker/terms_compliance.py`
+
+**Requirement:** Ensure platform usage complies with broker API terms of service.
+
+**Broker Terms Review Checklist:**
+```
+- [ ] Interactive Brokers: API Agreement Section 5 (Third-Party Access)
+- [ ] Alpaca: Platform Agreement, API Terms
+- [ ] Binance: API Terms of Use, Automated Trading Policy
+- [ ] Coinbase: API User Agreement
+- [ ] Kraken: API Terms of Service
+- [ ] TD Ameritrade: API License Agreement
+```
+
+**Key Requirements by Broker:**
+
+| Broker | Third-Party App Allowed | Rate Limits | Special Requirements |
+|--------|------------------------|-------------|---------------------|
+| Interactive Brokers | Yes (with disclosure) | 50 msg/sec | Must not mask client identity |
+| Alpaca | Yes | 200 req/min | Attribution required |
+| Binance | Yes | 1200 req/min | IP whitelist recommended |
+
+**Implementation:**
+
+```python
+# services/broker/terms_compliance.py
+"""
+Broker API Terms Compliance Tracking.
+
+Ensures users acknowledge broker-specific terms before API key submission.
+"""
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Optional, Dict
+
+class SupportedBroker(Enum):
+    INTERACTIVE_BROKERS = "interactive_brokers"
+    ALPACA = "alpaca"
+    BINANCE = "binance"
+    COINBASE = "coinbase"
+    KRAKEN = "kraken"
+
+@dataclass
+class BrokerTermsAcknowledgment:
+    user_id: str
+    broker: SupportedBroker
+    terms_version: str
+    acknowledged_at: datetime
+    ip_address: str
+
+BROKER_TERMS_WARNINGS: Dict[SupportedBroker, str] = {
+    SupportedBroker.INTERACTIVE_BROKERS: """
+INTERACTIVE BROKERS API USAGE NOTICE
+
+By connecting your Interactive Brokers account, you acknowledge:
+1. You are using a third-party application to access IB's API
+2. IB's API Agreement Section 5 applies to this usage
+3. You are responsible for compliance with IB's Acceptable Use Policy
+4. This platform will send orders on your behalf using your credentials
+
+IB API Documentation: https://interactivebrokers.github.io/
+""",
+    SupportedBroker.ALPACA: """
+ALPACA API USAGE NOTICE
+
+By connecting your Alpaca account, you acknowledge:
+1. You are using a third-party platform to access Alpaca's API
+2. Alpaca's Platform Agreement applies
+3. Rate limits: 200 requests/minute
+4. Paper trading is recommended for strategy testing
+
+Alpaca Terms: https://alpaca.markets/terms-and-conditions
+""",
+    SupportedBroker.BINANCE: """
+BINANCE API USAGE NOTICE
+
+By connecting your Binance account, you acknowledge:
+1. You accept Binance's API Terms of Use
+2. Automated trading must comply with Binance's policies
+3. IP whitelisting is strongly recommended for security
+4. Rate limits vary by endpoint (check documentation)
+
+Binance API Terms: https://www.binance.com/en/terms-api
+""",
+}
+
+class BrokerTermsService:
+    """Manage broker-specific terms acknowledgments."""
+
+    def __init__(self, storage):
+        self._storage = storage
+        self._current_versions = {
+            SupportedBroker.INTERACTIVE_BROKERS: "2024.1",
+            SupportedBroker.ALPACA: "2024.1",
+            SupportedBroker.BINANCE: "2024.1",
+        }
+
+    def get_broker_warning(self, broker: SupportedBroker) -> str:
+        """Get broker-specific warning text."""
+        return BROKER_TERMS_WARNINGS.get(broker, "")
+
+    def record_acknowledgment(
+        self,
+        user_id: str,
+        broker: SupportedBroker,
+        ip_address: str
+    ) -> BrokerTermsAcknowledgment:
+        """Record user's acknowledgment of broker terms."""
+        ack = BrokerTermsAcknowledgment(
+            user_id=user_id,
+            broker=broker,
+            terms_version=self._current_versions[broker],
+            acknowledged_at=datetime.utcnow(),
+            ip_address=ip_address
+        )
+        self._storage.save(ack)
+        return ack
+
+    def has_valid_acknowledgment(
+        self,
+        user_id: str,
+        broker: SupportedBroker
+    ) -> bool:
+        """Check if user has acknowledged current broker terms."""
+        latest = self._storage.get_latest(user_id, broker)
+        if not latest:
+            return False
+        return latest.terms_version == self._current_versions[broker]
+
+    def require_acknowledgment_before_key_submission(
+        self,
+        user_id: str,
+        broker: SupportedBroker
+    ):
+        """Enforce acknowledgment before API key can be submitted."""
+        if not self.has_valid_acknowledgment(user_id, broker):
+            raise BrokerTermsNotAcknowledgedError(
+                f"Please review and accept {broker.value} API terms before submitting credentials"
+            )
+
+class BrokerTermsNotAcknowledgedError(Exception):
+    pass
+```
+
+**Integration point:**
+```python
+# In API key submission flow
+def submit_broker_credentials(user_id: str, broker: str, api_key: str, api_secret: str):
+    broker_enum = SupportedBroker(broker)
+
+    # Step 1: Require broker terms acknowledgment
+    broker_terms_service.require_acknowledgment_before_key_submission(
+        user_id, broker_enum
+    )
+
+    # Step 2: Encrypt and store credentials
+    credential_vault.encrypt(user_id, CredentialType.BROKER_API_KEY, broker, api_key)
+    credential_vault.encrypt(user_id, CredentialType.BROKER_API_SECRET, broker, api_secret)
+```
+
+**Tests:**
+```python
+class TestBrokerTermsService:
+    def test_warning_text_exists_for_supported_brokers(self, service):
+        for broker in SupportedBroker:
+            warning = service.get_broker_warning(broker)
+            assert len(warning) > 0
+
+    def test_acknowledgment_required_before_key_submission(self, service):
+        with pytest.raises(BrokerTermsNotAcknowledgedError):
+            service.require_acknowledgment_before_key_submission(
+                "new_user", SupportedBroker.ALPACA
+            )
+
+    def test_acknowledgment_recorded(self, service):
+        service.record_acknowledgment("user_001", SupportedBroker.ALPACA, "127.0.0.1")
+        assert service.has_valid_acknowledgment("user_001", SupportedBroker.ALPACA)
+
+    def test_terms_version_change_requires_reacknowledgment(self, service):
+        service.record_acknowledgment("user_001", SupportedBroker.BINANCE, "127.0.0.1")
+        service._current_versions[SupportedBroker.BINANCE] = "2025.1"
+        assert not service.has_valid_acknowledgment("user_001", SupportedBroker.BINANCE)
+```
+
+---
+
 ## Phase 2: GDPR & Additional Protections
 
 ### 2.1 GDPR Delete (Right to Erasure)
@@ -1313,6 +1502,420 @@ h) Demonstrate compliance, allow audits
 
 ---
 
+### 2.6 Rate Limiting Service
+
+**Location:** `services/broker/rate_limiter.py`
+
+**Purpose:** Prevent users from hitting broker rate limits, which could lock their accounts or cause order rejections.
+
+**Known Broker Rate Limits:**
+
+| Broker | Orders/sec | API Calls/min | Penalty |
+|--------|-----------|---------------|---------|
+| Interactive Brokers | 50 msg/sec | 50/sec sustained | Connection throttle |
+| Alpaca | 200/min orders | 200/min | 429 errors, temp ban |
+| Binance | 10 orders/sec | 1200/min | IP ban (temporary) |
+| Coinbase | 10/sec | 10,000/hour | 429 errors |
+
+**Implementation:**
+
+```python
+# services/broker/rate_limiter.py
+"""
+Pre-broker rate limiting to protect user accounts.
+
+Prevents users from exceeding broker rate limits which could:
+- Lock their API access temporarily or permanently
+- Cause order rejections at critical moments
+- Result in account restrictions
+
+References:
+- Token bucket algorithm (RFC 6585)
+- Circuit breaker pattern (Release It!, Nygard)
+"""
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Dict, Optional
+from collections import deque
+import threading
+import time
+
+class RateLimitStatus(Enum):
+    OK = "ok"
+    WARNING = "warning"  # Approaching limit
+    THROTTLED = "throttled"  # At limit, requests delayed
+    BLOCKED = "blocked"  # Circuit breaker open
+
+@dataclass
+class BrokerRateLimits:
+    """Rate limit configuration per broker."""
+    orders_per_second: float
+    api_calls_per_minute: int
+    warning_threshold: float = 0.8  # Warn at 80% of limit
+    cooldown_seconds: int = 60
+
+BROKER_LIMITS: Dict[str, BrokerRateLimits] = {
+    "interactive_brokers": BrokerRateLimits(
+        orders_per_second=45,  # Conservative vs 50 actual
+        api_calls_per_minute=2700,
+    ),
+    "alpaca": BrokerRateLimits(
+        orders_per_second=3,  # 200/min = 3.3/sec
+        api_calls_per_minute=180,  # Conservative vs 200
+    ),
+    "binance": BrokerRateLimits(
+        orders_per_second=8,  # Conservative vs 10
+        api_calls_per_minute=1000,  # Conservative vs 1200
+    ),
+}
+
+@dataclass
+class RateLimitCheck:
+    status: RateLimitStatus
+    current_rate: float
+    limit: float
+    wait_seconds: float = 0
+    message: str = ""
+
+class BrokerRateLimiter:
+    """
+    Rate limiter with circuit breaker for broker API protection.
+
+    Features:
+    - Per-user, per-broker rate tracking
+    - Warning before hitting limits
+    - Automatic throttling
+    - Circuit breaker for runaway strategies
+    """
+
+    def __init__(self):
+        self._windows: Dict[str, deque] = {}  # user:broker -> timestamps
+        self._circuit_breakers: Dict[str, datetime] = {}
+        self._lock = threading.Lock()
+
+    def _get_key(self, user_id: str, broker: str) -> str:
+        return f"{user_id}:{broker}"
+
+    def check_and_consume(
+        self,
+        user_id: str,
+        broker: str,
+        request_type: str = "order"
+    ) -> RateLimitCheck:
+        """
+        Check rate limit and consume a token if allowed.
+
+        Args:
+            user_id: User making the request
+            broker: Target broker
+            request_type: "order" or "api_call"
+
+        Returns:
+            RateLimitCheck with status and wait time if throttled
+        """
+        key = self._get_key(user_id, broker)
+        limits = BROKER_LIMITS.get(broker)
+
+        if not limits:
+            return RateLimitCheck(status=RateLimitStatus.OK, current_rate=0, limit=0)
+
+        with self._lock:
+            # Check circuit breaker
+            if key in self._circuit_breakers:
+                if datetime.utcnow() < self._circuit_breakers[key]:
+                    return RateLimitCheck(
+                        status=RateLimitStatus.BLOCKED,
+                        current_rate=0,
+                        limit=limits.orders_per_second,
+                        wait_seconds=(self._circuit_breakers[key] - datetime.utcnow()).seconds,
+                        message="Circuit breaker open - strategy paused for safety"
+                    )
+                else:
+                    del self._circuit_breakers[key]
+
+            # Initialize window
+            if key not in self._windows:
+                self._windows[key] = deque()
+
+            window = self._windows[key]
+            now = time.time()
+            window_start = now - 1.0  # 1-second window
+
+            # Remove old entries
+            while window and window[0] < window_start:
+                window.popleft()
+
+            current_rate = len(window)
+            limit = limits.orders_per_second
+
+            # Check status
+            if current_rate >= limit:
+                wait_time = window[0] - window_start + 0.1
+                return RateLimitCheck(
+                    status=RateLimitStatus.THROTTLED,
+                    current_rate=current_rate,
+                    limit=limit,
+                    wait_seconds=max(0, wait_time),
+                    message=f"Rate limit reached. Wait {wait_time:.1f}s"
+                )
+
+            if current_rate >= limit * limits.warning_threshold:
+                window.append(now)
+                return RateLimitCheck(
+                    status=RateLimitStatus.WARNING,
+                    current_rate=current_rate + 1,
+                    limit=limit,
+                    message=f"Approaching rate limit: {current_rate + 1}/{limit}/sec"
+                )
+
+            window.append(now)
+            return RateLimitCheck(
+                status=RateLimitStatus.OK,
+                current_rate=current_rate + 1,
+                limit=limit
+            )
+
+    def trigger_circuit_breaker(
+        self,
+        user_id: str,
+        broker: str,
+        reason: str,
+        duration_seconds: int = 60
+    ):
+        """
+        Open circuit breaker to stop all requests.
+
+        Use for:
+        - Runaway strategy detection
+        - Broker error responses indicating issues
+        - Manual emergency stop
+        """
+        key = self._get_key(user_id, broker)
+        with self._lock:
+            self._circuit_breakers[key] = datetime.utcnow() + timedelta(seconds=duration_seconds)
+
+    def get_user_status(self, user_id: str, broker: str) -> dict:
+        """Get current rate limit status for user."""
+        key = self._get_key(user_id, broker)
+        limits = BROKER_LIMITS.get(broker)
+
+        with self._lock:
+            window = self._windows.get(key, deque())
+            now = time.time()
+            recent = sum(1 for t in window if t > now - 1.0)
+
+            return {
+                "user_id": user_id,
+                "broker": broker,
+                "current_rate_per_second": recent,
+                "limit_per_second": limits.orders_per_second if limits else None,
+                "utilization_percent": (recent / limits.orders_per_second * 100) if limits else 0,
+                "circuit_breaker_active": key in self._circuit_breakers
+            }
+```
+
+**Integration point:**
+```python
+# In order execution flow
+async def execute_order(user_id: str, broker: str, order: Order):
+    # Step 1: Check rate limit
+    rate_check = rate_limiter.check_and_consume(user_id, broker, "order")
+
+    if rate_check.status == RateLimitStatus.BLOCKED:
+        raise CircuitBreakerOpenError(rate_check.message)
+
+    if rate_check.status == RateLimitStatus.THROTTLED:
+        await asyncio.sleep(rate_check.wait_seconds)
+        rate_check = rate_limiter.check_and_consume(user_id, broker, "order")
+
+    if rate_check.status == RateLimitStatus.WARNING:
+        logger.warning(f"User {user_id} approaching rate limit: {rate_check.message}")
+
+    # Step 2: Execute order
+    return await broker_client.submit_order(order)
+```
+
+**Runaway Strategy Detection:**
+```python
+# Detect and stop runaway strategies
+class RunawayDetector:
+    def __init__(self, rate_limiter: BrokerRateLimiter):
+        self._limiter = rate_limiter
+        self._order_counts: Dict[str, int] = {}
+
+    def check_strategy(self, user_id: str, strategy_id: str, broker: str):
+        """Detect if strategy is placing orders too rapidly."""
+        key = f"{user_id}:{strategy_id}"
+        self._order_counts[key] = self._order_counts.get(key, 0) + 1
+
+        # More than 100 orders in rapid succession = runaway
+        if self._order_counts[key] > 100:
+            self._limiter.trigger_circuit_breaker(
+                user_id, broker,
+                reason=f"Runaway strategy detected: {strategy_id}",
+                duration_seconds=300  # 5 minute cooldown
+            )
+            raise RunawayStrategyError(f"Strategy {strategy_id} stopped: excessive order rate")
+```
+
+**Tests:**
+```python
+class TestBrokerRateLimiter:
+    def test_allows_requests_under_limit(self, limiter):
+        for _ in range(5):
+            result = limiter.check_and_consume("user_001", "alpaca", "order")
+            assert result.status in [RateLimitStatus.OK, RateLimitStatus.WARNING]
+
+    def test_throttles_at_limit(self, limiter):
+        # Fill up the rate limit
+        for _ in range(10):
+            limiter.check_and_consume("user_001", "alpaca", "order")
+
+        result = limiter.check_and_consume("user_001", "alpaca", "order")
+        assert result.status == RateLimitStatus.THROTTLED
+        assert result.wait_seconds > 0
+
+    def test_warning_at_threshold(self, limiter):
+        # Get to 80% of limit (alpaca = 3/sec, so 3 requests)
+        for _ in range(2):
+            limiter.check_and_consume("user_001", "alpaca", "order")
+
+        result = limiter.check_and_consume("user_001", "alpaca", "order")
+        assert result.status == RateLimitStatus.WARNING
+
+    def test_circuit_breaker_blocks_all(self, limiter):
+        limiter.trigger_circuit_breaker("user_001", "binance", "test", 60)
+        result = limiter.check_and_consume("user_001", "binance", "order")
+        assert result.status == RateLimitStatus.BLOCKED
+
+    def test_different_users_independent(self, limiter):
+        # User 1 at limit
+        for _ in range(10):
+            limiter.check_and_consume("user_001", "alpaca", "order")
+
+        # User 2 should still be OK
+        result = limiter.check_and_consume("user_002", "alpaca", "order")
+        assert result.status == RateLimitStatus.OK
+```
+
+---
+
+## Phase 3: Business Protection (Recommended)
+
+### 3.1 Professional Indemnity Insurance
+
+**Purpose:** Protect the business from claims arising from software errors that may lead to trading losses.
+
+**Why It's Important:**
+- Even with comprehensive disclaimers, users may attempt legal action
+- Software bugs causing order errors are a real risk
+- Insurance provides defense costs coverage even for frivolous claims
+- Required by some enterprise clients for B2B contracts
+
+**Recommended Coverage:**
+
+| Coverage Type | Minimum | Recommended | Notes |
+|---------------|---------|-------------|-------|
+| Professional Indemnity | €500,000 | €1-2M | Core coverage for software errors |
+| Cyber Liability | €250,000 | €500K-1M | Data breach, API key exposure |
+| General Liability | €500,000 | €1M | Office, operations |
+| D&O (if incorporated) | €250,000 | €500K | Director protection |
+
+**Key Coverage Elements for Trading Software:**
+
+```
+1. PROFESSIONAL INDEMNITY (Errors & Omissions)
+   Covers: Claims arising from:
+   - Software bugs causing incorrect order execution
+   - Data errors in backtesting leading to user losses
+   - System downtime during critical market events
+   - Incorrect API integration causing failed orders
+
+   Exclusions to negotiate removal:
+   - Trading losses (try to get sub-limit)
+   - Algorithmic trading software (ensure included)
+
+2. CYBER LIABILITY
+   Covers:
+   - Data breach notification costs
+   - Forensic investigation
+   - Regulatory fines (where insurable)
+   - API key exposure incidents
+   - Ransomware (business interruption)
+
+3. TECHNOLOGY E&O EXTENSION
+   Specific to software providers:
+   - Failure to deliver functionality
+   - Performance issues
+   - Integration failures
+```
+
+**Specialist Insurers for Fintech:**
+
+| Insurer | Specialty | Contact |
+|---------|-----------|---------|
+| Hiscox | Tech E&O, Cyber | hiscox.com/technology |
+| AIG | Large fintech, Cyber | aig.com/business/insurance/cyber |
+| Coalition | Cyber-first, AI underwriting | coalitioninc.com |
+| Embroker | Startup-friendly | embroker.com |
+| Vouch | Tech startups | vouch.us |
+
+**Application Checklist:**
+
+```
+□ Company registration documents
+□ Revenue projections (or current revenue)
+□ Number of users / API keys managed
+□ Security certifications (SOC 2, ISO 27001)
+□ Incident history (breaches, claims)
+□ Terms of Service (insurers review liability caps)
+□ Technical architecture overview
+□ Data storage locations (EU preference)
+```
+
+**Cost Estimates (Annual):**
+
+| Company Stage | Users | PI Coverage | Estimated Premium |
+|---------------|-------|-------------|-------------------|
+| Pre-revenue | <100 | €500K | €2,000-5,000 |
+| Early stage | 100-1000 | €1M | €5,000-15,000 |
+| Growth | 1000-10000 | €2M | €15,000-40,000 |
+| Scale | 10000+ | €5M | €40,000-100,000 |
+
+**Integration with ToS:**
+
+Update Terms of Service section 6 (LIMITATION OF LIABILITY):
+```
+6. LIMITATION OF LIABILITY
+   ...
+   d) The Platform maintains Professional Indemnity Insurance
+      with coverage of at least [€X]. This insurance covers
+      claims arising from software errors but does NOT cover
+      trading losses or investment performance.
+```
+
+**Action Items:**
+
+```
+□ Week 1: Get quotes from 3+ specialist insurers
+□ Week 2: Review policy wordings carefully
+□ Week 3: Negotiate exclusions (trading software, algo trading)
+□ Week 4: Bind coverage before public launch
+□ Ongoing: Annual policy review and renewal
+```
+
+**Documentation to Maintain:**
+
+```
+docs/legal/
+├── INSURANCE_CERTIFICATE.pdf      # Current certificate of insurance
+├── INSURANCE_POLICY_SUMMARY.md    # Key coverage summary
+└── CLAIMS_PROCEDURE.md            # Internal procedure for incidents
+```
+
+---
+
 ## Summary: Test Coverage
 
 ```
@@ -1321,46 +1924,74 @@ tests/
 ├── test_credential_vault.py          # Encryption, access logging
 ├── test_disclaimer_service.py        # UI disclaimers
 ├── test_backtest_disclaimer.py       # Backtest warnings
+├── test_broker_terms_service.py      # Broker API terms acknowledgment
 ├── test_gdpr_deletion.py             # Right to erasure
 ├── test_gdpr_export.py               # Right to portability
 ├── test_geo_blocking.py              # Sanctions screening
-└── test_credential_audit.py          # Access logging
+├── test_credential_audit.py          # Access logging
+└── test_broker_rate_limiter.py       # Rate limiting, circuit breaker
 ```
 
 **Coverage targets:**
 - Phase 1 (Critical): 100% coverage
 - Phase 2 (GDPR): 95% coverage
+- Phase 3 (Business): N/A (non-code)
 
 ---
 
 ## Implementation Order
 
 ```
-Week 1-2 (Phase 1):
+Week 1-2 (Phase 1 - Critical):
 ├── Day 1-2: Terms of Service document
 ├── Day 3-4: Privacy Policy document
 ├── Day 5-7: CredentialVault (encryption)
 ├── Day 8-10: DisclaimerService (UI + backtest)
-└── Day 11-14: Integration + tests
+├── Day 11-12: BrokerTermsService (API terms acknowledgment)
+└── Day 13-14: Integration + tests
 
-Week 3-4 (Phase 2):
+Week 3-4 (Phase 2 - GDPR & Protection):
 ├── Day 15-17: GDPRDeletionService
 ├── Day 18-20: GDPRExportService
-├── Day 21-23: GeoBlockingService
-├── Day 24-26: CredentialAuditLogger
+├── Day 21-22: GeoBlockingService
+├── Day 23-24: CredentialAuditLogger
+├── Day 25-26: BrokerRateLimiter (rate limiting + circuit breaker)
 ├── Day 27-28: DPA Template (if B2B)
+
+Week 5+ (Phase 3 - Business Protection):
+├── Get insurance quotes from 3+ providers
+├── Review policy wordings with legal counsel
+├── Negotiate exclusions (trading software coverage)
+├── Bind coverage before public launch
+└── Document insurance in ToS
 ```
 
 ---
 
 ## References
 
+### Regulatory
 1. **GDPR**: Regulation (EU) 2016/679
 2. **MiFID II**: Directive 2014/65/EU
 3. **E-Commerce Directive**: 2000/31/EC
-4. **ESMA Q&A**: ESMA35-43-349
+4. **ESMA Q&A**: ESMA35-43-349 (Software Vendor Exclusion)
 5. **EDPB Guidelines**: WP260 (Transparency), WP242 (Portability)
+
+### Security Standards
 6. **NIST**: SP 800-57 (Key Management)
 7. **OWASP**: Cryptographic Storage Cheat Sheet
-8. **OFAC**: Sanctions Programs and Country Information
-9. **EU Sanctions**: Council Regulation (EU) 833/2014
+8. **RFC 6585**: Token Bucket Rate Limiting
+9. **ISO 27001**: A.12.4 (Logging and Monitoring)
+
+### Sanctions
+10. **OFAC**: Sanctions Programs and Country Information
+11. **EU Sanctions**: Council Regulation (EU) 833/2014
+
+### Broker API Documentation
+12. **Interactive Brokers API**: https://interactivebrokers.github.io/
+13. **Alpaca API**: https://alpaca.markets/docs/api-references/
+14. **Binance API**: https://binance-docs.github.io/apidocs/
+
+### Insurance
+15. **Hiscox Technology Insurance**: hiscox.com/technology
+16. **AIG Cyber Insurance**: aig.com/business/insurance/cyber
