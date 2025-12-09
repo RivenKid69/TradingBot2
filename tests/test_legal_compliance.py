@@ -246,3 +246,144 @@ class TestLegalDocumentsIntegration:
             if path.exists():
                 content = path.read_text(encoding="utf-8").lower()
                 assert "version" in content, f"{path.name} must contain version info"
+
+
+class TestDataProcessingAgreement:
+    """Tests for Data Processing Agreement (DPA) template."""
+
+    @pytest.fixture
+    def dpa_path(self) -> Path:
+        """Get path to DPA template."""
+        return Path("docs/legal/DPA_TEMPLATE.md")
+
+    @pytest.fixture
+    def dpa_content(self, dpa_path: Path) -> str:
+        """Load DPA content."""
+        assert dpa_path.exists(), f"DPA template not found at {dpa_path}"
+        return dpa_path.read_text(encoding="utf-8")
+
+    def test_dpa_exists(self, dpa_path: Path):
+        """Verify DPA template exists."""
+        assert dpa_path.exists(), "DPA template must exist"
+
+    def test_dpa_not_empty(self, dpa_content: str):
+        """Verify DPA is not empty."""
+        assert len(dpa_content) > 5000, "DPA should be substantial"
+
+    def test_contains_parties_section(self, dpa_content: str):
+        """Verify parties section exists (GDPR Art. 28)."""
+        content_lower = dpa_content.lower()
+        assert "controller" in content_lower, "Must define Controller"
+        assert "processor" in content_lower, "Must define Processor"
+
+    def test_contains_subject_matter(self, dpa_content: str):
+        """Verify subject matter section exists."""
+        assert "subject matter" in dpa_content.lower(), "Must contain subject matter section"
+
+    def test_contains_data_types(self, dpa_content: str):
+        """Verify types of personal data are specified."""
+        content_lower = dpa_content.lower()
+        assert "personal data" in content_lower, "Must specify types of personal data"
+        assert "account" in content_lower or "email" in content_lower, "Must list data types"
+
+    def test_contains_data_subjects(self, dpa_content: str):
+        """Verify categories of data subjects are specified."""
+        content_lower = dpa_content.lower()
+        assert "data subject" in content_lower, "Must specify data subjects"
+
+    def test_contains_processor_obligations(self, dpa_content: str):
+        """Verify processor obligations per GDPR Art. 28(3)."""
+        content_lower = dpa_content.lower()
+        assert "instruction" in content_lower, "Must include processing on instructions"
+        assert "confidentiality" in content_lower, "Must include confidentiality"
+        assert "security" in content_lower, "Must include security measures"
+
+    def test_contains_sub_processor_section(self, dpa_content: str):
+        """Verify sub-processor section exists."""
+        content_lower = dpa_content.lower()
+        assert "sub-processor" in content_lower or "subprocessor" in content_lower, \
+            "Must address sub-processors"
+
+    def test_contains_security_measures(self, dpa_content: str):
+        """Verify security measures are detailed (GDPR Art. 32)."""
+        content_lower = dpa_content.lower()
+        assert "encryption" in content_lower, "Must mention encryption"
+        assert "aes" in content_lower, "Must specify encryption standard"
+        assert "access control" in content_lower, "Must mention access controls"
+
+    def test_contains_breach_notification(self, dpa_content: str):
+        """Verify data breach notification section exists."""
+        content_lower = dpa_content.lower()
+        assert "breach" in content_lower, "Must address data breaches"
+        assert "notification" in content_lower or "notify" in content_lower, \
+            "Must specify breach notification"
+        assert "24 hour" in content_lower or "24-hour" in content_lower, \
+            "Must specify notification timeline"
+
+    def test_contains_international_transfers(self, dpa_content: str):
+        """Verify international transfers are addressed."""
+        content_lower = dpa_content.lower()
+        assert "international" in content_lower or "transfer" in content_lower, \
+            "Must address international transfers"
+        assert "eea" in content_lower or "european economic area" in content_lower, \
+            "Must reference EEA"
+
+    def test_contains_audit_rights(self, dpa_content: str):
+        """Verify audit rights are specified."""
+        content_lower = dpa_content.lower()
+        assert "audit" in content_lower, "Must include audit rights"
+
+    def test_contains_termination_section(self, dpa_content: str):
+        """Verify termination section exists."""
+        content_lower = dpa_content.lower()
+        assert "termination" in content_lower, "Must include termination provisions"
+        assert "deletion" in content_lower or "delete" in content_lower, \
+            "Must specify data deletion on termination"
+
+    def test_contains_annex_a(self, dpa_content: str):
+        """Verify Annex A (Technical Measures) exists."""
+        assert "Annex A" in dpa_content, "Must include Annex A"
+
+    def test_contains_annex_b(self, dpa_content: str):
+        """Verify Annex B (Sub-processor List) exists."""
+        assert "Annex B" in dpa_content, "Must include Annex B"
+
+    def test_contains_annex_c(self, dpa_content: str):
+        """Verify Annex C (SCCs) exists."""
+        assert "Annex C" in dpa_content or "Standard Contractual Clauses" in dpa_content, \
+            "Must include SCCs reference"
+
+    def test_contains_gdpr_references(self, dpa_content: str):
+        """Verify GDPR articles are referenced."""
+        content_lower = dpa_content.lower()
+        assert "gdpr" in content_lower, "Must reference GDPR"
+        assert "article 28" in content_lower, "Must reference GDPR Article 28"
+
+    def test_contains_version_info(self, dpa_content: str):
+        """Verify version information is present."""
+        assert "Version" in dpa_content or "version" in dpa_content.lower(), \
+            "Must contain version information"
+
+    def test_contains_signature_blocks(self, dpa_content: str):
+        """Verify signature blocks exist."""
+        content_lower = dpa_content.lower()
+        assert "signature" in content_lower, "Must include signature blocks"
+
+
+class TestPhase2LegalDocuments:
+    """Integration tests for Phase 2 legal documents."""
+
+    def test_dpa_template_exists(self):
+        """Verify DPA template exists."""
+        dpa_path = Path("docs/legal/DPA_TEMPLATE.md")
+        assert dpa_path.exists(), "DPA template must exist"
+
+    def test_all_phase2_documents_exist(self):
+        """Verify all Phase 2 legal documents exist."""
+        required_docs = [
+            "docs/legal/TERMS_OF_SERVICE.md",
+            "docs/legal/PRIVACY_POLICY.md",
+            "docs/legal/DPA_TEMPLATE.md",
+        ]
+        for doc in required_docs:
+            assert Path(doc).exists(), f"{doc} must exist"
