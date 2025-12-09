@@ -48,6 +48,10 @@ GPAI Phase 1 - Core Requirements (Articles 50, 53):
     - copyright_compliance: Copyright Policy for Training Data (Article 53(1)(c))
     - training_data_summary: Public Training Data Summary (Article 53(1)(d))
 
+GPAI Phase 2 - Documentation & User Acknowledgment (Articles 50, 53):
+    - gpai_model_card: GPAI Model Card for Downstream Providers (Article 53(1)(b))
+    - user_acknowledgment: User AI Acknowledgment System (Article 50)
+
 Compliance Deadline: August 2, 2026
 
 References:
@@ -69,9 +73,9 @@ References:
 
 from __future__ import annotations
 
-__version__ = "4.1.0"
+__version__ = "4.2.0"
 __ai_act_compliance_phase__ = 4  # Current implementation phase
-__gpai_compliance_version__ = "1.0.0"  # Software Provider / GPAI compliance
+__gpai_compliance_version__ = "2.0.0"  # Software Provider / GPAI compliance (Phase 2 complete)
 
 # =============================================================================
 # Phase 1 exports (Foundation & Risk Management)
@@ -420,6 +424,55 @@ from services.ai_act.training_data_summary import (
 )
 
 # =============================================================================
+# GPAI Phase 2: Model Card & User Acknowledgment (Articles 50, 53(1)(b))
+# =============================================================================
+
+from services.ai_act.gpai_model_card import (
+    # Enums
+    IntendedUse,
+    LimitationType,
+    RiskLevel,
+    EvaluationDataset,
+    # Data structures
+    ModelLimitation,
+    PerformanceMetric,
+    BiasAssessment,
+    EthicalConsideration,
+    DownstreamRequirement,
+    GPAIModelCard,
+    # Main class
+    ModelCardManager,
+    # Factory functions
+    create_default_model_card,
+    create_model_card_manager,
+    get_default_limitations,
+    get_default_biases,
+    get_default_downstream_requirements,
+    validate_model_card,
+)
+
+from services.ai_act.user_acknowledgment import (
+    # Enums
+    AcknowledgmentType,
+    AcknowledgmentStatus,
+    FeatureCategory,
+    # Data structures
+    UserAcknowledgment,
+    AcknowledgmentAuditRecord,
+    # Constants
+    ACKNOWLEDGMENT_TEXTS,
+    FEATURE_REQUIREMENTS,
+    # Main class
+    UserAcknowledgmentManager,
+    # Factory functions
+    create_acknowledgment_manager,
+    get_acknowledgment_texts,
+    get_feature_requirements as get_acknowledgment_feature_requirements,
+    validate_acknowledgment,
+    get_acknowledgment_summary,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -694,4 +747,42 @@ __all__ = [
     "create_summary_manager",
     "get_data_categories",
     "validate_dataset_info",
+
+    # =========================================================================
+    # GPAI Phase 2: Model Card & User Acknowledgment
+    # =========================================================================
+
+    # GPAI Model Card (Article 53(1)(b))
+    "IntendedUse",
+    "LimitationType",
+    "RiskLevel",
+    "EvaluationDataset",
+    "ModelLimitation",
+    "PerformanceMetric",
+    "BiasAssessment",
+    "EthicalConsideration",
+    "DownstreamRequirement",
+    "GPAIModelCard",
+    "ModelCardManager",
+    "create_default_model_card",
+    "create_model_card_manager",
+    "get_default_limitations",
+    "get_default_biases",
+    "get_default_downstream_requirements",
+    "validate_model_card",
+
+    # User Acknowledgment (Article 50)
+    "AcknowledgmentType",
+    "AcknowledgmentStatus",
+    "FeatureCategory",
+    "UserAcknowledgment",
+    "AcknowledgmentAuditRecord",
+    "ACKNOWLEDGMENT_TEXTS",
+    "FEATURE_REQUIREMENTS",
+    "UserAcknowledgmentManager",
+    "create_acknowledgment_manager",
+    "get_acknowledgment_texts",
+    "get_acknowledgment_feature_requirements",
+    "validate_acknowledgment",
+    "get_acknowledgment_summary",
 ]

@@ -1,13 +1,15 @@
 # EU AI Act Integration Plan
 # План интеграции EU AI Act в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 1.4
+**Версия документа**: 1.5
 **Дата создания**: 2025-12-06
-**Последнее обновление**: 2025-12-08
+**Последнее обновление**: 2025-12-10
 **Целевое соответствие**: Regulation (EU) 2024/1689 (AI Act)
 **Крайний срок полного compliance**: 2 августа 2026 (high-risk AI systems)
 
 ### Progress Status
+
+#### HIGH-RISK Overcompliance (Voluntary)
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
@@ -17,13 +19,21 @@
 | **Phase 4: Conformity Assessment** | **COMPLETED** | 2025-12-08 | 81/81 passed |
 | Phase 5: Ongoing Compliance Monitoring | Planned | - | - |
 
-**Total AI Act Tests: 1007 passed**
+#### GPAI Compliance (Mandatory)
+
+| Phase | Status | Completion Date | Tests |
+|-------|--------|-----------------|-------|
+| **GPAI Phase 1: Transparency & Copyright** | **COMPLETED** | 2025-12-10 | 189/189 passed |
+| **GPAI Phase 2: Model Card & Acknowledgment** | **COMPLETED** | 2025-12-10 | TBD |
+| GPAI Phase 3: Documentation & Monitoring | Planned | - | - |
+
+**Total AI Act Tests: 1196+ passed**
 
 ### Module Version
 
-| Module | Version | Phase |
-|--------|---------|-------|
-| `services/ai_act` | 4.0.0 | 4 |
+| Module | Version | Phase | GPAI Phase |
+|--------|---------|-------|------------|
+| `services/ai_act` | 4.2.0 | 4 | 2 |
 
 ---
 
@@ -31,19 +41,53 @@
 
 Данный план описывает поэтапную интеграцию требований EU AI Act в платформу TradingBot2 -- AI-систему для количественных исследований и алгоритмической торговли, использующую reinforcement learning (Distributional PPO).
 
-### Классификация риска системы
+### Классификация риска системы (ОБНОВЛЕНО 2025-12-10)
 
-На основе анализа [Annex III](https://artificialintelligenceact.eu/annex/3/) и [Article 6](https://artificialintelligenceact.eu/article/6/):
+#### Официальная классификация: GPAI (General-Purpose AI Model)
 
-| Фактор | Оценка | Комментарий |
-|--------|--------|-------------|
-| **Creditworthiness assessment** | ❌ Не применимо | Система не оценивает кредитоспособность физических лиц |
-| **Insurance risk assessment** | ❌ Не применимо | Не связана со страхованием |
-| **Algorithmic trading** | ⚠️ **Высокий риск** | Согласно [Goodwin Law](https://www.goodwinlaw.com/en/insights/publications/2024/08/alerts-practices-pif-key-points-for-financial-services-businesses), compliance-менеджеры крупных финансовых фирм классифицируют AI в algorithmic trading как high-risk |
-| **Profiling natural persons** | ❌ Не применимо | Система не профилирует физических лиц |
-| **Financial stability impact** | ⚠️ Потенциальный | При масштабном deployment может влиять на рыночную стабильность |
+На основе детального анализа [Annex III](https://artificialintelligenceact.eu/annex/3/) и [Article 6](https://artificialintelligenceact.eu/article/6/):
 
-**РЕШЕНИЕ**: Классифицируем систему как **HIGH-RISK AI SYSTEM** для обеспечения максимального compliance и минимизации регуляторных рисков.
+| Фактор | Annex III | Применимо? | Комментарий |
+|--------|-----------|------------|-------------|
+| **Creditworthiness (5b)** | AI для оценки кредитоспособности | ❌ НЕТ | Система не оценивает кредитоспособность |
+| **Insurance pricing (5c)** | AI для страхования жизни/здоровья | ❌ НЕТ | Не связана со страхованием |
+| **Algorithmic trading** | **НЕ В ANNEX III** | ❌ НЕТ | Algorithmic trading НЕ включён в HIGH-RISK |
+| **Profiling natural persons** | AI для профилирования | ❌ НЕТ | Система не профилирует физических лиц |
+
+**ВЫВОД**: Algorithmic trading **НЕ включён** в перечень HIGH-RISK систем Annex III EU AI Act.
+
+#### Применимые требования
+
+| Категория | Статьи | Статус |
+|-----------|--------|--------|
+| **GPAI Obligations** | Article 53 | ✅ **Обязательно** |
+| **Transparency (Limited Risk)** | Article 50 | ✅ **Обязательно** |
+| **HIGH-RISK** | Articles 9-17 | ⚠️ Добровольный overcompliance |
+
+#### Консервативный подход (сохранён)
+
+Несмотря на классификацию как GPAI, мы **сохраняем** реализацию HIGH-RISK требований:
+- Дополнительная защита для пользователей
+- Готовность к возможным изменениям регулирования
+- Соответствие ожиданиям enterprise-клиентов
+- Best practices для AI в финансовых сервисах
+
+#### GPAI Compliance Status
+
+| Phase | Requirement | Article | Status |
+|-------|-------------|---------|--------|
+| GPAI Phase 1 | AI System Disclosure | 50(1) | ✅ COMPLETED |
+| GPAI Phase 1 | Copyright Policy | 53(1)(c) | ✅ COMPLETED |
+| GPAI Phase 1 | Training Data Summary | 53(1)(d) | ✅ COMPLETED |
+| GPAI Phase 2 | GPAI Model Card | 53(1)(b) | ✅ COMPLETED |
+| GPAI Phase 2 | User Acknowledgment | 50 | ✅ COMPLETED |
+
+**Источники**:
+- [EU AI Act Annex III](https://artificialintelligenceact.eu/annex/3/)
+- [Article 6 - Classification](https://artificialintelligenceact.eu/article/6/)
+- [Article 50 - Transparency](https://artificialintelligenceact.eu/article/50/)
+- [Article 53 - GPAI Obligations](https://artificialintelligenceact.eu/article/53/)
+- [GPAI Q&A - European Commission](https://digital-strategy.ec.europa.eu/en/faqs/general-purpose-ai-models-ai-act-questions-answers)
 
 ### Связь с существующим регулированием
 
@@ -1218,3 +1262,4 @@ TradingBot2/
 | 1.2 | 2025-12-08 | Claude | Phase 2 completion (236 tests) |
 | 1.3 | 2025-12-08 | Claude | Phase 3 completion (318 tests) |
 | 1.4 | 2025-12-08 | Claude | Phase 4 completion (81 tests) - Total: 1007 tests |
+| 1.5 | 2025-12-10 | Claude | GPAI Phase 2 completion - Model Card & User Acknowledgment |

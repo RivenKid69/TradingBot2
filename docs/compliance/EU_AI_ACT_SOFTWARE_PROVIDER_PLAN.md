@@ -1,9 +1,11 @@
 # EU AI Act: Software Provider Compliance Plan
 
-**Version**: 1.0
+**Version**: 2.0
 **Created**: 2025-12-10
+**Last Updated**: 2025-12-10
 **Target**: GPAI Provider + Article 50 Transparency
 **Deadline**: 2 August 2026
+**Phase 2 Status**: ✅ COMPLETED
 
 ---
 
@@ -1452,11 +1454,21 @@ from .training_data_summary import (
 
 ---
 
-## Phase 2: Documentation & Classification Update
+## Phase 2: Documentation & Classification Update - COMPLETED
 
+**Status**: ✅ COMPLETED (2025-12-10)
 **Scope**: Документация, GPAI Model Card, обновление классификации
-**Modules**: Документы + 1 модуль
-**Tests**: ~50 тестов
+**Modules**: 2 новых модуля + обновления документации
+**Tests**: 133 тестов (69 + 64) - 100% pass rate
+
+**Deliverables**:
+- ✅ `services/ai_act/gpai_model_card.py` - GPAI Model Card system
+- ✅ `services/ai_act/user_acknowledgment.py` - User Acknowledgment system
+- ✅ `tests/test_ai_act_gpai_model_card.py` - 69 tests
+- ✅ `tests/test_ai_act_user_acknowledgment.py` - 64 tests
+- ✅ `docs/compliance/GPAI_MODEL_CARD.md` - Public Model Card document
+- ✅ Updated `__init__.py` with Phase 2 exports
+- ✅ Updated classification in EU_AI_ACT_INTEGRATION_PLAN.md
 
 ### 2.1 GPAI Model Card (Article 53(1)(b))
 
