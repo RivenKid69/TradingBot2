@@ -1,9 +1,9 @@
 # DORA Operational Resilience Plan
 
-**Version**: 2.0
+**Version**: 2.2
 **Date**: 2025-12-09
 **Status**: Architecture Review & Roadmap
-**Revision**: Critical audit v2.0 — fixed ICT provider obligations
+**Revision**: Critical audit v2.2 — comprehensive operational validation
 
 ---
 
@@ -36,6 +36,20 @@
 | 18 | Data escrow not explicit | Art. 30(2)(d) | Enhanced insolvency protection |
 | 19 | Exit plan testing not required | Art. 28(8) | Strengthened Section 5.10 |
 | 20 | CTPP client mix tracking manual | Art. 31 | Added automated monitoring in Section 2.7.5 |
+
+## Changelog v2.2 (Operational Validation)
+
+| # | Issue | DORA Reference | Fix |
+|---|-------|----------------|-----|
+| 21 | Prior written approval workflow missing | Art. 30(3)(j)(i) | Added Section 5.8.1 Subcontracting Approval Workflow |
+| 22 | Archive list too aggressive | Art. 30(4), Art. 31 | Revised: ctpp_oversight → KEEP, pooled_testing → ADAPT |
+| 23 | RTO/RPO contractual risk | Art. 30(3)(a) | Added Section 5.4.4 Contractual SLA Guardrails |
+| 24 | On-call capacity unvalidated | Art. 30(2)(f) | Added Section 5.4.5 Notification SLA Tiers by Capacity |
+| 25 | Data localization not configurable | Art. 30(2)(b) | Added Section 5.11 Data Residency Configuration |
+| 26 | Pre-contractual portal missing | Art. 28(7) | Enhanced Section 6.6 with implementation details |
+| 27 | Insurance requirements missing | Industry practice | Added Section 6.11 Insurance & Indemnification |
+| 28 | Subcontractor incident flow missing | Art. 30(2)(f) | Added Section 5.8.2 Subcontractor Incident Escalation |
+| 29 | Pooled audit support undefined | Art. 30(4) | Added Section 6.12 Pooled Audit Framework |
 
 ---
 
@@ -944,23 +958,28 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 | `detection.py` | DORA Article 10 | Core anomaly detection |
 | `protection.py` | DORA Article 9 | Core security controls |
 
-### 4.E) Archive (Not applicable to ICT provider role)
+### 4.E) Archive (Not applicable to ICT provider role) — REVISED v2.2
 
 | Component | Reason |
 |-----------|--------|
 | `scope_verification.py` | Determines if DORA applies — irrelevant, we know it applies via contracts |
 | `proportionality.py` | Financial entity size classification |
-| `ctpp_oversight.py` | We're not designated CTPP (keep awareness) |
-| `pooled_testing.py` | Client arrangements, not provider |
 | `supervisory_feedback.py` | Client-NCA communication |
 | `nca_identification.yaml` | Client identifies their NCA |
 | `entity_classification.yaml` | Financial entity config |
 
-### 4.F) Concentration Risk — Special Handling
+### 4.F) Keep for CTPP Preparedness — NEW v2.2
 
 | Component | Action | Rationale |
 |-----------|--------|-----------|
+| `ctpp_oversight.py` | **KEEP scaled-down** | CTPP preparedness if client base grows; ESA engagement protocols |
 | `concentration_risk.py` | **KEEP for awareness** | If we gain market share → CTPP designation risk |
+
+### 4.G) Adapt for Provider Role — NEW v2.2
+
+| Component | Current | Target | Rationale |
+|-----------|---------|--------|-----------|
+| `pooled_testing.py` | Client pooled testing | `pooled_audit_support.py` | Art. 30(4) allows clients to use pooled audits; we must support this |
 
 ---
 
@@ -1688,6 +1707,395 @@ cross_region_failover:
       total: "€2,500-5,000/month additional"
 ```
 
+### 5.4.4 Contractual SLA Guardrails — NEW v2.2
+
+**CRITICAL PRINCIPLE:** Never promise in contracts what you cannot deliver operationally.
+
+```yaml
+contractual_sla_guardrails:
+  # =========================================================================
+  # RISK: CONTRACTUAL OVER-COMMITMENT
+  # =========================================================================
+  problem_statement: |
+    If we commit to RTO=1h in contracts but can only achieve RTO=4h operationally,
+    we face:
+    - Breach of contract claims
+    - SLA credit obligations
+    - Reputational damage
+    - Regulatory scrutiny from client's NCA
+
+  # =========================================================================
+  # GUARDRAIL 1: INFRASTRUCTURE-BACKED SLAs ONLY
+  # =========================================================================
+  guardrail_1:
+    name: "Infrastructure Validation Before Contract"
+    rule: |
+      Before offering a specific SLA tier to a client, Sales/Legal MUST verify
+      with Engineering that infrastructure supports it.
+
+    validation_checklist:
+      availability_99_9:
+        requires:
+          - "Multi-AZ deployment: YES/NO"
+          - "Database replication: SYNC/ASYNC/NONE"
+          - "Auto-failover configured: YES/NO"
+          - "Load balancer health checks: YES/NO"
+        evidence: "Architecture diagram + monitoring dashboard"
+
+      rto_1_hour:
+        requires:
+          - "Hot/warm standby: YES/NO"
+          - "Documented runbook: YES/NO"
+          - "Last DR test date: [DATE]"
+          - "DR test passed: YES/NO"
+        evidence: "DR test report within last 6 months"
+
+      rpo_15_minutes:
+        requires:
+          - "Replication type: SYNC/ASYNC/NONE"
+          - "Replication lag monitored: YES/NO"
+          - "Backup frequency: [FREQUENCY]"
+        evidence: "Replication lag dashboard"
+
+      notification_30_min:
+        requires:
+          - "24/7 on-call: YES/NO"
+          - "On-call team size: [NUMBER]"
+          - "Alerting SLA: [MINUTES]"
+          - "Communication tools ready: YES/NO"
+        evidence: "On-call schedule + incident response drill report"
+
+  # =========================================================================
+  # GUARDRAIL 2: CONTRACTUAL BUFFER
+  # =========================================================================
+  guardrail_2:
+    name: "Conservative SLA Commitment"
+    rule: |
+      Contract SLAs should be MORE conservative than operational targets.
+      This provides buffer for unexpected issues.
+
+    recommended_buffer:
+      availability:
+        operational_target: "99.95%"
+        contractual_commitment: "99.9%"
+        buffer: "0.05% (~22 min/month)"
+
+      rto:
+        operational_target: "45 minutes"
+        contractual_commitment: "1 hour"
+        buffer: "15 minutes"
+
+      rpo:
+        operational_target: "10 minutes"
+        contractual_commitment: "15 minutes"
+        buffer: "5 minutes"
+
+      notification:
+        operational_target: "20 minutes"
+        contractual_commitment: "30 minutes"
+        buffer: "10 minutes"
+
+  # =========================================================================
+  # GUARDRAIL 3: TIERED OFFER MATRIX
+  # =========================================================================
+  guardrail_3:
+    name: "Only Offer What We Can Deliver"
+
+    current_state_assessment:
+      date: "2025-01-01"
+      infrastructure:
+        deployment: "Single region (EU-WEST-1)"
+        database: "Primary + async replica"
+        on_call: "Informal"
+        dr_tested: false
+
+      achievable_slas:
+        availability: "99.5%"
+        rto: "4-8 hours"
+        rpo: "1 hour"
+        notification: "2-4 hours"
+
+    offer_matrix:
+      standard_tier:
+        can_offer_now: true
+        availability: "99.5%"
+        rto: "4 hours"
+        rpo: "1 hour"
+        notification: "2 hours"
+
+      professional_tier:
+        can_offer_now: false
+        available_when: "Q2 2025 (after infra upgrades)"
+        prerequisites:
+          - "Multi-AZ deployment completed"
+          - "Sync replication enabled"
+          - "On-call rotation established"
+          - "First DR test passed"
+
+      enterprise_tier:
+        can_offer_now: false
+        available_when: "Q4 2025 (after full build-out)"
+        prerequisites:
+          - "Multi-region deployment"
+          - "24/7 on-call team (4+ FTE)"
+          - "Quarterly DR tests passing"
+          - "SOC2 Type II certification"
+
+  # =========================================================================
+  # GUARDRAIL 4: CONTRACT REVIEW PROCESS
+  # =========================================================================
+  guardrail_4:
+    name: "Engineering Sign-Off on SLAs"
+
+    process:
+      step_1: "Sales identifies client SLA requirements"
+      step_2: "Engineering validates against current capabilities"
+      step_3: "If mismatch: propose alternative tier OR timeline for upgrade"
+      step_4: "Engineering sign-off required before SLA commitment"
+      step_5: "Document sign-off in contract file"
+
+    escalation:
+      if_sales_pushes_for_unsupported_sla:
+        - "Escalate to CTO"
+        - "Document risk in contract"
+        - "Client acknowledgment of infrastructure limitations"
+        - "Roadmap commitment for upgrades (if client critical)"
+
+  # =========================================================================
+  # GUARDRAIL 5: SLA CREDIT PROVISIONS
+  # =========================================================================
+  guardrail_5:
+    name: "SLA Credit Structure"
+
+    credit_structure:
+      standard_tier:
+        availability_breach:
+          "99.0-99.5%": "5% monthly fee credit"
+          "98.0-99.0%": "10% monthly fee credit"
+          "<98.0%": "25% monthly fee credit"
+        cap: "25% of monthly fee"
+
+      professional_tier:
+        availability_breach:
+          "99.5-99.9%": "10% monthly fee credit"
+          "99.0-99.5%": "20% monthly fee credit"
+          "<99.0%": "30% monthly fee credit"
+        rto_breach: "10% credit per incident"
+        cap: "50% of monthly fee"
+
+      enterprise_tier:
+        availability_breach:
+          "99.9-99.95%": "15% monthly fee credit"
+          "99.5-99.9%": "25% monthly fee credit"
+          "<99.5%": "50% monthly fee credit"
+        rto_breach: "15% credit per incident"
+        notification_breach: "5% credit per incident"
+        cap: "100% of monthly fee"
+
+    exclusions:
+      - "Scheduled maintenance windows"
+      - "Client-caused issues"
+      - "Force majeure events"
+      - "Third-party provider outages beyond our control (with notification)"
+```
+
+### 5.4.5 Notification SLA Tiers by Operational Capacity — NEW v2.2
+
+**Reality Check:** <30 min notification SLA requires 24/7 on-call capability.
+
+```yaml
+notification_sla_by_capacity:
+  # =========================================================================
+  # CURRENT OPERATIONAL REALITY
+  # =========================================================================
+  current_assessment:
+    team_size: "[TO BE FILLED]"
+    on_call_status: "[INFORMAL/FORMAL/24x7]"
+    alerting_tooling: "[PRESENT/ABSENT]"
+
+  # =========================================================================
+  # NOTIFICATION SLA OPTIONS
+  # =========================================================================
+  options:
+
+    # Option A: No formal on-call (Startup phase)
+    option_a_no_oncall:
+      name: "Business Hours Notification"
+      suitable_for: "Early stage, <5 engineers, no regulated clients"
+
+      operational_setup:
+        monitoring: "Email alerts"
+        coverage: "Business hours only (09:00-18:00 CET)"
+        weekend: "Best effort"
+        night: "No coverage"
+
+      achievable_sla:
+        critical: "4 hours (during business hours)"
+        high: "8 hours"
+        medium: "24 hours"
+
+      client_disclosure: |
+        Incident notifications are provided during business hours
+        (09:00-18:00 CET, Monday-Friday). Outside these hours,
+        notifications will be sent on the next business day.
+
+      cost: "€0 additional"
+      risk: "Cannot serve regulated clients with critical functions"
+
+    # Option B: Managed NOC (Growth phase)
+    option_b_managed_noc:
+      name: "Managed NOC with Engineering Escalation"
+      suitable_for: "Growing startup, 3-8 engineers, some regulated clients"
+
+      operational_setup:
+        monitoring: "PagerDuty/Opsgenie"
+        first_line: "Managed NOC (outsourced 24/7)"
+        second_line: "Engineering on-call (extended hours)"
+        escalation_time: "15 minutes from NOC to Engineering"
+
+      achievable_sla:
+        critical: "60 minutes"
+        high: "90 minutes"
+        medium: "4 hours"
+
+      providers:
+        - name: "DataDog/PagerDuty NOC services"
+          cost: "€2,000-4,000/month"
+        - name: "Specialized NOC providers"
+          cost: "€3,000-6,000/month"
+
+      client_disclosure: |
+        24/7 monitoring with initial triage by our operations center.
+        Engineering escalation within 15 minutes for critical issues.
+        Client notification within 60 minutes for critical incidents.
+
+      cost: "€3,000-5,000/month"
+      risk: "10-15 min delay vs in-house on-call"
+
+    # Option C: In-house on-call (Scale phase)
+    option_c_inhouse_oncall:
+      name: "In-House 24/7 On-Call"
+      suitable_for: "Established company, 8+ engineers, regulated clients"
+
+      operational_setup:
+        monitoring: "PagerDuty/Opsgenie with auto-alerting"
+        on_call_rotation: "Weekly rotation, 4+ engineers minimum"
+        response_time: "15 minutes acknowledgment"
+        escalation: "Automatic after 15 min no-response"
+
+      achievable_sla:
+        critical: "30 minutes"
+        high: "60 minutes"
+        medium: "4 hours"
+
+      staffing_requirements:
+        minimum_engineers: 4
+        rationale: "Sustainable rotation (1 week each per month)"
+        compensation: "On-call allowance + overtime"
+        burnout_prevention: "Max 1 week on-call per month"
+
+      client_disclosure: |
+        24/7 in-house engineering coverage with 15-minute
+        acknowledgment target. Client notification within 30 minutes
+        for critical incidents.
+
+      cost: "€4,000-8,000/month (on-call compensation)"
+      risk: "Burnout if team too small"
+
+    # Option D: Dedicated NOC + Engineering (Enterprise phase)
+    option_d_dedicated_noc:
+      name: "Dedicated NOC Team"
+      suitable_for: "Enterprise scale, significant regulated client base"
+
+      operational_setup:
+        noc_team: "3 FTE minimum (8-hour shifts)"
+        engineering_on_call: "Backup for complex issues"
+        response_time: "5 minutes acknowledgment"
+
+      achievable_sla:
+        critical: "15 minutes"
+        high: "30 minutes"
+        medium: "2 hours"
+
+      client_disclosure: |
+        Dedicated 24/7 operations team with continuous monitoring.
+        Client notification within 15 minutes for critical incidents.
+
+      cost: "€15,000-25,000/month (3 FTE)"
+      risk: "High fixed cost"
+
+  # =========================================================================
+  # RECOMMENDATION MATRIX
+  # =========================================================================
+  recommendation_matrix:
+    if_no_regulated_clients:
+      recommendation: "Option A"
+      rationale: "No DORA requirements, minimize cost"
+
+    if_few_regulated_clients_non_critical:
+      recommendation: "Option B"
+      rationale: "Balance cost and compliance"
+
+    if_regulated_clients_critical_functions:
+      recommendation: "Option C minimum"
+      rationale: "30 min notification required for DORA"
+
+    if_enterprise_focus:
+      recommendation: "Option D"
+      rationale: "15 min notification differentiator"
+
+  # =========================================================================
+  # TRANSITION PLANNING
+  # =========================================================================
+  transition_plan:
+    current_state: "[OPTION A/B/C/D]"
+
+    phase_1:
+      trigger: "First regulated client signs"
+      action: "Implement Option B (Managed NOC)"
+      timeline: "2-4 weeks"
+      cost: "€3,000-5,000/month"
+
+    phase_2:
+      trigger: "5+ regulated clients OR critical function designation"
+      action: "Transition to Option C (In-house on-call)"
+      timeline: "2-3 months (hiring + training)"
+      cost: "€4,000-8,000/month"
+
+    phase_3:
+      trigger: "Enterprise client base OR CTPP designation risk"
+      action: "Implement Option D (Dedicated NOC)"
+      timeline: "6-12 months"
+      cost: "€15,000-25,000/month"
+
+  # =========================================================================
+  # CONTRACTUAL ALIGNMENT
+  # =========================================================================
+  contractual_alignment:
+    principle: "Match SLA offers to operational capability"
+
+    current_capability: "[OPTION A/B/C/D]"
+
+    sla_offers:
+      if_option_a:
+        max_notification_sla: "4 hours (business hours only)"
+        cannot_offer: "Critical function contracts"
+
+      if_option_b:
+        max_notification_sla: "60 minutes"
+        can_offer: "Important function contracts"
+        cannot_offer: "Enterprise tier (<30 min)"
+
+      if_option_c:
+        max_notification_sla: "30 minutes"
+        can_offer: "Critical function contracts"
+        can_offer_enterprise: "Yes, with buffer"
+
+      if_option_d:
+        max_notification_sla: "15 minutes"
+        can_offer: "All tiers"
+```
+
 ### 5.5 Incident Management — CORRECTED
 
 ```yaml
@@ -2074,6 +2482,324 @@ subcontractor_management:
       deadline: "2025-Q1"
 ```
 
+### 5.8.1 Subcontracting Prior Written Approval Workflow — NEW v2.2
+
+**Legal Basis:** Art. 30(3)(j)(i) requires "prior approval for the subcontracting of all or part of critical or important functions."
+
+```yaml
+subcontracting_approval_workflow:
+  # =========================================================================
+  # SCOPE: When Prior Written Approval is Required
+  # =========================================================================
+  scope:
+    requires_prior_approval:
+      - "New subcontractor for critical function services"
+      - "Change of subcontractor for critical function services"
+      - "Material change to subcontractor scope affecting critical functions"
+      - "Subcontractor location change (data processing/storage)"
+
+    notification_only:
+      - "Non-critical function subcontractor changes"
+      - "Minor scope changes to existing subcontractors"
+      - "Security patch updates by subcontractors"
+
+  # =========================================================================
+  # APPROVAL PROCESS
+  # =========================================================================
+  approval_process:
+    step_1_internal_assessment:
+      duration: "5 business days"
+      actions:
+        - "Security assessment of proposed subcontractor"
+        - "DORA compliance verification"
+        - "Data protection impact assessment"
+        - "Concentration risk assessment"
+      output: "Internal approval recommendation"
+
+    step_2_client_notification:
+      timing: "Minimum 60 days before intended change"
+      content:
+        - "Proposed subcontractor identification (name, LEI, location)"
+        - "Services to be subcontracted"
+        - "Data access scope"
+        - "Security certifications"
+        - "Our risk assessment summary"
+        - "Alternative options if client objects"
+      format: "Formal written notice via contract-specified channel"
+
+    step_3_client_review_period:
+      duration: "30 business days from notification"
+      client_options:
+        approve: "Written approval received"
+        approve_with_conditions: "Approval with specific requirements"
+        object: "Written objection with reasons"
+        no_response: "Deemed approval after 30 days (if contract permits)"
+
+    step_4_objection_handling:
+      if_client_objects:
+        - "Acknowledge objection within 5 business days"
+        - "Provide alternative subcontractor options"
+        - "Negotiate resolution"
+        - "If no resolution: client retains termination rights"
+      escalation: "Legal review if impasse"
+
+    step_5_implementation:
+      upon_approval:
+        - "Update subcontractor register"
+        - "Update client's provider information package"
+        - "Implement agreed conditions"
+        - "Document approval for audit trail"
+
+  # =========================================================================
+  # DOCUMENTATION REQUIREMENTS
+  # =========================================================================
+  documentation:
+    approval_record:
+      - "Client name and contract reference"
+      - "Subcontractor details"
+      - "Notification date and method"
+      - "Client response date and content"
+      - "Any conditions attached"
+      - "Implementation date"
+
+    retention: "Duration of contract + 7 years"
+    audit_availability: "Available within 24 hours of request"
+
+  # =========================================================================
+  # EMERGENCY SUBCONTRACTING
+  # =========================================================================
+  emergency_process:
+    trigger: "Critical subcontractor failure requiring immediate replacement"
+    process:
+      - "Immediate client notification (within 24 hours)"
+      - "Temporary emergency subcontractor engagement"
+      - "Expedited approval process (10 business days)"
+      - "Client right to terminate if not approved"
+    documentation: "Full incident report with justification"
+
+  # =========================================================================
+  # CONTRACT TEMPLATE CLAUSE
+  # =========================================================================
+  contract_clause_template: |
+    SUBCONTRACTING (Art. 30(3)(j))
+
+    1. Provider shall not subcontract any services supporting Client's critical
+       or important functions without Client's prior written approval.
+
+    2. Provider shall notify Client of any proposed subcontracting at least
+       sixty (60) days in advance, providing:
+       (a) Identity and location of proposed subcontractor;
+       (b) Scope of services to be subcontracted;
+       (c) Security certifications and compliance status;
+       (d) Provider's risk assessment.
+
+    3. Client shall respond within thirty (30) business days. Failure to
+       respond shall [be deemed approval / require explicit approval].
+
+    4. Client may object to proposed subcontracting with written reasons.
+       Provider shall propose alternatives or Client may terminate per
+       Section [X] without penalty.
+
+    5. Provider shall maintain a current register of all subcontractors
+       supporting Client's services, available upon request.
+```
+
+### 5.8.2 Subcontractor Incident Escalation — NEW v2.2
+
+**Purpose:** When our subcontractors (AWS, Alpaca, Binance, etc.) experience incidents, we need a defined process to gather information and notify our clients.
+
+```yaml
+subcontractor_incident_escalation:
+  # =========================================================================
+  # MONITORING SUBCONTRACTOR STATUS
+  # =========================================================================
+  monitoring:
+    automated:
+      aws:
+        source: "AWS Health Dashboard API"
+        check_frequency: "Every 1 minute"
+        regions_monitored: ["eu-west-1", "eu-central-1"]
+        alert_on: ["operational_issue", "service_event", "account_notification"]
+
+      alpaca:
+        source: "Alpaca Status Page (status.alpaca.markets)"
+        check_frequency: "Every 5 minutes"
+        alert_on: ["degraded_performance", "partial_outage", "major_outage"]
+
+      binance:
+        source: "Binance API status endpoint"
+        check_frequency: "Every 5 minutes"
+        alert_on: ["system_maintenance", "api_degradation"]
+
+      polygon:
+        source: "Polygon.io status page"
+        check_frequency: "Every 5 minutes"
+        alert_on: ["delayed_data", "partial_outage"]
+
+    manual_checks:
+      frequency: "Daily review of status pages"
+      responsible: "On-call engineer"
+
+  # =========================================================================
+  # INCIDENT CLASSIFICATION (Subcontractor Events)
+  # =========================================================================
+  classification:
+    critical_subcontractor_incident:
+      definition: "Complete loss of subcontractor service affecting our trading operations"
+      examples:
+        - "AWS eu-west-1 region outage"
+        - "Alpaca trading API down"
+        - "Authentication provider (Auth0) unavailable"
+      our_sla: "Client notification within 30 minutes"
+
+    high_subcontractor_incident:
+      definition: "Degraded subcontractor service affecting our performance"
+      examples:
+        - "AWS elevated latency"
+        - "Alpaca partial API degradation"
+        - "Market data delays >5 minutes"
+      our_sla: "Client notification within 60 minutes"
+
+    medium_subcontractor_incident:
+      definition: "Subcontractor issue with limited client impact"
+      examples:
+        - "Non-critical region affected"
+        - "Backup data provider degraded"
+        - "Monitoring service issues"
+      our_sla: "Client notification within 4 hours (if relevant)"
+
+  # =========================================================================
+  # ESCALATION PROCEDURE
+  # =========================================================================
+  procedure:
+    phase_1_detection:
+      duration: "0-5 minutes"
+      actions:
+        - "Automated alert received or manual detection"
+        - "Verify incident via subcontractor status page"
+        - "Check impact on our services"
+        - "Log incident start time"
+
+    phase_2_assessment:
+      duration: "5-15 minutes"
+      actions:
+        - "Determine which of OUR services affected"
+        - "Identify which CLIENTS affected"
+        - "Classify incident severity"
+        - "Contact subcontractor support (if needed)"
+
+    phase_3_client_notification:
+      duration: "15-30 minutes"
+      content:
+        - "Incident ID and timestamp"
+        - "Subcontractor identified"
+        - "Impact on YOUR services (client-specific)"
+        - "Our mitigation actions (if any)"
+        - "Expected resolution (if known)"
+        - "Next update timeline"
+      note: "Do NOT wait for subcontractor resolution before notifying clients"
+
+    phase_4_ongoing_updates:
+      frequency: "Every 30 minutes during active incident"
+      content:
+        - "Current status"
+        - "Subcontractor updates"
+        - "Our actions"
+        - "Revised timeline"
+
+    phase_5_resolution:
+      upon_subcontractor_resolution:
+        - "Verify our services restored"
+        - "Notify clients of resolution"
+        - "Document total duration and impact"
+        - "Request incident report from subcontractor (for major incidents)"
+
+    phase_6_post_incident:
+      timeline: "Within 5 business days"
+      deliverables:
+        - "Incident report including subcontractor details"
+        - "Root cause (from subcontractor if available)"
+        - "Our response timeline analysis"
+        - "Lessons learned"
+        - "Preventive measures"
+
+  # =========================================================================
+  # SUBCONTRACTOR COMMUNICATION
+  # =========================================================================
+  subcontractor_contacts:
+    aws:
+      support_tier: "Business or Enterprise Support required"
+      escalation: "AWS Support Case → TAM (if Enterprise)"
+      sla: "1 hour response for production down (Business)"
+
+    alpaca:
+      support: "support@alpaca.markets"
+      escalation: "Account manager (if Enterprise)"
+      status_page: "https://status.alpaca.markets"
+
+    binance:
+      support: "API support ticket system"
+      escalation: "VIP account manager"
+      status: "https://www.binance.com/en/support"
+
+  # =========================================================================
+  # CLIENT COMMUNICATION TEMPLATE
+  # =========================================================================
+  notification_template:
+    subject: "Service Impact Notice - Third-Party Provider Incident"
+    body: |
+      INCIDENT NOTIFICATION
+
+      Incident ID: [INCIDENT_ID]
+      Detected: [TIMESTAMP_UTC]
+      Status: [ACTIVE/RESOLVED]
+
+      THIRD-PARTY PROVIDER:
+      Provider: [SUBCONTRACTOR_NAME]
+      Provider Status: [Link to their status page]
+
+      IMPACT ON YOUR SERVICES:
+      - Affected services: [List]
+      - Current functionality: [Available/Degraded/Unavailable]
+      - Data integrity: [Confirmed/Under review]
+
+      OUR ACTIONS:
+      - [Mitigation steps taken]
+      - [Failover activated if applicable]
+
+      EXPECTED RESOLUTION:
+      - Provider estimate: [Time if known, or "Under investigation"]
+      - Next update: [Time]
+
+      CONTACTS:
+      - Incident Commander: [Name, Email, Phone]
+      - Status Page: [URL]
+
+      This notification is provided per our DORA contractual obligations.
+      You may use this information for your regulatory reporting as needed.
+
+  # =========================================================================
+  # FAILOVER CAPABILITIES
+  # =========================================================================
+  failover_options:
+    market_data:
+      primary: "Polygon.io"
+      secondary: "Alpaca market data"
+      tertiary: "Yahoo Finance (degraded)"
+      auto_failover: true
+
+    trading_execution:
+      primary: "Per client broker configuration"
+      secondary: "N/A (client-specific)"
+      auto_failover: false
+      note: "Manual intervention required"
+
+    cloud_infrastructure:
+      primary: "AWS eu-west-1"
+      secondary: "AWS eu-central-1"
+      auto_failover: "Partial (database), Manual (full)"
+```
+
 ### 5.9 Contractual Compliance — NEW (Core)
 
 ```yaml
@@ -2235,6 +2961,255 @@ exit_strategy_testing:
     - action: "Create data export validation script"
       priority: "MEDIUM"
       deadline: "2025-Q1"
+```
+
+### 5.11 Data Residency Configuration — NEW v2.2
+
+**Legal Basis:** Art. 30(2)(b) requires contracts to specify "locations (regions or countries) where the contracted or subcontracted functions are to be provided and where data is to be processed."
+
+```yaml
+data_residency_configuration:
+  # =========================================================================
+  # PURPOSE
+  # =========================================================================
+  purpose: |
+    Provide configurable data residency options to meet Art. 30(2)(b) requirements
+    and client-specific data localization needs. EU regulated clients may require
+    EU-only data processing and storage.
+
+  # =========================================================================
+  # DATA RESIDENCY OPTIONS
+  # =========================================================================
+  residency_options:
+
+    option_eu_only:
+      name: "EU-Only Data Residency"
+      description: "All data processed and stored within EU/EEA"
+      regions:
+        primary: "eu-west-1 (Ireland)"
+        failover: "eu-central-1 (Frankfurt)"
+        backup: "eu-west-3 (Paris)"
+      suitable_for:
+        - "EU regulated financial entities"
+        - "Clients with strict GDPR requirements"
+        - "German clients (C5 compliance)"
+      restrictions:
+        - "No data transfer to non-EU regions"
+        - "All subcontractors must have EU data processing"
+        - "Monitoring data stays in EU"
+      implementation:
+        database: "RDS eu-west-1 with eu-central-1 replica"
+        storage: "S3 eu-west-1 with cross-region replication to eu-central-1"
+        compute: "ECS/Lambda in eu-west-1 only"
+        monitoring: "Datadog EU (Germany) region"
+        error_tracking: "Sentry EU region"
+      additional_cost: "€0-500/month (minimal)"
+
+    option_eu_primary_global_backup:
+      name: "EU Primary with Global Backup"
+      description: "Primary processing in EU, backup/DR may use other regions"
+      regions:
+        primary: "eu-west-1 (Ireland)"
+        failover: "us-east-1 (N. Virginia) - encrypted backup only"
+      suitable_for:
+        - "Clients accepting non-EU backup locations"
+        - "Cost-optimized deployments"
+      restrictions:
+        - "Live data processing in EU only"
+        - "Backup data encrypted and accessible only for DR"
+        - "Requires DPF/SCCs for US backup"
+      additional_cost: "€0"
+
+    option_dedicated_region:
+      name: "Dedicated Region Deployment"
+      description: "Single-tenant deployment in client-specified region"
+      regions: "Client-specified (EU, US, APAC)"
+      suitable_for:
+        - "Enterprise clients with specific jurisdiction requirements"
+        - "Clients requiring complete data isolation"
+      implementation:
+        type: "Dedicated infrastructure"
+        isolation: "Complete tenant isolation"
+        management: "Dedicated or customer-managed"
+      additional_cost: "€3,000-10,000/month"
+
+    option_on_premise:
+      name: "On-Premise / Private Cloud"
+      description: "Deployment within client's own infrastructure"
+      suitable_for:
+        - "Banks with strict data sovereignty"
+        - "Clients prohibited from using public cloud"
+      implementation:
+        delivery: "Container images / VM templates"
+        support: "Installation assistance + ongoing support"
+      additional_cost: "Custom pricing"
+
+  # =========================================================================
+  # DEFAULT CONFIGURATION
+  # =========================================================================
+  default_configuration:
+    new_clients: "option_eu_only"
+    rationale: "Most conservative option for DORA compliance"
+    exceptions: "By explicit client request with risk acknowledgment"
+
+  # =========================================================================
+  # DATA CLASSIFICATION BY RESIDENCY
+  # =========================================================================
+  data_classification:
+    always_eu:
+      - "User credentials and authentication data"
+      - "Trading strategies and configurations"
+      - "Backtest results"
+      - "Trained ML models"
+      - "Audit logs"
+      - "Personal data (GDPR scope)"
+
+    configurable:
+      - "Market data cache (can use global CDN)"
+      - "Anonymized platform metrics"
+      - "Public documentation"
+
+    never_stored:
+      - "Client broker passwords (passed through, not stored)"
+      - "Raw market data (streamed, not persisted)"
+
+  # =========================================================================
+  # SUBCONTRACTOR DATA RESIDENCY
+  # =========================================================================
+  subcontractor_residency:
+    aws:
+      eu_only_possible: true
+      regions_used: ["eu-west-1", "eu-central-1"]
+      compliance: "SOC2, ISO27001, C5"
+
+    datadog:
+      eu_only_possible: true
+      region: "EU (Germany)"
+      configuration: "EU data center selected"
+
+    sentry:
+      eu_only_possible: true
+      region: "EU (available on request)"
+      action_required: "Configure EU data residency by 2025-01-31"
+
+    auth0:
+      eu_only_possible: true
+      region: "EU option available"
+      configuration: "Select EU tenant on setup"
+
+    stripe:
+      eu_only_possible: true
+      region: "EU (Ireland)"
+      configuration: "EU entity by default"
+
+    polygon_alpaca_binance:
+      eu_only_possible: false
+      location: "US / Global"
+      data_type: "Market data only (no client PII)"
+      mitigation: "No client data sent to these providers"
+
+  # =========================================================================
+  # CLIENT CONFIGURATION PROCESS
+  # =========================================================================
+  configuration_process:
+    at_onboarding:
+      step_1: "Client selects data residency option"
+      step_2: "Configuration documented in contract"
+      step_3: "Infrastructure provisioned per selection"
+      step_4: "Residency verified and documented"
+
+    change_requests:
+      notice_period: "30 days minimum"
+      process:
+        - "Client submits change request"
+        - "Impact assessment"
+        - "Migration plan"
+        - "Execution during maintenance window"
+        - "Verification and documentation update"
+      cost: "Migration costs may apply"
+
+  # =========================================================================
+  # CONTRACTUAL DISCLOSURE
+  # =========================================================================
+  contractual_disclosure:
+    template_clause: |
+      DATA LOCATIONS (Art. 30(2)(b))
+
+      1. Primary Data Processing Location: [REGION]
+      2. Backup/DR Location: [REGION]
+      3. Data Storage Location: [REGION]
+
+      All data processing and storage shall occur within the locations
+      specified above. Provider shall notify Client at least sixty (60)
+      days in advance of any proposed change to data processing or
+      storage locations.
+
+      Subcontractor data processing locations are detailed in Schedule [X]
+      (Subcontractor Register).
+
+    mandatory_fields:
+      - "Primary processing region"
+      - "Backup/DR region"
+      - "Storage region"
+      - "Subcontractor locations"
+      - "Change notification commitment"
+
+  # =========================================================================
+  # VERIFICATION AND AUDIT
+  # =========================================================================
+  verification:
+    technical_controls:
+      - "AWS S3 bucket policies restricting to EU regions"
+      - "RDS instance region verification"
+      - "CloudTrail logging of cross-region access attempts"
+      - "Network policies blocking non-EU egress"
+
+    audit_evidence:
+      - "AWS Config compliance reports"
+      - "Infrastructure-as-code region specifications"
+      - "Data flow diagrams with regions"
+      - "Subcontractor region attestations"
+
+    monitoring:
+      - "Automated alerts for data leaving configured region"
+      - "Monthly compliance reports"
+      - "Annual third-party verification"
+
+  # =========================================================================
+  # IMPLEMENTATION STATUS
+  # =========================================================================
+  implementation_status:
+    eu_only_option:
+      status: "AVAILABLE"
+      verification: "Pending formal audit"
+
+    dedicated_region:
+      status: "PLANNED"
+      target_date: "Q3 2025"
+
+    on_premise:
+      status: "ROADMAP"
+      target_date: "Q4 2025"
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Configure Sentry EU data residency"
+      priority: "HIGH"
+      deadline: "2025-01-31"
+
+    - action: "Document default EU-only configuration"
+      priority: "HIGH"
+      deadline: "2025-01-31"
+
+    - action: "Create data residency selection in onboarding flow"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+
+    - action: "Implement automated region compliance monitoring"
+      priority: "MEDIUM"
+      deadline: "2025-Q2"
 ```
 
 ---
@@ -2448,6 +3423,225 @@ pre_contractual_support:
     information_request: "Initial response within 2 business days"
     complete_package: "Within 5 business days of engagement"
     custom_requests: "Timeline agreed per request"
+```
+
+#### 6.6.1 Pre-Contractual Portal Implementation — NEW v2.2
+
+```yaml
+precontractual_portal_implementation:
+  # =========================================================================
+  # PORTAL ARCHITECTURE
+  # =========================================================================
+  architecture:
+    type: "Self-service web portal"
+    authentication: "Email verification + optional SSO"
+    url: "trust.platform.com (or security.platform.com)"
+
+  # =========================================================================
+  # PUBLIC TIER (No authentication)
+  # =========================================================================
+  public_tier:
+    available_to: "Anyone"
+    content:
+      security_overview:
+        - "Security whitepaper (PDF)"
+        - "Architecture overview (high-level)"
+        - "Compliance certifications list"
+        - "Data handling summary"
+
+      service_documentation:
+        - "Platform capabilities overview"
+        - "API documentation (public endpoints)"
+        - "SLA tier descriptions"
+        - "Pricing models"
+
+      trust_indicators:
+        - "SOC2 Type II badge (with report available under NDA)"
+        - "ISO 27001 certification status"
+        - "GDPR compliance statement"
+        - "DORA compliance statement"
+
+  # =========================================================================
+  # REGISTERED TIER (Email verification)
+  # =========================================================================
+  registered_tier:
+    available_to: "Verified business email"
+    registration_fields:
+      required:
+        - "Company name"
+        - "Business email"
+        - "Role/Title"
+        - "Country"
+      optional:
+        - "Regulatory status"
+        - "Expected use case"
+        - "Timeline"
+
+    content:
+      detailed_documentation:
+        - "Full security architecture document"
+        - "Data flow diagrams"
+        - "Encryption specifications"
+        - "Access control model"
+
+      compliance_documents:
+        - "DORA Article 30 clause mapping"
+        - "Subcontractor list (summary)"
+        - "BCP/DR overview"
+        - "Incident response summary"
+
+      templates:
+        - "Standard contract template (preview)"
+        - "SLA template"
+        - "DPA template"
+
+  # =========================================================================
+  # NDA TIER (After NDA signed)
+  # =========================================================================
+  nda_tier:
+    available_to: "Prospects who signed NDA"
+    process:
+      - "Prospect requests NDA tier access"
+      - "We send mutual NDA"
+      - "Signed NDA uploaded to portal"
+      - "Legal verifies signature"
+      - "NDA tier unlocked"
+
+    content:
+      confidential_reports:
+        - "SOC2 Type II full report"
+        - "Penetration test executive summary"
+        - "Vulnerability assessment summary"
+        - "Incident history (sanitized)"
+
+      detailed_assessments:
+        - "Full subcontractor chain with LEIs"
+        - "Detailed control descriptions"
+        - "Risk register summary"
+        - "Audit findings status"
+
+  # =========================================================================
+  # ENTERPRISE TIER (Active negotiation)
+  # =========================================================================
+  enterprise_tier:
+    available_to: "Prospects in active contract negotiation"
+    activation: "Sales team grants access"
+
+    content:
+      custom_support:
+        - "Custom security questionnaire completion"
+        - "On-site security review scheduling"
+        - "Technical Q&A sessions"
+        - "Reference customer introductions"
+
+      negotiation_support:
+        - "Contract redline tracking"
+        - "Custom SLA negotiation"
+        - "Dedicated pre-sales engineer"
+
+  # =========================================================================
+  # SECURITY QUESTIONNAIRE AUTOMATION
+  # =========================================================================
+  questionnaire_automation:
+    supported_formats:
+      - name: "SIG Lite"
+        auto_response: "80% auto-populated"
+        turnaround: "2 business days"
+
+      - name: "SIG Core"
+        auto_response: "70% auto-populated"
+        turnaround: "5 business days"
+
+      - name: "CAIQ (CSA)"
+        auto_response: "75% auto-populated"
+        turnaround: "3 business days"
+
+      - name: "Custom"
+        auto_response: "Varies"
+        turnaround: "10 business days"
+
+    implementation:
+      tool_options:
+        - "Vanta Trust Center"
+        - "Drata Trust Center"
+        - "SafeBase"
+        - "Custom built"
+
+      features:
+        - "Question-answer database"
+        - "Evidence attachment"
+        - "Version control"
+        - "Export to multiple formats"
+
+  # =========================================================================
+  # METRICS AND TRACKING
+  # =========================================================================
+  metrics:
+    portal_analytics:
+      - "Visitors by company/country"
+      - "Document downloads"
+      - "Time spent per section"
+      - "Questionnaire requests"
+
+    sales_integration:
+      - "Lead scoring based on engagement"
+      - "CRM integration (Salesforce/HubSpot)"
+      - "Automatic notification to sales"
+
+  # =========================================================================
+  # IMPLEMENTATION ROADMAP
+  # =========================================================================
+  implementation_roadmap:
+    phase_1_mvp:
+      timeline: "Q1 2025"
+      scope:
+        - "Public documentation page"
+        - "Email registration for detailed docs"
+        - "Manual NDA process"
+      effort: "2-4 weeks"
+      cost: "€0-500 (static hosting)"
+
+    phase_2_automation:
+      timeline: "Q2 2025"
+      scope:
+        - "Trust center platform (Vanta/Drata)"
+        - "Questionnaire automation"
+        - "NDA workflow automation"
+      effort: "4-6 weeks"
+      cost: "€500-1500/month (SaaS)"
+
+    phase_3_enterprise:
+      timeline: "Q3 2025"
+      scope:
+        - "Custom portal development"
+        - "CRM integration"
+        - "Advanced analytics"
+      effort: "8-12 weeks"
+      cost: "€2000-5000 (development) + hosting"
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Create public security overview page"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Marketing + Security"
+
+    - action: "Evaluate trust center platforms (Vanta, Drata, SafeBase)"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Security"
+
+    - action: "Build question-answer database for common questionnaires"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Security"
+
+    - action: "Create NDA template and signing workflow"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Legal"
 ```
 
 ### 6.7 GDPR/DORA Breach Coordination — NEW
@@ -2986,6 +4180,510 @@ nca_jurisdiction_matrix:
         - "Document each inspection separately"
 ```
 
+### 6.11 Insurance & Indemnification — NEW v2.2
+
+**Context:** While DORA doesn't explicitly mandate insurance, EU regulated clients often require proof of adequate coverage and indemnification provisions as part of their third-party risk management.
+
+```yaml
+insurance_indemnification:
+  # =========================================================================
+  # INSURANCE REQUIREMENTS
+  # =========================================================================
+  insurance_types:
+
+    professional_liability:
+      name: "Professional Liability / Errors & Omissions (E&O)"
+      purpose: "Covers claims arising from professional services, advice, or negligence"
+      relevance: "Trading platform errors, strategy execution failures"
+      recommended_coverage: "€1-5 million per claim"
+      typical_cost: "€5,000-15,000/year"
+      client_requirement_frequency: "HIGH - most regulated clients require"
+
+    cyber_liability:
+      name: "Cyber Liability Insurance"
+      purpose: "Covers data breaches, cyber attacks, business interruption"
+      relevance: "Data breach costs, ransomware, incident response"
+      recommended_coverage: "€2-10 million per incident"
+      typical_cost: "€10,000-30,000/year"
+      client_requirement_frequency: "VERY HIGH - essential for financial services"
+      coverage_includes:
+        - "Incident response costs"
+        - "Notification costs"
+        - "Forensics investigation"
+        - "Legal defense"
+        - "Regulatory fines (where insurable)"
+        - "Business interruption"
+        - "Data restoration"
+
+    general_liability:
+      name: "General Liability (Public Liability)"
+      purpose: "Covers general business operations, premises liability"
+      relevance: "Basic business operations coverage"
+      recommended_coverage: "€1-2 million"
+      typical_cost: "€2,000-5,000/year"
+      client_requirement_frequency: "MEDIUM"
+
+    directors_officers:
+      name: "Directors & Officers (D&O) Insurance"
+      purpose: "Protects company leadership from personal liability"
+      relevance: "Corporate governance, fiduciary duties"
+      recommended_coverage: "€1-5 million"
+      typical_cost: "€5,000-20,000/year"
+      client_requirement_frequency: "LOW - enterprise clients may ask"
+
+  # =========================================================================
+  # RECOMMENDED COVERAGE BY STAGE
+  # =========================================================================
+  coverage_by_stage:
+
+    startup_phase:
+      revenue: "<€500K ARR"
+      clients: "Mostly retail, few regulated"
+      recommended:
+        professional_liability: "€1 million"
+        cyber_liability: "€2 million"
+        general_liability: "€1 million"
+      estimated_annual_cost: "€10,000-20,000"
+
+    growth_phase:
+      revenue: "€500K-2M ARR"
+      clients: "Mix of retail and regulated"
+      recommended:
+        professional_liability: "€2 million"
+        cyber_liability: "€5 million"
+        general_liability: "€1 million"
+        directors_officers: "€1 million"
+      estimated_annual_cost: "€25,000-50,000"
+
+    scale_phase:
+      revenue: ">€2M ARR"
+      clients: "Significant regulated client base"
+      recommended:
+        professional_liability: "€5 million"
+        cyber_liability: "€10 million"
+        general_liability: "€2 million"
+        directors_officers: "€5 million"
+      estimated_annual_cost: "€50,000-100,000"
+
+  # =========================================================================
+  # CLIENT DISCLOSURE
+  # =========================================================================
+  client_disclosure:
+    standard_disclosure:
+      - "Insurance types held"
+      - "Coverage amounts (ranges acceptable)"
+      - "Insurance provider (upon request)"
+      - "Policy expiry dates"
+
+    certificate_of_insurance:
+      availability: "Upon request"
+      turnaround: "3 business days"
+      content:
+        - "Named insured"
+        - "Policy number"
+        - "Coverage type and amount"
+        - "Policy period"
+        - "Certificate holder (client)"
+
+    additional_insured:
+      availability: "Enterprise tier clients"
+      process: "Request to insurance broker"
+      turnaround: "5-10 business days"
+      additional_cost: "May increase premium"
+
+  # =========================================================================
+  # INDEMNIFICATION PROVISIONS
+  # =========================================================================
+  indemnification:
+
+    standard_indemnification:
+      we_indemnify_client_for:
+        - "Third-party IP infringement claims"
+        - "Gross negligence in service delivery"
+        - "Willful misconduct"
+        - "Data breaches caused by our security failures"
+        - "Regulatory fines arising from our GDPR violations"
+
+      client_indemnifies_us_for:
+        - "Misuse of platform by client or their users"
+        - "Client's own regulatory violations"
+        - "Inaccurate data provided by client"
+        - "Third-party claims from client's end users"
+
+    liability_caps:
+      standard_tier:
+        cap: "12 months of fees paid"
+        exceptions: "Gross negligence, willful misconduct, IP indemnity"
+
+      professional_tier:
+        cap: "24 months of fees paid"
+        exceptions: "Gross negligence, willful misconduct, IP indemnity"
+
+      enterprise_tier:
+        cap: "Negotiated (typically 24-36 months)"
+        exceptions: "Gross negligence, willful misconduct, IP indemnity"
+        note: "May require increased insurance coverage"
+
+    carve_outs:
+      unlimited_liability:
+        - "Fraud"
+        - "Willful misconduct"
+        - "Gross negligence"
+        - "Confidentiality breaches"
+        - "IP indemnification"
+      note: "These are typically excluded from caps"
+
+    exclusions:
+      we_do_not_cover:
+        - "Trading losses (market risk)"
+        - "Broker failures (client's broker relationship)"
+        - "Client's own regulatory non-compliance"
+        - "Force majeure events"
+        - "Third-party service outages (with notification)"
+
+  # =========================================================================
+  # CONTRACT TEMPLATE CLAUSES
+  # =========================================================================
+  contract_clauses:
+
+    insurance_clause: |
+      INSURANCE
+
+      Provider shall maintain the following insurance coverage during
+      the term of this Agreement:
+
+      (a) Professional Liability Insurance: €[AMOUNT] per claim
+      (b) Cyber Liability Insurance: €[AMOUNT] per incident
+      (c) General Liability Insurance: €[AMOUNT] per occurrence
+
+      Upon Client's request, Provider shall provide a certificate of
+      insurance evidencing such coverage within five (5) business days.
+
+    indemnification_clause: |
+      INDEMNIFICATION
+
+      1. Provider Indemnification. Provider shall indemnify, defend,
+         and hold harmless Client from any third-party claims arising
+         from: (a) Provider's gross negligence or willful misconduct;
+         (b) Provider's infringement of third-party intellectual property;
+         (c) Provider's breach of data protection obligations.
+
+      2. Client Indemnification. Client shall indemnify, defend, and
+         hold harmless Provider from any claims arising from: (a) Client's
+         misuse of the Services; (b) Client's violation of applicable laws;
+         (c) claims by Client's end users.
+
+      3. Limitation of Liability. Except for indemnification obligations
+         and breaches of confidentiality, neither party's aggregate
+         liability shall exceed [AMOUNT/12 months fees].
+
+  # =========================================================================
+  # CURRENT STATUS
+  # =========================================================================
+  current_status:
+    professional_liability:
+      status: "[HAVE/PLANNED/NONE]"
+      coverage: "[AMOUNT]"
+      provider: "[INSURER]"
+      expiry: "[DATE]"
+
+    cyber_liability:
+      status: "[HAVE/PLANNED/NONE]"
+      coverage: "[AMOUNT]"
+      provider: "[INSURER]"
+      expiry: "[DATE]"
+
+    general_liability:
+      status: "[HAVE/PLANNED/NONE]"
+      coverage: "[AMOUNT]"
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Obtain cyber liability insurance quote"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Finance/Operations"
+
+    - action: "Obtain professional liability insurance quote"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Finance/Operations"
+
+    - action: "Create insurance disclosure document for clients"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Legal"
+
+    - action: "Update contract templates with indemnification clauses"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Legal"
+```
+
+### 6.12 Pooled Audit Framework — NEW v2.2
+
+**Legal Basis:** Art. 30(4) states "financial entities may, either individually or collectively, use pooled audits... or use third-party certifications."
+
+```yaml
+pooled_audit_framework:
+  # =========================================================================
+  # PURPOSE
+  # =========================================================================
+  purpose: |
+    Enable multiple clients to satisfy their audit rights (Art. 30(3)(e))
+    efficiently through shared audit arrangements, reducing burden on both
+    provider and clients while maintaining compliance.
+
+  # =========================================================================
+  # POOLED AUDIT OPTIONS
+  # =========================================================================
+  options:
+
+    option_1_soc2_reliance:
+      name: "SOC2 Type II Report Reliance"
+      description: "Clients rely on our annual SOC2 Type II report"
+      legal_basis: "Art. 30(4) - third-party certifications"
+
+      what_we_provide:
+        - "SOC2 Type II report (annually)"
+        - "Bridge letter between reports"
+        - "Management letter (if applicable)"
+        - "Auditor contact for verification"
+
+      client_benefits:
+        - "No need for individual audit"
+        - "Immediate availability (under NDA)"
+        - "Trusted third-party attestation"
+        - "Covers most security controls"
+
+      limitations:
+        - "May not cover all DORA-specific requirements"
+        - "Client may need supplementary review"
+        - "Report scope may not match client's exact needs"
+
+      cost_to_client: "€0 (included in subscription)"
+      our_cost: "€30,000-80,000/year (SOC2 audit)"
+
+    option_2_iso27001_reliance:
+      name: "ISO 27001 Certification Reliance"
+      description: "Clients rely on our ISO 27001 certification"
+      legal_basis: "Art. 30(4) - third-party certifications"
+      status: "PLANNED - certification in progress"
+      target_date: "Q4 2025"
+
+      what_we_provide:
+        - "ISO 27001 certificate"
+        - "Statement of Applicability"
+        - "Annual surveillance audit reports"
+
+      client_benefits:
+        - "Internationally recognized standard"
+        - "Continuous certification (surveillance audits)"
+        - "Comprehensive ISMS coverage"
+
+    option_3_joint_audit:
+      name: "Joint/Pooled Audit"
+      description: "Multiple clients conduct audit together"
+      legal_basis: "Art. 30(4) - pooled audits"
+
+      structure:
+        coordinator: "One client or third-party audit firm"
+        participants: "Multiple clients share costs"
+        scope: "Common scope agreed by participants"
+        timing: "Annual, coordinated schedule"
+
+      what_we_provide:
+        - "Audit coordination support"
+        - "Documentation package"
+        - "Personnel availability"
+        - "Facility access (if needed)"
+
+      cost_sharing:
+        coordinator_fee: "€5,000-15,000"
+        per_participant: "€2,000-5,000"
+        our_support_cost: "Included (up to 2 days/year)"
+
+      benefits:
+        - "Reduced cost per client"
+        - "Comprehensive scope"
+        - "Direct auditor access"
+        - "Custom focus areas possible"
+
+    option_4_individual_audit:
+      name: "Individual Client Audit"
+      description: "Single client exercises full audit rights"
+      legal_basis: "Art. 30(3)(e) - unrestricted audit rights"
+
+      what_we_provide:
+        - "Full audit access"
+        - "Documentation"
+        - "Personnel interviews"
+        - "Systems access (read-only)"
+        - "Facility access"
+
+      conditions:
+        notice_period: "10 business days (5 for cause)"
+        duration: "Up to 5 days on-site"
+        frequency: "Annual (more for cause)"
+        auditor_approval: "Must be reputable firm"
+
+      cost_to_client: "Client bears their audit costs"
+      our_support_cost:
+        included: "1 individual audit per year per Enterprise client"
+        additional: "€5,000/day for additional audits"
+
+  # =========================================================================
+  # RECOMMENDATION BY CLIENT TYPE
+  # =========================================================================
+  recommendations:
+
+    standard_tier_clients:
+      primary: "Option 1 (SOC2 Reliance)"
+      rationale: "Cost-effective, sufficient for non-critical functions"
+      supplementary: "Option 3 (Joint Audit) if needed"
+
+    professional_tier_clients:
+      primary: "Option 1 (SOC2 Reliance)"
+      supplementary: "Option 3 (Joint Audit) for specific concerns"
+      alternative: "Option 4 (Individual Audit) if required by their NCA"
+
+    enterprise_tier_clients:
+      primary: "Option 1 (SOC2) + Option 2 (ISO 27001)"
+      supplementary: "Option 4 (Individual Audit) rights included"
+      custom: "Can coordinate Option 3 (Joint Audit)"
+
+  # =========================================================================
+  # POOLED AUDIT COORDINATION
+  # =========================================================================
+  pooled_audit_coordination:
+
+    annual_cycle:
+      january: "Announce pooled audit availability"
+      february: "Collect interest from clients"
+      march: "Finalize participants and scope"
+      april: "Select audit firm (if client-led)"
+      may_june: "Conduct audit"
+      july: "Report distribution"
+      ongoing: "SOC2 report available upon request"
+
+    scope_options:
+      standard_scope:
+        - "Security controls (SOC2 CC series)"
+        - "Availability controls"
+        - "Incident response procedures"
+        - "Change management"
+        - "Backup and recovery"
+
+      dora_enhanced_scope:
+        - "Standard scope plus:"
+        - "ICT risk management framework"
+        - "Business continuity testing"
+        - "Exit strategy documentation"
+        - "Subcontractor oversight"
+
+    client_communication:
+      invitation: "December (for following year)"
+      confirmation_deadline: "January 31"
+      scope_finalization: "February 28"
+      audit_dates: "April-May"
+      report_delivery: "June 30"
+
+  # =========================================================================
+  # AUDIT EVIDENCE PACKAGE
+  # =========================================================================
+  evidence_package:
+    always_available:
+      - "SOC2 Type II report (under NDA)"
+      - "Security policy summary"
+      - "Incident history (sanitized)"
+      - "BCP/DR test results (summary)"
+      - "Penetration test executive summary"
+      - "Subcontractor list"
+
+    upon_request:
+      - "Detailed control documentation"
+      - "Full penetration test report"
+      - "Vulnerability scan results"
+      - "Access review logs"
+      - "Change management records"
+
+    audit_only:
+      - "Source code review"
+      - "Live system access"
+      - "Personnel interviews"
+      - "Physical facility inspection"
+
+  # =========================================================================
+  # CONTRACTUAL PROVISIONS
+  # =========================================================================
+  contract_provisions:
+
+    audit_rights_clause: |
+      AUDIT RIGHTS (Art. 30(3)(e) / Art. 30(4))
+
+      1. Client shall have the right to audit Provider's compliance with
+         this Agreement, either directly or through appointed auditors.
+
+      2. Client may satisfy audit requirements through:
+         (a) Reliance on Provider's SOC2 Type II report and/or ISO 27001
+             certification (copies available upon request under NDA);
+         (b) Participation in pooled audits organized by Provider or
+             jointly with other clients;
+         (c) Individual audit conducted by Client or Client's auditors.
+
+      3. For individual audits, Client shall provide at least ten (10)
+         business days' notice (five (5) days for cause-based audits).
+
+      4. Provider shall cooperate fully with any audit conducted by
+         Client's competent authority (NCA) per Art. 30(3)(e).
+
+      5. Audit costs shall be borne by Client, except that Provider
+         shall provide [X] days of support at no additional cost per year.
+
+  # =========================================================================
+  # CURRENT STATUS
+  # =========================================================================
+  current_status:
+    soc2_type2:
+      status: "IN PROGRESS"
+      target_completion: "Q4 2025"
+      auditor: "[TBD]"
+
+    iso27001:
+      status: "PLANNED"
+      target_completion: "Q4 2025"
+
+    pooled_audit_2025:
+      status: "PLANNED"
+      interest_collection: "Q4 2024"
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Complete SOC2 Type II readiness assessment"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Security"
+
+    - action: "Select SOC2 auditor"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Finance + Security"
+
+    - action: "Create pooled audit invitation template"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Security"
+
+    - action: "Document audit evidence package contents"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+      owner: "Security"
+```
+
 ---
 
 ## 7. SOC2 ↔ DORA Control Mapping — NEW
@@ -3028,20 +4726,21 @@ soc2_dora_synergy:
 
 ---
 
-## 8. Cleanup Plan — REVISED
+## 8. Cleanup Plan — REVISED v2.2
 
-### 8.1 Archive (Phase 1)
+### 8.1 Archive (Phase 1) — REVISED v2.2
 
 | Module | Reason |
 |--------|--------|
 | `services/dora/scope_verification.py` | Not applicable — we know DORA applies via contracts |
 | `services/dora/proportionality.py` | Financial entity classification |
-| `services/dora/pooled_testing.py` | Client-side arrangements |
 | `services/dora/supervisory_feedback.py` | Client-NCA communication |
 | `config/dora/nca_identification.yaml` | Client identifies their NCA |
 | `config/dora/entity_classification.yaml` | Financial entity config |
 
-### 8.2 Adapt (Phase 1-2)
+**Note v2.2:** `pooled_testing.py` removed from Archive → moved to Adapt section.
+
+### 8.2 Adapt (Phase 1-2) — REVISED v2.2
 
 | Module | Current | Target |
 |--------|---------|--------|
@@ -3050,6 +4749,7 @@ soc2_dora_synergy:
 | `third_party_risk.py` | Client risk assessment | Self-documentation + subcontractor info |
 | `contractual_requirements.py` | DORA clauses | Contract templates with Art. 30 clauses |
 | `concentration_risk.py` | Client analysis | CTPP designation awareness + monitoring |
+| `pooled_testing.py` | Client pooled testing | `pooled_audit_support.py` — support client pooled audits (Art. 30(4)) |
 
 ### 8.3 Keep (Core)
 
@@ -3061,6 +4761,7 @@ soc2_dora_synergy:
 | `ict_business_continuity.py` | Core BCP |
 | `detection.py` | Anomaly detection |
 | `protection.py` | Security controls |
+| `ctpp_oversight.py` | **NEW v2.2:** Keep scaled-down for CTPP preparedness |
 
 ### 8.4 Test Migration Plan — NEW
 
@@ -3087,7 +4788,7 @@ test_migration:
 
 ---
 
-## 9. Phased Roadmap — REVISED
+## 9. Phased Roadmap — REVISED v2.2
 
 ### Phase 1: Contractual Compliance & Baseline (PRIORITY)
 
@@ -3095,28 +4796,40 @@ test_migration:
 - Enable compliant contracts with EU clients NOW
 - Establish audit readiness
 - Clean up non-applicable modules
+- Validate operational capacity for SLA commitments
 
 **Work Blocks:**
 
-| Block | Description | Priority |
-|-------|-------------|----------|
-| 1.1 | Create contract templates with Art. 30(2) clauses | **CRITICAL** |
-| 1.2 | Create critical function addendum (Art. 30(3)) | **CRITICAL** |
-| 1.3 | Implement audit readiness procedures | **HIGH** |
-| 1.4 | Create provider information package | **HIGH** |
-| 1.5 | Document subcontractors (AWS, data providers) | **HIGH** |
-| 1.6 | Adapt exit_strategies.py for provider role | **HIGH** |
-| 1.7 | Archive non-applicable modules | MEDIUM |
-| 1.8 | Create SHARED_RESPONSIBILITY.md | MEDIUM |
-| 1.9 | Enhance incident notification (<30min critical) | **HIGH** |
+| Block | Description | Priority | NEW v2.2 |
+|-------|-------------|----------|----------|
+| 1.1 | Create contract templates with Art. 30(2) clauses | **CRITICAL** | |
+| 1.2 | Create critical function addendum (Art. 30(3)) | **CRITICAL** | |
+| 1.3 | Implement audit readiness procedures | **HIGH** | |
+| 1.4 | Create provider information package | **HIGH** | |
+| 1.5 | Document subcontractors (AWS, data providers) | **HIGH** | |
+| 1.6 | Adapt exit_strategies.py for provider role | **HIGH** | |
+| 1.7 | Archive non-applicable modules (revised list) | MEDIUM | ✓ |
+| 1.8 | Create SHARED_RESPONSIBILITY.md | MEDIUM | |
+| 1.9 | Validate on-call capacity → set achievable notification SLA | **HIGH** | ✓ |
+| 1.10 | Create subcontracting prior approval workflow | **HIGH** | ✓ |
+| 1.11 | Document EU-only data residency configuration | **HIGH** | ✓ |
+| 1.12 | Obtain cyber liability insurance quotes | **HIGH** | ✓ |
+| 1.13 | Implement SLA guardrails (engineering sign-off process) | **HIGH** | ✓ |
+| 1.14 | Create pre-contractual public security page | MEDIUM | ✓ |
+| 1.15 | Adapt pooled_testing.py → pooled_audit_support.py | MEDIUM | ✓ |
 
 **Deliverables:**
-- DORA-compliant contract templates
+- DORA-compliant contract templates (incl. subcontracting approval)
 - Audit readiness package
 - Provider information package for client ROI
-- Subcontractor documentation
+- Subcontractor documentation with incident escalation procedures
 - Exit strategy documentation
-- Updated incident notification procedures
+- Updated incident notification procedures (with realistic SLAs)
+- EU data residency configuration documentation
+- Insurance coverage (or quotes in progress)
+- Pre-contractual security overview page
+
+**Critical Constraint:** DO NOT offer Professional/Enterprise SLA tiers until infrastructure validated (see Section 5.4.4).
 
 ### Phase 2: Core Operational Resilience
 
@@ -3124,19 +4837,26 @@ test_migration:
 - Strengthen monitoring/logging/alerting
 - Improve DR/BCP with documented RTO/RPO
 - Enhance change management
+- Enable Professional tier offering
 
 **Work Blocks:**
 
-| Block | Description | Priority |
-|-------|-------------|----------|
-| 2.1 | Implement tiered backup (15min/1h/24h RPO) | **HIGH** |
-| 2.2 | Enhance healthcheck (/health, /ready, /live) | HIGH |
-| 2.3 | Implement structured logging with correlation IDs | HIGH |
-| 2.4 | Add comprehensive alerting | HIGH |
-| 2.5 | Quarterly DR testing with documentation | HIGH |
-| 2.6 | CI/CD security gates (SAST/DAST) | MEDIUM |
-| 2.7 | SOC2 ↔ DORA control mapping | MEDIUM |
-| 2.8 | Create `services/core/` package | MEDIUM |
+| Block | Description | Priority | NEW v2.2 |
+|-------|-------------|----------|----------|
+| 2.1 | Implement tiered backup (15min/1h/24h RPO) | **HIGH** | |
+| 2.2 | Enhance healthcheck (/health, /ready, /live) | HIGH | |
+| 2.3 | Implement structured logging with correlation IDs | HIGH | |
+| 2.4 | Add comprehensive alerting | HIGH | |
+| 2.5 | Quarterly DR testing with documentation | HIGH | |
+| 2.6 | CI/CD security gates (SAST/DAST) | MEDIUM | |
+| 2.7 | SOC2 ↔ DORA control mapping | MEDIUM | |
+| 2.8 | Create `services/core/` package | MEDIUM | |
+| 2.9 | Implement Multi-AZ deployment | **HIGH** | ✓ |
+| 2.10 | Establish formal on-call rotation (Option B or C) | **HIGH** | ✓ |
+| 2.11 | Implement subcontractor status monitoring | HIGH | ✓ |
+| 2.12 | Deploy trust center platform (Vanta/Drata) | MEDIUM | ✓ |
+| 2.13 | Complete first DR test with documentation | **HIGH** | ✓ |
+| 2.14 | Implement automated CTPP risk monitoring | MEDIUM | ✓ |
 
 **Deliverables:**
 - Tiered backup system with automated testing
@@ -3144,6 +4864,16 @@ test_migration:
 - Structured logging across all services
 - Quarterly DR test reports
 - SOC2-DORA mapping document
+- Multi-AZ deployment (Professional tier prerequisite)
+- Formal on-call rotation with documented procedures
+- Subcontractor incident monitoring system
+- Trust center portal (basic)
+
+**Gate:** Professional tier can be offered after:
+- [ ] Multi-AZ deployment completed
+- [ ] Sync replication enabled
+- [ ] On-call rotation established (Option B minimum)
+- [ ] First DR test passed
 
 ### Phase 3: Enterprise Enhancements
 
@@ -3151,19 +4881,26 @@ test_migration:
 - Extended reporting for regulated clients
 - Joint testing support
 - On-prem deployment support
+- Enable Enterprise tier offering
 
 **Work Blocks:**
 
-| Block | Description | Priority |
-|-------|-------------|----------|
-| 3.1 | Create `services/enterprise/` package | HIGH |
-| 3.2 | Extended incident report formats (PDF/JSON) | HIGH |
-| 3.3 | Per-client metrics and dashboards | MEDIUM |
-| 3.4 | SIEM integration (Splunk/ELK export) | MEDIUM |
-| 3.5 | TLPT cooperation procedures | MEDIUM |
-| 3.6 | On-prem deployment guide | MEDIUM |
-| 3.7 | Enterprise SLA templates | MEDIUM |
-| 3.8 | Feature flag system for Enterprise | LOW |
+| Block | Description | Priority | NEW v2.2 |
+|-------|-------------|----------|----------|
+| 3.1 | Create `services/enterprise/` package | HIGH | |
+| 3.2 | Extended incident report formats (PDF/JSON) | HIGH | |
+| 3.3 | Per-client metrics and dashboards | MEDIUM | |
+| 3.4 | SIEM integration (Splunk/ELK export) | MEDIUM | |
+| 3.5 | TLPT cooperation procedures | MEDIUM | |
+| 3.6 | On-prem deployment guide | MEDIUM | |
+| 3.7 | Enterprise SLA templates | MEDIUM | |
+| 3.8 | Feature flag system for Enterprise | LOW | |
+| 3.9 | Multi-region deployment | **HIGH** | ✓ |
+| 3.10 | 24/7 on-call (Option C: 4+ engineers) | **HIGH** | ✓ |
+| 3.11 | Complete SOC2 Type II certification | **HIGH** | ✓ |
+| 3.12 | Implement pooled audit coordination | MEDIUM | ✓ |
+| 3.13 | Dedicated region deployment option | MEDIUM | ✓ |
+| 3.14 | ISO 27001 certification (start) | MEDIUM | ✓ |
 
 **Deliverables:**
 - Extended incident reporting system
@@ -3171,6 +4908,36 @@ test_migration:
 - SIEM integration
 - TLPT cooperation documentation
 - On-prem deployment package
+- Multi-region deployment capability
+- 24/7 on-call team
+- SOC2 Type II report
+- Pooled audit framework operational
+- Dedicated region option
+
+**Gate:** Enterprise tier can be offered after:
+- [ ] Multi-region deployment completed
+- [ ] 24/7 on-call team (4+ FTE)
+- [ ] Quarterly DR tests passing
+- [ ] SOC2 Type II certification completed
+
+### Phase Summary Timeline
+
+```
+Phase 1 (Q1 2025): Contractual foundation
+├── Contract templates ready
+├── Standard tier only
+└── Insurance in place
+
+Phase 2 (Q2-Q3 2025): Operational maturity
+├── Professional tier available
+├── SOC2 audit in progress
+└── Trust center operational
+
+Phase 3 (Q4 2025+): Enterprise scale
+├── Enterprise tier available
+├── SOC2 Type II certified
+└── Multi-region operational
+```
 
 ---
 
@@ -3250,13 +5017,12 @@ services/
 
 ---
 
-## Appendix A: Files to Archive
+## Appendix A: Files to Archive — REVISED v2.2
 
 ```
 archive/dora_not_applicable/
 ├── scope_verification.py
 ├── proportionality.py
-├── pooled_testing.py
 ├── supervisory_feedback.py
 ├── configs/
 │   ├── nca_identification.yaml
@@ -3266,7 +5032,9 @@ archive/dora_not_applicable/
 └── README.md (explaining ICT provider vs financial entity)
 ```
 
-## Appendix B: Files to Adapt
+**Note v2.2:** `pooled_testing.py` removed from Archive list — see Appendix B for adaptation.
+
+## Appendix B: Files to Adapt — REVISED v2.2
 
 ```
 Adaptations:
@@ -3279,8 +5047,11 @@ Adaptations:
 ├── third_party_risk.py → subcontractors.py
 │   Purpose: Document OUR subcontractors for clients
 │
-└── concentration_risk.py → ctpp_awareness.py
-    Purpose: Monitor our market concentration for CTPP risk
+├── concentration_risk.py → ctpp_awareness.py
+│   Purpose: Monitor our market concentration for CTPP risk
+│
+└── pooled_testing.py → pooled_audit_support.py  [NEW v2.2]
+    Purpose: Support client pooled audits per Art. 30(4)
 ```
 
 ## Appendix C: Reference Documents
