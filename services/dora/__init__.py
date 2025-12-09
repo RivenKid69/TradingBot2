@@ -766,6 +766,26 @@ from services.dora.contractual_requirements import (
     create_contractual_requirements,
 )
 
+# Article 30(2)(i) - Training Participation
+from services.dora.training_participation import (
+    # Enums
+    TrainingType,
+    ParticipationMode,
+    RequestStatus as TrainingRequestStatus,
+    PersonnelRole,
+    # Data structures
+    TrainingCommitment,
+    TrainingRequest,
+    TrainingSession,
+    QuarterlyUsage,
+    TrainingParticipationConfig,
+    # Main class
+    DORATrainingParticipation,
+    # Factory functions
+    create_commitment as create_training_commitment,
+    receive_request as receive_training_request,
+)
+
 # Article 28(8) - Exit Strategies
 from services.dora.exit_strategies import (
     # Enums
@@ -1416,6 +1436,20 @@ __all__ = [
     "ContractualRequirementsConfig",
     "DORAContractualRequirements",
     "create_contractual_requirements",
+
+    # Training Participation (Article 30(2)(i))
+    "TrainingType",
+    "ParticipationMode",
+    "TrainingRequestStatus",
+    "PersonnelRole",
+    "TrainingCommitment",
+    "TrainingRequest",
+    "TrainingSession",
+    "QuarterlyUsage",
+    "TrainingParticipationConfig",
+    "DORATrainingParticipation",
+    "create_training_commitment",
+    "receive_training_request",
 
     # Exit Strategies (Article 28(8))
     "ExitTrigger",

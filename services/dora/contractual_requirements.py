@@ -64,16 +64,16 @@ class RequirementCategory(Enum):
 
 class RequirementType(Enum):
     """Types of contractual requirements."""
-    # Article 30(2) Basic Requirements
+    # Article 30(2) Basic Requirements - CORRECTED per official DORA text
     SERVICE_DESCRIPTION = "service_description"  # Art. 30(2)(a)
     DATA_LOCATION = "data_location"  # Art. 30(2)(b)
-    SERVICE_LEVELS = "service_levels"  # Art. 30(2)(c)
-    INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(d)
-    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(e)
-    EXIT_COOPERATION = "exit_cooperation"  # Art. 30(2)(f)
-    ACCESSIBILITY_SECURITY = "accessibility_security"  # Art. 30(2)(g)
-    RESILIENCE_TESTING = "resilience_testing"  # Art. 30(2)(h) - NEW
-    AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(i) - CORRECTED
+    SERVICE_LEVELS = "service_levels"  # Art. 30(2)(c) - availability, authenticity, integrity, confidentiality
+    SERVICE_LEVEL_TARGETS = "service_level_targets"  # Art. 30(2)(d) - quantitative/qualitative targets
+    INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(e) - CORRECTED
+    RESILIENCE_TESTING = "resilience_testing"  # Art. 30(2)(f) - CORRECTED
+    AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(g) - CORRECTED
+    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(h) - CORRECTED
+    TRAINING_PARTICIPATION = "training_participation"  # Art. 30(2)(i) - NEW
 
     # Article 30(3) Critical Function Requirements
     SLA_TARGETS = "sla_targets"
@@ -497,92 +497,64 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(2)(d) - Service Level Targets (quantitative/qualitative)
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.SERVICE_LEVEL_TARGETS,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(d)",
+        name="Service Level Descriptions with Targets",
+        description="Service level descriptions including quantitative and qualitative performance targets",
+        detailed_criteria=[
+            "Quantitative performance targets (uptime %, latency)",
+            "Qualitative service descriptions",
+            "Measurement methodology",
+            "Reporting frequency",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    # Article 30(2)(e) - Incident Assistance (CORRECTED from (d))
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.INCIDENT_ASSISTANCE,
         category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(d)",
+        article_reference="Article 30(2)(e)",
         name="Incident Assistance Obligations",
-        description="Obligations to provide assistance in the event of ICT incidents",
+        description="Obligation to provide assistance in the event of ICT incidents at no additional cost or at predetermined cost",
         detailed_criteria=[
             "Incident notification timelines",
             "Support during incident response",
             "Root cause analysis cooperation",
             "Remediation support",
+            "Cost provisions for assistance",
         ],
         mandatory=True,
         verification_method="document_review",
     ))
 
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.TERMINATION_RIGHTS,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(e)",
-        name="Termination Rights",
-        description="Termination rights and related minimum notice periods",
-        detailed_criteria=[
-            "Clear termination clauses",
-            "Notice period requirements",
-            "Termination for cause provisions",
-            "Regulatory termination rights",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.EXIT_COOPERATION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(f)",
-        name="Exit Cooperation",
-        description="Conditions for orderly termination and provider cooperation",
-        detailed_criteria=[
-            "Exit plan documentation",
-            "Data return procedures",
-            "Transition assistance commitment",
-            "Minimum transition period",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.ACCESSIBILITY_SECURITY,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(g)",
-        name="Accessibility and Security Provisions",
-        description="Provisions ensuring accessibility, availability, integrity, security, and protection of personal data",
-        detailed_criteria=[
-            "Data accessibility guarantees",
-            "Service availability commitments",
-            "Data integrity protection measures",
-            "Security controls description",
-            "Personal data protection measures",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
+    # Article 30(2)(f) - Resilience Testing Participation (CORRECTED from (h))
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.RESILIENCE_TESTING,
         category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(h)",
+        article_reference="Article 30(2)(f)",
         name="Resilience Testing Participation",
-        description="ICT provider obligation to participate in client's ICT security testing programs",
+        description="Obligation to participate in financial entity's ICT resilience testing per Articles 26-27",
         detailed_criteria=[
             "Obligation to participate in client security testing",
             "Cooperation with penetration tests",
             "Vulnerability assessment support",
-            "Threat-led testing cooperation (if required)",
+            "Threat-led testing cooperation (if required per Art. 26-27)",
             "Testing results sharing provisions",
         ],
         mandatory=True,
         verification_method="document_review",
     ))
 
+    # Article 30(2)(g) - Authority Cooperation (CORRECTED from (i))
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.AUTHORITY_COOPERATION,
         category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(i)",
+        article_reference="Article 30(2)(g)",
         name="Cooperation with Competent Authorities",
         description="Obligation to fully cooperate with competent authorities and resolution authorities",
         detailed_criteria=[
@@ -591,6 +563,42 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
             "Cooperation in supervisory activities",
             "Resolution authority access rights",
             "No impediment to supervision clause",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    # Article 30(2)(h) - Termination Rights (CORRECTED from (e))
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.TERMINATION_RIGHTS,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(h)",
+        name="Termination Rights and Notice Periods",
+        description="Termination rights and related minimum notice periods for contract termination",
+        detailed_criteria=[
+            "Clear termination clauses",
+            "Minimum notice period requirements",
+            "Termination for cause provisions",
+            "Regulatory termination rights",
+            "Exit transition provisions",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    # Article 30(2)(i) - Training Participation (NEW)
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.TRAINING_PARTICIPATION,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(i)",
+        name="Security Awareness and Resilience Training Participation",
+        description="Conditions for ICT provider participation in financial entity's security awareness programmes and digital operational resilience training per Article 13(6)",
+        detailed_criteria=[
+            "Commitment to participate in client security awareness programs",
+            "Participation in digital operational resilience training",
+            "Key personnel availability for training exercises",
+            "Joint incident simulation exercises",
+            "Reasonable notice and scheduling provisions",
         ],
         mandatory=True,
         verification_method="document_review",

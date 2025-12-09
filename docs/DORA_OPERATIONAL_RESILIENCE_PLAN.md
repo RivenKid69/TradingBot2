@@ -137,16 +137,40 @@ mandatory_contract_clauses:
   art_30_2_b: "Locations where data will be processed/stored, including subcontracting conditions"
   art_30_2_c: "Provisions on availability, authenticity, integrity, confidentiality of data"
   art_30_2_d: "Service level descriptions including quantitative/qualitative targets"
-  art_30_2_e: "Termination rights and related minimum notice periods"
-  art_30_2_f: "Exit strategy provisions and transition assistance"
-  art_30_2_g: "Provisions ensuring accessibility, availability, integrity, security"
+  art_30_2_e: "Obligation to provide assistance in case of ICT incidents at no additional cost or at predetermined cost"
+  art_30_2_f: "Obligation to participate in financial entity's ICT resilience testing (per Art. 26-27)"
+  art_30_2_g: "Obligation to fully cooperate with competent authorities and resolution authorities"
 
   # CRITICAL: Often-missed clauses
-  art_30_2_h: "ICT provider obligation to participate in client's resilience testing programs"
-  art_30_2_i: "Obligation to fully cooperate with competent authorities and resolution authorities"
+  art_30_2_h: "Termination rights and related minimum notice periods for contract termination"
+  art_30_2_i: "Conditions for ICT provider participation in financial entity's security awareness programmes and digital operational resilience training (per Art. 13(6))"
 ```
 
 **CRITICAL NOTE**: Many contracts miss Art. 30(2)(h) and (i). These are **mandatory** for ALL ICT service contracts, not just critical functions.
+
+**Art. 30(2)(i) Implementation** — Training Participation:
+```yaml
+training_participation_clause:
+  commitment: |
+    Provider shall make relevant personnel available to participate in
+    Client's ICT security awareness programmes and digital operational
+    resilience training as reasonably requested.
+
+  scope:
+    - security_awareness_programs: "Annual participation upon request"
+    - resilience_training_exercises: "Tabletop exercises, DR drills"
+    - joint_incident_simulations: "As agreed in SLA"
+
+  conditions:
+    - reasonable_notice: "14 business days minimum"
+    - personnel_availability: "Subject to operational needs"
+    - remote_participation: "Preferred where feasible"
+    - materials_provided: "Client provides training materials"
+
+  limitations:
+    - max_time_commitment: "8 hours per quarter per key contact"
+    - travel_costs: "Client responsibility if on-site required"
+```
 
 ### 2.5 Article 30(3) — Additional Requirements for Critical Functions
 
@@ -156,11 +180,161 @@ If client classifies our services as supporting "critical or important function"
 additional_requirements_critical:
   art_30_3_a: "Full service level descriptions with quantitative targets"
   art_30_3_b: "Notice periods and reporting obligations"
-  art_30_3_c: "Business contingency plans"
-  art_30_3_d: "ICT security measures participation"
-  art_30_3_e: "UNRESTRICTED audit and access rights"
+  art_30_3_c: "Business contingency plans including ICT-specific requirements"
+  art_30_3_d: "ICT security measures and testing participation"
+  art_30_3_e: "UNRESTRICTED audit and access rights for client and their NCA"
   art_30_3_f: "Exit strategies with transition periods"
-  art_30_3_g: "Cooperation in supervisory oversight"
+  art_30_3_g: "Participation in supervisory oversight activities"
+```
+
+#### 2.5.1 Detailed Art. 30(3) Implementation
+
+```yaml
+art_30_3_detailed_implementation:
+
+  # Art. 30(3)(a) - Full Service Level Descriptions
+  sla_targets:
+    availability:
+      trading_services: "99.9% monthly (43.8 min downtime max)"
+      backtest_services: "99.5% monthly"
+      api_services: "99.9% monthly"
+      measurement: "External monitoring (UptimeRobot/Datadog)"
+    performance:
+      order_latency_p95: "<500ms"
+      market_data_latency_p95: "<200ms"
+      api_response_p95: "<1000ms"
+    incident_response:
+      critical: "15 min acknowledgment, 1h update"
+      high: "30 min acknowledgment, 4h update"
+      medium: "4h acknowledgment, 24h update"
+    reporting:
+      frequency: "Monthly SLA report"
+      format: "PDF + JSON via client portal"
+
+  # Art. 30(3)(b) - Notice Periods
+  notice_periods:
+    termination_by_client: "90 days minimum"
+    termination_by_provider: "180 days minimum"
+    termination_for_cause: "30 days (material breach)"
+    service_changes:
+      material_changes: "60 days advance notice"
+      security_updates: "Immediate if critical"
+      pricing_changes: "90 days advance notice"
+    reporting_obligations:
+      incident_reports: "Within 30 min (critical)"
+      monthly_sla_reports: "By 5th business day"
+      annual_security_report: "By January 31"
+
+  # Art. 30(3)(c) - Business Contingency Plans
+  business_contingency:
+    documented_plans:
+      - business_continuity_plan
+      - disaster_recovery_plan
+      - incident_response_plan
+      - pandemic_response_plan
+    testing_frequency:
+      tabletop_exercises: "Quarterly"
+      technical_dr_test: "Semi-annually"
+      full_failover_test: "Annually"
+    client_communication:
+      bcp_summary: "Available on request"
+      test_results: "Sanitized summary provided"
+      recovery_time_objectives: "Documented in SLA"
+
+  # Art. 30(3)(d) - ICT Security Measures
+  security_measures_participation:
+    provider_obligations:
+      - maintain_security_certifications: "SOC2, ISO27001"
+      - vulnerability_management: "Weekly scans, critical <24h remediation"
+      - penetration_testing: "Annual third-party test"
+      - security_awareness: "Quarterly training for all staff"
+    client_cooperation:
+      - joint_security_reviews: "Annual or upon request"
+      - threat_intelligence_sharing: "As relevant"
+      - incident_coordination: "Documented escalation paths"
+
+  # Art. 30(3)(e) - UNRESTRICTED Audit Rights (CRITICAL)
+  audit_access_rights:
+    scope:
+      premises_access: "With 5 business days notice"
+      systems_access: "Read-only, escorted/supervised"
+      personnel_access: "Key contacts for interviews"
+      documentation_access: "All relevant policies, logs, reports"
+    unrestricted_means:
+      - "No cap on audit frequency for cause-based audits"
+      - "No unreasonable limitations on scope"
+      - "Access to subcontractor audit reports"
+      - "Right to use external auditors"
+    practical_limits:
+      - "Reasonable notice (5 business days, waived for incidents)"
+      - "Confidentiality of other clients' data"
+      - "No access to proprietary source code unless relevant"
+      - "Business hours unless emergency"
+    pooled_audit_option:
+      available: true
+      conditions: "Per Art. 30(4), client may use pooled audits"
+      our_support: "Annual third-party audit report provided"
+
+  # Art. 30(3)(f) - Exit Strategies
+  exit_strategy:
+    transition_period: "Minimum 90 days, up to 180 for complex"
+    data_export:
+      formats: ["JSON", "CSV", "SQL dump"]
+      scope: "All client data, configurations, trained models"
+      timeline: "Export available within 5 business days"
+    cooperation:
+      knowledge_transfer: "Documentation + handover sessions"
+      parallel_running: "Support dual operation during transition"
+      post_termination_support: "30 days read-only access"
+    no_vendor_lock_in:
+      - "Standard data formats documented"
+      - "API specifications published"
+      - "No proprietary data encoding"
+
+  # Art. 30(3)(g) - Supervisory Cooperation
+  supervisory_oversight:
+    client_nca_access:
+      information_requests: "Response within 5 business days"
+      on_site_inspection: "Cooperation required"
+      personnel_interviews: "Make available as requested"
+    cooperation_scope:
+      - "Answer questions about services provided"
+      - "Provide documentation about controls"
+      - "Support client's regulatory examinations"
+    limitations:
+      - "Only regarding services to that specific client"
+      - "Confidentiality of other clients maintained"
+      - "Proprietary business info protected where possible"
+```
+
+#### 2.5.2 NCA Inspection Protocol
+
+```yaml
+nca_inspection_protocol:
+  legal_basis: "Art. 30(3)(e) via client contract"
+
+  upon_request:
+    acknowledgment: "Within 24 hours"
+    scheduling: "Within 5 business days"
+    coordination: "Via client's compliance team"
+
+  what_we_provide:
+    - security_policies_and_procedures
+    - incident_response_documentation
+    - audit_logs_for_client_scope
+    - business_continuity_plans
+    - subcontractor_documentation
+    - personnel_for_interviews
+
+  what_we_protect:
+    - other_clients_data: "Strict isolation"
+    - proprietary_algorithms: "Unless directly relevant"
+    - commercial_sensitive_info: "Reasonable protection"
+
+  documentation:
+    inspection_log: "Record all access and requests"
+    evidence_provided: "Catalog of documents shared"
+    follow_up_tracking: "Action items with deadlines"
 ```
 
 ### 2.6 What We Don't Take On
@@ -175,17 +349,18 @@ additional_requirements_critical:
 
 **Current status:** We are NOT designated as Critical Third-Party Provider.
 
-#### 2.7.1 Designation Triggers (Art. 31)
+#### 2.7.1 Designation Triggers (Art. 31) — CORRECTED
 
-ESAs may designate us as CTPP if:
+ESAs assess CTPP designation based on **qualitative criteria** (not numeric thresholds):
 
-| Trigger | Threshold | Current Status | Risk Level |
-|---------|-----------|----------------|------------|
-| Systemic importance | Multiple FE clients in same sector | <15 clients | LOW |
-| Substitutability | Limited alternatives available | Many alternatives | LOW |
-| Number of member states | Services in 3+ EU countries | TBD | MEDIUM |
-| Cross-border dependency | FEs in multiple jurisdictions | TBD | MEDIUM |
-| Criticality assessment | ESA determines systemic risk | Not assessed | UNKNOWN |
+| Art. 31(2) Criterion | What ESAs Assess | Our Current Status |
+|---------------------|------------------|-------------------|
+| **(a) Systemic impact** | Impact on financial services stability if we fail | LOW - no systemic dependency yet |
+| **(b) Systemic importance of clients** | Whether GSIBs or O-SIIs rely on us | LOW - no GSIB/O-SII clients |
+| **(c) Reliance for critical functions** | How many FEs use us for critical functions | LOW - few critical function designations |
+| **(d) Substitutability** | Alternatives available, migration barriers | LOW - many alternatives exist |
+
+**Note:** Art. 31 does NOT set numeric thresholds. ESAs use judgment-based assessment through Joint Committee and Oversight Forum.
 
 #### 2.7.2 CTPP Obligations (Art. 33-44)
 
@@ -225,31 +400,42 @@ ctpp_direct_obligations:
 | Fee reserve allocation | ❌ Not planned | LOW |
 | Substitutability assessment | ❌ Not done | MEDIUM |
 
-#### 2.7.4 Monitoring and Thresholds
+#### 2.7.4 Monitoring and Qualitative Triggers — CORRECTED
 
 ```yaml
 ctpp_monitoring:
   quarterly_review:
     - count_eu_financial_entity_clients
-    - assess_market_share_by_sector
-    - evaluate_substitutability
-    - check_esa_communications
+    - identify_gsib_osii_clients       # Global/Other Systemically Important
+    - assess_critical_function_designations
+    - evaluate_substitutability_landscape
+    - review_esa_public_communications
 
-  alert_thresholds:
-    warning:
-      eu_fe_clients: 10
-      sectors_served: 2
-    critical:
-      eu_fe_clients: 15
-      sectors_served: 3
+  # Qualitative warning triggers (not numeric thresholds)
+  warning_triggers:
+    any_gsib_client: true              # Any Global Systemically Important Bank
+    any_osii_client: true              # Any Other Systemically Important Institution
+    multiple_critical_designations: 3  # 3+ clients designate us as critical
+    sector_concentration: "30%"        # >30% clients in single sector
+    limited_alternatives: "market_assessment" # Regular assessment needed
 
-  escalation:
-    - notify_board_on_warning
-    - engage_legal_counsel_on_critical
-    - prepare_ctpp_readiness_package
+  escalation_actions:
+    on_warning_trigger:
+      - notify_board_immediately
+      - engage_external_legal_counsel
+      - assess_ctpp_readiness_gaps
+      - consider_proactive_esa_engagement
+    ongoing:
+      - maintain_ctpp_readiness_package
+      - annual_substitutability_review
+      - track_esa_guidance_updates
 ```
 
-**Mitigation:** Monitor client concentration, prepare for potential designation, maintain CTPP readiness documentation.
+**Mitigation Strategy:**
+- Monitor client composition qualitatively, not just quantity
+- If ANY GSIB/O-SII becomes a client → immediately assess CTPP risk
+- Maintain documentation as if designation is possible
+- Consider voluntary ESA engagement if risk indicators increase
 
 ---
 
@@ -447,6 +633,64 @@ core_logging:
   tamper_protection: hash_chain
 ```
 
+#### 5.2.1 7-Year Log Retention Implementation — NEW
+
+```yaml
+log_retention_implementation:
+  tiered_storage:
+    hot_tier:
+      storage: "Elasticsearch / OpenSearch"
+      retention: "90 days"
+      purpose: "Active search and analysis"
+      monthly_cost_per_tb: "€150-300"
+    warm_tier:
+      storage: "S3 Standard / Azure Blob"
+      retention: "1 year"
+      purpose: "Occasional access for investigations"
+      monthly_cost_per_tb: "€20-40"
+    cold_tier:
+      storage: "S3 Glacier Deep Archive / Azure Archive"
+      retention: "6 years (to complete 7-year total)"
+      purpose: "Regulatory compliance, rare access"
+      monthly_cost_per_tb: "€1-2"
+
+  tamper_protection:
+    mechanism: "Hash chain + Object Lock"
+    implementation:
+      - daily_hash: "SHA-256 hash of day's logs"
+      - chain_verification: "Each day's hash includes previous day's hash"
+      - immutable_storage: "S3 Object Lock in GOVERNANCE mode"
+      - retention_lock: "7-year retention policy enforced"
+    verification:
+      frequency: "Quarterly integrity check"
+      process: "Automated hash chain verification script"
+      alert_on_failure: true
+
+  retrieval_sla:
+    hot_tier: "Immediate (seconds)"
+    warm_tier: "Minutes"
+    cold_tier: "12-48 hours (Glacier restore)"
+    audit_request_sla: "Evidence available within 24 hours"
+
+  cost_estimate_7_years:
+    assumptions:
+      audit_log_growth: "50 GB/month"
+      compression_ratio: "10:1"
+    total_uncompressed: "4.2 TB"
+    total_compressed: "420 GB"
+    estimated_cost:
+      year_1: "€500 (mostly hot/warm)"
+      years_2_7: "€50/year (cold storage)"
+      total_7_years: "€800-1000"
+
+  implementation_steps:
+    - configure_log_lifecycle_policies
+    - implement_hash_chain_module
+    - enable_s3_object_lock
+    - setup_integrity_verification_cron
+    - document_retrieval_procedures
+```
+
 ### 5.3 Backup & Recovery — CORRECTED
 
 ```yaml
@@ -481,6 +725,84 @@ core_backup:
     documented_runbook: true
     automated_smoke_test: weekly
     full_dr_test: quarterly
+```
+
+#### 5.3.1 RTO/RPO Technical Feasibility Assessment — NEW
+
+```yaml
+technical_feasibility:
+  tier_1_rpo_15min:
+    requirement: "Maximum 15 minutes data loss for trading state"
+    implementation_options:
+      option_a:
+        name: "PostgreSQL Streaming Replication"
+        description: "Hot standby with synchronous replication"
+        achievable_rpo: "Near-zero (seconds)"
+        monthly_cost: "€500-1000 (standby instance)"
+        complexity: "Medium"
+        recommended: true
+      option_b:
+        name: "AWS RDS Multi-AZ"
+        description: "Managed synchronous replication"
+        achievable_rpo: "Near-zero"
+        monthly_cost: "€300-600 (Multi-AZ premium)"
+        complexity: "Low"
+        recommended: true
+      option_c:
+        name: "Point-in-time recovery only"
+        description: "WAL archiving every 5 minutes"
+        achievable_rpo: "5-15 minutes"
+        monthly_cost: "€50-100 (S3 storage)"
+        complexity: "Low"
+        recommended: false  # Does not meet 15min requirement reliably
+
+  tier_1_rto_1h:
+    requirement: "Trading services resume within 1 hour"
+    implementation_options:
+      option_a:
+        name: "Hot Standby with Auto-Failover"
+        description: "Pre-provisioned standby, automated DNS/LB failover"
+        achievable_rto: "5-15 minutes"
+        monthly_cost: "€2000-4000 (standby infrastructure)"
+        complexity: "High"
+        recommended_for: "Enterprise tier with strict SLA"
+      option_b:
+        name: "Warm Standby with Manual Failover"
+        description: "Standby infrastructure, manual switchover"
+        achievable_rto: "30-60 minutes"
+        monthly_cost: "€1000-2000"
+        complexity: "Medium"
+        recommended_for: "Standard tier"
+      option_c:
+        name: "Cold Recovery from Backup"
+        description: "Restore from backup to new infrastructure"
+        achievable_rto: "2-4 hours"
+        monthly_cost: "€200-500 (backup storage only)"
+        complexity: "Low"
+        recommended_for: "Non-critical services only"
+
+  recommended_configuration:
+    trading_services:
+      target: "RTO 1h, RPO 15min"
+      implementation: "Option A (Hot Standby) or Option B (Warm Standby)"
+      estimated_monthly_cost: "€1500-3000"
+      justification: "Critical for financial operations"
+    backtest_services:
+      target: "RTO 4h, RPO 24h"
+      implementation: "Cold Recovery acceptable"
+      estimated_monthly_cost: "€200-500"
+
+  infrastructure_requirements:
+    multi_region:
+      primary: "eu-central-1 (Frankfurt)"
+      secondary: "eu-west-1 (Ireland)"
+      rationale: "GDPR compliance, geographic redundancy"
+    database:
+      - postgresql_streaming_replication: true
+      - automated_failover: "Patroni or RDS Multi-AZ"
+    monitoring:
+      - health_checks: "Every 30 seconds"
+      - failover_trigger: "3 consecutive failures"
 ```
 
 ### 5.4 Business Continuity & DR — CORRECTED
@@ -521,7 +843,142 @@ core_dr:
     - manual_intervention_procedures
 ```
 
-### 5.4.1 Client SLA Tiers — NEW
+### 5.4.1 Incident Notification Operations — NEW
+
+```yaml
+incident_notification_operations:
+  # =========================================================================
+  # ON-CALL STRUCTURE (Required for <30min notification SLA)
+  # =========================================================================
+  on_call:
+    rotation: "Weekly rotation"
+    coverage: "24/7/365"
+    team_size_minimum: 4  # For sustainable rotation
+    escalation_path:
+      level_1:
+        role: "On-call Engineer"
+        response_time: "15 minutes"
+        responsibilities:
+          - acknowledge_alert
+          - initial_triage
+          - start_incident_channel
+      level_2:
+        role: "Engineering Lead"
+        response_time: "30 minutes"
+        trigger: "Severity >= High OR L1 escalation"
+        responsibilities:
+          - technical_decision_making
+          - client_notification_approval
+          - resource_coordination
+      level_3:
+        role: "CTO / VP Engineering"
+        response_time: "60 minutes"
+        trigger: "Severity = Critical OR major client impact"
+        responsibilities:
+          - executive_decisions
+          - external_communications
+          - regulatory_coordination
+
+  # =========================================================================
+  # TOOLING REQUIREMENTS
+  # =========================================================================
+  tooling:
+    alerting_platform:
+      options: ["PagerDuty", "Opsgenie", "VictorOps"]
+      requirements:
+        - mobile_app_push
+        - sms_backup
+        - phone_escalation
+        - schedule_management
+      estimated_cost: "€500-1500/month"
+
+    incident_management:
+      options: ["PagerDuty + Slack", "Statuspage", "incident.io"]
+      requirements:
+        - incident_timeline_tracking
+        - stakeholder_notifications
+        - post_incident_reports
+
+    status_page:
+      purpose: "Real-time client communication"
+      options: ["Statuspage", "Instatus", "Custom"]
+      features:
+        - public_status_dashboard
+        - incident_updates
+        - maintenance_windows
+        - subscriber_notifications
+
+  # =========================================================================
+  # NOTIFICATION WORKFLOWS
+  # =========================================================================
+  notification_workflows:
+    critical_incident:
+      timeline:
+        "T+0": "Alert triggered by monitoring"
+        "T+5min": "On-call acknowledges"
+        "T+10min": "Incident classified and channel opened"
+        "T+15min": "Initial client notification drafted"
+        "T+20min": "L2 reviews and approves notification"
+        "T+30min": "All affected clients notified"
+      channels:
+        - webhook_to_client_systems
+        - email_to_registered_contacts
+        - status_page_update
+        - optional_sms_for_critical
+
+    high_incident:
+      timeline:
+        "T+0": "Alert triggered"
+        "T+15min": "On-call acknowledges and triages"
+        "T+30min": "Incident classified"
+        "T+45min": "Client notification drafted"
+        "T+60min": "All affected clients notified"
+
+  # =========================================================================
+  # STAFFING REQUIREMENTS
+  # =========================================================================
+  staffing_requirements:
+    minimum_for_24_7:
+      engineers: 4
+      rationale: "4 engineers = 1 week on-call each per month, sustainable"
+      compensation: "On-call allowance + incident response overtime"
+
+    alternative_managed_noc:
+      description: "Outsourced 24/7 NOC for initial triage"
+      cost: "€3000-5000/month"
+      limitations:
+        - "Initial triage only"
+        - "Escalates to internal team for resolution"
+        - "May increase response time by 5-10 minutes"
+      suitable_for: "Startups without 4+ engineers"
+
+  # =========================================================================
+  # SLA TRACKING
+  # =========================================================================
+  sla_tracking:
+    metrics:
+      - time_to_acknowledge
+      - time_to_classify
+      - time_to_notify_clients
+      - time_to_resolve
+      - time_to_post_incident_report
+
+    targets:
+      critical:
+        acknowledge: "5 minutes"
+        notify_clients: "30 minutes"
+        post_incident_report: "24 hours"
+      high:
+        acknowledge: "15 minutes"
+        notify_clients: "60 minutes"
+        post_incident_report: "72 hours"
+
+    reporting:
+      internal: "Weekly incident metrics review"
+      client_facing: "Monthly SLA report"
+```
+
+### 5.4.2 Client SLA Tiers — NEW
 
 Different clients require different service levels. Define tiered SLAs with realistic infrastructure backing:
 
@@ -707,34 +1164,237 @@ audit_readiness:
     - policy_review
 ```
 
-### 5.8 Subcontractor Documentation — NEW
+### 5.8 Subcontractor Documentation — EXPANDED
 
 ```yaml
 subcontractor_management:
+  # =========================================================================
+  # DOCUMENTATION REQUIREMENTS (per Art. 30(2)(b), CIR 2024/2956 B_99.01)
+  # =========================================================================
   documentation_required:
     - subcontractor_name_and_lei
     - services_provided
     - data_processing_locations
+    - data_storage_locations
     - security_certifications
     - subcontractor_chain (if any)
+    - data_access_scope
+    - contract_reference
 
+  # =========================================================================
+  # COMPLETE SUBCONTRACTOR INVENTORY (ITS-aligned)
+  # =========================================================================
   current_subcontractors:
-    cloud_infrastructure:
-      provider: "AWS / GCP / Azure"
-      services: "Compute, storage, networking"
-      locations: "EU (Frankfurt, Dublin)"
-      certifications: "SOC2, ISO27001, C5"
 
-    market_data:
-      provider: "Polygon, Binance, Alpaca"
-      services: "Real-time and historical market data"
-      locations: "US, Global"
-      certifications: "Varies by provider"
+    # --- TIER 1: Cloud Infrastructure (Critical) ---
+    aws:
+      legal_name: "Amazon Web Services EMEA SARL"
+      lei: "ZXTILKJGXN5HNWDRYU4"  # AWS parent (Amazon.com, Inc)
+      subcontractor_type: "cloud_infrastructure"
+      chain_level: 1
+      services_provided:
+        - "Compute (EC2, ECS, Lambda)"
+        - "Storage (S3, EBS)"
+        - "Database (RDS PostgreSQL)"
+        - "Networking (VPC, CloudFront)"
+      data_processing_locations: ["EU-WEST-1 (Ireland)", "EU-CENTRAL-1 (Frankfurt)"]
+      data_storage_locations: ["EU-WEST-1 (Ireland)"]
+      has_data_access: true
+      data_types_accessed: ["All platform data (encrypted)"]
+      certifications:
+        - "SOC 1/2/3"
+        - "ISO 27001"
+        - "ISO 27017"
+        - "ISO 27018"
+        - "C5 (Germany)"
+        - "GDPR compliant"
+      contract_reference: "AWS Enterprise Agreement"
+      is_material: true
+      supports_critical_functions: true
+      substitutability: "medium"  # GCP/Azure available
+      last_audit_date: "2024-11-01"
+      next_review_date: "2025-11-01"
 
+    # --- TIER 1: Market Data Providers ---
+    polygon:
+      legal_name: "Polygon.io, Inc."
+      lei: "TBD"  # ACTION: Obtain LEI or use EIN
+      alternative_id: "EIN: 84-3159622"
+      alternative_id_type: "US_EIN"
+      subcontractor_type: "data_provider"
+      chain_level: 1
+      services_provided:
+        - "Real-time stock market data"
+        - "Historical price data"
+        - "Options data"
+      data_processing_locations: ["US (New York)"]
+      data_storage_locations: ["US"]
+      has_data_access: false  # Market data only, no client data
+      data_types_accessed: []
+      certifications:
+        - "SOC 2 Type II"
+      contract_reference: "Polygon Enterprise Agreement"
+      is_material: false
+      supports_critical_functions: false
+      substitutability: "easy"  # Many alternatives
+      last_audit_date: "N/A"
+      next_review_date: "2025-06-01"
+
+    alpaca:
+      legal_name: "AlpacaDB, Inc."
+      lei: "TBD"  # ACTION: Obtain LEI
+      alternative_id: "EIN: 82-1913791"
+      alternative_id_type: "US_EIN"
+      subcontractor_type: "data_provider"
+      chain_level: 1
+      services_provided:
+        - "Brokerage API (order execution)"
+        - "Market data"
+        - "Account management"
+      data_processing_locations: ["US"]
+      data_storage_locations: ["US"]
+      has_data_access: true  # Client API keys stored
+      data_types_accessed: ["Client brokerage credentials (encrypted)"]
+      certifications:
+        - "SEC/FINRA registered broker"
+        - "SOC 2"
+      contract_reference: "Alpaca API Agreement"
+      is_material: true
+      supports_critical_functions: true  # Trading execution
+      substitutability: "medium"
+      last_audit_date: "N/A"
+      next_review_date: "2025-06-01"
+
+    binance:
+      legal_name: "Binance Holdings Limited"
+      lei: "TBD"
+      subcontractor_type: "data_provider"
+      chain_level: 1
+      services_provided:
+        - "Crypto market data"
+        - "Crypto trading API"
+      data_processing_locations: ["Global (various jurisdictions)"]
+      data_storage_locations: ["Variable"]
+      has_data_access: true  # Client API keys
+      data_types_accessed: ["Client exchange credentials (encrypted)"]
+      certifications:
+        - "Variable by jurisdiction"
+      contract_reference: "Binance API Terms"
+      is_material: true
+      supports_critical_functions: true  # Crypto trading
+      substitutability: "medium"  # Kraken, Coinbase alternatives
+      last_audit_date: "N/A"
+      next_review_date: "2025-06-01"
+      special_notes: "Regulatory status varies by jurisdiction"
+
+    # --- TIER 2: Monitoring & Operations ---
+    datadog:
+      legal_name: "Datadog, Inc."
+      lei: "549300F6JNO0KRPO1K63"
+      subcontractor_type: "monitoring"
+      chain_level: 1
+      services_provided:
+        - "Application monitoring"
+        - "Log management"
+        - "Alerting"
+      data_processing_locations: ["US", "EU (Germany)"]
+      data_storage_locations: ["EU (Germany) - configured"]
+      has_data_access: true  # Logs may contain metadata
+      data_types_accessed: ["System logs", "Performance metrics"]
+      certifications:
+        - "SOC 2 Type II"
+        - "ISO 27001"
+        - "GDPR compliant"
+      contract_reference: "Datadog Enterprise Agreement"
+      is_material: false
+      supports_critical_functions: false
+      substitutability: "easy"
+
+    sentry:
+      legal_name: "Functional Software, Inc. (Sentry)"
+      lei: "TBD"
+      subcontractor_type: "monitoring"
+      chain_level: 1
+      services_provided:
+        - "Error tracking"
+        - "Performance monitoring"
+      data_processing_locations: ["US", "EU option available"]
+      has_data_access: true  # Error context may contain data
+      certifications:
+        - "SOC 2 Type II"
+        - "GDPR compliant"
+      is_material: false
+      supports_critical_functions: false
+
+    # --- TIER 2: Authentication ---
+    auth0_clerk:
+      legal_name: "Auth0 Inc. (Okta) / Clerk Inc."
+      lei: "TBD"  # Okta LEI: 549300N8BTFTU58UJ747
+      subcontractor_type: "security_services"
+      chain_level: 1
+      services_provided:
+        - "User authentication"
+        - "Identity management"
+      data_processing_locations: ["US", "EU option"]
+      has_data_access: true  # User credentials
+      data_types_accessed: ["User emails", "Authentication tokens"]
+      certifications:
+        - "SOC 2 Type II"
+        - "ISO 27001"
+      is_material: true
+      supports_critical_functions: true  # Authentication is critical
+
+    # --- TIER 2: Payments ---
+    stripe:
+      legal_name: "Stripe, Inc."
+      lei: "549300HZVWQT6W3NQC36"
+      subcontractor_type: "payment_services"
+      chain_level: 1
+      services_provided:
+        - "Payment processing"
+        - "Subscription management"
+      data_processing_locations: ["US", "EU (Ireland)"]
+      has_data_access: true  # Payment info
+      data_types_accessed: ["Payment card tokens", "Billing info"]
+      certifications:
+        - "PCI DSS Level 1"
+        - "SOC 2 Type II"
+        - "ISO 27001"
+      is_material: true
+      supports_critical_functions: false  # Not trading-critical
+
+  # =========================================================================
+  # CLIENT DISCLOSURE
+  # =========================================================================
   client_disclosure:
-    - subprocessor_list_available_on_request
-    - notification_of_changes: 30_days_advance
-    - objection_right: per_contract
+    subprocessor_list:
+      availability: "On request via client portal"
+      format: "PDF + JSON (ITS B_99.01 compatible)"
+      update_frequency: "Quarterly + on material change"
+    notification_of_changes:
+      advance_notice: "30 days minimum"
+      material_changes: "60 days for critical function subcontractors"
+      channels: ["Email", "Client portal", "Contract amendment"]
+    objection_right:
+      standard_contracts: "Notification only"
+      critical_function_contracts: "Consent required for changes affecting critical services"
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Obtain LEI for Polygon.io"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+    - action: "Obtain LEI for Alpaca"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+    - action: "Configure Sentry EU data residency"
+      priority: "HIGH"
+      deadline: "2025-01-31"
+    - action: "Document Auth0/Clerk selection"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
 ```
 
 ### 5.9 Contractual Compliance — NEW (Core)
@@ -763,6 +1423,141 @@ contractual_compliance:
     - data_retention_post_termination: 30_days
     - cooperation_commitment: yes
     - no_vendor_lock_in: documented
+```
+
+### 5.10 Exit Strategy Testing — NEW
+
+Per Art. 28(8), exit strategies must be "comprehensive, documented and... tested where appropriate."
+
+```yaml
+exit_strategy_testing:
+  # =========================================================================
+  # TESTING SCHEDULE
+  # =========================================================================
+  schedule:
+    frequency: "Annual minimum"
+    critical_providers: "Semi-annual testing"
+    trigger_based:
+      - "Material change to provider services"
+      - "Provider acquisition/merger"
+      - "New critical function designation"
+      - "Failed previous test"
+
+  # =========================================================================
+  # TEST SCENARIOS
+  # =========================================================================
+  test_scenarios:
+    scenario_1_planned_termination:
+      description: "Orderly transition to alternative provider"
+      scope:
+        - "Data export completeness"
+        - "API compatibility with alternative"
+        - "Timeline validation"
+      test_method: "Tabletop exercise + partial data export"
+      frequency: "Annual"
+
+    scenario_2_provider_failure:
+      description: "Immediate provider failure requiring rapid transition"
+      scope:
+        - "Backup data availability"
+        - "Alternative provider activation time"
+        - "Service continuity during transition"
+      test_method: "Simulation with standby environment"
+      frequency: "Annual"
+
+    scenario_3_data_export:
+      description: "Validate data export functionality"
+      scope:
+        - "Export all client data"
+        - "Verify format compliance (JSON/CSV)"
+        - "Validate data integrity"
+        - "Measure export time"
+      test_method: "Actual export to test environment"
+      frequency: "Quarterly"
+
+    scenario_4_api_migration:
+      description: "Client migration to alternative platform"
+      scope:
+        - "API mapping documentation"
+        - "Integration test with mock client"
+        - "Breaking changes identification"
+      test_method: "Technical walkthrough + integration test"
+      frequency: "Annual"
+
+  # =========================================================================
+  # TEST COMPONENTS
+  # =========================================================================
+  test_components:
+    data_export:
+      validation_checks:
+        - "All data types exported"
+        - "No data corruption (checksum validation)"
+        - "Format meets specifications"
+        - "Export completes within SLA (5 business days)"
+      success_criteria:
+        - "100% of client data exportable"
+        - "Data integrity verified"
+        - "Export time < 24 hours for typical client"
+
+    documentation:
+      validation_checks:
+        - "Exit procedures documented"
+        - "Contact information current"
+        - "Alternative providers identified"
+        - "Timeline realistic"
+      success_criteria:
+        - "Documentation complete and current"
+        - "Reviewed within last 12 months"
+
+    alternative_providers:
+      validation_checks:
+        - "At least 1 alternative identified per critical service"
+        - "Alternative capable of receiving data"
+        - "Commercial terms understood"
+      success_criteria:
+        - "Alternatives evaluated and scored"
+        - "No single point of failure"
+
+  # =========================================================================
+  # TEST DOCUMENTATION
+  # =========================================================================
+  test_documentation:
+    required_records:
+      - test_date: "ISO 8601 format"
+      - test_type: "Scenario reference"
+      - participants: "List of involved personnel"
+      - test_results: "Pass/Fail with details"
+      - identified_gaps: "Issues found"
+      - remediation_actions: "Actions to address gaps"
+      - remediation_deadline: "Target date for fixes"
+      - sign_off: "Approver name and date"
+
+    retention: "7 years (aligned with audit log retention)"
+    availability: "Available for client audits"
+
+  # =========================================================================
+  # CURRENT TEST STATUS
+  # =========================================================================
+  current_status:
+    last_test_date: "TBD - Not yet conducted"
+    next_scheduled_test: "2025-Q1"
+    test_results: []
+    gaps_identified: []
+
+  # =========================================================================
+  # ACTION ITEMS
+  # =========================================================================
+  action_items:
+    - action: "Conduct first exit strategy test"
+      priority: "HIGH"
+      deadline: "2025-Q1"
+      owner: "Operations Team"
+    - action: "Document alternative providers for each service"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
+    - action: "Create data export validation script"
+      priority: "MEDIUM"
+      deadline: "2025-Q1"
 ```
 
 ---
