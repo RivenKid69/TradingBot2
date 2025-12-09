@@ -3,13 +3,24 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 2.0
+**Version**: 2.1
 **Date**: December 2025
-**Status**: Implementation Ready (Critical Audit Complete)
+**Status**: Implementation Ready (Critical Audit v2.1 Complete - 88% Coverage)
 
 ---
 
-### Version 2.0 Changelog
+### Version 2.1 Changelog
+
+| Change | Description | Audit Finding Addressed |
+|--------|-------------|-------------------------|
+| **Articles 40-43** | Full Codes of Conduct and Certification modules | Previously marked "low priority" |
+| **Articles 51-59** | Complete SA Powers Handler with all EU SAs | Missing Chapter VI coverage |
+| **Articles 68-76** | EDPB Structure Handler module | Missing EDPB procedures |
+| **Articles 83-84** | Comprehensive Administrative Fines Manager | Incomplete penalty tracking |
+| **EDPB Guidelines 2024** | Legitimate Interest Guidelines October 2024 with v2024 assessment | Outdated LI guidance |
+| **Article 85, 86, 90** | Extended Chapter IX specific situations | Missing specific situations |
+
+**v2.0 Changes (preserved):**
 
 | Change | Description | Audit Finding Addressed |
 |--------|-------------|-------------------------|
@@ -23,9 +34,10 @@
 | **Protocol Definitions** | Base protocols for all GDPR modules | Architecture improvement |
 | **Performance Benchmarks** | API/concurrency/throughput tests | Missing performance validation |
 
-**Coverage Update**: ~72 of 99 GDPR articles now covered (73%)
-- Previous: 62 articles (63%)
-- Added: Article 10, Article 47, Article 81, Articles 60-67
+**Coverage Update**: ~87 of 99 GDPR articles now covered (88%)
+- Previous v2.0: 72 articles (73%)
+- Previous v1.x: 62 articles (63%)
+- Added v2.1: Articles 40-43, 51-59, 68-76, 83-84 (full), 85-86, 90 (extended)
 
 ---
 
@@ -6385,6 +6397,514 @@ Class DPOToolkit:
 | Access to personal data/operations | ☐ | System access logs, authorization records |
 | Professional secrecy bound | ☐ | Confidentiality agreement |
 
+#### 6.2.2b CodesOfConductManager (codes_of_conduct.py) - NEW v2.1
+
+**Articles 40-41 - Codes of Conduct**
+
+Per [GDPR Article 40](https://gdpr-info.eu/art-40-gdpr/), Member States, supervisory authorities, the Board and the Commission shall encourage the drawing up of codes of conduct intended to contribute to proper GDPR application.
+
+Per [GDPR Article 41](https://gdpr-info.eu/art-41-gdpr/), monitoring of approved codes of conduct may be carried out by accredited bodies with appropriate expertise.
+
+> **Relevance for Trading Platforms**:
+> - Industry-specific codes (financial services, algorithmic trading)
+> - Demonstrable compliance evidence (accountability)
+> - May substitute or supplement other compliance measures
+> - EDPB-approved codes provide legal certainty
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Articles 40-41 - Codes of Conduct
+# ═══════════════════════════════════════════════════════════════════
+
+Enum CodeOfConductStatus:
+    """Status of code of conduct adherence"""
+    IDENTIFIED = "identified"          # Relevant code identified
+    ASSESSING = "assessing"            # Assessing applicability
+    ADOPTED = "adopted"                # Organization has adopted code
+    CERTIFIED = "certified"            # Compliance verified by monitoring body
+    SUSPENDED = "suspended"            # Adherence suspended
+    WITHDRAWN = "withdrawn"            # Withdrawn from code
+
+Dataclass CodeOfConduct:
+    """Article 40 - Code of conduct record"""
+    code_id: str
+    code_name: str
+    version: str
+
+    # Scope (Art. 40(2))
+    sector: str                          # "financial_services", "algorithmic_trading"
+    processing_types_covered: List[str]  # Specific processing operations
+    controller_processor_scope: str      # "controllers", "processors", "both"
+
+    # Approval
+    supervisory_authority: str           # SA that approved (Art. 40(5))
+    approval_date: datetime
+    approval_reference: str
+    edpb_registered: bool                # Art. 40(6) - for cross-border
+    edpb_opinion_date: Optional[datetime]
+
+    # Content areas (Art. 40(2))
+    covers_fair_transparent_processing: bool    # (a)
+    covers_legitimate_interests: bool           # (b)
+    covers_data_collection: bool                # (c)
+    covers_pseudonymisation: bool               # (d)
+    covers_ds_information: bool                 # (e)
+    covers_ds_rights_exercise: bool             # (f)
+    covers_child_protection: bool               # (g)
+    covers_security_measures: bool              # (h)
+    covers_breach_notification: bool            # (i)
+    covers_international_transfers: bool        # (j)
+    covers_dispute_resolution: bool             # (k)
+
+    # Monitoring body (Art. 41)
+    monitoring_body_id: Optional[str]
+    monitoring_body_name: Optional[str]
+    monitoring_body_accredited: bool
+
+    # Documentation
+    code_document_url: str
+    guidance_document_url: Optional[str]
+
+Dataclass CodeAdherence:
+    """Record of organization's adherence to a code of conduct"""
+    adherence_id: str
+    code_id: str
+    organization_name: str
+
+    # Adherence details
+    adherence_date: datetime
+    scope_of_adherence: List[str]        # Which parts adopted
+    processing_activities_covered: List[str]
+
+    # Status
+    status: CodeOfConductStatus
+
+    # Verification
+    self_assessment_date: Optional[datetime]
+    monitoring_body_verification_date: Optional[datetime]
+    verification_result: Optional[str]
+    next_verification_date: Optional[datetime]
+
+    # Compliance evidence
+    compliance_measures_implemented: List[str]
+    deviations_documented: List[str]
+    remediation_actions: List[str]
+
+Dataclass MonitoringBody:
+    """Article 41 - Accredited monitoring body"""
+    body_id: str
+    body_name: str
+
+    # Accreditation (Art. 41(1))
+    accrediting_sa: str                  # Supervisory authority
+    accreditation_date: datetime
+    accreditation_reference: str
+    accreditation_expiry: Optional[datetime]
+
+    # Requirements (Art. 41(2))
+    demonstrated_independence: bool       # (a)
+    demonstrated_expertise: bool          # (b)
+    established_procedures: bool          # (c) - complaints & infringements
+    no_conflict_of_interest: bool         # (d)
+
+    # Scope
+    codes_monitored: List[str]
+    sectors_covered: List[str]
+
+    # Contact
+    contact_details: str
+    complaint_mechanism: str
+
+# Known Codes of Conduct for Financial Services
+FINANCIAL_SERVICES_CODES = {
+    "CLOUD_INFRASTRUCTURE": {
+        "name": "EU Cloud Code of Conduct",
+        "status": "EDPB approved",
+        "approval_date": "2021-05-20",
+        "relevance": "Cloud providers processing platform data",
+        "url": "https://eucoc.cloud/"
+    },
+    "CREDIT_REFERENCE": {
+        "name": "ACCIS Code of Conduct",
+        "status": "Approved by Belgian DPA",
+        "relevance": "If platform performs credit checks",
+        "note": "May apply to risk scoring"
+    },
+    "DIRECT_MARKETING": {
+        "name": "FEDMA Global Code of Practice",
+        "status": "Industry standard",
+        "relevance": "Marketing communications to users"
+    }
+}
+
+Class CodesOfConductManager:
+    """
+    Articles 40-41 implementation - Codes of conduct management.
+
+    Per Article 40(1): Associations and other bodies representing categories
+    of controllers or processors may prepare codes of conduct.
+
+    Per Article 40(6): Codes with cross-border applicability require EDPB opinion.
+
+    Per Article 41(4): Monitoring body must take appropriate action and
+    inform the supervisory authority of non-compliance.
+
+    BENEFITS FOR TRADING PLATFORMS:
+    - Demonstrates accountability (Art. 5(2))
+    - May be considered in determining fine amount (Art. 83(2)(j))
+    - Provides sector-specific guidance
+    - Third-party verification of compliance
+    """
+
+    # Code discovery
+    - identify_relevant_codes(processing_activities: List[str]) -> List[CodeOfConduct]
+    - assess_code_applicability(code_id: str, platform_context: Dict) -> ApplicabilityAssessment
+    - get_codes_for_sector(sector: str) -> List[CodeOfConduct]
+    - check_edpb_approved_codes() -> List[CodeOfConduct]
+
+    # Adherence management
+    - adopt_code(code_id: str, scope: List[str]) -> CodeAdherence
+    - record_adherence(adherence: CodeAdherence) -> str
+    - update_adherence_status(adherence_id: str, status: CodeOfConductStatus) -> bool
+    - withdraw_from_code(adherence_id: str, reason: str) -> WithdrawalResult
+
+    # Compliance verification
+    - conduct_self_assessment(adherence_id: str) -> SelfAssessmentResult
+    - request_monitoring_body_verification(adherence_id: str) -> VerificationRequest
+    - receive_verification_result(adherence_id: str, result: VerificationResult) -> bool
+    - schedule_periodic_verification(adherence_id: str, interval_months: int) -> datetime
+
+    # Deviation handling
+    - document_deviation(adherence_id: str, deviation: str, justification: str) -> str
+    - plan_remediation(deviation_id: str, actions: List[str]) -> RemediationPlan
+    - verify_remediation(deviation_id: str) -> RemediationVerification
+
+    # Monitoring body interaction
+    - register_monitoring_body(body: MonitoringBody) -> str
+    - report_to_monitoring_body(adherence_id: str, report: ComplianceReport) -> ReportResult
+    - handle_monitoring_body_inquiry(inquiry: Inquiry) -> InquiryResponse
+
+    # Reporting
+    - generate_code_compliance_report(adherence_id: str) -> Report
+    - get_adherence_dashboard() -> AdherenceDashboard
+    - evidence_for_accountability(adherence_id: str) -> AccountabilityEvidence
+```
+
+**Code of Conduct Adoption Flow:**
+
+```
+Identify Relevant Codes:
+──────────────────────────────────────────────────────────────────
+
+1. Discovery
+   ├─ Search EDPB code registry
+   ├─ Check sector-specific codes (financial services)
+   ├─ Identify SA-approved codes in relevant jurisdictions
+   └─ Assess cloud provider codes (if using cloud infrastructure)
+
+2. Applicability Assessment
+   ├─ Does code cover our processing activities?
+   ├─ Is code approved by relevant SA?
+   ├─ Is monitoring body accredited?
+   └─ Cost-benefit analysis of adoption
+
+3. Adoption Decision
+   ├─ Full adoption vs. partial adoption
+   ├─ Gap analysis against code requirements
+   ├─ Implementation plan for gaps
+   └─ Resource allocation
+
+4. Implementation
+   ├─ Implement code requirements
+   ├─ Document compliance measures
+   ├─ Train staff on code provisions
+   └─ Update policies and procedures
+
+5. Verification
+   ├─ Conduct self-assessment
+   ├─ Request monitoring body verification
+   ├─ Address any findings
+   └─ Schedule periodic re-verification
+```
+
+#### 6.2.2c CertificationManager (certification_manager.py) - NEW v2.1
+
+**Articles 42-43 - Certification**
+
+Per [GDPR Article 42](https://gdpr-info.eu/art-42-gdpr/), Member States, supervisory authorities, the Board and the Commission shall encourage the establishment of data protection certification mechanisms, seals and marks.
+
+Per [GDPR Article 43](https://gdpr-info.eu/art-43-gdpr/), certification bodies must be accredited by the supervisory authority or national accreditation body.
+
+> **Relevance for Trading Platforms**:
+> - Demonstrates compliance to regulators and clients
+> - Competitive advantage in B2B relationships
+> - May reduce fine amounts (Art. 83(2)(j))
+> - Required for some procurement processes
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Articles 42-43 - Certification
+# ═══════════════════════════════════════════════════════════════════
+
+Enum CertificationStatus:
+    """Status of certification"""
+    EXPLORING = "exploring"            # Considering certification
+    PREPARING = "preparing"            # Preparing for certification
+    AUDIT_SCHEDULED = "audit_scheduled"
+    AUDIT_IN_PROGRESS = "audit_in_progress"
+    CERTIFIED = "certified"
+    RENEWAL_DUE = "renewal_due"
+    SUSPENDED = "suspended"
+    REVOKED = "revoked"
+    WITHDRAWN = "withdrawn"
+
+Dataclass CertificationScheme:
+    """Article 42 - Certification scheme details"""
+    scheme_id: str
+    scheme_name: str
+    version: str
+
+    # Approval (Art. 42(5))
+    approving_body: str                  # SA or EDPB
+    approval_date: datetime
+    approval_reference: str
+    is_eu_wide: bool                     # Art. 42(5) EDPB approval
+
+    # Criteria (Art. 42(5))
+    criteria_document_url: str
+    criteria_version: str
+
+    # Scope
+    processing_types_covered: List[str]
+    sectors: List[str]
+    geographic_scope: str                # "national", "eu_wide"
+
+    # Certification bodies
+    accredited_bodies: List[str]
+
+    # Validity
+    max_validity_years: int = 3          # Art. 42(7) - max 3 years
+    renewal_conditions: str
+
+Dataclass Certification:
+    """Record of organization's certification"""
+    certification_id: str
+    scheme_id: str
+
+    # Certification details
+    issue_date: datetime
+    expiry_date: datetime                # Max 3 years per Art. 42(7)
+    certificate_number: str
+
+    # Certification body (Art. 43)
+    certification_body_id: str
+    certification_body_name: str
+
+    # Scope
+    processing_activities_certified: List[str]
+    systems_certified: List[str]
+    geographic_scope: List[str]
+
+    # Status
+    status: CertificationStatus
+
+    # Audit details
+    last_audit_date: datetime
+    audit_findings: List[str]
+    corrective_actions: List[str]
+
+    # Renewal
+    renewal_audit_date: Optional[datetime]
+    renewal_application_date: Optional[datetime]
+
+    # Publication (Art. 42(8))
+    published_in_sa_register: bool
+    published_in_edpb_register: bool     # If EU-wide
+    publication_url: Optional[str]
+
+Dataclass CertificationBody:
+    """Article 43 - Accredited certification body"""
+    body_id: str
+    body_name: str
+
+    # Accreditation (Art. 43(1))
+    accreditation_type: str              # "sa_accredited" or "nab_accredited"
+    accrediting_authority: str
+    accreditation_date: datetime
+    accreditation_reference: str
+    accreditation_scope: List[str]
+
+    # Requirements (Art. 43(2))
+    independence_demonstrated: bool       # (a)
+    expertise_demonstrated: bool          # (b)
+    procedures_established: bool          # (c) - issuance, review, withdrawal
+    no_conflict_of_interest: bool         # (d)
+    sa_approved_tasks: bool               # (e)
+
+    # EN-ISO/IEC 17065/2012 (Art. 43(1)(b))
+    iso_17065_accredited: bool
+    iso_accreditation_reference: Optional[str]
+
+    # Schemes certified
+    schemes_offered: List[str]
+
+    # Contact
+    contact_details: str
+    certification_process_url: str
+
+# Known GDPR Certification Schemes
+GDPR_CERTIFICATION_SCHEMES = {
+    "EUROPRIVACY": {
+        "name": "Europrivacy/®",
+        "status": "EDPB approved (first EU-wide scheme)",
+        "approval_date": "2022-10-14",
+        "scope": "Processing operations under GDPR",
+        "url": "https://www.europrivacy.org/",
+        "validity": "3 years",
+        "relevance": "HIGH - Demonstrates comprehensive GDPR compliance"
+    },
+    "CARPA": {
+        "name": "CARPA - Certification of Application of GDPR Rules",
+        "status": "Luxembourg SA approved",
+        "scope": "Controllers and processors",
+        "url": "https://www.carpa-certification.lu/"
+    },
+    "GDPR_CERT": {
+        "name": "GDPR-CERT",
+        "status": "Various national approvals",
+        "scope": "Specific processing operations"
+    }
+}
+
+Class CertificationManager:
+    """
+    Articles 42-43 implementation - Certification management.
+
+    Per Article 42(1): Certification mechanisms shall be established to
+    demonstrate compliance with this Regulation of processing operations.
+
+    Per Article 42(4): Certification does NOT reduce controller/processor
+    responsibility for compliance. It is EVIDENCE, not EXEMPTION.
+
+    Per Article 42(7): Certification valid for maximum 3 years, renewable.
+
+    Per Article 43(1): Certification bodies accredited by:
+    - Supervisory authority, OR
+    - National accreditation body per Regulation (EC) No 765/2008
+
+    BENEFITS FOR TRADING PLATFORMS:
+    - Demonstrates accountability to regulators
+    - Competitive advantage with institutional clients
+    - May be considered in fine determination (Art. 83(2)(j))
+    - Third-party validation of compliance
+    """
+
+    # Scheme discovery
+    - identify_relevant_schemes(processing_activities: List[str]) -> List[CertificationScheme]
+    - get_edpb_approved_schemes() -> List[CertificationScheme]
+    - assess_scheme_suitability(scheme_id: str, platform_context: Dict) -> SuitabilityAssessment
+    - compare_schemes(scheme_ids: List[str]) -> SchemeComparison
+
+    # Certification body selection
+    - find_accredited_bodies(scheme_id: str) -> List[CertificationBody]
+    - verify_body_accreditation(body_id: str) -> AccreditationVerification
+    - request_certification_quote(body_id: str, scope: Dict) -> QuoteRequest
+
+    # Certification process
+    - initiate_certification(scheme_id: str, body_id: str, scope: List[str]) -> Certification
+    - prepare_for_audit(certification_id: str) -> AuditPreparation
+    - schedule_audit(certification_id: str, date: datetime) -> AuditSchedule
+    - submit_evidence(certification_id: str, evidence: Dict) -> SubmissionResult
+    - receive_audit_findings(certification_id: str, findings: List[str]) -> FindingsRecord
+    - implement_corrective_actions(certification_id: str, actions: List[str]) -> ActionResult
+    - receive_certification(certification_id: str, certificate: CertificateDetails) -> str
+
+    # Status management
+    - track_certification_status(certification_id: str) -> CertificationStatus
+    - handle_suspension(certification_id: str, reason: str) -> SuspensionResult
+    - handle_revocation(certification_id: str, reason: str) -> RevocationResult
+    - appeal_decision(certification_id: str, grounds: str) -> AppealResult
+
+    # Renewal (Art. 42(7))
+    - check_renewal_due(certification_id: str) -> RenewalStatus
+    - initiate_renewal(certification_id: str) -> RenewalProcess
+    - schedule_renewal_audit(certification_id: str, date: datetime) -> AuditSchedule
+
+    # Publication and communication
+    - publish_certification(certification_id: str) -> PublicationResult
+    - generate_certification_badge(certification_id: str) -> Badge
+    - communicate_to_stakeholders(certification_id: str, message: str) -> CommunicationResult
+
+    # Reporting
+    - get_certification_dashboard() -> CertificationDashboard
+    - generate_certification_report() -> Report
+    - evidence_for_accountability() -> AccountabilityEvidence
+    - evidence_for_fine_mitigation() -> FineMitigationEvidence
+```
+
+**Certification Process Flow:**
+
+```
+GDPR Certification Journey:
+──────────────────────────────────────────────────────────────────
+
+1. SCHEME SELECTION (Month 1)
+   ├─ Identify relevant certification schemes
+   ├─ Assess EDPB-approved schemes (Europrivacy)
+   ├─ Evaluate cost vs. benefit
+   └─ Select scheme aligned with business needs
+
+2. BODY SELECTION (Month 1-2)
+   ├─ Find accredited certification bodies
+   ├─ Verify accreditation status
+   ├─ Request quotes
+   └─ Select certification body
+
+3. PREPARATION (Month 2-4)
+   ├─ Gap analysis against certification criteria
+   ├─ Implement required controls
+   ├─ Document compliance evidence
+   ├─ Train staff
+   └─ Internal pre-audit
+
+4. AUDIT (Month 4-5)
+   ├─ Documentation review
+   ├─ On-site/remote audit
+   ├─ Interview key personnel
+   ├─ Evidence verification
+   └─ Receive audit report
+
+5. REMEDIATION (If needed)
+   ├─ Address non-conformities
+   ├─ Implement corrective actions
+   ├─ Verify effectiveness
+   └─ Submit evidence to body
+
+6. CERTIFICATION (Month 5-6)
+   ├─ Receive certificate
+   ├─ Publish in relevant registers
+   ├─ Communicate to stakeholders
+   └─ Integrate into marketing
+
+7. MAINTENANCE (Ongoing)
+   ├─ Surveillance audits (annual)
+   ├─ Continuous compliance monitoring
+   ├─ Address changes in processing
+   └─ Renewal before expiry (max 3 years)
+```
+
+**Certification vs. Code of Conduct Comparison:**
+
+| Aspect | Certification (Art. 42-43) | Code of Conduct (Art. 40-41) |
+|--------|---------------------------|------------------------------|
+| **Nature** | Third-party verification | Self-declaration + monitoring |
+| **Validity** | Max 3 years, renewable | Ongoing adherence |
+| **Cost** | Higher (audit fees) | Lower (self-assessment) |
+| **Credibility** | High (external verification) | Medium (monitoring body) |
+| **Flexibility** | Rigid criteria | More flexible |
+| **Best for** | High-assurance needed | Industry collaboration |
+| **Trading Platform** | Recommended for enterprise | Recommended for SME |
+
 #### 6.2.3 InternationalTransfers (international_transfers.py)
 
 Articles 44-49 transfer mechanisms:
@@ -7781,6 +8301,376 @@ class InsuranceIntegration:
     def coordinate_defense(self, proceeding_id: str) -> DefenseCoordination
 ```
 
+#### 6.2.6b AdministrativeFinesManager (administrative_fines.py) - NEW v2.1
+
+**Articles 83-84 - Administrative Fines and Penalties**
+
+Per [GDPR Article 83](https://gdpr-info.eu/art-83-gdpr/), supervisory authorities may impose administrative fines up to €20M or 4% of annual worldwide turnover. Per [Article 84](https://gdpr-info.eu/art-84-gdpr/), Member States lay down rules on other penalties.
+
+> **⚠️ CRITICAL FOR RISK MANAGEMENT**
+>
+> Understanding fine calculation factors (Art. 83(2)) is essential for:
+> 1. **Risk assessment** - Prioritizing compliance efforts
+> 2. **Mitigation planning** - Reducing potential penalties
+> 3. **Budget allocation** - Insurance and reserves
+> 4. **C-level reporting** - Board risk dashboards
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Articles 83-84 - Administrative Fines and Penalties
+# ═══════════════════════════════════════════════════════════════════
+
+Enum FineTier:
+    """Fine tiers per Article 83(4) and (5)"""
+    LOWER = "lower"    # Art. 83(4): €10M or 2% turnover
+    UPPER = "upper"    # Art. 83(5): €20M or 4% turnover
+
+Enum Article83_2_Factor:
+    """Factors for fine determination per Article 83(2)"""
+    # (a) Nature, gravity, duration
+    NATURE_GRAVITY_DURATION = "nature_gravity_duration"
+    # (b) Intentional or negligent
+    INTENT_OR_NEGLIGENCE = "intent_or_negligence"
+    # (c) Mitigation actions taken
+    MITIGATION_ACTIONS = "mitigation_actions"
+    # (d) Degree of responsibility (Art. 25, 32 measures)
+    DEGREE_OF_RESPONSIBILITY = "degree_of_responsibility"
+    # (e) Previous infringements
+    PREVIOUS_INFRINGEMENTS = "previous_infringements"
+    # (f) Cooperation with SA
+    COOPERATION_WITH_SA = "cooperation_with_sa"
+    # (g) Categories of personal data
+    DATA_CATEGORIES = "data_categories"
+    # (h) How infringement became known
+    HOW_KNOWN = "how_known"
+    # (i) Previous corrective measures
+    PREVIOUS_CORRECTIVE_MEASURES = "previous_corrective_measures"
+    # (j) Adherence to codes of conduct / certification
+    CODES_CERTIFICATION = "codes_certification"
+    # (k) Aggravating or mitigating factors
+    OTHER_FACTORS = "other_factors"
+
+Dataclass Article83_2_Assessment:
+    """Assessment of all Article 83(2) factors"""
+    assessment_id: str
+    infringement_id: str
+    assessment_date: datetime
+
+    # (a) Nature, gravity, duration
+    nature_of_infringement: str           # Type of GDPR violation
+    gravity: str                          # "low", "medium", "high", "critical"
+    duration_days: int                    # How long infringement continued
+    number_of_data_subjects: int          # Affected data subjects
+    extent_of_damage: str                 # Description of harm
+
+    # (b) Intent
+    intent_level: str                     # "intentional", "negligent", "accidental"
+    intent_evidence: str                  # Evidence of intent/negligence
+
+    # (c) Mitigation
+    mitigation_actions_taken: List[str]   # Actions to mitigate damage
+    mitigation_effectiveness: str         # "none", "partial", "significant"
+    mitigation_timing: str                # "immediate", "prompt", "delayed"
+
+    # (d) Responsibility
+    technical_measures_in_place: List[str]  # Art. 25 measures
+    organizational_measures_in_place: List[str]  # Art. 32 measures
+    responsibility_assessment: str        # "low", "medium", "high"
+
+    # (e) Previous infringements
+    previous_infringement_count: int
+    previous_infringement_dates: List[datetime]
+    previous_infringement_types: List[str]
+
+    # (f) SA cooperation
+    cooperation_level: str                # "full", "partial", "none", "obstructive"
+    cooperation_evidence: List[str]
+
+    # (g) Data categories
+    data_categories_affected: List[str]
+    special_categories_affected: bool     # Art. 9 data
+    criminal_data_affected: bool          # Art. 10 data
+
+    # (h) How known
+    how_became_known: str                 # "self_reported", "complaint", "audit", "breach"
+    voluntary_disclosure: bool
+
+    # (i) Previous corrective measures
+    previous_measures_complied: bool
+    previous_measures_details: List[str]
+
+    # (j) Codes and certification
+    codes_adhered_to: List[str]
+    certifications_held: List[str]
+    codes_certification_factor: str       # "strong_mitigating", "mitigating", "neutral"
+
+    # (k) Other factors
+    aggravating_factors: List[str]
+    mitigating_factors: List[str]
+    financial_benefit_from_infringement: Optional[float]
+
+    # Overall assessment
+    overall_severity: str                 # "low", "medium", "high", "critical"
+    recommended_fine_tier: FineTier
+    recommended_fine_percentage: float    # 0-100% of maximum
+    assessment_notes: str
+
+Dataclass FineCalculation:
+    """Fine calculation result"""
+    calculation_id: str
+    assessment_id: str
+
+    # Tier determination
+    fine_tier: FineTier
+    applicable_articles: List[str]        # Articles violated
+
+    # Maximum calculation
+    maximum_by_amount: float              # €10M or €20M
+    maximum_by_turnover: float            # 2% or 4% of turnover
+    applicable_maximum: float             # Higher of the two
+
+    # Adjustment factors
+    aggravating_percentage: float         # Increase factor
+    mitigating_percentage: float          # Decrease factor
+
+    # Final calculation
+    base_fine: float
+    adjusted_fine: float
+    recommended_range_low: float
+    recommended_range_high: float
+
+    # Comparison
+    similar_cases_average: Optional[float]
+    sector_average: Optional[float]
+
+Dataclass AdministrativeFineRecord:
+    """Record of an administrative fine received"""
+    fine_id: str
+    sa_id: str
+    fine_date: datetime
+
+    # Fine details
+    fine_amount: float
+    currency: str = "EUR"
+    articles_violated: List[str]
+    infringement_description: str
+
+    # SA decision
+    decision_reference: str
+    decision_document: str
+    decision_date: datetime
+
+    # Payment
+    payment_deadline: datetime
+    payment_status: str                   # "pending", "paid", "appealed", "reduced"
+    amount_paid: Optional[float]
+    payment_date: Optional[datetime]
+
+    # Appeal
+    appeal_submitted: bool
+    appeal_deadline: Optional[datetime]
+    appeal_grounds: Optional[str]
+    appeal_outcome: Optional[str]
+
+    # Publication
+    publicly_published: bool
+    publication_url: Optional[str]
+
+Dataclass MemberStatePenalty:
+    """Article 84 - Member State specific penalties"""
+    penalty_id: str
+    member_state: str
+    penalty_type: str                     # "criminal", "administrative_other", "civil"
+
+    # Legal basis
+    national_law_reference: str
+    gdpr_articles_supplemented: List[str]
+
+    # Scope
+    applicable_to: str                    # "controllers", "processors", "both"
+    infringements_covered: List[str]
+
+    # Penalties
+    maximum_penalty: str                  # Description of max penalty
+    criminal_sanctions_possible: bool
+    imprisonment_possible: bool
+    personal_liability_possible: bool     # Directors/officers
+
+# Article 83(5) Upper Tier Violations
+UPPER_TIER_VIOLATIONS = [
+    {"article": "5", "description": "Processing principles violation"},
+    {"article": "6", "description": "Unlawful processing - no legal basis"},
+    {"article": "7", "description": "Consent requirements violation"},
+    {"article": "9", "description": "Special categories violation"},
+    {"article": "12-22", "description": "Data subject rights violation"},
+    {"article": "44-49", "description": "International transfer violation"},
+    {"article": "58(1)", "description": "Non-compliance with SA order"},
+    {"article": "58(2)", "description": "Non-compliance with corrective measure"},
+]
+
+# Article 83(4) Lower Tier Violations
+LOWER_TIER_VIOLATIONS = [
+    {"article": "8", "description": "Child consent requirements"},
+    {"article": "11", "description": "Processing not requiring identification"},
+    {"article": "25-39", "description": "Controller/processor obligations"},
+    {"article": "42-43", "description": "Certification requirements"},
+]
+
+# Notable GDPR Fines Reference (2024-2025)
+NOTABLE_FINES_REFERENCE = {
+    "META_IRELAND_2023": {
+        "amount": 1_200_000_000,
+        "sa": "DPC Ireland",
+        "violation": "Art. 46 - US transfers",
+        "relevance": "Transfer mechanism failures"
+    },
+    "AMAZON_LUXEMBOURG_2021": {
+        "amount": 746_000_000,
+        "sa": "CNPD Luxembourg",
+        "violation": "Art. 6, 12-22 - Targeted advertising",
+        "relevance": "Consent and transparency"
+    },
+    "META_IRELAND_2022": {
+        "amount": 405_000_000,
+        "sa": "DPC Ireland",
+        "violation": "Art. 6, 12-14 - Instagram children",
+        "relevance": "Child data protection"
+    },
+    "TIKTOK_IRELAND_2023": {
+        "amount": 345_000_000,
+        "sa": "DPC Ireland",
+        "violation": "Art. 5, 12-14, 25 - Children's data",
+        "relevance": "Children, transparency"
+    },
+    "CLEARVIEW_AI_VARIOUS": {
+        "amount": 20_000_000,
+        "sa": "Multiple (FR, IT, UK, GR)",
+        "violation": "Art. 5, 6, 9, 12-14",
+        "relevance": "Biometric data, consent"
+    }
+}
+
+Class AdministrativeFinesManager:
+    """
+    Articles 83-84 implementation - Administrative fines management.
+
+    Per Article 83(1): Fines must be effective, proportionate, and dissuasive.
+
+    Per Article 83(2): When deciding whether to impose a fine and the amount,
+    due regard shall be given to specified factors.
+
+    Per Article 83(3): Multiple infringements in single processing =
+    fine shall not exceed amount specified for the gravest infringement.
+
+    Per Article 84: Member States lay down rules on other penalties for
+    infringements not subject to administrative fines under Article 83.
+
+    CRITICAL FOR TRADING PLATFORMS:
+    - Assess fine risk for compliance prioritization
+    - Document mitigation factors proactively
+    - Track regulatory enforcement trends
+    - Prepare for potential SA enforcement
+    """
+
+    # Fine risk assessment
+    - assess_infringement_risk(infringement: str) -> InfringementRiskAssessment
+    - determine_fine_tier(violated_articles: List[str]) -> FineTier
+    - calculate_maximum_fine(tier: FineTier, annual_turnover: float) -> float
+    - perform_article_83_2_assessment(infringement_id: str) -> Article83_2_Assessment
+    - calculate_estimated_fine(assessment_id: str) -> FineCalculation
+    - compare_with_precedents(assessment_id: str) -> PrecedentComparison
+
+    # Factor documentation (proactive)
+    - document_technical_measures() -> MeasuresDocumentation
+    - document_organizational_measures() -> MeasuresDocumentation
+    - record_cooperation_history() -> CooperationRecord
+    - track_codes_certifications() -> MitigationEvidence
+    - prepare_mitigation_dossier() -> MitigationDossier
+
+    # Fine tracking
+    - register_fine(fine: AdministrativeFineRecord) -> str
+    - track_payment_deadline(fine_id: str) -> DeadlineStatus
+    - process_payment(fine_id: str, payment: Payment) -> PaymentResult
+    - initiate_appeal(fine_id: str, grounds: str) -> AppealRecord
+    - track_appeal_status(appeal_id: str) -> AppealStatus
+
+    # Member State penalties (Art. 84)
+    - register_member_state_penalty_rules(penalty: MemberStatePenalty) -> str
+    - assess_criminal_liability_risk(member_state: str) -> CriminalRiskAssessment
+    - check_director_liability_rules(member_state: str) -> DirectorLiabilityRules
+
+    # Precedent tracking
+    - track_enforcement_action(action: EnforcementAction) -> str
+    - analyze_sector_trends() -> TrendAnalysis
+    - get_similar_case_fines(infringement_type: str) -> List[FineReference]
+    - monitor_edpb_enforcement_tracker() -> List[Update]
+
+    # Reporting
+    - generate_fine_risk_report() -> FineRiskReport
+    - calculate_total_exposure() -> ExposureSummary
+    - get_enforcement_dashboard() -> EnforcementDashboard
+    - prepare_board_risk_summary() -> BoardSummary
+```
+
+**Article 83(2) Factor Assessment Guide:**
+
+| Factor | How to Document | Mitigation Strategy |
+|--------|-----------------|---------------------|
+| **(a) Nature, gravity, duration** | Incident timeline, impact analysis | Rapid detection and response |
+| **(b) Intent** | Decision logs, policy evidence | Document good faith efforts |
+| **(c) Mitigation actions** | Remediation records | Act quickly, document everything |
+| **(d) Technical/org measures** | Security assessments, policies | Implement Art. 25, 32 fully |
+| **(e) Previous infringements** | Compliance history | Clean record maintenance |
+| **(f) SA cooperation** | Communication logs | Full, prompt cooperation |
+| **(g) Data categories** | Data inventory | Minimize special categories |
+| **(h) How became known** | Self-reporting records | Proactive disclosure |
+| **(i) Previous measures** | Compliance evidence | Full compliance with orders |
+| **(j) Codes/certification** | Certificates, adherence records | Obtain certifications |
+| **(k) Other factors** | Financial records, context | Document extenuating circumstances |
+
+**Fine Risk Calculator:**
+
+```
+Fine Risk Assessment Workflow:
+──────────────────────────────────────────────────────────────────
+
+1. IDENTIFY POTENTIAL INFRINGEMENT
+   ├─ What articles potentially violated?
+   ├─ Determine fine tier (Upper/Lower)
+   └─ Calculate maximum fine
+
+2. ASSESS ARTICLE 83(2) FACTORS
+   ├─ Rate each factor: aggravating / neutral / mitigating
+   ├─ Document evidence for each
+   └─ Calculate adjustment percentage
+
+3. COMPARE WITH PRECEDENTS
+   ├─ Find similar SA decisions
+   ├─ Identify sector averages
+   └─ Adjust estimate
+
+4. CALCULATE RISK-ADJUSTED ESTIMATE
+   ├─ Apply adjustments to maximum
+   ├─ Determine likely range
+   └─ Compare with company turnover
+
+5. DOCUMENT AND REPORT
+   ├─ Generate risk report
+   ├─ Update exposure calculations
+   └─ Brief relevant stakeholders
+```
+
+**Article 84 - Member State Specific Penalties (Key Jurisdictions):**
+
+| Member State | Criminal Sanctions | Max Imprisonment | Director Liability | Notes |
+|--------------|-------------------|------------------|-------------------|-------|
+| **Germany** | Yes (BDSG §42) | Up to 3 years | Yes | Strict criminal provisions |
+| **France** | Yes (Code pénal) | Up to 5 years | Yes | €300K criminal fine |
+| **Netherlands** | Limited | N/A | Yes | Focus on admin fines |
+| **Ireland** | Limited (DPA 2018) | Up to 5 years | Yes | For serious obstruction |
+| **Spain** | Yes (LO 3/2018) | Variable | Yes | Supplement to admin fines |
+| **Italy** | Yes (D.Lgs. 101/2018) | Up to 6 years | Yes | Broadest criminal scope |
+
 #### 6.2.7 CertificationFramework (certification_framework.py) - NEW v1.7
 
 **Articles 40-43 - Codes of Conduct and Certification**
@@ -7902,6 +8792,317 @@ Class CertificationFramework:
 | Cloud Infrastructure Providers (CISPE) | Cloud | Approved | Scope Europe |
 | Direct Marketing Code | Marketing | Approved | Various national |
 | **Financial Services (proposed)** | Financial | **Pending** | TBD |
+
+#### 6.2.7aa SupervisoryAuthorityPowersHandler (sa_powers_handler.py) - NEW v2.1
+
+**Articles 51-59 - Supervisory Authorities**
+
+Per [GDPR Chapter VI](https://gdpr-info.eu/chapter-6/), each Member State must establish one or more independent supervisory authorities. This module handles understanding and responding to SA powers.
+
+> **⚠️ CRITICAL FOR COMPLIANCE OPERATIONS**
+>
+> Understanding SA powers is essential for:
+> 1. **Responding to investigations** (Art. 58 investigative powers)
+> 2. **Handling corrective measures** (Art. 58 corrective powers)
+> 3. **Cooperating with audits** (Art. 58(1)(e-f))
+> 4. **Preparing for enforcement actions**
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Chapter VI - Supervisory Authorities (Articles 51-59)
+# ═══════════════════════════════════════════════════════════════════
+
+Enum SAPowerType:
+    """Types of supervisory authority powers per Article 58"""
+    # Investigative Powers - Art. 58(1)
+    ORDER_INFORMATION = "order_information"           # 58(1)(a)
+    CONDUCT_AUDIT = "conduct_audit"                   # 58(1)(b)
+    CONDUCT_REVIEW = "conduct_review"                 # 58(1)(c)
+    NOTIFY_INFRINGEMENT = "notify_infringement"       # 58(1)(d)
+    OBTAIN_ACCESS_PREMISES = "access_premises"        # 58(1)(f)
+    OBTAIN_ACCESS_EQUIPMENT = "access_equipment"      # 58(1)(f)
+
+    # Corrective Powers - Art. 58(2)
+    ISSUE_WARNING = "issue_warning"                   # 58(2)(a)
+    ISSUE_REPRIMAND = "issue_reprimand"               # 58(2)(b)
+    ORDER_COMPLIANCE = "order_compliance"             # 58(2)(c)
+    ORDER_COMMUNICATION = "order_communication"       # 58(2)(d)
+    IMPOSE_LIMITATION = "impose_limitation"           # 58(2)(f)
+    ORDER_RECTIFICATION = "order_rectification"       # 58(2)(g)
+    ORDER_ERASURE = "order_erasure"                   # 58(2)(g)
+    WITHDRAW_CERTIFICATION = "withdraw_certification" # 58(2)(h)
+    IMPOSE_FINE = "impose_fine"                       # 58(2)(i)
+    ORDER_SUSPENSION = "order_suspension"             # 58(2)(j)
+
+    # Authorization Powers - Art. 58(3)
+    ADVISE_CONTROLLER = "advise_controller"           # 58(3)(a)
+    ISSUE_OPINION = "issue_opinion"                   # 58(3)(b)
+    AUTHORIZE_PROCESSING = "authorize_processing"     # 58(3)(c)
+    APPROVE_BCR = "approve_bcr"                       # 58(3)(j)
+    ACCREDIT_BODY = "accredit_body"                   # 58(3)(n)
+
+Enum SACompetenceType:
+    """Competence basis per Article 55-56"""
+    TERRITORIAL = "territorial"                       # Art. 55(1) - Processing in MS
+    LEAD_SA = "lead_sa"                               # Art. 56(1) - Cross-border, main establishment
+    CONCERNED_SA = "concerned_sa"                     # Art. 56(1) - Affected but not lead
+    PUBLIC_AUTHORITY = "public_authority"             # Art. 55(2) - Public authority processing
+
+Dataclass SupervisoryAuthority:
+    """Article 51 - Supervisory authority details"""
+    sa_id: str
+    country: str                                      # ISO 3166-1 alpha-2
+    official_name: str
+    acronym: str                                      # e.g., "DPC", "CNIL", "BfDI"
+
+    # Independence (Art. 52)
+    is_independent: bool = True
+    established_by_law: str                           # National law reference
+
+    # Contact
+    address: str
+    website: str
+    general_contact_email: str
+    complaint_form_url: str
+
+    # Competence
+    competence_areas: List[str]                       # Sectors/areas of special competence
+    languages: List[str]
+
+    # Key contacts for trading platforms
+    financial_services_contact: Optional[str]
+    technology_contact: Optional[str]
+
+Dataclass SAAction:
+    """Record of a supervisory authority action"""
+    action_id: str
+    sa_id: str
+    action_date: datetime
+
+    # Action details
+    power_exercised: SAPowerType
+    legal_basis: str                                  # Art. 58(x)(y)
+    subject_matter: str
+
+    # Response requirements
+    response_required: bool
+    response_deadline: Optional[datetime]
+    response_format: Optional[str]
+
+    # Status
+    status: str  # "received", "under_review", "responded", "closed", "appealed"
+    our_response: Optional[str]
+    response_date: Optional[datetime]
+
+    # Outcome
+    sa_decision: Optional[str]
+    decision_date: Optional[datetime]
+    appeal_deadline: Optional[datetime]
+    appealed: bool = False
+
+Dataclass SAAudit:
+    """Article 58(1)(b) - SA audit record"""
+    audit_id: str
+    sa_id: str
+    notification_date: datetime
+
+    # Audit scope
+    audit_type: str                                   # "on_site", "remote", "documentation"
+    scope_description: str
+    processing_activities_covered: List[str]
+    time_period_covered: str
+
+    # Schedule
+    audit_start_date: datetime
+    audit_end_date: Optional[datetime]
+
+    # Documentation requested
+    documents_requested: List[str]
+    documents_provided: List[str]
+    documents_pending: List[str]
+
+    # Findings
+    preliminary_findings: List[str]
+    final_findings: Optional[List[str]]
+    recommendations: List[str]
+
+    # Response
+    corrective_actions_required: List[str]
+    corrective_actions_taken: List[str]
+    follow_up_date: Optional[datetime]
+
+Dataclass InvestigativeRequest:
+    """Article 58(1) - Investigative request from SA"""
+    request_id: str
+    sa_id: str
+    request_date: datetime
+
+    # Request basis
+    power_basis: SAPowerType
+    legal_reference: str
+    investigation_reference: Optional[str]
+
+    # Request content
+    information_requested: List[str]
+    access_requested: List[str]
+    deadline: datetime
+
+    # Status
+    status: str
+    response_date: Optional[datetime]
+
+    # Appeal rights
+    appealable: bool
+    appeal_deadline: Optional[datetime]
+
+# EU/EEA Supervisory Authorities
+EU_SUPERVISORY_AUTHORITIES = {
+    "AT": {"name": "Österreichische Datenschutzbehörde", "acronym": "DSB", "url": "https://www.dsb.gv.at/"},
+    "BE": {"name": "Autorité de protection des données", "acronym": "APD", "url": "https://www.autoriteprotectiondonnees.be/"},
+    "BG": {"name": "Комисия за защита на личните данни", "acronym": "CPDP", "url": "https://www.cpdp.bg/"},
+    "CY": {"name": "Γραφείο Επιτρόπου Προστασίας Δεδομένων Προσωπικού Χαρακτήρα", "url": "http://www.dataprotection.gov.cy/"},
+    "CZ": {"name": "Úřad pro ochranu osobních údajů", "acronym": "ÚOOÚ", "url": "https://www.uoou.cz/"},
+    "DE": {"name": "Der Bundesbeauftragte für den Datenschutz", "acronym": "BfDI", "url": "https://www.bfdi.bund.de/"},
+    "DK": {"name": "Datatilsynet", "url": "https://www.datatilsynet.dk/"},
+    "EE": {"name": "Andmekaitse Inspektsioon", "acronym": "AKI", "url": "https://www.aki.ee/"},
+    "ES": {"name": "Agencia Española de Protección de Datos", "acronym": "AEPD", "url": "https://www.aepd.es/"},
+    "FI": {"name": "Tietosuojavaltuutetun toimisto", "url": "https://tietosuoja.fi/"},
+    "FR": {"name": "Commission Nationale de l'Informatique et des Libertés", "acronym": "CNIL", "url": "https://www.cnil.fr/"},
+    "GR": {"name": "Αρχή Προστασίας Δεδομένων Προσωπικού Χαρακτήρα", "acronym": "HDPA", "url": "https://www.dpa.gr/"},
+    "HR": {"name": "Agencija za zaštitu osobnih podataka", "acronym": "AZOP", "url": "https://azop.hr/"},
+    "HU": {"name": "Nemzeti Adatvédelmi és Információszabadság Hatóság", "acronym": "NAIH", "url": "https://www.naih.hu/"},
+    "IE": {"name": "Data Protection Commission", "acronym": "DPC", "url": "https://www.dataprotection.ie/"},
+    "IT": {"name": "Garante per la protezione dei dati personali", "url": "https://www.garanteprivacy.it/"},
+    "LT": {"name": "Valstybinė duomenų apsaugos inspekcija", "acronym": "VDAI", "url": "https://vdai.lrv.lt/"},
+    "LU": {"name": "Commission Nationale pour la Protection des Données", "acronym": "CNPD", "url": "https://cnpd.public.lu/"},
+    "LV": {"name": "Datu valsts inspekcija", "acronym": "DVI", "url": "https://www.dvi.gov.lv/"},
+    "MT": {"name": "Office of the Information and Data Protection Commissioner", "acronym": "IDPC", "url": "https://idpc.org.mt/"},
+    "NL": {"name": "Autoriteit Persoonsgegevens", "acronym": "AP", "url": "https://autoriteitpersoonsgegevens.nl/"},
+    "PL": {"name": "Urząd Ochrony Danych Osobowych", "acronym": "UODO", "url": "https://uodo.gov.pl/"},
+    "PT": {"name": "Comissão Nacional de Proteção de Dados", "acronym": "CNPD", "url": "https://www.cnpd.pt/"},
+    "RO": {"name": "Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal", "acronym": "ANSPDCP", "url": "https://www.dataprotection.ro/"},
+    "SE": {"name": "Integritetsskyddsmyndigheten", "acronym": "IMY", "url": "https://www.imy.se/"},
+    "SI": {"name": "Informacijski pooblaščenec", "acronym": "IP", "url": "https://www.ip-rs.si/"},
+    "SK": {"name": "Úrad na ochranu osobných údajov", "url": "https://dataprotection.gov.sk/"},
+    # EEA
+    "IS": {"name": "Persónuvernd", "url": "https://www.personuvernd.is/"},
+    "LI": {"name": "Datenschutzstelle", "url": "https://www.datenschutzstelle.li/"},
+    "NO": {"name": "Datatilsynet", "url": "https://www.datatilsynet.no/"}
+}
+
+Class SupervisoryAuthorityPowersHandler:
+    """
+    Chapter VI implementation - Supervisory Authority powers management.
+
+    Per Article 51(1): Each Member State shall provide for one or more
+    independent public authorities responsible for monitoring GDPR application.
+
+    Per Article 58: SAs have investigative, corrective, and advisory powers.
+
+    CRITICAL FOR TRADING PLATFORMS:
+    - Know which SA has jurisdiction (Lead SA determination)
+    - Understand SA powers and respond appropriately
+    - Prepare for audits and investigations
+    - Track and manage SA interactions
+    """
+
+    # SA identification
+    - get_sa_for_country(country: str) -> SupervisoryAuthority
+    - get_all_eas_sas() -> List[SupervisoryAuthority]
+    - identify_competent_sa(processing: Dict) -> SACompetenceResult
+    - determine_lead_sa(establishments: List[str]) -> LeadSADetermination
+
+    # Investigative powers response (Art. 58(1))
+    - receive_investigative_request(request: InvestigativeRequest) -> str
+    - assess_request_validity(request_id: str) -> ValidityAssessment
+    - prepare_response(request_id: str) -> ResponsePreparation
+    - submit_response(request_id: str, response: Dict) -> SubmissionResult
+    - track_response_deadline(request_id: str) -> DeadlineStatus
+    - request_extension(request_id: str, reason: str) -> ExtensionRequest
+
+    # Audit management (Art. 58(1)(b))
+    - receive_audit_notification(notification: AuditNotification) -> str
+    - prepare_for_audit(audit_id: str) -> AuditPreparation
+    - assign_audit_coordinator(audit_id: str, coordinator: str) -> bool
+    - provide_documentation(audit_id: str, documents: List[str]) -> ProvisionResult
+    - facilitate_on_site_audit(audit_id: str) -> FacilitationResult
+    - receive_audit_findings(audit_id: str, findings: List[str]) -> FindingsRecord
+    - implement_corrective_actions(audit_id: str, actions: List[str]) -> ActionResult
+    - request_follow_up(audit_id: str) -> FollowUpResult
+
+    # Corrective powers response (Art. 58(2))
+    - receive_corrective_measure(measure: CorrectiveMeasure) -> str
+    - assess_measure_impact(measure_id: str) -> ImpactAssessment
+    - implement_measure(measure_id: str) -> ImplementationResult
+    - report_compliance(measure_id: str, evidence: Dict) -> ComplianceReport
+    - appeal_measure(measure_id: str, grounds: str) -> AppealResult
+
+    # Advisory interaction (Art. 58(3))
+    - request_sa_advice(topic: str, context: Dict) -> AdviceRequest
+    - receive_sa_opinion(opinion: SAOpinion) -> OpinionRecord
+    - request_prior_consultation(dpia_id: str) -> ConsultationRequest
+
+    # Action tracking
+    - register_sa_action(action: SAAction) -> str
+    - track_action_status(action_id: str) -> ActionStatus
+    - get_pending_actions() -> List[SAAction]
+    - get_action_history(sa_id: str) -> List[SAAction]
+
+    # Reporting
+    - generate_sa_interaction_report() -> Report
+    - get_sa_dashboard() -> SAInteractionDashboard
+    - prepare_for_sa_meeting(sa_id: str) -> MeetingPreparation
+```
+
+**SA Power Response Matrix:**
+
+| Power (Art. 58) | Typical Deadline | Response Required | Appeal Available |
+|-----------------|------------------|-------------------|------------------|
+| Order info (1)(a) | 1-4 weeks | YES - provide information | YES |
+| Conduct audit (1)(b) | Varies | Cooperation required | Limited |
+| Access premises (1)(f) | Immediate | Must grant access | YES (ex post) |
+| Issue warning (2)(a) | N/A | Acknowledge | NO |
+| Issue reprimand (2)(b) | N/A | Acknowledge, may need action | Limited |
+| Order compliance (2)(c) | Specified | YES - demonstrate compliance | YES |
+| Impose limitation (2)(f) | Immediate | Must comply; appeal | YES |
+| Order erasure (2)(g) | Specified | YES - confirm erasure | YES |
+| Impose fine (2)(i) | Varies | Payment or appeal | YES |
+| Order suspension (2)(j) | Immediate | Must comply; appeal | YES |
+
+**SA Audit Preparation Checklist:**
+
+```
+Pre-Audit Preparation:
+──────────────────────────────────────────────────────────────────
+
+1. DOCUMENTATION READINESS
+   ├─ ROPA current and complete
+   ├─ Privacy policies up to date
+   ├─ DPIAs available for review
+   ├─ Data processing agreements in order
+   ├─ Consent records accessible
+   └─ Breach register complete
+
+2. TECHNICAL READINESS
+   ├─ Access controls documented
+   ├─ Security measures evidenced
+   ├─ Audit logs available
+   ├─ Data flow diagrams current
+   └─ System documentation ready
+
+3. ORGANIZATIONAL READINESS
+   ├─ DPO available
+   ├─ Key personnel identified
+   ├─ Response team assigned
+   ├─ Meeting rooms booked (if on-site)
+   └─ NDA for auditors (if required)
+
+4. PROCESS READINESS
+   ├─ DSAR process documented
+   ├─ Breach response process documented
+   ├─ Third-party management documented
+   └─ Training records available
+```
 
 #### 6.2.7a SupervisoryAuthorityCooperationExtended (sa_cooperation_extended.py) - NEW v2.0
 
@@ -8347,6 +9548,270 @@ Class BCRManager:
 | EU group with UK subsidiary | POSSIBLE | Consider post-adequacy; BCR as backup |
 | Multiple EU entities sharing data | NO | Intra-EEA; GDPR applies directly |
 | EU controller, US parent processor | YES | BCR-P for processor services |
+
+#### 6.2.7c EDPBStructureHandler (edpb_structure.py) - NEW v2.1
+
+**Articles 68-76 - European Data Protection Board**
+
+Per [GDPR Chapter VII, Section 3](https://gdpr-info.eu/chapter-7/), the European Data Protection Board (EDPB) is established as an independent body of the Union. Understanding EDPB structure is essential for cross-border compliance.
+
+> **Relevance for Trading Platforms**:
+> - EDPB opinions affect enforcement consistency
+> - EDPB binding decisions resolve SA disputes
+> - EDPB guidelines shape compliance requirements
+> - Cross-border cases may be escalated to EDPB
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# Chapter VII, Section 3 - European Data Protection Board (Art. 68-76)
+# ═══════════════════════════════════════════════════════════════════
+
+Enum EDPBOutputType:
+    """Types of EDPB outputs"""
+    OPINION = "opinion"                   # Art. 64 - Advisory opinions
+    BINDING_DECISION = "binding_decision" # Art. 65 - Dispute resolution
+    GUIDELINES = "guidelines"             # Art. 70(1)(e) - Implementation guidance
+    RECOMMENDATION = "recommendation"     # Art. 70(1)(b) - Best practices
+    ENDORSEMENT = "endorsement"           # Art. 63 - Consistency endorsement
+    REPORT = "report"                     # Art. 70(1)(u) - Annual reports
+
+Enum EDPBProcedureType:
+    """EDPB procedures"""
+    CONSISTENCY_OPINION = "consistency_opinion"      # Art. 64
+    BINDING_DISPUTE = "binding_dispute"              # Art. 65
+    URGENCY_OPINION = "urgency_opinion"              # Art. 66(2)
+    GENERAL_GUIDANCE = "general_guidance"            # Art. 70(1)
+
+Dataclass EDPBOpinion:
+    """Article 64 - EDPB Opinion record"""
+    opinion_id: str
+    opinion_number: str                   # e.g., "Opinion 1/2024"
+    opinion_date: datetime
+
+    # Request details
+    requesting_sa: str
+    request_type: str                     # What triggered Art. 64
+    draft_decision_reference: Optional[str]
+
+    # Substance
+    subject_matter: str
+    gdpr_articles_addressed: List[str]
+    opinion_text_url: str
+
+    # Relevance
+    affects_platform: bool
+    relevance_assessment: str
+    action_required: List[str]
+
+Dataclass EDPBBindingDecision:
+    """Article 65 - EDPB Binding Decision"""
+    decision_id: str
+    decision_number: str
+    decision_date: datetime
+
+    # Dispute context
+    dispute_type: str                     # Art. 65(1)(a), (b), or (c)
+    lead_sa: str
+    concerned_sas: List[str]
+    objecting_sas: List[str]
+
+    # Decision
+    decision_text_url: str
+    outcome_summary: str
+    binding_on: List[str]                 # Which SAs bound
+
+    # Enforcement
+    implementation_deadline: datetime
+    implementation_actions: List[str]
+
+    # Platform impact
+    affects_platform: bool
+    platform_action_required: List[str]
+
+Dataclass EDPBGuidelines:
+    """Article 70(1)(e) - EDPB Guidelines"""
+    guidelines_id: str
+    guidelines_number: str                # e.g., "Guidelines 1/2024"
+    version: str
+    adoption_date: datetime
+
+    # Content
+    title: str
+    subject_matter: str
+    gdpr_articles_covered: List[str]
+    guidelines_url: str
+
+    # Status
+    status: str                           # "draft", "public_consultation", "final"
+    consultation_deadline: Optional[datetime]
+    final_adoption_date: Optional[datetime]
+
+    # Platform relevance
+    relevance_to_platform: str            # "high", "medium", "low", "not_applicable"
+    implementation_priority: str
+    affected_modules: List[str]
+
+# Article 70 - Tasks of the Board
+EDPB_TASKS = {
+    "monitor_application": {
+        "reference": "Art. 70(1)(a)",
+        "description": "Monitor and ensure correct application of GDPR"
+    },
+    "advise_commission": {
+        "reference": "Art. 70(1)(b)",
+        "description": "Advise Commission on data protection matters"
+    },
+    "issue_guidelines": {
+        "reference": "Art. 70(1)(e)",
+        "description": "Issue guidelines, recommendations and best practices"
+    },
+    "encourage_codes": {
+        "reference": "Art. 70(1)(p)",
+        "description": "Encourage drafting of codes of conduct"
+    },
+    "encourage_certification": {
+        "reference": "Art. 70(1)(o)",
+        "description": "Encourage establishment of certification mechanisms"
+    },
+    "maintain_sccs_register": {
+        "reference": "Art. 70(1)(k)",
+        "description": "Maintain register of decisions on SCCs"
+    },
+    "maintain_bcr_register": {
+        "reference": "Art. 70(1)(l)",
+        "description": "Maintain register of BCR approvals"
+    },
+    "dispute_resolution": {
+        "reference": "Art. 65",
+        "description": "Issue binding decisions in dispute resolution"
+    },
+    "consistency_opinions": {
+        "reference": "Art. 64",
+        "description": "Issue opinions on cross-border matters"
+    },
+    "annual_report": {
+        "reference": "Art. 70(1)(u)",
+        "description": "Draw up annual report on data protection in Union"
+    }
+}
+
+# Article 72 - Procedure (Voting)
+EDPB_VOTING_RULES = {
+    "general_matters": {
+        "rule": "Simple majority",
+        "reference": "Art. 72(1)",
+        "applies_to": "Most decisions"
+    },
+    "internal_rules": {
+        "rule": "Two-thirds majority",
+        "reference": "Art. 72(2)",
+        "applies_to": "Rules of procedure"
+    },
+    "binding_decisions": {
+        "rule": "Two-thirds majority",
+        "reference": "Art. 65",
+        "applies_to": "Art. 65 binding decisions"
+    }
+}
+
+# Article 76 - Confidentiality
+EDPB_CONFIDENTIALITY = {
+    "deliberations": "Confidential unless EDPB decides otherwise (Art. 76)",
+    "documents": "Subject to Art. 15(3) of Regulation 1049/2001",
+    "breach_data": "Always confidential",
+    "personal_data": "Protected per GDPR"
+}
+
+Class EDPBStructureHandler:
+    """
+    Articles 68-76 implementation - EDPB structure and procedures.
+
+    Per Article 68(1): EDPB is established as a body of the Union with
+    legal personality.
+
+    Per Article 68(3): EDPB composed of head of SA of each Member State
+    and the European Data Protection Supervisor.
+
+    RELEVANCE FOR TRADING PLATFORMS:
+    - Track EDPB guidelines that affect platform compliance
+    - Understand consistency mechanism for cross-border issues
+    - Monitor binding decisions that may create precedent
+    - Stay informed on enforcement coordination
+    """
+
+    # Guidelines tracking
+    - get_relevant_guidelines() -> List[EDPBGuidelines]
+    - assess_guidelines_impact(guidelines_id: str) -> ImpactAssessment
+    - track_guidelines_status(guidelines_id: str) -> GuidelinesStatus
+    - implement_guidelines_requirements(guidelines_id: str) -> ImplementationPlan
+    - respond_to_consultation(guidelines_id: str, response: str) -> ConsultationResponse
+
+    # Opinion tracking
+    - get_recent_opinions() -> List[EDPBOpinion]
+    - assess_opinion_relevance(opinion_id: str) -> RelevanceAssessment
+    - extract_compliance_requirements(opinion_id: str) -> List[Requirement]
+
+    # Binding decision tracking
+    - get_binding_decisions() -> List[EDPBBindingDecision]
+    - assess_decision_precedent(decision_id: str) -> PrecedentAssessment
+    - check_platform_exposure(decision_id: str) -> ExposureAssessment
+
+    # Consistency mechanism awareness
+    - understand_consistency_procedure() -> ProcedureExplanation
+    - track_cases_at_edpb() -> List[EDPBCase]
+    - assess_potential_referral_risk(case_id: str) -> ReferralRisk
+
+    # Register access
+    - query_bcr_register() -> List[BCRApproval]
+    - query_scc_decisions() -> List[SCCDecision]
+    - query_certification_register() -> List[CertificationScheme]
+
+    # Reporting
+    - generate_edpb_relevance_report() -> Report
+    - get_regulatory_update_dashboard() -> Dashboard
+    - track_edpb_work_programme() -> WorkProgramme
+```
+
+**EDPB Procedure Flow:**
+
+```
+EDPB Involvement in Cross-Border Cases:
+──────────────────────────────────────────────────────────────────
+
+1. NORMAL CASE (Art. 60)
+   └─ Lead SA + Concerned SAs cooperate
+      └─ Reach consensus → Decision issued
+
+2. CONSISTENCY OPINION (Art. 64)
+   └─ Draft decision with significant effect on multiple MS
+      └─ Lead SA submits to EDPB
+         └─ EDPB issues opinion within 8 weeks
+            └─ Lead SA takes utmost account of opinion
+
+3. DISPUTE RESOLUTION (Art. 65)
+   └─ Concerned SA raises objection (Art. 60(4))
+      └─ Lead SA rejects or doesn't follow objection
+         └─ Matter referred to EDPB
+            └─ EDPB adopts BINDING decision by 2/3 majority
+               └─ Lead SA MUST adopt final decision based on binding decision
+
+4. URGENCY (Art. 66)
+   └─ SA adopts provisional measure (max 3 months)
+      └─ Requests urgent opinion from EDPB
+         └─ EDPB opinion within 2 weeks
+```
+
+**Key EDPB Outputs for Trading Platforms:**
+
+| Output | Reference | Platform Relevance | Action Required |
+|--------|-----------|-------------------|-----------------|
+| Guidelines on Automated Decisions | Art. 22 | HIGH | Implement for algo trading |
+| Guidelines on Consent | Art. 7 | HIGH | Review consent flows |
+| Guidelines on Legitimate Interest | Art. 6(1)(f) | HIGH | LIA methodology |
+| Guidelines on Transfers | Art. 44-49 | HIGH | TIA, SCCs, adequacy |
+| Guidelines on Data Breach | Art. 33-34 | HIGH | Breach procedures |
+| BCR Referential | Art. 47 | MEDIUM | If pursuing BCR |
+| Annual Report | Art. 70(1)(u) | MEDIUM | Enforcement trends |
 
 #### 6.2.8 EmploymentDataHandler (employment_data.py) - NEW v1.7
 
@@ -9346,6 +10811,102 @@ test_regulatory_arbitrage.py:
 | Time manipulation | Controllable clock | Deadline testing |
 
 **Expected test count**: ~220-260 tests (increased for stress/negative + new articles)
+
+### 6.8 Version 2.1 Test Additions (NEW v2.1)
+
+**Tests for Articles 40-43, 51-59, 68-76, 83-84, EDPB Guidelines 2024:**
+
+```
+test_gdpr_v21_additions.py:
+├── test_codes_of_conduct/                          # NEW v2.1 - Articles 40-41
+│   ├── test_code_discovery
+│   ├── test_code_applicability_assessment
+│   ├── test_code_adoption_workflow
+│   ├── test_adherence_record_management
+│   ├── test_monitoring_body_verification
+│   ├── test_deviation_documentation
+│   ├── test_cloud_code_compliance              # EU Cloud CoC
+│   ├── test_financial_services_code_pending
+│   └── test_code_withdrawal_process
+│
+├── test_certification/                             # NEW v2.1 - Articles 42-43
+│   ├── test_scheme_discovery
+│   ├── test_europrivacy_scheme_assessment
+│   ├── test_certification_body_selection
+│   ├── test_certification_process_initiation
+│   ├── test_audit_preparation
+│   ├── test_certification_receipt
+│   ├── test_certification_renewal_tracking
+│   ├── test_certification_suspension_handling
+│   ├── test_certificate_publication
+│   └── test_fine_mitigation_evidence
+│
+├── test_sa_powers/                                 # NEW v2.1 - Articles 51-59
+│   ├── test_sa_identification
+│   ├── test_all_eu_sas_registered
+│   ├── test_competent_sa_determination
+│   ├── test_investigative_request_handling
+│   ├── test_audit_notification_response
+│   ├── test_audit_document_provision
+│   ├── test_corrective_measure_implementation
+│   ├── test_fine_receipt_processing
+│   ├── test_appeal_workflow
+│   ├── test_sa_cooperation_tracking
+│   └── test_sa_dashboard_generation
+│
+├── test_edpb_structure/                            # NEW v2.1 - Articles 68-76
+│   ├── test_guidelines_tracking
+│   ├── test_guidelines_impact_assessment
+│   ├── test_opinion_relevance_check
+│   ├── test_binding_decision_tracking
+│   ├── test_consistency_procedure_understanding
+│   ├── test_bcr_register_query
+│   ├── test_scc_decisions_query
+│   ├── test_voting_rules_reference
+│   ├── test_edpb_work_programme_tracking
+│   └── test_regulatory_update_dashboard
+│
+├── test_administrative_fines/                      # NEW v2.1 - Articles 83-84
+│   ├── test_fine_tier_determination
+│   ├── test_maximum_fine_calculation
+│   ├── test_article_83_2_factor_assessment
+│   ├── test_fine_aggravating_factors
+│   ├── test_fine_mitigating_factors
+│   ├── test_precedent_comparison
+│   ├── test_fine_registration
+│   ├── test_payment_tracking
+│   ├── test_appeal_initiation
+│   ├── test_member_state_criminal_liability
+│   ├── test_director_liability_check
+│   ├── test_enforcement_trend_analysis
+│   └── test_board_risk_summary
+│
+├── test_legitimate_interest_v2024/                 # NEW v2.1 - EDPB Guidelines Oct 2024
+│   ├── test_li_assessment_creation_v2024
+│   ├── test_strict_necessity_test
+│   ├── test_consent_refusal_check                  # C-621/22 requirement
+│   ├── test_li_independence_documentation
+│   ├── test_balancing_test_enhanced
+│   ├── test_power_imbalance_assessment
+│   ├── test_vulnerable_groups_check
+│   ├── test_direct_marketing_li_stricter
+│   ├── test_opt_out_mechanism_validation
+│   ├── test_li_not_available_scenarios
+│   ├── test_existing_li_claims_audit
+│   └── test_remediation_plan_generation
+│
+└── test_chapter_9_specific/                        # NEW v2.1 - Articles 85, 86, 90
+    ├── test_article_85_expression_assessment
+    ├── test_article_86_public_document_disclosure
+    ├── test_article_90_professional_secrecy
+    ├── test_lawyer_privilege_handling
+    ├── test_financial_advisor_secrecy
+    └── test_member_state_secrecy_rules
+```
+
+**Expected additional test count v2.1**: ~80-100 tests
+
+**Updated Total Test Count**: ~300-360 tests (v2.0 + v2.1)
 
 ---
 
@@ -10779,6 +12340,218 @@ Class CookieConsentValidator:
 ```
 
 ### EDPB Guidelines 2024-2025 (Updated)
+
+#### Guidelines on Legitimate Interest (October 2024) - NEW v2.1
+
+Per [EDPB Guidelines 1/2024 on Legitimate Interest](https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-12024-processing-personal-data-based_en), the following key requirements apply:
+
+**⚠️ CRITICAL UPDATE POST-CJEU C-621/22**
+
+The October 2024 Guidelines incorporate CJEU ruling C-621/22 which significantly impacts legitimate interest claims.
+
+```
+# ═══════════════════════════════════════════════════════════════════
+# EDPB Guidelines 1/2024 - Legitimate Interest (October 2024)
+# ═══════════════════════════════════════════════════════════════════
+
+Dataclass LegitimateInterestAssessmentv2024:
+    """
+    Enhanced LIA per EDPB Guidelines 1/2024.
+
+    KEY CHANGES FROM PREVIOUS GUIDANCE:
+    1. STRICTER "NECESSITY" TEST - must be truly necessary, not just useful
+    2. NO FALLBACK FROM CONSENT - cannot use LI if consent was refused
+    3. ENHANCED DOCUMENTATION - explicit balancing test documentation required
+    4. DIRECT MARKETING RESTRICTIONS - stricter standards for marketing LI
+    """
+    assessment_id: str
+    processing_activity: str
+    assessment_date: datetime
+    assessor: str
+
+    # Step 1: Identify the legitimate interest (Art. 6(1)(f))
+    interest_identified: str
+    interest_type: str                    # "controller", "third_party", "data_subject"
+    interest_lawful: bool                 # Is the interest legal?
+    interest_real_present: bool           # Is it concrete and not speculative?
+    interest_articulated: bool            # Is it clearly described?
+
+    # NEW v2024: Interest legitimacy check
+    interest_recognized_by_cjeu: bool     # Listed in CJEU case law as legitimate
+    interest_in_recital_47_49: bool       # Mentioned in GDPR recitals
+
+    # Step 2: Necessity test (STRICTER per 2024 Guidelines)
+    necessity_test_passed: bool
+    alternative_methods_considered: List[str]
+    why_alternatives_insufficient: str
+    processing_is_proportionate: bool
+
+    # NEW v2024: Strict necessity requirements
+    processing_strictly_necessary: bool   # Not just "useful"
+    less_intrusive_option_rejected: str   # Why less intrusive option won't work
+    minimum_data_principle_applied: bool
+
+    # Step 3: Balancing test
+    data_subject_interests: List[str]
+    data_subject_rights: List[str]
+    reasonable_expectations: str          # What would DS reasonably expect?
+    relationship_with_ds: str             # Nature of controller-DS relationship
+
+    # NEW v2024: Enhanced balancing factors
+    impact_severity: str                  # "minimal", "moderate", "significant", "severe"
+    impact_likelihood: str                # "unlikely", "possible", "likely", "very_likely"
+    power_imbalance_exists: bool          # Controller vs DS power differential
+    vulnerable_groups_affected: bool      # Children, employees, patients, etc.
+
+    # NEW v2024: Prior consent check (C-621/22)
+    consent_previously_refused: bool      # CRITICAL - blocks LI if true
+    consent_refusal_date: Optional[datetime]
+    consent_refusal_context: Optional[str]
+    li_independence_documented: bool      # LI determined independently, not as fallback
+
+    # Safeguards implemented
+    safeguards_implemented: List[str]     # Technical and organizational measures
+    transparency_measures: List[str]      # How DS is informed
+    opt_out_mechanism: str                # Easy opt-out for direct marketing
+
+    # Overall decision
+    balancing_result: str                 # "interest_prevails", "ds_rights_prevail"
+    assessment_conclusion: str
+    processing_permitted: bool
+
+    # Documentation (MANDATORY per 2024 Guidelines)
+    full_reasoning_documented: str
+    retention_of_assessment: str          # Keep as long as processing continues
+
+Dataclass DirectMarketingLIAssessment:
+    """
+    Direct marketing under legitimate interest - STRICTER per 2024 Guidelines.
+
+    Per EDPB Guidelines 1/2024, while Recital 47 mentions direct marketing
+    as potentially legitimate, this DOES NOT mean it's automatic.
+    """
+    assessment_id: str
+    marketing_type: str                   # "email", "postal", "phone", "targeted_ads"
+    assessment_date: datetime
+
+    # Recital 47 acknowledgment
+    recital_47_acknowledged: bool = True
+
+    # STRICTER requirements
+    existing_customer_relationship: bool  # Much easier if existing customer
+    relationship_context: str             # What is the relationship?
+    product_service_similar: bool         # Marketing for similar products?
+
+    # NEW 2024: Reasonable expectations
+    ds_reasonably_expects_marketing: bool
+    expectation_evidence: str             # How do you know they expect it?
+
+    # Opt-out (MANDATORY per ePrivacy and GDPR)
+    easy_opt_out_provided: bool
+    opt_out_mechanism_description: str
+    opt_out_at_collection: bool           # Must offer at data collection
+    opt_out_in_every_communication: bool  # Must offer in every marketing msg
+
+    # Data minimization
+    only_necessary_data_used: bool
+    profiling_involved: bool
+    if_profiling_art22_applies: bool      # If significant automated decision
+
+    # Result
+    marketing_li_valid: bool
+    conditions_applied: List[str]
+
+# NEW: Legitimate interest NOT available scenarios (per 2024 Guidelines)
+LI_NOT_AVAILABLE_SCENARIOS = [
+    {
+        "scenario": "consent_previously_refused",
+        "reason": "Cannot use LI as fallback when consent refused (C-621/22)",
+        "guidance_reference": "EDPB Guidelines 1/2024, para 45"
+    },
+    {
+        "scenario": "public_authority_core_tasks",
+        "reason": "Public authorities cannot use LI for their public tasks",
+        "guidance_reference": "Art. 6(1) last sentence; EDPB Guidelines 1/2024, para 12"
+    },
+    {
+        "scenario": "covert_surveillance",
+        "reason": "Covert monitoring generally fails balancing test",
+        "guidance_reference": "EDPB Guidelines 1/2024, para 67"
+    },
+    {
+        "scenario": "large_scale_profiling_without_consent",
+        "reason": "Invasive profiling rarely passes balancing test",
+        "guidance_reference": "EDPB Guidelines 1/2024, para 71"
+    },
+    {
+        "scenario": "selling_personal_data",
+        "reason": "Commercial data sale to third parties fails necessity test",
+        "guidance_reference": "EDPB Guidelines 1/2024, para 55"
+    }
+]
+
+Class LegitimateInterestManagerv2024:
+    """
+    Updated Legitimate Interest manager per EDPB Guidelines October 2024.
+
+    KEY PRINCIPLES:
+    1. LI is NOT automatic - requires full assessment
+    2. LI is NOT a fallback from consent - independent basis
+    3. Necessity is STRICT - not just useful, truly necessary
+    4. Balancing is MANDATORY - must document fully
+    5. Safeguards are EXPECTED - implement to tip balance
+    """
+
+    # Assessment
+    - create_li_assessment(processing: str) -> LegitimateInterestAssessmentv2024
+    - perform_necessity_test(assessment_id: str) -> NecessityTestResult
+    - perform_balancing_test(assessment_id: str) -> BalancingTestResult
+    - check_consent_refusal_history(ds_id: str, purpose: str) -> ConsentRefusalCheck
+    - document_li_independence(assessment_id: str) -> IndependenceDocumentation
+
+    # Direct marketing
+    - assess_direct_marketing_li(marketing_activity: str) -> DirectMarketingLIAssessment
+    - check_existing_customer(ds_id: str) -> ExistingCustomerCheck
+    - verify_opt_out_mechanism(activity_id: str) -> OptOutVerification
+
+    # Validation
+    - validate_li_claim(assessment_id: str) -> ValidationResult
+    - check_li_not_available_scenarios(processing: str) -> ScenarioCheck
+    - recommend_alternative_basis(processing: str) -> List[LegalBasis]
+
+    # Documentation
+    - generate_li_documentation(assessment_id: str) -> Documentation
+    - store_assessment(assessment: LegitimateInterestAssessmentv2024) -> str
+    - retrieve_assessments_for_processing(processing_id: str) -> List[Assessment]
+
+    # Compliance
+    - audit_existing_li_claims() -> AuditResult
+    - identify_li_claims_needing_review() -> List[str]
+    - generate_remediation_plan() -> RemediationPlan
+```
+
+**LI Assessment Checklist (EDPB 2024):**
+
+| Step | Requirement | v2024 Change | Action |
+|------|-------------|--------------|--------|
+| **1. Interest** | Identify legitimate interest | More specific | Document concretely |
+| **2. Necessity** | Prove truly necessary | STRICTER | Rule out alternatives |
+| **3. Consent check** | Not refused consent | NEW | Check consent history |
+| **4. Balance** | DS rights vs interest | Enhanced | Document reasoning |
+| **5. Safeguards** | Implement protections | Emphasized | Technical measures |
+| **6. Document** | Full documentation | MANDATORY | Keep with ROPA |
+
+**Trading Platform LI Use Cases (v2024 Assessment):**
+
+| Use Case | LI Valid? | Key Consideration | Safeguards Required |
+|----------|-----------|-------------------|---------------------|
+| **Fraud prevention** | ✅ Yes | Clear legitimate interest | Proportionate checks |
+| **Security logging** | ✅ Yes | Necessary for operations | Retention limits |
+| **Performance analytics** | ⚠️ Maybe | Must be necessary | Anonymization preferred |
+| **Direct marketing (existing)** | ⚠️ Maybe | Easy opt-out mandatory | Per-communication opt-out |
+| **Direct marketing (new)** | ❌ Prefer consent | Weak expectations | Use consent instead |
+| **Profiling for risk scores** | ⚠️ Careful | May trigger Art. 22 | Human review, transparency |
+| **Selling data to third parties** | ❌ No | Fails necessity test | Not permitted under LI |
 
 **Critical Guidelines to Implement:**
 
