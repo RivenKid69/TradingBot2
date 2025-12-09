@@ -74,7 +74,7 @@ References:
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
+__version__ = "2.1.0"  # Updated per audit fixes
 __dora_compliance_phase__ = 5  # Current implementation phase
 
 # =============================================================================
@@ -760,6 +760,9 @@ from services.dora.contractual_requirements import (
     SLADefinition,
     ICTContract,
     ContractualRequirementsConfig,
+    # Art. 30(2)(h) Termination clause templates
+    TerminationClause,
+    get_termination_clause_templates,
     # Main class
     DORAContractualRequirements,
     # Factory functions
@@ -863,6 +866,69 @@ from services.dora.ctpp_oversight import (
     get_designated_ctpps_list,
     get_ctpp_requirements,
     get_ctpp_contract_requirements,
+)
+
+# =============================================================================
+# ICT Provider Support Modules (Art. 30 obligations as ICT Provider)
+# =============================================================================
+
+# Audit Readiness (Art. 30(3)(e) - Audit and Access Rights)
+from services.dora.audit_readiness import (
+    # SLA Constants
+    AUDIT_SLA_ACKNOWLEDGMENT_DAYS,
+    AUDIT_SLA_SCHEDULING_DAYS,
+    AUDIT_SLA_EVIDENCE_STANDARD_DAYS,
+    AUDIT_SLA_EVIDENCE_COMPLEX_DAYS,
+    AUDIT_SLA_NCA_RESPONSE_DAYS,
+    EVIDENCE_RETENTION_YEARS,
+    AUDIT_TYPE_SLAS,
+    # Enums
+    AuditType,
+    AuditScope,
+    AuditStatus,
+    EvidenceType,
+    EvidenceCategory,
+    # Data structures
+    AuditRequest,
+    EvidenceItem,
+    AuditFinding,
+    EvidenceTemplate,
+    AuditReadinessConfig,
+    # Main class
+    DORAuditReadiness,
+    # Factory functions
+    create_audit_readiness,
+    get_standard_evidence_templates,
+)
+
+# Subcontractor Management (Art. 30(2)(b), 30(3) - Subcontracting)
+from services.dora.subcontractor_management import (
+    # Enums
+    SubcontractorType,
+    SubcontractorStatus,
+    RiskLevel as SubcontractorRiskLevel,
+    ChangeType as SubcontractorChangeType,
+    NotificationStatus as SubcontractorNotificationStatus,
+    ConsentMode,  # NEW v2.1 - Prior consent vs notification workflow
+    # Data structures
+    Subcontractor,
+    SubcontractorChange,
+    ClientSubcontractorPreference,
+    SubcontractorRiskAssessment,
+    SubcontractorConfig,
+    # Main class
+    DORASubcontractorManagement,
+    # Factory functions
+    create_subcontractor_management,
+)
+
+# Multi-Client Incident Coordination (Art. 30(2)(f) - NEW v2.1)
+from services.dora.audit_readiness import (
+    IncidentNotificationStatus,
+    ClientNotificationRecord,
+    MultiClientIncident,
+    MultiClientIncidentCoordinator,
+    create_incident_coordinator,
 )
 
 # =============================================================================
@@ -1434,6 +1500,9 @@ __all__ = [
     "SLADefinition",
     "ICTContract",
     "ContractualRequirementsConfig",
+    # Art. 30(2)(h) Termination clause templates
+    "TerminationClause",
+    "get_termination_clause_templates",
     "DORAContractualRequirements",
     "create_contractual_requirements",
 
@@ -1555,4 +1624,52 @@ __all__ = [
     "UnifiedReport",
     "SubmissionPackage",
     "UnifiedReportingManager",
+
+    # =========================================================================
+    # ICT Provider Support Modules (Art. 30 obligations)
+    # =========================================================================
+
+    # Audit Readiness (Art. 30(3)(e))
+    "AUDIT_SLA_ACKNOWLEDGMENT_DAYS",
+    "AUDIT_SLA_SCHEDULING_DAYS",
+    "AUDIT_SLA_EVIDENCE_STANDARD_DAYS",
+    "AUDIT_SLA_EVIDENCE_COMPLEX_DAYS",
+    "AUDIT_SLA_NCA_RESPONSE_DAYS",
+    "EVIDENCE_RETENTION_YEARS",
+    "AUDIT_TYPE_SLAS",
+    "AuditType",
+    "AuditScope",
+    "AuditStatus",
+    "EvidenceType",
+    "EvidenceCategory",
+    "AuditRequest",
+    "EvidenceItem",
+    "AuditFinding",
+    "EvidenceTemplate",
+    "AuditReadinessConfig",
+    "DORAuditReadiness",
+    "create_audit_readiness",
+    "get_standard_evidence_templates",
+
+    # Subcontractor Management (Art. 30(2)(b), 30(3))
+    "SubcontractorType",
+    "SubcontractorStatus",
+    "SubcontractorRiskLevel",
+    "SubcontractorChangeType",
+    "SubcontractorNotificationStatus",
+    "ConsentMode",  # NEW v2.1 - Prior consent vs notification workflow
+    "Subcontractor",
+    "SubcontractorChange",
+    "ClientSubcontractorPreference",
+    "SubcontractorRiskAssessment",
+    "SubcontractorConfig",
+    "DORASubcontractorManagement",
+    "create_subcontractor_management",
+
+    # Multi-Client Incident Coordination (Art. 30(2)(f) - NEW v2.1)
+    "IncidentNotificationStatus",
+    "ClientNotificationRecord",
+    "MultiClientIncident",
+    "MultiClientIncidentCoordinator",
+    "create_incident_coordinator",
 ]

@@ -260,17 +260,71 @@ class EvidenceTemplate:
 
 
 # =============================================================================
+# Audit Response SLA Constants
+# Per DORA Article 30(3)(e) - Unrestricted audit and access rights
+# =============================================================================
+
+# Standard audit response SLAs (business days)
+AUDIT_SLA_ACKNOWLEDGMENT_DAYS = 2      # Acknowledge receipt of audit request
+AUDIT_SLA_SCHEDULING_DAYS = 5          # Schedule audit dates
+AUDIT_SLA_EVIDENCE_STANDARD_DAYS = 10  # Deliver standard evidence package
+AUDIT_SLA_EVIDENCE_COMPLEX_DAYS = 20   # Deliver complex/historical evidence
+AUDIT_SLA_NCA_RESPONSE_DAYS = 5        # Response to NCA inspection requests
+
+# Evidence retention per DORA requirements
+EVIDENCE_RETENTION_YEARS = 7           # Minimum retention period
+
+# Audit types and corresponding response expectations
+AUDIT_TYPE_SLAS = {
+    "client_operational": {
+        "acknowledgment": 2,
+        "scheduling": 5,
+        "evidence": 10,
+    },
+    "client_security": {
+        "acknowledgment": 2,
+        "scheduling": 5,
+        "evidence": 10,
+    },
+    "nca_inspection": {
+        "acknowledgment": 1,  # Faster for regulatory
+        "scheduling": 3,
+        "evidence": 5,
+    },
+    "third_party": {
+        "acknowledgment": 2,
+        "scheduling": 10,  # More flexibility for pooled audits
+        "evidence": 15,
+    },
+    "certification": {
+        "acknowledgment": 2,
+        "scheduling": 10,
+        "evidence": 20,
+    },
+}
+
+
+# =============================================================================
 # Configuration
 # =============================================================================
 
 @dataclass
 class AuditReadinessConfig:
-    """Configuration for audit readiness system."""
+    """
+    Configuration for audit readiness system.
 
-    # SLA settings
-    acknowledgment_sla_business_days: int = 2
-    scheduling_sla_business_days: int = 5
-    evidence_delivery_sla_days: int = 10
+    Default SLAs per DORA Art. 30(3)(e) requirements:
+    - Acknowledgment: 2 business days
+    - Scheduling: 5 business days
+    - Evidence delivery: 10 calendar days (standard), 20 days (complex)
+    - NCA requests: 5 business days (expedited)
+    """
+
+    # SLA settings (business days unless noted)
+    acknowledgment_sla_business_days: int = AUDIT_SLA_ACKNOWLEDGMENT_DAYS
+    scheduling_sla_business_days: int = AUDIT_SLA_SCHEDULING_DAYS
+    evidence_delivery_sla_days: int = AUDIT_SLA_EVIDENCE_STANDARD_DAYS
+    nca_response_sla_days: int = AUDIT_SLA_NCA_RESPONSE_DAYS
 
     # Access settings
     allow_remote_access: bool = True
@@ -278,7 +332,7 @@ class AuditReadinessConfig:
     require_nda_for_access: bool = True
 
     # Evidence settings
-    evidence_retention_years: int = 7
+    evidence_retention_years: int = EVIDENCE_RETENTION_YEARS
     auto_generate_standard_evidence: bool = True
 
     # Notifications
@@ -1122,3 +1176,584 @@ def create_audit_readiness(
         Configured DORAuditReadiness instance
     """
     return DORAuditReadiness(config=config)
+
+
+# =============================================================================
+# Multi-Client Incident Coordination (NEW - v2.1 audit)
+# =============================================================================
+# Reference: DORA Art. 30(2)(f) - Incident assistance obligations
+# When a shared infrastructure incident affects multiple EU regulated clients,
+# we must coordinate notifications while maintaining client confidentiality.
+
+class IncidentNotificationStatus(Enum):
+    """Status of individual client notification."""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    SENT = "sent"
+    ACKNOWLEDGED = "acknowledged"
+    FAILED = "failed"
+
+
+@dataclass
+class ClientNotificationRecord:
+    """Record of notification sent to a single client."""
+    client_id: str
+    client_name: str
+    contact_name: str = ""
+    contact_method: str = ""  # phone, email, webhook
+    notification_status: IncidentNotificationStatus = IncidentNotificationStatus.PENDING
+    notification_time: str = ""
+    acknowledgment_time: str = ""
+    acknowledged_by: str = ""
+    follow_up_report_sent: bool = False
+    follow_up_report_time: str = ""
+    notes: str = ""
+
+
+@dataclass
+class MultiClientIncident:
+    """
+    Multi-client incident record for coordinated notification.
+
+    Per DORA Art. 30(2)(f), we must assist clients during ICT incidents.
+    When an incident affects multiple clients, we must:
+    - Notify ALL affected clients within SLA (30 min for critical)
+    - Maintain consistent messaging
+    - Preserve confidentiality between clients
+    - Document timeline for each client's NCA reporting
+    """
+    incident_id: str = ""
+    incident_type: str = ""  # data_breach, service_outage, security_incident
+    severity: str = "high"  # critical, high, medium
+
+    # Detection and classification
+    detection_time: str = ""
+    classification_time: str = ""
+    incident_summary: str = ""
+    incident_details: str = ""
+
+    # Root cause
+    root_cause_preliminary: str = ""
+    root_cause_final: str = ""
+
+    # Affected clients
+    affected_clients: List[str] = field(default_factory=list)
+    client_notifications: Dict[str, ClientNotificationRecord] = field(default_factory=dict)
+
+    # Notification phase
+    notification_start_time: str = ""
+    all_notifications_sent_time: str = ""
+    notification_sla_met: bool = False
+
+    # Status
+    status: str = "open"  # open, notifying, notified, investigating, resolved
+    resolution_time: str = ""
+
+    # Audit trail
+    timeline_events: List[Dict[str, Any]] = field(default_factory=list)
+
+    def __post_init__(self):
+        if not self.incident_id:
+            self.incident_id = f"INC-{uuid.uuid4().hex[:8].upper()}"
+        if not self.detection_time:
+            self.detection_time = datetime.now(timezone.utc).isoformat()
+
+
+class MultiClientIncidentCoordinator:
+    """
+    Coordinates incident notification across multiple EU regulated clients.
+
+    Per DORA Art. 30(2)(f), Art. 30(3)(b), and the coordinated notification
+    procedure defined in DORA_OPERATIONAL_RESILIENCE_PLAN v2.1 Section 6.9.
+
+    Key requirements:
+    - Parallel notification to all affected clients
+    - 30-minute SLA for critical incidents
+    - 60-minute SLA for high severity incidents
+    - Consistent messaging across clients
+    - No cross-client information disclosure
+    - Full audit trail for each client's NCA reporting
+    """
+
+    # Notification SLAs (minutes from detection)
+    NOTIFICATION_SLA = {
+        "critical": 30,
+        "high": 60,
+        "medium": 240,  # 4 hours
+    }
+
+    def __init__(self, log_path: Optional[Path] = None):
+        """Initialize the coordinator."""
+        self._incidents: Dict[str, MultiClientIncident] = {}
+        self._log_path = log_path or Path("./logs/incidents")
+        self._log_path.mkdir(parents=True, exist_ok=True)
+
+    def create_incident(
+        self,
+        incident_type: str,
+        severity: str,
+        summary: str,
+        affected_clients: List[str],
+        details: str = "",
+    ) -> MultiClientIncident:
+        """
+        Create a new multi-client incident.
+
+        Args:
+            incident_type: Type of incident (data_breach, service_outage, etc.)
+            severity: Severity level (critical, high, medium)
+            summary: Brief incident summary
+            affected_clients: List of affected client IDs
+            details: Detailed incident description
+
+        Returns:
+            Created MultiClientIncident
+        """
+        incident = MultiClientIncident(
+            incident_type=incident_type,
+            severity=severity,
+            incident_summary=summary,
+            incident_details=details,
+            affected_clients=affected_clients,
+            status="open",
+        )
+
+        # Initialize notification records for each client
+        for client_id in affected_clients:
+            incident.client_notifications[client_id] = ClientNotificationRecord(
+                client_id=client_id,
+                client_name=f"Client {client_id}",  # Would be looked up in real system
+            )
+
+        # Log creation
+        incident.timeline_events.append({
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "event": "incident_created",
+            "details": f"Incident created affecting {len(affected_clients)} clients",
+        })
+
+        self._incidents[incident.incident_id] = incident
+        self._log_incident_event(incident.incident_id, "created", {
+            "severity": severity,
+            "affected_clients_count": len(affected_clients),
+        })
+
+        return incident
+
+    def classify_incident(
+        self,
+        incident_id: str,
+        final_severity: str,
+        affected_scope: str,
+    ) -> Optional[MultiClientIncident]:
+        """
+        Classify incident and finalize affected client list.
+
+        Args:
+            incident_id: Incident ID
+            final_severity: Final severity assessment
+            affected_scope: Description of affected scope
+
+        Returns:
+            Updated incident or None if not found
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        incident.severity = final_severity
+        incident.classification_time = datetime.now(timezone.utc).isoformat()
+
+        incident.timeline_events.append({
+            "timestamp": incident.classification_time,
+            "event": "incident_classified",
+            "details": f"Severity: {final_severity}, Scope: {affected_scope}",
+        })
+
+        return incident
+
+    def start_notifications(
+        self,
+        incident_id: str,
+    ) -> Optional[MultiClientIncident]:
+        """
+        Begin parallel notification process.
+
+        Args:
+            incident_id: Incident ID
+
+        Returns:
+            Updated incident or None if not found
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        incident.notification_start_time = datetime.now(timezone.utc).isoformat()
+        incident.status = "notifying"
+
+        # Mark all notifications as in_progress
+        for client_id in incident.client_notifications:
+            incident.client_notifications[client_id].notification_status = (
+                IncidentNotificationStatus.IN_PROGRESS
+            )
+
+        incident.timeline_events.append({
+            "timestamp": incident.notification_start_time,
+            "event": "notifications_started",
+            "details": f"Starting parallel notification to {len(incident.affected_clients)} clients",
+        })
+
+        return incident
+
+    def record_notification_sent(
+        self,
+        incident_id: str,
+        client_id: str,
+        contact_name: str,
+        contact_method: str,
+        notes: str = "",
+    ) -> Optional[ClientNotificationRecord]:
+        """
+        Record that notification was sent to a client.
+
+        Args:
+            incident_id: Incident ID
+            client_id: Client ID
+            contact_name: Name of person contacted
+            contact_method: Method used (phone, email, webhook)
+            notes: Additional notes
+
+        Returns:
+            Updated notification record or None
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        if client_id not in incident.client_notifications:
+            return None
+
+        record = incident.client_notifications[client_id]
+        record.notification_status = IncidentNotificationStatus.SENT
+        record.notification_time = datetime.now(timezone.utc).isoformat()
+        record.contact_name = contact_name
+        record.contact_method = contact_method
+        record.notes = notes
+
+        incident.timeline_events.append({
+            "timestamp": record.notification_time,
+            "event": "client_notified",
+            "client_id": client_id,  # Note: In audit log, not shared between clients
+            "contact_method": contact_method,
+        })
+
+        # Check if all notifications sent
+        all_sent = all(
+            n.notification_status in [IncidentNotificationStatus.SENT, IncidentNotificationStatus.ACKNOWLEDGED]
+            for n in incident.client_notifications.values()
+        )
+
+        if all_sent and not incident.all_notifications_sent_time:
+            incident.all_notifications_sent_time = datetime.now(timezone.utc).isoformat()
+            incident.status = "notified"
+
+            # Check SLA
+            detection = datetime.fromisoformat(incident.detection_time.replace("Z", "+00:00"))
+            all_sent_time = datetime.fromisoformat(incident.all_notifications_sent_time.replace("Z", "+00:00"))
+            elapsed_minutes = (all_sent_time - detection).total_seconds() / 60
+
+            sla_target = self.NOTIFICATION_SLA.get(incident.severity, 60)
+            incident.notification_sla_met = elapsed_minutes <= sla_target
+
+            incident.timeline_events.append({
+                "timestamp": incident.all_notifications_sent_time,
+                "event": "all_notifications_complete",
+                "elapsed_minutes": round(elapsed_minutes, 1),
+                "sla_target_minutes": sla_target,
+                "sla_met": incident.notification_sla_met,
+            })
+
+        return record
+
+    def record_acknowledgment(
+        self,
+        incident_id: str,
+        client_id: str,
+        acknowledged_by: str,
+    ) -> Optional[ClientNotificationRecord]:
+        """
+        Record client acknowledgment of notification.
+
+        Args:
+            incident_id: Incident ID
+            client_id: Client ID
+            acknowledged_by: Name of person who acknowledged
+
+        Returns:
+            Updated notification record or None
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        if client_id not in incident.client_notifications:
+            return None
+
+        record = incident.client_notifications[client_id]
+        record.notification_status = IncidentNotificationStatus.ACKNOWLEDGED
+        record.acknowledgment_time = datetime.now(timezone.utc).isoformat()
+        record.acknowledged_by = acknowledged_by
+
+        incident.timeline_events.append({
+            "timestamp": record.acknowledgment_time,
+            "event": "client_acknowledged",
+            "client_id": client_id,
+        })
+
+        return record
+
+    def send_follow_up_report(
+        self,
+        incident_id: str,
+        client_id: str,
+    ) -> Optional[ClientNotificationRecord]:
+        """
+        Record that follow-up report was sent to client.
+
+        Per DORA Art. 30(2)(f), we must provide detailed incident reports
+        to support client's NCA notification.
+
+        Args:
+            incident_id: Incident ID
+            client_id: Client ID
+
+        Returns:
+            Updated notification record or None
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        if client_id not in incident.client_notifications:
+            return None
+
+        record = incident.client_notifications[client_id]
+        record.follow_up_report_sent = True
+        record.follow_up_report_time = datetime.now(timezone.utc).isoformat()
+
+        incident.timeline_events.append({
+            "timestamp": record.follow_up_report_time,
+            "event": "follow_up_report_sent",
+            "client_id": client_id,
+        })
+
+        return record
+
+    def get_client_specific_report(
+        self,
+        incident_id: str,
+        client_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Generate client-specific incident report.
+
+        This report is tailored for the specific client and contains
+        only information relevant to their services. It does NOT
+        disclose other affected clients' information.
+
+        Args:
+            incident_id: Incident ID
+            client_id: Client ID
+
+        Returns:
+            Client-specific incident report
+        """
+        if incident_id not in self._incidents:
+            return {"error": "Incident not found"}
+
+        incident = self._incidents[incident_id]
+        if client_id not in incident.client_notifications:
+            return {"error": "Client not affected by this incident"}
+
+        notification = incident.client_notifications[client_id]
+
+        # Filter timeline events for this client only
+        client_events = [
+            {k: v for k, v in event.items() if k != "client_id" or v == client_id}
+            for event in incident.timeline_events
+            if event.get("client_id") is None or event.get("client_id") == client_id
+        ]
+
+        return {
+            "report_type": "client_specific_incident_report",
+            "report_generated": datetime.now(timezone.utc).isoformat(),
+            "incident": {
+                "id": incident.incident_id,
+                "type": incident.incident_type,
+                "severity": incident.severity,
+                "summary": incident.incident_summary,
+                "detection_time": incident.detection_time,
+                "status": incident.status,
+            },
+            "your_notification": {
+                "notification_time": notification.notification_time,
+                "acknowledgment_time": notification.acknowledgment_time,
+                "contact_method": notification.contact_method,
+                "follow_up_report_sent": notification.follow_up_report_sent,
+            },
+            "root_cause": {
+                "preliminary": incident.root_cause_preliminary,
+                "final": incident.root_cause_final if incident.status == "resolved" else "",
+            },
+            "timeline": client_events,
+            # Explicitly NOT included: other affected clients, their notification status
+            "confidentiality_note": (
+                "This report contains information specific to your organization only. "
+                "Other affected parties are not disclosed per confidentiality requirements."
+            ),
+            "nca_support": (
+                "This report is provided to support your DORA Art. 19 reporting obligations. "
+                "Please contact us if you require additional information for your NCA notification."
+            ),
+        }
+
+    def get_notification_status(
+        self,
+        incident_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Get overall notification status for an incident.
+
+        This is an internal view showing all clients (for our coordination).
+        NOT to be shared with clients.
+
+        Args:
+            incident_id: Incident ID
+
+        Returns:
+            Notification status summary
+        """
+        if incident_id not in self._incidents:
+            return {"error": "Incident not found"}
+
+        incident = self._incidents[incident_id]
+
+        status_counts = {
+            "pending": 0,
+            "in_progress": 0,
+            "sent": 0,
+            "acknowledged": 0,
+            "failed": 0,
+        }
+
+        for notification in incident.client_notifications.values():
+            status_counts[notification.notification_status.value] += 1
+
+        # Calculate SLA status
+        if incident.detection_time:
+            detection = datetime.fromisoformat(incident.detection_time.replace("Z", "+00:00"))
+            now = datetime.now(timezone.utc)
+            elapsed_minutes = (now - detection).total_seconds() / 60
+            sla_target = self.NOTIFICATION_SLA.get(incident.severity, 60)
+            sla_remaining = sla_target - elapsed_minutes
+        else:
+            elapsed_minutes = 0
+            sla_remaining = 0
+
+        return {
+            "incident_id": incident.incident_id,
+            "severity": incident.severity,
+            "status": incident.status,
+            "total_clients": len(incident.affected_clients),
+            "notification_status": status_counts,
+            "all_notified": incident.all_notifications_sent_time is not None,
+            "sla": {
+                "target_minutes": self.NOTIFICATION_SLA.get(incident.severity, 60),
+                "elapsed_minutes": round(elapsed_minutes, 1),
+                "remaining_minutes": round(max(0, sla_remaining), 1),
+                "met": incident.notification_sla_met if incident.all_notifications_sent_time else None,
+            },
+            "clients": [
+                {
+                    "client_id": client_id,
+                    "status": notification.notification_status.value,
+                    "notified_at": notification.notification_time,
+                    "acknowledged_at": notification.acknowledgment_time,
+                }
+                for client_id, notification in incident.client_notifications.items()
+            ],
+        }
+
+    def resolve_incident(
+        self,
+        incident_id: str,
+        root_cause: str,
+        resolution_summary: str,
+    ) -> Optional[MultiClientIncident]:
+        """
+        Mark incident as resolved.
+
+        Args:
+            incident_id: Incident ID
+            root_cause: Final root cause analysis
+            resolution_summary: Summary of resolution
+
+        Returns:
+            Updated incident or None
+        """
+        if incident_id not in self._incidents:
+            return None
+
+        incident = self._incidents[incident_id]
+        incident.status = "resolved"
+        incident.resolution_time = datetime.now(timezone.utc).isoformat()
+        incident.root_cause_final = root_cause
+
+        incident.timeline_events.append({
+            "timestamp": incident.resolution_time,
+            "event": "incident_resolved",
+            "details": resolution_summary,
+        })
+
+        self._log_incident_event(incident_id, "resolved", {
+            "resolution_summary": resolution_summary,
+        })
+
+        return incident
+
+    def _log_incident_event(
+        self,
+        incident_id: str,
+        event_type: str,
+        data: Dict[str, Any],
+    ) -> None:
+        """Log incident event to file."""
+        event = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "incident_id": incident_id,
+            "event_type": event_type,
+            "data": data,
+        }
+
+        log_file = self._log_path / f"incidents_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        try:
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(event, default=str) + "\n")
+        except Exception as e:
+            logger.error(f"Failed to log incident event: {e}")
+
+
+def create_incident_coordinator(
+    log_path: Optional[Path] = None,
+) -> MultiClientIncidentCoordinator:
+    """
+    Create a MultiClientIncidentCoordinator instance.
+
+    Args:
+        log_path: Optional path for incident logs
+
+    Returns:
+        Configured MultiClientIncidentCoordinator instance
+    """
+    return MultiClientIncidentCoordinator(log_path=log_path)

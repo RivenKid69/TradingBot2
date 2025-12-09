@@ -24,6 +24,19 @@
 | 11 | Roadmap dependencies wrong | Contractual moved to Phase 1 |
 | 12 | Tests not considered | Added test migration plan |
 
+## Changelog v2.1 (Audit Fixes)
+
+| # | Issue | DORA Reference | Fix |
+|---|-------|----------------|-----|
+| 13 | Training participation passive only | Art. 30(2)(i), Art. 13(6) | Enhanced active participation commitment |
+| 14 | Prior consent vs notification conflated | Art. 30(3)(j) | Added explicit prior consent workflow |
+| 15 | Multi-client breach procedure missing | Art. 30(2)(f) | Added Section 6.9 Coordinated Multi-Client Notification |
+| 16 | Cross-region failover undocumented | RTO commitment | Added Section 5.4.3 Cross-Region Failover |
+| 17 | NCA jurisdiction unclear | Art. 30(3)(e) | Added Section 6.10 NCA Jurisdiction Matrix |
+| 18 | Data escrow not explicit | Art. 30(2)(d) | Enhanced insolvency protection |
+| 19 | Exit plan testing not required | Art. 28(8) | Strengthened Section 5.10 |
+| 20 | CTPP client mix tracking manual | Art. 31 | Added automated monitoring in Section 2.7.5 |
+
 ---
 
 ## 1. Executive Summary: Repository Analysis
@@ -217,28 +230,121 @@ data_access_recovery_clause:
     extended_retention: "Per-month fee for retention beyond 30 days"
 ```
 
-**Art. 30(2)(i) Implementation** — Training Participation:
+**Art. 30(2)(i) Implementation** — Training Participation (ENHANCED v2.1):
 ```yaml
 training_participation_clause:
+  # Reference: DORA Art. 30(2)(i) + Art. 13(6)
+  # Art. 13(6): Financial entities shall develop ICT security awareness programmes
+  # and digital operational resilience training as compulsory modules for staff
+
   commitment: |
-    Provider shall make relevant personnel available to participate in
-    Client's ICT security awareness programmes and digital operational
-    resilience training as reasonably requested.
+    Provider shall ACTIVELY participate in Client's ICT security awareness
+    programmes and digital operational resilience training per Art. 13(6).
+    This is a MANDATORY contract clause, not optional cooperation.
 
-  scope:
-    - security_awareness_programs: "Annual participation upon request"
-    - resilience_training_exercises: "Tabletop exercises, DR drills"
-    - joint_incident_simulations: "As agreed in SLA"
+  # =========================================================================
+  # ACTIVE PARTICIPATION (not just "available upon request")
+  # =========================================================================
+  active_participation:
+    security_awareness_programs:
+      frequency: "Annual minimum, more frequent upon request"
+      format: "Live session (remote or on-site)"
+      our_contribution:
+        - "Present platform security architecture"
+        - "Explain incident response procedures"
+        - "Review shared responsibility model"
+        - "Q&A with client security team"
+      personnel: "Security Lead + relevant technical contacts"
 
-  conditions:
-    - reasonable_notice: "14 business days minimum"
-    - personnel_availability: "Subject to operational needs"
-    - remote_participation: "Preferred where feasible"
-    - materials_provided: "Client provides training materials"
+    resilience_training_exercises:
+      types:
+        - tabletop_exercises: "Scenario-based discussions"
+        - dr_drills: "Joint disaster recovery exercises"
+        - incident_simulations: "Simulated security incidents"
+      our_role:
+        - "Participate in scenario planning"
+        - "Execute provider-side procedures during drill"
+        - "Provide debrief and lessons learned"
+      frequency: "As defined in SLA (minimum annual)"
 
-  limitations:
-    - max_time_commitment: "8 hours per quarter per key contact"
-    - travel_costs: "Client responsibility if on-site required"
+    joint_testing:
+      scope: "Per Art. 30(3)(d) for critical functions"
+      includes:
+        - "Failover testing coordination"
+        - "Backup restoration verification"
+        - "Communication channel testing"
+        - "Escalation path validation"
+
+  # =========================================================================
+  # PROVIDER-INITIATED TRAINING SUPPORT
+  # =========================================================================
+  provider_initiated:
+    security_updates:
+      trigger: "Material security changes to platform"
+      action: "Proactive briefing to affected clients"
+      format: "Webinar or documentation"
+
+    threat_briefings:
+      trigger: "Relevant threat intelligence"
+      action: "Share sanitized threat information"
+      format: "Security advisory to client contacts"
+
+    platform_training:
+      availability: "Self-service documentation and videos"
+      live_sessions: "Quarterly for Enterprise clients"
+      topics:
+        - "Security best practices"
+        - "Incident reporting procedures"
+        - "API security configuration"
+
+  # =========================================================================
+  # SCHEDULING AND CONDITIONS
+  # =========================================================================
+  scheduling:
+    notice_period:
+      standard: "14 business days"
+      urgent: "5 business days (security-related)"
+      emergency: "Best effort (active incident)"
+
+    personnel_commitment:
+      key_contacts: "2 designated contacts per client"
+      availability: "Best effort, operational needs considered"
+      backup: "Alternative contacts if primary unavailable"
+
+    format_preference:
+      primary: "Remote (video conference)"
+      on_site: "Upon request, travel costs per contract"
+
+  # =========================================================================
+  # TIME COMMITMENT AND COSTS
+  # =========================================================================
+  resource_commitment:
+    standard_tier:
+      annual_hours: "4 hours included"
+      additional: "Billable at standard rate"
+
+    professional_tier:
+      annual_hours: "8 hours included"
+      additional: "Billable at reduced rate"
+
+    enterprise_tier:
+      annual_hours: "16 hours included"
+      quarterly_sessions: "Included"
+      additional: "Negotiated rate"
+
+    cost_provisions:
+      included: "Remote participation, standard materials"
+      client_responsibility: "Travel, accommodation, venue"
+      custom_materials: "By agreement"
+
+  # =========================================================================
+  # DOCUMENTATION AND RECORDS
+  # =========================================================================
+  documentation:
+    attendance_records: "Maintained for audit purposes"
+    training_certificates: "Issued upon request"
+    exercise_reports: "Summary provided post-exercise"
+    retention: "7 years (aligned with audit requirements)"
 ```
 
 ### 2.5 Article 30(3) — Additional Requirements for Critical Functions
@@ -519,6 +625,223 @@ ctpp_monitoring:
 - If ANY GSIB/O-SII becomes a client → immediately assess CTPP risk
 - Maintain documentation as if designation is possible
 - Consider voluntary ESA engagement if risk indicators increase
+
+#### 2.7.5 Automated Client Mix Monitoring — NEW (v2.1)
+
+Replace manual quarterly reviews with automated tracking and alerts.
+
+```yaml
+automated_ctpp_monitoring:
+  # =========================================================================
+  # DATA MODEL
+  # =========================================================================
+  client_classification:
+    fields:
+      - client_id: "Unique identifier"
+      - client_name: "Legal name"
+      - client_type: "ENUM: bank, investment_firm, casp, insurance, other"
+      - regulatory_status: "ENUM: gsib, osii, licensed_fe, unregulated"
+      - jurisdiction: "ISO country code"
+      - critical_function_designation: "BOOLEAN"
+      - onboarding_date: "ISO date"
+      - services_used: "LIST of service categories"
+      - revenue_contribution: "Percentage (for concentration)"
+
+    regulatory_status_definitions:
+      gsib: "Global Systemically Important Bank (FSB list)"
+      osii: "Other Systemically Important Institution (national lists)"
+      licensed_fe: "Licensed financial entity under DORA scope"
+      unregulated: "Not subject to DORA (retail, non-EU, etc.)"
+
+  # =========================================================================
+  # AUTOMATED TRACKING
+  # =========================================================================
+  tracking:
+    update_triggers:
+      - "New client onboarding"
+      - "Client status change"
+      - "Critical function designation change"
+      - "Contract renewal/modification"
+
+    scheduled_refresh:
+      frequency: "Daily"
+      data_sources:
+        - "Client database"
+        - "Contract management system"
+        - "Billing system (revenue data)"
+
+    external_data_integration:
+      gsib_list:
+        source: "FSB (Financial Stability Board)"
+        url: "https://www.fsb.org/work-of-the-fsb/market-and-institutional-resilience/post-2008-financial-crisis-reforms/ending-too-big-to-fail/global-systemically-important-banks-g-sibs/"
+        update_frequency: "Annual (November)"
+        automation: "Semi-annual manual check"
+
+      osii_lists:
+        note: "Maintained per jurisdiction by national authorities"
+        automation: "Quarterly manual check against client jurisdictions"
+
+  # =========================================================================
+  # REAL-TIME METRICS
+  # =========================================================================
+  metrics:
+    total_clients:
+      description: "Total number of clients"
+      breakdown_by: ["client_type", "regulatory_status", "jurisdiction"]
+
+    eu_regulated_clients:
+      description: "Clients under DORA scope"
+      formula: "COUNT WHERE regulatory_status IN (gsib, osii, licensed_fe)"
+
+    critical_function_clients:
+      description: "Clients who designated us as critical/important"
+      formula: "COUNT WHERE critical_function_designation = TRUE"
+
+    sector_concentration:
+      description: "Percentage in largest sector"
+      formula: "MAX(COUNT per client_type) / total_clients * 100"
+
+    revenue_concentration:
+      description: "Revenue from top client"
+      formula: "MAX(revenue_contribution)"
+
+    gsib_osii_exposure:
+      description: "Number of systemically important clients"
+      formula: "COUNT WHERE regulatory_status IN (gsib, osii)"
+
+  # =========================================================================
+  # ALERT THRESHOLDS
+  # =========================================================================
+  alerts:
+    critical:  # Immediate escalation to Board
+      - trigger: "ANY GSIB onboards"
+        action: "CTPP readiness assessment within 30 days"
+      - trigger: "ANY OSII onboards"
+        action: "CTPP risk review within 30 days"
+      - trigger: "critical_function_clients >= 10"
+        action: "Assess substitutability and CTPP likelihood"
+
+    high:  # Escalation to Management
+      - trigger: "eu_regulated_clients >= 50"
+        action: "Review CTPP preparedness"
+      - trigger: "sector_concentration >= 40%"
+        action: "Diversification strategy review"
+      - trigger: "critical_function_clients >= 5"
+        action: "Enhanced monitoring"
+
+    warning:  # Monthly review
+      - trigger: "eu_regulated_clients >= 20"
+        action: "Quarterly CTPP status review"
+      - trigger: "revenue_concentration >= 25%"
+        action: "Concentration risk assessment"
+
+  # =========================================================================
+  # DASHBOARD
+  # =========================================================================
+  dashboard:
+    components:
+      - ctpp_risk_score: "Composite score 0-100"
+      - client_composition_chart: "Pie chart by type and status"
+      - trend_analysis: "Month-over-month growth in regulated clients"
+      - jurisdiction_map: "Geographic distribution"
+      - alert_status: "Active warnings and critical alerts"
+
+    access:
+      - "Executive team: Full dashboard"
+      - "Operations: Client metrics"
+      - "Sales: New client impact preview"
+
+    export:
+      - format: "PDF report"
+      - frequency: "Quarterly"
+      - recipients: "Board, Legal, Compliance"
+
+  # =========================================================================
+  # CTPP RISK SCORING
+  # =========================================================================
+  risk_scoring:
+    methodology: "Weighted composite score"
+
+    factors:
+      gsib_osii_clients:
+        weight: 40
+        scoring:
+          "0": 0
+          "1-2": 50
+          "3+": 100
+        rationale: "Primary CTPP trigger per Art. 31"
+
+      critical_function_designations:
+        weight: 30
+        scoring:
+          "0-2": 0
+          "3-5": 30
+          "6-10": 60
+          "10+": 100
+
+      eu_regulated_client_count:
+        weight: 15
+        scoring:
+          "0-10": 0
+          "11-50": 30
+          "51-100": 60
+          "100+": 100
+
+      sector_concentration:
+        weight: 15
+        scoring:
+          "<20%": 0
+          "20-40%": 30
+          "40-60%": 60
+          ">60%": 100
+
+    composite_score:
+      formula: "SUM(factor_score * factor_weight) / 100"
+      interpretation:
+        "0-25": "LOW - Continue monitoring"
+        "26-50": "MEDIUM - Enhanced monitoring, prepare documentation"
+        "51-75": "HIGH - Active CTPP preparation, legal review"
+        "76-100": "CRITICAL - Assume designation likely, full preparation"
+
+  # =========================================================================
+  # IMPLEMENTATION
+  # =========================================================================
+  implementation:
+    database_changes:
+      - "Add client_classification table"
+      - "Add regulatory_status field to clients"
+      - "Create ctpp_metrics materialized view"
+
+    api_endpoints:
+      - "GET /api/v1/ctpp/metrics - Current CTPP metrics"
+      - "GET /api/v1/ctpp/score - Current risk score"
+      - "GET /api/v1/ctpp/alerts - Active alerts"
+      - "POST /api/v1/clients/{id}/classification - Update client classification"
+
+    cron_jobs:
+      - "Daily: Refresh metrics"
+      - "Weekly: Check alert thresholds"
+      - "Quarterly: Generate CTPP status report"
+
+    integration:
+      - "Slack/Teams: Alert notifications"
+      - "Email: Weekly summary to management"
+      - "Dashboard: Real-time display"
+
+  # =========================================================================
+  # CURRENT STATUS
+  # =========================================================================
+  current_status:
+    implementation_status: "PLANNED"
+    target_date: "Q1 2025"
+    priority: "HIGH"
+    owner: "Platform Engineering"
+
+    interim_process:
+      - "Manual quarterly review"
+      - "Spreadsheet tracking of regulated clients"
+      - "Ad-hoc GSIB/OSII checks on onboarding"
+```
 
 ---
 
@@ -1192,6 +1515,177 @@ infrastructure_reality_check:
       offer_now: false
       offer_when: "Q4 2025 after full build-out"
       confidence_after_upgrade: "HIGH"
+```
+
+### 5.4.3 Cross-Region Failover Procedure — NEW (v2.1)
+
+**Scenario:** Primary region (eu-west-1) experiences extended outage (>30 min projected)
+
+```yaml
+cross_region_failover:
+  # =========================================================================
+  # TRIGGER CONDITIONS
+  # =========================================================================
+  trigger_conditions:
+    automatic_failover:
+      - "Primary region health check failures >5 minutes"
+      - "AWS regional service degradation announced"
+      - "Database primary unreachable >3 minutes"
+    manual_failover:
+      - "Projected outage >30 minutes"
+      - "Security incident requiring isolation"
+      - "Scheduled DR testing"
+
+  # =========================================================================
+  # FAILOVER PROCEDURE
+  # =========================================================================
+  procedure:
+    phase_1_detection:
+      duration: "0-5 minutes"
+      actions:
+        - "Health checks detect primary region issues"
+        - "Alert fires to on-call engineer"
+        - "Automated diagnostics run"
+        - "AWS status page checked"
+      decision_point: "Continue monitoring OR initiate failover"
+
+    phase_2_decision:
+      duration: "5-10 minutes"
+      criteria:
+        initiate_failover:
+          - "AWS confirms regional issue"
+          - "Estimated recovery >30 minutes"
+          - "Critical client SLAs at risk"
+        wait_and_monitor:
+          - "Transient issue, recovering"
+          - "Non-critical hours (if applicable)"
+      approval: "On-call L2 or above"
+
+    phase_3_failover_execution:
+      duration: "10-30 minutes"
+      steps:
+        step_1:
+          name: "Database failover"
+          action: "Promote DR replica to primary"
+          time: "2-5 minutes (automated)"
+          verification: "Write test successful"
+        step_2:
+          name: "Application failover"
+          action: "Route traffic to DR region"
+          method: "Route 53 health-based routing OR manual DNS update"
+          time: "2-5 minutes (DNS propagation)"
+        step_3:
+          name: "Verify services"
+          action: "Run smoke tests against DR region"
+          time: "5-10 minutes"
+        step_4:
+          name: "Client notification"
+          action: "Notify all affected clients"
+          time: "<30 minutes from incident start"
+
+    phase_4_operation_in_dr:
+      monitoring: "Enhanced monitoring during DR operation"
+      limitations:
+        - "Possible increased latency"
+        - "Some non-critical features may be degraded"
+        - "Capacity limits in DR region"
+      communication: "Status page updated every 30 minutes"
+
+    phase_5_failback:
+      trigger: "Primary region confirmed stable >1 hour"
+      procedure:
+        - "Verify primary region health"
+        - "Sync data changes from DR to primary"
+        - "Gradual traffic shift (canary)"
+        - "Full failback"
+        - "Post-incident review"
+      timing: "During low-traffic window when possible"
+
+  # =========================================================================
+  # DATA LOSS CONSIDERATIONS
+  # =========================================================================
+  data_loss_scenarios:
+    synchronous_replication:
+      rpo: "Near-zero (seconds)"
+      cost: "HIGH (multi-region sync)"
+      tier: "Enterprise"
+    asynchronous_replication:
+      rpo: "1-5 minutes"
+      cost: "MEDIUM"
+      tier: "Professional"
+      note: "Possible data loss for in-flight transactions"
+    backup_restore:
+      rpo: "15 minutes - 1 hour"
+      cost: "LOW"
+      tier: "Standard (manual failover only)"
+
+  # =========================================================================
+  # RTO BREACH NOTIFICATION
+  # =========================================================================
+  rto_breach_handling:
+    if_failover_exceeds_rto:
+      action: "Proactive client notification"
+      timing: "As soon as RTO breach is projected"
+      content:
+        - "Incident description"
+        - "Current status"
+        - "Revised recovery estimate"
+        - "Actions being taken"
+      follow_up: "Incident report with root cause within 24h"
+
+    sla_credit_consideration:
+      trigger: "RTO exceeded by >50%"
+      process: "Per contract terms"
+      documentation: "Full timeline preserved for audit"
+
+  # =========================================================================
+  # TESTING REQUIREMENTS
+  # =========================================================================
+  testing:
+    frequency:
+      full_failover_test: "Annual minimum"
+      tabletop_exercise: "Quarterly"
+      component_tests: "Monthly (database failover, DNS switch)"
+
+    test_documentation:
+      - "Test date and participants"
+      - "Scenario description"
+      - "Actual vs expected timeline"
+      - "Issues encountered"
+      - "Remediation actions"
+
+    client_involvement:
+      enterprise_tier: "Annual joint DR test offered"
+      professional_tier: "Notified of test results"
+      standard_tier: "Summary available on request"
+
+  # =========================================================================
+  # INFRASTRUCTURE REQUIREMENTS
+  # =========================================================================
+  infrastructure:
+    primary_region: "eu-west-1 (Ireland)"
+    dr_region: "eu-central-1 (Frankfurt)"
+
+    components:
+      database:
+        type: "PostgreSQL with streaming replication"
+        dr_replica: "Hot standby in DR region"
+        promotion_time: "<5 minutes"
+      application:
+        deployment: "Pre-deployed in DR region (scaled down)"
+        scale_up_time: "5-10 minutes"
+      dns:
+        provider: "Route 53 with health checks"
+        ttl: "60 seconds"
+        failover_type: "Health-based routing"
+      storage:
+        type: "S3 cross-region replication"
+        lag: "<15 minutes"
+
+    estimated_cost:
+      dr_infrastructure: "€2,000-4,000/month"
+      data_transfer: "€500-1,000/month"
+      total: "€2,500-5,000/month additional"
 ```
 
 ### 5.5 Incident Management — CORRECTED
@@ -2144,6 +2638,352 @@ nca_jurisdiction_faq:
       - Other clients' confidential information
       - Proprietary source code (unless directly relevant)
       - Information unrelated to the client's services
+```
+
+### 6.9 Coordinated Multi-Client Breach Notification — NEW (v2.1)
+
+**Scenario:** Security incident affecting shared infrastructure impacts multiple EU regulated clients.
+
+```yaml
+multi_client_breach_notification:
+  # =========================================================================
+  # SCENARIO DEFINITION
+  # =========================================================================
+  scenario:
+    description: "Data breach or major ICT incident affecting shared platform infrastructure"
+    affected_clients: "Multiple EU regulated financial entities"
+    example: "Database compromise exposing client configuration data"
+
+  # =========================================================================
+  # PARALLEL NOTIFICATION CHALLENGE
+  # =========================================================================
+  challenge:
+    problem: |
+      With 5+ EU regulated clients, we must notify ALL affected clients within
+      30 minutes (critical) to 60 minutes (high) while:
+      - Maintaining consistent messaging
+      - Avoiding information leakage between clients
+      - Preserving evidence and timeline for each client's NCA reporting
+      - Managing limited incident response resources
+
+    compliance_pressure:
+      - "Each client has 4-hour NCA initial notification deadline"
+      - "Each client needs incident details for their DORA report"
+      - "NCAs may compare reports from different clients"
+
+  # =========================================================================
+  # COORDINATED NOTIFICATION PROCEDURE
+  # =========================================================================
+  procedure:
+    phase_1_detection_and_classification:
+      duration: "T+0 to T+15 minutes"
+      actions:
+        - "Incident detected and verified"
+        - "Initial scope assessment"
+        - "Identify ALL potentially affected clients"
+        - "Classify incident severity"
+        - "Activate incident commander"
+      output: "Affected client list with impact assessment per client"
+
+    phase_2_notification_preparation:
+      duration: "T+15 to T+25 minutes"
+      actions:
+        - "Prepare TEMPLATE notification message"
+        - "Customize per-client details (what data/services affected)"
+        - "Assign notification responsibility (who calls/emails whom)"
+        - "Prepare status page update"
+        - "Legal review of messaging (if time permits, otherwise post-facto)"
+      output: "Client-specific notification messages ready"
+
+    phase_3_parallel_notification:
+      duration: "T+25 to T+30 minutes"
+      method: "SIMULTANEOUS notification to all affected clients"
+      execution:
+        - "Multiple team members notify in parallel"
+        - "Primary: Phone call to designated security contact"
+        - "Backup: Email with HIGH PRIORITY flag"
+        - "Webhook/API notification to client systems (if configured)"
+      documentation:
+        - "Record exact notification time per client"
+        - "Record acknowledgment status"
+        - "Record contact name/method"
+
+    phase_4_follow_up:
+      duration: "T+30 to T+4 hours"
+      actions:
+        - "Provide written incident summary to each client"
+        - "Answer client-specific questions"
+        - "Prepare NCA-ready incident report template"
+        - "Update status page with progress"
+      deliverable: "Each client has information needed for their NCA filing"
+
+  # =========================================================================
+  # NOTIFICATION MESSAGE TEMPLATE
+  # =========================================================================
+  notification_template:
+    initial_notification:
+      subject: "URGENT: ICT Security Incident Notification - [INCIDENT_ID]"
+      content: |
+        This is an urgent notification per our DORA contractual obligations.
+
+        INCIDENT SUMMARY:
+        - Incident ID: [INCIDENT_ID]
+        - Detection Time: [TIMESTAMP_UTC]
+        - Classification: [CRITICAL/HIGH]
+        - Nature: [Brief description]
+
+        YOUR SPECIFIC IMPACT:
+        - Services affected: [Client-specific]
+        - Data potentially affected: [Client-specific]
+        - Current service status: [Operational/Degraded/Unavailable]
+
+        IMMEDIATE ACTIONS:
+        - [Actions we are taking]
+
+        NEXT UPDATE:
+        - Expected within [60 minutes / 4 hours]
+
+        CONTACTS:
+        - Incident Commander: [Name, Phone, Email]
+        - Status Page: [URL]
+
+        This notification is provided to support your regulatory obligations.
+
+    follow_up_report:
+      delivered_within: "4 hours"
+      contents:
+        - "Detailed incident timeline"
+        - "Root cause (preliminary if investigation ongoing)"
+        - "Full scope of impact"
+        - "Remediation actions taken"
+        - "Remediation actions planned"
+        - "Information for NCA notification"
+
+  # =========================================================================
+  # RESOURCE REQUIREMENTS
+  # =========================================================================
+  resource_requirements:
+    minimum_team_for_multi_client:
+      incident_commander: 1
+      technical_responders: 2
+      client_notification_team: "1 per 3 clients (parallel calling)"
+      communications_lead: 1
+
+    example_5_clients:
+      notification_team_size: 2  # Can notify 5 clients in 5 minutes
+      total_team_size: 6
+
+    on_call_implications:
+      note: "Multi-client incidents require rapid team assembly"
+      escalation: "Page full incident team, not just primary on-call"
+
+  # =========================================================================
+  # CLIENT CONFIDENTIALITY
+  # =========================================================================
+  confidentiality_controls:
+    principle: "Each client only learns about their own impact"
+    controls:
+      - "No disclosure of other affected clients' identities"
+      - "No disclosure of other clients' specific data/configurations"
+      - "Generic messaging about 'platform-wide' vs 'your specific' impact"
+      - "Separate incident reports per client"
+
+    exception:
+      scenario: "NCA requests information about incident affecting multiple clients"
+      response: "Coordinate with legal; provide aggregated statistics without identifying other clients"
+
+  # =========================================================================
+  # DOCUMENTATION FOR AUDIT
+  # =========================================================================
+  audit_trail:
+    per_incident:
+      - incident_id
+      - detection_timestamp
+      - classification_timestamp
+      - client_list_finalized_timestamp
+      - notification_sent_timestamps_per_client
+      - acknowledgment_timestamps_per_client
+      - follow_up_report_timestamps
+
+    retention: "7 years"
+    format: "Immutable audit log"
+    availability: "Available for client and NCA audit requests"
+
+  # =========================================================================
+  # TESTING
+  # =========================================================================
+  testing:
+    tabletop_exercise:
+      frequency: "Annual"
+      scenario: "Simulated multi-client breach"
+      participants: "Incident response team + client contacts (optional)"
+      success_criteria:
+        - "All notifications sent within 30 minutes"
+        - "Consistent messaging across clients"
+        - "No cross-client information leakage"
+
+    after_action_review:
+      trigger: "Any real multi-client incident"
+      focus:
+        - "Notification timeline accuracy"
+        - "Resource adequacy"
+        - "Process improvements"
+```
+
+### 6.10 NCA Jurisdiction Matrix — NEW (v2.1)
+
+Quick reference for determining which NCA has inspection rights based on client jurisdiction.
+
+```yaml
+nca_jurisdiction_matrix:
+  # =========================================================================
+  # EU MEMBER STATE NCAs
+  # =========================================================================
+  eu_member_states:
+    DE:
+      country: "Germany"
+      primary_nca: "BaFin (Bundesanstalt für Finanzdienstleistungsaufsicht)"
+      website: "https://www.bafin.de"
+      dora_contact: "IT-Aufsicht@bafin.de"
+      language: "German preferred, English accepted"
+      inspection_style: "Thorough, documentation-heavy"
+      notes: "May request German translations of key documents"
+
+    FR:
+      country: "France"
+      primary_nca: "ACPR (Autorité de contrôle prudentiel et de résolution)"
+      secondary_nca: "AMF (Autorité des marchés financiers)"
+      website: "https://acpr.banque-france.fr"
+      language: "French preferred, English accepted"
+      notes: "ACPR for banks, AMF for investment firms"
+
+    NL:
+      country: "Netherlands"
+      primary_nca: "AFM (Autoriteit Financiële Markten)"
+      secondary_nca: "DNB (De Nederlandsche Bank)"
+      website: "https://www.afm.nl"
+      language: "English widely accepted"
+      inspection_style: "Risk-based, proportionate"
+
+    IE:
+      country: "Ireland"
+      primary_nca: "Central Bank of Ireland"
+      website: "https://www.centralbank.ie"
+      language: "English"
+      notes: "Common for fintech, pragmatic approach"
+
+    LU:
+      country: "Luxembourg"
+      primary_nca: "CSSF (Commission de Surveillance du Secteur Financier)"
+      website: "https://www.cssf.lu"
+      language: "French, English accepted"
+      notes: "Significant funds industry presence"
+
+    ES:
+      country: "Spain"
+      primary_nca: "CNMV (Comisión Nacional del Mercado de Valores)"
+      secondary_nca: "Banco de España"
+      language: "Spanish preferred"
+
+    IT:
+      country: "Italy"
+      primary_nca: "CONSOB"
+      secondary_nca: "Banca d'Italia"
+      language: "Italian preferred"
+
+    AT:
+      country: "Austria"
+      primary_nca: "FMA (Finanzmarktaufsicht)"
+      website: "https://www.fma.gv.at"
+      language: "German"
+
+    BE:
+      country: "Belgium"
+      primary_nca: "FSMA"
+      secondary_nca: "NBB (National Bank of Belgium)"
+      language: "Dutch, French, English accepted"
+
+    PT:
+      country: "Portugal"
+      primary_nca: "CMVM"
+      secondary_nca: "Banco de Portugal"
+      language: "Portuguese preferred"
+
+  # =========================================================================
+  # NON-EU EEA
+  # =========================================================================
+  eea_non_eu:
+    NO:
+      country: "Norway"
+      primary_nca: "Finanstilsynet"
+      dora_status: "Expected to adopt DORA via EEA agreement"
+
+    LI:
+      country: "Liechtenstein"
+      primary_nca: "FMA Liechtenstein"
+      dora_status: "Expected to adopt DORA via EEA agreement"
+
+    IS:
+      country: "Iceland"
+      primary_nca: "FME"
+      dora_status: "Expected to adopt DORA via EEA agreement"
+
+  # =========================================================================
+  # POST-BREXIT UK
+  # =========================================================================
+  uk:
+    country: "United Kingdom"
+    primary_nca: "FCA (Financial Conduct Authority)"
+    secondary_nca: "PRA (Prudential Regulation Authority)"
+    dora_status: "NOT subject to DORA"
+    notes: |
+      UK has separate operational resilience framework (PS21/3).
+      UK clients are NOT within DORA scope.
+      However, UK subsidiaries of EU firms may be indirectly affected.
+
+  # =========================================================================
+  # CTPP DESIGNATION - ESA LEAD OVERSEERS
+  # =========================================================================
+  ctpp_oversight:
+    note: "Only applies if designated as Critical Third-Party Provider"
+    lead_overseers:
+      EBA: "European Banking Authority - for banking sector"
+      ESMA: "European Securities and Markets Authority - for securities"
+      EIOPA: "European Insurance and Occupational Pensions Authority - for insurance"
+
+    selection_criteria: |
+      Lead Overseer determined by which sector has greatest exposure to the CTPP.
+      Joint Committee coordinates between ESAs.
+
+  # =========================================================================
+  # PRACTICAL GUIDANCE
+  # =========================================================================
+  practical_guidance:
+    inspection_request_received:
+      step_1: "Verify request authenticity (official letterhead, contact details)"
+      step_2: "Confirm client relationship and contract in place"
+      step_3: "Notify client's compliance team"
+      step_4: "Acknowledge request within 24 hours"
+      step_5: "Schedule inspection within 5 business days"
+      step_6: "Prepare evidence package"
+
+    language_considerations:
+      policy: "Maintain key documentation in English as baseline"
+      on_request: "Provide translations for material documents if required"
+      cost: "Translation costs may be passed to requesting party per contract"
+
+    multi_jurisdiction_clients:
+      scenario: "Client operates in multiple EU countries"
+      answer: "Home Member State NCA has primary oversight"
+      cooperation: "Host NCAs may participate via coordination"
+
+    simultaneous_inspections:
+      scenario: "Multiple NCAs request inspection for different clients"
+      approach:
+        - "Coordinate schedules where possible"
+        - "Offer pooled audit report as alternative"
+        - "Maintain separate evidence packages per client"
+        - "Document each inspection separately"
 ```
 
 ---

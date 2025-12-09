@@ -92,6 +92,47 @@ class NotificationStatus(Enum):
     APPROVED = "approved"
 
 
+class ConsentMode(Enum):
+    """
+    Client consent mode for subcontracting changes per Art. 30(3)(j).
+
+    DORA Art. 30(3)(j) requires contracts to include "the conditions for the
+    ICT third-party service provider participating in the financial entity's
+    ICT security awareness programmes and digital operational resilience
+    training" AND "the conditions for subcontracting".
+
+    Different contracts may specify different consent requirements:
+
+    NOTIFICATION_ONLY:
+        - Provider notifies client of change
+        - No response required
+        - Change proceeds after notification
+        - Typical for non-critical functions
+
+    NOTIFICATION_WITH_OBJECTION:
+        - Provider notifies client with objection period
+        - Client may object within specified period (default 30 days)
+        - Change proceeds if no objection received
+        - Change blocked if objection received until resolved
+        - Standard mode for critical functions per Art. 30(3)
+
+    PRIOR_CONSENT:
+        - Provider requests explicit approval BEFORE change
+        - Change CANNOT proceed without positive consent
+        - Most restrictive mode
+        - Required by some clients for all critical function subcontracting
+        - Typical for banking clients with strict outsourcing policies
+
+    References:
+        - Art. 30(3)(j): Subcontracting conditions
+        - Art. 30(3)(a): Notice periods and reporting
+        - EBA Guidelines on Outsourcing: EBA/GL/2019/02 Section 13
+    """
+    NOTIFICATION_ONLY = "notification_only"
+    NOTIFICATION_WITH_OBJECTION = "notification_with_objection"
+    PRIOR_CONSENT = "prior_consent"
+
+
 # =============================================================================
 # Data Structures
 # =============================================================================
@@ -164,7 +205,17 @@ class Subcontractor:
 
 @dataclass
 class SubcontractorChange:
-    """Record of a subcontractor change."""
+    """
+    Record of a subcontractor change.
+
+    For critical functions (Art. 30(3)), clients have objection rights.
+    Changes cannot proceed if objections are unresolved.
+
+    Consent Modes (per Art. 30(3)(j)):
+        NOTIFICATION_ONLY: Inform client, proceed immediately
+        NOTIFICATION_WITH_OBJECTION: Client can object within period (standard)
+        PRIOR_CONSENT: Explicit approval required before proceeding (strict)
+    """
     change_id: str = ""
     subcontractor_id: str = ""
     subcontractor_name: str = ""
@@ -192,6 +243,32 @@ class SubcontractorChange:
     clients_notified: List[str] = field(default_factory=list)
     clients_objected: List[str] = field(default_factory=list)
 
+    # =========================================================================
+    # CONSENT MODE (NEW - v2.1 audit)
+    # Art. 30(3)(j) distinguishes between notification and prior consent
+    # =========================================================================
+    consent_mode: ConsentMode = ConsentMode.NOTIFICATION_WITH_OBJECTION
+
+    # Client-specific consent requirements (from contract terms)
+    # Maps client_id -> ConsentMode (overrides default)
+    client_consent_modes: Dict[str, str] = field(default_factory=dict)
+
+    # Prior consent tracking (for PRIOR_CONSENT mode)
+    clients_requiring_prior_consent: List[str] = field(default_factory=list)
+    clients_granted_consent: List[str] = field(default_factory=list)
+    clients_denied_consent: List[str] = field(default_factory=list)
+    consent_request_date: str = ""
+
+    # Objection rights (Art. 30(3) for critical functions)
+    requires_client_approval: bool = False  # True for critical function changes
+    objection_period_days: int = 30  # Days clients have to object
+    objection_deadline: str = ""  # Deadline for objections
+    objections_resolved: bool = False  # True if all objections addressed
+    objection_resolution_notes: str = ""
+
+    # Change status
+    change_status: str = "pending"  # pending, pending_consent, approved, blocked, cancelled, implemented
+
     # Approval
     approved_by: str = ""
     approval_date: str = ""
@@ -201,6 +278,114 @@ class SubcontractorChange:
             self.change_id = f"CHG-{uuid.uuid4().hex[:8].upper()}"
         if not self.change_date:
             self.change_date = datetime.now(timezone.utc).isoformat()
+
+    def can_proceed(self) -> bool:
+        """
+        Check if change can proceed per Art. 30(3) consent/objection requirements.
+
+        Logic by consent mode:
+            NOTIFICATION_ONLY: Always True after notification sent
+            NOTIFICATION_WITH_OBJECTION: True if no unresolved objections and deadline passed
+            PRIOR_CONSENT: True ONLY if ALL required clients granted explicit consent
+
+        Returns:
+            True if change can proceed
+        """
+        # Mode 1: Notification only - proceed after notification
+        if self.consent_mode == ConsentMode.NOTIFICATION_ONLY:
+            return self.notification_status in [
+                NotificationStatus.SENT,
+                NotificationStatus.ACKNOWLEDGED,
+                NotificationStatus.APPROVED
+            ]
+
+        # Mode 2: Notification with objection rights (standard DORA)
+        if self.consent_mode == ConsentMode.NOTIFICATION_WITH_OBJECTION:
+            # Check if objections exist and are unresolved
+            if self.clients_objected and not self.objections_resolved:
+                return False
+
+            # Check if objection deadline passed
+            if self.objection_deadline:
+                deadline = datetime.fromisoformat(
+                    self.objection_deadline.replace("Z", "+00:00")
+                )
+                if datetime.now(timezone.utc) < deadline:
+                    # Still in objection period, can't proceed unless all notified approved
+                    return self.notification_status == NotificationStatus.APPROVED
+
+            return True
+
+        # Mode 3: Prior consent required (strictest)
+        if self.consent_mode == ConsentMode.PRIOR_CONSENT:
+            # Cannot proceed if ANY client requiring prior consent hasn't granted it
+            if not self.clients_requiring_prior_consent:
+                # No clients require prior consent
+                return True
+
+            # Check if all required consents received
+            required = set(self.clients_requiring_prior_consent)
+            granted = set(self.clients_granted_consent)
+
+            # All required clients must have granted consent
+            if not required.issubset(granted):
+                return False
+
+            # Any denial blocks the change
+            if self.clients_denied_consent:
+                return False
+
+            return True
+
+        # Default: require approval
+        return self.requires_client_approval and self.notification_status == NotificationStatus.APPROVED
+
+    def get_blocking_clients(self) -> List[str]:
+        """
+        Get list of clients blocking this change.
+
+        Returns:
+            List of client IDs that are blocking the change
+        """
+        blocking = []
+
+        if self.consent_mode == ConsentMode.NOTIFICATION_WITH_OBJECTION:
+            if self.clients_objected and not self.objections_resolved:
+                blocking.extend(self.clients_objected)
+
+        elif self.consent_mode == ConsentMode.PRIOR_CONSENT:
+            # Clients who denied consent
+            blocking.extend(self.clients_denied_consent)
+            # Clients who haven't responded yet
+            required = set(self.clients_requiring_prior_consent)
+            granted = set(self.clients_granted_consent)
+            denied = set(self.clients_denied_consent)
+            pending = required - granted - denied
+            blocking.extend(list(pending))
+
+        return blocking
+
+    def get_consent_status_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of consent status for reporting.
+
+        Returns:
+            Dict with consent status details
+        """
+        return {
+            "change_id": self.change_id,
+            "consent_mode": self.consent_mode.value,
+            "can_proceed": self.can_proceed(),
+            "clients_notified": len(self.clients_notified),
+            "clients_objected": len(self.clients_objected),
+            "objections_resolved": self.objections_resolved,
+            "clients_requiring_prior_consent": len(self.clients_requiring_prior_consent),
+            "clients_granted_consent": len(self.clients_granted_consent),
+            "clients_denied_consent": len(self.clients_denied_consent),
+            "blocking_clients": self.get_blocking_clients(),
+            "objection_deadline": self.objection_deadline,
+            "change_status": self.change_status,
+        }
 
 
 @dataclass
@@ -672,6 +857,16 @@ class DORASubcontractorManagement:
             ).isoformat()
             change.notification_status = NotificationStatus.PENDING
 
+        # Art. 30(3): Critical function changes require client approval
+        # Clients have objection rights per Art. 30(3)(a)(ii)
+        if change.affects_critical_functions:
+            change.requires_client_approval = True
+            change.objection_period_days = 30  # Standard objection period
+            change.objection_deadline = (
+                datetime.now(timezone.utc) + timedelta(days=30)
+            ).isoformat()
+            change.change_status = "pending_approval"
+
         self._changes[change.change_id] = change
         self._changes_by_subcontractor[subcontractor_id].add(change.change_id)
 
@@ -833,7 +1028,12 @@ class DORASubcontractorManagement:
         objection: bool = False,
         objection_reason: str = "",
     ) -> Optional[SubcontractorChange]:
-        """Record client response to change notification."""
+        """
+        Record client response to change notification.
+
+        Per Art. 30(3), for critical functions, clients can object to
+        subcontractor changes. Objections block the change until resolved.
+        """
         if change_id not in self._changes:
             return None
 
@@ -842,15 +1042,175 @@ class DORASubcontractorManagement:
         if objection:
             change.clients_objected.append(client_id)
             change.notification_status = NotificationStatus.OBJECTION_RECEIVED
+
+            # Block change if it affects critical functions
+            if change.requires_client_approval:
+                change.change_status = "blocked"
+
             self._log_event("client_objection", {
                 "change_id": change_id,
                 "client_id": client_id,
                 "reason": objection_reason,
+                "change_blocked": change.change_status == "blocked",
             })
         elif acknowledged:
-            change.notification_status = NotificationStatus.ACKNOWLEDGED
+            # Check if all notified clients have responded
+            all_responded = all(
+                cid in change.clients_objected or acknowledged
+                for cid in change.clients_notified
+            )
+            if all_responded and not change.clients_objected:
+                change.notification_status = NotificationStatus.APPROVED
+                if change.requires_client_approval:
+                    change.change_status = "approved"
+            else:
+                change.notification_status = NotificationStatus.ACKNOWLEDGED
 
         return change
+
+    def resolve_objection(
+        self,
+        change_id: str,
+        client_id: str,
+        resolution: str,
+        resolved_by: str,
+    ) -> Optional[SubcontractorChange]:
+        """
+        Resolve a client objection to a subcontractor change.
+
+        Args:
+            change_id: Change with objection
+            client_id: Client who objected
+            resolution: How objection was resolved (e.g., "change cancelled",
+                       "alternative subcontractor selected", "client accepted")
+            resolved_by: Person who resolved
+
+        Returns:
+            Updated SubcontractorChange or None
+        """
+        if change_id not in self._changes:
+            return None
+
+        change = self._changes[change_id]
+
+        if client_id not in change.clients_objected:
+            return change  # No objection from this client
+
+        # Remove from objected list
+        change.clients_objected.remove(client_id)
+        change.objection_resolution_notes += f"\n{client_id}: {resolution}"
+
+        # Check if all objections resolved
+        if not change.clients_objected:
+            change.objections_resolved = True
+            if change.change_status == "blocked":
+                change.change_status = "approved"
+            change.notification_status = NotificationStatus.APPROVED
+
+        self._log_event("objection_resolved", {
+            "change_id": change_id,
+            "client_id": client_id,
+            "resolution": resolution,
+            "resolved_by": resolved_by,
+            "all_resolved": change.objections_resolved,
+        })
+
+        return change
+
+    def implement_change(
+        self,
+        change_id: str,
+        implemented_by: str,
+    ) -> Dict[str, Any]:
+        """
+        Implement a subcontractor change after approval.
+
+        Per Art. 30(3), changes affecting critical functions can only
+        proceed if:
+        - All clients were notified
+        - Objection period has passed
+        - All objections are resolved
+
+        Returns:
+            Dict with implementation result
+        """
+        if change_id not in self._changes:
+            return {"success": False, "error": "Change not found"}
+
+        change = self._changes[change_id]
+
+        # Check if change can proceed
+        if not change.can_proceed():
+            blockers = []
+            if change.clients_objected and not change.objections_resolved:
+                blockers.append(f"Unresolved objections from: {change.clients_objected}")
+            if change.objection_deadline:
+                deadline = datetime.fromisoformat(
+                    change.objection_deadline.replace("Z", "+00:00")
+                )
+                if datetime.now(timezone.utc) < deadline:
+                    blockers.append(f"Objection period ends: {change.objection_deadline}")
+
+            return {
+                "success": False,
+                "error": "Change blocked",
+                "blockers": blockers,
+                "change_status": change.change_status,
+            }
+
+        # Implement the change
+        change.change_status = "implemented"
+        change.approved_by = implemented_by
+        change.approval_date = datetime.now(timezone.utc).isoformat()
+
+        self._log_event("change_implemented", {
+            "change_id": change_id,
+            "implemented_by": implemented_by,
+            "affects_critical": change.affects_critical_functions,
+        })
+
+        return {
+            "success": True,
+            "change_id": change_id,
+            "change_status": "implemented",
+            "approval_date": change.approval_date,
+        }
+
+    def cancel_change(
+        self,
+        change_id: str,
+        reason: str,
+        cancelled_by: str,
+    ) -> Optional[SubcontractorChange]:
+        """Cancel a pending subcontractor change."""
+        if change_id not in self._changes:
+            return None
+
+        change = self._changes[change_id]
+        change.change_status = "cancelled"
+        change.objection_resolution_notes += f"\nCancelled by {cancelled_by}: {reason}"
+
+        self._log_event("change_cancelled", {
+            "change_id": change_id,
+            "reason": reason,
+            "cancelled_by": cancelled_by,
+        })
+
+        return change
+
+    def get_blocked_changes(self) -> List[SubcontractorChange]:
+        """Get all changes blocked by client objections."""
+        return [
+            c for c in self._changes.values()
+            if c.change_status == "blocked"
+        ]
+
+    def get_pending_approval_changes(self) -> List[SubcontractorChange]:
+        """Get changes pending client approval (critical functions)."""
+        return [
+            c for c in self._changes.values()
+            if c.change_status == "pending_approval"
+        ]
 
     # =========================================================================
     # Risk Assessment

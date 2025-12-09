@@ -137,6 +137,207 @@ class ContractStatus(Enum):
 
 
 # =============================================================================
+# Contract Clause Templates (Art. 30(2)(h) Termination Rights)
+# =============================================================================
+
+@dataclass
+class TerminationClause:
+    """
+    Termination clause template per DORA Article 30(2)(h).
+
+    DORA Art. 30(2)(h) requires: "termination rights and related minimum
+    notice period for the termination of the contractual arrangements,
+    in accordance with the expectations of competent authorities and
+    resolution authorities"
+    """
+    clause_id: str = ""
+    clause_type: str = ""  # standard, for_cause, regulatory, convenience
+
+    # Notice periods
+    notice_period_days: int = 90
+    minimum_notice_days: int = 30  # Regulatory minimum
+
+    # Termination triggers
+    termination_triggers: List[str] = field(default_factory=list)
+
+    # Transition support
+    transition_assistance_period_days: int = 90
+    data_return_period_days: int = 30
+
+    # Template text
+    clause_text: str = ""
+
+    def __post_init__(self):
+        if not self.clause_id:
+            self.clause_id = f"TRM-{uuid.uuid4().hex[:8].upper()}"
+
+
+def get_termination_clause_templates() -> Dict[str, TerminationClause]:
+    """
+    Get standard termination clause templates per Art. 30(2)(h).
+
+    These templates provide DORA-compliant termination provisions
+    for ICT service contracts with financial entities.
+
+    Returns:
+        Dict of clause templates by type
+    """
+    return {
+        "standard": TerminationClause(
+            clause_type="standard",
+            notice_period_days=90,
+            minimum_notice_days=30,
+            termination_triggers=[
+                "Expiry of contract term",
+                "Mutual agreement",
+                "Non-renewal at end of term",
+            ],
+            transition_assistance_period_days=90,
+            data_return_period_days=30,
+            clause_text="""
+TERMINATION FOR CONVENIENCE
+
+Either party may terminate this Agreement upon [90] days' prior written
+notice to the other party.
+
+Upon termination or expiration:
+(a) Provider shall continue to provide Services during the notice period;
+(b) Provider shall provide transition assistance for [90] days following
+    termination, at Client's option and prevailing rates;
+(c) Provider shall return or securely delete Client Data within [30] days
+    of termination, as directed by Client;
+(d) Provider shall provide data in a non-proprietary, machine-readable format.
+
+This termination right exists without prejudice to any other termination
+rights under this Agreement or applicable law.
+""".strip(),
+        ),
+
+        "for_cause": TerminationClause(
+            clause_type="for_cause",
+            notice_period_days=30,
+            minimum_notice_days=0,  # Immediate in severe cases
+            termination_triggers=[
+                "Material breach not cured within 30 days of notice",
+                "Insolvency or bankruptcy of Provider",
+                "Provider security breach affecting Client data",
+                "Provider fails to maintain required certifications",
+                "Repeated SLA breaches (3+ in rolling 12 months)",
+                "Provider subject to regulatory enforcement action",
+            ],
+            transition_assistance_period_days=90,
+            data_return_period_days=30,
+            clause_text="""
+TERMINATION FOR CAUSE
+
+Client may terminate this Agreement immediately or upon [30] days' notice if:
+
+(a) Provider commits a material breach and fails to cure within 30 days
+    of receiving written notice specifying the breach;
+(b) Provider becomes insolvent, files for bankruptcy, or has a receiver
+    appointed;
+(c) Provider experiences a security incident materially affecting Client
+    data confidentiality, integrity, or availability;
+(d) Provider fails to maintain certifications required under this Agreement;
+(e) Provider commits three or more SLA breaches within any 12-month period;
+(f) Provider becomes subject to regulatory enforcement that could materially
+    affect service delivery.
+
+Upon termination for cause:
+(a) Provider shall immediately cease using Client Data;
+(b) Transition assistance shall be provided at no additional cost for [90] days;
+(c) Client shall not be liable for fees beyond the termination date;
+(d) Client's remedies under this clause are in addition to other remedies
+    available at law or equity.
+""".strip(),
+        ),
+
+        "regulatory": TerminationClause(
+            clause_type="regulatory",
+            notice_period_days=0,  # Immediate
+            minimum_notice_days=0,
+            termination_triggers=[
+                "Competent authority (NCA) directive requiring termination",
+                "Resolution authority order",
+                "Regulatory prohibition on outsourcing arrangement",
+                "Provider designated as CTPP and fails oversight requirements",
+                "Material change in regulatory requirements making arrangement non-compliant",
+            ],
+            transition_assistance_period_days=180,  # Extended for regulatory
+            data_return_period_days=30,
+            clause_text="""
+REGULATORY TERMINATION
+
+Client may terminate this Agreement immediately, without penalty, if:
+
+(a) Client's competent authority or resolution authority directs or
+    requires termination of this arrangement;
+(b) Applicable law or regulation prohibits or materially restricts the
+    outsourcing arrangement;
+(c) Provider is designated as a Critical Third-Party Provider (CTPP)
+    and fails to comply with Lead Overseer requirements;
+(d) Continued performance would cause Client to breach applicable
+    financial services regulations.
+
+Upon regulatory termination:
+(a) Provider shall cooperate fully with Client and any authorities;
+(b) Transition assistance period shall be extended to [180] days if
+    required by regulatory circumstances;
+(c) Provider shall not obstruct Client's regulatory compliance;
+(d) Provider shall maintain confidentiality of regulatory communications.
+
+Provider acknowledges that regulatory termination rights exist to ensure
+Client's compliance with DORA (Regulation (EU) 2022/2554) and cannot be
+waived or limited.
+""".strip(),
+        ),
+
+        "critical_function": TerminationClause(
+            clause_type="critical_function",
+            notice_period_days=180,  # Extended for critical
+            minimum_notice_days=90,
+            termination_triggers=[
+                "All standard and for-cause triggers",
+                "Provider fails to support Client's resilience testing (TLPT)",
+                "Provider restricts audit/inspection rights",
+                "Subcontracting changes materially affecting critical function",
+                "Concentration risk exceeds acceptable thresholds",
+            ],
+            transition_assistance_period_days=180,
+            data_return_period_days=60,
+            clause_text="""
+TERMINATION - CRITICAL/IMPORTANT FUNCTIONS (Art. 30(3))
+
+For Services supporting Client's critical or important functions:
+
+1. NOTICE PERIOD: [180] days written notice for termination without cause.
+
+2. ADDITIONAL TERMINATION TRIGGERS: Client may terminate if Provider:
+   (a) Fails to cooperate with Client's resilience testing or TLPT;
+   (b) Restricts or impedes Client's audit rights or NCA access;
+   (c) Makes subcontracting changes without required consent;
+   (d) Creates unacceptable concentration risk for Client.
+
+3. ENHANCED TRANSITION:
+   (a) Transition assistance period: [180] days minimum;
+   (b) Provider shall develop and maintain exit plan throughout term;
+   (c) Provider shall conduct annual exit plan testing;
+   (d) Knowledge transfer to Client or successor provider included.
+
+4. NO LOCK-IN:
+   (a) Data formats shall remain non-proprietary throughout term;
+   (b) Provider shall not impose technical barriers to portability;
+   (c) APIs and interfaces shall be documented for successor providers.
+
+5. CONTINUED SERVICE OBLIGATION:
+   During transition, Provider shall maintain service levels as if
+   Agreement were continuing in full force.
+""".strip(),
+        ),
+    }
+
+
+# =============================================================================
 # Data Structures
 # =============================================================================
 
@@ -596,19 +797,53 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
-    # Article 30(2)(i) - Training Participation
+    # Article 30(2)(i) - Training Participation (ENHANCED per v2.1 audit)
+    # Reference: Art. 30(2)(i) + Art. 13(6)
+    # Art. 13(6): FEs shall develop ICT security awareness programmes and digital
+    # operational resilience training as compulsory modules for staff
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.TRAINING_PARTICIPATION,
         category=RequirementCategory.BASIC,
         article_reference="Article 30(2)(i)",
         name="Security Awareness and Resilience Training Participation",
-        description="Conditions for ICT provider participation in financial entity's security awareness programmes and digital operational resilience training per Article 13(6)",
+        description=(
+            "Conditions for ICT provider ACTIVE participation in financial entity's "
+            "security awareness programmes and digital operational resilience training "
+            "per Article 13(6). This is a MANDATORY clause requiring active involvement, "
+            "not merely availability upon request."
+        ),
         detailed_criteria=[
-            "Commitment to participate in client security awareness programs",
-            "Participation in digital operational resilience training",
-            "Key personnel availability for training exercises",
-            "Joint incident simulation exercises",
-            "Reasonable notice and scheduling provisions",
+            # Active participation requirements
+            "ACTIVE participation in client security awareness programs (not just 'upon request')",
+            "Annual minimum attendance at client ICT security awareness sessions",
+            "Provider presents platform security architecture to client security team",
+            "Provider explains incident response procedures",
+            "Provider reviews shared responsibility model with client",
+            # Resilience training
+            "Participation in digital operational resilience training exercises",
+            "Joint tabletop exercises for incident scenarios",
+            "Joint DR/BCP drills with provider-side execution",
+            "Debriefing and lessons learned sharing",
+            # Joint testing (per Art. 30(3)(d) for critical functions)
+            "Failover testing coordination",
+            "Backup restoration verification",
+            "Communication channel testing",
+            "Escalation path validation",
+            # Provider-initiated support
+            "Proactive security briefings on material platform changes",
+            "Threat intelligence sharing (sanitized)",
+            "Self-service training materials availability",
+            # Scheduling and logistics
+            "Reasonable notice period (14 business days standard, 5 for urgent)",
+            "Designated key contacts (minimum 2 per client)",
+            "Remote participation as default, on-site upon request",
+            # Time commitment (tiered by SLA)
+            "Defined annual time commitment (4-16 hours depending on tier)",
+            "Cost provisions for additional training beyond commitment",
+            # Documentation
+            "Attendance records maintained for audit purposes",
+            "Training certificates issued upon request",
+            "Exercise reports provided post-exercise",
         ],
         mandatory=True,
         verification_method="document_review",
