@@ -931,6 +931,52 @@ from services.dora.audit_readiness import (
     create_incident_coordinator,
 )
 
+# SLA Guardrails (Art. 30(2)(e), 30(3)(a) - NEW Phase 1)
+from services.dora.sla_guardrails import (
+    # Enums
+    SLATier,
+    CapacityStatus,
+    ApprovalStatus as SLAApprovalStatus,
+    InfrastructureRequirement,
+    OnCallRequirement,
+    # Data structures
+    SLATierDefinition,
+    CapacityValidation,
+    SLACommitmentRequest,
+    SLAGuardrailsConfig,
+    CurrentCapacityState,
+    # Main class
+    SLAGuardrails,
+    # Factory functions
+    create_sla_guardrails,
+    get_sla_tier_definitions,
+    get_sla_tiers,
+)
+
+# Pooled Audit Support (Art. 30(4) - NEW Phase 1)
+from services.dora.pooled_audit_support import (
+    # Enums
+    AuditReportType,
+    PooledAuditStatus,
+    ParticipationStatus,
+    AuditScopeArea,
+    FindingSeverity as PooledAuditFindingSeverity,
+    RemediationStatus as PooledAuditRemediationStatus,
+    # Data structures
+    CertificationRecord,
+    PooledAuditParticipant,
+    AuditFinding as PooledAuditFinding,
+    PooledAuditEngagement,
+    AuditReportAccess,
+    PooledAuditConfig,
+    # Main class
+    PooledAuditSupport,
+    # Factory functions
+    create_pooled_audit_support,
+    get_audit_scope_areas,
+    get_report_types,
+)
+
 # =============================================================================
 # Phase 5 exports (Information Sharing & Integration - Article 45)
 # =============================================================================
@@ -1672,4 +1718,38 @@ __all__ = [
     "MultiClientIncident",
     "MultiClientIncidentCoordinator",
     "create_incident_coordinator",
+
+    # SLA Guardrails (Art. 30(2)(e), 30(3)(a) - NEW Phase 1)
+    "SLATier",
+    "CapacityStatus",
+    "SLAApprovalStatus",
+    "InfrastructureRequirement",
+    "OnCallRequirement",
+    "SLATierDefinition",
+    "CapacityValidation",
+    "SLACommitmentRequest",
+    "SLAGuardrailsConfig",
+    "CurrentCapacityState",
+    "SLAGuardrails",
+    "create_sla_guardrails",
+    "get_sla_tier_definitions",
+    "get_sla_tiers",
+
+    # Pooled Audit Support (Art. 30(4) - NEW Phase 1)
+    "AuditReportType",
+    "PooledAuditStatus",
+    "ParticipationStatus",
+    "AuditScopeArea",
+    "PooledAuditFindingSeverity",
+    "PooledAuditRemediationStatus",
+    "CertificationRecord",
+    "PooledAuditParticipant",
+    "PooledAuditFinding",
+    "PooledAuditEngagement",
+    "AuditReportAccess",
+    "PooledAuditConfig",
+    "PooledAuditSupport",
+    "create_pooled_audit_support",
+    "get_audit_scope_areas",
+    "get_report_types",
 ]

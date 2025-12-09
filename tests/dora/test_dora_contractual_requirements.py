@@ -118,7 +118,7 @@ class TestEnumerations:
         assert RequirementType.DATA_LOCATION.value == "data_location"
         assert RequirementType.AUDIT_RIGHTS.value == "audit_rights"
         assert RequirementType.EXIT_STRATEGY.value == "exit_strategy"
-        assert len(RequirementType) == 20
+        assert len(RequirementType) == 25  # 9 Art. 30(2) + 11 Art. 30(3) + 5 derived
 
     def test_compliance_status_values(self):
         """Test ComplianceStatus enumeration values."""
@@ -799,7 +799,7 @@ class TestFactoryFunctions:
     def test_get_requirement_types(self):
         """Test getting requirement types."""
         types = get_requirement_types()
-        assert len(types) == 20
+        assert len(types) == 25  # 9 Art. 30(2) + 11 Art. 30(3) + 5 derived
         assert RequirementType.SERVICE_DESCRIPTION in types
         assert RequirementType.AUDIT_RIGHTS in types
 
