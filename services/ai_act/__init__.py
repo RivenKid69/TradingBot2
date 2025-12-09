@@ -4,7 +4,17 @@ AI Act Compliance Module for TradingBot2.
 
 EU AI Act (Regulation (EU) 2024/1689) Compliance Implementation.
 
-This package provides compliance tools for high-risk AI systems in algorithmic trading:
+This package provides compliance tools for AI systems in algorithmic trading.
+
+Classification:
+    - Primary: General-Purpose AI Model Provider (GPAI) - Article 53
+    - Secondary: Limited Risk AI System - Article 50 (Transparency)
+    - Voluntary: HIGH-RISK compliance maintained for enterprise readiness
+
+Note: Algorithmic trading is NOT included in Annex III (HIGH-RISK).
+      HIGH-RISK compliance is maintained as overcompliance for enterprise clients.
+
+=== HIGH-RISK Compliance (Voluntary Overcompliance) ===
 
 Phase 1 - Foundation & Risk Management (Articles 9, 14, 15):
     - risk_management: Risk Management System (Article 9)
@@ -31,14 +41,19 @@ Phase 4 - Conformity Assessment & Deployment (Articles 43, 47, 49):
     - Instructions for Use generation (Article 13)
     - EU Database Registration preparation (Article 49)
 
-Classification:
-    This system is classified as HIGH-RISK AI SYSTEM per Annex III
-    (algorithmic trading in financial services context).
+=== Software Provider / GPAI Compliance (Mandatory) ===
+
+GPAI Phase 1 - Core Requirements (Articles 50, 53):
+    - transparency_disclosure: AI Interaction Disclosure (Article 50)
+    - copyright_compliance: Copyright Policy for Training Data (Article 53(1)(c))
+    - training_data_summary: Public Training Data Summary (Article 53(1)(d))
 
 Compliance Deadline: August 2, 2026
 
 References:
     - EU AI Act: https://artificialintelligenceact.eu/
+    - Article 50 (Transparency): https://artificialintelligenceact.eu/article/50/
+    - Article 53 (GPAI Obligations): https://artificialintelligenceact.eu/article/53/
     - Article 9 (Risk Management): https://artificialintelligenceact.eu/article/9/
     - Article 10 (Data Governance): https://artificialintelligenceact.eu/article/10/
     - Article 12 (Record-Keeping): https://artificialintelligenceact.eu/article/12/
@@ -48,12 +63,15 @@ References:
     - Article 47 (EU Declaration of Conformity): https://artificialintelligenceact.eu/article/47/
     - Article 49 (Registration): https://artificialintelligenceact.eu/article/49/
     - Annex VI (Internal Control): https://artificialintelligenceact.eu/annex/6/
+    - DSM Directive 2019/790 (Copyright): https://eur-lex.europa.eu/eli/dir/2019/790/oj
+    - GPAI Code of Practice: https://digital-strategy.ec.europa.eu/en/policies/contents-code-gpai
 """
 
 from __future__ import annotations
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 __ai_act_compliance_phase__ = 4  # Current implementation phase
+__gpai_compliance_version__ = "1.0.0"  # Software Provider / GPAI compliance
 
 # =============================================================================
 # Phase 1 exports (Foundation & Risk Management)
@@ -343,6 +361,65 @@ from services.ai_act.conformity_assessment import (
 )
 
 # =============================================================================
+# Software Provider / GPAI Compliance (Articles 50, 53)
+# =============================================================================
+
+from services.ai_act.transparency_disclosure import (
+    # Enums
+    DisclosureType,
+    DisclosureContext,
+    DisclosureLanguage,
+    # Data structures
+    AIDisclosure,
+    DisclosureRequirement,
+    DisclosureAuditRecord,
+    # Constants
+    DISCLOSURE_REQUIREMENTS,
+    # Main class
+    TransparencyDisclosureManager,
+    SyntheticContentMarker,
+    # Factory functions
+    create_transparency_manager,
+    get_disclosure_requirements,
+    validate_disclosure_text,
+)
+
+from services.ai_act.copyright_compliance import (
+    # Enums
+    DataSourceType,
+    CopyrightStatus,
+    OptOutMechanism,
+    # Data structures
+    DataSourceRecord,
+    OptOutCheck,
+    RightsHolderRequest,
+    # Constants
+    DEFAULT_DATA_SOURCES,
+    # Main class
+    CopyrightComplianceManager,
+    # Factory functions
+    create_copyright_manager,
+    get_default_data_sources,
+    validate_source_record,
+)
+
+from services.ai_act.training_data_summary import (
+    # Enums
+    DataCategory,
+    DataQualityLevel,
+    # Data structures
+    DatasetInfo,
+    TrainingDataSummary,
+    # Main class
+    TrainingDataSummaryManager,
+    # Factory functions
+    create_default_summary,
+    create_summary_manager,
+    get_data_categories,
+    validate_dataset_info,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -575,4 +652,46 @@ __all__ = [
     "ConformitySelfAssessment",
     "create_conformity_assessment",
     "get_default_checklist",
+
+    # =========================================================================
+    # Software Provider / GPAI Compliance (Articles 50, 53)
+    # =========================================================================
+
+    # Transparency Disclosure (Article 50)
+    "DisclosureType",
+    "DisclosureContext",
+    "DisclosureLanguage",
+    "AIDisclosure",
+    "DisclosureRequirement",
+    "DisclosureAuditRecord",
+    "DISCLOSURE_REQUIREMENTS",
+    "TransparencyDisclosureManager",
+    "SyntheticContentMarker",
+    "create_transparency_manager",
+    "get_disclosure_requirements",
+    "validate_disclosure_text",
+
+    # Copyright Compliance (Article 53(1)(c))
+    "DataSourceType",
+    "CopyrightStatus",
+    "OptOutMechanism",
+    "DataSourceRecord",
+    "OptOutCheck",
+    "RightsHolderRequest",
+    "DEFAULT_DATA_SOURCES",
+    "CopyrightComplianceManager",
+    "create_copyright_manager",
+    "get_default_data_sources",
+    "validate_source_record",
+
+    # Training Data Summary (Article 53(1)(d))
+    "DataCategory",
+    "DataQualityLevel",
+    "DatasetInfo",
+    "TrainingDataSummary",
+    "TrainingDataSummaryManager",
+    "create_default_summary",
+    "create_summary_manager",
+    "get_data_categories",
+    "validate_dataset_info",
 ]

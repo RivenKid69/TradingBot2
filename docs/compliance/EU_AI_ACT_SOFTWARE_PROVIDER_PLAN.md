@@ -23,11 +23,14 @@
 
 ---
 
-## Phase 1: Core GPAI Compliance (Articles 50 & 53)
+## Phase 1: Core GPAI Compliance (Articles 50 & 53) - COMPLETED
+
+**Status**: COMPLETED (2025-12-10)
+**Completion Report**: [EU_AI_ACT_PHASE1_COMPLETION_REPORT.md](../reports/EU_AI_ACT_PHASE1_COMPLETION_REPORT.md)
 
 **Scope**: Обязательные требования EU AI Act
-**Modules**: 4 новых файла + обновления существующих
-**Tests**: ~150 тестов
+**Modules**: 3 новых файла + обновления существующих
+**Tests**: 166 тестов (100% pass rate)
 
 ### 1.1 AI System Disclosure (Article 50)
 
