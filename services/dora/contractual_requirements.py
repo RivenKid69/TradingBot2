@@ -64,12 +64,18 @@ class RequirementCategory(Enum):
 
 class RequirementType(Enum):
     """Types of contractual requirements."""
-    SERVICE_DESCRIPTION = "service_description"
-    DATA_LOCATION = "data_location"
-    SERVICE_LEVELS = "service_levels"
-    INCIDENT_ASSISTANCE = "incident_assistance"
-    AUTHORITY_COOPERATION = "authority_cooperation"
-    TERMINATION_RIGHTS = "termination_rights"
+    # Article 30(2) Basic Requirements
+    SERVICE_DESCRIPTION = "service_description"  # Art. 30(2)(a)
+    DATA_LOCATION = "data_location"  # Art. 30(2)(b)
+    SERVICE_LEVELS = "service_levels"  # Art. 30(2)(c)
+    INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(d)
+    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(e)
+    EXIT_COOPERATION = "exit_cooperation"  # Art. 30(2)(f)
+    ACCESSIBILITY_SECURITY = "accessibility_security"  # Art. 30(2)(g)
+    RESILIENCE_TESTING = "resilience_testing"  # Art. 30(2)(h) - NEW
+    AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(i) - CORRECTED
+
+    # Article 30(3) Critical Function Requirements
     SLA_TARGETS = "sla_targets"
     NOTICE_PERIODS = "notice_periods"
     REPORTING_OBLIGATIONS = "reporting_obligations"
@@ -81,6 +87,8 @@ class RequirementType(Enum):
     BUSINESS_CONTINUITY = "business_continuity"
     SECURITY_MEASURES = "security_measures"
     SUBCONTRACTING = "subcontracting"
+
+    # Additional requirements
     DATA_PROTECTION = "data_protection"
     CONFIDENTIALITY = "confidentiality"
     IP_RIGHTS = "ip_rights"
@@ -506,25 +514,9 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
     ))
 
     requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.AUTHORITY_COOPERATION,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(e)",
-        name="Cooperation with Competent Authorities",
-        description="Obligation to cooperate with competent authorities and resolution authorities",
-        detailed_criteria=[
-            "NCA access provisions",
-            "Information provision requirements",
-            "Cooperation in investigations",
-            "Resolution authority access",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
-    requirements.append(ContractualRequirement(
         requirement_type=RequirementType.TERMINATION_RIGHTS,
         category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(f)",
+        article_reference="Article 30(2)(e)",
         name="Termination Rights",
         description="Termination rights and related minimum notice periods",
         detailed_criteria=[
@@ -532,6 +524,73 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
             "Notice period requirements",
             "Termination for cause provisions",
             "Regulatory termination rights",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.EXIT_COOPERATION,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(f)",
+        name="Exit Cooperation",
+        description="Conditions for orderly termination and provider cooperation",
+        detailed_criteria=[
+            "Exit plan documentation",
+            "Data return procedures",
+            "Transition assistance commitment",
+            "Minimum transition period",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.ACCESSIBILITY_SECURITY,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(g)",
+        name="Accessibility and Security Provisions",
+        description="Provisions ensuring accessibility, availability, integrity, security, and protection of personal data",
+        detailed_criteria=[
+            "Data accessibility guarantees",
+            "Service availability commitments",
+            "Data integrity protection measures",
+            "Security controls description",
+            "Personal data protection measures",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.RESILIENCE_TESTING,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(h)",
+        name="Resilience Testing Participation",
+        description="ICT provider obligation to participate in client's ICT security testing programs",
+        detailed_criteria=[
+            "Obligation to participate in client security testing",
+            "Cooperation with penetration tests",
+            "Vulnerability assessment support",
+            "Threat-led testing cooperation (if required)",
+            "Testing results sharing provisions",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.AUTHORITY_COOPERATION,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(i)",
+        name="Cooperation with Competent Authorities",
+        description="Obligation to fully cooperate with competent authorities and resolution authorities",
+        detailed_criteria=[
+            "Unrestricted NCA access provisions",
+            "Information provision on request",
+            "Cooperation in supervisory activities",
+            "Resolution authority access rights",
+            "No impediment to supervision clause",
         ],
         mandatory=True,
         verification_method="document_review",
@@ -1351,23 +1410,28 @@ class DORAContractualRequirements:
             return "Review contract and add appropriate clause"
 
         recommendations = {
-            RequirementType.SERVICE_DESCRIPTION: "Add detailed service description clause",
-            RequirementType.DATA_LOCATION: "Add data processing and storage location clause",
-            RequirementType.SERVICE_LEVELS: "Add service level descriptions",
-            RequirementType.INCIDENT_ASSISTANCE: "Add incident assistance obligations",
-            RequirementType.AUTHORITY_COOPERATION: "Add NCA cooperation clause",
-            RequirementType.TERMINATION_RIGHTS: "Add/clarify termination provisions",
-            RequirementType.SLA_TARGETS: "Add quantitative SLA targets",
-            RequirementType.NOTICE_PERIODS: "Specify notice periods",
-            RequirementType.REPORTING_OBLIGATIONS: "Add reporting obligations",
-            RequirementType.AUDIT_RIGHTS: "Add audit rights clause",
-            RequirementType.NCA_ACCESS: "Add explicit NCA access rights",
-            RequirementType.EXIT_STRATEGY: "Document exit strategy provisions",
-            RequirementType.TRANSITION_SUPPORT: "Add transition assistance clause",
-            RequirementType.PERFORMANCE_REMEDIATION: "Add SLA breach remediation clause",
-            RequirementType.BUSINESS_CONTINUITY: "Add BCP requirements clause",
-            RequirementType.SECURITY_MEASURES: "Add security requirements clause",
-            RequirementType.SUBCONTRACTING: "Add subcontracting provisions",
+            # Article 30(2) Basic Requirements
+            RequirementType.SERVICE_DESCRIPTION: "Add detailed service description clause (Art. 30(2)(a))",
+            RequirementType.DATA_LOCATION: "Add data processing and storage location clause (Art. 30(2)(b))",
+            RequirementType.SERVICE_LEVELS: "Add service level descriptions (Art. 30(2)(c))",
+            RequirementType.INCIDENT_ASSISTANCE: "Add incident assistance obligations (Art. 30(2)(d))",
+            RequirementType.TERMINATION_RIGHTS: "Add/clarify termination provisions (Art. 30(2)(e))",
+            RequirementType.EXIT_COOPERATION: "Add exit cooperation and transition clause (Art. 30(2)(f))",
+            RequirementType.ACCESSIBILITY_SECURITY: "Add accessibility/security provisions (Art. 30(2)(g))",
+            RequirementType.RESILIENCE_TESTING: "Add resilience testing participation clause (Art. 30(2)(h))",
+            RequirementType.AUTHORITY_COOPERATION: "Add NCA/resolution authority cooperation clause (Art. 30(2)(i))",
+            # Article 30(3) Critical Function Requirements
+            RequirementType.SLA_TARGETS: "Add quantitative SLA targets (Art. 30(3)(a))",
+            RequirementType.NOTICE_PERIODS: "Specify notice periods (Art. 30(3)(b))",
+            RequirementType.REPORTING_OBLIGATIONS: "Add reporting obligations (Art. 30(3)(c))",
+            RequirementType.AUDIT_RIGHTS: "Add audit rights clause (Art. 30(3)(d))",
+            RequirementType.NCA_ACCESS: "Add explicit NCA access rights (Art. 30(3)(e))",
+            RequirementType.EXIT_STRATEGY: "Document exit strategy provisions (Art. 30(3)(f))",
+            RequirementType.TRANSITION_SUPPORT: "Add transition assistance clause (Art. 30(3)(f))",
+            RequirementType.PERFORMANCE_REMEDIATION: "Add SLA breach remediation clause (Art. 30(3)(g))",
+            RequirementType.BUSINESS_CONTINUITY: "Add BCP requirements clause (Art. 30(3)(h))",
+            RequirementType.SECURITY_MEASURES: "Add security requirements clause (Art. 30(3)(i))",
+            RequirementType.SUBCONTRACTING: "Add subcontracting provisions (Art. 30(3)(j))",
         }
 
         return recommendations.get(req.requirement_type, "Review and amend contract")

@@ -8,6 +8,25 @@ Regulation (EU) 2022/2554 Article 19 defines incident reporting requirements:
     - Final report within 1 month
     - Reporting to designated competent authority
 
+USAGE CONTEXT:
+    This module implements FINANCIAL ENTITY obligations to report to NCAs.
+
+    For ICT THIRD-PARTY PROVIDERS (our primary use case):
+    - We do NOT report directly to NCAs (except if designated CTPP)
+    - We notify CLIENTS, who then report to their NCAs
+    - Use `client_incident_notification.py` for client notifications
+    - This module can be used to understand client reporting requirements
+
+    Integration with client_incident_notification.py:
+    >>> from services.dora.client_incident_notification import DORAClientNotification
+    >>> from services.dora.incident_reporting import DORAIncidentReporter
+    >>>
+    >>> # Create incident for clients
+    >>> client_notifier.create_incident(...)
+    >>>
+    >>> # For reference: understand what client must report
+    >>> report = incident_reporter.create_initial_notification(...)
+
 This module implements reporting requirements from:
     - DORA Article 19-21
     - Commission Delegated Regulation (CDR) 2025/301 - RTS on content and time limits
@@ -19,6 +38,10 @@ References:
     - Article 20 DORA: https://www.digital-operational-resilience-act.com/Article_20.html
     - CDR 2025/301: RTS on major ICT-related incident reporting
     - CIR 2025/302: ITS on reporting templates and procedures
+
+Related Modules (for ICT providers):
+    - client_incident_notification.py: Client notification (PRIMARY for ICT providers)
+    - audit_readiness.py: Incident documentation for audits
 """
 
 from __future__ import annotations

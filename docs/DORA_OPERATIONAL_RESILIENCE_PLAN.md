@@ -123,22 +123,30 @@
 | **Art. 30(2)** | Basic contractual terms | Include in ALL contracts with EU clients |
 | **Art. 30(3)** | Extended terms (critical functions) | Audit rights, inspection, locations, subcontracting |
 | **Art. 30(3)(e)** | Audit and access rights | Allow client + NCA audits |
-| **Art. 29** | Subcontracting chain | Document and disclose subcontractors |
+| **Art. 30(2)(b)** | Subcontracting provisions | Document and disclose subcontractors |
+| **Art. 29** | ICT concentration risk (FE obligation) | Monitor our market concentration for CTPP risk |
 
-### 2.4 Article 30(2) — Mandatory Contract Clauses
+### 2.4 Article 30(2) — Mandatory Contract Clauses (ALL 9 Subpoints)
 
-ALL contracts with EU regulated clients MUST include:
+ALL contracts with EU regulated clients MUST include these **9 mandatory clauses**:
 
 ```yaml
 mandatory_contract_clauses:
-  art_30_2_a: "Clear description of all ICT services"
-  art_30_2_b: "Locations of data processing and storage"
-  art_30_2_c: "Data protection and access provisions"
-  art_30_2_d: "Service availability guarantees (SLA)"
-  art_30_2_e: "Termination rights and notice periods"
-  art_30_2_f: "Cooperation with competent authorities"
-  art_30_2_g: "Termination rights for regulatory reasons"
+  # Basic service terms
+  art_30_2_a: "Clear and complete description of all ICT services to be provided"
+  art_30_2_b: "Locations where data will be processed/stored, including subcontracting conditions"
+  art_30_2_c: "Provisions on availability, authenticity, integrity, confidentiality of data"
+  art_30_2_d: "Service level descriptions including quantitative/qualitative targets"
+  art_30_2_e: "Termination rights and related minimum notice periods"
+  art_30_2_f: "Exit strategy provisions and transition assistance"
+  art_30_2_g: "Provisions ensuring accessibility, availability, integrity, security"
+
+  # CRITICAL: Often-missed clauses
+  art_30_2_h: "ICT provider obligation to participate in client's resilience testing programs"
+  art_30_2_i: "Obligation to fully cooperate with competent authorities and resolution authorities"
 ```
+
+**CRITICAL NOTE**: Many contracts miss Art. 30(2)(h) and (i). These are **mandatory** for ALL ICT service contracts, not just critical functions.
 
 ### 2.5 Article 30(3) — Additional Requirements for Critical Functions
 
@@ -163,21 +171,85 @@ additional_requirements_critical:
 - Register of Information submission (client submits, we provide data)
 - Client's internal governance and risk management
 
-### 2.7 CTPP Designation Risk
+### 2.7 CTPP Designation Risk — EXPANDED
 
 **Current status:** We are NOT designated as Critical Third-Party Provider.
 
-**Risk factors for future designation:**
-- High market share among EU financial entities
-- Services supporting critical functions for multiple clients
-- Limited substitutability
+#### 2.7.1 Designation Triggers (Art. 31)
 
-**If designated as CTPP (Art. 31-44):**
-- Direct oversight by Lead Overseer (ESA)
-- Mandatory operational resilience requirements
-- Regular reporting and examinations
+ESAs may designate us as CTPP if:
 
-**Mitigation:** Monitor client concentration, prepare for potential designation.
+| Trigger | Threshold | Current Status | Risk Level |
+|---------|-----------|----------------|------------|
+| Systemic importance | Multiple FE clients in same sector | <15 clients | LOW |
+| Substitutability | Limited alternatives available | Many alternatives | LOW |
+| Number of member states | Services in 3+ EU countries | TBD | MEDIUM |
+| Cross-border dependency | FEs in multiple jurisdictions | TBD | MEDIUM |
+| Criticality assessment | ESA determines systemic risk | Not assessed | UNKNOWN |
+
+#### 2.7.2 CTPP Obligations (Art. 33-44)
+
+If designated as CTPP, we would face:
+
+```yaml
+ctpp_direct_obligations:
+  oversight:
+    lead_overseer: "Designated ESA (EBA/ESMA/EIOPA)"
+    oversight_fee: "Annual fee based on turnover"
+    reporting: "Regular supervisory reporting"
+
+  operational:
+    resilience_testing: "Mandatory annual testing"
+    incident_reporting: "Direct to Lead Overseer"
+    governance: "Board-level accountability"
+
+  inspections:
+    on_site: "Lead Overseer can inspect premises"
+    access_rights: "Full access to systems and data"
+    third_party_audits: "May require external audits"
+
+  enforcement:
+    recommendations: "Binding recommendations possible"
+    penalties: "Fines up to 1% of global turnover"
+    suspension: "Services can be suspended"
+```
+
+#### 2.7.3 CTPP Preparedness Checklist
+
+| Preparation Item | Status | Priority |
+|------------------|--------|----------|
+| Client concentration tracking | ⚠️ Manual | HIGH |
+| ESA communication channel | ❌ Not established | MEDIUM |
+| Enhanced incident reporting (direct) | ❌ Not implemented | HIGH |
+| Governance documentation | ⚠️ Basic | MEDIUM |
+| Fee reserve allocation | ❌ Not planned | LOW |
+| Substitutability assessment | ❌ Not done | MEDIUM |
+
+#### 2.7.4 Monitoring and Thresholds
+
+```yaml
+ctpp_monitoring:
+  quarterly_review:
+    - count_eu_financial_entity_clients
+    - assess_market_share_by_sector
+    - evaluate_substitutability
+    - check_esa_communications
+
+  alert_thresholds:
+    warning:
+      eu_fe_clients: 10
+      sectors_served: 2
+    critical:
+      eu_fe_clients: 15
+      sectors_served: 3
+
+  escalation:
+    - notify_board_on_warning
+    - engage_legal_counsel_on_critical
+    - prepare_ctpp_readiness_package
+```
+
+**Mitigation:** Monitor client concentration, prepare for potential designation, maintain CTPP readiness documentation.
 
 ---
 
@@ -448,6 +520,86 @@ core_dr:
     - read_only_mode
     - manual_intervention_procedures
 ```
+
+### 5.4.1 Client SLA Tiers — NEW
+
+Different clients require different service levels. Define tiered SLAs with realistic infrastructure backing:
+
+```yaml
+client_sla_tiers:
+  # =========================================================================
+  # STANDARD TIER (Default for all clients)
+  # =========================================================================
+  standard:
+    availability: "99.5%"
+    rto: "4 hours"
+    rpo: "1 hour"
+    incident_notification: "2 hours"
+    support_hours: "Business hours (EU timezone)"
+
+    infrastructure:
+      deployment: "Single region (EU-WEST-1)"
+      database: "Primary + async replica"
+      backups: "Every 4 hours"
+      monitoring: "5-minute intervals"
+
+    cost_multiplier: 1.0x
+    suitable_for: "Non-critical functions, retail traders, prop firms"
+
+  # =========================================================================
+  # PROFESSIONAL TIER (For regulated clients with important functions)
+  # =========================================================================
+  professional:
+    availability: "99.9%"
+    rto: "1 hour"
+    rpo: "15 minutes"
+    incident_notification: "30 minutes"
+    support_hours: "Extended (06:00-22:00 CET)"
+
+    infrastructure:
+      deployment: "Multi-AZ (EU-WEST-1 a/b/c)"
+      database: "Primary + sync replica + async DR"
+      backups: "Every 15 minutes (continuous for critical)"
+      monitoring: "1-minute intervals with auto-alerting"
+
+    cost_multiplier: 2.0x
+    suitable_for: "Important functions, asset managers, hedge funds"
+
+  # =========================================================================
+  # ENTERPRISE TIER (For clients with critical functions)
+  # =========================================================================
+  enterprise:
+    availability: "99.95%"
+    rto: "15 minutes"
+    rpo: "5 minutes"
+    incident_notification: "15 minutes"
+    support_hours: "24/7/365"
+
+    infrastructure:
+      deployment: "Multi-region (EU-WEST-1 + EU-CENTRAL-1)"
+      database: "Multi-region sync replication"
+      backups: "Continuous with point-in-time recovery"
+      monitoring: "Real-time with predictive alerting"
+
+    additional:
+      - dedicated_instance_option
+      - custom_integrations
+      - quarterly_resilience_reviews
+      - annual_joint_dr_testing
+
+    cost_multiplier: 4.0x
+    suitable_for: "Critical functions, banks, CASPs with significant AUM"
+```
+
+### 5.4.2 Infrastructure Requirements by Tier
+
+| Tier | Multi-AZ | Multi-Region | Sync Replication | DR Tested | Est. Monthly Cost |
+|------|----------|--------------|------------------|-----------|-------------------|
+| Standard | ❌ | ❌ | ❌ | Quarterly | €500-2,000 |
+| Professional | ✅ | ❌ | Partial | Monthly | €2,000-5,000 |
+| Enterprise | ✅ | ✅ | ✅ | Weekly | €5,000-15,000 |
+
+**CRITICAL**: RTO/RPO claims MUST be backed by documented infrastructure and tested procedures.
 
 ### 5.5 Incident Management — CORRECTED
 
