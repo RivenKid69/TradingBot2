@@ -19,7 +19,72 @@ This document describes recovery procedures for common failure scenarios in Trad
 
 ---
 
+## DORA Notification Checkpoints
+
+**For EU Regulated Clients**: All recovery procedures must include DORA notification checkpoints. Apply this framework to each scenario:
+
+### Notification Decision Framework
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               DORA NOTIFICATION CHECKPOINT                   │
+├─────────────────────────────────────────────────────────────┤
+│ 1. DURATION: Has outage exceeded 15 minutes?                │
+│    YES → Proceed to step 2                                  │
+│    NO  → Continue recovery, re-check at 15 min mark         │
+│                                                             │
+│ 2. IMPACT: Are EU regulated clients affected?               │
+│    YES → Proceed to step 3                                  │
+│    NO  → Continue recovery, document incident               │
+│                                                             │
+│ 3. SEVERITY:                                                │
+│    - Data breach/security? → CRITICAL (notify <30 min)      │
+│    - Trading unavailable?  → HIGH (notify <1 hour)          │
+│    - Degraded performance? → MEDIUM (notify <4 hours)       │
+│    - Minor/planned?        → LOW (notify within 24 hours)   │
+│                                                             │
+│ 4. NOTIFY:                                                  │
+│    a) Identify affected clients (esp. critical functions)   │
+│    b) Use template from OPERATIONS_RUNBOOK.md               │
+│    c) Log notification in incident tracker                  │
+│    d) Schedule follow-up updates                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Quick Reference: When to Notify
+
+| Scenario | Typical Severity | Notification Timeline |
+|----------|------------------|----------------------|
+| Network Disconnection (>15min) | HIGH | Within 1 hour |
+| Clock Drift (kill switch triggered) | MEDIUM | Within 4 hours |
+| Kill Switch (risk breach) | HIGH | Within 1 hour |
+| Partial Fills | LOW | Within 24 hours |
+| Exchange Maintenance (planned) | LOW | Pre-notify if possible |
+| Process Crash (>15min recovery) | HIGH | Within 1 hour |
+| Data Corruption | CRITICAL | Within 30 minutes |
+| API Key Issues | HIGH | Within 1 hour |
+| Position Mismatch | HIGH | Within 1 hour |
+| Memory Exhaustion | MEDIUM | Within 4 hours |
+
+### Evidence Preservation
+
+During any recovery, preserve evidence for potential audits:
+```bash
+# Snapshot logs before any recovery action
+cp -r logs/ logs_incident_$(date +%Y%m%d_%H%M%S)/
+
+# Record state files
+cp -r state/ state_incident_$(date +%Y%m%d_%H%M%S)/
+
+# Document timeline
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) - [ACTION]" >> incident_timeline.log
+```
+
+---
+
 ## 1. Network Disconnection
+
+**DORA Checkpoint**: If disconnection >15 minutes AND affects EU clients → Notify per severity table above.
 
 ### Symptoms
 - "Connection refused" errors in logs

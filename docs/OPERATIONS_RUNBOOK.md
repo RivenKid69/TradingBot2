@@ -467,6 +467,177 @@ python scripts/fetch_alpaca_universe.py --output data/universe/alpaca_symbols.js
 
 ---
 
+## DORA Regulatory Procedures
+
+This section covers procedures for EU regulated clients per DORA (Regulation EU 2022/2554).
+
+### Client Notification Procedure
+
+**When to notify:** Any incident affecting service availability, data integrity, or security.
+
+**Notification Timeline by Severity:**
+
+| Severity | Timeline | Method | Escalation |
+|----------|----------|--------|------------|
+| Critical | <30 min | Phone + Email | Immediate |
+| High | <1 hour | Email + Dashboard | Within 2 hours |
+| Medium | <4 hours | Email | Within 24 hours |
+| Low | <24 hours | Dashboard | N/A |
+
+**Critical Incident Notification Steps:**
+1. Classify incident severity using `services/dora/incident_classification.py`
+2. Identify affected clients (especially EU regulated)
+3. Draft initial notification using template below
+4. Send via established channels (phone for critical)
+5. Log notification in incident tracking system
+6. Prepare follow-up report within 4 hours
+
+**Notification Template:**
+```
+Subject: [SEVERITY] Service Incident - [Brief Description]
+
+Dear [Client],
+
+We are writing to inform you of a service incident affecting [Platform/Service].
+
+Incident ID: [ID]
+Start Time: [UTC]
+Current Status: [Investigating/Mitigating/Resolved]
+Impact: [Brief description of impact]
+
+Next Update: [Time]
+
+For questions, contact: [Emergency contact]
+
+---
+This notification is provided per DORA Article 30(2)(f) contractual obligations.
+```
+
+### Audit Response Procedure
+
+**Response SLA:** 5 business days for standard requests, 24 hours for regulatory urgent.
+
+**Audit Request Processing:**
+1. Log request in `services/dora/audit_readiness.py`
+2. Classify request type (client operational, NCA, third-party)
+3. Assign audit coordinator
+4. Gather requested evidence
+5. Review for confidentiality (other clients' data)
+6. Package and deliver
+7. Document completion
+
+**Evidence Categories Available:**
+- ICT governance documentation
+- Security policies and procedures
+- Incident reports (client-specific)
+- Backup and recovery test results
+- Access control logs
+- Change management records
+- Penetration test summaries
+- SOC2/ISO27001 reports
+
+**Commands for Evidence Gathering:**
+```bash
+# Generate client-specific audit log extract
+python -m services.dora.audit_readiness generate-evidence \
+  --client CLIENT_ID \
+  --start-date YYYY-MM-DD \
+  --end-date YYYY-MM-DD \
+  --output audit_package.zip
+
+# Generate system health report
+python -m services.monitoring.health_report generate \
+  --period monthly \
+  --output health_report.pdf
+```
+
+### Data Export Procedure (Art. 30(2)(d))
+
+**For client data export upon termination or request:**
+
+```bash
+# Full client data export
+python -m services.data_export client-full \
+  --client CLIENT_ID \
+  --format json \
+  --include-models \
+  --include-logs \
+  --output /exports/CLIENT_ID/
+
+# Verify export integrity
+python -m services.data_export verify \
+  --path /exports/CLIENT_ID/ \
+  --generate-checksums
+```
+
+**Export Contents:**
+- Trading strategies and configurations
+- Backtest results and performance history
+- Trained ML/RL models (ONNX format)
+- User preferences and settings
+- Client-specific audit logs
+- API configurations (excluding keys)
+
+**Timeline Commitment:**
+- Standard: 5 business days
+- Urgent: 48 hours
+- Insolvency scenario: 72 hours
+
+### NCA Inspection Support
+
+**Upon receiving NCA inspection request:**
+
+1. **Acknowledge** within 24 hours
+2. **Verify** request legitimacy via client
+3. **Scope** - clarify what information is needed
+4. **Prepare** - gather relevant documentation
+5. **Coordinate** - schedule if on-site required
+6. **Execute** - provide access with appropriate supervision
+7. **Document** - log all information provided
+
+**Confidentiality Protection:**
+- Redact other clients' data
+- Escorted access only
+- Scope limited to requesting client's services
+- Written confirmation of scope before inspection
+
+### Incident Classification (DORA-aligned)
+
+```bash
+# Classify incident using DORA criteria
+python -m services.dora.incident_classification classify \
+  --type [security|availability|integrity|performance] \
+  --duration-minutes N \
+  --clients-affected N \
+  --financial-impact [none|low|medium|high] \
+  --data-breach [true|false]
+```
+
+**Classification Outputs:**
+- CRITICAL: Data breach, >2h outage, >50% clients affected
+- HIGH: 30min-2h outage, security incident, <50% clients
+- MEDIUM: <30min outage, performance degradation
+- LOW: Planned maintenance, minor issues
+
+### Subcontractor Incident Response
+
+**If a subcontractor (AWS, Polygon, Alpaca, etc.) has an incident:**
+
+1. Monitor subcontractor status pages
+2. Assess impact on our services
+3. Classify as our incident if services affected
+4. Notify clients per above procedure
+5. Document root cause as subcontractor issue
+6. Update subcontractor risk assessment
+
+**Subcontractor Status Pages:**
+- AWS: https://status.aws.amazon.com/
+- Polygon: https://status.polygon.io/
+- Alpaca: https://status.alpaca.markets/
+- Binance: https://www.binance.com/en/support/announcement
+
+---
+
 ## Quick Reference Commands
 
 ### Simulation

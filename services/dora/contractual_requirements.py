@@ -64,32 +64,39 @@ class RequirementCategory(Enum):
 
 class RequirementType(Enum):
     """Types of contractual requirements."""
-    # Article 30(2) Basic Requirements - CORRECTED per official DORA text
-    SERVICE_DESCRIPTION = "service_description"  # Art. 30(2)(a)
-    DATA_LOCATION = "data_location"  # Art. 30(2)(b)
+    # =========================================================================
+    # Article 30(2) Basic Requirements - ALL ICT service contracts
+    # Reference: https://www.digital-operational-resilience-act.com/Article_30.html
+    # =========================================================================
+    SERVICE_DESCRIPTION = "service_description"  # Art. 30(2)(a) - functions & ICT services
+    DATA_LOCATION = "data_location"  # Art. 30(2)(b) - processing/storage locations
     SERVICE_LEVELS = "service_levels"  # Art. 30(2)(c) - availability, authenticity, integrity, confidentiality
-    SERVICE_LEVEL_TARGETS = "service_level_targets"  # Art. 30(2)(d) - quantitative/qualitative targets
-    INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(e) - CORRECTED
-    RESILIENCE_TESTING = "resilience_testing"  # Art. 30(2)(f) - CORRECTED
-    AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(g) - CORRECTED
-    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(h) - CORRECTED
-    TRAINING_PARTICIPATION = "training_participation"  # Art. 30(2)(i) - NEW
+    DATA_ACCESS_RECOVERY = "data_access_recovery"  # Art. 30(2)(d) - data access, recovery, return upon termination/insolvency
+    SERVICE_LEVEL_DESCRIPTIONS = "service_level_descriptions"  # Art. 30(2)(e) - SLA descriptions with targets
+    INCIDENT_ASSISTANCE = "incident_assistance"  # Art. 30(2)(f) - assistance during ICT incidents
+    AUTHORITY_COOPERATION = "authority_cooperation"  # Art. 30(2)(g) - cooperation with NCAs
+    TERMINATION_RIGHTS = "termination_rights"  # Art. 30(2)(h) - termination rights and notice periods
+    TRAINING_PARTICIPATION = "training_participation"  # Art. 30(2)(i) - security awareness training
 
-    # Article 30(3) Critical Function Requirements
-    SLA_TARGETS = "sla_targets"
-    NOTICE_PERIODS = "notice_periods"
-    REPORTING_OBLIGATIONS = "reporting_obligations"
-    AUDIT_RIGHTS = "audit_rights"
-    NCA_ACCESS = "nca_access"
-    EXIT_STRATEGY = "exit_strategy"
-    TRANSITION_SUPPORT = "transition_support"
-    PERFORMANCE_REMEDIATION = "performance_remediation"
-    BUSINESS_CONTINUITY = "business_continuity"
-    SECURITY_MEASURES = "security_measures"
-    SUBCONTRACTING = "subcontracting"
+    # =========================================================================
+    # Article 30(3) Critical Function Requirements - critical/important functions only
+    # =========================================================================
+    SLA_TARGETS = "sla_targets"  # Art. 30(3)(a) - full SLAs with quantitative targets
+    NOTICE_PERIODS = "notice_periods"  # Art. 30(3)(b) - notice periods
+    REPORTING_OBLIGATIONS = "reporting_obligations"  # Art. 30(3)(b) - reporting obligations
+    BCP_REQUIREMENTS = "bcp_requirements"  # Art. 30(3)(c) - provider's business contingency plans
+    RESILIENCE_TESTING = "resilience_testing"  # Art. 30(3)(d) - participation in client's testing
+    AUDIT_RIGHTS = "audit_rights"  # Art. 30(3)(e) - unrestricted audit rights
+    EXIT_STRATEGY = "exit_strategy"  # Art. 30(3)(f) - exit strategies
+    NCA_ACCESS = "nca_access"  # Art. 30(3)(g) - supervisory cooperation
+    BUSINESS_CONTINUITY = "business_continuity"  # Art. 30(3)(h) - BCP implementation and testing
+    SECURITY_MEASURES = "security_measures"  # Art. 30(3)(i) - security arrangements
+    SUBCONTRACTING = "subcontracting"  # Art. 30(3)(j) - subcontracting conditions
 
-    # Additional requirements
-    DATA_PROTECTION = "data_protection"
+    # Additional derived requirements
+    TRANSITION_SUPPORT = "transition_support"  # Part of Art. 30(3)(f)
+    PERFORMANCE_REMEDIATION = "performance_remediation"  # SLA breach handling
+    DATA_PROTECTION = "data_protection"  # GDPR alignment
     CONFIDENTIALITY = "confidentiality"
     IP_RIGHTS = "ip_rights"
 
@@ -497,28 +504,49 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
-    # Article 30(2)(d) - Service Level Targets (quantitative/qualitative)
+    # Article 30(2)(d) - Data Access, Recovery and Return
+    # CRITICAL: This requirement is often missed but is MANDATORY for ALL contracts
     requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.SERVICE_LEVEL_TARGETS,
+        requirement_type=RequirementType.DATA_ACCESS_RECOVERY,
         category=RequirementCategory.BASIC,
         article_reference="Article 30(2)(d)",
-        name="Service Level Descriptions with Targets",
-        description="Service level descriptions including quantitative and qualitative performance targets",
+        name="Data Access, Recovery and Return",
+        description="Provisions on data access, recovery and return in easily accessible format upon termination, insolvency, or resolution of ICT provider",
         detailed_criteria=[
-            "Quantitative performance targets (uptime %, latency)",
-            "Qualitative service descriptions",
-            "Measurement methodology",
-            "Reporting frequency",
+            "Data export in easily accessible, non-proprietary format",
+            "Data access mechanisms upon contract termination",
+            "Data recovery procedures upon provider insolvency",
+            "Data return timeline commitments",
+            "Data management provisions during provider resolution",
+            "Escrow or safeguard arrangements for critical data",
         ],
         mandatory=True,
         verification_method="document_review",
     ))
 
-    # Article 30(2)(e) - Incident Assistance (CORRECTED from (d))
+    # Article 30(2)(e) - Service Level Descriptions
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.SERVICE_LEVEL_DESCRIPTIONS,
+        category=RequirementCategory.BASIC,
+        article_reference="Article 30(2)(e)",
+        name="Service Level Descriptions",
+        description="Service level descriptions including quantitative and qualitative performance targets, with provisions for updates and revisions",
+        detailed_criteria=[
+            "Quantitative performance targets (uptime %, latency)",
+            "Qualitative service descriptions",
+            "Measurement methodology",
+            "Reporting frequency",
+            "Provisions for SLA updates and revisions",
+        ],
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    # Article 30(2)(f) - Incident Assistance
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.INCIDENT_ASSISTANCE,
         category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(e)",
+        article_reference="Article 30(2)(f)",
         name="Incident Assistance Obligations",
         description="Obligation to provide assistance in the event of ICT incidents at no additional cost or at predetermined cost",
         detailed_criteria=[
@@ -526,37 +554,19 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
             "Support during incident response",
             "Root cause analysis cooperation",
             "Remediation support",
-            "Cost provisions for assistance",
+            "Cost provisions for assistance (free or predetermined)",
         ],
         mandatory=True,
         verification_method="document_review",
     ))
 
-    # Article 30(2)(f) - Resilience Testing Participation (CORRECTED from (h))
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.RESILIENCE_TESTING,
-        category=RequirementCategory.BASIC,
-        article_reference="Article 30(2)(f)",
-        name="Resilience Testing Participation",
-        description="Obligation to participate in financial entity's ICT resilience testing per Articles 26-27",
-        detailed_criteria=[
-            "Obligation to participate in client security testing",
-            "Cooperation with penetration tests",
-            "Vulnerability assessment support",
-            "Threat-led testing cooperation (if required per Art. 26-27)",
-            "Testing results sharing provisions",
-        ],
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
-    # Article 30(2)(g) - Authority Cooperation (CORRECTED from (i))
+    # Article 30(2)(g) - Authority Cooperation
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.AUTHORITY_COOPERATION,
         category=RequirementCategory.BASIC,
         article_reference="Article 30(2)(g)",
         name="Cooperation with Competent Authorities",
-        description="Obligation to fully cooperate with competent authorities and resolution authorities",
+        description="Obligation to fully cooperate with competent authorities and resolution authorities of the financial entity",
         detailed_criteria=[
             "Unrestricted NCA access provisions",
             "Information provision on request",
@@ -568,13 +578,13 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
-    # Article 30(2)(h) - Termination Rights (CORRECTED from (e))
+    # Article 30(2)(h) - Termination Rights
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.TERMINATION_RIGHTS,
         category=RequirementCategory.BASIC,
         article_reference="Article 30(2)(h)",
         name="Termination Rights and Notice Periods",
-        description="Termination rights and related minimum notice periods for contract termination",
+        description="Termination rights and related minimum notice periods for contract termination, in line with supervisory expectations",
         detailed_criteria=[
             "Clear termination clauses",
             "Minimum notice period requirements",
@@ -586,7 +596,7 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
-    # Article 30(2)(i) - Training Participation (NEW)
+    # Article 30(2)(i) - Training Participation
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.TRAINING_PARTICIPATION,
         category=RequirementCategory.BASIC,
@@ -606,14 +616,16 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
 
     # ==========================================================================
     # Article 30(3) - Additional Requirements (Critical/Important Functions)
+    # Reference: https://www.digital-operational-resilience-act.com/Article_30.html
     # ==========================================================================
 
+    # Article 30(3)(a) - Full SLAs with Quantitative Targets
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.SLA_TARGETS,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(a)",
         name="Full SLAs with Quantitative Targets",
-        description="Full service level agreements including quantitative and qualitative performance targets",
+        description="Full service level descriptions including quantitative and qualitative performance targets",
         detailed_criteria=[
             "Quantitative availability targets",
             "Response time targets",
@@ -627,17 +639,19 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(b) - Notice Periods AND Reporting Obligations
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.NOTICE_PERIODS,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(b)",
-        name="Notice Periods",
-        description="Notice periods for termination and material changes",
+        name="Notice Periods and Reporting Obligations",
+        description="Notice periods and reporting obligations to the financial entity",
         detailed_criteria=[
             "Termination notice period",
             "Change notification requirements",
             "Minimum notice for material changes",
-            "Emergency termination provisions",
+            "Regular performance reporting",
+            "Incident reporting frequency",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -645,17 +659,19 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(c) - Provider's Business Contingency Plans
     requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.REPORTING_OBLIGATIONS,
+        requirement_type=RequirementType.BCP_REQUIREMENTS,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(c)",
-        name="Reporting Obligations",
-        description="Reporting obligations of the ICT third-party service provider",
+        name="Provider Business Contingency Plans",
+        description="Requirements for ICT provider to maintain appropriate business contingency plans",
         detailed_criteria=[
-            "Regular performance reports",
-            "Incident reports",
-            "Security reports",
-            "Compliance attestations",
+            "Provider must have documented BCP",
+            "Disaster recovery plan requirements",
+            "ICT-specific contingency measures",
+            "Regular BCP review and updates",
+            "BCP summary available to client on request",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -663,36 +679,41 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(d) - Resilience Testing Participation
+    requirements.append(ContractualRequirement(
+        requirement_type=RequirementType.RESILIENCE_TESTING,
+        category=RequirementCategory.CRITICAL,
+        article_reference="Article 30(3)(d)",
+        name="Resilience Testing Participation",
+        description="Participation in testing of business contingency plans per Articles 26-27",
+        detailed_criteria=[
+            "Obligation to participate in client's resilience testing",
+            "Cooperation with penetration tests",
+            "Vulnerability assessment support",
+            "Threat-led testing cooperation (TLPT if required)",
+            "Testing results sharing provisions",
+            "Joint DR exercises",
+        ],
+        applies_to_all=False,
+        applies_to_critical_only=True,
+        mandatory=True,
+        verification_method="document_review",
+    ))
+
+    # Article 30(3)(e) - UNRESTRICTED Audit and Access Rights
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.AUDIT_RIGHTS,
         category=RequirementCategory.CRITICAL,
-        article_reference="Article 30(3)(d)",
-        name="Entity Audit Rights",
-        description="Right of the financial entity to monitor performance through audit",
-        detailed_criteria=[
-            "On-site audit rights",
-            "Remote audit capabilities",
-            "Audit frequency provisions",
-            "Access to relevant documentation",
-            "Third-party audit acceptance",
-        ],
-        applies_to_all=False,
-        applies_to_critical_only=True,
-        mandatory=True,
-        verification_method="document_review",
-    ))
-
-    requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.NCA_ACCESS,
-        category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(e)",
-        name="NCA Access Rights",
-        description="Rights of access, inspection and audit by competent authorities",
+        name="Unrestricted Audit and Access Rights",
+        description="UNRESTRICTED rights of access, inspection and audit by financial entity and their competent authority",
         detailed_criteria=[
-            "Explicit NCA access clause",
-            "No impediment to supervision",
-            "Documentation access",
-            "On-site inspection rights",
+            "Unrestricted on-site audit rights",
+            "Remote audit capabilities",
+            "No cap on audit frequency for cause-based audits",
+            "Access to relevant documentation",
+            "Third-party auditor acceptance",
+            "NCA inspection cooperation",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -700,17 +721,19 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(f) - Exit Strategies
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.EXIT_STRATEGY,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(f)",
         name="Exit Strategies",
-        description="Exit strategies and transition assistance provisions",
+        description="Exit strategies including adequate transition periods and data portability",
         detailed_criteria=[
             "Documented exit strategy",
+            "Adequate transition period",
             "Data return procedures",
-            "Transition period provisions",
             "Knowledge transfer requirements",
+            "No vendor lock-in provisions",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -718,12 +741,13 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(f) continued - Transition Support
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.TRANSITION_SUPPORT,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(f)",
         name="Transition Support",
-        description="Transition assistance for migration to alternative provider",
+        description="Transition assistance for migration to alternative provider or in-house",
         detailed_criteria=[
             "Transition support duration",
             "Technical assistance commitment",
@@ -736,17 +760,18 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(g) - Supervisory Cooperation
     requirements.append(ContractualRequirement(
-        requirement_type=RequirementType.PERFORMANCE_REMEDIATION,
+        requirement_type=RequirementType.NCA_ACCESS,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(g)",
-        name="Performance Remediation",
-        description="Remediation measures where SLA targets are not met",
+        name="Supervisory Cooperation",
+        description="Participation in supervisory oversight activities and cooperation with competent authorities",
         detailed_criteria=[
-            "Service credits",
-            "Remediation plan requirements",
-            "Escalation procedures",
-            "Termination triggers",
+            "Information provision to NCAs on request",
+            "No impediment to supervision",
+            "Cooperation in supervisory activities",
+            "Support for resolution planning",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -754,17 +779,18 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(h) - Business Continuity Implementation
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.BUSINESS_CONTINUITY,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(h)",
-        name="Business Continuity",
-        description="Business continuity arrangements of the provider",
+        name="Business Continuity Implementation",
+        description="Implementation and testing of business continuity measures ensuring service availability",
         detailed_criteria=[
-            "Provider BCP requirements",
-            "DR capabilities",
-            "Testing requirements",
-            "Recovery time commitments",
+            "Provider BCP implementation",
+            "DR capabilities demonstrated",
+            "Testing schedule and evidence",
+            "Recovery time commitments (RTO/RPO)",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -772,16 +798,18 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(i) - Security Measures
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.SECURITY_MEASURES,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(i)",
-        name="Security Measures",
-        description="Implementation and testing of security measures",
+        name="ICT Security Measures",
+        description="ICT security-related arrangements including implementation and testing of security measures",
         detailed_criteria=[
-            "Security policy requirements",
+            "Security policy implementation",
             "Security testing provisions",
             "Vulnerability management",
+            "Security certifications (SOC2, ISO27001)",
             "Security incident handling",
         ],
         applies_to_all=False,
@@ -790,17 +818,19 @@ def get_article_30_requirements() -> List[ContractualRequirement]:
         verification_method="document_review",
     ))
 
+    # Article 30(3)(j) - Subcontracting Provisions
     requirements.append(ContractualRequirement(
         requirement_type=RequirementType.SUBCONTRACTING,
         category=RequirementCategory.CRITICAL,
         article_reference="Article 30(3)(j)",
         name="Subcontracting Provisions",
-        description="Conditions for subcontracting and requirements for subcontractors",
+        description="Conditions for subcontracting, including prior approval requirements and chain monitoring",
         detailed_criteria=[
-            "Approval requirements for subcontracting",
+            "Prior approval for critical subcontracting",
             "Notification of subcontractors",
             "Flow-down of requirements",
-            "Subcontractor oversight",
+            "Subcontractor chain monitoring",
+            "Right to object to new subcontractors",
         ],
         applies_to_all=False,
         applies_to_critical_only=True,
@@ -1418,28 +1448,33 @@ class DORAContractualRequirements:
             return "Review contract and add appropriate clause"
 
         recommendations = {
-            # Article 30(2) Basic Requirements
+            # Article 30(2) Basic Requirements - ALL contracts
             RequirementType.SERVICE_DESCRIPTION: "Add detailed service description clause (Art. 30(2)(a))",
             RequirementType.DATA_LOCATION: "Add data processing and storage location clause (Art. 30(2)(b))",
-            RequirementType.SERVICE_LEVELS: "Add service level descriptions (Art. 30(2)(c))",
-            RequirementType.INCIDENT_ASSISTANCE: "Add incident assistance obligations (Art. 30(2)(d))",
-            RequirementType.TERMINATION_RIGHTS: "Add/clarify termination provisions (Art. 30(2)(e))",
-            RequirementType.EXIT_COOPERATION: "Add exit cooperation and transition clause (Art. 30(2)(f))",
-            RequirementType.ACCESSIBILITY_SECURITY: "Add accessibility/security provisions (Art. 30(2)(g))",
-            RequirementType.RESILIENCE_TESTING: "Add resilience testing participation clause (Art. 30(2)(h))",
-            RequirementType.AUTHORITY_COOPERATION: "Add NCA/resolution authority cooperation clause (Art. 30(2)(i))",
+            RequirementType.SERVICE_LEVELS: "Add availability/integrity/confidentiality provisions (Art. 30(2)(c))",
+            RequirementType.DATA_ACCESS_RECOVERY: "Add data access, recovery and return provisions (Art. 30(2)(d)) - CRITICAL",
+            RequirementType.SERVICE_LEVEL_DESCRIPTIONS: "Add service level descriptions with targets (Art. 30(2)(e))",
+            RequirementType.INCIDENT_ASSISTANCE: "Add incident assistance obligations (Art. 30(2)(f))",
+            RequirementType.AUTHORITY_COOPERATION: "Add NCA/resolution authority cooperation clause (Art. 30(2)(g))",
+            RequirementType.TERMINATION_RIGHTS: "Add/clarify termination provisions and notice periods (Art. 30(2)(h))",
+            RequirementType.TRAINING_PARTICIPATION: "Add security awareness training participation clause (Art. 30(2)(i))",
+
             # Article 30(3) Critical Function Requirements
-            RequirementType.SLA_TARGETS: "Add quantitative SLA targets (Art. 30(3)(a))",
-            RequirementType.NOTICE_PERIODS: "Specify notice periods (Art. 30(3)(b))",
-            RequirementType.REPORTING_OBLIGATIONS: "Add reporting obligations (Art. 30(3)(c))",
-            RequirementType.AUDIT_RIGHTS: "Add audit rights clause (Art. 30(3)(d))",
-            RequirementType.NCA_ACCESS: "Add explicit NCA access rights (Art. 30(3)(e))",
+            RequirementType.SLA_TARGETS: "Add full SLAs with quantitative targets (Art. 30(3)(a))",
+            RequirementType.NOTICE_PERIODS: "Specify notice periods and reporting obligations (Art. 30(3)(b))",
+            RequirementType.BCP_REQUIREMENTS: "Add provider BCP requirements clause (Art. 30(3)(c))",
+            RequirementType.RESILIENCE_TESTING: "Add resilience testing participation clause (Art. 30(3)(d))",
+            RequirementType.AUDIT_RIGHTS: "Add unrestricted audit rights clause (Art. 30(3)(e))",
             RequirementType.EXIT_STRATEGY: "Document exit strategy provisions (Art. 30(3)(f))",
             RequirementType.TRANSITION_SUPPORT: "Add transition assistance clause (Art. 30(3)(f))",
-            RequirementType.PERFORMANCE_REMEDIATION: "Add SLA breach remediation clause (Art. 30(3)(g))",
-            RequirementType.BUSINESS_CONTINUITY: "Add BCP requirements clause (Art. 30(3)(h))",
-            RequirementType.SECURITY_MEASURES: "Add security requirements clause (Art. 30(3)(i))",
+            RequirementType.NCA_ACCESS: "Add supervisory cooperation clause (Art. 30(3)(g))",
+            RequirementType.BUSINESS_CONTINUITY: "Add BCP implementation requirements (Art. 30(3)(h))",
+            RequirementType.SECURITY_MEASURES: "Add ICT security requirements clause (Art. 30(3)(i))",
             RequirementType.SUBCONTRACTING: "Add subcontracting provisions (Art. 30(3)(j))",
+
+            # Additional
+            RequirementType.REPORTING_OBLIGATIONS: "Add reporting obligations (part of Art. 30(3)(b))",
+            RequirementType.PERFORMANCE_REMEDIATION: "Add SLA breach remediation clause",
         }
 
         return recommendations.get(req.requirement_type, "Review and amend contract")

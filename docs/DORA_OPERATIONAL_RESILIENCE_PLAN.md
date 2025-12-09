@@ -128,25 +128,94 @@
 
 ### 2.4 Article 30(2) — Mandatory Contract Clauses (ALL 9 Subpoints)
 
-ALL contracts with EU regulated clients MUST include these **9 mandatory clauses**:
+ALL contracts with EU regulated clients MUST include these **9 mandatory clauses** (per official DORA text):
 
 ```yaml
 mandatory_contract_clauses:
-  # Basic service terms
-  art_30_2_a: "Clear and complete description of all ICT services to be provided"
-  art_30_2_b: "Locations where data will be processed/stored, including subcontracting conditions"
-  art_30_2_c: "Provisions on availability, authenticity, integrity, confidentiality of data"
-  art_30_2_d: "Service level descriptions including quantitative/qualitative targets"
-  art_30_2_e: "Obligation to provide assistance in case of ICT incidents at no additional cost or at predetermined cost"
-  art_30_2_f: "Obligation to participate in financial entity's ICT resilience testing (per Art. 26-27)"
-  art_30_2_g: "Obligation to fully cooperate with competent authorities and resolution authorities"
+  # Basic service terms (a-c)
+  art_30_2_a: "Clear and complete description of all functions and ICT services to be provided, including subcontracting permissions and conditions"
+  art_30_2_b: "Locations (regions/countries) where data will be processed and stored, advance notice requirements for location changes"
+  art_30_2_c: "Provisions on availability, authenticity, integrity and confidentiality of data, including personal data protection"
 
-  # CRITICAL: Often-missed clauses
-  art_30_2_h: "Termination rights and related minimum notice periods for contract termination"
+  # Data and service management (d-f)
+  art_30_2_d: "Provisions on data access, recovery and return in easily accessible format upon termination, insolvency, or resolution of ICT provider"
+  art_30_2_e: "Service level descriptions with quantitative and qualitative performance targets, updates and revisions"
+  art_30_2_f: "Obligation to provide assistance in case of ICT incidents at no additional cost or at predetermined cost"
+
+  # Regulatory and termination (g-i)
+  art_30_2_g: "Obligation to fully cooperate with competent authorities and resolution authorities of the financial entity"
+  art_30_2_h: "Termination rights and related minimum notice periods for contract termination, in line with supervisory expectations"
   art_30_2_i: "Conditions for ICT provider participation in financial entity's security awareness programmes and digital operational resilience training (per Art. 13(6))"
 ```
 
-**CRITICAL NOTE**: Many contracts miss Art. 30(2)(h) and (i). These are **mandatory** for ALL ICT service contracts, not just critical functions.
+**CRITICAL NOTES**:
+1. Art. 30(2)(d) is often missed — data access/recovery/return mechanisms are MANDATORY for ALL contracts
+2. Art. 30(2)(h) and (i) are also frequently overlooked but are mandatory
+3. Resilience testing participation is a **30(3)** requirement (critical functions only), not 30(2)
+
+**Art. 30(2)(d) Implementation** — Data Access, Recovery and Return:
+```yaml
+data_access_recovery_clause:
+  purpose: |
+    Ensure client can access, recover and retrieve all their data upon:
+    - Contract termination (planned or unplanned)
+    - Provider insolvency or resolution
+    - Regulatory requirement
+
+  data_export_formats:
+    primary: "JSON (structured, machine-readable)"
+    secondary: "CSV (tabular data)"
+    database: "SQL dump (PostgreSQL compatible)"
+    models: "ONNX format for trained AI/ML models"
+    documentation: "PDF/Markdown"
+
+  data_scope:
+    included:
+      - "All trading strategies and configurations"
+      - "Backtest results and performance history"
+      - "Trained ML/RL models and weights"
+      - "User configurations and preferences"
+      - "Audit logs (client-specific)"
+      - "API integration configurations"
+    excluded:
+      - "Platform source code (proprietary)"
+      - "Other clients' data"
+      - "Aggregated/anonymized platform metrics"
+
+  timeline_commitments:
+    standard_termination:
+      export_request_response: "24 hours"
+      data_package_ready: "5 business days"
+      download_availability: "30 days post-termination"
+    urgent_termination:
+      export_request_response: "4 hours"
+      data_package_ready: "48 hours"
+      download_availability: "14 days"
+    insolvency_scenario:
+      data_escrow: "Available immediately via escrow provider"
+      direct_access: "Within 72 hours of insolvency notice"
+
+  technical_provisions:
+    api_access: "REST API for programmatic data export"
+    bulk_download: "Secure HTTPS download links"
+    verification: "SHA-256 checksums for all exports"
+    encryption: "AES-256 encryption for transit and at-rest"
+
+  insolvency_protection:
+    data_escrow:
+      provider: "To be designated (e.g., Iron Mountain, AWS Glacier)"
+      update_frequency: "Weekly full backup to escrow"
+      access_trigger: "Insolvency filing or 30-day non-response"
+    contractual_safeguards:
+      - "Data classified as client property, not platform asset"
+      - "Explicit carve-out from bankruptcy estate"
+      - "Priority access rights in insolvency proceedings"
+
+  cost_provisions:
+    standard_export: "Included in subscription (no additional cost)"
+    expedited_export: "Predetermined fee schedule in contract"
+    extended_retention: "Per-month fee for retention beyond 30 days"
+```
 
 **Art. 30(2)(i) Implementation** — Training Participation:
 ```yaml
@@ -174,18 +243,32 @@ training_participation_clause:
 
 ### 2.5 Article 30(3) — Additional Requirements for Critical Functions
 
-If client classifies our services as supporting "critical or important function":
+If client classifies our services as supporting "critical or important function", contracts MUST include these **10 additional requirements** (a-j):
 
 ```yaml
 additional_requirements_critical:
-  art_30_3_a: "Full service level descriptions with quantitative targets"
-  art_30_3_b: "Notice periods and reporting obligations"
-  art_30_3_c: "Business contingency plans including ICT-specific requirements"
-  art_30_3_d: "ICT security measures and testing participation"
-  art_30_3_e: "UNRESTRICTED audit and access rights for client and their NCA"
-  art_30_3_f: "Exit strategies with transition periods"
-  art_30_3_g: "Participation in supervisory oversight activities"
+  # Performance and reporting (a-b)
+  art_30_3_a: "Full service level descriptions including quantitative and qualitative performance targets"
+  art_30_3_b: "Notice periods and reporting obligations to the financial entity"
+
+  # Business continuity (c-d) — OFTEN CONFLATED, MUST BE SEPARATE
+  art_30_3_c: "Requirements for ICT provider to maintain appropriate business contingency plans (provider's own BCP/DR)"
+  art_30_3_d: "Participation in testing of business contingency plans (client's resilience testing per Art. 26-27)"
+
+  # Audit and oversight (e-g)
+  art_30_3_e: "UNRESTRICTED rights of access, inspection and audit by financial entity and its competent authority"
+  art_30_3_f: "Exit strategies including adequate transition periods and data portability"
+  art_30_3_g: "Participation in supervisory oversight activities, including cooperation with NCAs"
+
+  # Security and risk management (h-j)
+  art_30_3_h: "Implementation and testing of business continuity measures ensuring service availability"
+  art_30_3_i: "ICT security-related arrangements including implementation and testing of security measures"
+  art_30_3_j: "Conditions for subcontracting, including prior approval requirements and chain monitoring"
 ```
+
+**CRITICAL DISTINCTION Art. 30(3)(c) vs (d)**:
+- **(c)** = Provider must HAVE business contingency plans (our internal BCP/DR)
+- **(d)** = Provider must PARTICIPATE in client's testing of contingency plans (joint exercises)
 
 #### 2.5.1 Detailed Art. 30(3) Implementation
 
@@ -1058,6 +1141,59 @@ client_sla_tiers:
 
 **CRITICAL**: RTO/RPO claims MUST be backed by documented infrastructure and tested procedures.
 
+#### Current State vs Target State — IMPORTANT
+
+```yaml
+infrastructure_reality_check:
+  # Be honest about current capabilities vs contractual commitments
+  current_state:
+    as_of: "2025-01-01"
+    deployment: "Single region (EU-WEST-1)"
+    database: "Primary only with nightly backups"
+    achievable_rto: "4-8 hours"
+    achievable_rpo: "24 hours"
+    dr_testing: "Not yet conducted"
+    on_call: "Informal, no SLA"
+
+  what_we_can_offer_today:
+    tier: "Standard only"
+    availability_target: "99.5%"
+    incident_notification: "Best effort (2-4 hours)"
+    notes: "Until infrastructure upgrades completed"
+
+  target_state_professional:
+    target_date: "Q2 2025"
+    investment_required: "€30,000-50,000"
+    milestones:
+      - "Multi-AZ deployment"
+      - "Sync replication setup"
+      - "Automated failover testing"
+      - "On-call rotation established"
+
+  target_state_enterprise:
+    target_date: "Q4 2025"
+    investment_required: "€100,000-150,000"
+    milestones:
+      - "Multi-region deployment"
+      - "24/7 on-call team (4+ FTE)"
+      - "Automated DR testing"
+      - "SOC2 Type II certification"
+
+  contractual_guidance:
+    principle: "Never promise what you cannot deliver"
+    standard_tier:
+      offer_now: true
+      confidence: "HIGH"
+    professional_tier:
+      offer_now: false
+      offer_when: "Q2 2025 after infrastructure upgrades"
+      confidence_after_upgrade: "HIGH"
+    enterprise_tier:
+      offer_now: false
+      offer_when: "Q4 2025 after full build-out"
+      confidence_after_upgrade: "HIGH"
+```
+
 ### 5.5 Incident Management — CORRECTED
 
 ```yaml
@@ -1267,25 +1403,67 @@ subcontractor_management:
 
     binance:
       legal_name: "Binance Holdings Limited"
-      lei: "TBD"
+      lei: "TBD"  # Note: Binance operates through multiple entities
+      alternative_id: "Cayman Islands Exempt Company"
+      alternative_id_type: "CAYMAN_REGISTRATION"
       subcontractor_type: "data_provider"
       chain_level: 1
       services_provided:
         - "Crypto market data"
         - "Crypto trading API"
       data_processing_locations: ["Global (various jurisdictions)"]
-      data_storage_locations: ["Variable"]
+      data_storage_locations: ["Variable - depends on Binance entity used"]
       has_data_access: true  # Client API keys
       data_types_accessed: ["Client exchange credentials (encrypted)"]
       certifications:
         - "Variable by jurisdiction"
+        - "See regulatory_risk_assessment below"
       contract_reference: "Binance API Terms"
       is_material: true
       supports_critical_functions: true  # Crypto trading
       substitutability: "medium"  # Kraken, Coinbase alternatives
       last_audit_date: "N/A"
       next_review_date: "2025-06-01"
-      special_notes: "Regulatory status varies by jurisdiction"
+
+      # REGULATORY RISK ASSESSMENT - Required per Art. 29
+      regulatory_risk_assessment:
+        overall_risk_level: "HIGH"
+        assessment_date: "2025-01-01"
+        next_assessment: "2025-06-01"
+
+        jurisdictional_issues:
+          - jurisdiction: "United States"
+            status: "SEC enforcement action (2023)"
+            implication: "US clients should use Binance.US or alternatives"
+          - jurisdiction: "European Union"
+            status: "Some EU entities licensed (France AMF, others pending)"
+            implication: "Verify specific entity used for EU clients"
+          - jurisdiction: "United Kingdom"
+            status: "FCA restrictions - not authorized"
+            implication: "UK clients should use alternatives"
+
+        risk_mitigation:
+          - "Offer alternative exchanges (Kraken, Coinbase) for regulated clients"
+          - "Allow per-client exchange restrictions"
+          - "Client consent required before enabling Binance"
+          - "Segregate crypto trading as optional feature"
+
+        alternative_providers:
+          - name: "Kraken"
+            lei: "TBD"
+            regulatory_status: "Licensed in multiple EU jurisdictions"
+            notes: "Recommended for EU-regulated clients"
+          - name: "Coinbase"
+            lei: "5493005KJDX9YGBJI252"
+            regulatory_status: "US SEC registered, EU licenses"
+            notes: "Recommended for US and EU clients"
+
+        client_disclosure: |
+          Binance regulatory status varies significantly by jurisdiction.
+          Clients must verify Binance's authorization status in their jurisdiction
+          before enabling Binance integration. Platform offers alternative
+          exchange integrations (Kraken, Coinbase) for jurisdictions where
+          Binance is not authorized.
 
     # --- TIER 2: Monitoring & Operations ---
     datadog:
@@ -1312,24 +1490,29 @@ subcontractor_management:
 
     sentry:
       legal_name: "Functional Software, Inc. (Sentry)"
-      lei: "TBD"
+      lei: "TBD"  # Private company - may not have LEI
+      alternative_id: "Delaware Corporation"
+      alternative_id_type: "US_STATE_REGISTRATION"
       subcontractor_type: "monitoring"
       chain_level: 1
       services_provided:
         - "Error tracking"
         - "Performance monitoring"
       data_processing_locations: ["US", "EU option available"]
+      data_storage_locations: ["US (default)", "EU (on request)"]
       has_data_access: true  # Error context may contain data
       certifications:
         - "SOC 2 Type II"
         - "GDPR compliant"
       is_material: false
       supports_critical_functions: false
+      substitutability: "easy"  # Alternatives: Bugsnag, Rollbar
 
     # --- TIER 2: Authentication ---
     auth0_clerk:
-      legal_name: "Auth0 Inc. (Okta) / Clerk Inc."
-      lei: "TBD"  # Okta LEI: 549300N8BTFTU58UJ747
+      legal_name: "Auth0 Inc. (subsidiary of Okta, Inc.)"
+      lei: "549300N8BTFTU58UJ747"  # Okta LEI - Auth0 is subsidiary
+      parent_company: "Okta, Inc."
       subcontractor_type: "security_services"
       chain_level: 1
       services_provided:
@@ -1683,6 +1866,284 @@ enterprise_onprem:
     - configuration_review
     - security_assessment
     - ongoing_maintenance_guidance
+```
+
+### 6.6 Pre-Contractual Support Package (Art. 28(7)) — NEW
+
+Per DORA Article 28(7), financial entities must conduct pre-contractual due diligence. We proactively support this with a comprehensive information package.
+
+```yaml
+pre_contractual_support:
+  # Reference: DORA Article 28(7) - Pre-contractual risk assessment
+  purpose: |
+    Support financial entity's pre-contractual assessment obligations
+    by providing comprehensive information package for due diligence.
+
+  standard_package:
+    # Available to all prospective clients
+    service_description:
+      - "Platform capabilities overview"
+      - "Architecture documentation"
+      - "Security whitepaper"
+      - "Service Level Agreement template"
+
+    security_documentation:
+      - "Security policy summary"
+      - "Data handling procedures"
+      - "Encryption standards"
+      - "Access control overview"
+
+    compliance_attestations:
+      - "SOC 2 Type II report (under NDA)"
+      - "ISO 27001 certificate (when available)"
+      - "Penetration test executive summary"
+      - "GDPR compliance statement"
+
+    operational_documentation:
+      - "BCP/DR summary"
+      - "Incident response overview"
+      - "Change management process"
+      - "SLA performance history"
+
+  enterprise_package:
+    # Additional for regulated clients
+    detailed_assessments:
+      - "Full security architecture review"
+      - "Risk assessment documentation"
+      - "Control mapping (DORA/SOC2/ISO)"
+      - "Detailed subcontractor chain"
+
+    regulatory_support:
+      - "DORA compliance statement"
+      - "Article 30 clause mapping"
+      - "Concentration risk self-assessment"
+      - "Exit strategy documentation"
+
+    due_diligence_support:
+      - "On-site security review option"
+      - "Technical Q&A sessions"
+      - "Reference customer contacts"
+      - "Custom security questionnaire completion"
+
+  questionnaire_support:
+    turnaround_time:
+      standard_questionnaires: "5 business days"
+      custom_questionnaires: "10 business days"
+      complex_assessments: "By agreement"
+
+    supported_formats:
+      - "SIG Lite / SIG Core"
+      - "CAIQ (CSA)"
+      - "Custom client questionnaires"
+      - "Regulatory questionnaires"
+
+  concentration_risk_support:
+    # Per Art. 29 - help client assess concentration risk
+    information_provided:
+      - "Number of financial entity clients (aggregated)"
+      - "Geographic distribution"
+      - "No single client >25% revenue"
+      - "Subcontractor diversification"
+
+    self_assessment:
+      substitutability: "MEDIUM - alternatives exist but migration requires effort"
+      market_position: "Not dominant - multiple competitors"
+      single_point_failure: "No - multi-provider architecture"
+
+  response_commitment:
+    information_request: "Initial response within 2 business days"
+    complete_package: "Within 5 business days of engagement"
+    custom_requests: "Timeline agreed per request"
+```
+
+### 6.7 GDPR/DORA Breach Coordination — NEW
+
+When a data breach occurs, both GDPR and DORA notification requirements may apply. This section coordinates the overlapping obligations.
+
+```yaml
+breach_notification_coordination:
+  # When BOTH GDPR and DORA apply to a single incident
+  scenario: "Personal data breach affecting EU regulated clients"
+
+  timeline_comparison:
+    gdpr_72h:
+      requirement: "DPA notification within 72 hours of awareness"
+      applies_when: "Personal data breach affecting EU data subjects"
+      our_role: "Notify client (data controller) immediately; they notify DPA"
+
+    dora_client_notification:
+      requirement: "Client notification <30 min (critical)"
+      applies_when: "ICT incident affecting client's critical functions"
+      our_role: "Direct notification to client per SLA"
+
+    dora_nca_notification:
+      requirement: "Client must notify NCA (initial: within 4 hours, detailed: within 72h)"
+      applies_when: "Major ICT-related incident"
+      our_role: "Provide incident report to client for their NCA submission"
+
+  coordinated_response_timeline:
+    t_plus_0: "Incident detection"
+    t_plus_15min: "Internal classification (ICT incident vs data breach vs both)"
+    t_plus_30min: "Client notification (critical ICT incident)"
+    t_plus_1h: "Initial incident report to client"
+    t_plus_4h: "Detailed information for client's NCA initial notification"
+    t_plus_24h: "Updated incident report with root cause progress"
+    t_plus_72h: "Support client's GDPR DPA notification if personal data involved"
+    t_plus_final: "Full incident report for client's regulatory submissions"
+
+  our_responsibilities:
+    as_processor:
+      - "Notify controller (client) without undue delay"
+      - "Provide information needed for GDPR notification"
+      - "Cooperate in investigation"
+      - "Document all actions taken"
+
+    as_ict_provider:
+      - "Notify client per DORA SLA requirements"
+      - "Provide technical incident details"
+      - "Support client's NCA notification preparation"
+      - "Participate in post-incident review"
+
+  information_we_provide:
+    for_gdpr_notification:
+      - "Nature of the breach"
+      - "Categories of data affected"
+      - "Approximate number of records"
+      - "Contact point for more information"
+      - "Likely consequences"
+      - "Measures taken to address breach"
+
+    for_dora_notification:
+      - "Incident type and classification"
+      - "Root cause (preliminary and final)"
+      - "Impact on services"
+      - "Actions taken and planned"
+      - "Recovery timeline"
+      - "Preventive measures for future"
+
+  dual_notification_template:
+    # Single incident report format covering both requirements
+    sections:
+      - incident_identification
+      - timeline_of_events
+      - data_impact_assessment  # GDPR focus
+      - service_impact_assessment  # DORA focus
+      - root_cause_analysis
+      - remediation_actions
+      - prevention_measures
+      - lessons_learned
+
+  special_considerations:
+    ransomware:
+      gdpr: "Personal data breach if data exfiltrated or destroyed"
+      dora: "Major ICT incident affecting availability/confidentiality"
+      action: "Dual notification likely required"
+
+    supply_chain:
+      gdpr: "Notify if subprocessor breach affects personal data"
+      dora: "Notify if affects services to client"
+      action: "Coordinate with subcontractor and client"
+```
+
+### 6.8 NCA Jurisdiction FAQ — NEW
+
+Common questions about regulatory jurisdiction and inspection rights.
+
+```yaml
+nca_jurisdiction_faq:
+
+  q1_which_nca:
+    question: "If our client is a German bank but we're registered in [Country X], which NCA has jurisdiction?"
+    answer: |
+      The client's home NCA (BaFin in this case) has inspection rights THROUGH the
+      client's contract with us. Our registration location is irrelevant for
+      Art. 30(3)(e) purposes.
+
+      Legal basis: Art. 30(3)(e) requires contracts to include "rights of access,
+      inspection and audit by the financial entity and its competent authority."
+
+      Practical implication: We must allow BaFin (or any client's NCA) to:
+      - Access our premises for inspection (with notice)
+      - Review relevant documentation
+      - Interview key personnel
+
+      We are NOT directly supervised by any NCA unless designated as CTPP.
+
+  q2_nca_scope:
+    question: "Can a client's NCA inspect ALL our systems, including other clients' data?"
+    answer: |
+      No. The scope is limited to:
+      - Systems and data relevant to THAT client's services
+      - Compliance with contractual obligations
+      - Our security controls and procedures (general)
+
+      We protect other clients' data through:
+      - Logical segregation of client data
+      - Redaction of other client information
+      - Escorted access with scope limitations
+      - Written scope agreement before inspection
+
+  q3_multiple_ncas:
+    question: "If we have clients in Germany, France, and Luxembourg, can we have 3 NCAs inspecting us simultaneously?"
+    answer: |
+      Yes, in theory. Each client's NCA has independent inspection rights.
+
+      Mitigation strategies:
+      - Offer pooled audit reports (Art. 30(4))
+      - Maintain comprehensive audit documentation
+      - Coordinate inspection schedules where possible
+      - SOC 2 Type II report as baseline evidence
+
+  q4_nca_vs_ctpp:
+    question: "How does NCA inspection differ if we become designated as CTPP?"
+    answer: |
+      Current (Non-CTPP):
+      - NCA access via client contracts only
+      - No direct regulatory relationship
+      - Inspections triggered by client request
+
+      If designated CTPP:
+      - Direct oversight by Lead Overseer ESA
+      - Annual oversight plan
+      - Direct requests for information
+      - Potential recommendations and penalty powers
+      - Art. 31-44 obligations apply
+
+  q5_data_residency:
+    question: "If our data is processed in the US (AWS US regions), does this create issues for EU NCA inspection?"
+    answer: |
+      Not directly for inspection rights, but considerations include:
+
+      1. GDPR implications: EU-US data transfer mechanisms required (DPF, SCCs)
+      2. Art. 30(2)(b): Must disclose US data processing/storage locations
+      3. Art. 29: Assess "any constraint that may arise in respect to the urgent
+         recovery of the financial entity's data" from third-country providers
+      4. NCA access: We provide NCA access to documentation/systems; physical data
+         location doesn't prevent this
+
+      Our approach:
+      - Offer EU-only deployment option (AWS EU-West-1, EU-Central-1)
+      - Document all data locations in contract
+      - Ensure SCCs in place with US subcontractors
+      - Data export capability from any region
+
+  q6_legal_basis:
+    question: "What is our legal basis for providing information to a client's NCA?"
+    answer: |
+      Primary: Contractual obligation per Art. 30(3)(e)
+
+      The contract with our client REQUIRES us to cooperate with their NCA.
+      This is a contractual duty, not a direct regulatory relationship.
+
+      If we refuse:
+      - Breach of contract with client
+      - Client may be forced to terminate (regulatory pressure)
+      - Reputational damage
+
+      What we cannot be compelled to provide:
+      - Other clients' confidential information
+      - Proprietary source code (unless directly relevant)
+      - Information unrelated to the client's services
 ```
 
 ---
