@@ -34,13 +34,14 @@ Migration Status:
     Phase 2: Incident Interface Layer (COMPLETE)
     Phase 3: Third-Party Risk Interface (COMPLETE)
     Phase 4: Contracts & SLA Layer (COMPLETE)
-    Phase 5-8: Module migration pending
+    Phase 5: Unified Reporting Layer (COMPLETE)
+    Phase 6-8: Module migration pending
 """
 
 from __future__ import annotations
 
-__version__ = "1.3.0"
-__migration_phase__ = 4  # Current migration phase
+__version__ = "1.4.0"
+__migration_phase__ = 5  # Current migration phase
 
 # =============================================================================
 # Phase 1: Due Diligence & Audit Layer (Art. 30(3)(e), Art. 28(3), Art. 30(4))
@@ -478,6 +479,91 @@ from services.dora_integration.contracts import (
 )
 
 # =============================================================================
+# Phase 5: Unified Reporting Layer (Art. 28(3), Art. 19, Art. 20)
+# =============================================================================
+
+from services.dora_integration.reporting import (
+    # =========================================================================
+    # Unified Reporting Manager
+    # =========================================================================
+    # Enums
+    ReportType as UnifiedReportType,
+    ReportStatus as UnifiedReportStatus,
+    ReportChannel,
+    PackageFormat,
+    ClientType as ReportClientType,
+    # Data structures
+    ReportDestination,
+    ReportValidationResult,
+    UnifiedReport,
+    SubmissionPackage,
+    DeliveryRecord,
+    UnifiedReportingConfig,
+    # Main class
+    UnifiedReportingManager,
+    # Factory functions
+    create_unified_reporting_manager,
+    create_report_destination,
+    get_report_types as get_unified_report_types,
+    get_report_statuses,
+
+    # =========================================================================
+    # Reporting Templates (Article 20)
+    # =========================================================================
+    # Enums
+    IncidentTypeCode,
+    DataTypeCode,
+    ClientTypeCode,
+    ServiceTypeCode,
+    ResponseEffectivenessCode,
+    TemplateExportFormat,
+    # Data structures
+    ITSInitialNotificationTemplate,
+    ITSIntermediateReportTemplate,
+    ITSFinalReportTemplate,
+    TimelineEvent,
+    ClientIncidentDataPackage,
+    # Main class
+    DORAReportingTemplates,
+    # Factory functions
+    create_reporting_templates,
+    get_incident_type_codes,
+    get_data_type_codes,
+    get_service_type_codes,
+    get_client_type_codes,
+    create_timeline_event,
+
+    # =========================================================================
+    # Register of Information - ROI Data Generator (Article 28(3))
+    # =========================================================================
+    # Enums
+    ContractType,
+    ServiceType,
+    FunctionType,
+    DataLocation as ROIDataLocation,
+    ProviderLocationType,
+    SubcontractingLevel as ROISubcontractingLevel,
+    ExportFormat,
+    # Data structures
+    ProviderIdentification as ROIProviderIdentification,
+    ContractReferenceData,
+    SubcontractorData,
+    ServiceRecord,
+    ROIDataPackage,
+    ROIDataGeneratorConfig,
+    # Main class
+    DORARegisterOfInformation,
+    # Factory functions
+    create_register_of_information,
+    create_roi_data_generator,
+    get_contract_types,
+    get_service_types,
+    get_subcontracting_levels,
+    get_its_templates_provided,
+    get_its_templates_client_provides,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -886,4 +972,87 @@ __all__ = [
     "get_exit_triggers",
     "get_exit_phases",
     "get_transition_types",
+
+    # =========================================================================
+    # Phase 5: Unified Reporting Layer
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Unified Reporting Manager
+    # -------------------------------------------------------------------------
+    # Enums
+    "UnifiedReportType",
+    "UnifiedReportStatus",
+    "ReportChannel",
+    "PackageFormat",
+    "ReportClientType",
+    # Data structures
+    "ReportDestination",
+    "ReportValidationResult",
+    "UnifiedReport",
+    "SubmissionPackage",
+    "DeliveryRecord",
+    "UnifiedReportingConfig",
+    # Main class
+    "UnifiedReportingManager",
+    # Factory functions
+    "create_unified_reporting_manager",
+    "create_report_destination",
+    "get_unified_report_types",
+    "get_report_statuses",
+
+    # -------------------------------------------------------------------------
+    # Reporting Templates (Article 20)
+    # -------------------------------------------------------------------------
+    # Enums
+    "IncidentTypeCode",
+    "DataTypeCode",
+    "ClientTypeCode",
+    "ServiceTypeCode",
+    "ResponseEffectivenessCode",
+    "TemplateExportFormat",
+    # Data structures
+    "ITSInitialNotificationTemplate",
+    "ITSIntermediateReportTemplate",
+    "ITSFinalReportTemplate",
+    "TimelineEvent",
+    "ClientIncidentDataPackage",
+    # Main class
+    "DORAReportingTemplates",
+    # Factory functions
+    "create_reporting_templates",
+    "get_incident_type_codes",
+    "get_data_type_codes",
+    "get_service_type_codes",
+    "get_client_type_codes",
+    "create_timeline_event",
+
+    # -------------------------------------------------------------------------
+    # Register of Information - ROI Data Generator (Article 28(3))
+    # -------------------------------------------------------------------------
+    # Enums
+    "ContractType",
+    "ServiceType",
+    "FunctionType",
+    "ROIDataLocation",
+    "ProviderLocationType",
+    "ROISubcontractingLevel",
+    "ExportFormat",
+    # Data structures
+    "ROIProviderIdentification",
+    "ContractReferenceData",
+    "SubcontractorData",
+    "ServiceRecord",
+    "ROIDataPackage",
+    "ROIDataGeneratorConfig",
+    # Main class
+    "DORARegisterOfInformation",
+    # Factory functions
+    "create_register_of_information",
+    "create_roi_data_generator",
+    "get_contract_types",
+    "get_service_types",
+    "get_subcontracting_levels",
+    "get_its_templates_provided",
+    "get_its_templates_client_provides",
 ]

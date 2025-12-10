@@ -186,10 +186,10 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration can be imported."""
         try:
             from services import dora_integration
-            # Phase 4 complete - version is now 1.3.0
-            assert dora_integration.__version__ == "1.3.0"
-            # Phase 4 complete - migration_phase is now 4
-            assert dora_integration.__migration_phase__ >= 4
+            # Phase 5 complete - version is now 1.4.0
+            assert dora_integration.__version__ == "1.4.0"
+            # Phase 5 complete - migration_phase is now 5
+            assert dora_integration.__migration_phase__ >= 5
         except ImportError as e:
             pytest.fail(f"Failed to import dora_integration: {e}")
 
@@ -233,7 +233,8 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.reporting can be imported."""
         try:
             from services.dora_integration import reporting
-            assert reporting.__all__ == []  # Empty in Phase 0
+            # Phase 5 complete - reporting now has exports
+            assert len(reporting.__all__) > 0
         except ImportError as e:
             pytest.fail(f"Failed to import reporting: {e}")
 

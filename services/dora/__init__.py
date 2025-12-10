@@ -1024,7 +1024,8 @@ from services.dora_integration.due_diligence.compliance_dashboard import (
     DORAComplianceDashboard,
 )
 
-from services.dora.unified_reporting import (
+# MIGRATED: Phase 5 -> services.dora_integration.reporting
+from services.dora_integration.reporting.unified_reporting import (
     ReportType,
     ReportStatus,
     ReportChannel,
@@ -1032,6 +1033,61 @@ from services.dora.unified_reporting import (
     UnifiedReport,
     SubmissionPackage,
     UnifiedReportingManager,
+)
+
+# MIGRATED: Phase 5 -> services.dora_integration.reporting
+# ROI Data Generator (refactored from full register to data generator)
+from services.dora_integration.reporting.register_of_information import (
+    # Enums - re-exported for compatibility
+    ContractType as ROIContractType,
+    ServiceType as ROIServiceType,
+    FunctionType as ROIFunctionType,
+    DataLocation as ROIDataLocation,
+    ProviderLocationType as ROIProviderLocationType,
+    SubcontractingLevel as ROISubcontractingLevel,
+    ExportFormat as ROIExportFormat,
+    # Data structures - re-exported for compatibility
+    ProviderIdentification,
+    ContractReferenceData,
+    SubcontractorData as ROISubcontractorData,
+    ServiceRecord as ROIServiceRecord,
+    ROIDataPackage,
+    ROIDataGeneratorConfig,
+    # Main class
+    DORARegisterOfInformation as DORAROIDataGenerator,
+    # Factory functions
+    create_register_of_information as create_roi_data_generator,
+    create_roi_data_generator as create_roi_generator,
+    get_contract_types as get_roi_contract_types,
+    get_service_types as get_roi_service_types,
+    get_subcontracting_levels as get_roi_subcontracting_levels,
+    get_its_templates_provided,
+    get_its_templates_client_provides,
+)
+
+# MIGRATED: Phase 5 -> services.dora_integration.reporting
+from services.dora_integration.reporting.reporting_templates import (
+    # Enums
+    IncidentTypeCode as TemplateIncidentTypeCode,
+    DataTypeCode,
+    ClientTypeCode,
+    ServiceTypeCode,
+    ResponseEffectivenessCode,
+    # Data structures
+    TimelineEvent,
+    ITSInitialNotificationTemplate,
+    ITSIntermediateReportTemplate,
+    ITSFinalReportTemplate,
+    ClientIncidentDataPackage,
+    # Main class
+    DORAReportingTemplates,
+    # Factory functions
+    create_reporting_templates,
+    get_incident_type_codes,
+    get_data_type_codes,
+    get_service_type_codes,
+    get_client_type_codes,
+    create_timeline_event,
 )
 
 # =============================================================================
@@ -1666,7 +1722,7 @@ __all__ = [
     "DORAComplianceReport",
     "DORAComplianceDashboard",
 
-    # Unified Reporting
+    # Unified Reporting (MIGRATED to services.dora_integration.reporting)
     "ReportType",
     "ReportStatus",
     "ReportChannel",
@@ -1674,6 +1730,48 @@ __all__ = [
     "UnifiedReport",
     "SubmissionPackage",
     "UnifiedReportingManager",
+
+    # ROI Data Generator (MIGRATED to services.dora_integration.reporting)
+    "ROIContractType",
+    "ROIServiceType",
+    "ROIFunctionType",
+    "ROIDataLocation",
+    "ROIProviderLocationType",
+    "ROISubcontractingLevel",
+    "ROIExportFormat",
+    "ProviderIdentification",
+    "ContractReferenceData",
+    "ROISubcontractorData",
+    "ROIServiceRecord",
+    "ROIDataPackage",
+    "ROIDataGeneratorConfig",
+    "DORAROIDataGenerator",
+    "create_roi_data_generator",
+    "create_roi_generator",
+    "get_roi_contract_types",
+    "get_roi_service_types",
+    "get_roi_subcontracting_levels",
+    "get_its_templates_provided",
+    "get_its_templates_client_provides",
+
+    # Reporting Templates (MIGRATED to services.dora_integration.reporting)
+    "TemplateIncidentTypeCode",
+    "DataTypeCode",
+    "ClientTypeCode",
+    "ServiceTypeCode",
+    "ResponseEffectivenessCode",
+    "TimelineEvent",
+    "ITSInitialNotificationTemplate",
+    "ITSIntermediateReportTemplate",
+    "ITSFinalReportTemplate",
+    "ClientIncidentDataPackage",
+    "DORAReportingTemplates",
+    "create_reporting_templates",
+    "get_incident_type_codes",
+    "get_data_type_codes",
+    "get_service_type_codes",
+    "get_client_type_codes",
+    "create_timeline_event",
 
     # =========================================================================
     # ICT Provider Support Modules (Art. 30 obligations)
