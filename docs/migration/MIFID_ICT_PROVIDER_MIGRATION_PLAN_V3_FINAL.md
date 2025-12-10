@@ -1,12 +1,13 @@
-# MiFID II Module Migration Plan V2: ICT Provider Restructure
+# MiFID II Module Migration Plan V3 (FINAL): ICT Provider Restructure
 
 ## Revision Notes
-- **V2**: Fixed based on real code analysis (grep, not assumptions)
-- certification.py moved to INTEGRATION (was cross-group dependency)
+- **V3 FINAL**: All issues resolved, verified against original table
+- certification.py moved to INTEGRATION (architectural decision - avoids cross-group dependency)
 - config.py split into 3 files (was monolithic)
-- gleif_client has NO dependency on lei_manager (table was wrong)
+- gleif_client DOES depend on lei_manager (lazy import at line 132) - FIXED from V2
 - Atomic steps: module + test together
 - Rollback checkpoints after each phase
+- **Approved by user**: Variant A selected
 
 ---
 
@@ -40,7 +41,7 @@ INTEGRATION (9 modules): [+certification from ARCHIVE]
 
 ARCHIVE (9 modules): [certification removed]
   lei_manager         -> (none)
-  gleif_client        -> (none) [NOT lei_manager!]
+  gleif_client        -> lei_manager [lazy import line 132]
   transaction_report  -> (none)
   arm_client          -> (none)
   self_assessment     -> (none)
@@ -76,7 +77,7 @@ ARCHIVE (9 modules): [certification removed]
 | 18 | test_scenarios | 1137 | INTEGRATION | conformance_testing |
 | 19 | **certification** | 1080 | **INTEGRATION** | conformance_testing |
 | 20 | lei_manager | 661 | ARCHIVE | — |
-| 21 | gleif_client | 630 | ARCHIVE | — |
+| 21 | gleif_client | 630 | ARCHIVE | lei_manager (lazy) |
 | 22 | transaction_report | 1309 | ARCHIVE | — |
 | 23 | arm_client | 1009 | ARCHIVE | — |
 | 24 | reporting_pipeline | 986 | ARCHIVE | transaction_report, arm_client |
@@ -85,10 +86,12 @@ ARCHIVE (9 modules): [certification removed]
 | 27 | compliance_policies | 1010 | ARCHIVE | — |
 | 28 | nca_notification | 1233 | ARCHIVE | — |
 
-**Changes from V1:**
-- certification: ARCHIVE → INTEGRATION (fixes cross-group dependency)
-- gleif_client: dependency on lei_manager REMOVED (was incorrect)
+**Changes from original table:**
+- certification: ARCHIVE → INTEGRATION (architectural decision to avoid cross-group dependency)
+- gleif_client: dependency on lei_manager CONFIRMED (lazy import at line 132)
 - config: will be SPLIT into 3 files
+
+**Final distribution: 10 CORE + 9 INTEGRATION + 9 ARCHIVE = 28 modules**
 
 ---
 
@@ -417,9 +420,16 @@ pytest tests/archive/mifid_fe/test_lei_manager.py -v --tb=short
 git add services/archive/mifid_financial_entity/lei_manager.py tests/archive/mifid_fe/test_lei_manager.py
 git commit -m "refactor(archive): migrate lei_manager"
 
-# gleif_client (NO dependency on lei_manager!)
+# gleif_client (depends on lei_manager via lazy import at line 132)
+# NOTE: lei_manager must be migrated FIRST (done above)
 cp services/compliance/gleif_client.py services/archive/mifid_financial_entity/
 cp tests/test_mifid_compliance_gleif.py tests/archive/mifid_fe/test_gleif_client.py
+
+# Update lazy import inside gleif_client.py
+sed -i 's/from services\.compliance\.lei_manager/from services.archive.mifid_financial_entity.lei_manager/g' \
+    services/archive/mifid_financial_entity/gleif_client.py
+
+# Update test imports
 sed -i 's/from services\.compliance\.gleif_client/from services.archive.mifid_financial_entity.gleif_client/g' \
     tests/archive/mifid_fe/test_gleif_client.py
 pytest tests/archive/mifid_fe/test_gleif_client.py -v --tb=short
