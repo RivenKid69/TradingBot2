@@ -33,13 +33,14 @@ Migration Status:
     Phase 1: Due Diligence & Audit Layer (COMPLETE)
     Phase 2: Incident Interface Layer (COMPLETE)
     Phase 3: Third-Party Risk Interface (COMPLETE)
-    Phase 4-8: Module migration pending
+    Phase 4: Contracts & SLA Layer (COMPLETE)
+    Phase 5-8: Module migration pending
 """
 
 from __future__ import annotations
 
-__version__ = "1.2.0"
-__migration_phase__ = 3  # Current migration phase
+__version__ = "1.3.0"
+__migration_phase__ = 4  # Current migration phase
 
 # =============================================================================
 # Phase 1: Due Diligence & Audit Layer (Art. 30(3)(e), Art. 28(3), Art. 30(4))
@@ -402,6 +403,81 @@ from services.dora_integration.third_party import (
 )
 
 # =============================================================================
+# Phase 4: Contracts & SLA Layer (Art. 30, Art. 30(2)(e), Art. 28(8))
+# =============================================================================
+
+from services.dora_integration.contracts import (
+    # =========================================================================
+    # Contractual Requirements (Article 30)
+    # =========================================================================
+    DORAContractualRequirements,
+    ContractualRequirementsConfig,
+    RequirementCategory,
+    RequirementType,
+    ComplianceStatus,
+    GapSeverity,
+    RemediationStatus,
+    ContractStatus,
+    ContractualRequirement,
+    ContractProvision,
+    ContractAssessment,
+    ContractGap,
+    ContractAmendment,
+    SLADefinition,
+    ICTContract,
+    TerminationClause,
+    create_contractual_requirements,
+    get_article_30_requirements,
+    get_requirement_types,
+    get_basic_requirement_count,
+    get_critical_requirement_count,
+    get_termination_clause_templates,
+
+    # =========================================================================
+    # SLA Guardrails (Article 30(2)(e))
+    # =========================================================================
+    SLAGuardrails,
+    SLAGuardrailsConfig,
+    SLATier,
+    CapacityStatus,
+    ApprovalStatus,
+    InfrastructureRequirement,
+    OnCallRequirement,
+    SLATierDefinition,
+    CapacityValidation,
+    SLACommitmentRequest,
+    CurrentCapacityState,
+    create_sla_guardrails,
+    get_sla_tier_definitions,
+    get_sla_tiers,
+
+    # =========================================================================
+    # Exit Strategies (Article 28(8))
+    # =========================================================================
+    DORAExitStrategies,
+    ExitStrategiesConfig,
+    ExitTrigger,
+    ExitPhase,
+    ExitPlanStatus,
+    TransitionType,
+    ReadinessLevel,
+    AlternativeProviderStatus,
+    RiskLevel as ExitRiskLevel,
+    AlternativeProvider,
+    DataMigrationPlan,
+    TransitionTask,
+    ExitRisk,
+    ExitCostEstimate,
+    ExitPlan,
+    ExitExecution,
+    ExitReadinessAssessment,
+    create_exit_strategies,
+    get_exit_triggers,
+    get_exit_phases,
+    get_transition_types,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -737,4 +813,77 @@ __all__ = [
     "ClientSubcontractorPreference",
     "SubcontractorRiskAssessment",
     "create_subcontractor_management",
+
+    # =========================================================================
+    # Phase 4: Contracts & SLA Layer
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Contractual Requirements (Article 30)
+    # -------------------------------------------------------------------------
+    "DORAContractualRequirements",
+    "ContractualRequirementsConfig",
+    "RequirementCategory",
+    "RequirementType",
+    "ComplianceStatus",
+    "GapSeverity",
+    "RemediationStatus",
+    "ContractStatus",
+    "ContractualRequirement",
+    "ContractProvision",
+    "ContractAssessment",
+    "ContractGap",
+    "ContractAmendment",
+    "SLADefinition",
+    "ICTContract",
+    "TerminationClause",
+    "create_contractual_requirements",
+    "get_article_30_requirements",
+    "get_requirement_types",
+    "get_basic_requirement_count",
+    "get_critical_requirement_count",
+    "get_termination_clause_templates",
+
+    # -------------------------------------------------------------------------
+    # SLA Guardrails (Article 30(2)(e))
+    # -------------------------------------------------------------------------
+    "SLAGuardrails",
+    "SLAGuardrailsConfig",
+    "SLATier",
+    "CapacityStatus",
+    "ApprovalStatus",
+    "InfrastructureRequirement",
+    "OnCallRequirement",
+    "SLATierDefinition",
+    "CapacityValidation",
+    "SLACommitmentRequest",
+    "CurrentCapacityState",
+    "create_sla_guardrails",
+    "get_sla_tier_definitions",
+    "get_sla_tiers",
+
+    # -------------------------------------------------------------------------
+    # Exit Strategies (Article 28(8))
+    # -------------------------------------------------------------------------
+    "DORAExitStrategies",
+    "ExitStrategiesConfig",
+    "ExitTrigger",
+    "ExitPhase",
+    "ExitPlanStatus",
+    "TransitionType",
+    "ReadinessLevel",
+    "AlternativeProviderStatus",
+    "ExitRiskLevel",
+    "AlternativeProvider",
+    "DataMigrationPlan",
+    "TransitionTask",
+    "ExitRisk",
+    "ExitCostEstimate",
+    "ExitPlan",
+    "ExitExecution",
+    "ExitReadinessAssessment",
+    "create_exit_strategies",
+    "get_exit_triggers",
+    "get_exit_phases",
+    "get_transition_types",
 ]

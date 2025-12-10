@@ -385,11 +385,14 @@ class TestBackwardCompatibility:
         assert DORACommunication is not None
 
     def test_version_updated(self):
-        """Test version is updated to 1.2.0."""
+        """Test version is at least 1.2.0 (Phase 3+)."""
         from services.dora_integration import __version__, __migration_phase__
 
-        assert __version__ == "1.2.0"
-        assert __migration_phase__ == 3
+        # Version should be at least 1.2.0 (Phase 3 or later)
+        major, minor, patch = map(int, __version__.split("."))
+        assert major >= 1 and minor >= 2
+        # Migration phase should be at least 3 (Phase 3 or later)
+        assert __migration_phase__ >= 3
 
 
 if __name__ == "__main__":
