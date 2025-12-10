@@ -22,7 +22,7 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
-from services.dora.concentration_risk import (
+from services.dora_integration.third_party import (
     # Enumerations
     ConcentrationType,
     RiskLevel,

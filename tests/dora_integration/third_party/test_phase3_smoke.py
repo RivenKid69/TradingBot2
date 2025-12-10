@@ -389,8 +389,9 @@ class TestBackwardCompatibility:
         from services.dora_integration import __version__, __migration_phase__
 
         # Version should be at least 1.2.0 (Phase 3 or later)
+        # With Phase 8 complete, version is 2.0.0
         major, minor, patch = map(int, __version__.split("."))
-        assert major >= 1 and minor >= 2
+        assert major >= 2 or (major >= 1 and minor >= 2)
         # Migration phase should be at least 3 (Phase 3 or later)
         assert __migration_phase__ >= 3
 

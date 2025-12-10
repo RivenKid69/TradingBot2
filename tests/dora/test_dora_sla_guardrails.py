@@ -15,7 +15,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, MagicMock
 
-from services.dora.sla_guardrails import (
+from services.dora_integration.contracts import (
     # Enums
     SLATier,
     CapacityStatus,

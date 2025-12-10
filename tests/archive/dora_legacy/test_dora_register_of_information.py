@@ -22,7 +22,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 import threading
 
-from services.dora.register_of_information import (
+from services.dora_integration.reporting import (
     # Enumerations
     ContractType,
     ServiceType,

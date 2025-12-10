@@ -5,7 +5,7 @@ Tests for DORA compliance dashboard (Phase 5).
 
 from datetime import datetime, timedelta, timezone
 
-from services.dora.compliance_dashboard import (
+from services.dora_integration.due_diligence import (
     ComplianceIssue,
     ComplianceStatus,
     Deadline,

@@ -7,18 +7,23 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from services.dora.information_sharing import (
+from services.dora_integration.sharing import (
     CommunityType,
-    CyberThreat,
+    CyberThreatIntelligence,
     DORAInformationSharing,
     InformationSharingPolicy,
     MembershipStatus,
     SharingChannel,
     SharingCommunity,
     SharingOutcome,
-    SHAREABLE_INFORMATION,
-    ThreatIntelligence,
+    SHAREABLE_INFORMATION_TYPES,
+    ThreatIntelligenceRecord,
 )
+
+# Aliases for backward compatibility in tests
+CyberThreat = CyberThreatIntelligence
+SHAREABLE_INFORMATION = SHAREABLE_INFORMATION_TYPES
+ThreatIntelligence = ThreatIntelligenceRecord
 
 
 @pytest.fixture

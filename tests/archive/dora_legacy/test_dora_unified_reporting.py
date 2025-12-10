@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from services.dora.unified_reporting import (
+from services.dora_integration.reporting import (
     ReportChannel,
     ReportDestination,
     ReportStatus,
