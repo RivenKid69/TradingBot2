@@ -1224,3 +1224,283 @@ git branch -D refactor/mifid-ict-provider-migration-v2
 2. **Update docs**: README.md, API docs
 3. **Notify B2B clients**: Deprecation notice with migration guide
 4. **Set deprecation deadline**: Remove facade in v3.0.0 (6 months)
+
+---
+
+## PHASE 13: Final Verification & Documentation Update
+
+### 13.1 Full System Verification
+
+```bash
+# Run complete test suite
+pytest tests/core tests/algo_integration tests/archive/mifid_fe -v --tb=short
+
+# Verify no broken imports in entire codebase
+python -c "
+import sys
+import importlib
+
+modules = [
+    'services.core.risk_controls',
+    'services.algo_integration',
+    'services.archive.mifid_financial_entity',
+    'services.compliance',  # facade
+]
+
+for mod in modules:
+    try:
+        importlib.import_module(mod)
+        print(f'✓ {mod}')
+    except Exception as e:
+        print(f'✗ {mod}: {e}')
+        sys.exit(1)
+
+print('\nAll imports OK')
+"
+
+# Check for any remaining old imports in codebase
+echo "Checking for stale imports..."
+grep -r "from services.compliance\." services/ --include="*.py" | grep -v "__pycache__" | grep -v "services/compliance/__init__.py"
+# Should return empty (only facade allowed)
+
+# Verify test coverage
+pytest tests/core tests/algo_integration tests/archive/mifid_fe --cov=services --cov-report=term-missing
+```
+
+### 13.2 Documentation Updates
+
+```bash
+# Files to update:
+# 1. README.md - architecture section
+# 2. docs/api/ - import paths
+# 3. docs/compliance/ - reorganize structure
+# 4. CHANGELOG.md - document breaking change
+```
+
+**README.md changes:**
+
+```markdown
+## Architecture
+
+### Module Structure (Post-Migration)
+
+| Package | Purpose | Load |
+|---------|---------|------|
+| `services.core.risk_controls` | Universal risk controls | Always |
+| `services.algo_integration` | MiFID II B2B compliance toolkit | Enterprise |
+| `services.archive.mifid_financial_entity` | Investment Firm modules | Never (archived) |
+
+### For ICT Providers
+
+This platform is designed for **ICT Providers / Software Providers**:
+- We provide algo-trading infrastructure
+- Users trade through THEIR OWN broker accounts
+- Platform does NOT hold client assets
+- MiFID II does NOT apply directly to us
+
+### For B2B Clients (Financial Institutions)
+
+Enable `services.algo_integration` for MiFID II compliance tools:
+- Best Execution Analysis (Article 27)
+- TCA Compliance
+- Conformance Testing (RTS 6 Article 5)
+- Algorithm Registry
+- Certification Management
+```
+
+**CHANGELOG.md entry:**
+
+```markdown
+## [2.0.0] - YYYY-MM-DD
+
+### BREAKING CHANGES
+
+- **Module restructure for ICT Provider positioning**
+  - `services.compliance.*` → deprecated facade
+  - New locations:
+    - CORE: `services.core.risk_controls`
+    - INTEGRATION: `services.algo_integration`
+    - ARCHIVE: `services.archive.mifid_financial_entity`
+
+### Migration Guide
+
+```python
+# Old (deprecated, emits warning)
+from services.compliance import EnhancedKillSwitch
+
+# New
+from services.core.risk_controls import EnhancedKillSwitch
+```
+
+### Added
+- B2B compliance toolkit (`services.algo_integration`)
+- Backward compatibility facade with deprecation warnings
+
+### Removed
+- Direct MiFID II terminology from core modules
+```
+
+### 13.3 API Documentation Update
+
+```bash
+# Create/update API docs structure
+mkdir -p docs/api/core docs/api/integration docs/api/archive
+
+# Generate API reference
+cat > docs/api/README.md << 'EOF'
+# API Reference
+
+## Core Risk Controls
+`from services.core.risk_controls import ...`
+
+Universal risk management for all platform users.
+
+| Module | Description |
+|--------|-------------|
+| audit_models | Audit record data models |
+| audit_storage | Storage backends (SQLite, File, Memory) |
+| audit_trail_writer | Write-once audit trail |
+| retention_policy | Data retention management |
+| time_sync | Clock synchronization (RTS 25 compatible) |
+| kill_switch | Emergency stop functionality |
+| pre_trade_controls | Order validation, fat finger protection |
+| realtime_monitor | P&L and risk monitoring |
+| bcp | Business continuity planning |
+| config | Configuration models |
+
+## Algo Integration (B2B)
+`from services.algo_integration import ...`
+
+MiFID II compliance toolkit for financial institution clients.
+
+| Module | MiFID II Reference | Description |
+|--------|-------------------|-------------|
+| best_execution | Article 27 | Best execution analysis |
+| tca_compliance | Article 27 | Transaction cost analysis |
+| venue_analysis | Article 27 | Venue performance & SOR |
+| execution_quality_report | Article 27 | Execution quality reports |
+| otr_monitor | RTS 6 | Order-to-trade ratio |
+| algorithm_registry | Article 17(2) | Algorithm registration |
+| conformance_testing | RTS 6 Article 5 | Testing framework |
+| test_scenarios | RTS 6 Article 5 | Standard test scenarios |
+| certification | RTS 6 Article 7 | Deployment certification |
+
+## Archive (Financial Entity)
+`from services.archive.mifid_financial_entity import ...`
+
+**NOT FOR ICT PROVIDERS** - Only for Investment Firms.
+
+| Module | Description |
+|--------|-------------|
+| lei_manager | LEI validation (ISO 17442) |
+| gleif_client | GLEIF API integration |
+| transaction_report | RTS 22 reporting |
+| arm_client | ARM submission |
+| reporting_pipeline | T+1 pipeline |
+| self_assessment | Annual self-assessment |
+| governance | Policy document management |
+| compliance_policies | Policy templates |
+| nca_notification | NCA notification |
+EOF
+```
+
+### 13.4 Final Checklist
+
+```bash
+# Print final verification checklist
+cat << 'EOF'
+═══════════════════════════════════════════════════════════════
+                    MIGRATION COMPLETE CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+CODE:
+  [ ] All 28 modules migrated
+  [ ] All tests pass (pytest)
+  [ ] No stale imports in codebase
+  [ ] Facade emits deprecation warnings
+  [ ] Config split into 3 files
+
+DOCUMENTATION:
+  [ ] README.md updated (architecture section)
+  [ ] CHANGELOG.md updated (breaking change)
+  [ ] API docs created/updated
+  [ ] Migration guide for B2B clients
+
+CI/CD:
+  [ ] Test paths updated in workflows
+  [ ] Coverage reports configured
+
+COMMUNICATION:
+  [ ] B2B clients notified of deprecation
+  [ ] Deprecation timeline set (6 months)
+
+GIT:
+  [ ] All 13 checkpoints created
+  [ ] Final tag: v2.0.0-migration-complete
+  [ ] Branch merged to main
+
+═══════════════════════════════════════════════════════════════
+EOF
+```
+
+### 13.5 Commit Documentation Updates
+
+```bash
+git add docs/ README.md CHANGELOG.md
+git commit -m "docs: update documentation for ICT Provider architecture
+
+- Updated README.md with new module structure
+- Added CHANGELOG.md entry for breaking change
+- Created API reference documentation
+- Added migration guide for B2B clients
+
+Architecture:
+- CORE: Universal risk controls (always loaded)
+- INTEGRATION: MiFID II B2B toolkit (enterprise)
+- ARCHIVE: FE-only modules (not loaded)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+
+# FINAL CHECKPOINT
+git tag checkpoint-13-docs-complete
+git tag v2.0.0-ict-provider-migration
+
+git push origin refactor/mifid-ict-provider-migration-v2 --tags
+```
+
+---
+
+## 10. Summary
+
+### What We Built
+
+| Layer | Modules | Purpose | MiFID Terms |
+|-------|---------|---------|-------------|
+| **CORE** | 10 | Universal risk controls | Removed |
+| **INTEGRATION** | 9 | B2B compliance toolkit | **Kept** |
+| **ARCHIVE** | 9 | FE-specific (unused) | Kept |
+
+### ICT Provider Positioning
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    YOUR SAAS PLATFORM                       │
+│                    (ICT Provider)                           │
+├─────────────────────────────────────────────────────────────┤
+│  CORE (Always)          │  INTEGRATION (B2B)                │
+│  ──────────────         │  ─────────────────                │
+│  • Kill Switch          │  • Best Execution (Art. 27)       │
+│  • Pre-Trade Controls   │  • TCA Compliance                 │
+│  • Audit Trail          │  • Conformance Testing (RTS 6)    │
+│  • Time Sync            │  • Algorithm Registry             │
+│  • BCP                  │  • Certification                  │
+├─────────────────────────────────────────────────────────────┤
+│  "We provide the tools, clients use their own accounts"     │
+│  "MiFID II doesn't apply to us directly"                    │
+│  "Our INTEGRATION module helps clients comply with MiFID"   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Total: 13 Phases, 13 Checkpoints, 28 Modules
