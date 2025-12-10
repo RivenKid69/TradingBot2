@@ -1,8 +1,9 @@
 # DORA Integration Layer Migration Plan
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2025-01-17
 **Status:** Draft
+**Updated:** Paths, class names, test strategy synchronized with codebase
 
 ---
 
@@ -12,7 +13,7 @@
 
 1. **CORE** (`services/core/`) — операционная устойчивость провайдера (НЕ ТРОГАЕМ)
 2. **INTEGRATION** (`services/dora_integration/`) — интерфейс взаимодействия с клиентами
-3. **ARCHIVE** (`archive/dora_financial_entity/`) — модули для финансовых организаций
+3. **ARCHIVE** (`services/archive/dora_financial_entity/`) — модули для финансовых организаций
 
 **Ключевой принцип:** Мы — ICT-провайдер (Art. 30 DORA), а не финансовая организация (Art. 2). Интеграционный слой — это то, что мы отдаём клиенту для его compliance.
 
@@ -80,32 +81,31 @@ services/
 │       ├── __init__.py
 │       └── information_sharing.py
 │
-├── dora/                          # ОСТАЁТСЯ - Internal DORA modules
-│   └── (модули, которые относятся к внутренней работе)
+├── dora/                          # Thin facade → re-exports from dora_integration
+│   └── __init__.py                # FE framework archived, integration re-exported
 │
-configs/
-├── dora/                          # Конфиги
-│   ├── proportionality_assessment.yaml   # KEEP - internal toggle
-│   ├── digital_resilience_strategy.yaml  # MOVE → dora_integration/
-│   ├── third_party_management.yaml       # MOVE → dora_integration/
-│   └── information_sharing.yaml          # MOVE → dora_integration/
+├── archive/                       # ARCHIVE - FE modules (единственное место)
+│   └── dora_financial_entity/
+│       ├── README.md
+│       ├── configs/
+│       │   ├── entity_classification.yaml
+│       │   └── nca_identification.yaml
+│       ├── scope_verification.py
+│       ├── function_classification.py
+│       ├── proportionality.py
+│       ├── governance.py
+│       ├── ict_risk_framework.py
+│       ├── training_participation.py  # Art. 30(2)(i) - FE training requests
+│       └── ... (full FE framework, 23 modules total)
 │
-├── dora_integration/              # NEW - Integration configs
-│   ├── digital_resilience_strategy.yaml
-│   ├── third_party_management.yaml
-│   └── information_sharing.yaml
+config/                            # Конфиги (НЕ configs/)
+├── dora/
+│   └── proportionality_assessment.yaml   # KEEP - internal toggle
 │
-archive/
-└── dora_financial_entity/         # Archive - модули для FE (не ICT provider)
-    ├── README.md
-    ├── entity_classification.yaml
-    ├── nca_identification.yaml
-    ├── scope_verification.py
-    ├── function_classification.py
-    ├── proportionality.py
-    ├── governance.py
-    ├── ict_risk_framework.py
-    └── ... (full FE framework)
+└── dora_integration/              # NEW - Integration configs
+    ├── digital_resilience_strategy.yaml
+    ├── third_party_management.yaml
+    └── information_sharing.yaml
 ```
 
 ---
@@ -119,16 +119,17 @@ archive/
 | Task | Action | Files |
 |------|--------|-------|
 | 0.1 | Create directory structure | `services/dora_integration/`, subfolders |
-| 0.2 | Create archive directory | `archive/dora_financial_entity/` |
-| 0.3 | Backup current state | `git tag pre-integration-refactor` |
-| 0.4 | Document current imports | Audit all `from services.dora import` |
-| 0.5 | Create migration branch | `git checkout -b refactor/dora-integration-layer` |
+| 0.2 | Create archive directory | `services/archive/dora_financial_entity/` |
+| 0.3 | Create integration config dir | `config/dora_integration/` |
+| 0.4 | Backup current state | `git tag pre-integration-refactor` |
+| 0.5 | Document current imports | Audit all `from services.dora import` |
+| 0.6 | Create migration branch | `git checkout -b refactor/dora-integration-layer` |
 
 **Commands:**
 ```bash
 mkdir -p services/dora_integration/{due_diligence,incident_interface,third_party,contracts,reporting,sharing}
-mkdir -p configs/dora_integration
-mkdir -p archive/dora_financial_entity
+mkdir -p services/archive/dora_financial_entity/configs
+mkdir -p config/dora_integration
 git tag -a pre-integration-refactor -m "Before DORA integration layer refactor"
 ```
 
@@ -162,36 +163,51 @@ Provides interfaces for:
 - Compliance status dashboard
 """
 
+# Audit Readiness - uses existing class names from code
 from services.dora_integration.due_diligence.audit_readiness import (
-    DORAuditReadiness,
-    AuditRequest,
-    EvidenceItem,
-    create_audit_readiness,
+    DORAuditReadiness,          # Main class (exists in code)
+    AuditRequest,               # Data structure (exists)
+    EvidenceItem,               # Data structure (exists)
+    create_audit_readiness,     # Factory (exists)
+    get_standard_evidence_templates,  # Helper (exists)
 )
 
+# Provider Info Package - uses existing class names
 from services.dora_integration.due_diligence.provider_info_package import (
-    ProviderInfoPackage,
-    ProviderIdentification,
-    ICTServiceType,
-    generate_roi_data_package,
+    ProviderIdentification,     # Data structure (exists)
+    ICTServiceType,             # Enum (exists)
+    ICTServiceDescription,      # Data structure (exists)
+    DataLocationInfo,           # Data structure (exists)
+    ProviderInfoPackageGenerator,  # Main class (exists as implicit)
 )
 
+# Pooled Audit Support - uses existing class names
 from services.dora_integration.due_diligence.pooled_audit_support import (
-    PooledAuditSupport,
-    PooledAuditEngagement,
-    create_pooled_audit_support,
+    PooledAuditSupport,         # Main class (exists)
+    PooledAuditEngagement,      # Data structure (exists)
+    CertificationRecord,        # Data structure (exists)
+    create_pooled_audit_support,  # Factory (exists)
 )
 
+# Compliance Dashboard - uses existing class names
 from services.dora_integration.due_diligence.compliance_dashboard import (
-    DORAComplianceDashboard,
-    ComplianceStatus,
+    DORAComplianceDashboard,    # Main class (exists)
+    ComplianceStatus,           # Data structure (exists)
+    DORAComplianceReport,       # Data structure (exists)
 )
 
 __all__ = [
-    "DORAuditReadiness", "AuditRequest", "EvidenceItem", "create_audit_readiness",
-    "ProviderInfoPackage", "ProviderIdentification", "ICTServiceType", "generate_roi_data_package",
-    "PooledAuditSupport", "PooledAuditEngagement", "create_pooled_audit_support",
-    "DORAComplianceDashboard", "ComplianceStatus",
+    # Audit
+    "DORAuditReadiness", "AuditRequest", "EvidenceItem",
+    "create_audit_readiness", "get_standard_evidence_templates",
+    # Provider Info
+    "ProviderIdentification", "ICTServiceType", "ICTServiceDescription",
+    "DataLocationInfo", "ProviderInfoPackageGenerator",
+    # Pooled Audit
+    "PooledAuditSupport", "PooledAuditEngagement", "CertificationRecord",
+    "create_pooled_audit_support",
+    # Dashboard
+    "DORAComplianceDashboard", "ComplianceStatus", "DORAComplianceReport",
 ]
 ```
 
@@ -246,29 +262,69 @@ pytest tests/dora_integration/test_due_diligence.py -v
 | `services/dora/cyber_threat_notification.py` | `services/dora_integration/incident_interface/cyber_threat_notification.py` | Art. 19(4) |
 | `services/dora/communication.py` | `services/dora_integration/incident_interface/communication.py` | Art. 14 channels |
 
-#### 2.2 Refactor Focus
+#### 2.2 Refactor Focus: Export-Only Semantics
 
-**Ключевое изменение:** Модули должны работать как **экспорт данных клиенту**, а не как полная система управления инцидентами:
+**Ключевое изменение:** Модули должны работать как **экспорт данных клиенту**, а не как полная система управления инцидентами.
+
+> **NOTE:** Текущий `incident_reporting.py` уже содержит правильный docstring:
+> _"For ICT THIRD-PARTY PROVIDERS: We do NOT report directly to NCAs... We notify CLIENTS, who then report to their NCAs"_
+
+**Рефакторинг `DORAIncidentReporter`:**
 
 ```python
-# BEFORE (in services/dora/incident_reporting.py)
+# services/dora_integration/incident_interface/incident_reporting.py
+"""
+Incident Data Export for Client NCA Reporting.
+
+We generate DORA-compliant incident data packages.
+Clients use this data to fulfill their Art. 19 obligations.
+"""
+
 class DORAIncidentReporter:
-    def submit_to_nca(self, report):  # WRONG - we don't submit
+    """
+    DORA Incident Reporter - Export-Only Mode.
+
+    Primary methods for ICT providers:
+    - generate_client_data_package()  # NEW: main export method
+    - create_initial_notification()   # Creates template, doesn't submit
+    - create_intermediate_report()    # Creates template, doesn't submit
+    - create_final_report()           # Creates template, doesn't submit
+
+    DEPRECATED (for FE use only):
+    - submit_report()  # Raises DeprecationWarning, archived to FE module
+    """
+
+    def generate_client_data_package(
+        self,
+        incident_id: str,
+        format: str = "json"
+    ) -> bytes:
+        """
+        Generate complete incident data package for client.
+
+        Client uses this to populate their NCA submission.
+        Formats: json, xml, csv, dpm (DPM taxonomy)
+        """
         ...
 
-# AFTER (in services/dora_integration/incident_interface/)
-class IncidentDataExporter:
-    def generate_client_report(self, incident) -> ClientIncidentReport:
-        """Generate data package for client's NCA submission."""
+    def export_for_client_roi(self, incident_id: str) -> dict:
+        """Export incident data for client's Register of Information."""
         ...
 
-    def export_json(self, incident) -> str:
-        """Export incident data in DORA-compliant JSON."""
+    # Keep existing report creation methods - they generate templates
+    def create_initial_notification(self, ...) -> InitialNotificationReport:
+        """Create initial notification template (client submits to NCA)."""
         ...
+```
 
-    def export_dpm_format(self, incident) -> dict:
-        """Export in DPM taxonomy format for client ROI."""
-        ...
+**Связь с `client_incident_notification.py`:**
+```python
+# Flow: Detection → Classification → Client Notification → Data Export
+#
+# 1. DORAIncidentClassification.classify_incident()
+# 2. ClientIncidentNotification.notify_client()  # We notify client
+# 3. DORAIncidentReporter.generate_client_data_package()  # Client gets data
+# 4. Client submits to their NCA using our data package
 ```
 
 #### 2.3 Create `__init__.py`
@@ -287,31 +343,75 @@ Provides:
 NOTE: We notify CLIENTS. Clients report to NCAs.
 """
 
+# Client Notification - uses existing class names
 from services.dora_integration.incident_interface.client_incident_notification import (
-    ClientIncidentNotification,
-    NotificationStatus,
-    notify_client,
+    IncidentSeverity,              # Enum (exists)
+    NotificationStatus,            # Enum (exists)
+    NotificationChannel,           # Enum (exists)
+    ClientContact,                 # Data structure (exists)
+    IncidentNotification,          # Data structure (exists)
+    ClientNotificationService,     # Main class (exists)
 )
 
+# Incident Classification - uses existing class names
 from services.dora_integration.incident_interface.incident_classification import (
-    DORAIncidentClassification,
-    IncidentClassificationResult,
-    classify_incident,
+    DORAIncidentClassification,        # Main class (exists)
+    IncidentClassificationResult,      # Data structure (exists)
+    ClassificationThresholds,          # Data structure (exists)
+    create_incident_classification,    # Factory (exists)
 )
 
+# Incident Reporting (Export-Only) - uses existing class names
 from services.dora_integration.incident_interface.incident_reporting import (
-    IncidentDataExporter,
-    ClientIncidentReport,
-    export_incident_data,
+    DORAIncidentReporter,              # Main class (exists)
+    ReportType,                        # Enum (exists)
+    ReportStatus,                      # Enum (exists)
+    InitialNotificationReport,         # Data structure (exists)
+    IntermediateReport,                # Data structure (exists)
+    FinalReport,                       # Data structure (exists)
+    create_incident_reporter,          # Factory (exists)
 )
 
-__all__ = [...]
+# Cyber Threat Notification - uses existing class names
+from services.dora_integration.incident_interface.cyber_threat_notification import (
+    CyberThreatNotificationService,    # Main class (exists)
+    ThreatNotification,                # Data structure (exists)
+    ThreatSeverity,                    # Enum (exists)
+    create_cyber_threat_notification_service,  # Factory (exists)
+)
+
+# Communication - uses existing class names
+from services.dora_integration.incident_interface.communication import (
+    DORACommunication,                 # Main class (exists)
+    CommunicationPolicy,               # Data structure (exists)
+    CrisisCommunicationPlan,           # Data structure (exists)
+    create_dora_communication,         # Factory (exists)
+)
+
+__all__ = [
+    # Client Notification
+    "IncidentSeverity", "NotificationStatus", "NotificationChannel",
+    "ClientContact", "IncidentNotification", "ClientNotificationService",
+    # Classification
+    "DORAIncidentClassification", "IncidentClassificationResult",
+    "ClassificationThresholds", "create_incident_classification",
+    # Reporting (Export)
+    "DORAIncidentReporter", "ReportType", "ReportStatus",
+    "InitialNotificationReport", "IntermediateReport", "FinalReport",
+    "create_incident_reporter",
+    # Cyber Threat
+    "CyberThreatNotificationService", "ThreatNotification", "ThreatSeverity",
+    "create_cyber_threat_notification_service",
+    # Communication
+    "DORACommunication", "CommunicationPolicy", "CrisisCommunicationPlan",
+    "create_dora_communication",
+]
 ```
 
 #### 2.4 Integration Points
 
 ```yaml
-# configs/dora_integration/incident_notification.yaml
+# config/dora_integration/incident_notification.yaml
 notification:
   channels:
     webhook:
@@ -388,7 +488,7 @@ class DORASubcontractorManagement:
 #### 3.3 Move Configs
 
 ```bash
-mv configs/dora/third_party_management.yaml configs/dora_integration/third_party_management.yaml
+mv config/dora/third_party_management.yaml config/dora_integration/third_party_management.yaml
 ```
 
 ---
@@ -488,10 +588,11 @@ class ROIDataGenerator:
 |--------|--------|-------|
 | `services/dora/information_sharing.py` | `services/dora_integration/sharing/information_sharing.py` | Art. 45 |
 
-#### 6.2 Move Config
+#### 6.2 Move Configs
 
 ```bash
-mv configs/dora/information_sharing.yaml configs/dora_integration/information_sharing.yaml
+mv config/dora/information_sharing.yaml config/dora_integration/information_sharing.yaml
+mv config/dora/digital_resilience_strategy.yaml config/dora_integration/digital_resilience_strategy.yaml
 ```
 
 ---
@@ -503,41 +604,66 @@ mv configs/dora/information_sharing.yaml configs/dora_integration/information_sh
 
 #### 7.1 Archive Modules
 
-Эти модули предназначены для финансовых организаций, не для ICT-провайдера:
+Эти модули предназначены для финансовых организаций, не для ICT-провайдера.
 
-| Module | Reason |
-|--------|--------|
-| `scope_verification.py` | Art. 2 scope check — для FE |
-| `function_classification.py` | Art. 3(22) — FE классифицирует свои функции |
-| `proportionality.py` | Art. 4, 16 — FE определяет свой режим |
-| `governance.py` | Art. 5 — FE governance, не наше |
-| `ict_risk_framework.py` | Art. 6 — FE framework |
-| `ict_systems.py` | Art. 7 — FE systems |
-| `ict_identification.py` | Art. 8 — FE assets |
-| `protection.py` | Art. 9 — FE protection |
-| `detection.py` | Art. 10 — FE detection |
-| `response_recovery.py` | Art. 11 — FE response |
-| `backup_recovery.py` | Art. 12 — FE backup |
-| `learning.py` | Art. 13 — FE learning |
-| `ict_business_continuity.py` | Art. 15 — FE BCP |
-| `simplified_framework.py` | Art. 16 — FE simplified |
-| `incident_management.py` | Art. 17 — FE incident mgmt |
-| `supervisory_feedback.py` | Art. 22 — FE ↔ NCA |
-| `resilience_testing.py` | Art. 24 — FE testing |
-| `ict_testing.py` | Art. 25 — FE testing |
-| `tlpt.py` | Art. 26 — FE TLPT |
-| `tester_management.py` | Art. 27 — FE testers |
-| `pooled_testing.py` | Art. 26(3) — FE pooled |
-| `cross_regulation.py` | FE cross-reg compliance |
+**Целевая директория:** `services/archive/dora_financial_entity/`
+
+| # | Module | DORA Article | Reason |
+|---|--------|--------------|--------|
+| 1 | `scope_verification.py` | Art. 2 | FE scope check |
+| 2 | `function_classification.py` | Art. 3(22) | FE классифицирует свои функции |
+| 3 | `proportionality.py` | Art. 4, 16 | FE определяет свой режим |
+| 4 | `governance.py` | Art. 5 | FE governance |
+| 5 | `ict_risk_framework.py` | Art. 6 | FE framework |
+| 6 | `ict_systems.py` | Art. 7 | FE systems |
+| 7 | `ict_identification.py` | Art. 8 | FE assets |
+| 8 | `protection.py` | Art. 9 | FE protection |
+| 9 | `detection.py` | Art. 10 | FE detection |
+| 10 | `response_recovery.py` | Art. 11 | FE response |
+| 11 | `backup_recovery.py` | Art. 12 | FE backup |
+| 12 | `learning.py` | Art. 13 | FE learning |
+| 13 | `ict_business_continuity.py` | Art. 15 | FE BCP |
+| 14 | `simplified_framework.py` | Art. 16 | FE simplified regime |
+| 15 | `incident_management.py` | Art. 17 | FE incident mgmt |
+| 16 | `supervisory_feedback.py` | Art. 22 | FE ↔ NCA feedback |
+| 17 | `resilience_testing.py` | Art. 24 | FE testing programme |
+| 18 | `ict_testing.py` | Art. 25 | FE ICT testing |
+| 19 | `tlpt.py` | Art. 26 | FE TLPT |
+| 20 | `tester_management.py` | Art. 27 | FE testers |
+| 21 | `pooled_testing.py` | Art. 26(3) | FE pooled TLPT |
+| 22 | `cross_regulation.py` | - | FE cross-reg compliance |
+| 23 | `training_participation.py` | Art. 30(2)(i) | FE training requests to providers |
+
+**Итого: 23 модуля**
 
 #### 7.2 Archive Configs
 
-| Config | Reason |
-|--------|--------|
-| `entity_classification.yaml` | FE classification |
-| `nca_identification.yaml` | FE ↔ NCA mapping |
+**Целевая директория:** `services/archive/dora_financial_entity/configs/`
 
-#### 7.3 Create Archive README
+| Config | Source | Reason |
+|--------|--------|--------|
+| `entity_classification.yaml` | `config/dora/` | FE classification |
+| `nca_identification.yaml` | `config/dora/` | FE ↔ NCA mapping |
+
+#### 7.3 Archive Commands
+
+```bash
+# Move all FE modules
+for module in scope_verification function_classification proportionality \
+              governance ict_risk_framework ict_systems ict_identification \
+              protection detection response_recovery backup_recovery learning \
+              ict_business_continuity simplified_framework incident_management \
+              supervisory_feedback resilience_testing ict_testing tlpt \
+              tester_management pooled_testing cross_regulation training_participation; do
+    mv services/dora/${module}.py services/archive/dora_financial_entity/
+done
+
+# Move FE configs
+mv config/dora/entity_classification.yaml services/archive/dora_financial_entity/configs/
+mv config/dora/nca_identification.yaml services/archive/dora_financial_entity/configs/
+```
+
+#### 7.4 Create Archive README
 
 ```markdown
 # Archived DORA Financial Entity Modules
@@ -552,16 +678,55 @@ As an ICT service provider, we:
 - Support client due diligence (Art. 28)
 - DO NOT implement full FE DORA framework
 
+Our active DORA code lives in:
+- `services/core/` - Operational resilience
+- `services/dora_integration/` - Client-facing interfaces
+
 ## When to Use?
 
 If you're building a product FOR financial entities to manage their own
 DORA compliance, these modules provide a reference implementation.
 
-## Modules
+## Archived Modules (23 total)
 
-- `scope_verification.py` - DORA scope determination
-- `governance.py` - ICT governance framework
-- ...
+| Module | Article | Description |
+|--------|---------|-------------|
+| `scope_verification.py` | Art. 2 | DORA scope determination |
+| `function_classification.py` | Art. 3(22) | Critical function classification |
+| `proportionality.py` | Art. 4, 16 | Proportionality regime |
+| `governance.py` | Art. 5 | ICT governance framework |
+| `ict_risk_framework.py` | Art. 6 | ICT risk management |
+| `ict_systems.py` | Art. 7 | ICT systems management |
+| `ict_identification.py` | Art. 8 | ICT asset identification |
+| `protection.py` | Art. 9 | Protection controls |
+| `detection.py` | Art. 10 | Anomaly detection |
+| `response_recovery.py` | Art. 11 | Incident response |
+| `backup_recovery.py` | Art. 12 | Backup policies |
+| `learning.py` | Art. 13 | Learning & evolving |
+| `ict_business_continuity.py` | Art. 15 | Business continuity |
+| `simplified_framework.py` | Art. 16 | Simplified ICT framework |
+| `incident_management.py` | Art. 17 | Incident management |
+| `supervisory_feedback.py` | Art. 22 | NCA feedback handling |
+| `resilience_testing.py` | Art. 24 | Testing programme |
+| `ict_testing.py` | Art. 25 | ICT tools testing |
+| `tlpt.py` | Art. 26 | Threat-led penetration testing |
+| `tester_management.py` | Art. 27 | Tester requirements |
+| `pooled_testing.py` | Art. 26(3) | Pooled TLPT |
+| `cross_regulation.py` | - | Cross-regulation integration |
+| `training_participation.py` | Art. 30(2)(i) | FE training requests |
+
+## Archived Configs
+
+- `configs/entity_classification.yaml` - Entity type classification
+- `configs/nca_identification.yaml` - NCA contact mapping
+
+## Recovery
+
+To restore any module:
+```bash
+git log --oneline -- services/dora/<module>.py  # Find last commit
+git checkout <commit>^ -- services/dora/<module>.py
+```
 ```
 
 ---
@@ -592,65 +757,112 @@ Subpackages:
 
 __version__ = "1.0.0"
 
+# Due Diligence - uses REAL class names from code
 from services.dora_integration.due_diligence import (
-    DORAuditReadiness,
-    ProviderInfoPackage,
-    PooledAuditSupport,
-    DORAComplianceDashboard,
+    DORAuditReadiness,              # audit_readiness.py
+    ProviderIdentification,         # provider_info_package.py
+    PooledAuditSupport,             # pooled_audit_support.py
+    DORAComplianceDashboard,        # compliance_dashboard.py
 )
 
+# Incident Interface - uses REAL class names from code
 from services.dora_integration.incident_interface import (
-    ClientIncidentNotification,
-    DORAIncidentClassification,
-    IncidentDataExporter,
+    ClientNotificationService,      # client_incident_notification.py
+    DORAIncidentClassification,     # incident_classification.py
+    DORAIncidentReporter,           # incident_reporting.py (export-only mode)
+    CyberThreatNotificationService, # cyber_threat_notification.py
+    DORACommunication,              # communication.py
 )
 
+# Third Party - uses REAL class names from code
 from services.dora_integration.third_party import (
-    DORASubcontractorManagement,
-    ConcentrationRiskAssessor,
-    CTPPOversightPrep,
+    DORASubcontractorManagement,    # subcontractor_management.py
+    DORAConcentrationRisk,          # concentration_risk.py
+    DORACtppOversight,              # ctpp_oversight.py
+    DORAThirdPartyRiskManagement,   # third_party_risk.py
+    DORAThirdPartyIncidents,        # third_party_incidents.py
 )
 
+# Contracts - uses REAL class names from code
 from services.dora_integration.contracts import (
-    ContractualRequirementsChecker,
-    SLAGuardrails,
-    ExitStrategyManager,
+    DORAContractualRequirements,    # contractual_requirements.py
+    SLAGuardrails,                  # sla_guardrails.py
+    DORAExitStrategies,             # exit_strategies.py
 )
 
+# Reporting - uses REAL class names from code
 from services.dora_integration.reporting import (
-    UnifiedReportingManager,
-    ROIDataGenerator,
+    UnifiedReportingManager,        # unified_reporting.py
+    DORAReportingTemplates,         # reporting_templates.py
+    DORARegisterOfInformation,      # register_of_information.py (as data generator)
 )
 
+# Sharing - uses REAL class names from code
 from services.dora_integration.sharing import (
-    InformationSharingCoordinator,
+    DORAInformationSharing,         # information_sharing.py
 )
 
-__all__ = [...]
+__all__ = [
+    # Due Diligence
+    "DORAuditReadiness", "ProviderIdentification",
+    "PooledAuditSupport", "DORAComplianceDashboard",
+    # Incident Interface
+    "ClientNotificationService", "DORAIncidentClassification",
+    "DORAIncidentReporter", "CyberThreatNotificationService", "DORACommunication",
+    # Third Party
+    "DORASubcontractorManagement", "DORAConcentrationRisk",
+    "DORACtppOversight", "DORAThirdPartyRiskManagement", "DORAThirdPartyIncidents",
+    # Contracts
+    "DORAContractualRequirements", "SLAGuardrails", "DORAExitStrategies",
+    # Reporting
+    "UnifiedReportingManager", "DORAReportingTemplates", "DORARegisterOfInformation",
+    # Sharing
+    "DORAInformationSharing",
+]
 ```
 
 #### 8.2 Update `services/dora/__init__.py`
 
-Оставляем только ссылки на core + интеграционный слой:
+`services/dora/` становится **тонким фасадом** — re-export из integration layer:
 
 ```python
 # services/dora/__init__.py
 """
-DORA Compliance Module.
+DORA Compliance Module - Facade.
 
-ARCHITECTURE:
-- services/core/: Operational resilience (logging, health, backup, DR)
-- services/dora_integration/: Client-facing interfaces
-- services/dora/: Internal utilities (if any remain)
+ARCHITECTURE (post-migration):
+    services/core/              - Operational resilience (14 modules)
+    services/dora_integration/  - Client-facing interfaces (21 modules)
+    services/dora/              - THIS FILE: thin facade for backward compatibility
+    services/archive/dora_financial_entity/  - Archived FE modules (23 modules)
 
-For client-facing DORA functionality, use services.dora_integration.
+USAGE:
+    # Preferred (direct import from integration layer):
+    from services.dora_integration.due_diligence import DORAuditReadiness
+
+    # Also works (via this facade):
+    from services.dora import DORAuditReadiness  # DeprecationWarning in v2.0
+
+For new code, prefer direct imports from services.dora_integration.
 """
 
-# Re-export integration layer for convenience
+import warnings
+
+__version__ = "2.0.0"  # Major bump: FE modules archived, integration layer active
+
+# Re-export from integration layer for backward compatibility
 from services.dora_integration import *
 
-# Internal utilities (if any)
-# ...
+# Deprecation notice for old import path
+def __getattr__(name):
+    # Triggered when accessing attributes not explicitly imported
+    warnings.warn(
+        f"Importing from services.dora is deprecated. "
+        f"Use services.dora_integration instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    raise AttributeError(f"module 'services.dora' has no attribute '{name}'")
 ```
 
 #### 8.3 Update All Imports
@@ -670,6 +882,149 @@ grep -r "from services.dora." --include="*.py" | grep -v "services/dora/"
 pytest tests/ -v --tb=short
 pytest tests/dora_integration/ -v
 pytest tests/core/ -v
+```
+
+---
+
+### Phase 9: Test Strategy & Validation
+**Duration:** 2-3 days (parallel with Phase 8)
+**Risk:** Medium
+**Dependencies:** Phases 1-7 complete
+
+#### 9.1 Test Directory Structure
+
+```
+tests/
+├── core/                          # Existing - НЕ ТРОГАЕМ
+│   └── test_*.py
+│
+├── dora_integration/              # NEW - Integration layer tests
+│   ├── __init__.py
+│   ├── test_due_diligence.py      # audit, provider_info, pooled, dashboard
+│   ├── test_incident_interface.py # notification, classification, reporting
+│   ├── test_third_party.py        # concentration, ctpp, subcontractor
+│   ├── test_contracts.py          # requirements, sla, exit
+│   ├── test_reporting.py          # unified, templates, roi
+│   └── test_sharing.py            # information_sharing
+│
+├── dora/                          # UPDATE - Only facade tests
+│   └── test_facade_imports.py     # Verify re-exports work
+│
+└── archive/                       # OPTIONAL - Archived module tests
+    └── dora_financial_entity/
+        └── test_fe_modules.py     # Mark as @pytest.mark.archived
+```
+
+#### 9.2 Import Migration Script
+
+```bash
+#!/bin/bash
+# scripts/migrate_dora_imports.sh
+
+# Find all files importing from services.dora (excluding dora/ itself)
+FILES=$(grep -rl "from services.dora" --include="*.py" | grep -v "services/dora/")
+
+for file in $FILES; do
+    echo "Processing: $file"
+
+    # Update imports for each subpackage
+    sed -i 's/from services\.dora\.audit_readiness/from services.dora_integration.due_diligence.audit_readiness/g' "$file"
+    sed -i 's/from services\.dora\.provider_info_package/from services.dora_integration.due_diligence.provider_info_package/g' "$file"
+    sed -i 's/from services\.dora\.pooled_audit_support/from services.dora_integration.due_diligence.pooled_audit_support/g' "$file"
+    sed -i 's/from services\.dora\.compliance_dashboard/from services.dora_integration.due_diligence.compliance_dashboard/g' "$file"
+
+    sed -i 's/from services\.dora\.client_incident_notification/from services.dora_integration.incident_interface.client_incident_notification/g' "$file"
+    sed -i 's/from services\.dora\.incident_classification/from services.dora_integration.incident_interface.incident_classification/g' "$file"
+    sed -i 's/from services\.dora\.incident_reporting/from services.dora_integration.incident_interface.incident_reporting/g' "$file"
+    sed -i 's/from services\.dora\.cyber_threat_notification/from services.dora_integration.incident_interface.cyber_threat_notification/g' "$file"
+    sed -i 's/from services\.dora\.communication/from services.dora_integration.incident_interface.communication/g' "$file"
+
+    # ... (continue for all modules)
+done
+```
+
+#### 9.3 Test Validation Checklist
+
+```python
+# tests/dora_integration/test_import_validation.py
+"""Validate all imports work after migration."""
+
+import pytest
+
+class TestImportValidation:
+    """Verify all integration layer imports resolve correctly."""
+
+    def test_due_diligence_imports(self):
+        from services.dora_integration.due_diligence import (
+            DORAuditReadiness,
+            ProviderIdentification,
+            PooledAuditSupport,
+            DORAComplianceDashboard,
+        )
+        assert DORAuditReadiness is not None
+
+    def test_incident_interface_imports(self):
+        from services.dora_integration.incident_interface import (
+            ClientNotificationService,
+            DORAIncidentClassification,
+            DORAIncidentReporter,
+        )
+        assert DORAIncidentReporter is not None
+
+    def test_facade_backward_compat(self):
+        """Verify old import path still works (with warning)."""
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            from services.dora import DORAuditReadiness
+            # Should work but emit DeprecationWarning
+            assert len(w) >= 0  # May or may not warn depending on implementation
+
+    @pytest.mark.archived
+    def test_archived_modules_not_importable(self):
+        """Verify archived modules are not in main import path."""
+        with pytest.raises(ImportError):
+            from services.dora import DORAGovernanceFramework  # Archived
+```
+
+#### 9.4 CI/CD Integration
+
+```yaml
+# .github/workflows/test-migration.yml
+name: Test DORA Migration
+
+on:
+  push:
+    paths:
+      - 'services/dora_integration/**'
+      - 'services/dora/**'
+      - 'tests/dora_integration/**'
+
+jobs:
+  test-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run integration layer tests
+        run: pytest tests/dora_integration/ -v --tb=short
+
+      - name: Run facade tests
+        run: pytest tests/dora/test_facade_imports.py -v
+
+      - name: Verify no broken imports
+        run: |
+          python -c "from services.dora_integration import *"
+          python -c "from services.dora import *"
+
+      - name: Check for deprecated imports in codebase
+        run: |
+          # Should find zero direct imports from services.dora.<module>
+          ! grep -r "from services.dora\." --include="*.py" \
+            | grep -v "services/dora/" \
+            | grep -v "dora_integration" \
+            | grep -v "test_" \
+            | grep -v "#"
 ```
 
 ---
@@ -707,20 +1062,24 @@ git revert <commit-hash>
 - [ ] Documentation updated
 
 ### Final Success
-- [ ] Clean separation: core vs integration
-- [ ] All 21 integration modules organized
-- [ ] All 22+ FE modules archived with README
-- [ ] `services/dora/__init__.py` simplified
-- [ ] Zero deprecation warnings in production
+- [ ] Clean separation: core (14) vs integration (21) vs archive (23)
+- [ ] All 21 integration modules organized in 6 subpackages
+- [ ] All 23 FE modules archived with README
+- [ ] `services/dora/__init__.py` is thin facade only
+- [ ] All tests pass (core, integration, facade)
+- [ ] Zero direct imports from `services.dora.<module>` in app code
+- [ ] CI/CD validates migration integrity
 
 ---
 
 ## 6. Migration Checklist
 
-### Phase 0
-- [ ] Directory structure created
-- [ ] Git tag created
-- [ ] Import audit complete
+### Phase 0 (Preparation)
+- [ ] Directory structure created (`services/dora_integration/`, `services/archive/`)
+- [ ] Config directory created (`config/dora_integration/`)
+- [ ] Git tag `pre-integration-refactor` created
+- [ ] Import audit complete (all `from services.dora import` documented)
+- [ ] Migration branch created
 
 ### Phase 1 (Due Diligence)
 - [ ] 4 modules moved
@@ -751,15 +1110,22 @@ git revert <commit-hash>
 - [ ] Config moved
 
 ### Phase 7 (Archive)
-- [ ] 22+ modules archived
-- [ ] 2 configs archived
-- [ ] README created
+- [ ] 23 modules archived to `services/archive/dora_financial_entity/`
+- [ ] 2 configs archived to `services/archive/dora_financial_entity/configs/`
+- [ ] README created with module list and recovery instructions
 
 ### Phase 8 (Finalize)
-- [ ] Main `__init__.py` updated
-- [ ] All imports updated
-- [ ] Full test suite passes
+- [ ] Main `services/dora_integration/__init__.py` updated with real class names
+- [ ] `services/dora/__init__.py` converted to thin facade
+- [ ] All imports updated via migration script
 - [ ] Documentation complete
+
+### Phase 9 (Test & Validate)
+- [ ] `tests/dora_integration/` directory created with test files
+- [ ] Import validation tests pass
+- [ ] Facade backward compatibility tests pass
+- [ ] CI/CD workflow added
+- [ ] Zero deprecated imports in app code
 
 ---
 
