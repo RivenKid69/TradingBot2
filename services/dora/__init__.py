@@ -81,7 +81,8 @@ __dora_compliance_phase__ = 5  # Current implementation phase
 # Phase 0 exports (Proportionality Assessment)
 # =============================================================================
 
-from services.dora.scope_verification import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.scope_verification import (
     # Enums
     DORAEntityType,
     DORAScopeResult,
@@ -95,7 +96,8 @@ from services.dora.scope_verification import (
     get_entity_type_description,
 )
 
-from services.dora.function_classification import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.function_classification import (
     # Enums
     FunctionCriticality,
     ImpairmentType,
@@ -111,7 +113,8 @@ from services.dora.function_classification import (
     get_ict_providers,
 )
 
-from services.dora.proportionality import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.proportionality import (
     # Enums
     DORARegime,
     ExemptionType,
@@ -131,7 +134,8 @@ from services.dora.proportionality import (
 # =============================================================================
 
 # Article 5 - Governance
-from services.dora.governance import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.governance import (
     # Enums
     GovernanceRole,
     DefenceLine,
@@ -152,7 +156,8 @@ from services.dora.governance import (
 )
 
 # Article 6 - ICT Risk Management Framework
-from services.dora.ict_risk_framework import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.ict_risk_framework import (
     # Enums
     PolicyCategory,
     ControlDomain,
@@ -171,7 +176,8 @@ from services.dora.ict_risk_framework import (
 )
 
 # Article 7 - ICT Systems
-from services.dora.ict_systems import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.ict_systems import (
     # Enums
     SystemCriticality,
     SystemType,
@@ -191,7 +197,8 @@ from services.dora.ict_systems import (
 )
 
 # Article 8 - ICT Identification
-from services.dora.ict_identification import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.ict_identification import (
     # Enums
     AssetType,
     AssetClassification,
@@ -212,7 +219,8 @@ from services.dora.ict_identification import (
 )
 
 # Article 9 - Protection and Prevention
-from services.dora.protection import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.protection import (
     # Enums
     SecurityControlCategory,
     AccessControlType,
@@ -232,7 +240,8 @@ from services.dora.protection import (
 )
 
 # Article 10 - Detection
-from services.dora.detection import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.detection import (
     # Enums
     AnomalyType,
     AlertSeverity,
@@ -251,7 +260,8 @@ from services.dora.detection import (
 )
 
 # Article 11 - Response and Recovery
-from services.dora.response_recovery import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.response_recovery import (
     # Enums
     IncidentSeverity,
     IncidentStatus,
@@ -271,7 +281,8 @@ from services.dora.response_recovery import (
 )
 
 # Article 12 - Backup and Recovery
-from services.dora.backup_recovery import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.backup_recovery import (
     # Enums
     BackupType,
     BackupFrequency,
@@ -292,7 +303,8 @@ from services.dora.backup_recovery import (
 )
 
 # Article 13 - Learning and Evolving
-from services.dora.learning import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.learning import (
     # Enums
     ReviewType,
     LessonCategory,
@@ -341,7 +353,8 @@ from services.dora.communication import (
 )
 
 # Article 15 - ICT Business Continuity
-from services.dora.ict_business_continuity import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.ict_business_continuity import (
     # Enums
     ContinuityStatus,
     CriticalityLevel,
@@ -368,7 +381,8 @@ from services.dora.ict_business_continuity import (
 )
 
 # Article 16 - Simplified Framework
-from services.dora.simplified_framework import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.simplified_framework import (
     # Enums
     EntitySize,
     SimplifiedControlCategory,
@@ -400,7 +414,8 @@ from services.dora.simplified_framework import (
 # =============================================================================
 
 # Article 17 - Incident Management
-from services.dora.incident_management import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.incident_management import (
     # Enums
     ICTEventType,
     IncidentPhase,
@@ -511,7 +526,8 @@ from services.dora.reporting_templates import (
 )
 
 # Article 22 - Supervisory Feedback
-from services.dora.supervisory_feedback import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.supervisory_feedback import (
     # Enums
     FeedbackType,
     FeedbackPriority,
@@ -562,7 +578,8 @@ from services.dora.third_party_incidents import (
 # =============================================================================
 
 # Article 24 - Digital Operational Resilience Testing Programme
-from services.dora.resilience_testing import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.resilience_testing import (
     # Enums
     TestCategory,
     TestFrequency,
@@ -587,7 +604,8 @@ from services.dora.resilience_testing import (
 )
 
 # Article 25 - Testing of ICT Tools and Systems
-from services.dora.ict_testing import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.ict_testing import (
     # Enums
     ICTSystemType,
     SystemCriticality as ICTSystemCriticality,
@@ -613,7 +631,8 @@ from services.dora.ict_testing import (
 )
 
 # Article 26 - Threat-Led Penetration Testing (TLPT)
-from services.dora.tlpt import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.tlpt import (
     # Enums
     TLPTPhase,
     TLPTStatus,
@@ -640,7 +659,8 @@ from services.dora.tlpt import (
 )
 
 # Article 27 - Requirements for Testers
-from services.dora.tester_management import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.tester_management import (
     # Enums
     TesterType as TLPTTesterType,
     TesterRole,
@@ -664,7 +684,8 @@ from services.dora.tester_management import (
 )
 
 # Article 26(3) - Pooled TLPT
-from services.dora.pooled_testing import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.pooled_testing import (
     # Enums
     PooledTestStatus,
     ParticipantRole,
@@ -770,7 +791,8 @@ from services.dora.contractual_requirements import (
 )
 
 # Article 30(2)(i) - Training Participation
-from services.dora.training_participation import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.training_participation import (
     # Enums
     TrainingType,
     ParticipationMode,
@@ -1003,7 +1025,8 @@ from services.dora.information_sharing import (
     DORAInformationSharing,
 )
 
-from services.dora.cross_regulation import (
+# ARCHIVED: Phase 7 -> services.archive.dora_financial_entity
+from services.archive.dora_financial_entity.cross_regulation import (
     Regulation,
     ReportingRequirement,
     IncidentAlignmentResult,

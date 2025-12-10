@@ -1,0 +1,279 @@
+# ==============================================================================
+# DORA NCA (National Competent Authority) Identification Configuration
+# ==============================================================================
+#
+# DORA Regulation (EU) 2022/2554 - NCA Identification and Reporting Channels
+#
+# Identifies the appropriate National Competent Authority (NCA) for:
+#   - Register of Information submission (Article 28)
+#   - Major incident reporting (Article 19)
+#   - TLPT designation (Article 26)
+#
+# References:
+#   - Article 19: https://www.digital-operational-resilience-act.com/Article_19.html
+#   - Article 28: https://www.digital-operational-resilience-act.com/Article_28.html
+#
+# ==============================================================================
+
+# ==============================================================================
+# NCA IDENTIFICATION PROCESS
+# ==============================================================================
+nca_identification:
+  # Step 1: Determine Member State of authorization
+  authorization_member_state: null  # ISO 3166-1 alpha-2 (e.g., "DE", "FR", "NL", "IE", "LU")
+
+  # Step 2: Entity type determines NCA
+  # Different NCAs may supervise different entity types in same Member State
+  entity_type: investment_firm  # From entity_classification.yaml
+
+  # Step 3: Identified NCA
+  primary_nca:
+    name: null  # e.g., "BaFin", "AMF", "AFM", "CBI", "CSSF"
+    full_name: null  # Full official name
+    website: null
+    country: null
+
+  # Step 4: If multiple supervisors, identify single NCA for incident reporting
+  # Per Article 19(1): Member States designate single NCA if multiple
+  designated_incident_nca: null  # May be same as primary_nca
+
+# ==============================================================================
+# NCA REFERENCE BY MEMBER STATE AND ENTITY TYPE
+# ==============================================================================
+#
+# This is reference information. Fill in the appropriate NCA above.
+#
+nca_reference:
+  investment_firms:
+    DE:
+      name: "BaFin"
+      full_name: "Bundesanstalt für Finanzdienstleistungsaufsicht"
+      website: "https://www.bafin.de"
+      dora_portal: "MVP Portal"
+
+    FR:
+      name: "AMF"
+      full_name: "Autorité des Marchés Financiers"
+      website: "https://www.amf-france.org"
+      notes: "For investment services; ACPR for banking"
+
+    NL:
+      name: "AFM"
+      full_name: "Autoriteit Financiële Markten"
+      website: "https://www.afm.nl"
+      notes: "DNB for prudential supervision"
+
+    IE:
+      name: "CBI"
+      full_name: "Central Bank of Ireland"
+      website: "https://www.centralbank.ie"
+      dora_portal: "ONR (Online Reporting)"
+
+    LU:
+      name: "CSSF"
+      full_name: "Commission de Surveillance du Secteur Financier"
+      website: "https://www.cssf.lu"
+      dora_portal: "eDesk"
+
+    IT:
+      name: "CONSOB"
+      full_name: "Commissione Nazionale per le Società e la Borsa"
+      website: "https://www.consob.it"
+      notes: "Banca d'Italia for prudential"
+
+    ES:
+      name: "CNMV"
+      full_name: "Comisión Nacional del Mercado de Valores"
+      website: "https://www.cnmv.es"
+
+    AT:
+      name: "FMA"
+      full_name: "Finanzmarktaufsicht"
+      website: "https://www.fma.gv.at"
+
+    BE:
+      name: "FSMA"
+      full_name: "Financial Services and Markets Authority"
+      website: "https://www.fsma.be"
+
+    PT:
+      name: "CMVM"
+      full_name: "Comissão do Mercado de Valores Mobiliários"
+      website: "https://www.cmvm.pt"
+
+# ==============================================================================
+# REGISTER OF INFORMATION SUBMISSION
+# ==============================================================================
+register_of_information:
+  # Reference date for first submission
+  # All contractual arrangements in place as of this date must be reported
+  reference_date: "2025-03-31"
+
+  # Submission details
+  submission:
+    platform: null  # e.g., "BaFin MVP Portal", "CSSF eDesk", "CBI ONR"
+    format: "CSV"  # Per ITS - plain CSV format
+    encoding: "UTF-8"
+
+    # Submission deadlines by Member State
+    # IMPORTANT: These are NCA-specific deadlines for first submission
+    deadline: null  # e.g., "2025-04-11" for Germany
+
+  # Templates required (DPM 4.0 naming)
+  templates:
+    - template_id: "B_01.01"
+      name: "Entity Identification"
+      required: true
+    - template_id: "B_02.01"
+      name: "Contractual Arrangement"
+      required: true
+    - template_id: "B_02.02"
+      name: "Entities Using ICT Services"
+      required: true
+    - template_id: "B_02.03"
+      name: "Intra-group Linkages"
+      required: false  # Only if applicable
+    - template_id: "B_03.01"
+      name: "ICT Service Provider ID"
+      required: true
+    - template_id: "B_03.02"
+      name: "Direct Providers"
+      required: true
+    - template_id: "B_03.03"
+      name: "Intra-group Providers"
+      required: false
+    - template_id: "B_04.01"
+      name: "Entity Making Use"
+      required: true
+    - template_id: "B_05.01"
+      name: "ICT Services"
+      required: true
+    - template_id: "B_05.02"
+      name: "ICT Service Chain"
+      required: true
+    - template_id: "B_05.03"
+      name: "Service Chain Details"
+      required: true
+    - template_id: "B_06.01"
+      name: "Functions"
+      required: true
+    - template_id: "B_07.01"
+      name: "Assessments"
+      required: true
+    - template_id: "B_08.01"
+      name: "Costs"
+      required: true
+    - template_id: "B_99.01"
+      name: "Definitions"
+      required: true
+
+# ==============================================================================
+# INCIDENT REPORTING SUBMISSION
+# ==============================================================================
+incident_reporting:
+  # Reporting channel
+  platform: null  # e.g., "BaFin MVP Portal", "CBI ONR"
+  backup_method: "email"  # If technical impossibility
+  backup_email: null
+
+  # Reporting timelines (CDR 2025/301)
+  timelines:
+    initial_notification:
+      # TWO conditions, whichever comes FIRST:
+      condition_1: "4 hours after classification as MAJOR"
+      condition_2: "24 hours after initial detection"
+      logic: "WHICHEVER IS EARLIER"
+
+    intermediate_report:
+      deadline: "72 hours after initial notification"
+
+    final_report:
+      deadline: "1 month after resolution"
+
+  # Weekend/Holiday extension (CDR 2025/301 Art. 4)
+  weekend_extension:
+    applies: true
+    extension: "until noon of next working day"
+    applicable_entities: "certain financial entities per CDR 2025/301 Art. 4"
+
+  # Incident upgrade procedure
+  upgrade_procedure:
+    trigger: "Incident initially not major, later becomes major"
+    deadline: "4 hours from upgrade classification"
+    note: "24h from detection no longer constraining after upgrade"
+
+# ==============================================================================
+# SUBMISSION DEADLINES BY MEMBER STATE
+# ==============================================================================
+#
+# Register of Information submission deadlines to NCA
+# NCAs then submit to ESAs by 30 April 2025
+#
+submission_deadlines:
+  reference_date: "2025-03-31"  # Data must reflect arrangements as of this date
+
+  by_member_state:
+    IE:
+      nca: "CBI"
+      deadline: "2025-04-01"  # to 2025-04-04
+      platform: "ONR"
+      notes: "Window 1-4 April 2025"
+
+    DE:
+      nca: "BaFin"
+      deadline: "2025-04-11"
+      platform: "MVP Portal"
+      source: "BaFin announcement"
+
+    FR:
+      nca: "AMF/ACPR"
+      deadline: "2025-04-15"
+      platform: "TBD"
+      source: "ACPR guidance"
+
+    LU:
+      nca: "CSSF"
+      deadline: "2025-04-15"  # Window 1-15 April
+      platform: "eDesk"
+      source: "CSSF website"
+
+    IT:
+      nca: "Banca d'Italia / CONSOB"
+      deadline: "2025-04-30"
+      platform: "TBD"
+      source: "BoI guidance"
+
+    NL:
+      nca: "AFM/DNB"
+      deadline: "2025-04-30"
+      platform: "TBD"
+      source: "AFM/DNB guidance"
+
+    # ESA aggregation deadline
+    ESA_deadline: "2025-04-30"  # NCAs submit to ESAs by this date
+
+# ==============================================================================
+# CONTACT INFORMATION
+# ==============================================================================
+nca_contacts:
+  general_inquiry:
+    email: null
+    phone: null
+
+  incident_reporting:
+    email: null
+    phone: null  # 24/7 if available
+    escalation: null
+
+  register_of_information:
+    email: null
+    support_desk: null
+
+# ==============================================================================
+# CONFIGURATION METADATA
+# ==============================================================================
+metadata:
+  version: "1.0"
+  last_updated: null
+  updated_by: null
+  notes: ""

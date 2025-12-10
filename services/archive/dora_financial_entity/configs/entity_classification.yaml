@@ -1,0 +1,226 @@
+# ==============================================================================
+# DORA Entity Classification Configuration
+# ==============================================================================
+#
+# DORA Regulation (EU) 2022/2554 - Entity Classification
+#
+# This configuration file documents the entity classification for DORA purposes.
+# MUST be completed BEFORE implementing any DORA requirements.
+#
+# References:
+#   - Article 2 (Scope): https://www.digital-operational-resilience-act.com/Article_2.html
+#   - Article 4 (Proportionality): https://www.digital-operational-resilience-act.com/Article_4.html
+#   - Article 16 (Simplified Framework): https://www.digital-operational-resilience-act.com/Article_16.html
+#
+# ==============================================================================
+
+# ==============================================================================
+# ENTITY IDENTIFICATION
+# ==============================================================================
+entity_identification:
+  # Legal entity information
+  legal_name: ""  # REQUIRED: Full legal name of entity
+  trading_name: ""  # Trading/brand name if different
+
+  # Legal Entity Identifier (ISO 17442)
+  # Get LEI from: https://www.gleif.org/en/lei-data/gleif-lei-look-up-api
+  lei: null  # e.g., "549300XXX..."
+
+  # If no LEI, provide alternative identification
+  alternative_identifier:
+    type: null  # "registration_number", "tax_id", "sec_crd"
+    value: null
+    issuing_authority: null
+
+  # Registration information
+  registration:
+    country: null  # ISO 3166-1 alpha-2 (e.g., "DE", "FR", "IE", "LU")
+    registration_number: null
+    date_of_incorporation: null
+    legal_form: null  # e.g., "GmbH", "Ltd", "SA", "BV"
+
+# ==============================================================================
+# SIZE METRICS (EU Recommendation 2003/361)
+# ==============================================================================
+size_metrics:
+  # IMPORTANT: Use values as of the assessment date
+  assessment_date: null  # REQUIRED: Date of these figures (YYYY-MM-DD)
+
+  # Employee count (FTE)
+  employee_count: null  # REQUIRED: Full-time equivalent employees
+
+  # Financial metrics (EUR)
+  annual_turnover_eur: null  # REQUIRED: Annual turnover in EUR
+  balance_sheet_eur: null  # REQUIRED: Total balance sheet in EUR
+
+  # Source documentation
+  source_documents:
+    - ""  # List documents used (e.g., "Annual report 2024", "Financial statements")
+
+# ==============================================================================
+# ENTITY TYPE (Article 2(1))
+# ==============================================================================
+entity_type:
+  # Primary entity type under DORA Article 2(1)
+  # Options:
+  #   - credit_institution (a)
+  #   - payment_institution (b)
+  #   - account_information_service_provider (c)
+  #   - electronic_money_institution (d)
+  #   - investment_firm (e) <-- MOST COMMON FOR ALGO TRADING
+  #   - crypto_asset_service_provider (f)
+  #   - central_securities_depository (g)
+  #   - central_counterparty (h)
+  #   - trading_venue (i)
+  #   - trade_repository (j)
+  #   - aifm (k)
+  #   - management_company (l)
+  #   - data_reporting_service_provider (m)
+  #   - insurance_undertaking (n)
+  #   - insurance_intermediary (o)
+  #   - iorp (p)
+  #   - credit_rating_agency (q)
+  #   - administrator_of_critical_benchmarks (r)
+  #   - crowdfunding_service_provider (s)
+  #   - securitisation_repository (t)
+  #   - ict_third_party_service_provider (u)
+
+  primary_type: investment_firm  # REQUIRED
+
+  # Authorization details
+  authorization:
+    framework: "MiFID II"  # e.g., "MiFID II", "MiCA", "PSD2", "AIFMD"
+    license_number: null
+    authorizing_nca: null  # e.g., "BaFin", "AMF", "CBI"
+    authorization_date: null
+
+  # Additional activities (if applicable)
+  additional_activities: []
+
+# ==============================================================================
+# ARTICLE 16 EXEMPTION CHECKS
+# ==============================================================================
+#
+# Article 16 allows certain entities to use a simplified ICT risk management
+# framework instead of Articles 5-15.
+#
+exemption_checks:
+  # Article 16(1)(a) - Small and non-interconnected investment firm
+  # Defined in IFR Regulation (EU) 2019/2033 Article 12
+  small_non_interconnected_investment_firm:
+    applicable: false
+    qualification_evidence: ""
+    ifr_article_12_criteria_met: false
+
+  # Article 16(1)(b) - Payment institution exempted per PSD2 Article 32(1)
+  psd2_exempted:
+    applicable: false
+    exemption_reference: ""
+    member_state_decision: ""
+
+  # Article 16(1)(c) - Institution exempted per CRD Article 2(5)(4-23)
+  crd_exempted:
+    applicable: false
+    exemption_reference: ""
+    member_state_decision: ""
+
+  # Article 16(1)(d) - E-money institution exempted per EMD2 Article 9
+  emd2_exempted:
+    applicable: false
+    exemption_reference: ""
+    waiver_conditions: ""
+
+  # Article 16(1)(e) - Small IORPs
+  small_iorp:
+    applicable: false
+    member_state: ""
+    qualification_criteria: ""
+
+# ==============================================================================
+# RISK PROFILE (Article 4 Proportionality)
+# ==============================================================================
+risk_profile:
+  # Overall risk profile assessment
+  overall_risk_level: medium  # "low", "medium", "high"
+
+  # Complexity factors
+  operational_complexity: medium  # "low", "medium", "high"
+
+  # Scale factors
+  cross_border_operations: false
+  number_of_member_states: 1
+
+  # Systemic factors
+  systemic_importance: false
+  designated_significant: false
+
+  # ICT dependency
+  ict_dependency_level: high  # "low", "medium", "high"
+
+  # Client base
+  client_types:
+    - retail
+    - professional
+  approximate_client_count: null
+
+# ==============================================================================
+# ASSESSMENT RESULT
+# ==============================================================================
+#
+# This section is filled by the proportionality assessment.
+# Do not fill manually - use the assessment module.
+#
+assessment_result:
+  # Determined regime
+  # Options: "full", "simplified", "microenterprise"
+  determined_regime: null
+
+  # Qualification status
+  is_microenterprise: null
+  is_small_enterprise: null
+  qualifies_for_simplified: null
+
+  # Assessment metadata
+  assessment_date: null
+  assessment_id: null
+  assessed_by: null
+
+  # Review status
+  legal_review_required: true
+  legal_review_completed: false
+  legal_reviewer: null
+  legal_review_date: null
+
+  # NCA confirmation
+  nca_confirmation_required: false
+  nca_confirmed: false
+  nca_confirmation_date: null
+  nca_reference: null
+
+# ==============================================================================
+# APPLICABLE EXEMPTIONS
+# ==============================================================================
+applicable_exemptions: []
+# Example when populated:
+# - exemption_type: microenterprise_no_tpp_strategy
+#   dora_article: "Article 28(2)"
+#   description: "No requirement for third-party ICT risk strategy"
+
+# ==============================================================================
+# DOCUMENTATION & EVIDENCE
+# ==============================================================================
+supporting_documentation:
+  # List of documents supporting this classification
+  documents:
+    - name: ""
+      type: ""  # "financial_statement", "registration", "authorization", "assessment"
+      date: null
+      location: ""
+
+  # Notes
+  notes: ""
+
+  # Version control
+  version: "1.0"
+  last_updated: null
+  updated_by: null
