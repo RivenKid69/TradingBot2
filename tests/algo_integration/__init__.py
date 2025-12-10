@@ -1,1 +1,1 @@
-"""Tests for algo integration modules."""
+"""Algo Integration Tests Package."""
