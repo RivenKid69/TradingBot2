@@ -31,13 +31,14 @@ References:
 Migration Status:
     Phase 0: Directory structure created (COMPLETE)
     Phase 1: Due Diligence & Audit Layer (COMPLETE)
-    Phase 2-8: Module migration pending
+    Phase 2: Incident Interface Layer (COMPLETE)
+    Phase 3-8: Module migration pending
 """
 
 from __future__ import annotations
 
-__version__ = "1.0.0"
-__migration_phase__ = 1  # Current migration phase
+__version__ = "1.1.0"
+__migration_phase__ = 2  # Current migration phase
 
 # =============================================================================
 # Phase 1: Due Diligence & Audit Layer (Art. 30(3)(e), Art. 28(3), Art. 30(4))
@@ -146,6 +147,146 @@ from services.dora_integration.due_diligence import (
 )
 
 # =============================================================================
+# Phase 2: Incident Interface Layer (Art. 30(2)(d), Art. 18, Art. 19, Art. 14)
+# =============================================================================
+
+from services.dora_integration.incident_interface import (
+    # =========================================================================
+    # Client Incident Notification (Article 30(2)(d))
+    # =========================================================================
+    # Main Service
+    ClientNotificationService,
+    DORAClientNotification,
+    # Configuration
+    ClientNotificationConfig,
+    # Enums
+    IncidentSeverity,
+    NotificationStatus,
+    NotificationChannel,
+    IncidentCategory,
+    # Data Structures
+    ClientContact,
+    IncidentNotification,
+    IncidentUpdate,
+    ClientIncident,
+    # Factory Functions
+    create_client_notification_service,
+    create_client_notification_system,
+    get_notification_template,
+
+    # =========================================================================
+    # Incident Classification (Article 18)
+    # =========================================================================
+    # Main Service
+    DORAIncidentClassification,
+    # Configuration
+    IncidentClassificationConfig,
+    ClassificationThresholds,
+    # Enums
+    IncidentClassificationType,
+    ClientType,
+    DataType,
+    CriticalServiceType,
+    MajorIncidentTrigger,
+    ReputationalImpactLevel,
+    # Assessment Data Structures
+    ClientImpactAssessment,
+    DurationAssessment,
+    GeographicAssessment,
+    DataLossAssessment,
+    CriticalServiceAssessment,
+    EconomicImpactAssessment,
+    ReputationalAssessment,
+    RecurringIncidentAssessment,
+    MaliciousAccessAssessment,
+    # Result
+    IncidentClassificationResult,
+    # Factory Functions
+    create_incident_classification,
+    get_default_thresholds,
+    get_classification_criteria,
+    create_client_impact_assessment,
+    create_duration_assessment,
+    create_economic_impact_assessment,
+    create_data_loss_assessment,
+    create_critical_service_assessment,
+
+    # =========================================================================
+    # Incident Reporting (Article 19) - Export Templates
+    # =========================================================================
+    # Main Service
+    DORAIncidentReporter,
+    # Configuration
+    IncidentReportingConfig,
+    # Enums
+    ReportType,
+    ReportStatus,
+    IncidentTypeCode,
+    RootCauseCategory,
+    CompetentAuthorityType,
+    # Data Structures
+    CompetentAuthority,
+    InitialNotificationReport,
+    IntermediateReport,
+    FinalReport,
+    ClientDataPackage,
+    ReportSubmission,
+    # Factory Functions
+    create_incident_reporter,
+    get_report_deadlines,
+    get_report_types as get_incident_report_types,  # Alias to avoid conflict
+
+    # =========================================================================
+    # Cyber Threat Notification (Article 19(4))
+    # =========================================================================
+    # Main Service
+    CyberThreatNotificationService,
+    # Configuration
+    CyberThreatNotificationConfig,
+    # Enums
+    ThreatCategory,
+    ThreatActorType,
+    ThreatSeverity,
+    ThreatStatus,
+    ThreatSignificance,
+    # Data Structures
+    ThreatIndicator,
+    CyberThreat,
+    ThreatSignificanceAssessment,
+    ThreatNotification,
+    # Factory Functions
+    create_cyber_threat_notification_service,
+    get_threat_categories,
+    get_threat_severities,
+
+    # =========================================================================
+    # Crisis Communication (Article 14)
+    # =========================================================================
+    # Main Service
+    DORACommunication,
+    # Configuration
+    CommunicationConfig,
+    # Enums
+    CommunicationChannel,
+    StakeholderType,
+    CommunicationPriority,
+    CommunicationStatus,
+    CrisisPhase,
+    PolicyStatus,
+    # Data Structures
+    CommunicationContact,
+    CommunicationTemplate,
+    CommunicationRecord,
+    CommunicationPolicy,
+    CrisisStatus,
+    # Factory Functions
+    create_communication_service,
+    get_communication_channels,
+    get_stakeholder_types,
+    get_crisis_phases,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -155,8 +296,12 @@ __all__ = [
     "__migration_phase__",
 
     # =========================================================================
-    # Audit Readiness (Art. 30(3)(e))
+    # Phase 1: Due Diligence & Audit Layer
     # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Audit Readiness (Art. 30(3)(e))
+    # -------------------------------------------------------------------------
     # SLA Constants
     "AUDIT_SLA_ACKNOWLEDGMENT_DAYS",
     "AUDIT_SLA_SCHEDULING_DAYS",
@@ -189,9 +334,9 @@ __all__ = [
     "MultiClientIncidentCoordinator",
     "create_incident_coordinator",
 
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Provider Information Package (Art. 28(3))
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Enums
     "ICTServiceType",
     "FunctionCriticality",
@@ -215,9 +360,9 @@ __all__ = [
     # Factory functions
     "create_provider_info_package",
 
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Pooled Audit Support (Art. 30(4))
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Enums
     "AuditReportType",
     "PooledAuditStatus",
@@ -239,9 +384,9 @@ __all__ = [
     "get_audit_scope_areas",
     "get_report_types",
 
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Compliance Dashboard
-    # =========================================================================
+    # -------------------------------------------------------------------------
     # Enums
     "IssueSeverity",
     "IssueStatus",
@@ -253,4 +398,116 @@ __all__ = [
     "DORAComplianceReport",
     # Main class
     "DORAComplianceDashboard",
+
+    # =========================================================================
+    # Phase 2: Incident Interface Layer
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Client Incident Notification (Article 30(2)(d))
+    # -------------------------------------------------------------------------
+    "ClientNotificationService",
+    "DORAClientNotification",
+    "ClientNotificationConfig",
+    "IncidentSeverity",
+    "NotificationStatus",
+    "NotificationChannel",
+    "IncidentCategory",
+    "ClientContact",
+    "IncidentNotification",
+    "IncidentUpdate",
+    "ClientIncident",
+    "create_client_notification_service",
+    "create_client_notification_system",
+    "get_notification_template",
+
+    # -------------------------------------------------------------------------
+    # Incident Classification (Article 18)
+    # -------------------------------------------------------------------------
+    "DORAIncidentClassification",
+    "IncidentClassificationConfig",
+    "ClassificationThresholds",
+    "IncidentClassificationType",
+    "ClientType",
+    "DataType",
+    "CriticalServiceType",
+    "MajorIncidentTrigger",
+    "ReputationalImpactLevel",
+    "ClientImpactAssessment",
+    "DurationAssessment",
+    "GeographicAssessment",
+    "DataLossAssessment",
+    "CriticalServiceAssessment",
+    "EconomicImpactAssessment",
+    "ReputationalAssessment",
+    "RecurringIncidentAssessment",
+    "MaliciousAccessAssessment",
+    "IncidentClassificationResult",
+    "create_incident_classification",
+    "get_default_thresholds",
+    "get_classification_criteria",
+    "create_client_impact_assessment",
+    "create_duration_assessment",
+    "create_economic_impact_assessment",
+    "create_data_loss_assessment",
+    "create_critical_service_assessment",
+
+    # -------------------------------------------------------------------------
+    # Incident Reporting (Article 19) - Export Templates
+    # -------------------------------------------------------------------------
+    "DORAIncidentReporter",
+    "IncidentReportingConfig",
+    "ReportType",
+    "ReportStatus",
+    "IncidentTypeCode",
+    "RootCauseCategory",
+    "CompetentAuthorityType",
+    "CompetentAuthority",
+    "InitialNotificationReport",
+    "IntermediateReport",
+    "FinalReport",
+    "ClientDataPackage",
+    "ReportSubmission",
+    "create_incident_reporter",
+    "get_report_deadlines",
+    "get_incident_report_types",
+
+    # -------------------------------------------------------------------------
+    # Cyber Threat Notification (Article 19(4))
+    # -------------------------------------------------------------------------
+    "CyberThreatNotificationService",
+    "CyberThreatNotificationConfig",
+    "ThreatCategory",
+    "ThreatActorType",
+    "ThreatSeverity",
+    "ThreatStatus",
+    "ThreatSignificance",
+    "ThreatIndicator",
+    "CyberThreat",
+    "ThreatSignificanceAssessment",
+    "ThreatNotification",
+    "create_cyber_threat_notification_service",
+    "get_threat_categories",
+    "get_threat_severities",
+
+    # -------------------------------------------------------------------------
+    # Crisis Communication (Article 14)
+    # -------------------------------------------------------------------------
+    "DORACommunication",
+    "CommunicationConfig",
+    "CommunicationChannel",
+    "StakeholderType",
+    "CommunicationPriority",
+    "CommunicationStatus",
+    "CrisisPhase",
+    "PolicyStatus",
+    "CommunicationContact",
+    "CommunicationTemplate",
+    "CommunicationRecord",
+    "CommunicationPolicy",
+    "CrisisStatus",
+    "create_communication_service",
+    "get_communication_channels",
+    "get_stakeholder_types",
+    "get_crisis_phases",
 ]

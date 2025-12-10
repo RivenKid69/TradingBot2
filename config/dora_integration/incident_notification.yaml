@@ -1,0 +1,286 @@
+# =============================================================================
+# DORA Incident Communication Interface Configuration
+# =============================================================================
+#
+# This configuration file controls the incident communication layer of the
+# DORA Integration system for ICT third-party providers.
+#
+# IMPORTANT: As ICT providers, we notify CLIENTS about incidents.
+# Clients then report to their NCAs. We do NOT report directly to NCAs.
+#
+# References:
+#   - DORA Article 14: Crisis communication
+#   - DORA Article 18: Incident classification criteria
+#   - DORA Article 19: Incident reporting requirements
+#   - DORA Article 30(2)(d): Incident notification obligations
+#   - CDR 2024/1772: RTS on incident classification
+#   - CDR 2025/301: RTS on incident reporting
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Client Notification Configuration (Article 30(2)(d))
+# -----------------------------------------------------------------------------
+client_notification:
+  # SLA settings (minutes from incident detection)
+  sla:
+    critical: 30      # Critical incidents: notify within 30 minutes
+    high: 60          # High severity: notify within 1 hour
+    medium: 240       # Medium severity: notify within 4 hours
+    low: 1440         # Low severity: notify within 24 hours
+
+  # Delivery settings
+  delivery:
+    max_attempts: 3
+    retry_interval_seconds: 60
+
+  # Escalation
+  escalation:
+    enabled: true
+    escalate_on_sla_breach: true
+    escalation_contacts: []  # Configure via API
+
+  # Channels
+  channels:
+    default: email
+    enabled:
+      - email
+      - webhook
+      - api
+      - portal
+    disabled:
+      - sms
+
+  # Logging
+  logging:
+    enabled: true
+    path: "logs/dora/client_notifications"
+    retention_days: 2555  # 7 years per DORA
+
+# -----------------------------------------------------------------------------
+# Incident Classification Configuration (Article 18 / CDR 2024/1772)
+# -----------------------------------------------------------------------------
+incident_classification:
+  # Thresholds for major incident determination
+  thresholds:
+    # Client impact thresholds (Article 18(1)(a))
+    client_impact:
+      retail_client_count: 5000
+      professional_client_count: 100
+      counterparty_count: 10
+
+    # Duration threshold (Article 18(1)(b))
+    duration:
+      hours: 4.0
+
+    # Geographic spread (Article 18(1)(c))
+    geographic:
+      countries_affected: 2
+
+    # Economic impact (Article 18(1)(g))
+    economic:
+      impact_eur: 100000.0
+
+    # Recurring incidents (Article 18(2))
+    recurring:
+      count: 3
+      period_months: 3
+
+    # Criteria threshold for major
+    criteria_for_major: 2
+
+  # Classification behavior
+  behavior:
+    auto_classify: true
+    require_human_review_for_major: true
+    conservative_classification: true  # When in doubt, classify as major
+
+  # Entity-specific
+  entity:
+    type: "ict_provider"
+    size: "small"  # micro, small, medium, large
+
+  # Logging
+  logging:
+    enabled: true
+    path: "logs/dora/incident_classification"
+
+# -----------------------------------------------------------------------------
+# Incident Reporting Configuration (Article 19 / CDR 2025/301)
+# -----------------------------------------------------------------------------
+incident_reporting:
+  # Deadlines (regulatory requirements)
+  deadlines:
+    initial_notification_hours_from_classification: 4
+    initial_notification_hours_from_detection: 24
+    intermediate_report_hours: 72
+    final_report_days: 30
+
+  # Weekend/Holiday extension (CDR 2025/301 Art. 4)
+  weekend_extension:
+    enabled: true
+    extend_to_noon_next_business_day: true
+
+  # ICT Provider Entity Information
+  entity:
+    lei: ""  # Set via environment variable
+    name: ""  # Set via environment variable
+    type: "ict_third_party_provider"
+
+  # Reference NCA (for documentation purposes)
+  # Note: As ICT providers, we provide data to clients, not submit to NCAs
+  reference_nca:
+    id: ""
+    name: ""
+    country: ""
+
+  # Approval workflow
+  approval:
+    require_approval_before_submit: true
+    approval_roles:
+      - compliance_officer
+      - incident_manager
+
+  # Logging
+  logging:
+    enabled: true
+    path: "logs/dora/incident_reporting"
+
+# -----------------------------------------------------------------------------
+# Cyber Threat Notification Configuration (Article 19(4))
+# -----------------------------------------------------------------------------
+cyber_threat_notification:
+  # Significance thresholds
+  significance:
+    high_score_threshold: 70
+    recommendation_threshold: 50
+
+  # Notification settings
+  notification:
+    auto_assess_significance: true
+    require_approval: true
+    approval_roles:
+      - security_officer
+      - compliance_officer
+
+  # Reference NCA (for voluntary notifications)
+  reference_nca:
+    id: ""
+    name: ""
+
+  # TLP defaults
+  tlp:
+    default_marking: "TLP:AMBER"
+
+  # Logging
+  logging:
+    enabled: true
+    path: "logs/dora/cyber_threats"
+
+# -----------------------------------------------------------------------------
+# Crisis Communication Configuration (Article 14)
+# -----------------------------------------------------------------------------
+crisis_communication:
+  # Organization info
+  organization:
+    name: ""  # Set via environment variable
+    lei: ""   # Set via environment variable
+
+  # Default settings
+  defaults:
+    priority: "normal"
+    channel: "email"
+
+  # Approval workflow
+  approval:
+    require_approval_for_external: true
+    approval_timeout_minutes: 15
+
+  # Escalation
+  escalation:
+    auto_escalate_on_no_ack_minutes: 30
+    max_escalation_level: 3
+
+  # Retry settings
+  retry:
+    max_attempts: 3
+    interval_minutes: 5
+
+  # Logging
+  logging:
+    enabled: true
+    path: "logs/dora/communications"
+
+# -----------------------------------------------------------------------------
+# Notification Timelines (Reference from CDR 2025/301)
+# -----------------------------------------------------------------------------
+# These timelines show what CLIENTS must meet for NCA reporting.
+# We notify clients early enough for them to meet their deadlines.
+#
+# Client NCA Reporting Timeline:
+#   Initial Notification: 4h from classification OR 24h from detection
+#   Intermediate Report: 72h from initial notification
+#   Final Report: 1 month from resolution
+#
+# Our SLA (ICT Provider to Client):
+#   Critical: 30 min (gives client 3.5h for NCA)
+#   High: 60 min (gives client 3h for NCA)
+#   Medium: 240 min (informational)
+#   Low: 1440 min (routine)
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Template Configuration
+# -----------------------------------------------------------------------------
+templates:
+  # Path to custom templates (optional)
+  custom_path: ""
+
+  # Default templates enabled
+  use_default_templates: true
+
+  # Template variable mappings
+  variables:
+    - incident_id
+    - incident_title
+    - incident_severity
+    - detection_time
+    - current_status
+    - next_update_time
+    - contact_name
+    - organization_name
+    - affected_services
+    - impact_description
+    - current_actions
+    - resolution_time
+    - root_cause
+    - remediation_actions
+    - preventive_measures
+
+# -----------------------------------------------------------------------------
+# Integration Settings
+# -----------------------------------------------------------------------------
+integration:
+  # Feature flags
+  features:
+    client_notification: true
+    incident_classification: true
+    incident_reporting: true
+    cyber_threat_notification: true
+    crisis_communication: true
+
+  # API settings
+  api:
+    enabled: true
+    rate_limit_per_minute: 100
+
+  # Webhook settings (for outbound notifications)
+  webhooks:
+    timeout_seconds: 30
+    verify_ssl: true
+    retry_on_failure: true
+
+  # Audit trail
+  audit:
+    enabled: true
+    include_pii: false
+    retention_days: 2555  # 7 years per DORA
