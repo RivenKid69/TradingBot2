@@ -1,0 +1,500 @@
+# DORA Digital Resilience Strategy Configuration
+#
+# This configuration supports the digital operational resilience strategy
+# per Regulation (EU) 2022/2554, defining:
+#   - Risk appetite and tolerance thresholds
+#   - Resilience testing schedules
+#   - Recovery objectives (RTO/RPO)
+#   - Integration with information sharing (Art. 45)
+#
+# ICT Provider Context:
+#   As an ICT third-party provider (Art. 30), we implement operational
+#   resilience measures that support our clients' DORA compliance:
+#   - Contractual SLA commitments (Art. 30(2)(e))
+#   - Incident notification capabilities (Art. 30(2)(d))
+#   - Audit and due diligence support (Art. 30(3)(e))
+#   - Information sharing facilitation (Art. 45)
+#
+# References:
+#   - DORA Article 6: ICT risk management framework
+#   - DORA Article 11: Response and recovery
+#   - DORA Article 12: Backup policies
+#   - DORA Article 30: Provider requirements
+
+version: "1.0"
+last_updated: "2025-01-17"
+document_owner: "Chief Technology Officer"
+next_review_date: "2025-07-17"
+
+# =============================================================================
+# Strategy Overview
+# =============================================================================
+strategy:
+  name: "AI Research Platform Digital Resilience Strategy"
+  effective_date: "2025-01-17"
+  version: "2025.1"
+
+  # Strategic objectives aligned with DORA
+  objectives:
+    - id: "OBJ-001"
+      name: "Service Continuity"
+      description: "Maintain service availability for critical functions"
+      target_metric: "99.9% uptime"
+      dora_reference: "Art. 11(1)"
+
+    - id: "OBJ-002"
+      name: "Incident Response"
+      description: "Rapid detection and response to ICT incidents"
+      target_metric: "< 15 min MTTD, < 60 min MTTR"
+      dora_reference: "Art. 17(1)"
+
+    - id: "OBJ-003"
+      name: "Data Protection"
+      description: "Protect client data integrity and confidentiality"
+      target_metric: "Zero data breaches"
+      dora_reference: "Art. 9(1)"
+
+    - id: "OBJ-004"
+      name: "Recovery Capability"
+      description: "Rapid recovery from disruptions"
+      target_metric: "RTO < 4h, RPO < 1h"
+      dora_reference: "Art. 12(1)"
+
+    - id: "OBJ-005"
+      name: "Client Support"
+      description: "Support client DORA compliance requirements"
+      target_metric: "100% Art. 30 compliance"
+      dora_reference: "Art. 30"
+
+# =============================================================================
+# Risk Appetite & Tolerance
+# =============================================================================
+risk:
+  # Overall risk appetite statement
+  appetite_statement: >
+    We accept moderate operational risk in pursuit of innovation while
+    maintaining high resilience standards for critical services. We have
+    zero tolerance for risks that could cause significant harm to clients
+    or regulatory non-compliance.
+
+  # Risk tolerance thresholds by category
+  tolerance_levels:
+    availability:
+      critical_services:
+        minimum_uptime: 99.95
+        maximum_downtime_minutes_per_month: 22
+        consecutive_downtime_limit_minutes: 15
+
+      standard_services:
+        minimum_uptime: 99.5
+        maximum_downtime_minutes_per_month: 219
+        consecutive_downtime_limit_minutes: 60
+
+    integrity:
+      data_loss_tolerance: "zero"
+      corruption_detection_time_minutes: 5
+      recovery_point_maximum_hours: 1
+
+    confidentiality:
+      breach_tolerance: "zero"
+      unauthorized_access_detection_minutes: 5
+      encryption_standard: "AES-256"
+
+    incident_response:
+      detection_time_target_minutes: 15
+      containment_time_target_minutes: 30
+      recovery_time_target_hours: 4
+      client_notification_time_minutes: 60
+
+  # Risk escalation matrix
+  escalation_matrix:
+    critical:
+      notify: ["CISO", "CTO", "CEO", "Board"]
+      timeline_minutes: 15
+      actions: ["Incident command activated", "Client notification", "Regulator notification"]
+
+    high:
+      notify: ["CISO", "CTO", "On-call Lead"]
+      timeline_minutes: 30
+      actions: ["Security team engaged", "Impact assessment"]
+
+    medium:
+      notify: ["Security Team Lead", "On-call Engineer"]
+      timeline_minutes: 60
+      actions: ["Investigation initiated"]
+
+    low:
+      notify: ["On-call Engineer"]
+      timeline_minutes: 240
+      actions: ["Ticket created", "Scheduled review"]
+
+# =============================================================================
+# Recovery Objectives
+# =============================================================================
+recovery:
+  # Recovery Time Objectives (RTO) by service tier
+  rto:
+    tier1_critical:
+      target_hours: 1
+      maximum_hours: 2
+      services:
+        - "Authentication services"
+        - "Core API gateway"
+        - "Database primary"
+        - "Client notification system"
+
+    tier2_important:
+      target_hours: 4
+      maximum_hours: 8
+      services:
+        - "Analytics processing"
+        - "Reporting services"
+        - "Secondary databases"
+        - "Monitoring systems"
+
+    tier3_standard:
+      target_hours: 24
+      maximum_hours: 48
+      services:
+        - "Development environments"
+        - "Non-critical batch jobs"
+        - "Archive systems"
+
+  # Recovery Point Objectives (RPO)
+  rpo:
+    tier1_critical:
+      target_minutes: 15
+      maximum_minutes: 60
+      backup_frequency: "continuous"
+
+    tier2_important:
+      target_minutes: 60
+      maximum_minutes: 240
+      backup_frequency: "hourly"
+
+    tier3_standard:
+      target_hours: 24
+      maximum_hours: 48
+      backup_frequency: "daily"
+
+  # Disaster recovery configuration
+  disaster_recovery:
+    primary_region: "eu-west-1"
+    secondary_region: "eu-central-1"
+    failover_mode: "automatic"
+    failover_threshold_minutes: 5
+    data_replication: "synchronous"
+    test_frequency: "quarterly"
+
+# =============================================================================
+# Resilience Testing Program (Art. 24-27)
+# =============================================================================
+testing:
+  # Testing program overview
+  program:
+    owner: "Chief Information Security Officer"
+    frequency: "continuous"
+    scope: "all_critical_services"
+
+  # Testing types and schedules
+  test_types:
+    vulnerability_assessment:
+      frequency: "weekly"
+      scope: "all_systems"
+      tools:
+        - "Nessus"
+        - "Qualys"
+      automated: true
+
+    penetration_testing:
+      frequency: "quarterly"
+      scope: "external_perimeter"
+      provider: "external_certified"
+      report_to: ["CISO", "CTO", "Compliance"]
+
+    red_team_exercise:
+      frequency: "annually"
+      scope: "full_organization"
+      duration_weeks: 2
+      notification: "limited"
+
+    disaster_recovery_test:
+      frequency: "quarterly"
+      scope: "tier1_services"
+      type: "full_failover"
+      duration_hours: 4
+
+    backup_restoration:
+      frequency: "monthly"
+      scope: "critical_data"
+      verification: "checksum_and_functional"
+
+    business_continuity:
+      frequency: "semi-annually"
+      scope: "critical_processes"
+      participants: ["IT", "Operations", "Management"]
+
+    incident_response_tabletop:
+      frequency: "quarterly"
+      scenarios:
+        - "ransomware_attack"
+        - "data_breach"
+        - "service_outage"
+        - "supply_chain_compromise"
+
+  # TLPT requirements (Art. 26) - if designated as critical
+  tlpt:
+    enabled: false  # Enable if designated as CTPP
+    frequency: "every_3_years"
+    scope: "critical_functions"
+    tester_requirements:
+      - "CREST_certified"
+      - "TIBER_EU_accredited"
+
+# =============================================================================
+# Integration with Information Sharing (Art. 45)
+# =============================================================================
+information_sharing_integration:
+  # Enable integration with sharing module
+  enabled: true
+
+  # Share threat intelligence from resilience testing
+  share_testing_findings:
+    enabled: true
+    tlp_level: "tlp_amber"
+    anonymize: true
+    types:
+      - "vulnerability_disclosures"
+      - "attack_patterns"
+      - "remediation_guidance"
+
+  # Receive threat intelligence for resilience improvement
+  receive_intelligence:
+    enabled: true
+    auto_update_detection_rules: true
+    auto_update_blocklists: true
+    communities:
+      - "fs_isac"
+      - "cert"
+
+  # Threat intelligence feedback loop
+  feedback_loop:
+    enabled: true
+    report_effectiveness: true
+    improvement_suggestions: true
+
+# =============================================================================
+# Client Support Configuration
+# =============================================================================
+client_support:
+  # DORA Art. 30 compliance support
+  art30_support:
+    enabled: true
+
+    # Audit support (Art. 30(3)(e))
+    audit:
+      sla_acknowledgment_days: 3
+      evidence_provision_days: 10
+      pooled_audit_support: true
+
+    # Incident notification (Art. 30(2)(d))
+    incident_notification:
+      critical_notify_minutes: 30
+      high_notify_minutes: 60
+      medium_notify_minutes: 240
+      channels:
+        - "webhook"
+        - "email"
+        - "api"
+
+    # Exit strategy support (Art. 28(8))
+    exit_support:
+      data_export_format: ["json", "csv", "xml"]
+      transition_period_days: 90
+      documentation_provided: true
+
+    # Subcontractor transparency (Art. 30(2)(b))
+    subcontractor:
+      prior_notification_days: 30
+      consent_workflow: true
+      chain_visibility: true
+
+  # ROI data generation for clients
+  roi_data:
+    enabled: true
+    auto_update: true
+    export_formats:
+      - "json"
+      - "xml"
+      - "csv"
+    templates:
+      - "B_02.01_provider_identification"
+      - "B_03.01_service_types"
+      - "B_99.01_subcontractor_chain"
+
+# =============================================================================
+# Governance & Reporting
+# =============================================================================
+governance:
+  # Reporting schedule
+  reporting:
+    board_report:
+      frequency: "quarterly"
+      content:
+        - "resilience_metrics"
+        - "incident_summary"
+        - "test_results"
+        - "risk_posture"
+
+    management_report:
+      frequency: "monthly"
+      content:
+        - "operational_metrics"
+        - "security_metrics"
+        - "compliance_status"
+
+    operational_report:
+      frequency: "weekly"
+      content:
+        - "availability_metrics"
+        - "incident_count"
+        - "change_summary"
+
+  # Review schedule
+  reviews:
+    strategy_review:
+      frequency: "annually"
+      participants: ["Board", "Executive Team", "CISO", "CTO"]
+
+    risk_assessment:
+      frequency: "quarterly"
+      participants: ["Risk Committee", "CISO", "Compliance"]
+
+    policy_review:
+      frequency: "annually"
+      participants: ["CISO", "Legal", "Compliance"]
+
+# =============================================================================
+# Metrics & KPIs
+# =============================================================================
+metrics:
+  # Key Performance Indicators
+  kpis:
+    availability:
+      - name: "Service Uptime"
+        target: "99.95%"
+        measurement: "percentage"
+        frequency: "continuous"
+
+      - name: "Mean Time Between Failures (MTBF)"
+        target: "> 720 hours"
+        measurement: "hours"
+        frequency: "monthly"
+
+    security:
+      - name: "Mean Time to Detect (MTTD)"
+        target: "< 15 minutes"
+        measurement: "minutes"
+        frequency: "per_incident"
+
+      - name: "Mean Time to Respond (MTTR)"
+        target: "< 60 minutes"
+        measurement: "minutes"
+        frequency: "per_incident"
+
+      - name: "Vulnerability Remediation Time"
+        target: "< 30 days (critical), < 90 days (high)"
+        measurement: "days"
+        frequency: "continuous"
+
+    recovery:
+      - name: "RTO Achievement Rate"
+        target: "100%"
+        measurement: "percentage"
+        frequency: "per_incident"
+
+      - name: "RPO Achievement Rate"
+        target: "100%"
+        measurement: "percentage"
+        frequency: "per_incident"
+
+      - name: "Backup Success Rate"
+        target: "99.99%"
+        measurement: "percentage"
+        frequency: "daily"
+
+    compliance:
+      - name: "DORA Compliance Score"
+        target: "100%"
+        measurement: "percentage"
+        frequency: "quarterly"
+
+      - name: "Audit Finding Closure Rate"
+        target: "> 95% within SLA"
+        measurement: "percentage"
+        frequency: "monthly"
+
+  # Dashboard configuration
+  dashboard:
+    enabled: true
+    refresh_interval_seconds: 60
+    alerts:
+      critical_threshold: "immediate"
+      warning_threshold: "15_minutes"
+    export:
+      enabled: true
+      formats: ["pdf", "csv"]
+      schedule: "daily"
+
+# =============================================================================
+# Continuous Improvement
+# =============================================================================
+continuous_improvement:
+  # Lessons learned process
+  lessons_learned:
+    enabled: true
+    trigger_events:
+      - "major_incident"
+      - "near_miss"
+      - "audit_finding"
+      - "test_failure"
+    review_timeline_days: 14
+    action_tracking: true
+
+  # Maturity assessment
+  maturity_assessment:
+    framework: "NIST_CSF"
+    frequency: "annually"
+    target_level: 4  # Adaptive
+    current_level: 3  # Repeatable
+
+  # Training and awareness
+  training:
+    security_awareness:
+      frequency: "quarterly"
+      mandatory: true
+      topics:
+        - "phishing_awareness"
+        - "incident_reporting"
+        - "data_protection"
+
+    technical_training:
+      frequency: "ongoing"
+      budget_per_engineer: 5000
+      certifications_supported:
+        - "CISSP"
+        - "CISM"
+        - "AWS_Security"
+        - "Azure_Security"
+
+  # Innovation and emerging threats
+  emerging_threats:
+    monitoring:
+      enabled: true
+      sources:
+        - "threat_intelligence_feeds"
+        - "security_research"
+        - "vendor_advisories"
+        - "regulatory_updates"
+    review_frequency: "weekly"
+    adaptation_timeline_days: 30

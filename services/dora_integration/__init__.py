@@ -35,13 +35,14 @@ Migration Status:
     Phase 3: Third-Party Risk Interface (COMPLETE)
     Phase 4: Contracts & SLA Layer (COMPLETE)
     Phase 5: Unified Reporting Layer (COMPLETE)
-    Phase 6-8: Module migration pending
+    Phase 6: Information Sharing Layer (COMPLETE)
+    Phase 7-8: Archive & Finalization pending
 """
 
 from __future__ import annotations
 
-__version__ = "1.4.0"
-__migration_phase__ = 5  # Current migration phase
+__version__ = "1.5.0"
+__migration_phase__ = 6  # Current migration phase
 
 # =============================================================================
 # Phase 1: Due Diligence & Audit Layer (Art. 30(3)(e), Art. 28(3), Art. 30(4))
@@ -564,6 +565,76 @@ from services.dora_integration.reporting import (
 )
 
 # =============================================================================
+# Phase 6: Information Sharing Layer (Art. 45)
+# =============================================================================
+
+from services.dora_integration.sharing import (
+    # =========================================================================
+    # Constants
+    # =========================================================================
+    SHAREABLE_INFORMATION_TYPES,
+    TLP_DEFINITIONS,
+    DEFAULT_INTELLIGENCE_RETENTION_DAYS,
+    NCA_NOTIFICATION_DEADLINE_DAYS,
+
+    # =========================================================================
+    # Enums
+    # =========================================================================
+    # Community classification
+    CommunityType,
+    # Sharing channels
+    SharingChannel,
+    # TLP levels
+    TLPLevel,
+    # Membership states
+    MembershipStatus,
+    # Sharing outcomes
+    SharingOutcome,
+    # Intelligence direction
+    IntelligenceDirection,
+    # Threat severity for sharing
+    ThreatSeverity as SharingThreatSeverity,
+    # Sanitization levels
+    SanitizationLevel,
+
+    # =========================================================================
+    # Data Structures
+    # =========================================================================
+    # Community metadata
+    SharingCommunity,
+    # Policy controls
+    InformationSharingPolicy,
+    # Threat intelligence payload
+    CyberThreatIntelligence,
+    # Sharing records
+    ThreatIntelligenceRecord,
+    # Audit records
+    SharingAuditRecord,
+    # NCA notifications
+    NCANotification,
+    # Service configuration
+    InformationSharingConfig,
+
+    # =========================================================================
+    # Main Service Class
+    # =========================================================================
+    DORAInformationSharing,
+
+    # =========================================================================
+    # Factory Functions
+    # =========================================================================
+    create_information_sharing,
+    get_shareable_information_types,
+    get_tlp_definitions,
+    get_community_types,
+    get_sharing_channels,
+    get_tlp_levels,
+    create_sharing_community,
+    create_cyber_threat,
+    create_sharing_policy,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -1055,4 +1126,57 @@ __all__ = [
     "get_subcontracting_levels",
     "get_its_templates_provided",
     "get_its_templates_client_provides",
+
+    # =========================================================================
+    # Phase 6: Information Sharing Layer (Art. 45)
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Constants
+    # -------------------------------------------------------------------------
+    "SHAREABLE_INFORMATION_TYPES",
+    "TLP_DEFINITIONS",
+    "DEFAULT_INTELLIGENCE_RETENTION_DAYS",
+    "NCA_NOTIFICATION_DEADLINE_DAYS",
+
+    # -------------------------------------------------------------------------
+    # Enums
+    # -------------------------------------------------------------------------
+    "CommunityType",
+    "SharingChannel",
+    "TLPLevel",
+    "MembershipStatus",
+    "SharingOutcome",
+    "IntelligenceDirection",
+    "SharingThreatSeverity",
+    "SanitizationLevel",
+
+    # -------------------------------------------------------------------------
+    # Data Structures
+    # -------------------------------------------------------------------------
+    "SharingCommunity",
+    "InformationSharingPolicy",
+    "CyberThreatIntelligence",
+    "ThreatIntelligenceRecord",
+    "SharingAuditRecord",
+    "NCANotification",
+    "InformationSharingConfig",
+
+    # -------------------------------------------------------------------------
+    # Main Service Class
+    # -------------------------------------------------------------------------
+    "DORAInformationSharing",
+
+    # -------------------------------------------------------------------------
+    # Factory Functions
+    # -------------------------------------------------------------------------
+    "create_information_sharing",
+    "get_shareable_information_types",
+    "get_tlp_definitions",
+    "get_community_types",
+    "get_sharing_channels",
+    "get_tlp_levels",
+    "create_sharing_community",
+    "create_cyber_threat",
+    "create_sharing_policy",
 ]

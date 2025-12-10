@@ -186,10 +186,10 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration can be imported."""
         try:
             from services import dora_integration
-            # Phase 5 complete - version is now 1.4.0
-            assert dora_integration.__version__ == "1.4.0"
-            # Phase 5 complete - migration_phase is now 5
-            assert dora_integration.__migration_phase__ >= 5
+            # Phase 6 complete - version is now 1.5.0
+            assert dora_integration.__version__ == "1.5.0"
+            # Phase 6 complete - migration_phase is now 6
+            assert dora_integration.__migration_phase__ >= 6
         except ImportError as e:
             pytest.fail(f"Failed to import dora_integration: {e}")
 
@@ -242,7 +242,9 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.sharing can be imported."""
         try:
             from services.dora_integration import sharing
-            assert sharing.__all__ == []  # Empty in Phase 0
+            # Phase 6 complete - sharing now has 29 exports
+            assert len(sharing.__all__) > 0
+            assert "DORAInformationSharing" in sharing.__all__
         except ImportError as e:
             pytest.fail(f"Failed to import sharing: {e}")
 
