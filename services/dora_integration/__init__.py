@@ -32,13 +32,14 @@ Migration Status:
     Phase 0: Directory structure created (COMPLETE)
     Phase 1: Due Diligence & Audit Layer (COMPLETE)
     Phase 2: Incident Interface Layer (COMPLETE)
-    Phase 3-8: Module migration pending
+    Phase 3: Third-Party Risk Interface (COMPLETE)
+    Phase 4-8: Module migration pending
 """
 
 from __future__ import annotations
 
-__version__ = "1.1.0"
-__migration_phase__ = 2  # Current migration phase
+__version__ = "1.2.0"
+__migration_phase__ = 3  # Current migration phase
 
 # =============================================================================
 # Phase 1: Due Diligence & Audit Layer (Art. 30(3)(e), Art. 28(3), Art. 30(4))
@@ -287,6 +288,120 @@ from services.dora_integration.incident_interface import (
 )
 
 # =============================================================================
+# Phase 3: Third-Party Risk Interface (Art. 28, 29, 30, 31-44, Art. 23)
+# =============================================================================
+
+from services.dora_integration.third_party import (
+    # =========================================================================
+    # Concentration Risk (Article 29)
+    # =========================================================================
+    DORAConcentrationRisk,
+    ConcentrationRiskConfig,
+    ConcentrationType,
+    ConcentrationRiskLevel,
+    MitigationStatus,
+    AssessmentScope,
+    SubstitutabilityLevel as ConcentrationSubstitutabilityLevel,
+    ProviderDependency,
+    ConcentrationMetric,
+    ConcentrationRisk,
+    MitigationMeasure,
+    ConcentrationAssessment,
+    DependencyMap,
+    create_concentration_risk,
+    get_concentration_types,
+    get_substitutability_levels,
+
+    # =========================================================================
+    # CTPP Oversight (Articles 31-44)
+    # =========================================================================
+    DORACtppOversight,
+    CTPPOversightConfig,
+    LeadOverseer,
+    CTPPStatus,
+    OversightRecommendationType,
+    RecommendationStatus,
+    ComplianceLevel,
+    OversightExerciseType,
+    CTPPDesignation,
+    OversightRecommendation,
+    OversightExercise,
+    CTPPRiskAssessment,
+    CTPPContractRequirement,
+    EntityCTPPRelationship,
+    DESIGNATED_CTPPS_2025,
+    create_ctpp_oversight,
+    get_lead_overseers,
+    get_designated_ctpps_list,
+    get_ctpp_requirements,
+    get_ctpp_contract_requirements,
+
+    # =========================================================================
+    # Third-Party Risk Management (Article 28)
+    # =========================================================================
+    DORAThirdPartyRiskManagement,
+    ThirdPartyRiskConfig,
+    ProviderType,
+    ProviderCriticality,
+    ServiceCriticality,
+    ProviderStatus,
+    RiskCategory,
+    RiskLevel,
+    DueDiligenceStatus,
+    AssessmentType,
+    TPRSubstitutabilityLevel,
+    ICTService,
+    ICTProvider,
+    ThirdPartyRisk,
+    ThirdPartyRiskAssessment,
+    DueDiligenceCheck,
+    ProviderRelationshipEvent,
+    create_third_party_risk_management,
+    get_provider_types,
+    get_risk_categories,
+    get_criticality_levels,
+
+    # =========================================================================
+    # Third-Party Incidents (Article 23)
+    # =========================================================================
+    DORAThirdPartyIncidents,
+    ThirdPartyProviderType,
+    ThirdPartyCriticality,
+    ThirdPartyIncidentType,
+    IncidentSeverity as ThirdPartyIncidentSeverity,
+    IncidentStatus as ThirdPartyIncidentStatus,
+    ContractualSLAStatus,
+    EscalationLevel,
+    CommunicationChannel as ThirdPartyCommunicationChannel,
+    ThirdPartyProvider,
+    AffectedService,
+    SLAAssessment,
+    CommunicationRecord as ThirdPartyCommunicationRecord,
+    EscalationRecord,
+    IncidentMitigationAction,
+    ThirdPartyIncident,
+    PostIncidentReview,
+    create_third_party_incidents,
+
+    # =========================================================================
+    # Subcontractor Management (Article 30)
+    # =========================================================================
+    DORASubcontractorManagement,
+    SubcontractorConfig,
+    SubcontractorType,
+    SubcontractorStatus,
+    SubcontractorRiskLevel,
+    ChangeType,
+    NotificationStatus as SubcontractorNotificationStatus,
+    ConsentMode,
+    Subcontractor,
+    SubcontractorChange,
+    ClientSubcontractorPreference,
+    SubcontractorRiskAssessment,
+    create_subcontractor_management,
+)
+
+# =============================================================================
 # __all__ exports
 # =============================================================================
 
@@ -510,4 +625,116 @@ __all__ = [
     "get_communication_channels",
     "get_stakeholder_types",
     "get_crisis_phases",
+
+    # =========================================================================
+    # Phase 3: Third-Party Risk Interface
+    # =========================================================================
+
+    # -------------------------------------------------------------------------
+    # Concentration Risk (Article 29)
+    # -------------------------------------------------------------------------
+    "DORAConcentrationRisk",
+    "ConcentrationRiskConfig",
+    "ConcentrationType",
+    "ConcentrationRiskLevel",
+    "MitigationStatus",
+    "AssessmentScope",
+    "ConcentrationSubstitutabilityLevel",
+    "ProviderDependency",
+    "ConcentrationMetric",
+    "ConcentrationRisk",
+    "MitigationMeasure",
+    "ConcentrationAssessment",
+    "DependencyMap",
+    "create_concentration_risk",
+    "get_concentration_types",
+    "get_substitutability_levels",
+
+    # -------------------------------------------------------------------------
+    # CTPP Oversight (Articles 31-44)
+    # -------------------------------------------------------------------------
+    "DORACtppOversight",
+    "CTPPOversightConfig",
+    "LeadOverseer",
+    "CTPPStatus",
+    "OversightRecommendationType",
+    "RecommendationStatus",
+    "ComplianceLevel",
+    "OversightExerciseType",
+    "CTPPDesignation",
+    "OversightRecommendation",
+    "OversightExercise",
+    "CTPPRiskAssessment",
+    "CTPPContractRequirement",
+    "EntityCTPPRelationship",
+    "DESIGNATED_CTPPS_2025",
+    "create_ctpp_oversight",
+    "get_lead_overseers",
+    "get_designated_ctpps_list",
+    "get_ctpp_requirements",
+    "get_ctpp_contract_requirements",
+
+    # -------------------------------------------------------------------------
+    # Third-Party Risk Management (Article 28)
+    # -------------------------------------------------------------------------
+    "DORAThirdPartyRiskManagement",
+    "ThirdPartyRiskConfig",
+    "ProviderType",
+    "ProviderCriticality",
+    "ServiceCriticality",
+    "ProviderStatus",
+    "RiskCategory",
+    "RiskLevel",
+    "DueDiligenceStatus",
+    "AssessmentType",
+    "TPRSubstitutabilityLevel",
+    "ICTService",
+    "ICTProvider",
+    "ThirdPartyRisk",
+    "ThirdPartyRiskAssessment",
+    "DueDiligenceCheck",
+    "ProviderRelationshipEvent",
+    "create_third_party_risk_management",
+    "get_provider_types",
+    "get_risk_categories",
+    "get_criticality_levels",
+
+    # -------------------------------------------------------------------------
+    # Third-Party Incidents (Article 23)
+    # -------------------------------------------------------------------------
+    "DORAThirdPartyIncidents",
+    "ThirdPartyProviderType",
+    "ThirdPartyCriticality",
+    "ThirdPartyIncidentType",
+    "ThirdPartyIncidentSeverity",
+    "ThirdPartyIncidentStatus",
+    "ContractualSLAStatus",
+    "EscalationLevel",
+    "ThirdPartyCommunicationChannel",
+    "ThirdPartyProvider",
+    "AffectedService",
+    "SLAAssessment",
+    "ThirdPartyCommunicationRecord",
+    "EscalationRecord",
+    "IncidentMitigationAction",
+    "ThirdPartyIncident",
+    "PostIncidentReview",
+    "create_third_party_incidents",
+
+    # -------------------------------------------------------------------------
+    # Subcontractor Management (Article 30)
+    # -------------------------------------------------------------------------
+    "DORASubcontractorManagement",
+    "SubcontractorConfig",
+    "SubcontractorType",
+    "SubcontractorStatus",
+    "SubcontractorRiskLevel",
+    "ChangeType",
+    "SubcontractorNotificationStatus",
+    "ConsentMode",
+    "Subcontractor",
+    "SubcontractorChange",
+    "ClientSubcontractorPreference",
+    "SubcontractorRiskAssessment",
+    "create_subcontractor_management",
 ]
