@@ -873,7 +873,8 @@ from services.dora.ctpp_oversight import (
 # =============================================================================
 
 # Audit Readiness (Art. 30(3)(e) - Audit and Access Rights)
-from services.dora.audit_readiness import (
+# MIGRATED: Phase 1 -> services.dora_integration.due_diligence
+from services.dora_integration.due_diligence.audit_readiness import (
     # SLA Constants
     AUDIT_SLA_ACKNOWLEDGMENT_DAYS,
     AUDIT_SLA_SCHEDULING_DAYS,
@@ -923,7 +924,8 @@ from services.dora.subcontractor_management import (
 )
 
 # Multi-Client Incident Coordination (Art. 30(2)(f) - NEW v2.1)
-from services.dora.audit_readiness import (
+# MIGRATED: Phase 1 -> services.dora_integration.due_diligence
+from services.dora_integration.due_diligence.audit_readiness import (
     IncidentNotificationStatus,
     ClientNotificationRecord,
     MultiClientIncident,
@@ -954,7 +956,8 @@ from services.dora.sla_guardrails import (
 )
 
 # Pooled Audit Support (Art. 30(4) - NEW Phase 1)
-from services.dora.pooled_audit_support import (
+# MIGRATED: Phase 1 -> services.dora_integration.due_diligence
+from services.dora_integration.due_diligence.pooled_audit_support import (
     # Enums
     AuditReportType,
     PooledAuditStatus,
@@ -1009,7 +1012,8 @@ from services.dora.cross_regulation import (
     DORARegulationIntegration,
 )
 
-from services.dora.compliance_dashboard import (
+# MIGRATED: Phase 1 -> services.dora_integration.due_diligence
+from services.dora_integration.due_diligence.compliance_dashboard import (
     IssueSeverity,
     IssueStatus,
     DeadlineStatus,

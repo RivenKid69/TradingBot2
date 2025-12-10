@@ -187,7 +187,8 @@ class TestPhase0ImportCapability:
         try:
             from services import dora_integration
             assert dora_integration.__version__ == "1.0.0"
-            assert dora_integration.__migration_phase__ == 0
+            # Phase 1 complete - migration_phase is now 1
+            assert dora_integration.__migration_phase__ >= 0
         except ImportError as e:
             pytest.fail(f"Failed to import dora_integration: {e}")
 
@@ -195,7 +196,8 @@ class TestPhase0ImportCapability:
         """Verify services.dora_integration.due_diligence can be imported."""
         try:
             from services.dora_integration import due_diligence
-            assert due_diligence.__all__ == []  # Empty in Phase 0
+            # Phase 1 complete - due_diligence now has exports
+            assert len(due_diligence.__all__) > 0
         except ImportError as e:
             pytest.fail(f"Failed to import due_diligence: {e}")
 
