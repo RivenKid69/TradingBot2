@@ -144,6 +144,11 @@ class DORAScope:
 
 **КРИТИЧЕСКИ ВАЖНО**: Если платформа не является лицензированной финансовой организацией, DORA может НЕ применяться!
 
+> **УТОЧНЕНИЕ (v4.1)**: Эта платформа позиционируется как **ICT Provider / Software Provider** (Art. 30).
+> Мы НЕ являемся Investment Firm или иной Financial Entity. Наши B2B клиенты (банки, инвестфирмы)
+> могут быть Financial Entities, и для них предоставляется compliance toolkit в
+> `services/archive/dora_financial_entity/`.
+
 ---
 
 ### v3.0 Critical Fix #2: Critical/Important Function Definition (NEW)

@@ -2,6 +2,12 @@
 """
 DORA Proportionality Assessment Module (Articles 4, 16).
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider (DORA Art. 30),
+NOT a Financial Entity. Proportionality assessment (Art. 4, 16) applies to
+Financial Entities, not to software providers. Use this module only for
+B2B clients who ARE Financial Entities.
+
 Article 4 - Proportionality Principle:
     DORA requirements apply in a manner proportionate to the size, risk profile,
     nature, scale and complexity of operations.

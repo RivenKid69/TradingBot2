@@ -2,10 +2,23 @@
 # DORA Entity Classification Configuration
 # ==============================================================================
 #
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY              ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║  This platform is an ICT Provider / Software Provider (DORA Art. 30),        ║
+# ║  NOT a Financial Entity (DORA Art. 2).                                       ║
+# ║                                                                               ║
+# ║  This archived configuration is provided for:                                 ║
+# ║  - B2B clients (banks, investment firms) who need DORA FE compliance tools   ║
+# ║  - Building compliance software products FOR financial entities              ║
+# ║                                                                               ║
+# ║  DO NOT use this to classify the platform itself.                            ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
 # DORA Regulation (EU) 2022/2554 - Entity Classification
 #
 # This configuration file documents the entity classification for DORA purposes.
-# MUST be completed BEFORE implementing any DORA requirements.
+# MUST be completed by FINANCIAL ENTITY clients BEFORE implementing DORA requirements.
 #
 # References:
 #   - Article 2 (Scope): https://www.digital-operational-resilience-act.com/Article_2.html
@@ -67,7 +80,7 @@ entity_type:
   #   - payment_institution (b)
   #   - account_information_service_provider (c)
   #   - electronic_money_institution (d)
-  #   - investment_firm (e) <-- MOST COMMON FOR ALGO TRADING
+  #   - investment_firm (e)  # For clients who are licensed investment firms
   #   - crypto_asset_service_provider (f)
   #   - central_securities_depository (g)
   #   - central_counterparty (h)
@@ -85,7 +98,7 @@ entity_type:
   #   - securitisation_repository (t)
   #   - ict_third_party_service_provider (u)
 
-  primary_type: investment_firm  # REQUIRED
+  primary_type: ""  # REQUIRED: Client must specify their entity type (e.g., investment_firm, credit_institution)
 
   # Authorization details
   authorization:

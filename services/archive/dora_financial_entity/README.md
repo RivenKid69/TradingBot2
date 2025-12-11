@@ -1,17 +1,39 @@
 # Archived DORA Financial Entity Modules
 
+> ⚠️ **IMPORTANT: FOR FINANCIAL ENTITY CLIENTS ONLY**
+>
+> This platform is an **ICT Provider / Software Provider** (DORA Art. 30), NOT a Financial Entity.
+> These archived modules are provided for B2B clients who ARE Financial Entities and need
+> compliance tools, or for building DORA compliance products for the financial services market.
+>
+> **DO NOT** use these modules to classify or position the platform itself.
+
 **Status:** Phase 7 Complete - All FE modules archived
 **Migration Date:** 2025-01-17
 **Version:** 1.0.0
 
-These modules implement DORA requirements for **Financial Entities** (Art. 2),
-not for ICT Third-Party Service Providers (Art. 30).
+These modules implement DORA requirements for **Financial Entities** (Art. 2).
+They are archived because the platform itself is an ICT Third-Party Service Provider (Art. 30),
+not a Financial Entity.
+
+## Platform Positioning
+
+**What we ARE:**
+- ICT Provider / Software Provider (DORA Art. 30)
+- SaaS platform for algorithmic trading strategy development
+- B2B service provider for financial institutions
+
+**What we are NOT:**
+- Investment firm
+- Financial Entity under DORA Art. 2
+- Entity that holds or manages client assets
 
 ## Why Archived?
 
 As an ICT service provider, we:
 - Comply with Art. 30 (contractual requirements for ICT providers)
 - Support client due diligence (Art. 28)
+- Provide software tools; clients trade via their own broker accounts
 - **DO NOT** implement the full FE DORA framework ourselves
 
 Our active DORA code lives in:
@@ -23,10 +45,11 @@ Our active DORA code lives in:
 If you're building a product **FOR financial entities** to manage their own
 DORA compliance, these modules provide a comprehensive reference implementation.
 
-**Use cases:**
-- Building a DORA compliance SaaS for banks
-- Creating a regulatory reporting tool for investment firms
-- Developing an ICT risk management platform for insurance companies
+**Use cases (for B2B clients who ARE Financial Entities):**
+- Banks using this platform for strategy development (they handle their own DORA compliance)
+- Investment firms (MiFID II authorized) who need FE compliance toolkit
+- Insurance companies building ICT risk management using these modules
+- Building a DORA compliance SaaS product for the financial services market
 
 ## Architecture Overview
 

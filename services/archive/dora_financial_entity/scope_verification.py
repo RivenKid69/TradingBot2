@@ -2,10 +2,15 @@
 """
 DORA Scope Verification Module (Article 2).
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider (DORA Art. 30),
+NOT a Financial Entity (DORA Art. 2). Use this module only for
+B2B clients who need to verify their own DORA scope.
+
 Regulation (EU) 2022/2554 Article 2 defines the scope of application.
 This module verifies if an entity falls within DORA scope.
 
-CRITICAL: Verify if DORA applies BEFORE any implementation work.
+CRITICAL (for FE clients): Verify if DORA applies BEFORE any implementation work.
 
 Article 2(1) lists 21 types of financial entities subject to DORA:
     (a) Credit institutions

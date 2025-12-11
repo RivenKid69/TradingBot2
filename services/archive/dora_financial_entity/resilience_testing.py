@@ -2,8 +2,14 @@
 """
 DORA Digital Operational Resilience Testing Programme (Article 24).
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider (DORA Art. 30),
+NOT a Financial Entity. The Art. 24 resilience testing programme applies
+to Financial Entities. Use this module only for B2B clients who ARE
+Financial Entities.
+
 Regulation (EU) 2022/2554 Article 24 defines requirements for digital
-operational resilience testing:
+operational resilience testing (for Financial Entities):
     - Sound and comprehensive testing programme as part of ICT risk management
     - Range of assessments, tests, methodologies, practices, and tools
     - Risk-based approach proportionate to size and risk profile

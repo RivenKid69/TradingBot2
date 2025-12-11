@@ -2,13 +2,20 @@
 """
 MiFID II NCA Notification - Article 17(2) Compliance.
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider, NOT an Investment Firm.
+The Art. 17(2) notification obligation applies to Investment Firms, not to
+software providers. Use this module only for B2B clients who ARE Investment Firms.
+
 This module handles notifications to National Competent Authorities (NCAs)
-per MiFID II Article 17(2) requirements:
+per MiFID II Article 17(2) requirements for Investment Firm clients:
 
 "An investment firm that engages in algorithmic trading shall notify the
 competent authorities of its home Member State and of the trading venues
 at which the investment firm engages in algorithmic trading as a member
 or participant of those trading venues."
+
+Note: This applies to the FE client using our software, NOT to this platform.
 
 Key Requirements:
     - Notify NCA of algorithmic trading activities

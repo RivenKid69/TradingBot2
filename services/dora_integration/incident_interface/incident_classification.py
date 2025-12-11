@@ -504,8 +504,9 @@ class IncidentClassificationConfig:
     log_all_classifications: bool = True
     log_path: str = "logs/dora/incident_classification"
 
-    # Entity-specific configuration
-    entity_type: str = "investment_firm"
+    # Entity-specific configuration (for FE client using this service)
+    # NOTE: This is the FE CLIENT's entity type, not the platform's type
+    entity_type: str = ""  # FE client must specify: investment_firm, credit_institution, etc.
     entity_size: str = "small"  # micro, small, medium, large
 
 

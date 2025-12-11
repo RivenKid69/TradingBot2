@@ -2,10 +2,23 @@
 # DORA Proportionality Assessment Configuration
 # ==============================================================================
 #
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY              ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║  This platform is an ICT Provider / Software Provider (DORA Art. 30),        ║
+# ║  NOT a Financial Entity (DORA Art. 2).                                       ║
+# ║                                                                               ║
+# ║  Proportionality assessment (Art. 4, 16) applies to Financial Entities.      ║
+# ║  As an ICT Provider, we do not need to classify ourselves under Art. 16.     ║
+# ║                                                                               ║
+# ║  DO NOT use this to assess the platform itself.                              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
 # DORA Regulation (EU) 2022/2554 - Proportionality Assessment (Articles 4, 16)
 #
 # This configuration stores the results of the proportionality assessment
-# and defines how DORA requirements should be implemented proportionately.
+# for FINANCIAL ENTITY clients and defines how DORA requirements should be
+# implemented proportionately based on their size and risk profile.
 #
 # References:
 #   - Article 4 (Proportionality): https://www.digital-operational-resilience-act.com/Article_4.html

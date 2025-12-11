@@ -2,11 +2,16 @@
 """
 MiFIR Article 26 Transaction Report Data Model (RTS 22).
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider, NOT an Investment Firm.
+Transaction reporting obligations apply to Investment Firms, not to software
+providers. Use this module only for B2B clients who ARE Investment Firms.
+
 Implements the complete 65-field transaction report format as specified
 in Commission Delegated Regulation (EU) 2017/590 (RTS 22).
 
 Transaction reports must be submitted to National Competent Authorities (NCAs)
-via Approved Reporting Mechanisms (ARMs) within T+1.
+by Investment Firms (FE clients) via Approved Reporting Mechanisms (ARMs) within T+1.
 
 Report Structure (RTS 22 Annex I Table 2):
     - Fields 1-6: Report identification

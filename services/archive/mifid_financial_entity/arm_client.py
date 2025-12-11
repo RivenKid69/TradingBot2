@@ -2,9 +2,13 @@
 """
 ARM (Approved Reporting Mechanism) Client Module.
 
+WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY.
+This platform is an ICT Provider / Software Provider, NOT an Investment Firm.
+Use this module only for B2B clients who ARE Investment Firms.
+
 Provides integration with ARMs for MiFIR transaction reporting per Article 26.
 ARMs are authorized entities that submit transaction reports to NCAs on behalf
-of investment firms.
+of investment firms (FE clients, not this platform).
 
 Supported ARM Providers:
     - Bloomberg BTRL (Transaction Reporting)

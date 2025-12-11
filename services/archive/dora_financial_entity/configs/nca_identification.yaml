@@ -2,9 +2,21 @@
 # DORA NCA (National Competent Authority) Identification Configuration
 # ==============================================================================
 #
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║  WARNING: THIS MODULE IS FOR FINANCIAL ENTITY (FE) CLIENTS ONLY              ║
+# ╠══════════════════════════════════════════════════════════════════════════════╣
+# ║  This platform is an ICT Provider / Software Provider (DORA Art. 30),        ║
+# ║  NOT a Financial Entity (DORA Art. 2).                                       ║
+# ║                                                                               ║
+# ║  NCA reporting obligations (ROI, incidents) apply to Financial Entities.     ║
+# ║  As an ICT Provider, we support FE clients with their NCA submissions.       ║
+# ║                                                                               ║
+# ║  DO NOT use this to configure platform's own NCA relationship.               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
 # DORA Regulation (EU) 2022/2554 - NCA Identification and Reporting Channels
 #
-# Identifies the appropriate National Competent Authority (NCA) for:
+# Identifies the appropriate National Competent Authority (NCA) for FE clients:
 #   - Register of Information submission (Article 28)
 #   - Major incident reporting (Article 19)
 #   - TLPT designation (Article 26)
@@ -24,7 +36,7 @@ nca_identification:
 
   # Step 2: Entity type determines NCA
   # Different NCAs may supervise different entity types in same Member State
-  entity_type: investment_firm  # From entity_classification.yaml
+  entity_type: ""  # REQUIRED: Client's entity type from entity_classification.yaml
 
   # Step 3: Identified NCA
   primary_nca:
