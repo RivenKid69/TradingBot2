@@ -1,5 +1,82 @@
 # Changelog
 
+## [5.0.0] - 2025-12-11
+
+### BREAKING CHANGES
+
+- **ICT Provider Architecture Restructure** (2025-12-11)
+  - Complete module restructure for ICT Provider regulatory positioning
+  - `services.compliance.*` is now a deprecated facade with deprecation warnings
+  - New module locations:
+    - **CORE**: `services.core.risk_controls` (universal risk controls)
+    - **INTEGRATION**: `services.algo_integration` (B2B compliance toolkit)
+    - **ARCHIVE**: `services.archive.mifid_financial_entity` (Investment Firm modules)
+
+### Migration Guide
+
+```python
+# Old (deprecated - emits DeprecationWarning)
+from services.compliance import EnhancedKillSwitch
+
+# New
+from services.core.risk_controls import EnhancedKillSwitch
+```
+
+| Old Import | New Import |
+|------------|------------|
+| `services.compliance.audit_models` | `services.core.risk_controls.audit_models` |
+| `services.compliance.compliance_clock` | `services.core.risk_controls.time_sync` |
+| `services.compliance.enhanced_kill_switch` | `services.core.risk_controls.kill_switch` |
+| `services.compliance.best_execution` | `services.algo_integration.best_execution` |
+| `services.compliance.lei_manager` | `services.archive.mifid_financial_entity.lei_manager` |
+
+### Added
+
+- **Core Risk Controls Package** (`services.core.risk_controls`)
+  - 10 modules: audit_models, audit_storage, audit_trail_writer, retention_policy,
+    time_sync, kill_switch, pre_trade_controls, realtime_monitor, bcp, config
+  - Universal risk management for all platform users
+  - Reference: RTS 6, RTS 25
+
+- **Algo Integration Package** (`services.algo_integration`)
+  - 9 modules: best_execution, tca_compliance, venue_analysis, execution_quality_report,
+    otr_monitor, algorithm_registry, conformance_testing, test_scenarios, certification
+  - B2B compliance toolkit for enterprise financial institution clients
+  - Reference: MiFID II Article 27, RTS 6 Article 5
+
+- **Archive Package** (`services.archive.mifid_financial_entity`)
+  - 9 modules: lei_manager, gleif_client, transaction_report, arm_client,
+    reporting_pipeline, self_assessment, governance, compliance_policies, nca_notification
+  - Investment Firm specific modules (NOT for ICT Providers)
+  - Emits deprecation warning on import
+
+- **Backward Compatibility Facade** (`services.compliance`)
+  - Re-exports all modules from new locations
+  - Emits DeprecationWarning on import
+  - Will be removed in v6.0.0
+
+- **Split Configuration Files**
+  - `services.core.risk_controls.config` - TimeSyncConfig, PreTradeControlsConfig, RiskControlsConfig
+  - `services.algo_integration.config` - AlgorithmRegistryConfig, AlgoIntegrationConfig
+  - `services.archive.mifid_financial_entity.config` - LEIConfig, MiFIDIIComplianceConfig
+
+### Test Coverage
+
+- **1,612 Migration Tests** (2025-12-11)
+  - CORE tests: 12 test files
+  - INTEGRATION tests: 12 test files
+  - ARCHIVE tests: 10 test files
+  - All tests passing (100%)
+
+### Documentation
+
+- Updated README.md with Module Architecture section
+- Created API reference documentation (`docs/api/README.md`)
+- Added migration guide for B2B clients
+- Reference: [MIFID_ICT_PROVIDER_MIGRATION_PLAN_V3_FINAL.md](docs/migration/MIFID_ICT_PROVIDER_MIGRATION_PLAN_V3_FINAL.md)
+
+---
+
 ## [4.0.0] - 2025-12-08
 
 ### DORA Compliance (100% Complete)

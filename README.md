@@ -61,6 +61,54 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 - Docs quality: markdown lint/render checks for user-facing docs.
 - Security SAST: static analysis of adapters/core for regressions.
 
+## Module Architecture
+
+### ICT Provider Positioning
+
+This platform is designed for **ICT Providers / Software Providers** under MiFID II scope:
+- We provide algorithmic trading infrastructure
+- Users trade through THEIR OWN broker accounts
+- Platform does NOT hold client assets
+- MiFID II does NOT apply directly to us
+
+### Module Structure (Post-Migration v2.0)
+
+| Package | Purpose | Load |
+|---------|---------|------|
+| `services.core.risk_controls` | Universal risk controls (kill switch, pre-trade, audit) | Always |
+| `services.algo_integration` | MiFID II B2B compliance toolkit | Enterprise clients |
+| `services.archive.mifid_financial_entity` | Investment Firm modules | Archived (not loaded) |
+
+#### For ICT Providers (Default)
+```python
+from services.core.risk_controls import (
+    EnhancedKillSwitch, PreTradeControls, AuditTrailWriter,
+    RealTimeMonitor, BusinessContinuityPlan
+)
+```
+
+#### For B2B Clients (Financial Institutions)
+Enable `services.algo_integration` for MiFID II compliance tools:
+```python
+from services.algo_integration import (
+    BestExecutionAnalyzer,      # Article 27
+    TCAComplianceWrapper,       # Transaction Cost Analysis
+    ConformanceTestRunner,      # RTS 6 Article 5
+    AlgorithmRegistry,          # Article 17(2)
+    CertificateManager          # Deployment certification
+)
+```
+
+#### Migration Note
+The old `services.compliance` module is now a deprecated facade that emits warnings:
+```python
+# Old (deprecated - emits DeprecationWarning)
+from services.compliance import EnhancedKillSwitch
+
+# New (recommended)
+from services.core.risk_controls import EnhancedKillSwitch
+```
+
 ## Regulatory Compliance
 
 ### MiFID II (Directive 2014/65/EU)
