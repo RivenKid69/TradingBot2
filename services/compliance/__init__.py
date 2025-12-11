@@ -1,631 +1,446 @@
 # -*- coding: utf-8 -*-
 """
-MiFID II Compliance Module for AI-Powered Quantitative Research Platform.
+DEPRECATED: Backward Compatibility Facade.
 
-MiFID II (Directive 2014/65/EU) Compliance Implementation.
+This module provides backward compatibility for code that imports from
+services.compliance. All imports will continue to work, but a deprecation
+warning will be emitted.
 
-This package provides compliance tools for algorithmic trading per MiFID II/MiFIR requirements:
+Migration Guide:
+    OLD: from services.compliance import X
+    NEW: Depends on the module:
 
-Phase 1 - Foundation (LEI, Clock Sync, Algorithm Registry):
-    - lei_manager: LEI Management and Validation (ISO 17442)
-    - gleif_client: GLEIF API Integration for LEI verification
-    - compliance_clock: RTS 25 Compliant Clock Synchronisation
-    - algorithm_registry: Algorithm Registration per Article 17(2)
+    CORE (Risk Controls - Universal):
+        from services.core.risk_controls import X
+        - audit_models, audit_storage, audit_trail_writer, retention_policy
+        - time_sync (was compliance_clock), kill_switch (was enhanced_kill_switch)
+        - pre_trade_controls, realtime_monitor, bcp, config
 
-Phase 2 - Transaction Reporting (RTS 22):
-    - transaction_report: Transaction Report Data Model
-    - arm_client: ARM (Approved Reporting Mechanism) Integration
-    - reporting_pipeline: End-to-end Reporting Pipeline
+    INTEGRATION (B2B Compliance Toolkit):
+        from services.algo_integration import X
+        - best_execution, tca_compliance, venue_analysis, execution_quality_report
+        - otr_monitor, algorithm_registry, conformance_testing, test_scenarios
+        - certification, config
 
-Phase 3 - Algorithmic Trading Controls (RTS 6):
-    - enhanced_kill_switch: RTS 6 Article 12 Kill Switch
-    - pre_trade_controls: RTS 6 Article 15 Pre-Trade Controls
-    - realtime_monitor: RTS 6 Article 17 Real-Time Monitoring
-    - otr_monitor: Order-to-Trade Ratio Monitoring
+    ARCHIVE (Financial Entity - NOT for ICT Providers):
+        from services.archive.mifid_financial_entity import X
+        - lei_manager, gleif_client, transaction_report, arm_client
+        - reporting_pipeline, self_assessment, governance, compliance_policies
+        - nca_notification, config
 
-Phase 4 - Record Keeping & Audit Trail (MiFIR Article 25):
-    - audit_models: Audit Record Data Models
-    - audit_storage: Storage Backends (SQLite, File, Memory)
-    - retention_policy: 5-7 Year Retention Policy Management
-    - audit_trail_writer: Write-Once Audit Trail with Chain Verification
+Deprecation Timeline:
+    - v8.0.0: Deprecation warnings added
+    - v9.0.0: This facade will be removed
 
-Phase 5 - Best Execution (Article 27 MiFID II):
-    - best_execution: Best Execution Policy and Analyzer
-    - tca_compliance: Transaction Cost Analysis Compliance Wrapper
-    - venue_analysis: Venue Performance Analysis and Smart Order Routing
-    - execution_quality_report: Execution Quality Report Generator
+Why the restructure:
+    This platform is positioned as an ICT Provider under MiFID II scope.
+    The old monolithic compliance module mixed:
+    - Universal risk controls (apply to everyone)
+    - B2B compliance tools (for enterprise clients)
+    - Financial Entity requirements (NOT applicable to ICT Providers)
 
-Phase 6 - Governance & Documentation (RTS 6 Articles 3, 9):
-    - self_assessment: Annual Self-Assessment (RTS 6 Article 9)
-    - bcp: Business Continuity Plan (RTS 6 Article 3)
-    - governance: Policy Documents Manager
-    - compliance_policies: MiFID II Policy Templates
-
-Phase 7 - Testing & Certification (RTS 6 Article 5):
-    - conformance_testing: Conformance Testing Framework
-    - test_scenarios: Standard Test Scenarios
-    - certification: Conformance Certificates
-    - nca_notification: NCA Notification (Article 17(2))
-
-Classification:
-    This system is classified as an ALGORITHMIC TRADING SYSTEM per
-    Article 17 MiFID II and subject to RTS 6 requirements.
-
-Applicable Regulations:
-    - MiFID II (Directive 2014/65/EU) Article 17, Article 27
-    - MiFIR (Regulation 600/2014) Articles 25-26
-    - RTS 6 (Regulation 2017/589) - Algorithmic Trading
-    - RTS 22 (Regulation 2017/590) - Transaction Reporting
-    - RTS 24 (Regulation 2017/580) - Order Book Data
-    - RTS 25 (Regulation 2017/574) - Clock Synchronisation
-
-References:
-    - ESMA MiFID II Rulebook: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii
-    - GLEIF LEI Lookup: https://www.gleif.org/en/lei-data/gleif-lei-look-up-api
-    - Article 17 MiFID II: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-17-algorithmic-trading
-    - Article 27 MiFID II: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-27-obligation-execute-orders-terms-most-favourable-client
-    - MiFIR Article 25: https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifir/article-25-obligation-maintain-records
+    The new structure clearly separates these concerns.
 """
 
 from __future__ import annotations
 
-__version__ = "7.0.0"
-__mifid_ii_compliance_phase__ = 7  # Current implementation phase
+import warnings
 
-# Phase 1 exports (Foundation)
-from services.compliance.lei_manager import (
-    LEIRecord,
-    LEIStatus,
-    LEIValidationResult,
-    LEIManager,
-    create_lei_manager,
+__version__ = "8.0.0"
+__deprecated__ = True
+
+# =============================================================================
+# Emit deprecation warning on import
+# =============================================================================
+warnings.warn(
+    "services.compliance is deprecated. "
+    "Use services.core.risk_controls, services.algo_integration, "
+    "or services.archive.mifid_financial_entity instead. "
+    "See module docstring for migration guide.",
+    DeprecationWarning,
+    stacklevel=2,
 )
 
-from services.compliance.gleif_client import (
-    GLEIFClient,
-    GLEIFResponse,
-    GLEIFError,
-    create_gleif_client,
-)
-
-from services.compliance.compliance_clock import (
-    ClockSyncStatus,
-    ClockDriftSeverity,
-    ComplianceClock,
-    create_compliance_clock,
-)
-
-from services.compliance.algorithm_registry import (
-    AlgorithmType,
-    AlgorithmStatus,
-    AlgorithmRecord,
-    AlgorithmRegistry,
-    create_algorithm_registry,
-    get_default_algorithm_types,
-)
-
-from services.compliance.config import (
-    MiFIDIIComplianceConfig,
-    LEIConfig,
-    ClockSyncComplianceConfig,
-    AlgorithmRegistryConfig,
-)
-
-# Phase 2 exports (Transaction Reporting - RTS 22)
-from services.compliance.transaction_report import (
-    # Enums
-    BuySellIndicator,
-    TradingCapacity,
-    IdentifierType,
-    InstrumentIdentifierType,
-    PriceType,
-    QuantityType,
-    TransactionType,
-    ReportStatus,
-    # Validators
-    ISINValidator,
-    MICValidator,
-    CFIValidator,
-    # Data classes
-    TransactionReportParty,
-    TransactionReport,
-    # Builder
-    TransactionReportBuilder,
-)
-
-from services.compliance.arm_client import (
-    # Enums
-    ARMProvider,
-    ARMEnvironment,
-    SubmissionStatus,
-    ErrorCode,
-    # Data classes
-    ARMError,
-    SubmissionResult,
-    BatchSubmissionResult,
-    ARMClientConfig,
-    # Clients
-    ARMClient,
-    MockARMClient,
-    BloombergBTRLClient,
-    FileARMClient,
-    # Factory
-    create_arm_client,
-)
-
-from services.compliance.reporting_pipeline import (
-    # Enums
-    PipelineStatus,
-    ReportQueuePriority,
-    # Data classes
-    PipelineConfig,
-    QueuedReport,
-    PipelineMetrics,
-    # Main class
-    TransactionReportingPipeline,
-    # Factory
-    create_reporting_pipeline,
-)
-
-# Phase 3 exports (Algorithmic Trading Controls - RTS 6)
-from services.compliance.enhanced_kill_switch import (
-    # Enums
-    KillSwitchScope,
-    KillSwitchTriggerReason,
-    KillSwitchState,
-    # Data classes
-    KillSwitchEvent,
-    KillSwitchConfig,
-    EmergencyContact,
-    # Main class
-    EnhancedKillSwitch,
-    # Factory
-    create_enhanced_kill_switch,
-)
-
-from services.compliance.pre_trade_controls import (
-    # Enums
-    RejectionReason,
-    ControlSeverity,
-    # Data classes
-    PreTradeCheckResult,
+# =============================================================================
+# Re-export from CORE (services.core.risk_controls)
+# These are universal risk controls for all platform users
+# =============================================================================
+from services.core.risk_controls import (
+    # Version
+    # Config
+    ControlsMode,
+    TimeSyncConfig,
     PreTradeControlsConfig,
-    TraderAuthorization,
-    MessageRateWindow,
-    # Main class
-    PreTradeControls,
-    # Factory
-    create_pre_trade_controls,
-)
-
-from services.compliance.realtime_monitor import (
-    # Enums
-    AlertSeverity,
-    AlertCategory,
-    # Data classes
-    ComplianceAlert,
-    MonitoringThreshold,
-    RealTimeMonitorConfig,
-    MonitoringMetrics,
-    # Main class
-    RealTimeMonitor,
-    # Factory
-    create_realtime_monitor,
-)
-
-from services.compliance.otr_monitor import (
-    # Enums
-    OrderEvent,
-    OTRLevel,
-    # Data classes
-    OTRBucket,
-    OTRMetrics,
-    OTRBreachEvent,
-    OTRMonitorConfig,
-    PerVenueOTR,
-    PerAlgorithmOTR,
-    # Main class
-    OTRMonitor,
-    # Factory
-    create_otr_monitor,
-)
-
-# Phase 4 exports (Record Keeping & Audit Trail - MiFIR Article 25)
-from services.compliance.audit_models import (
-    # Enums
+    AuditConfig,
+    KillSwitchConfig,
+    RiskControlsConfig,
+    load_risk_controls_config,
+    # Audit Models
     AuditEventType,
     AuditRecordPriority,
     AuditRecordStatus,
     OrderSide,
-    # Data classes
     AuditRecord,
     AuditRecordBuilder,
     AuditChainStatus,
     AuditExportRequest,
     AuditExportResult,
-    # Factory functions
     create_order_submitted_record,
     create_order_filled_record,
     create_risk_event_record,
     create_system_event_record,
-)
-
-from services.compliance.audit_storage import (
-    # Enums
+    # Audit Storage
     StorageBackendType,
     StorageState,
-    # Config
     AuditStorageConfig,
     StorageMetrics,
-    # Base class
     AuditStorageBackend,
-    # Implementations
     MemoryAuditStorage,
     SQLiteAuditStorage,
     FileAuditStorage,
-    # Factory
     create_audit_storage,
-)
-
-from services.compliance.retention_policy import (
-    # Enums
+    # Retention Policy
     RetentionPeriod,
     ArchiveStatus,
     NCARequestType,
-    # Config
     RetentionPolicyConfig,
-    # Data classes
     NCARequest,
     RetentionRecord,
     RetentionMetrics,
     ArchiveOperation,
-    # Main class
     RetentionManager,
-    # Factory
     create_retention_manager,
-)
-
-from services.compliance.audit_trail_writer import (
-    # Enums
+    # Audit Trail Writer
     WriterMode,
     WriterState,
-    # Config
     AuditTrailWriterConfig,
-    # Metrics
     WriterMetrics,
-    # Main class
     AuditTrailWriter,
-    # Factory
     create_audit_trail_writer,
-)
-
-# Phase 5 exports (Best Execution - Article 27 MiFID II)
-from services.compliance.best_execution import (
-    # Enums
-    ExecutionFactor,
-    AssetClass,
-    VenueType,
-    ExecutionQualityLevel,
-    # Data classes
-    ExecutionVenue,
-    FactorWeights,
-    ExecutionAnalysis,
-    BestExecutionPolicyConfig,
-    # Main classes
-    BestExecutionPolicy,
-    BestExecutionAnalyzer,
-    # Factory functions
-    create_best_execution_policy,
-    create_best_execution_analyzer,
-    get_standard_eu_venues,
-)
-
-from services.compliance.tca_compliance import (
-    # Enums
-    TCAMetricType,
-    TCABenchmark,
-    ExecutionStrategy,
-    # Data classes
-    PreTradeEstimate,
-    PostTradeAnalysis,
-    TCAConfig,
-    TCAAggregateMetrics,
-    # Main class
-    TCAComplianceWrapper,
-    # Factory
-    create_tca_wrapper,
-)
-
-from services.compliance.venue_analysis import (
-    # Enums
-    VenueMetricType,
-    VenueSelectionReason,
-    VenueStatus,
-    # Data classes
-    VenueExecutionRecord,
-    VenuePerformanceMetrics,
-    VenueRoutingDecision,
-    VenueAnalysisConfig,
-    # Main classes
-    VenueAnalyzer,
-    SmartOrderRouter,
-    # Factory functions
-    create_venue_analyzer,
-    create_smart_order_router,
-)
-
-from services.compliance.execution_quality_report import (
-    # Enums
-    ReportPeriod,
-    ReportFormat,
-    ReportStatus,
-    # Data classes
-    VenueExecutionSummary,
-    AssetClassExecutionSummary,
-    ExecutionQualityReportMetadata,
-    ExecutionQualityReport,
-    ReportGeneratorConfig,
-    # Main class
-    ExecutionQualityReportGenerator,
-    # Factory
-    create_report_generator,
-)
-
-# Phase 6 exports (Governance & Documentation - RTS 6 Articles 3, 9)
-from services.compliance.self_assessment import (
-    # Enums
-    AssessmentCategory,
-    ComplianceStatus,
-    RemediationPriority,
-    AssessmentStatus,
-    # Data classes
-    Evidence,
-    RemediationAction,
-    SelfAssessmentQuestion,
-    AnnualSelfAssessment,
-    # Factory functions
-    create_annual_assessment,
-    get_rts6_assessment_template,
-)
-
-from services.compliance.bcp import (
-    # Enums
+    # Time Sync (was compliance_clock)
+    ClockDriftSeverity,
+    ClockSyncStatus,
+    ClockSyncEvent,
+    ComplianceClock,
+    create_compliance_clock,
+    # Kill Switch (was enhanced_kill_switch)
+    KillSwitchScope,
+    KillSwitchTriggerReason,
+    KillSwitchState,
+    KillSwitchEvent,
+    KillSwitchDetailedConfig,
+    EmergencyContact,
+    EnhancedKillSwitch,
+    create_enhanced_kill_switch,
+    # Pre-Trade Controls
+    RejectionReason,
+    ControlSeverity,
+    PreTradeCheckResult,
+    PreTradeDetailedConfig,
+    TraderAuthorization,
+    MessageRateWindow,
+    PreTradeControls,
+    create_pre_trade_controls,
+    # Real-Time Monitoring
+    AlertSeverity,
+    AlertCategory,
+    ComplianceAlert,
+    MonitoringThreshold,
+    RealTimeMonitorConfig,
+    MonitoringMetrics,
+    RealTimeMonitor,
+    create_realtime_monitor,
+    # BCP
     ScenarioCategory,
     ImpactLevel,
     LikelihoodLevel,
     RecoveryStatus,
     AlertLevel,
-    # Data classes
-    EmergencyContact as BCPEmergencyContact,
+    BCPEmergencyContact,
     RecoveryStep,
     RecoveryProcedure,
     BCPScenario,
     BCPIncident,
     BusinessContinuityPlan,
-    # Factory functions
     create_business_continuity_plan,
+    load_bcp_from_file,
+    save_bcp_to_file,
     get_standard_bcp_scenarios,
 )
 
-from services.compliance.governance import (
-    # Enums
-    PolicyType,
-    PolicyStatus,
-    ApprovalLevel,
-    ReviewFrequency,
-    # Data classes
-    PolicyVersion,
-    PolicySection,
-    PolicyDocument,
-    GovernanceFramework,
-    # Factory functions
-    create_governance_framework,
-    create_algorithmic_trading_policy,
-    create_risk_management_policy,
-    create_record_keeping_policy,
-)
-
-from services.compliance.compliance_policies import (
-    # Policy template functions
-    create_best_execution_policy as create_best_execution_policy_template,
-    create_order_handling_policy,
-    create_conflicts_of_interest_policy,
-    create_kill_switch_policy,
-    create_transaction_reporting_policy,
-    create_market_abuse_prevention_policy,
-    create_business_continuity_policy,
-    create_all_standard_policies,
-)
-
-# Phase 7 exports (Testing & Certification - RTS 6 Article 5)
-from services.compliance.conformance_testing import (
-    # Enums
+# =============================================================================
+# Re-export from INTEGRATION (services.algo_integration)
+# B2B compliance toolkit for enterprise clients
+# =============================================================================
+from services.algo_integration import (
+    # Config
+    AlgorithmType,
+    ConformanceTestLevel,
+    AlgorithmRegistryConfig,
+    BestExecutionConfig,
+    TCAConfig,
+    ConformanceTestingConfig,
+    OTRConfig,
+    AlgoIntegrationConfig,
+    load_algo_integration_config,
+    # Best Execution
+    ExecutionFactor,
+    AssetClass,
+    OrderCategory,
+    VenueType,
+    ExecutionQualityLevel,
+    ExecutionVenue,
+    FactorWeights,
+    ExecutionAnalysis,
+    BestExecutionPolicyConfig,
+    BestExecutionPolicy,
+    BestExecutionAnalyzer,
+    create_best_execution_policy,
+    create_best_execution_analyzer,
+    get_standard_eu_venues,
+    # TCA
+    TCAMetricType,
+    TCABenchmark,
+    CostCategory,
+    ExecutionStrategy,
+    PreTradeEstimate,
+    PostTradeAnalysis,
+    TCADetailedConfig,
+    TCAAggregateMetrics,
+    SlippageProvider,
+    TCAComplianceWrapper,
+    create_tca_wrapper,
+    # Venue Analysis
+    VenueMetricType,
+    VenueSelectionReason,
+    VenueStatus,
+    VenueExecutionRecord,
+    VenuePerformanceMetrics,
+    VenueRoutingDecision,
+    VenueAnalysisConfig,
+    VenueAnalyzer,
+    SmartOrderRouter,
+    create_venue_analyzer,
+    create_smart_order_router,
+    # Execution Quality Reports
+    ReportPeriod,
+    ReportFormat,
+    ReportStatus,
+    VenueExecutionSummary,
+    AssetClassExecutionSummary,
+    ExecutionQualityReportMetadata,
+    ExecutionQualityReport,
+    ReportGeneratorConfig,
+    ExecutionQualityReportGenerator,
+    create_report_generator,
+    # OTR Monitor
+    OrderEvent,
+    OTRBucket,
+    OTRLevel,
+    OTRMetrics,
+    OTRBreachEvent,
+    OTRMonitorConfig,
+    PerVenueOTR,
+    PerAlgorithmOTR,
+    OTRMonitor,
+    create_otr_monitor,
+    # Algorithm Registry
+    AlgoType,
+    AlgorithmStatus,
+    AlgorithmRiskControl,
+    AlgorithmRecord,
+    AlgorithmRegistry,
+    create_algorithm_registry,
+    get_default_algorithm_types,
+    # Conformance Testing
     TestResult,
     TestCategory,
     TestPriority,
     TestEnvironment,
     ConformanceSuiteStatus,
-    CertificationStatus as ConformanceCertificationStatus,
-    # Data classes
+    CertificationStatus,
     TestEvidence,
     ConformanceTest,
     ConformanceTestSuite,
-    # Runner
     TestExecutorConfig,
     ConformanceTestRunner,
-    # Factory functions
     create_conformance_suite,
     create_test_runner,
     get_standard_conformance_tests,
-)
-
-from services.compliance.test_scenarios import (
-    # Enums
+    # Test Scenarios
     ScenarioType,
     ScenarioSeverity,
     ExecutionPhase,
     ScenarioStatus,
-    # Data classes
     ScenarioStep,
     TestScenario,
-    # Executor
     ScenarioExecutor,
-    # Factory functions
     create_test_scenario,
     create_scenario_executor,
-    # Standard scenarios
     get_kill_switch_scenarios,
     get_pre_trade_scenarios,
     get_stress_test_scenarios,
     get_business_continuity_scenarios,
     get_all_standard_scenarios,
-)
-
-from services.compliance.certification import (
-    # Enums
+    # Certification
     CertificateStatus,
     CertificateType,
     DeploymentApproval,
-    # Data classes
     CertificateCondition,
     ConformanceCertificate,
-    # Manager
     CertificateManager,
-    # Factory functions
     create_certificate,
     create_certificate_manager,
 )
 
-from services.compliance.nca_notification import (
-    # Enums
-    NCAJurisdiction,
-    NotificationType,
-    NotificationStatus,
-    AlgorithmCategory,
-    # Data classes
-    NCAContact,
-    AlgorithmDescription,
-    NCANotification,
-    # Manager
-    NCANotificationManager,
-    # Factory functions
-    create_algorithm_description,
-    create_nca_notification_manager,
-)
+# =============================================================================
+# Re-export from ARCHIVE (services.archive.mifid_financial_entity)
+# Financial Entity modules - NOT for ICT Providers
+# Import suppresses the archive warning since we're already in deprecated mode
+# =============================================================================
+import warnings as _warnings
+with _warnings.catch_warnings():
+    _warnings.simplefilter("ignore", DeprecationWarning)
+    from services.archive.mifid_financial_entity import (
+        # Config
+        ComplianceMode,
+        LEIStatus,
+        LEIConfig,
+        TransactionReportingConfig,
+        NCANotificationConfig,
+        GovernanceConfig,
+        MiFIDIIComplianceConfig,
+        load_mifid_compliance_config,
+        # LEI Manager
+        LEIStatusEnum,
+        LEIRecord,
+        LEIValidationResult,
+        LEIManager,
+        create_lei_manager,
+        # GLEIF Client
+        GLEIFErrorCode,
+        GLEIFError,
+        GLEIFEntity,
+        GLEIFRegistration,
+        GLEIFResponse,
+        GLEIFClient,
+        create_gleif_client,
+        # Transaction Report
+        BuySellIndicator,
+        TradingCapacity,
+        IdentifierType,
+        InstrumentIdentifierType,
+        PriceType,
+        QuantityType,
+        TransactionType,
+        # ReportStatus - already imported from algo_integration
+        ISINValidator,
+        MICValidator,
+        CFIValidator,
+        TransactionReportParty,
+        TransactionReport,
+        TransactionReportBuilder,
+        # ARM Client
+        ARMProvider,
+        ARMEnvironment,
+        SubmissionStatus,
+        ErrorCode,
+        ARMError,
+        SubmissionResult,
+        BatchSubmissionResult,
+        ARMClientConfig,
+        ARMClient,
+        MockARMClient,
+        BloombergBTRLClient,
+        FileARMClient,
+        create_arm_client,
+        # Reporting Pipeline
+        PipelineStatus,
+        ReportQueuePriority,
+        PipelineConfig,
+        QueuedReport,
+        PipelineMetrics,
+        TransactionReportingPipeline,
+        create_reporting_pipeline,
+        # Self Assessment
+        AssessmentCategory,
+        ComplianceStatus,
+        RemediationPriority,
+        AssessmentStatus,
+        Evidence,
+        RemediationAction,
+        SelfAssessmentQuestion,
+        AnnualSelfAssessment,
+        create_annual_assessment,
+        load_assessment_from_file,
+        save_assessment_to_file,
+        get_rts6_assessment_template,
+        # Governance
+        PolicyType,
+        PolicyStatus,
+        ApprovalLevel,
+        ReviewFrequency,
+        PolicyVersion,
+        PolicySection,
+        PolicyDocument,
+        GovernanceFramework,
+        create_governance_framework,
+        create_algorithmic_trading_policy,
+        create_risk_management_policy,
+        create_record_keeping_policy,
+        load_framework_from_file,
+        save_framework_to_file,
+        # Compliance Policies
+        create_best_execution_policy,
+        create_order_handling_policy,
+        create_conflicts_of_interest_policy,
+        create_kill_switch_policy,
+        create_transaction_reporting_policy,
+        create_market_abuse_prevention_policy,
+        create_business_continuity_policy,
+        create_all_standard_policies,
+        # NCA Notification
+        NCAJurisdiction,
+        NotificationType,
+        NotificationStatus,
+        AlgorithmCategory,
+        NCAContact,
+        AlgorithmDescription,
+        NCANotification,
+        NCANotificationManager,
+        create_algorithm_description,
+        create_nca_notification_manager,
+    )
 
+# =============================================================================
+# Backward compatibility aliases
+# Some names were changed during migration
+# =============================================================================
+# compliance_clock -> time_sync
+# Enhanced kill switch is still called EnhancedKillSwitch
+
+# Old config names (for compatibility with old code)
+ClockSyncComplianceConfig = TimeSyncConfig  # Alias
+
+# =============================================================================
+# Public API (comprehensive list for star imports)
+# =============================================================================
 __all__ = [
     # Version info
     "__version__",
-    "__mifid_ii_compliance_phase__",
-    # ==== Phase 1: Foundation ====
-    # LEI Management
-    "LEIRecord",
-    "LEIStatus",
-    "LEIValidationResult",
-    "LEIManager",
-    "create_lei_manager",
-    # GLEIF Client
-    "GLEIFClient",
-    "GLEIFResponse",
-    "GLEIFError",
-    "create_gleif_client",
-    # Compliance Clock (RTS 25)
-    "ClockSyncStatus",
-    "ClockDriftSeverity",
-    "ComplianceClock",
-    "create_compliance_clock",
-    # Algorithm Registry (Article 17)
-    "AlgorithmType",
-    "AlgorithmStatus",
-    "AlgorithmRecord",
-    "AlgorithmRegistry",
-    "create_algorithm_registry",
-    "get_default_algorithm_types",
-    # Configuration
-    "MiFIDIIComplianceConfig",
-    "LEIConfig",
-    "ClockSyncComplianceConfig",
-    "AlgorithmRegistryConfig",
-    # ==== Phase 2: Transaction Reporting (RTS 22) ====
-    # Transaction Report enums
-    "BuySellIndicator",
-    "TradingCapacity",
-    "IdentifierType",
-    "InstrumentIdentifierType",
-    "PriceType",
-    "QuantityType",
-    "TransactionType",
-    "ReportStatus",
-    # Validators
-    "ISINValidator",
-    "MICValidator",
-    "CFIValidator",
-    # Transaction Report
-    "TransactionReportParty",
-    "TransactionReport",
-    "TransactionReportBuilder",
-    # ARM Client
-    "ARMProvider",
-    "ARMEnvironment",
-    "SubmissionStatus",
-    "ErrorCode",
-    "ARMError",
-    "SubmissionResult",
-    "BatchSubmissionResult",
-    "ARMClientConfig",
-    "ARMClient",
-    "MockARMClient",
-    "BloombergBTRLClient",
-    "FileARMClient",
-    "create_arm_client",
-    # Reporting Pipeline
-    "PipelineStatus",
-    "ReportQueuePriority",
-    "PipelineConfig",
-    "QueuedReport",
-    "PipelineMetrics",
-    "TransactionReportingPipeline",
-    "create_reporting_pipeline",
-    # ==== Phase 3: Algorithmic Trading Controls (RTS 6) ====
-    # Enhanced Kill Switch (Article 12)
-    "KillSwitchScope",
-    "KillSwitchTriggerReason",
-    "KillSwitchState",
-    "KillSwitchEvent",
-    "KillSwitchConfig",
-    "EmergencyContact",
-    "EnhancedKillSwitch",
-    "create_enhanced_kill_switch",
-    # Pre-Trade Controls (Article 15)
-    "RejectionReason",
-    "ControlSeverity",
-    "PreTradeCheckResult",
+    "__deprecated__",
+    # =========================================================================
+    # CORE: Risk Controls
+    # =========================================================================
+    # Config
+    "ControlsMode",
+    "TimeSyncConfig",
+    "ClockSyncComplianceConfig",  # Alias for backward compat
     "PreTradeControlsConfig",
-    "TraderAuthorization",
-    "MessageRateWindow",
-    "PreTradeControls",
-    "create_pre_trade_controls",
-    # Real-Time Monitoring (Article 17)
-    "AlertSeverity",
-    "AlertCategory",
-    "ComplianceAlert",
-    "MonitoringThreshold",
-    "RealTimeMonitorConfig",
-    "MonitoringMetrics",
-    "RealTimeMonitor",
-    "create_realtime_monitor",
-    # OTR Monitoring
-    "OrderEvent",
-    "OTRLevel",
-    "OTRBucket",
-    "OTRMetrics",
-    "OTRBreachEvent",
-    "OTRMonitorConfig",
-    "PerVenueOTR",
-    "PerAlgorithmOTR",
-    "OTRMonitor",
-    "create_otr_monitor",
-    # ==== Phase 4: Record Keeping & Audit Trail (MiFIR Article 25) ====
+    "AuditConfig",
+    "KillSwitchConfig",
+    "RiskControlsConfig",
+    "load_risk_controls_config",
     # Audit Models
     "AuditEventType",
     "AuditRecordPriority",
@@ -668,10 +483,72 @@ __all__ = [
     "WriterMetrics",
     "AuditTrailWriter",
     "create_audit_trail_writer",
-    # ==== Phase 5: Best Execution (Article 27 MiFID II) ====
-    # Best Execution Policy
+    # Time Sync
+    "ClockDriftSeverity",
+    "ClockSyncStatus",
+    "ClockSyncEvent",
+    "ComplianceClock",
+    "create_compliance_clock",
+    # Kill Switch
+    "KillSwitchScope",
+    "KillSwitchTriggerReason",
+    "KillSwitchState",
+    "KillSwitchEvent",
+    "KillSwitchDetailedConfig",
+    "EmergencyContact",
+    "EnhancedKillSwitch",
+    "create_enhanced_kill_switch",
+    # Pre-Trade Controls
+    "RejectionReason",
+    "ControlSeverity",
+    "PreTradeCheckResult",
+    "PreTradeDetailedConfig",
+    "TraderAuthorization",
+    "MessageRateWindow",
+    "PreTradeControls",
+    "create_pre_trade_controls",
+    # Real-Time Monitoring
+    "AlertSeverity",
+    "AlertCategory",
+    "ComplianceAlert",
+    "MonitoringThreshold",
+    "RealTimeMonitorConfig",
+    "MonitoringMetrics",
+    "RealTimeMonitor",
+    "create_realtime_monitor",
+    # BCP
+    "ScenarioCategory",
+    "ImpactLevel",
+    "LikelihoodLevel",
+    "RecoveryStatus",
+    "AlertLevel",
+    "BCPEmergencyContact",
+    "RecoveryStep",
+    "RecoveryProcedure",
+    "BCPScenario",
+    "BCPIncident",
+    "BusinessContinuityPlan",
+    "create_business_continuity_plan",
+    "load_bcp_from_file",
+    "save_bcp_to_file",
+    "get_standard_bcp_scenarios",
+    # =========================================================================
+    # INTEGRATION: B2B Compliance Toolkit
+    # =========================================================================
+    # Config
+    "AlgorithmType",
+    "ConformanceTestLevel",
+    "AlgorithmRegistryConfig",
+    "BestExecutionConfig",
+    "TCAConfig",
+    "ConformanceTestingConfig",
+    "OTRConfig",
+    "AlgoIntegrationConfig",
+    "load_algo_integration_config",
+    # Best Execution
     "ExecutionFactor",
     "AssetClass",
+    "OrderCategory",
     "VenueType",
     "ExecutionQualityLevel",
     "ExecutionVenue",
@@ -683,14 +560,16 @@ __all__ = [
     "create_best_execution_policy",
     "create_best_execution_analyzer",
     "get_standard_eu_venues",
-    # TCA Compliance
+    # TCA
     "TCAMetricType",
     "TCABenchmark",
+    "CostCategory",
     "ExecutionStrategy",
     "PreTradeEstimate",
     "PostTradeAnalysis",
-    "TCAConfig",
+    "TCADetailedConfig",
     "TCAAggregateMetrics",
+    "SlippageProvider",
     "TCAComplianceWrapper",
     "create_tca_wrapper",
     # Venue Analysis
@@ -716,62 +595,32 @@ __all__ = [
     "ReportGeneratorConfig",
     "ExecutionQualityReportGenerator",
     "create_report_generator",
-    # ==== Phase 6: Governance & Documentation (RTS 6 Articles 3, 9) ====
-    # Self-Assessment (RTS 6 Article 9)
-    "AssessmentCategory",
-    "ComplianceStatus",
-    "RemediationPriority",
-    "AssessmentStatus",
-    "Evidence",
-    "RemediationAction",
-    "SelfAssessmentQuestion",
-    "AnnualSelfAssessment",
-    "create_annual_assessment",
-    "get_rts6_assessment_template",
-    # Business Continuity Plan (RTS 6 Article 3)
-    "ScenarioCategory",
-    "ImpactLevel",
-    "LikelihoodLevel",
-    "RecoveryStatus",
-    "AlertLevel",
-    "BCPEmergencyContact",
-    "RecoveryStep",
-    "RecoveryProcedure",
-    "BCPScenario",
-    "BCPIncident",
-    "BusinessContinuityPlan",
-    "create_business_continuity_plan",
-    "get_standard_bcp_scenarios",
-    # Governance Framework
-    "PolicyType",
-    "PolicyStatus",
-    "ApprovalLevel",
-    "ReviewFrequency",
-    "PolicyVersion",
-    "PolicySection",
-    "PolicyDocument",
-    "GovernanceFramework",
-    "create_governance_framework",
-    "create_algorithmic_trading_policy",
-    "create_risk_management_policy",
-    "create_record_keeping_policy",
-    # Compliance Policy Templates
-    "create_best_execution_policy_template",
-    "create_order_handling_policy",
-    "create_conflicts_of_interest_policy",
-    "create_kill_switch_policy",
-    "create_transaction_reporting_policy",
-    "create_market_abuse_prevention_policy",
-    "create_business_continuity_policy",
-    "create_all_standard_policies",
-    # ==== Phase 7: Testing & Certification (RTS 6 Article 5) ====
+    # OTR Monitor
+    "OrderEvent",
+    "OTRBucket",
+    "OTRLevel",
+    "OTRMetrics",
+    "OTRBreachEvent",
+    "OTRMonitorConfig",
+    "PerVenueOTR",
+    "PerAlgorithmOTR",
+    "OTRMonitor",
+    "create_otr_monitor",
+    # Algorithm Registry
+    "AlgoType",
+    "AlgorithmStatus",
+    "AlgorithmRiskControl",
+    "AlgorithmRecord",
+    "AlgorithmRegistry",
+    "create_algorithm_registry",
+    "get_default_algorithm_types",
     # Conformance Testing
     "TestResult",
     "TestCategory",
     "TestPriority",
     "TestEnvironment",
     "ConformanceSuiteStatus",
-    "ConformanceCertificationStatus",
+    "CertificationStatus",
     "TestEvidence",
     "ConformanceTest",
     "ConformanceTestSuite",
@@ -804,6 +653,105 @@ __all__ = [
     "CertificateManager",
     "create_certificate",
     "create_certificate_manager",
+    # =========================================================================
+    # ARCHIVE: Financial Entity (NOT for ICT Providers)
+    # =========================================================================
+    # Config
+    "ComplianceMode",
+    "LEIStatus",
+    "LEIConfig",
+    "TransactionReportingConfig",
+    "NCANotificationConfig",
+    "GovernanceConfig",
+    "MiFIDIIComplianceConfig",
+    "load_mifid_compliance_config",
+    # LEI Manager
+    "LEIStatusEnum",
+    "LEIRecord",
+    "LEIValidationResult",
+    "LEIManager",
+    "create_lei_manager",
+    # GLEIF Client
+    "GLEIFErrorCode",
+    "GLEIFError",
+    "GLEIFEntity",
+    "GLEIFRegistration",
+    "GLEIFResponse",
+    "GLEIFClient",
+    "create_gleif_client",
+    # Transaction Report
+    "BuySellIndicator",
+    "TradingCapacity",
+    "IdentifierType",
+    "InstrumentIdentifierType",
+    "PriceType",
+    "QuantityType",
+    "TransactionType",
+    "ISINValidator",
+    "MICValidator",
+    "CFIValidator",
+    "TransactionReportParty",
+    "TransactionReport",
+    "TransactionReportBuilder",
+    # ARM Client
+    "ARMProvider",
+    "ARMEnvironment",
+    "SubmissionStatus",
+    "ErrorCode",
+    "ARMError",
+    "SubmissionResult",
+    "BatchSubmissionResult",
+    "ARMClientConfig",
+    "ARMClient",
+    "MockARMClient",
+    "BloombergBTRLClient",
+    "FileARMClient",
+    "create_arm_client",
+    # Reporting Pipeline
+    "PipelineStatus",
+    "ReportQueuePriority",
+    "PipelineConfig",
+    "QueuedReport",
+    "PipelineMetrics",
+    "TransactionReportingPipeline",
+    "create_reporting_pipeline",
+    # Self Assessment
+    "AssessmentCategory",
+    "ComplianceStatus",
+    "RemediationPriority",
+    "AssessmentStatus",
+    "Evidence",
+    "RemediationAction",
+    "SelfAssessmentQuestion",
+    "AnnualSelfAssessment",
+    "create_annual_assessment",
+    "load_assessment_from_file",
+    "save_assessment_to_file",
+    "get_rts6_assessment_template",
+    # Governance
+    "PolicyType",
+    "PolicyStatus",
+    "ApprovalLevel",
+    "ReviewFrequency",
+    "PolicyVersion",
+    "PolicySection",
+    "PolicyDocument",
+    "GovernanceFramework",
+    "create_governance_framework",
+    "create_algorithmic_trading_policy",
+    "create_risk_management_policy",
+    "create_record_keeping_policy",
+    "load_framework_from_file",
+    "save_framework_to_file",
+    # Compliance Policies
+    "create_best_execution_policy",
+    "create_order_handling_policy",
+    "create_conflicts_of_interest_policy",
+    "create_kill_switch_policy",
+    "create_transaction_reporting_policy",
+    "create_market_abuse_prevention_policy",
+    "create_business_continuity_policy",
+    "create_all_standard_policies",
     # NCA Notification
     "NCAJurisdiction",
     "NotificationType",
