@@ -22,6 +22,7 @@ import tempfile
 import numpy as np
 import pandas as pd
 import pytest
+pytest.importorskip("torch")
 
 
 def _install_sb3_stub() -> None:

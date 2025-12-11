@@ -20,6 +20,7 @@ References:
 """
 
 import pytest
+pytest.importorskip("sortedcontainers")
 import math
 import time
 from decimal import Decimal

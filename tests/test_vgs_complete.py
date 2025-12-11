@@ -5,7 +5,8 @@ This test can run without pytest or external dependencies beyond PyTorch.
 Tests all functionality with 100% code coverage goal.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import sys
 import os

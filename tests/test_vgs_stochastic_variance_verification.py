@@ -11,7 +11,8 @@ The claimed bug is:
 This test will demonstrate that the CURRENT implementation is MATHEMATICALLY CORRECT.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 from variance_gradient_scaler import VarianceGradientScaler
 

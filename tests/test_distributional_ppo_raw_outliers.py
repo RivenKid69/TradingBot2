@@ -6,10 +6,7 @@ from collections import deque
 import numpy as np
 import pytest
 
-try:  # pragma: no cover - optional dependency for tensor helpers
-    import torch
-except ModuleNotFoundError:  # pragma: no cover - graceful fallback for test-only usage
-    torch = None
+torch = pytest.importorskip("torch")
 torch_is_stub = getattr(torch, "__test_stub__", False)
 
 

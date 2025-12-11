@@ -5,7 +5,8 @@ This test demonstrates that the current implementation creates a triple max
 instead of the correct double max required by PPO.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

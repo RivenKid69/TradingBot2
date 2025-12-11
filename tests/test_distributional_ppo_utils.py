@@ -23,10 +23,11 @@ from dataclasses import dataclass
 from typing import Any, Optional
 from unittest.mock import Mock, MagicMock
 
-import gymnasium as gym
+import pytest
+gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from pydantic import BaseModel
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 

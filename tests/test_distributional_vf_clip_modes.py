@@ -11,10 +11,10 @@ This test suite validates three modes:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 
 
 class TestDistributionalVFClipModes:

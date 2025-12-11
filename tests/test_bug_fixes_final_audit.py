@@ -13,10 +13,11 @@ import warnings
 from typing import Any, Optional, Tuple
 from unittest.mock import MagicMock, Mock, patch
 
-import gymnasium as gym
+import pytest
+gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 from stable_baselines3.common.vec_env import DummyVecEnv
 

@@ -26,10 +26,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 from unittest.mock import MagicMock, patch
 
-import gymnasium as gym
+import pytest
+gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pandas as pd
 import pytest
+pytest.importorskip("torch")
 import yaml
 
 # Add project root to path

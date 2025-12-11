@@ -10,7 +10,7 @@ All tests follow research-backed approaches and best practices.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from pathlib import Path
 import tempfile

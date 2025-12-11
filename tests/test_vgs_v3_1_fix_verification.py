@@ -11,7 +11,8 @@ v3.1 now CORRECTLY computes E[g^2] = mean(g^2).
 These tests ensure the bug does NOT regress.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import pytest
 import numpy as np
 from variance_gradient_scaler import VarianceGradientScaler

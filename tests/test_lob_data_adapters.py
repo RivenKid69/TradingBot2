@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.data_adapters import (
     AdapterStats,

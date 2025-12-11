@@ -27,7 +27,7 @@ which can break the computational graph in PyTorch.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 from distributional_ppo import DistributionalPPO

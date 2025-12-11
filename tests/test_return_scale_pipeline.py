@@ -1,7 +1,7 @@
 import inspect
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import trading_patchnew
 
 distributional_ppo = pytest.importorskip(

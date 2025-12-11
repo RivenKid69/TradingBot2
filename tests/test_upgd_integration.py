@@ -6,8 +6,8 @@ AI-Powered Quantitative Research Platform training pipeline.
 """
 
 import pytest
-import torch
-import gymnasium as gym
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from optimizers import UPGD, AdaptiveUPGD, UPGDW

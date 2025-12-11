@@ -9,7 +9,7 @@ Tests that the new per_quantile mode:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

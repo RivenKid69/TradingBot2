@@ -10,7 +10,7 @@ These tests verify that the extraction maintained correct functionality.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import MagicMock, patch
 from typing import List, Optional

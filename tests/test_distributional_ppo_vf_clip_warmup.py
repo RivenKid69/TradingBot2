@@ -2,7 +2,7 @@ import types
 from typing import Any
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 

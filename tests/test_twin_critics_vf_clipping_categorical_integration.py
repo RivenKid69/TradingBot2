@@ -11,10 +11,10 @@ Test Coverage:
 4. Categorical vs Quantile: Correct detection of critic type
 """
 
-import gymnasium as gym
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
 from custom_policy_patch1 import CustomActorCriticPolicy

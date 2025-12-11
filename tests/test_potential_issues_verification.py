@@ -13,7 +13,7 @@ These tests document and verify that the reported concerns are either:
 Created: 2025-11-21
 """
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, MagicMock, patch
 

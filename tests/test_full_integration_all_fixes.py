@@ -10,8 +10,9 @@ Tests all fixed components working together:
 This test verifies that all components work together without conflicts.
 """
 
+import pytest
 import sys
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy
@@ -142,7 +143,6 @@ def test_full_integration():
     has_inf = False
 
     for param in model.policy.parameters():
-        import torch
         if torch.isnan(param).any():
             has_nan = True
         if torch.isinf(param).any():

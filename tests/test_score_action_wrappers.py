@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+pytest.importorskip("torch")
 from gymnasium import Env, spaces
 
 from action_proto import ActionProto, ActionType

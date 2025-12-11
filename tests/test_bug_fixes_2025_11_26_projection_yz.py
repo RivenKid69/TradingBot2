@@ -8,7 +8,7 @@ These tests verify that the fixes are correctly implemented and prevent regressi
 
 import math
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

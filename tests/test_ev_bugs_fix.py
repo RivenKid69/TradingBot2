@@ -7,7 +7,8 @@ Tests verify that:
 """
 
 import numpy as np
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import pytest
 from unittest.mock import MagicMock, patch
 

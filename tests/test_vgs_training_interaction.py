@@ -13,7 +13,7 @@ This test suite validates the hypothesis and proposes fixes.
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Tuple, List
 import sys

@@ -48,7 +48,7 @@ References:
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from collections import deque
 
 from transformers import OnlineFeatureTransformer, FeatureSpec

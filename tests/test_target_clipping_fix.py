@@ -25,7 +25,7 @@ See: CONCEPTUAL_BUGS_VERIFICATION_REPORT_2025_11_24.md for full analysis
 """
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 from distributional_ppo import DistributionalPPO
 from stable_baselines3.common.buffers import RolloutBuffer

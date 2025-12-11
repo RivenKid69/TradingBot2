@@ -11,9 +11,9 @@ Tests cover:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 

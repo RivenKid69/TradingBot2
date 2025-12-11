@@ -10,7 +10,9 @@ This test suite provides 100% coverage of the per_quantile fix including:
 6. Integration with normalize_returns, PopArt, etc.
 """
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional, NamedTuple
 

@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Dict, Any
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 

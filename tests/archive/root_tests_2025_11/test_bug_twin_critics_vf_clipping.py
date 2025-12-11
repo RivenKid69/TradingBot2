@@ -1,5 +1,9 @@
 """Test for Twin Critics + VF Clipping Bug Fix (2025-11-22)"""
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
+pytest.importorskip("gymnasium")
+
 import inspect
 
 print("="*80)

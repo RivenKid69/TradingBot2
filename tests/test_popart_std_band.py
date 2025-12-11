@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import pytest
 import sys
 import types
 from typing import Optional
 
-import torch
+torch = pytest.importorskip("torch")
 
 if "sb3_contrib" not in sys.modules:
     sb3_module = types.ModuleType("sb3_contrib")

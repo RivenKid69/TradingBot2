@@ -22,9 +22,11 @@ from pathlib import Path
 from typing import Dict, Any
 from unittest.mock import MagicMock, patch, PropertyMock
 
-import gymnasium as gym
+import pytest
+gym = pytest.importorskip("gymnasium")
 import numpy as np
 import pytest
+pytest.importorskip("torch")
 from gymnasium import spaces
 
 from wrappers.forex_env import (

@@ -23,7 +23,9 @@ CORRECT behavior (clip to old_quantiles):
 This test verifies the fix is working correctly.
 """
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

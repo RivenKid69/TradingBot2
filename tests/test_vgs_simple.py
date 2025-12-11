@@ -2,8 +2,9 @@
 Simple standalone test for VarianceGradientScaler without external dependencies.
 """
 
+import pytest
 import sys
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 
 sys.path.insert(0, '/home/user/ai-quant-platform')

@@ -4,16 +4,9 @@ Numerical gradient test using finite differences.
 Verifies that autograd gradients match numerical gradients.
 """
 
+import pytest
+torch = pytest.importorskip("torch")
 import sys
-
-try:
-    import torch
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-    print("⚠️  PyTorch not available - skipping numerical tests")
-    print("   Install torch to run: pip install torch")
-    sys.exit(0)
 
 from distributional_ppo import DistributionalPPO
 

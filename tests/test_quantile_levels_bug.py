@@ -19,7 +19,7 @@ This affects:
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 
 from custom_policy_patch1 import QuantileValueHead

@@ -11,7 +11,7 @@ These tests perform in-depth validation of UPGD optimizer mechanics:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 from optimizers import UPGD, AdaptiveUPGD, UPGDW

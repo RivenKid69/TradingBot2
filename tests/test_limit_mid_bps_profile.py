@@ -1,4 +1,5 @@
 import pytest
+pytest.importorskip("torch")
 from test_execution_profiles import base_sim, ActionProto, ActionType
 
 

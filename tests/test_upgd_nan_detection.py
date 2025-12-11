@@ -7,8 +7,9 @@ due to division by zero in scaled_utility computation.
 Root cause: When global_max_util = 0, division produces Inf, leading to NaN parameters.
 """
 
+import pytest
 import sys
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers.upgd import UPGD
 

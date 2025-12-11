@@ -10,7 +10,8 @@ Correct: (max(L_uc1, L_c1) + max(L_uc2, L_c2))/2
 This script tests whether these formulas are equivalent.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

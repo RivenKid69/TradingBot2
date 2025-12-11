@@ -15,7 +15,7 @@ All tests verify that the fixes prevent:
 import pytest
 import numpy as np
 from dataclasses import replace
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
 # Import fixed modules

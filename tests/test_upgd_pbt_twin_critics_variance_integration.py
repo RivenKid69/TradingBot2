@@ -16,9 +16,9 @@ Tests check for:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch

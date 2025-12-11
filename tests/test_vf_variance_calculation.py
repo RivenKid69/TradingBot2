@@ -13,7 +13,8 @@ The fix:
 - Compute old_variance from these stored distributions
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

@@ -13,6 +13,7 @@ Total: 70+ tests covering all latency functionality.
 
 import math
 import pytest
+pytest.importorskip("sortedcontainers")
 import threading
 import time
 from typing import List, Optional

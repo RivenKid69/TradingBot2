@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from gymnasium import spaces
 
 pytest.importorskip(

@@ -30,7 +30,6 @@ def check_dependencies():
         missing.append("numpy")
 
     try:
-        import gymnasium
         print(f"✓ Gymnasium {gymnasium.__version__}")
     except ImportError:
         missing.append("gymnasium")
@@ -348,7 +347,6 @@ def test_06_upgd_with_ppo():
 def test_07_twin_critics_with_upgd():
     """Test Twin Critics with UPGD optimizer."""
     import torch
-    import gymnasium as gym
     from stable_baselines3.common.vec_env import DummyVecEnv
     from distributional_ppo import DistributionalPPO
 
@@ -385,7 +383,6 @@ def test_07_twin_critics_with_upgd():
 def test_08_full_integration():
     """Test full integration: UPGD + Twin Critics + VGS."""
     import torch
-    import gymnasium as gym
     from stable_baselines3.common.vec_env import DummyVecEnv
     from distributional_ppo import DistributionalPPO
 

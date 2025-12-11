@@ -21,7 +21,7 @@ from unittest.mock import Mock, MagicMock, patch
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from sb3_contrib.common.recurrent.buffers import RecurrentRolloutBuffer
 
 # Import functions under test

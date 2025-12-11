@@ -9,10 +9,10 @@ was NEVER called, making adversarial training completely inactive.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import MagicMock, patch, call
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 
 from adversarial import (
     PerturbationConfig,

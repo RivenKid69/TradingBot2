@@ -10,7 +10,7 @@ These tests simulate realistic training scenarios to verify that:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 import numpy as np
 from typing import Optional, Tuple

@@ -11,7 +11,7 @@ These tests validate hypotheses about root causes.
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Tuple, Optional
 from unittest.mock import MagicMock, patch

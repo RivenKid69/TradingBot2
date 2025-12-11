@@ -8,7 +8,7 @@ following standard PPO practice (OpenAI Baselines, Stable-Baselines3).
 
 import pytest
 import numpy as np
-import torch
+torch = pytest.importorskip("torch")
 
 
 def test_global_advantage_normalization_basic():

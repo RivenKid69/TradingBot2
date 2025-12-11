@@ -16,7 +16,7 @@ Tests cover:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 from unittest.mock import patch, MagicMock

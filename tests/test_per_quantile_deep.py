@@ -11,7 +11,7 @@ This test suite covers:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

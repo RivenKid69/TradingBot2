@@ -6,7 +6,8 @@ the scaling logic inverts: parameters with lower utility (more negative)
 receive smaller updates, which is opposite to the intended behavior.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import sys
 import os
 

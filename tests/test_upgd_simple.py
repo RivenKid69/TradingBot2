@@ -4,8 +4,9 @@ Simple test script to verify UPGD optimizer integration.
 Tests basic functionality without requiring pytest or complex dependencies.
 """
 
+import pytest
 import sys
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 
 # Test 1: Import UPGD optimizers

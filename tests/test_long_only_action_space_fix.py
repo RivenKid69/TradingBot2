@@ -22,8 +22,8 @@ Test categories:
 
 import pytest
 import numpy as np
-import torch
-import gymnasium as gym
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 from dataclasses import dataclass
 from typing import Any, Optional

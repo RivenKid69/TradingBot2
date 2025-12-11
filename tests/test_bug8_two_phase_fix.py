@@ -14,7 +14,7 @@ from typing import Optional
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from gymnasium import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv
 
@@ -29,7 +29,6 @@ from distributional_ppo import DistributionalPPO
 def _make_simple_env():
     """Create a simple dummy environment for testing."""
     def _init():
-        import gymnasium as gym
         # Use Pendulum-v1 which has Box action space
         return gym.make("Pendulum-v1")
     return DummyVecEnv([_init])

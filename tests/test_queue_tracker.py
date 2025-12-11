@@ -17,6 +17,7 @@ Target: >95% coverage for queue_tracker.py
 import math
 import time
 import pytest
+pytest.importorskip("sortedcontainers")
 from typing import List, Optional
 
 from lob.data_structures import (

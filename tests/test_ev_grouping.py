@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import pytest
+pytest.importorskip("torch")
 
 import sys
 import types

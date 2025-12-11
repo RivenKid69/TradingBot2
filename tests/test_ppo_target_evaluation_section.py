@@ -6,7 +6,7 @@ correctly uses unclipped targets for explained variance computation.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional
 

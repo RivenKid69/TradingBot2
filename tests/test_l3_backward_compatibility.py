@@ -15,6 +15,7 @@ Run with:
 """
 
 import pytest
+pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import Dict, Any
 

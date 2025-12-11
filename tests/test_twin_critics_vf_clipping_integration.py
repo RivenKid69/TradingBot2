@@ -17,7 +17,7 @@ Key aspects tested:
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import warnings
 from unittest.mock import Mock, MagicMock, patch
 from typing import Dict, Any

@@ -9,7 +9,7 @@ This test file ensures 100% coverage of the target clipping fix across:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional, Tuple
 

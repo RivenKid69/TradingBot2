@@ -13,7 +13,8 @@ Example from problem description:
 - PROBLEM: Quantiles [0, 30] are outside bounds [5, 15]!
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

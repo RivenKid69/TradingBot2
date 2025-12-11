@@ -3,6 +3,8 @@
 import numpy as np
 import pytest
 
+pytest.importorskip("sortedcontainers")
+
 try:
     from lob_state_cython import (
         EnvState,

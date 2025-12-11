@@ -25,7 +25,7 @@ in all loss and explained variance computations.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from unittest.mock import Mock, patch, MagicMock
 from typing import Optional

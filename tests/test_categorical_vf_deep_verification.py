@@ -3,7 +3,8 @@ Deep verification tests for categorical VF clipping.
 These tests check for subtle bugs and edge cases.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

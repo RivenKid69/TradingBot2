@@ -5,7 +5,7 @@ Target: 100% code coverage
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from unittest.mock import Mock, MagicMock
 

@@ -7,7 +7,7 @@ for the analysis that led to these changes.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import sys
 import os

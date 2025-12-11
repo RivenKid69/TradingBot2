@@ -28,10 +28,11 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from unittest.mock import MagicMock, patch, PropertyMock
 
-import gymnasium as gym
 import numpy as np
 import pandas as pd
 import pytest
+gym = pytest.importorskip("gymnasium")
+pytest.importorskip("torch")
 
 # Import from services for reset
 from services.futures_feature_flags import reset_global_flags

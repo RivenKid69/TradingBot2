@@ -24,7 +24,7 @@ from unittest.mock import MagicMock, Mock, patch, call
 import copy
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 import yaml
