@@ -1,11 +1,20 @@
-# EU AI Act Optional Modules Refactoring Plan v2.0
+# EU AI Act Optional Modules Refactoring Plan v2.1
 ## Task: Make High-Risk Modules Optional While Keeping GPAI Mandatory
-### Version: 2.0.0 | Target: AI Agent Execution | Reviewed: Critical Issues Fixed
+### Version: 2.1.0 | Target: AI Agent Execution | Reviewed: All Critical Issues Resolved
 ---
 ## 1. EXECUTIVE SUMMARY
 **Objective**: Restructure `services/ai_act/` to separate mandatory GPAI compliance (Articles 50, 53) from optional High-Risk compliance (Articles 9, 14, 15, 17, 43, 72).
 **Legal Basis**: EU AI Act Regulation 2024/1689 - algorithmic trading NOT in Annex III (High-Risk). Platform = GPAI Provider per Article 53.
 **Architecture Pattern**: Follow `services/dora/` facade pattern with integration layers.
+**Key Changes from v2.0:**
+- **CRITICAL**: Enterprise access guard with `RuntimeError` (not just DeprecationWarning)
+- **CRITICAL**: Config check in enterprise `__getattr__` before module loading
+- **CRITICAL**: TYPE_CHECKING guards for cross-imports (prevent circular imports)
+- Environment variable override (`AIACT_COMPLIANCE_LEVEL`)
+- Config serialization (`to_dict()`/`from_dict()`) for persistence
+- Module cache invalidation mechanism
+- Graceful error handling with `EnterpriseNotAvailableError`
+- Explicit Art.52/53(2) out-of-scope documentation
 **Key Changes from v1.0:**
 - Thread-safe config via `contextvars` (not global state)
 - Proper Article separation (Art.53/Annex XI for GPAI vs Art.11/Annex IV for High-Risk)
@@ -41,16 +50,34 @@
 | post_market_monitoring.py | 72 | Post-market surveillance |
 | conformity_assessment.py | 43 | Self-assessment framework |
 | high_risk_technical_docs.py | 11, Annex IV | High-Risk documentation (NEW - split) |
+
+### 2.3 Explicitly Out-of-Scope (with Legal Justification)
+
+| Article | Title | Why Not Applicable |
+|---------|-------|-------------------|
+| **Article 52** | Transparency for certain AI systems | Applies to: emotion recognition, biometric categorization, deepfakes. Platform does NOT use these capabilities — algo-trading models process market data, not biometric/emotional data. |
+| **Article 53(2)** | GPAI with systemic risk | Applies to: GPAI models with >10^25 FLOPs training compute OR designated by EU Commission. Platform uses downstream GPAI models (e.g., LLMs for analysis), does NOT train foundation models at systemic risk scale. |
+| **Article 6** | High-Risk classification rules | Platform NOT a safety component, NOT in Annex III use cases. Algo-trading = financial services, but NOT "creditworthiness" (Annex III, 5b) or "life/health insurance" (Annex III, 5a). |
+| **Annex I** | Harmonised legislation | No CE marking required — platform is NOT a product under EU harmonised legislation (Machinery, Medical Devices, etc.). |
+
+**Legal Opinion Summary:**
+> The platform operates as a **Software Provider** offering tools for algorithmic trading. Users connect their own brokerage accounts; the platform does NOT hold assets or execute trades on behalf of clients. Per EU AI Act 2024/1689:
+> - Classification: **GPAI Provider** (Article 53)
+> - NOT High-Risk AI System — algorithmic trading absent from Annex III
+> - High-Risk modules = **voluntary overcompliance** for B2B enterprise clients
+
 ---
 ## 3. TARGET ARCHITECTURE
 ### 3.1 Directory Structure
 ```
 services/ai_act/
 ├── __init__.py                    # Facade with lazy loading + TYPE_CHECKING
-├── __init__.pyi                   # NEW: Stub file for IDE/mypy
-├── config.py                      # Thread-safe config via contextvars
+├── __init__.pyi                   # Stub file for IDE/mypy
+├── config.py                      # Thread-safe config via contextvars + ENV override
+├── exceptions.py                  # NEW: Custom exceptions (EnterpriseNotAvailableError)
 ├── _compat.py                     # Backward compatibility with full aliases
-├── _version.py                    # NEW: Version and deprecation constants
+├── _version.py                    # Version and deprecation constants
+├── _cache.py                      # NEW: Module cache with invalidation
 ├── core/                          # Mandatory GPAI modules (Art. 50, 53)
 │   ├── __init__.py
 │   ├── __init__.pyi               # Stub file
@@ -61,8 +88,9 @@ services/ai_act/
 │   ├── user_acknowledgment.py
 │   └── gpai_technical_docs.py     # NEW: Art.53(1)(a), Annex XI only
 └── enterprise/                    # Optional High-Risk modules
-    ├── __init__.py                # Lazy loading via __getattr__
+    ├── __init__.py                # Lazy loading via __getattr__ + config check
     ├── __init__.pyi               # Stub file
+    ├── _guard.py                  # NEW: Enterprise access guard (import-time check)
     ├── risk_management.py
     ├── risk_registry.py           # Imports from .risk_management (relative)
     ├── human_oversight.py
@@ -79,20 +107,170 @@ services/ai_act/
     ├── conformity_assessment.py
     └── high_risk_technical_docs.py # NEW: Art.11, Annex IV
 ```
-### 3.2 Configuration Model (Thread-Safe)
+### 3.2 Custom Exceptions
+```python
+# services/ai_act/exceptions.py
+"""
+Custom exceptions for AI Act compliance module.
+"""
+from __future__ import annotations
+
+
+class AIActComplianceError(Exception):
+    """Base exception for AI Act compliance errors."""
+    pass
+
+
+class EnterpriseNotAvailableError(AIActComplianceError):
+    """
+    Raised when enterprise module is accessed without proper license/config.
+
+    This is a BLOCKING error, not a warning. Enterprise modules are
+    optional features for B2B clients and require explicit enablement.
+    """
+
+    def __init__(self, module_name: str, current_level: str):
+        self.module_name = module_name
+        self.current_level = current_level
+        super().__init__(
+            f"Enterprise module '{module_name}' is not available. "
+            f"Current compliance level: {current_level}. "
+            f"To use enterprise features, set AIACT_COMPLIANCE_LEVEL=enterprise "
+            f"or configure AIActComplianceConfig(level=AIActComplianceLevel.ENTERPRISE). "
+            f"Enterprise modules are optional High-Risk compliance features for B2B clients."
+        )
+
+
+class ConfigurationError(AIActComplianceError):
+    """Raised when configuration is invalid."""
+    pass
+
+
+class ModuleLoadError(AIActComplianceError):
+    """Raised when enterprise module fails to load."""
+
+    def __init__(self, module_name: str, original_error: Exception):
+        self.module_name = module_name
+        self.original_error = original_error
+        super().__init__(
+            f"Failed to load enterprise module '{module_name}': {original_error}. "
+            f"This may indicate a missing dependency or code error."
+        )
+```
+
+### 3.3 Module Cache with Invalidation
+```python
+# services/ai_act/_cache.py
+"""
+Thread-safe module cache with invalidation support.
+"""
+from __future__ import annotations
+import threading
+from typing import Any, Optional
+import importlib
+
+
+class ModuleCache:
+    """
+    Thread-safe cache for lazily loaded enterprise modules.
+
+    Supports invalidation for testing and hot-reload scenarios.
+    """
+
+    def __init__(self):
+        self._cache: dict[str, Any] = {}
+        self._lock = threading.RLock()
+
+    def get(self, module_name: str) -> Optional[Any]:
+        """Get cached module or None."""
+        with self._lock:
+            return self._cache.get(module_name)
+
+    def set(self, module_name: str, module: Any) -> None:
+        """Cache a loaded module."""
+        with self._lock:
+            self._cache[module_name] = module
+
+    def load_or_get(self, full_module_path: str) -> Any:
+        """
+        Load module if not cached, otherwise return cached.
+
+        Args:
+            full_module_path: e.g., "services.ai_act.enterprise.risk_management"
+
+        Returns:
+            Loaded module object
+        """
+        module_name = full_module_path.split(".")[-1]
+
+        with self._lock:
+            if module_name not in self._cache:
+                self._cache[module_name] = importlib.import_module(full_module_path)
+            return self._cache[module_name]
+
+    def invalidate(self, module_name: Optional[str] = None) -> None:
+        """
+        Invalidate cached module(s).
+
+        Args:
+            module_name: Specific module to invalidate, or None for all
+        """
+        with self._lock:
+            if module_name is None:
+                self._cache.clear()
+            elif module_name in self._cache:
+                del self._cache[module_name]
+
+    def is_loaded(self, module_name: str) -> bool:
+        """Check if module is in cache."""
+        with self._lock:
+            return module_name in self._cache
+
+    @property
+    def loaded_modules(self) -> list[str]:
+        """List of currently loaded module names."""
+        with self._lock:
+            return list(self._cache.keys())
+
+
+# Global cache instance
+_enterprise_cache = ModuleCache()
+
+
+def get_enterprise_cache() -> ModuleCache:
+    """Get the global enterprise module cache."""
+    return _enterprise_cache
+
+
+def invalidate_enterprise_cache() -> None:
+    """Invalidate all cached enterprise modules (for testing)."""
+    _enterprise_cache.invalidate()
+```
+
+### 3.4 Configuration Model (Thread-Safe with ENV Override)
 ```python
 # services/ai_act/config.py
 """
 Thread-safe AI Act compliance configuration using contextvars.
+
+Features:
+    - Thread/async-safe via contextvars (PEP 567)
+    - Environment variable override (AIACT_COMPLIANCE_LEVEL)
+    - Serialization support (to_dict/from_dict) for persistence
+    - Validation with normalization
+
 References:
     - PEP 567: Context Variables
     - https://docs.python.org/3/library/contextvars.html
 """
 from __future__ import annotations
 import contextvars
+import os
 from enum import Enum
-from typing import Set, Optional, Any
+from typing import Set, Optional, Any, Dict
 from pydantic import BaseModel, Field, field_validator
+
+from services.ai_act.exceptions import ConfigurationError
 class AIActComplianceLevel(str, Enum):
     """EU AI Act compliance levels based on business model."""
     GPAI_ONLY = "gpai"           # Art. 50 + 53 only (SaaS default)
@@ -189,6 +367,84 @@ class AIActComplianceConfig(BaseModel):
         if self.level == AIActComplianceLevel.ENTERPRISE:
             return True
         return module_name in self.get_enabled_enterprise_modules()
+
+    # =========================================================================
+    # Serialization Methods
+    # =========================================================================
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serialize config to dictionary for persistence (YAML, JSON, DB).
+
+        Returns:
+            Dictionary with all config values
+        """
+        return {
+            "level": self.level.value,
+            "enable_risk_management": self.enable_risk_management,
+            "enable_human_oversight": self.enable_human_oversight,
+            "enable_accuracy_metrics": self.enable_accuracy_metrics,
+            "enable_robustness_testing": self.enable_robustness_testing,
+            "enable_explainability": self.enable_explainability,
+            "enable_data_governance": self.enable_data_governance,
+            "enable_logging_system": self.enable_logging_system,
+            "enable_qms": self.enable_qms,
+            "enable_testing_framework": self.enable_testing_framework,
+            "enable_cybersecurity": self.enable_cybersecurity,
+            "enable_post_market": self.enable_post_market,
+            "enable_conformity": self.enable_conformity,
+            "log_retention_months": self.log_retention_months,
+            "audit_trail_enabled": self.audit_trail_enabled,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "AIActComplianceConfig":
+        """
+        Deserialize config from dictionary.
+
+        Args:
+            data: Dictionary with config values
+
+        Returns:
+            AIActComplianceConfig instance
+
+        Raises:
+            ConfigurationError: If data is invalid
+        """
+        try:
+            return cls(**data)
+        except Exception as e:
+            raise ConfigurationError(f"Invalid config data: {e}") from e
+
+    @classmethod
+    def from_yaml_section(cls, yaml_data: Dict[str, Any]) -> "AIActComplianceConfig":
+        """
+        Create config from YAML section (e.g., from CommonRunConfig).
+
+        Handles nested structure like:
+            ai_act:
+              level: enterprise
+              modules:
+                risk_management: true
+                human_oversight: false
+        """
+        if not yaml_data:
+            return cls()
+
+        # Flatten nested modules if present
+        flat_data = {"level": yaml_data.get("level", "gpai")}
+        modules = yaml_data.get("modules", {})
+
+        for key, value in modules.items():
+            flat_key = f"enable_{key}"
+            if flat_key in cls.model_fields:
+                flat_data[flat_key] = value
+
+        # Copy non-nested fields
+        for key in ["log_retention_months", "audit_trail_enabled"]:
+            if key in yaml_data:
+                flat_data[key] = yaml_data[key]
+
+        return cls.from_dict(flat_data)
 # =============================================================================
 # Thread-Safe Context Variable
 # =============================================================================
@@ -196,12 +452,62 @@ _ai_act_config_var: contextvars.ContextVar[AIActComplianceConfig] = contextvars.
     "ai_act_config",
     default=AIActComplianceConfig()
 )
+# =============================================================================
+# Environment Variable Override
+# =============================================================================
+_ENV_VAR_NAME = "AIACT_COMPLIANCE_LEVEL"
+_ENV_LEVEL_MAPPING = {
+    "gpai": AIActComplianceLevel.GPAI_ONLY,
+    "gpai_only": AIActComplianceLevel.GPAI_ONLY,
+    "enterprise": AIActComplianceLevel.ENTERPRISE,
+    "custom": AIActComplianceLevel.CUSTOM,
+}
+
+
+def _get_env_override() -> Optional[AIActComplianceLevel]:
+    """
+    Get compliance level override from environment variable.
+
+    Returns:
+        AIActComplianceLevel if valid env var set, None otherwise
+    """
+    env_value = os.environ.get(_ENV_VAR_NAME, "").lower().strip()
+    if not env_value:
+        return None
+    if env_value not in _ENV_LEVEL_MAPPING:
+        import warnings
+        warnings.warn(
+            f"Invalid {_ENV_VAR_NAME}='{env_value}'. "
+            f"Valid values: {list(_ENV_LEVEL_MAPPING.keys())}. "
+            f"Ignoring environment override.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return None
+    return _ENV_LEVEL_MAPPING[env_value]
+
+
 def get_ai_act_config() -> AIActComplianceConfig:
     """
     Get current AI Act config for this context.
+
+    Resolution order:
+        1. Environment variable (AIACT_COMPLIANCE_LEVEL) - highest priority
+        2. Context variable (set via set_ai_act_config or context manager)
+        3. Default config (GPAI_ONLY)
+
     Thread-safe: each thread/async context has its own config.
     """
-    return _ai_act_config_var.get()
+    config = _ai_act_config_var.get()
+
+    # Check for environment override
+    env_level = _get_env_override()
+    if env_level is not None and env_level != config.level:
+        # Create new config with overridden level
+        # Note: This doesn't modify the context var, just returns override
+        return config.model_copy(update={"level": env_level})
+
+    return config
 def set_ai_act_config(config: AIActComplianceConfig) -> contextvars.Token[AIActComplianceConfig]:
     """
     Set AI Act config for this context.
@@ -372,27 +678,143 @@ def get_all_enterprise_names() -> list[str]:
     """Get list of all enterprise export names."""
     return list(ENTERPRISE_MODULE_ALIASES.keys())
 ```
-### 3.5 Enterprise Package with Lazy Loading
+### 3.5 Enterprise Access Guard
+```python
+# services/ai_act/enterprise/_guard.py
+"""
+Enterprise module access guard.
+
+This module is imported at the top of every enterprise module to enforce
+access control. It raises EnterpriseNotAvailableError if the current
+config level is GPAI_ONLY.
+
+Usage in enterprise modules:
+    from services.ai_act.enterprise._guard import require_enterprise_access
+    require_enterprise_access(__name__)  # Call at module level
+
+Design Decision:
+    We use RuntimeError (via EnterpriseNotAvailableError) instead of
+    DeprecationWarning because enterprise modules are a B2B feature
+    that requires explicit enablement. Silent warnings could lead to
+    unintended usage and compliance issues.
+"""
+from __future__ import annotations
+import os
+from typing import Optional
+
+# Avoid circular import - only import what we need
+from services.ai_act.exceptions import EnterpriseNotAvailableError
+
+
+def require_enterprise_access(module_name: str) -> None:
+    """
+    Enforce enterprise access at module import time.
+
+    Args:
+        module_name: The __name__ of the calling module
+
+    Raises:
+        EnterpriseNotAvailableError: If enterprise features are not enabled
+
+    Note:
+        This check happens at IMPORT TIME, not at runtime.
+        Once a module is imported, subsequent usage doesn't re-check.
+        This is intentional for performance.
+    """
+    # Defer import to avoid circular dependency
+    from services.ai_act.config import get_ai_act_config, AIActComplianceLevel
+
+    config = get_ai_act_config()
+
+    if config.level == AIActComplianceLevel.GPAI_ONLY:
+        # Extract short module name for cleaner error message
+        short_name = module_name.split(".")[-1]
+        raise EnterpriseNotAvailableError(
+            module_name=short_name,
+            current_level=config.level.value,
+        )
+
+
+def is_enterprise_enabled_for_module(module_name: str) -> bool:
+    """
+    Check if enterprise access is enabled for a specific module.
+
+    Useful for conditional logic without raising exceptions.
+
+    Args:
+        module_name: Module name to check (e.g., "risk_management")
+
+    Returns:
+        True if module is enabled, False otherwise
+    """
+    from services.ai_act.config import get_ai_act_config
+
+    config = get_ai_act_config()
+    return config.is_module_enabled(module_name)
+
+
+# =============================================================================
+# Testing Support
+# =============================================================================
+_GUARD_DISABLED_FOR_TESTING: bool = False
+
+
+def disable_guard_for_testing() -> None:
+    """
+    Disable the enterprise guard for testing purposes.
+
+    WARNING: Only use in test fixtures, never in production code.
+    """
+    global _GUARD_DISABLED_FOR_TESTING
+    _GUARD_DISABLED_FOR_TESTING = True
+
+
+def enable_guard_after_testing() -> None:
+    """Re-enable the enterprise guard after testing."""
+    global _GUARD_DISABLED_FOR_TESTING
+    _GUARD_DISABLED_FOR_TESTING = False
+
+
+def _is_guard_active() -> bool:
+    """Check if guard is currently active (not disabled for testing)."""
+    return not _GUARD_DISABLED_FOR_TESTING
+```
+
+### 3.6 Enterprise Package with Lazy Loading and Config Check
 ```python
 # services/ai_act/enterprise/__init__.py
 """
 EU AI Act Enterprise Compliance Modules (High-Risk).
+
+IMPORTANT: This package is OPTIONAL and requires explicit enablement.
+Attempting to import from this package in GPAI_ONLY mode will raise
+EnterpriseNotAvailableError.
+
 Implements lazy loading to avoid importing all 15 modules at once.
+
 Legal Basis:
     - Articles 9, 14, 15, 17, 43, 72 apply to High-Risk AI Systems (Annex III)
     - Algorithmic trading NOT in Annex III
     - These modules provide VOLUNTARY overcompliance for B2B clients
+
 Usage:
-    # Direct import (recommended - only loads requested module):
-    from services.ai_act.enterprise import AIActRiskManager
-    # Via facade with config:
+    # First, enable enterprise mode:
+    export AIACT_COMPLIANCE_LEVEL=enterprise
+
+    # Or programmatically:
     from services.ai_act.config import ai_act_config_context, AIActComplianceConfig, AIActComplianceLevel
     with ai_act_config_context(AIActComplianceConfig(level=AIActComplianceLevel.ENTERPRISE)):
-        from services.ai_act import AIActRiskManager
+        from services.ai_act.enterprise import AIActRiskManager
+
+    # Direct import ONLY works if enterprise is enabled:
+    from services.ai_act.enterprise import AIActRiskManager  # Raises if GPAI_ONLY
 """
 from __future__ import annotations
 from typing import Any, List, TYPE_CHECKING
 import importlib
+
+from services.ai_act.exceptions import EnterpriseNotAvailableError, ModuleLoadError
+from services.ai_act._cache import get_enterprise_cache
 # =============================================================================
 # Lazy Loading via __getattr__ (PEP 562)
 # =============================================================================
@@ -489,22 +911,70 @@ _NAME_TO_MODULE: dict[str, str] = {}
 for module, names in _MODULE_EXPORTS.items():
     for name in names:
         _NAME_TO_MODULE[name] = module
-# Cache for loaded modules
-_loaded_modules: dict[str, Any] = {}
+# Use thread-safe cache from _cache.py instead of module-level dict
+# _loaded_modules is replaced by get_enterprise_cache()
+
+
+def _check_enterprise_access(name: str) -> None:
+    """
+    Check if enterprise access is allowed before loading module.
+
+    Raises:
+        EnterpriseNotAvailableError: If in GPAI_ONLY mode
+    """
+    from services.ai_act.config import get_ai_act_config, AIActComplianceLevel
+    from services.ai_act.enterprise._guard import _is_guard_active
+
+    # Skip check if guard is disabled for testing
+    if not _is_guard_active():
+        return
+
+    config = get_ai_act_config()
+
+    if config.level == AIActComplianceLevel.GPAI_ONLY:
+        raise EnterpriseNotAvailableError(
+            module_name=name,
+            current_level=config.level.value,
+        )
+
+
 def __getattr__(name: str) -> Any:
     """
     Lazy load enterprise modules on first access.
+
+    IMPORTANT: This function enforces enterprise access control.
+    Attempting to access any attribute in GPAI_ONLY mode will raise
+    EnterpriseNotAvailableError.
+
     Only imports the specific module needed, not all 15.
+
+    Args:
+        name: Attribute name (e.g., "AIActRiskManager")
+
+    Returns:
+        The requested attribute from the appropriate module
+
+    Raises:
+        EnterpriseNotAvailableError: If enterprise features are not enabled
+        AttributeError: If name is not a valid enterprise export
+        ModuleLoadError: If module fails to load (wraps ImportError)
     """
     if name not in _NAME_TO_MODULE:
         raise AttributeError(f"module 'services.ai_act.enterprise' has no attribute '{name}'")
+
+    # CRITICAL: Check enterprise access BEFORE loading module
+    _check_enterprise_access(name)
+
     module_name = _NAME_TO_MODULE[name]
-    # Check cache first
-    if module_name not in _loaded_modules:
-        _loaded_modules[module_name] = importlib.import_module(
-            f"services.ai_act.enterprise.{module_name}"
-        )
-    return getattr(_loaded_modules[module_name], name)
+    cache = get_enterprise_cache()
+
+    # Try to load from cache or import
+    try:
+        full_path = f"services.ai_act.enterprise.{module_name}"
+        module = cache.load_or_get(full_path)
+        return getattr(module, name)
+    except ImportError as e:
+        raise ModuleLoadError(module_name=module_name, original_error=e) from e
 def __dir__() -> List[str]:
     """Return all available exports for IDE autocompletion."""
     return list(_NAME_TO_MODULE.keys())
@@ -872,6 +1342,7 @@ class GPAIDocumentationGenerator:
 """
 High-Risk AI Technical Documentation (Article 11, Annex IV).
 Required ONLY for High-Risk AI systems per Annex III.
+
 Annex IV Required Elements:
     1. General description of the AI system
     2. Detailed description of elements and development process
@@ -879,16 +1350,23 @@ Annex IV Required Elements:
     4. Performance metrics appropriateness
     5. Risk management system description
     6. Changes made to the system
+
 References:
     - Article 11: https://artificialintelligenceact.eu/article/11/
     - Annex IV: https://artificialintelligenceact.eu/annex/4/
 """
 from __future__ import annotations
 from enum import Enum
-# Import from enterprise siblings (relative imports)
-from .risk_management import AIActRiskManager
-from .human_oversight import HumanOversightSystem
-from .data_governance import DataGovernanceFramework
+from typing import TYPE_CHECKING, Optional
+
+# CRITICAL: Use TYPE_CHECKING to avoid circular imports
+# Runtime imports are deferred to methods that need them
+if TYPE_CHECKING:
+    from .risk_management import AIActRiskManager
+    from .human_oversight import HumanOversightSystem
+    from .data_governance import DataGovernanceFramework
+
+
 class AnnexIVSection(Enum):
     GENERAL_DESCRIPTION = "general_description"
     ALGORITHM_AND_DATA = "algorithm_and_data"
@@ -898,20 +1376,60 @@ class AnnexIVSection(Enum):
     CHANGE_LOG = "change_log"
     HUMAN_OVERSIGHT = "human_oversight"  # References enterprise module
     DATA_GOVERNANCE = "data_governance"  # References enterprise module
+
+
 class HighRiskDocumentationGenerator:
     """Generate Annex IV compliant documentation for High-Risk AI systems."""
-    # ... implementation with enterprise dependencies
+
+    def __init__(
+        self,
+        risk_manager: Optional["AIActRiskManager"] = None,
+        oversight_system: Optional["HumanOversightSystem"] = None,
+        data_framework: Optional["DataGovernanceFramework"] = None,
+    ):
+        """
+        Initialize with optional enterprise components.
+
+        Args:
+            risk_manager: Risk management system (Art. 9)
+            oversight_system: Human oversight system (Art. 14)
+            data_framework: Data governance framework (Art. 10)
+
+        Note:
+            Dependencies are injected, not imported directly.
+            This avoids circular imports and allows for testing.
+        """
+        self._risk_manager = risk_manager
+        self._oversight_system = oversight_system
+        self._data_framework = data_framework
+
+    def _get_risk_manager(self) -> "AIActRiskManager":
+        """Lazy import of risk_management if not injected."""
+        if self._risk_manager is None:
+            from .risk_management import create_risk_manager
+            self._risk_manager = create_risk_manager()
+        return self._risk_manager
+
+    # ... rest of implementation
 ```
 ---
-## 5. TEST FIXTURES (Thread-Safe)
+## 5. TEST FIXTURES (Thread-Safe with Enterprise Guard Support)
 ```python
 # tests/conftest_ai_act.py
 """
 AI Act test fixtures with proper isolation.
-Each test gets clean config state via contextvars.
+
+Features:
+    - Thread-safe config via contextvars
+    - Enterprise guard control for testing
+    - Module cache invalidation between tests
+    - pytest-xdist compatibility
 """
 import pytest
+import os
 from contextvars import copy_context
+from typing import Generator, Callable
+
 from services.ai_act.config import (
     AIActComplianceConfig,
     AIActComplianceLevel,
@@ -919,84 +1437,377 @@ from services.ai_act.config import (
     reset_ai_act_config,
     ai_act_config_context,
 )
+from services.ai_act._cache import invalidate_enterprise_cache
+from services.ai_act.enterprise._guard import (
+    disable_guard_for_testing,
+    enable_guard_after_testing,
+)
+
+
+# =============================================================================
+# Core Fixtures (autouse)
+# =============================================================================
+
+
 @pytest.fixture(autouse=True)
-def reset_ai_act_config_after_test():
+def reset_ai_act_state_after_test() -> Generator[None, None, None]:
     """
-    Reset AI Act config after each test.
+    Reset ALL AI Act state after each test.
+
+    This fixture:
+    1. Sets default config
+    2. Clears environment variable override
+    3. Invalidates module cache
+    4. Re-enables enterprise guard (in case test disabled it)
+
     Uses contextvars token for proper cleanup.
     """
+    # Clear any environment override
+    env_backup = os.environ.pop("AIACT_COMPLIANCE_LEVEL", None)
+
     # Store default config
     default_config = AIActComplianceConfig()
     token = set_ai_act_config(default_config)
+
     yield
-    # Reset to default after test
+
+    # Cleanup in reverse order
     reset_ai_act_config(token)
+    invalidate_enterprise_cache()  # Clear cached modules
+    enable_guard_after_testing()   # Ensure guard is active
+
+    # Restore environment if it was set
+    if env_backup is not None:
+        os.environ["AIACT_COMPLIANCE_LEVEL"] = env_backup
+
+
+# =============================================================================
+# Config Level Fixtures
+# =============================================================================
+
+
 @pytest.fixture
-def ai_act_gpai_config():
-    """GPAI-only config fixture."""
+def ai_act_gpai_config() -> Generator[AIActComplianceConfig, None, None]:
+    """GPAI-only config fixture (default mode)."""
     config = AIActComplianceConfig(level=AIActComplianceLevel.GPAI_ONLY)
     with ai_act_config_context(config):
         yield config
+
+
 @pytest.fixture
-def ai_act_enterprise_config():
-    """Enterprise config fixture."""
+def ai_act_enterprise_config() -> Generator[AIActComplianceConfig, None, None]:
+    """
+    Enterprise config fixture.
+
+    Enables all enterprise modules. Use this for testing enterprise functionality.
+    """
     config = AIActComplianceConfig(level=AIActComplianceLevel.ENTERPRISE)
     with ai_act_config_context(config):
         yield config
+
+
 @pytest.fixture
-def ai_act_custom_config():
-    """Custom config fixture factory."""
-    def _make_config(**kwargs):
+def ai_act_custom_config() -> Callable[..., "ai_act_config_context"]:
+    """
+    Custom config fixture factory.
+
+    Usage:
+        def test_custom_modules(ai_act_custom_config):
+            with ai_act_custom_config(enable_risk_management=True):
+                from services.ai_act.enterprise import AIActRiskManager
+                # Test with only risk_management enabled
+    """
+    def _make_config(**kwargs) -> ai_act_config_context:
         config = AIActComplianceConfig(
             level=AIActComplianceLevel.CUSTOM,
             **kwargs
         )
         return ai_act_config_context(config)
     return _make_config
+
+
+# =============================================================================
+# Enterprise Guard Control Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def disable_enterprise_guard() -> Generator[None, None, None]:
+    """
+    Temporarily disable enterprise guard for testing.
+
+    WARNING: Use only when testing enterprise modules without proper config.
+    The guard will be re-enabled after the test.
+
+    Usage:
+        def test_enterprise_internals(disable_enterprise_guard):
+            # Guard disabled - can import without EnterpriseNotAvailableError
+            from services.ai_act.enterprise.risk_management import AIActRiskManager
+    """
+    disable_guard_for_testing()
+    yield
+    enable_guard_after_testing()
+
+
+@pytest.fixture
+def with_enterprise_env() -> Generator[None, None, None]:
+    """
+    Set AIACT_COMPLIANCE_LEVEL=enterprise via environment.
+
+    Useful for testing environment variable override.
+    """
+    old_value = os.environ.get("AIACT_COMPLIANCE_LEVEL")
+    os.environ["AIACT_COMPLIANCE_LEVEL"] = "enterprise"
+    yield
+    if old_value is None:
+        os.environ.pop("AIACT_COMPLIANCE_LEVEL", None)
+    else:
+        os.environ["AIACT_COMPLIANCE_LEVEL"] = old_value
+
+
 # =============================================================================
 # Test Isolation for Parallel Execution (pytest-xdist)
 # =============================================================================
+
+
 @pytest.fixture(scope="function")
-def isolated_context():
+def isolated_context() -> Callable:
     """
     Run test in isolated context for pytest-xdist compatibility.
-    Each test gets its own contextvars context.
+
+    Each test gets its own contextvars context, preventing
+    cross-test contamination in parallel execution.
+
+    Usage:
+        def test_parallel_safe(isolated_context):
+            def inner_test():
+                config = get_ai_act_config()
+                assert config.level == AIActComplianceLevel.GPAI_ONLY
+            isolated_context(inner_test)
     """
     ctx = copy_context()
-    def run_in_context(func, *args, **kwargs):
+
+    def run_in_context(func: Callable, *args, **kwargs):
         return ctx.run(func, *args, **kwargs)
+
     return run_in_context
+
+
+# =============================================================================
+# Exception Testing Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def expect_enterprise_error():
+    """
+    Context manager for testing EnterpriseNotAvailableError.
+
+    Usage:
+        def test_gpai_blocks_enterprise(expect_enterprise_error):
+            with expect_enterprise_error("risk_management"):
+                from services.ai_act.enterprise import AIActRiskManager
+    """
+    from contextlib import contextmanager
+    from services.ai_act.exceptions import EnterpriseNotAvailableError
+
+    @contextmanager
+    def _expect_error(module_name: str):
+        import pytest
+        with pytest.raises(EnterpriseNotAvailableError) as exc_info:
+            yield
+        assert exc_info.value.module_name == module_name
+        assert exc_info.value.current_level == "gpai"
+
+    return _expect_error
+
+
+# =============================================================================
+# Cleanup Utilities
+# =============================================================================
+
+
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line(
+        "markers",
+        "enterprise: mark test as requiring enterprise config"
+    )
+    config.addinivalue_line(
+        "markers",
+        "gpai_only: mark test as testing GPAI-only behavior"
+    )
 ```
 ---
-## 6. INTERNAL IMPORT UPDATES
-### 6.1 enterprise/risk_registry.py
+## 6. INTERNAL IMPORT UPDATES (TYPE_CHECKING Pattern)
+
+### 6.1 Pattern: TYPE_CHECKING for Cross-Module Dependencies
+
+All enterprise modules that import from other enterprise modules MUST use the TYPE_CHECKING pattern to prevent circular imports:
+
 ```python
-# Before:
-from services.ai_act.risk_management import (
-    AIActRiskCategory,
-    AIActRiskSeverity,
-    ...
-)
-# After (relative import within enterprise package):
-from .risk_management import (
-    AIActRiskCategory,
-    AIActRiskSeverity,
-    ...
-)
+# Pattern for enterprise modules with cross-dependencies
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
+
+# Runtime-safe imports (no circular dependencies)
+from .shared_types import SomeEnum, SomeDataclass
+
+# TYPE_CHECKING block for type hints only (not executed at runtime)
+if TYPE_CHECKING:
+    from .risk_management import AIActRiskManager
+    from .human_oversight import HumanOversightSystem
+
+class MyClass:
+    def __init__(self, risk_manager: Optional["AIActRiskManager"] = None):
+        # String annotation allows forward reference
+        self._risk_manager = risk_manager
+
+    def _get_risk_manager(self) -> "AIActRiskManager":
+        # Lazy import at runtime when actually needed
+        if self._risk_manager is None:
+            from .risk_management import create_risk_manager
+            self._risk_manager = create_risk_manager()
+        return self._risk_manager
 ```
-### 6.2 All enterprise modules use relative imports
+
+### 6.2 enterprise/risk_registry.py
 ```python
-# enterprise/conformity_assessment.py
-from .risk_management import AIActRiskManager
-from .human_oversight import HumanOversightSystem
-from .data_governance import DataGovernanceFramework
-from .logging_system import AIActLogger
-# enterprise/qms.py
-from .logging_system import AIActLogger, AIActLogEventType
-# enterprise/post_market_monitoring.py
-from .logging_system import AIActLogger
-# enterprise/testing_framework.py
-from .accuracy_metrics import AccuracyMetric, MetricType
+"""Risk Registry - depends on risk_management types."""
+from __future__ import annotations
+from typing import TYPE_CHECKING, List, Optional
+from enum import Enum
+from dataclasses import dataclass
+
+# TYPE_CHECKING for type hints
+if TYPE_CHECKING:
+    from .risk_management import (
+        AIActRiskCategory,
+        AIActRiskSeverity,
+        AIActRiskLikelihood,
+    )
+
+# Runtime imports - only what's needed for actual execution
+# Defer heavy imports to methods
+
+
+class RiskStatus(Enum):
+    """Risk lifecycle status."""
+    IDENTIFIED = "identified"
+    ASSESSED = "assessed"
+    MITIGATED = "mitigated"
+    ACCEPTED = "accepted"
+    CLOSED = "closed"
+
+
+@dataclass
+class RiskEntry:
+    """Single risk entry in registry."""
+    risk_id: str
+    category: "AIActRiskCategory"  # Forward reference (string)
+    severity: "AIActRiskSeverity"
+    likelihood: "AIActRiskLikelihood"
+    status: RiskStatus
+    # ...
+
+
+class RiskRegistry:
+    """Registry for tracking risks."""
+
+    def add_risk(
+        self,
+        category: "AIActRiskCategory",
+        severity: "AIActRiskSeverity",
+        likelihood: "AIActRiskLikelihood",
+    ) -> RiskEntry:
+        # Runtime import when method is called
+        from .risk_management import AIActRiskCategory  # noqa: F811
+        # Validation uses runtime import
+        if not isinstance(category, AIActRiskCategory):
+            raise TypeError(f"Expected AIActRiskCategory, got {type(category)}")
+        # ...
+```
+
+### 6.3 All Enterprise Modules with Cross-Dependencies
+
+| Module | Dependencies | Pattern |
+|--------|-------------|---------|
+| `risk_registry.py` | risk_management | TYPE_CHECKING + lazy import |
+| `conformity_assessment.py` | risk_management, human_oversight, data_governance, logging_system | TYPE_CHECKING + DI |
+| `qms.py` | logging_system | TYPE_CHECKING + lazy import |
+| `post_market_monitoring.py` | logging_system | TYPE_CHECKING + lazy import |
+| `testing_framework.py` | accuracy_metrics | TYPE_CHECKING + lazy import |
+| `high_risk_technical_docs.py` | risk_management, human_oversight, data_governance | TYPE_CHECKING + DI |
+
+**DI = Dependency Injection**: Dependencies passed to `__init__`, not imported at module level.
+
+### 6.4 Refactored conformity_assessment.py Example
+```python
+"""Conformity Assessment - heavy cross-dependencies, uses DI pattern."""
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional, Protocol
+from dataclasses import dataclass
+from enum import Enum
+
+if TYPE_CHECKING:
+    from .risk_management import AIActRiskManager
+    from .human_oversight import HumanOversightSystem
+    from .data_governance import DataGovernanceFramework
+    from .logging_system import AIActLogger
+
+
+# Protocol for dependency injection (allows duck typing)
+class RiskManagerProtocol(Protocol):
+    """Protocol for risk manager dependency."""
+    def get_risk_summary(self) -> dict: ...
+
+
+class ConformitySelfAssessment:
+    """
+    Self-assessment framework for High-Risk AI conformity.
+
+    Uses Dependency Injection to avoid circular imports and
+    enable easier testing with mocks.
+    """
+
+    def __init__(
+        self,
+        risk_manager: Optional["AIActRiskManager"] = None,
+        oversight: Optional["HumanOversightSystem"] = None,
+        data_gov: Optional["DataGovernanceFramework"] = None,
+        logger: Optional["AIActLogger"] = None,
+    ):
+        """
+        Initialize with optional dependencies.
+
+        If not provided, dependencies are lazily created when needed.
+        This allows:
+        1. Testing with mocks
+        2. Avoiding circular imports
+        3. Delayed initialization (performance)
+        """
+        self._risk_manager = risk_manager
+        self._oversight = oversight
+        self._data_gov = data_gov
+        self._logger = logger
+
+    @property
+    def risk_manager(self) -> "AIActRiskManager":
+        """Lazy-load risk manager."""
+        if self._risk_manager is None:
+            from .risk_management import create_risk_manager
+            self._risk_manager = create_risk_manager()
+        return self._risk_manager
+
+    @property
+    def oversight(self) -> "HumanOversightSystem":
+        """Lazy-load oversight system."""
+        if self._oversight is None:
+            from .human_oversight import create_human_oversight_system
+            self._oversight = create_human_oversight_system()
+        return self._oversight
+
+    # ... rest of implementation
 ```
 ---
 ## 7. ROLLBACK PLAN (Improved)
@@ -1057,18 +1868,21 @@ except DeprecationWarning as e:
 "
 ```
 ---
-## 8. MIGRATION CHECKLIST v2.0
+## 8. MIGRATION CHECKLIST v2.1
 ### Pre-Migration
 - [ ] Create feature branch: `feature/ai-act-tiered-architecture`
 - [ ] Create backup tag: `backup/ai-act-before-tiered-YYYYMMDD`
 - [ ] Run baseline tests and save results
 - [ ] Document current import patterns with grep
-### Phase 1: Core Infrastructure
+### Phase 1: Core Infrastructure (NEW FILES)
 - [ ] Create `services/ai_act/_version.py`
-- [ ] Create `services/ai_act/config.py` with contextvars
+- [ ] Create `services/ai_act/exceptions.py` with `EnterpriseNotAvailableError`
+- [ ] Create `services/ai_act/_cache.py` with `ModuleCache`
+- [ ] Create `services/ai_act/config.py` with contextvars + ENV override
 - [ ] Create `services/ai_act/_compat.py` with full mapping
 - [ ] Verify: `python -c "from services.ai_act.config import ai_act_config_context"`
-- [ ] Commit: "feat(ai-act): add thread-safe config with contextvars"
+- [ ] Verify: `python -c "from services.ai_act.exceptions import EnterpriseNotAvailableError"`
+- [ ] Commit: "feat(ai-act): add thread-safe config with contextvars and exceptions"
 ### Phase 2: Create Core Package
 - [ ] `mkdir -p services/ai_act/core`
 - [ ] Create `services/ai_act/core/__init__.py`
@@ -1083,7 +1897,8 @@ except DeprecationWarning as e:
 - [ ] Commit: "feat(ai-act): create core package with GPAI modules"
 ### Phase 3: Create Enterprise Package
 - [ ] `mkdir -p services/ai_act/enterprise`
-- [ ] Create `services/ai_act/enterprise/__init__.py` with lazy loading
+- [ ] Create `services/ai_act/enterprise/_guard.py` with access control
+- [ ] Create `services/ai_act/enterprise/__init__.py` with lazy loading + config check
 - [ ] Create `services/ai_act/enterprise/__init__.pyi`
 - [ ] `git mv risk_management.py enterprise/`
 - [ ] `git mv risk_registry.py enterprise/`
@@ -1103,28 +1918,50 @@ except DeprecationWarning as e:
 - [ ] Delete original `technical_documentation.py`
 - [ ] Verify: `python -c "from services.ai_act.enterprise import AIActRiskManager"`
 - [ ] Commit: "feat(ai-act): create enterprise package with lazy loading"
-### Phase 4: Update Internal Imports
-- [ ] Update `enterprise/risk_registry.py`: `from .risk_management import ...`
-- [ ] Update `enterprise/conformity_assessment.py`: relative imports
-- [ ] Update `enterprise/qms.py`: relative imports
-- [ ] Update `enterprise/post_market_monitoring.py`: relative imports
-- [ ] Update `enterprise/testing_framework.py`: relative imports
-- [ ] Update `enterprise/high_risk_technical_docs.py`: relative imports
+### Phase 4: Update Internal Imports (TYPE_CHECKING Pattern)
+- [ ] Update `enterprise/risk_registry.py`: TYPE_CHECKING + lazy imports
+- [ ] Update `enterprise/conformity_assessment.py`: TYPE_CHECKING + Dependency Injection
+- [ ] Update `enterprise/qms.py`: TYPE_CHECKING + lazy imports
+- [ ] Update `enterprise/post_market_monitoring.py`: TYPE_CHECKING + lazy imports
+- [ ] Update `enterprise/testing_framework.py`: TYPE_CHECKING + lazy imports
+- [ ] Update `enterprise/high_risk_technical_docs.py`: TYPE_CHECKING + DI
 - [ ] Run: `python -m py_compile services/ai_act/enterprise/*.py`
-- [ ] Commit: "refactor(ai-act): update internal imports to relative"
+- [ ] Test circular imports: `python -c "from services.ai_act.enterprise import *"`
+- [ ] Commit: "refactor(ai-act): update imports to TYPE_CHECKING pattern"
 ### Phase 5: Update Facade
-- [ ] Rewrite `services/ai_act/__init__.py`
+- [ ] Rewrite `services/ai_act/__init__.py` with enterprise guard integration
 - [ ] Create `services/ai_act/__init__.pyi`
-- [ ] Verify facade imports
-- [ ] Test deprecation warning
-- [ ] Commit: "feat(ai-act): add facade with deprecation warnings"
+- [ ] Verify facade imports work in GPAI mode
+- [ ] Test EnterpriseNotAvailableError in GPAI mode:
+```bash
+python -c "
+from services.ai_act.config import get_ai_act_config
+print(f'Level: {get_ai_act_config().level}')
+try:
+    from services.ai_act.enterprise import AIActRiskManager
+    print('ERROR: Should have raised EnterpriseNotAvailableError')
+except Exception as e:
+    print(f'OK: {type(e).__name__}: {e}')
+"
+```
+- [ ] Test enterprise mode works:
+```bash
+AIACT_COMPLIANCE_LEVEL=enterprise python -c "
+from services.ai_act.enterprise import AIActRiskManager
+print('OK: Enterprise module loaded')
+"
+```
+- [ ] Commit: "feat(ai-act): add facade with enterprise guard"
 ### Phase 6: Update Tests
-- [ ] Create `tests/conftest_ai_act.py` with fixtures
+- [ ] Create `tests/conftest_ai_act.py` with all fixtures
 - [ ] Update test imports to use explicit paths
 - [ ] Add import to main `conftest.py`: `pytest_plugins = ["tests.conftest_ai_act"]`
+- [ ] Add tests for EnterpriseNotAvailableError
+- [ ] Add tests for ENV override
+- [ ] Add tests for cache invalidation
 - [ ] Run: `pytest tests/test_ai_act_*.py -v`
 - [ ] Run parallel: `pytest tests/test_ai_act_*.py -v -n auto`
-- [ ] Commit: "test(ai-act): update fixtures for thread safety"
+- [ ] Commit: "test(ai-act): update fixtures with enterprise guard support"
 ### Phase 7: Integration
 - [ ] Add `ai_act` field to `CommonRunConfig` in `core_config.py`
 - [ ] Update YAML config examples
@@ -1135,15 +1972,43 @@ except DeprecationWarning as e:
 - [ ] Update module docstrings
 - [ ] Create `MIGRATION_GUIDE.md` for users
 - [ ] Commit: "docs(ai-act): update documentation for tiered architecture"
-### Post-Migration
+### Post-Migration Validation
 - [ ] Run full test suite: `pytest tests/test_ai_act_*.py -v`
 - [ ] Run type checking: `mypy services/ai_act/ --strict`
 - [ ] Run parallel tests: `pytest tests/test_ai_act_*.py -n auto`
 - [ ] Verify all 1007+ tests pass
+- [ ] Verify enterprise guard blocks in GPAI mode:
+```bash
+python -c "
+from services.ai_act.exceptions import EnterpriseNotAvailableError
+try:
+    from services.ai_act.enterprise import AIActRiskManager
+    exit(1)  # Should not reach here
+except EnterpriseNotAvailableError:
+    print('PASS: Enterprise correctly blocked in GPAI mode')
+"
+```
+- [ ] Verify ENV override works:
+```bash
+AIACT_COMPLIANCE_LEVEL=enterprise python -c "
+from services.ai_act.enterprise import AIActRiskManager
+print('PASS: ENV override enables enterprise')
+"
+```
+- [ ] Verify cache invalidation works:
+```bash
+python -c "
+from services.ai_act._cache import get_enterprise_cache, invalidate_enterprise_cache
+invalidate_enterprise_cache()
+print(f'PASS: Cache cleared, loaded: {get_enterprise_cache().loaded_modules}')
+"
+```
 - [ ] Create PR for review
-- [ ] After merge: `git tag v5.0.0-ai-act-tiered`
+- [ ] After merge: `git tag v5.1.0-ai-act-tiered`
 ---
 ## 9. RESOLVED ISSUES SUMMARY
+
+### v2.0 Issues (from v1.0)
 | # | Issue | Resolution |
 |---|-------|------------|
 | 1 | Thread safety | `contextvars` instead of global state |
@@ -1159,16 +2024,44 @@ except DeprecationWarning as e:
 | 11 | Article 11 vs 53 | gpai_technical_docs.py (Art.53) vs high_risk_technical_docs.py (Art.11) |
 | 12 | Enterprise loads all | Lazy loading via `__getattr__` + module cache |
 | 13 | No deprecation versioning | `_version.py` with DEPRECATION_VERSION and REMOVAL_DATE |
+
+### v2.1 Issues (from v2.0 review)
+| # | Issue | Resolution |
+|---|-------|------------|
+| 14 | **Enterprise loads without config check** | `_check_enterprise_access()` in `__getattr__` BEFORE loading module |
+| 15 | **Soft warning vs hard block** | `EnterpriseNotAvailableError` (RuntimeError) instead of DeprecationWarning |
+| 16 | **Direct import bypasses guard** | `_guard.py` with `require_enterprise_access()` for module-level check |
+| 17 | **Circular imports in enterprise** | TYPE_CHECKING pattern + Dependency Injection for cross-dependencies |
+| 18 | **No ENV override** | `AIACT_COMPLIANCE_LEVEL` environment variable with priority over config |
+| 19 | **No config serialization** | `to_dict()`, `from_dict()`, `from_yaml_section()` methods |
+| 20 | **No cache invalidation** | `_cache.py` with `ModuleCache` class and `invalidate()` method |
+| 21 | **Test fixture doesn't clean cache** | `reset_ai_act_state_after_test()` fixture clears config + cache + guard |
+| 22 | **No guard control for tests** | `disable_enterprise_guard()` fixture + `_GUARD_DISABLED_FOR_TESTING` flag |
+| 23 | **Art.52/53(2) not documented** | Section 2.3 with explicit out-of-scope justification |
+| 24 | **No graceful error handling** | `ModuleLoadError` wraps ImportError with context |
+| 25 | **No testing markers** | `@pytest.mark.enterprise` and `@pytest.mark.gpai_only` markers |
+
+### Design Decisions
+| Decision | Rationale |
+|----------|-----------|
+| **RuntimeError over Warning** | Enterprise is B2B feature requiring explicit enablement. Silent warnings could lead to compliance issues and accidental usage. |
+| **Import-time guard check** | Performance: check once at import, not every method call. Security: fail fast before code execution. |
+| **TYPE_CHECKING + DI pattern** | Prevents circular imports while maintaining full type safety. DI enables testing with mocks. |
+| **ENV override priority** | Allows DevOps to control compliance level without code changes. Useful for staging/production differences. |
+| **Module cache with invalidation** | Performance: avoid re-importing. Testing: clean state between tests. Hot-reload: support development workflow. |
 ---
-## 10. EXECUTION COMMAND SEQUENCE
+## 10. EXECUTION COMMAND SEQUENCE v2.1
 ```bash
 # Setup
-git checkout -b feature/ai-act-tiered-architecture
+git checkout -b feature/ai-act-tiered-architecture-v2.1
 git tag backup/ai-act-before-tiered-$(date +%Y%m%d)
-# Phase 1: Infrastructure
+
+# Phase 1: Infrastructure (NEW FILES)
 mkdir -p services/ai_act/core services/ai_act/enterprise
+
+# Create _version.py
 cat > services/ai_act/_version.py << 'EOF'
-__version__ = "5.0.0"
+__version__ = "5.1.0"
 __ai_act_compliance_phase__ = 5
 __gpai_compliance_version__ = "3.0.0"
 DEPRECATION_VERSION = "5.0.0"
@@ -1176,7 +2069,14 @@ REMOVAL_VERSION = "6.0.0"
 DEPRECATION_DATE = "2025-01-15"
 REMOVAL_DATE = "2025-07-15"
 EOF
-# Create config.py, _compat.py (from plan sections 3.2, 3.4)
+
+# Create exceptions.py (from plan section 3.2)
+# Create _cache.py (from plan section 3.3)
+# Create config.py with ENV override (from plan section 3.4)
+# Create _compat.py (from plan section 3.x)
+
+git add services/ai_act/_version.py services/ai_act/exceptions.py services/ai_act/_cache.py
+git commit -m "feat(ai-act): add core infrastructure files"
 # Phase 2: Core modules
 git mv services/ai_act/transparency_disclosure.py services/ai_act/core/
 git mv services/ai_act/gpai_model_card.py services/ai_act/core/
@@ -1184,7 +2084,14 @@ git mv services/ai_act/copyright_compliance.py services/ai_act/core/
 git mv services/ai_act/training_data_summary.py services/ai_act/core/
 git mv services/ai_act/user_acknowledgment.py services/ai_act/core/
 # Create gpai_technical_docs.py from technical_documentation.py (GPAI parts only)
-# Phase 3: Enterprise modules
+git commit -m "feat(ai-act): create core package with GPAI modules"
+
+# Phase 3: Enterprise modules with guard
+# Create _guard.py (from plan section 3.5)
+cat > services/ai_act/enterprise/_guard.py << 'EOF'
+# ... content from plan section 3.5
+EOF
+
 git mv services/ai_act/risk_management.py services/ai_act/enterprise/
 git mv services/ai_act/risk_registry.py services/ai_act/enterprise/
 git mv services/ai_act/human_oversight.py services/ai_act/enterprise/
@@ -1201,20 +2108,94 @@ git mv services/ai_act/post_market_monitoring.py services/ai_act/enterprise/
 git mv services/ai_act/conformity_assessment.py services/ai_act/enterprise/
 # Create high_risk_technical_docs.py from technical_documentation.py (High-Risk parts)
 rm services/ai_act/technical_documentation.py
-# Phase 4: Update imports in enterprise modules
-sed -i 's/from services\.ai_act\.risk_management/from .risk_management/g' services/ai_act/enterprise/risk_registry.py
-# ... (repeat for other files)
+git commit -m "feat(ai-act): create enterprise package with access guard"
+
+# Phase 4: Update imports to TYPE_CHECKING pattern
+# Update each enterprise module with cross-dependencies
+# See plan section 6 for detailed patterns
+git commit -m "refactor(ai-act): update imports to TYPE_CHECKING pattern"
+
 # Phase 5-8: Create __init__.py files, stubs, tests, docs
-# Verify
+
+# Verify - GPAI mode (default)
 python -c "from services.ai_act.core import TransparencyDisclosureManager; print('Core OK')"
-python -c "from services.ai_act.enterprise import AIActRiskManager; print('Enterprise OK')"
+
+# Verify - Enterprise should FAIL in default mode
+python -c "
+try:
+    from services.ai_act.enterprise import AIActRiskManager
+    print('ERROR: Should have raised EnterpriseNotAvailableError')
+    exit(1)
+except Exception as e:
+    print(f'OK: {type(e).__name__}')
+"
+
+# Verify - Enterprise should WORK with ENV override
+AIACT_COMPLIANCE_LEVEL=enterprise python -c "
+from services.ai_act.enterprise import AIActRiskManager
+print('Enterprise OK with ENV override')
+"
+
+# Run tests
 pytest tests/test_ai_act_*.py -v --tb=short
 pytest tests/test_ai_act_*.py -v -n auto  # Parallel
 mypy services/ai_act/ --strict
+
 # Commit and push
 git add -A
-git commit -m "feat(ai-act): implement tiered architecture with thread-safe config"
-git push -u origin feature/ai-act-tiered-architecture
+git commit -m "feat(ai-act): implement tiered architecture v2.1 with enterprise guard"
+git push -u origin feature/ai-act-tiered-architecture-v2.1
 ```
 ---
-END OF PLAN v2.0
+## 11. QUICK REFERENCE CARD
+
+### Environment Variable
+```bash
+# Enable enterprise features
+export AIACT_COMPLIANCE_LEVEL=enterprise
+
+# Values: gpai (default), enterprise, custom
+```
+
+### Python Config
+```python
+from services.ai_act.config import (
+    AIActComplianceConfig,
+    AIActComplianceLevel,
+    ai_act_config_context,
+)
+
+# Temporary enterprise mode
+with ai_act_config_context(AIActComplianceConfig(level=AIActComplianceLevel.ENTERPRISE)):
+    from services.ai_act.enterprise import AIActRiskManager
+```
+
+### Import Patterns
+```python
+# GPAI (always available)
+from services.ai_act.core import TransparencyDisclosureManager
+
+# Enterprise (requires enablement)
+# Option 1: ENV variable
+# Option 2: Context manager (see above)
+# Option 3: Global config
+from services.ai_act.config import set_ai_act_config, AIActComplianceConfig, AIActComplianceLevel
+set_ai_act_config(AIActComplianceConfig(level=AIActComplianceLevel.ENTERPRISE))
+from services.ai_act.enterprise import AIActRiskManager
+```
+
+### Testing
+```python
+# Test that enterprise is blocked
+def test_gpai_blocks_enterprise(expect_enterprise_error):
+    with expect_enterprise_error("AIActRiskManager"):
+        from services.ai_act.enterprise import AIActRiskManager
+
+# Test with enterprise enabled
+def test_with_enterprise(ai_act_enterprise_config):
+    from services.ai_act.enterprise import AIActRiskManager
+    assert AIActRiskManager is not None
+```
+
+---
+END OF PLAN v2.1
