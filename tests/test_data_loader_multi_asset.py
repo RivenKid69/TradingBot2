@@ -23,6 +23,17 @@ from pathlib import Path
 from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 
+# Check for pyarrow availability (needed for parquet/feather tests)
+try:
+    import pyarrow
+    HAS_PYARROW = True
+except ImportError:
+    HAS_PYARROW = False
+
+pyarrow_required = pytest.mark.skipif(
+    not HAS_PYARROW, reason="pyarrow required for parquet/feather support"
+)
+
 from data_loader_multi_asset import (
     load_multi_asset_data,
     filter_trading_hours,
@@ -298,6 +309,7 @@ class TestValidateData:
 # Load From File Tests
 # =============================================================================
 
+@pyarrow_required
 class TestLoadFromFile:
     """Tests for loading data from files."""
 
@@ -336,6 +348,7 @@ class TestLoadFromFile:
 class TestLoadMultiAssetData:
     """Tests for multi-asset data loading."""
 
+    @pyarrow_required
     def test_load_crypto_from_parquet(self, sample_crypto_df):
         """Test loading crypto data from parquet files."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -368,6 +381,7 @@ class TestLoadMultiAssetData:
             # Also acceptable
             pass
 
+    @pyarrow_required
     def test_load_with_basic_params(self, sample_crypto_df):
         """Test loading with basic parameters."""
         with tempfile.TemporaryDirectory() as tmpdir:

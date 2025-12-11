@@ -29,6 +29,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+# Skip all tests if pyarrow is not installed (required for parquet/feather operations)
+pytest.importorskip("pyarrow", reason="pyarrow required for parquet/feather support")
+
 from data_loader_multi_asset import (
     AssetClass,
     DataVendor,
