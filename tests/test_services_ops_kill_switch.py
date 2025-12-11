@@ -179,15 +179,27 @@ class TestRecordDuplicate:
 
         assert ops_kill_switch._counters["duplicates"] == 1
 
-    def test_record_duplicate_trips_when_limit_reached(self):
-        """Test recording duplicate trips when limit reached."""
-        ops_kill_switch.init({"duplicate_limit": 2})
+    def test_record_duplicate_trips_when_limit_reached(self, tmp_path):
+        """Test recording duplicate trips when limit reached.
 
-        ops_kill_switch.record_duplicate()
-        ops_kill_switch.record_duplicate()
+        Note: The kill switch uses >= comparison, so with limit=3,
+        trip occurs when counter reaches 3 (after 3rd call).
+        """
+        # Use tmp_path to ensure clean state with fresh paths
+        state_path = tmp_path / "test_dup_state.json"
+        flag_path = tmp_path / "test_dup_flag.txt"
+
+        ops_kill_switch.init({
+            "duplicate_limit": 3,  # Trip when counter >= 3
+            "state_path": str(state_path),
+            "flag_path": str(flag_path),
+        })
+
+        ops_kill_switch.record_duplicate()  # counter=1
+        ops_kill_switch.record_duplicate()  # counter=2
         assert ops_kill_switch._tripped is False
 
-        ops_kill_switch.record_duplicate()
+        ops_kill_switch.record_duplicate()  # counter=3, 3 >= 3 -> trip
         assert ops_kill_switch._tripped is True
 
 

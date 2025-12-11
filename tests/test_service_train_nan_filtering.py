@@ -17,6 +17,9 @@ from typing import Any, Optional
 import pandas as pd
 import pytest
 
+# Skip entire module if pyarrow not available (tests use parquet files)
+pytest.importorskip("pyarrow", reason="pyarrow required for parquet support")
+
 from service_train import ServiceTrain, TrainConfig, Trainer
 from feature_pipe import FeaturePipe
 from core_config import FeatureSpec

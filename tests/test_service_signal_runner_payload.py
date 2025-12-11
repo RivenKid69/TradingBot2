@@ -14,6 +14,8 @@ def _make_worker() -> _Worker:
     worker._cooldown_settings = CooldownSettings()
     worker._symbol_cooldowns = {}
     worker._symbol_cooldown_set_ts = {}
+    worker._order_meta_fallback = {}  # Required for _build_envelope_payload
+    worker._order_meta_sidecar = {}   # Required for _ensure_order_meta
     return worker
 
 

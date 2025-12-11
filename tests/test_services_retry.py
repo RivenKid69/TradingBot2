@@ -324,7 +324,12 @@ class TestRetryAsyncDecorator:
         mock_reset.assert_called_once()
 
     async def test_retry_async_with_backoff(self):
-        """Test retry waits between attempts."""
+        """Test retry waits between attempts.
+
+        Note: compute_backoff uses full jitter (random() * cap), so
+        actual backoff can range from 0 to cap. We can't assert a
+        minimum wait time, only that the function was called multiple times.
+        """
         cfg = RetryConfig(max_attempts=3, backoff_base_s=0.05, max_backoff_s=0.1)
         classify = lambda e: None
 
@@ -341,10 +346,13 @@ class TestRetryAsyncDecorator:
 
         await func()
 
-        # Should have waited between attempts
+        # Should have retried (at least 2 calls)
+        assert len(timings) >= 2
+        assert counter["calls"] == 2
+        # Time diff can be close to 0 due to full jitter
         if len(timings) >= 2:
             time_diff = timings[1] - timings[0]
-            assert time_diff >= 0.01  # Some backoff should occur
+            assert time_diff >= 0  # Just verify non-negative (backoff can be near 0)
 
     async def test_retry_async_zero_max_attempts(self):
         """Test with zero max_attempts defaults to 1."""

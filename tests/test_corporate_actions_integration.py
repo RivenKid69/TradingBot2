@@ -6,6 +6,10 @@ Tests for corporate actions integration in data_loader_multi_asset.py
 import numpy as np
 import pandas as pd
 import pytest
+
+# Skip entire module if pyarrow not available (tests use parquet files)
+pytest.importorskip("pyarrow", reason="pyarrow required for parquet support")
+
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 import tempfile
