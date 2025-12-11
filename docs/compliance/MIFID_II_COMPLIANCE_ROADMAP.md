@@ -1,8 +1,35 @@
 # MiFID II Compliance Roadmap
 
-**Версия**: 7.0
-**Дата**: 2025-12-07
-**Статус**: ВСЕ ФАЗЫ ЗАВЕРШЕНЫ (1, 2, 3, 4, 5, 6, 7) ✅
+**Версия**: 8.0
+**Дата**: 2025-12-11
+**Статус**: ВСЕ ФАЗЫ ЗАВЕРШЕНЫ ✅
+
+---
+
+## ⚠️ Important: ICT Provider Positioning
+
+> **This platform is positioned as an ICT Provider / Software Provider, NOT as an Investment Firm.**
+
+| Characteristic | Our Platform | Investment Firm |
+|----------------|--------------|-----------------|
+| Trade execution | ❌ No | ✅ Yes |
+| Asset custody | ❌ No | ✅ Yes |
+| Investment advice | ❌ No | ✅ Yes |
+| MiFID II applies directly | ❌ **No** | ✅ Yes |
+
+### What This Document Describes
+
+This roadmap documents the **compliance toolkit** we provide to our B2B clients (financial institutions). The modules described here are:
+
+| Layer | Package | Purpose | For Whom |
+|-------|---------|---------|----------|
+| 🟢 **CORE** | `services.core.risk_controls` | Universal risk controls | All users (default) |
+| 🟡 **INTEGRATION** | `services.algo_integration` | MiFID II compliance toolkit | B2B enterprise clients |
+| 🔴 **ARCHIVE** | `services.archive.mifid_financial_entity` | Investment Firm modules | **ARCHIVED** - not for ICT Providers |
+
+### Why "100% Complete"?
+
+"100% compliance" means we have **implemented all the tools** our B2B clients need to meet their MiFID II obligations — not that we as an ICT Provider are subject to these requirements.
 
 ---
 
@@ -27,52 +54,70 @@
 
 ### Цель документа
 
-Данный документ определяет пошаговый план приведения AI-Powered Quantitative Research Platform в соответствие с требованиями **MiFID II** (Directive 2014/65/EU) и связанных регуляторных технических стандартов (RTS).
+Данный документ описывает **compliance toolkit**, который наша платформа предоставляет B2B клиентам (финансовым организациям) для соответствия требованиям **MiFID II** (Directive 2014/65/EU).
 
-### Scope
+> **Важно**: Как ICT Provider, мы НЕ являемся субъектом MiFID II напрямую. Мы предоставляем инструменты для наших клиентов-финорганизаций.
 
-| Область | Применимость | Основной RTS |
-|---------|--------------|--------------|
-| Алгоритмическая торговля | **Полная** | RTS 6 (Article 17) |
-| Transaction Reporting | **Полная** | RTS 22, RTS 25 |
-| Record Keeping | **Полная** | RTS 24, Article 25 MiFIR |
-| Best Execution | **Частичная** | RTS 27, RTS 28* |
-| Клиентская классификация | Не применимо** | - |
+### Scope по уровням
 
-*RTS 28 reporting отменён с 2024 года, но best execution policy остаётся обязательной
-**Система торгует на собственный счёт (proprietary trading), не для клиентов
+| Уровень | Модули | Применимость | Для кого |
+|---------|--------|--------------|----------|
+| 🟢 **CORE** | Kill Switch, Pre-Trade, Audit Trail | **Всегда включено** | Все пользователи |
+| 🟡 **INTEGRATION** | Best Execution, TCA, Conformance Testing | **Enterprise addon** | B2B клиенты |
+| 🔴 **ARCHIVE** | LEI, Transaction Reporting, NCA Notification | **Архивировано** | Investment Firms only |
 
-### Текущий статус
+### MiFID II Scope для разных участников
+
+| Область | ICT Provider (мы) | B2B Client (Investment Firm) |
+|---------|-------------------|------------------------------|
+| Алгоритмическая торговля (RTS 6) | Предоставляем инструменты | Обязаны соответствовать |
+| Transaction Reporting (RTS 22) | ❌ Не применимо | ✅ Обязательно |
+| Record Keeping (Art. 25 MiFIR) | Предоставляем инструменты | Обязаны соответствовать |
+| Best Execution (Art. 27) | Предоставляем TCA инструменты | Обязаны соответствовать |
+| NCA Notification (Art. 17(2)) | ❌ Не применимо | ✅ Обязательно |
+
+### Текущий статус по уровням
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    MiFID II COMPLIANCE SCORE                    │
+│                 MiFID II TOOLKIT IMPLEMENTATION                  │
 ├─────────────────────────────────────────────────────────────────┤
-│ Kill Switch (Art. 12)         [██████████] 100% ✅ Phase 3      │
-│ Pre-Trade Controls (RTS 6)    [██████████] 100% ✅ Phase 3      │
-│ Real-Time Monitoring (Art.17) [██████████] 100% ✅ Phase 3      │
-│ OTR Monitoring               [██████████] 100% ✅ Phase 3      │
-│ Transaction Reporting         [██████████] 100% ✅ Phase 2      │
-│ Record Keeping               [██████████] 100% ✅ Phase 4      │
-│ Audit Trail                  [██████████] 100% ✅ Phase 4      │
-│ Retention Policy (5-7 years) [██████████] 100% ✅ Phase 4      │
-│ Best Execution Policy        [██████████] 100% ✅ Phase 5      │
-│ TCA Compliance               [██████████] 100% ✅ Phase 5      │
-│ Venue Analysis & SOR         [██████████] 100% ✅ Phase 5      │
-│ Execution Quality Reports    [██████████] 100% ✅ Phase 5      │
-│ LEI Integration              [██████████] 100% ✅ Phase 1       │
-│ Clock Sync (RTS 25)          [██████████] 100% ✅ Phase 1       │
-│ Algorithm Registration       [██████████] 100% ✅ Phase 1       │
-│ Annual Self-Assessment       [██████████] 100% ✅ Phase 6      │
-│ Business Continuity Plan     [██████████] 100% ✅ Phase 6      │
-│ Governance Framework         [██████████] 100% ✅ Phase 6      │
-│ Policy Documents             [██████████] 100% ✅ Phase 6      │
-│ Conformance Testing          [██████████] 100% ✅ Phase 7      │
-│ Test Scenarios               [██████████] 100% ✅ Phase 7      │
-│ Certification                [██████████] 100% ✅ Phase 7      │
-│ NCA Notification             [██████████] 100% ✅ Phase 7      │
+│                                                                  │
+│ 🟢 CORE (services.core.risk_controls) - For ALL users           │
+│ ─────────────────────────────────────────────────────           │
+│ Kill Switch (Art. 12)         [██████████] 100% ✅              │
+│ Pre-Trade Controls (RTS 6)    [██████████] 100% ✅              │
+│ Real-Time Monitoring (Art.17) [██████████] 100% ✅              │
+│ Clock Sync (RTS 25)           [██████████] 100% ✅              │
+│ Audit Trail                   [██████████] 100% ✅              │
+│ Retention Policy (5-7 years)  [██████████] 100% ✅              │
+│ Business Continuity Plan      [██████████] 100% ✅              │
+│                                                                  │
+│ 🟡 INTEGRATION (services.algo_integration) - B2B Enterprise     │
+│ ─────────────────────────────────────────────────────           │
+│ Best Execution Policy         [██████████] 100% ✅              │
+│ TCA Compliance                [██████████] 100% ✅              │
+│ Venue Analysis & SOR          [██████████] 100% ✅              │
+│ Execution Quality Reports     [██████████] 100% ✅              │
+│ OTR Monitoring                [██████████] 100% ✅              │
+│ Algorithm Registration        [██████████] 100% ✅              │
+│ Conformance Testing           [██████████] 100% ✅              │
+│ Test Scenarios                [██████████] 100% ✅              │
+│ Certification                 [██████████] 100% ✅              │
+│                                                                  │
+│ 🔴 ARCHIVE (services.archive.mifid_financial_entity) - FE ONLY  │
+│ ─────────────────────────────────────────────────────           │
+│ ⚠️  NOT FOR ICT PROVIDERS - Deprecated with warnings            │
+│ LEI Integration               [██████████] 100% ✅ (archived)   │
+│ Transaction Reporting         [██████████] 100% ✅ (archived)   │
+│ Annual Self-Assessment        [██████████] 100% ✅ (archived)   │
+│ Governance Framework          [██████████] 100% ✅ (archived)   │
+│ Policy Documents              [██████████] 100% ✅ (archived)   │
+│ NCA Notification              [██████████] 100% ✅ (archived)   │
+│                                                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│ OVERALL COMPLIANCE:          [██████████] 100% ✅               │
+│ TOOLKIT COMPLETENESS:        [██████████] 100% ✅               │
+│ (All tools implemented for B2B clients)                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,14 +138,28 @@
 
 ### 2.2 Применимость к проекту
 
+#### Наше позиционирование: ICT Provider / Software Vendor
+
+Согласно MiFID II scope, мы НЕ являемся Investment Firm, потому что:
+- ❌ НЕ исполняем сделки от имени клиентов
+- ❌ НЕ храним активы клиентов
+- ❌ НЕ предоставляем инвестиционные рекомендации
+- ❌ НЕ управляем торговой площадкой
+
+**Наша роль**: Предоставляем software infrastructure (аналогично Bloomberg Terminal, QuantConnect, Refinitiv).
+
+#### Для наших B2B клиентов (Investment Firms)
+
 Согласно [Article 17 MiFID II](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mifid-ii/article-17-algorithmic-trading):
 
-> "An investment firm that engages in algorithmic trading shall have in place effective systems and risk controls suitable to the business it operates to ensure that its trading systems are resilient and have sufficient capacity..."
+> "An investment firm that engages in algorithmic trading shall have in place effective systems and risk controls..."
 
-**Проект классифицируется как:**
-- ✅ Algorithmic trading system (автоматическое принятие решений)
-- ✅ Proprietary trading (торговля на собственный счёт)
-- ⚠️ Потенциально HFT (зависит от частоты сообщений)
+**Наши B2B клиенты классифицируются как:**
+- ✅ Investment Firms использующие algorithmic trading
+- ✅ Субъекты MiFID II Article 17
+- ⚠️ Потенциально HFT firms (зависит от их торговли)
+
+**Мы предоставляем им инструменты для соответствия этим требованиям.**
 
 ### 2.3 Изменения 2024-2025
 
@@ -113,43 +172,84 @@
 
 ---
 
-## 3. GAP Analysis
+## 3. Module Architecture (Post-Migration)
 
-### 3.1 Что УЖЕ есть в проекте
+> **All gaps from the original analysis have been closed.** Below is the current module structure.
 
-| Компонент | Файл | MiFID II Mapping | Статус |
-|-----------|------|------------------|--------|
-| Kill Switch | `services/ops_kill_switch.py` | Art. 12 RTS 6 | ⚠️ Частично |
-| Risk Guards | `risk_guard.py` | Art. 15 RTS 6 | ⚠️ Частично |
-| Position Limits | `services/futures_risk_guards.py` | Art. 15(4) RTS 6 | ⚠️ Частично |
-| Circuit Breaker Awareness | `impl_circuit_breaker.py` | Art. 18 RTS 6 | ⚠️ CME only |
-| TCA Models | `execution_providers.py` | Best Execution | ⚠️ Частично |
-| Event Bus | `event_bus.py` | Logging | ⚠️ Не compliance-ready |
+### 3.1 Module Location Mapping
 
-### 3.2 Что ОТСУТСТВУЕТ (критические gaps)
+| Module | Old Path | New Path | Layer |
+|--------|----------|----------|-------|
+| **Kill Switch** | ~~services/compliance/enhanced_kill_switch.py~~ | `services/core/risk_controls/kill_switch.py` | 🟢 CORE |
+| **Pre-Trade Controls** | ~~services/compliance/pre_trade_controls.py~~ | `services/core/risk_controls/pre_trade_controls.py` | 🟢 CORE |
+| **Real-Time Monitor** | ~~services/compliance/realtime_monitor.py~~ | `services/core/risk_controls/realtime_monitor.py` | 🟢 CORE |
+| **Time Sync** | ~~services/compliance/compliance_clock.py~~ | `services/core/risk_controls/time_sync.py` | 🟢 CORE |
+| **Audit Trail** | ~~services/compliance/audit_*.py~~ | `services/core/risk_controls/audit_*.py` | 🟢 CORE |
+| **Retention Policy** | ~~services/compliance/retention_policy.py~~ | `services/core/risk_controls/retention_policy.py` | 🟢 CORE |
+| **BCP** | ~~services/compliance/bcp.py~~ | `services/core/risk_controls/bcp.py` | 🟢 CORE |
+| **Best Execution** | ~~services/compliance/best_execution.py~~ | `services/algo_integration/best_execution.py` | 🟡 INTEGRATION |
+| **TCA Compliance** | ~~services/compliance/tca_compliance.py~~ | `services/algo_integration/tca_compliance.py` | 🟡 INTEGRATION |
+| **Venue Analysis** | ~~services/compliance/venue_analysis.py~~ | `services/algo_integration/venue_analysis.py` | 🟡 INTEGRATION |
+| **OTR Monitor** | ~~services/compliance/otr_monitor.py~~ | `services/algo_integration/otr_monitor.py` | 🟡 INTEGRATION |
+| **Algorithm Registry** | ~~services/compliance/algorithm_registry.py~~ | `services/algo_integration/algorithm_registry.py` | 🟡 INTEGRATION |
+| **Conformance Testing** | ~~services/compliance/conformance_testing.py~~ | `services/algo_integration/conformance_testing.py` | 🟡 INTEGRATION |
+| **Certification** | ~~services/compliance/certification.py~~ | `services/algo_integration/certification.py` | 🟡 INTEGRATION |
+| **LEI Manager** | ~~services/compliance/lei_manager.py~~ | `services/archive/mifid_financial_entity/lei_manager.py` | 🔴 ARCHIVE |
+| **Transaction Report** | ~~services/compliance/transaction_report.py~~ | `services/archive/mifid_financial_entity/transaction_report.py` | 🔴 ARCHIVE |
+| **ARM Client** | ~~services/compliance/arm_client.py~~ | `services/archive/mifid_financial_entity/arm_client.py` | 🔴 ARCHIVE |
+| **NCA Notification** | ~~services/compliance/nca_notification.py~~ | `services/archive/mifid_financial_entity/nca_notification.py` | 🔴 ARCHIVE |
 
-| Требование | RTS | Приоритет | Сложность |
-|------------|-----|-----------|-----------|
-| **Transaction Reporting to ARM** | RTS 22 | 🔴 Critical | High |
-| **LEI Integration** | RTS 22 Art. 4 | 🔴 Critical | Medium |
-| **5-Year Audit Trail** | Art. 25 MiFIR | 🔴 Critical | High |
-| **Clock Synchronisation** | RTS 25 | 🟡 High | Medium |
-| **Algorithm Registration** | Art. 17(2) | 🟡 High | Low |
-| **Order-to-Trade Ratio Monitoring** | RTS 6 Art. 16 | 🟡 High | Medium |
-| **Best Execution Policy** | Art. 27 MiFID II | 🟡 High | Low |
-| **Annual Self-Assessment** | RTS 6 Art. 9 | 🟡 High | Medium |
-| **Real-Time Monitoring Dashboard** | Art. 17 RTS 6 | 🟠 Medium | Medium |
-| **Business Continuity Plan** | Art. 3 RTS 6 | 🟠 Medium | Low |
+### 3.2 Import Examples
+
+```python
+# 🟢 CORE - For all users (always loaded)
+from services.core.risk_controls import (
+    EnhancedKillSwitch, PreTradeControls, AuditTrailWriter,
+    RealTimeMonitor, BusinessContinuityPlan, ComplianceClock
+)
+
+# 🟡 INTEGRATION - For B2B enterprise clients
+from services.algo_integration import (
+    BestExecutionAnalyzer, TCAComplianceWrapper, OTRMonitor,
+    AlgorithmRegistry, ConformanceTestRunner, CertificateManager
+)
+
+# 🔴 ARCHIVE - For Investment Firms ONLY (emits DeprecationWarning)
+# NOT for ICT Providers!
+from services.archive.mifid_financial_entity import (
+    LEIManager, TransactionReport, ARMClient, NCANotificationManager
+)
+```
+
+### 3.3 Original GAP Analysis (Historical)
+
+> The gaps below were identified at the start of the project and have all been resolved.
+
+| Requirement | Status | Location |
+|-------------|--------|----------|
+| Kill Switch | ✅ Implemented | `services.core.risk_controls` |
+| Pre-Trade Controls | ✅ Implemented | `services.core.risk_controls` |
+| Audit Trail (5-7 years) | ✅ Implemented | `services.core.risk_controls` |
+| Clock Sync (RTS 25) | ✅ Implemented | `services.core.risk_controls` |
+| Best Execution | ✅ Implemented | `services.algo_integration` |
+| OTR Monitoring | ✅ Implemented | `services.algo_integration` |
+| LEI Integration | ✅ Implemented | `services.archive.mifid_financial_entity` (archived) |
+| Transaction Reporting | ✅ Implemented | `services.archive.mifid_financial_entity` (archived) |
 
 ---
 
 ## 4. Фаза 1: Foundational Compliance
 
-**Длительность**: 2-3 недели
-**Зависимости**: Нет
-**Приоритет**: 🔴 Critical
+**Статус**: ✅ ЗАВЕРШЕНО
+**Модули**:
+- `services.core.risk_controls` (time_sync, algorithm_registry config)
+- `services.archive.mifid_financial_entity` (LEI - 🔴 ARCHIVED, not for ICT Providers)
 
-### 4.1 Этап 1.1: LEI Integration
+> ⚠️ **LEI Integration (4.1) is ARCHIVED** - This is only needed for Investment Firms who must submit transaction reports. ICT Providers do NOT need LEI.
+
+### 4.1 Этап 1.1: LEI Integration (🔴 ARCHIVED)
+
+> **Note**: This module is in `services.archive.mifid_financial_entity` and emits DeprecationWarning. Only for Investment Firms.
 
 **Требование**: [GLEIF Guidelines](https://www.gleif.org/en/newsroom/blog/reminder-failure-to-obtain-an-lei-by-the-firm-or-its-client-will-prevent-firms-from-being-able-to-comply-with-the-reporting-requirements-under-mifir-applicable-from-january-2018)
 
@@ -2252,12 +2352,25 @@ compliance:
 
 ## Приложения
 
-### A. Checklist для внедрения
+### A. Module Migration Notice
+
+> ⚠️ **IMPORTANT**: The paths below reflect the **historical implementation** in `services/compliance/`.
+> All modules have been migrated to the new three-tier architecture. See [Section 3.1](#31-module-location-mapping) for current paths.
+
+**Quick Reference:**
+| Old Path | New Path | Layer |
+|----------|----------|-------|
+| `services/compliance/` | `services/core/risk_controls/` | 🟢 CORE |
+| `services/compliance/` | `services/algo_integration/` | 🟡 INTEGRATION |
+| `services/compliance/` | `services/archive/mifid_financial_entity/` | 🔴 ARCHIVE |
+
+### B. Checklist для внедрения (Historical)
 
 ```
 Phase 1: Foundation ✅ COMPLETED (2025-12-07)
-[x] Получен LEI (lei_manager.py)
-[x] LEI Manager реализован (services/compliance/lei_manager.py)
+⚠️ Note: LEI modules are now in ARCHIVE (not for ICT Providers)
+[x] Получен LEI (lei_manager.py) → NOW: services/archive/mifid_financial_entity/
+[x] LEI Manager реализован → NOW: services/archive/mifid_financial_entity/lei_manager.py
 [x] GLEIF Client реализован (services/compliance/gleif_client.py)
 [x] Clock sync работает (services/compliance/compliance_clock.py)
 [x] Algorithm Registry создан (services/compliance/algorithm_registry.py)

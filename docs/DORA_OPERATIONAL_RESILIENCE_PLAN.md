@@ -1,9 +1,14 @@
 # DORA Operational Resilience Plan
 
-**Version**: 2.3
-**Date**: 2025-12-09
+**Version**: 2.4
+**Date**: 2025-12-11
 **Status**: Phase 1 Complete — Production Ready for EU Clients
 **Revision**: Phase 1 implementation complete with 100% test coverage
+
+> **Note (v2.4)**: References to `services/compliance/` are historical. MiFID II compliance modules have been reorganized:
+> - `services/core/risk_controls/` (universal risk controls, audit_trail, bcp)
+> - `services/algo_integration/` (B2B compliance toolkit)
+> - `services/archive/mifid_financial_entity/` (archived Investment Firm modules)
 
 ---
 

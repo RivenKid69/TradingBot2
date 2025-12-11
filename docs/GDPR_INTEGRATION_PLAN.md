@@ -3,9 +3,15 @@
 ## AI-Powered Quantitative Research Platform
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
-**Version**: 2.3
+**Version**: 2.4
 **Date**: December 2025
 **Status**: Implementation Ready (Critical Audit v2.3 Complete - 97% Coverage)
+
+> **Note (v2.4)**: Module paths referencing `services/compliance/` in this document are historical.
+> Compliance modules have been reorganized to a three-tier architecture. See [MIFID_II_COMPLIANCE_ROADMAP.md](compliance/MIFID_II_COMPLIANCE_ROADMAP.md#31-module-location-mapping) for current paths:
+> - `services/core/risk_controls/` (audit_trail, retention_policy, etc.)
+> - `services/algo_integration/` (B2B compliance toolkit)
+> - `services/archive/mifid_financial_entity/` (archived Investment Firm modules)
 
 ---
 
