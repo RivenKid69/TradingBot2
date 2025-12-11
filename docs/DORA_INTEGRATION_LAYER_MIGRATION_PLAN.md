@@ -98,14 +98,17 @@ services/
 │       ├── training_participation.py  # Art. 30(2)(i) - FE training requests
 │       └── ... (full FE framework, 23 modules total)
 │
-config/                            # Конфиги (НЕ configs/)
+config/
 ├── dora/
-│   └── proportionality_assessment.yaml   # KEEP - internal toggle
+│   └── README.md                  # Migration notice (FE configs moved to archive)
 │
-└── dora_integration/              # NEW - Integration configs
-    ├── digital_resilience_strategy.yaml
-    ├── third_party_management.yaml
-    └── information_sharing.yaml
+└── dora_integration/
+    └── README.md                  # Config migration docs
+
+configs/dora/                      # ACTIVE - ICT Provider configs
+├── digital_resilience_strategy.yaml
+├── third_party_management.yaml
+└── information_sharing.yaml
 ```
 
 ---
@@ -658,9 +661,12 @@ for module in scope_verification function_classification proportionality \
     mv services/dora/${module}.py services/archive/dora_financial_entity/
 done
 
-# Move FE configs
+# Move FE configs to archive
 mv config/dora/entity_classification.yaml services/archive/dora_financial_entity/configs/
 mv config/dora/nca_identification.yaml services/archive/dora_financial_entity/configs/
+mv config/dora/proportionality_assessment.yaml services/archive/dora_financial_entity/configs/
+
+# Note: Active ICT Provider configs are in configs/dora/ (not config/dora/)
 ```
 
 #### 7.4 Create Archive README

@@ -2,11 +2,32 @@
 # Digital Operational Resilience Act (EU Regulation 2022/2554)
 # План интеграции в AI-Powered Quantitative Research Platform
 
-**Версия документа**: 4.0.0
+**Версия документа**: 4.1.0
 **Дата создания**: 2025-12-08
+**Последнее обновление**: 2025-12-12
 **Целевое соответствие**: Regulation (EU) 2022/2554 (DORA)
 **Дата вступления в силу**: 17 января 2025
 **Статус проекта**: COMPLIANCE REMEDIATION (DORA уже применяется)
+
+---
+
+> ### ICT Provider Positioning Update (v4.1)
+>
+> **ВАЖНО:** Этот документ содержит как исторический контекст планирования для Financial Entities,
+> так и актуальные требования для ICT Providers. Мы позиционируемся как **ICT Third-Party Service Provider (Art. 30)**.
+>
+> **Текущая архитектура:**
+> - `services/dora_integration/` — активные модули для ICT Provider обязательств
+> - `services/archive/dora_financial_entity/` — заархивированные FE-специфичные модули
+> - `configs/dora/` — активные конфиги (digital_resilience_strategy, third_party_management, information_sharing)
+>
+> **Заархивированные FE конфиги** (перемещены в `services/archive/dora_financial_entity/configs/`):
+> - `entity_classification.yaml` — классификация FE по Art. 2
+> - `nca_identification.yaml` — идентификация NCA для FE
+> - `proportionality_assessment.yaml` — определение режима (Art. 4, 16)
+>
+> Примеры кода с путями `services/dora/` в этом документе относятся к **историческим планам**.
+> Актуальное расположение модулей см. в `services/archive/dora_financial_entity/README.md`.
 
 ---
 
@@ -1057,7 +1078,7 @@ class EntityClassification:
         return exemptions
 ```
 
-**Конфигурация**: `config/dora/entity_classification.yaml`
+**Конфигурация**: `services/archive/dora_financial_entity/configs/entity_classification.yaml` *(archived - FE-specific)*
 
 ```yaml
 # ЗАПОЛНИТЬ ПЕРЕД НАЧАЛОМ РЕАЛИЗАЦИИ
@@ -1101,11 +1122,13 @@ entity_classification:
 
 ### 0.2 Phase 0 Deliverables
 
-| Deliverable | File | Tests |
-|-------------|------|-------|
-| Entity Classification | `services/dora/proportionality.py` | 15 |
-| Classification Config | `config/dora/entity_classification.yaml` | - |
-| Assessment Report | `docs/compliance/dora/proportionality_assessment.md` | - |
+> **Note (v4.1):** Phase 0 modules were for Financial Entity scope. Now archived.
+
+| Deliverable | Current Location | Status |
+|-------------|------------------|--------|
+| Entity Classification | `services/archive/dora_financial_entity/proportionality.py` | Archived |
+| Classification Config | `services/archive/dora_financial_entity/configs/entity_classification.yaml` | Archived |
+| Assessment Report | `docs/compliance/dora/proportionality_assessment.md` | Reference only |
 
 ### 0.3 Phase 0 Acceptance Criteria
 

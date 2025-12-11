@@ -229,11 +229,14 @@ Based on the assessment:
 
 | Document | Location | Status |
 |----------|----------|--------|
-| Entity Classification Config | `config/dora/entity_classification.yaml` | Created |
-| NCA Identification Config | `config/dora/nca_identification.yaml` | Created |
-| Proportionality Config | `config/dora/proportionality_assessment.yaml` | Created |
+| Entity Classification Config | `services/archive/dora_financial_entity/configs/entity_classification.yaml` | Archived (FE-specific) |
+| NCA Identification Config | `services/archive/dora_financial_entity/configs/nca_identification.yaml` | Archived (FE-specific) |
+| Proportionality Config | `services/archive/dora_financial_entity/configs/proportionality_assessment.yaml` | Archived (FE-specific) |
 | Financial Statements | [TO BE ADDED] | Required |
 | Authorization Documents | [TO BE ADDED] | Required |
+
+> **Note:** These configs are for Financial Entity (FE) compliance. As an ICT Provider,
+> we use `configs/dora/` for our operational configurations.
 
 ---
 
@@ -266,6 +269,10 @@ Based on the assessment:
 
 ## Appendix B: Related Platform Modules
 
-- `services/dora/scope_verification.py` - Article 2 scope verification
-- `services/dora/function_classification.py` - Article 3(22) function classification
-- `services/dora/proportionality.py` - Articles 4, 16 proportionality assessment
+**Archived Financial Entity Modules** (for building FE compliance tools):
+- `services/archive/dora_financial_entity/scope_verification.py` - Article 2 scope verification
+- `services/archive/dora_financial_entity/function_classification.py` - Article 3(22) function classification
+- `services/archive/dora_financial_entity/proportionality.py` - Articles 4, 16 proportionality assessment
+
+> **ICT Provider Note:** As an ICT Third-Party Provider (Art. 30), these FE-specific modules
+> are archived. Our active DORA modules are in `services/dora_integration/`.
