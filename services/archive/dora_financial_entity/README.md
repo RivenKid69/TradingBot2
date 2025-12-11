@@ -48,9 +48,10 @@ services/
 │
 └── archive/                       # ARCHIVE - FE modules (this directory)
     └── dora_financial_entity/     # 23 FE modules
-        ├── configs/               # 2 FE configuration files
+        ├── configs/               # 3 FE configuration files
         │   ├── entity_classification.yaml
-        │   └── nca_identification.yaml
+        │   ├── nca_identification.yaml
+        │   └── proportionality_assessment.yaml
         ├── __init__.py            # Deprecation-aware exports
         ├── README.md              # This file
         └── [23 Python modules]
@@ -106,12 +107,16 @@ services/
 | 22 | `cross_regulation.py` | - | Cross-regulation integration (AI Act, MiFID II) |
 | 23 | `training_participation.py` | Art. 30(2)(i) | FE requests for provider training participation |
 
-## Archived Configurations (2 files)
+## Archived Configurations (3 files)
 
 | Config | Description | Used By |
 |--------|-------------|---------|
-| `entity_classification.yaml` | Entity type classification rules | `scope_verification.py`, `proportionality.py` |
+| `entity_classification.yaml` | Entity type classification rules (Art. 2 scope) | `scope_verification.py`, `proportionality.py` |
 | `nca_identification.yaml` | NCA contact mapping per jurisdiction | `incident_reporting.py`, `supervisory_feedback.py` |
+| `proportionality_assessment.yaml` | Regime determination (Art. 4, 16) | `proportionality.py`, `simplified_framework.py` |
+
+**Note:** These configurations were previously in `/config/dora/` and have been consolidated
+here as they are FE-specific. ICT Providers use `/configs/dora/` for active configurations.
 
 ## DORA Article Reference
 

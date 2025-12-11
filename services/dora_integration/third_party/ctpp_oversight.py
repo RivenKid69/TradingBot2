@@ -5,6 +5,22 @@ DORA Critical Third-Party Provider (CTPP) Oversight Module (Articles 31-44).
 Regulation (EU) 2022/2554 Articles 31-44 establish the oversight framework
 for Critical Third-Party Providers (CTPPs) designated by ESAs.
 
+ICT Provider Perspective (Why This Module Exists):
+==================================================
+As an ICT Third-Party Service Provider (Art. 30), this module serves THREE purposes:
+
+    1. FORWARD-LOOKING COMPLIANCE: Track if WE become designated as CTPP (Art. 31).
+       If our platform becomes systemically important, we need to be prepared for
+       Lead Overseer oversight, including inspections and recommendations.
+
+    2. SUBCONTRACTOR DUE DILIGENCE: Monitor CTPP status of OUR subcontractors
+       (AWS, Google Cloud, Microsoft Azure, etc.). Per Art. 30(2)(a), we must
+       inform clients about subcontracting arrangements with CTPPs.
+
+    3. CLIENT SUPPORT: Provide CTPP-related data to B2B clients for their
+       Art. 28 due diligence and Register of Information (Art. 28(3)) submissions.
+       Financial entities must document their CTPP dependencies.
+
 Key Components:
     - Article 31: Designation of CTPPs by ESAs
     - Article 32: Structure of the Oversight Framework
@@ -22,16 +38,21 @@ CTPP Designation Criteria (Article 31(2)):
     e) Number of Member States affected
 
 This module provides:
-    1. CTPP designation tracking
-    2. Lead Overseer coordination
-    3. Oversight requirement compliance
+    1. CTPP designation tracking (for us and our subcontractors)
+    2. Lead Overseer coordination (if we become CTPP)
+    3. Oversight requirement compliance readiness
     4. CTPP-specific risk management
-    5. Financial entity obligations for CTPPs
+    5. Client data export for their CTPP documentation needs
+
+Architecture Context:
+    This module is part of the INTEGRATION layer (services/dora_integration/),
+    providing client-facing interfaces for DORA compliance. It is NOT part of
+    the archived Financial Entity modules (services/archive/dora_financial_entity/).
 
 References:
     - Articles 31-44 DORA: https://www.digital-operational-resilience-act.com
     - ESAs Joint Statement: CTPPs designated 19 Nov 2025
-    - Designated CTPPs: AWS, Google Cloud, Microsoft Azure, etc.
+    - Designated CTPPs: AWS, Google Cloud, Microsoft Azure, ServiceNow, Oracle, Salesforce
     - Lead Overseers: EBA, ESMA, EIOPA
 """
 

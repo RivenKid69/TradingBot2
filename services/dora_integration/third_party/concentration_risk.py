@@ -2,38 +2,59 @@
 """
 DORA Concentration Risk Module (Article 29).
 
-Regulation (EU) 2022/2554 Article 29 requires financial entities to assess
-and manage ICT concentration risk at various levels:
-    - Entity level
-    - Sub-consolidated level (where applicable)
-    - Consolidated level (for groups)
+ICT Provider Perspective (Why This Module Exists):
+==================================================
+As an ICT Third-Party Service Provider (Art. 30), this module serves THREE purposes:
+
+    1. OUR SUBCONTRACTOR CONCENTRATION: Assess and manage OUR concentration risk
+       on cloud providers, data centers, and other subcontractors. Per Art. 30(2)(a),
+       we must manage subcontracting arrangements responsibly. If we depend heavily
+       on AWS or Google Cloud, we need to understand and mitigate that risk.
+
+    2. CLIENT TRANSPARENCY: Provide clients with data about their concentration
+       risk ON US. Financial entities (Art. 29) must assess concentration risk
+       including "the degree of substitutability" of their ICT providers.
+       We help them by providing:
+       - Our substitutability metrics
+       - Our geographic footprint
+       - Our subcontractor dependencies
+       - Exit strategy feasibility data
+
+    3. B2B ANALYTICS ADDON: Enterprise clients can use this module to analyze
+       their overall ICT concentration across all providers (not just us).
+       This is a value-added feature for their Art. 29 compliance.
+
+Regulatory Context:
+    Article 29 DORA requires FINANCIAL ENTITIES (not ICT providers) to assess
+    concentration risk. However, as an ICT provider we:
+    - Must provide data to support client assessments (Art. 30(3)(e))
+    - Should manage our own supply chain concentration (best practice)
+    - Can offer concentration analytics as enterprise B2B feature
 
 Key Concentration Risk Types:
     1. Provider concentration - Single provider for multiple services
     2. Geographic concentration - Data/services in limited locations
     3. Service concentration - Critical functions on few providers
     4. Technology concentration - Limited technology diversity
-    5. Subcontractor concentration - Common subcontractors
-
-Assessment Requirements:
-    - Identify concentration risk at time of contracting
-    - Consider substitutability of providers
-    - Assess systemic risk implications
-    - Evaluate benefits vs risks of diversification
+    5. Subcontractor concentration - Common subcontractors in supply chains
 
 This module provides:
-    1. Concentration risk identification
-    2. Multi-dimensional concentration analysis
-    3. Dependency metrics calculation
-    4. Mitigation measure development
-    5. Concentration monitoring and reporting
+    1. OUR subcontractor concentration analysis
+    2. Client dependency metrics (how much they depend on us)
+    3. Substitutability scoring and exit feasibility data
+    4. Geographic and technology diversity reporting
+    5. Concentration risk data export for client ROI submissions
+
+Architecture Context:
+    This module is part of the INTEGRATION layer (services/dora_integration/),
+    providing client-facing interfaces for DORA compliance. It is NOT part of
+    the archived Financial Entity modules (services/archive/dora_financial_entity/).
 
 References:
     - Article 29 DORA: https://www.digital-operational-resilience-act.com/Article_29.html
+    - Article 30(3)(e) DORA: Cooperation with FE due diligence
     - RTS on ICT Risk Management: CDR 2024/1774
     - ESAs Guidelines on ICT Concentration Risk
-
-Migration: Phase 3 - Third-Party Risk Interface
 """
 
 from __future__ import annotations
