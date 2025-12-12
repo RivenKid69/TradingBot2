@@ -4,7 +4,7 @@
 
 Ключевой принцип (не обсуждается): Cloud = research/build/monitoring/control plane (lifecycle requests), Agent = secrets + live loop + risk enforce + order creation/sending. Cloud никогда не хранит ключи, не имеет кода/доступа к торговым API от имени пользователя и не передаёт live‑торговые инструкции/ордера/targets.
 
-Ниже — фазы с конкретными задачами и “done‑критериями”. План закрывает обязательные разделы Design Doc: требования (3–5), модель данных (6), change_class/policy firewall (7), артефакты (8), agent runtime (9), протокол (10), state machines (11), config layering (12), telemetry/privacy/residency (13–14), security (15), enterprise/evidence pack (16), AI Act posture и “не advice” (17–18), CI guardrails (19), rollout (20), open questions (21).
+Ниже — фазы с конкретными задачами и “done‑критериями”. План закрывает обязательные разделы Design Doc: требования (3–5), модель данных (6), change_class/policy firewall (7), артефакты (8), agent runtime (9), протокол (10), state machines (11), config layering (12), telemetry/privacy/residency (13–14), security (15), enterprise/evidence pack (16), AI Act posture и “не advice” (17–18), CI guardrails (19), rollout (20), open questions (21), а также приложение с sequence diagrams (22) и детализирующие приложения (0–13, D*/E*).
 
 Примечания по трассируемости (иначе “100% соответствие” не проверяемо):
 - Design Doc должен быть доступен/версионирован для ревью и CI (например: снапшот в `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` или ссылка + `sha256` + дата версии).
@@ -45,6 +45,7 @@ Done:
 - Decision Log по Open Questions (Design Doc 21) + зафиксированные дефолты.
 - Черновик JSON схем (manifest + protocol) и список CI guardrails (Design Doc 19).
 - Зафиксированная версия Design Doc (снапшот/ссылка + `sha256`) + короткий мэппинг фаз плана на Rollout plan (Design Doc 20).
+- Sequence diagrams/flows по Design Doc 22 + приложениям (enroll, deploy+start+approve, upgrade, stop/pause, revoke/rotation, export logs).
 - Матрица трассируемости “Design Doc требование → план/фаза → код/док/CI‑check” (1 файл, чтобы потом не спорить словами).
 
 Фаза 1. Skeleton end‑to‑end (минимальный вертикальный срез) + базовые guardrails (2–4 недели)
@@ -178,9 +179,9 @@ Done:
 Фаза 6. Cloud Control Plane: модель данных, RBAC, trust/revoke, blobs (6–8 недель)
 
 1) Cloud сервис (FastAPI) + БД (Postgres) + multi‑tenant модель данных:
-- Org/Workspace/User/Roles/Permissions (+ access audit).
+- Org/Workspace/User/Roles/Permissions (+ MFA для enterprise, + access audit).
 - Strategy/StrategyVersion, Build/Artifact (digest, signature_ref, sbom_ref, provenance, change_class).
-- Agent (+ public_key, agent_version, capabilities, trust_state ENROLLED/REVOKED, last_seen).
+- Agent (+ public_key, agent_version, capabilities, trust_state ENROLLED/REVOKED, last_seen, опц. attestation/health для enterprise).
 - AgentEnrollmentToken (TTL).
 - Deployment/Run.
 - Command (+ idempotency_key, payload_ref digest, requires_approval, status).
@@ -225,6 +226,7 @@ Done:
 - TRADING_IMPACTING всегда требует local approve по умолчанию (стратегия/модель/build, universe, execution params, risk limits, schedule, paper↔live, broker account/adapter).
 - Agent показывает diff (config blob digest diff, build digest, universe diff, mode change) и применяет только после approve.
 - Auto‑approve только через локальную политику (whitelists/thresholds), причём cloud не может включить auto‑approve сам.
+- REQUEST_EXPORT_LOGS — data‑sensitive: требовать локальный approve/локальную политику + break‑glass reason; всегда redaction/DLP.
 - Stop/Pause можно удалённо (safety); “flatten” по умолчанию локально (или enterprise‑режим по договору).
 
 Done:
@@ -248,7 +250,7 @@ Done:
 
 4) Data residency:
 - EU region default для EU tenants.
-- Enterprise: “telemetry stays local” режим или выборочный экспорт.
+- Enterprise: “telemetry stays local” режим или выборочный экспорт; опционально customer‑managed keys (CMK) для хранения в cloud.
 
 5) Monitoring/alerts (Design Doc 4.1/3.1):
 - Дашборды health и состояний (agent online/offline, run state, halted reasons).
