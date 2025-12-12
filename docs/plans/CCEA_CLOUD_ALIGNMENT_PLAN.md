@@ -6,6 +6,10 @@
 
 Ниже — фазы с конкретными задачами и “done‑критериями”. План закрывает обязательные разделы Design Doc: требования (3–5), модель данных (6), change_class/policy firewall (7), артефакты (8), agent runtime (9), протокол (10), state machines (11), config layering (12), telemetry/privacy/residency (13–14), security (15), enterprise/evidence pack (16), AI Act posture и “не advice” (17–18), CI guardrails (19), rollout (20), open questions (21).
 
+Примечания по трассируемости (иначе “100% соответствие” не проверяемо):
+- Design Doc должен быть доступен/версионирован для ревью и CI (например: снапшот в `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` или ссылка + `sha256` + дата версии).
+- Явно зафиксировать мэппинг на Rollout plan (Design Doc 20): Skeleton → Lifecycle+Approvals → Live+Risk → Telemetry+Privacy → Enterprise pack (мэппинг ниже в Done Фазы 0).
+
 Фаза 0. Инвентаризация, решения по Open Questions, целевая архитектура (1–2 недели)
 
 1) Карта текущих модулей по зонам:
@@ -16,6 +20,8 @@
 2) “Граница периметра” и запреты Cloud:
 - Список запрещённых зависимостей/импортов/библиотек для cloud‑сборки (любые broker submitters, private trading clients).
 - Список запрещённых типов сообщений и полей (никаких PLACE_ORDER/SUBMIT_ORDER/EXECUTE_SIGNAL/SET_TARGET_POSITION, и никаких payload, которые можно интерпретировать как готовый ордер).
+- Запрет “remote shell/remote code exec” в Agent из Cloud в retail‑режиме; любые enterprise‑диагностические команды только с redaction и строгим аудитом.
+- Secret hygiene: зафиксировать, как гарантируем “секреты не попадают в cloud” (secret scanning + redaction + запрет support dumps с секретами).
 
 3) Зафиксировать продуктовые режимы (Design Doc 0.7):
 - Retail Research SaaS (EU-friendly): cloud research/sim/monitoring + BYO agent (опционально).
@@ -38,6 +44,8 @@ Done:
 - Документ “Target CCEA Architecture” (диаграмма Cloud/Agent/Shared + таблица модулей “куда относится”).
 - Decision Log по Open Questions (Design Doc 21) + зафиксированные дефолты.
 - Черновик JSON схем (manifest + protocol) и список CI guardrails (Design Doc 19).
+- Зафиксированная версия Design Doc (снапшот/ссылка + `sha256`) + короткий мэппинг фаз плана на Rollout plan (Design Doc 20).
+- Матрица трассируемости “Design Doc требование → план/фаза → код/док/CI‑check” (1 файл, чтобы потом не спорить словами).
 
 Фаза 1. Skeleton end‑to‑end (минимальный вертикальный срез) + базовые guardrails (2–4 недели)
 
@@ -49,7 +57,7 @@ Done:
 
 2) Минимальный Agent daemon (agentd) + локальный approve:
 - agent enroll --token: генерит device keypair локально, регистрирует public key, получает agent_id.
-- Outbound‑only: agent делает poll, принимает только allowlisted команды REQUEST_*.
+- Outbound‑only: agent делает poll, принимает только allowlisted команды REQUEST_* (на старте: REQUEST_START_RUN/STOP_RUN/PAUSE_RUN/UPGRADE_ARTIFACT/UPDATE_CONFIG; ops: ROTATE_AGENT_SESSION/EXPORT_LOGS — если нужны).
 - Local approval UI/CLI: подтверждение TRADING_IMPACTING запросов (start/upgrade/config) и запись evidence_hash.
 
 3) Аутентификация/подпись каждого сообщения Agent↔Cloud (Design Doc 10.2):
@@ -85,7 +93,8 @@ Done:
 
 Расширить guardrails:
 - allowlist зависимостей для cloud (проверка транзитивных deps тоже).
-- запрет импорта live‑модулей из cloud на уровне CI.
+- запрет импорта live‑модулей из cloud на уровне CI (расширить существующий `importlinter.ini` контрактами cloud↔agent).
+- сборочная проверка содержимого cloud‑артефакта (wheel/OCI): “в cloud build нет live‑модулей/`order_execution`/private trading clients” (не только import‑уровень).
 
 Done:
 - cloud‑образ/сборка физически не содержит trading client libs и не может обратиться к broker trading API (ни прямо, ни транзитивно).
@@ -113,8 +122,10 @@ Done:
 В cloud‑пакете реализовать builder pipeline:
 - OCI image (digest‑pinned) как основной формат; zip/wheel — только как fallback с явными ограничениями.
 - manifest.json/yaml по схеме Design Doc: schema_version, entrypoint, runtime, deps lock digest, model refs (digests), data_contract, permissions (fs/network), risk_profile_suggested (только suggested), telemetry_schema_version, change_class, provenance (git_sha, dataset_refs, training_run_id, params_hash).
+- Добавить в manifest: live_capabilities (нужен ли broker access/какие sandbox’ы нужны), чтобы агент мог заранее валидировать окружение и UX (Design Doc приложение 2.1).
 - SBOM (CycloneDX/SPDX) + ссылка (sbom_ref) в Build/registry.
 - Подпись артефакта и manifest blob (sigstore/cosign или GPG).
+- Key management (сразу зафиксировать в Decision Log): как храним/ротируем ключи подписи (keyless sigstore vs keyful для enterprise/offline) и что считаем trust root.
 
 Agent verification:
 - verify digest + signature + allowlist registry + schema_version совместимость.
@@ -128,6 +139,7 @@ Done:
 
 1) Local Vault (secrets):
 - Использовать существующий CredentialVault как Local Vault.
+- Зафиксировать источник master key (предпочтительно OS keychain; fallback: encrypted file + env var), и что cloud никогда не получает ни master key, ни “backup”.
 - Ротация ключей — локальная операция.
 - Поддержка нескольких broker accounts (явный выбор локально).
 - Гарантии: секреты не попадают в логи/телеметрию (redaction/DLP).
@@ -141,12 +153,22 @@ Done:
 - Cloud не может поднять риски выше hard caps никогда, даже при approve.
 - Локальная политика имеет приоритет над cloud config и risk_profile_suggested из manifest.
 
-4) Reconciliation/idempotency:
+4) Pre-flight проверки перед стартом/апгрейдом (Design Doc D1):
+- verify signature + digest + schema_version (manifest + protocol).
+- verify broker connectivity + permissions (без раскрытия секретов в cloud).
+- verify local policy firewall/hard caps.
+- verify time sync (допустимый drift) и корректность timestamps/idempotency.
+
+5) Kill Switch + halt reasons (Design Doc 9.4):
+- Триггеры: max daily loss, broker errors burst, latency spike, order spam, state divergence, data feed invalid.
+- Действия: cancel open orders → optional flatten (только если локально разрешено) → halt run; репорт причины в telemetry (с учётом уровня чувствительности).
+
+6) Reconciliation/idempotency:
 - Детерминированный client_order_id для ордеров (idempotent).
 - На рестарте: fetch open orders/positions → reconcile local journal → если неопределённость → safe halt.
 - Никаких дублирующих ордеров из-за retries.
 
-5) Local journal + telemetry buffer:
+7) Local journal + telemetry buffer:
 - Durable очередь событий (sqlite/jsonl), восстановление после рестарта.
 - Degraded safe режимы: cloud down / network down / data feed invalid → halt или ограничение по локальной политике.
 
@@ -165,6 +187,7 @@ Done:
 - ApprovalRecord (+ evidence_hash/attestation).
 - TelemetryEvent/Alert.
 - DataRetentionPolicy/AccessAudit (break‑glass events).
+- Tenant boundary enforce (минимум: обязательный workspace_id; рекомендовано: Postgres RLS, чтобы “не ошибиться” кодом).
 
 2) Endpoints:
 - Create enrollment token (TTL), enroll, heartbeat.
@@ -185,6 +208,7 @@ Done:
 - JSON schemas сообщений: HEARTBEAT, POLL_COMMANDS, COMMAND_BATCH, COMMAND_ACK, COMMAND_APPROVAL, COMMAND_RESULT, TELEMETRY.
 - schema_versioning + min_supported/max_supported negotiation.
 - Allowlist command types; любой новый тип = security review.
+- Initial safe list command types (Design Doc приложение E2): REQUEST_START_RUN, REQUEST_STOP_RUN, REQUEST_PAUSE_RUN, REQUEST_UPGRADE_ARTIFACT, REQUEST_UPDATE_CONFIG, REQUEST_ROTATE_AGENT_SESSION, REQUEST_EXPORT_LOGS (с redaction).
 
 2) Запрет “order‑like payload” (Design Doc 10.5/19.2):
 - На уровне схемы: нет полей/структур, которые можно интерпретировать как готовый ордер (side/qty/price и аналоги).
@@ -226,6 +250,10 @@ Done:
 - EU region default для EU tenants.
 - Enterprise: “telemetry stays local” режим или выборочный экспорт.
 
+5) Monitoring/alerts (Design Doc 4.1/3.1):
+- Дашборды health и состояний (agent online/offline, run state, halted reasons).
+- Alerts по базовым событиям (kill switch, broker errors burst, data feed invalid, order spam).
+
 Done:
 - Телеметрия минимизирована, классифицирована и редактирована; есть управляемое хранение, residency и аудит доступа.
 
@@ -246,6 +274,7 @@ Done:
 - Подписанные обновления агента.
 - Staged rollout + rollback.
 - Enterprise: version pinning + change windows, min/max supported schema versions.
+- (Рекомендация best practice) Защита от rollback/freeze атак обновлений: подписанные update‑метаданные (например TUF‑подобный подход), а не только подпись бинаря.
 
 Done:
 - Можно развернуть on‑prem/VPC контур, обновлять агента подписанно и управляемо, и выгрузить audit/evidence pack.
@@ -281,4 +310,3 @@ Done:
 
 Done:
 - Документация, ToS/AUP/позиционирование и реальный код согласованы с Design Doc; CI‑проверки доков зелёные.
-
