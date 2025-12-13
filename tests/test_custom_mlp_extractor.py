@@ -1,8 +1,9 @@
+import pytest
 import sys
 import types
 from typing import Callable, Tuple
 
-import torch
+torch = pytest.importorskip("torch")
 from torch import nn
 
 

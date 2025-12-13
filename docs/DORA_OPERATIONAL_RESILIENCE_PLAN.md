@@ -1,9 +1,14 @@
 # DORA Operational Resilience Plan
 
-**Version**: 2.3
-**Date**: 2025-12-09
+**Version**: 2.4
+**Date**: 2025-12-11
 **Status**: Phase 1 Complete — Production Ready for EU Clients
 **Revision**: Phase 1 implementation complete with 100% test coverage
+
+> **Note (v2.4)**: References to `services/compliance/` are historical. MiFID II compliance modules have been reorganized:
+> - `services/core/risk_controls/` (universal risk controls, audit_trail, bcp)
+> - `services/algo_integration/` (B2B compliance toolkit)
+> - `services/archive/mifid_financial_entity/` (archived Investment Firm modules)
 
 ---
 
@@ -4751,17 +4756,19 @@ soc2_dora_synergy:
 
 ## 8. Cleanup Plan — REVISED v2.2
 
-### 8.1 Archive (Phase 1) — REVISED v2.2
+### 8.1 Archive (Phase 1) — REVISED v2.4
 
-| Module | Reason |
-|--------|--------|
-| `services/dora/scope_verification.py` | Not applicable — we know DORA applies via contracts |
-| `services/dora/proportionality.py` | Financial entity classification |
-| `services/dora/supervisory_feedback.py` | Client-NCA communication |
-| `config/dora/nca_identification.yaml` | Client identifies their NCA |
-| `config/dora/entity_classification.yaml` | Financial entity config |
+| Original Location | Archived To | Reason |
+|-------------------|-------------|--------|
+| `services/dora/scope_verification.py` | `services/archive/dora_financial_entity/` | FE-specific — we're ICT Provider (Art. 30) |
+| `services/dora/proportionality.py` | `services/archive/dora_financial_entity/` | FE regime determination |
+| `services/dora/supervisory_feedback.py` | `services/archive/dora_financial_entity/` | Client-NCA communication |
+| `config/dora/nca_identification.yaml` | `services/archive/dora_financial_entity/configs/` | Client identifies their NCA |
+| `config/dora/entity_classification.yaml` | `services/archive/dora_financial_entity/configs/` | FE classification config |
+| `config/dora/proportionality_assessment.yaml` | `services/archive/dora_financial_entity/configs/` | FE proportionality config |
 
-**Note v2.2:** `pooled_testing.py` removed from Archive → moved to Adapt section.
+**Note v2.4:** All FE-specific modules and configs consolidated in `services/archive/dora_financial_entity/`.
+Active ICT Provider configs are in `configs/dora/`.
 
 ### 8.2 Adapt (Phase 1-2) — REVISED v2.2
 

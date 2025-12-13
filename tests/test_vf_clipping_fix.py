@@ -12,7 +12,8 @@ Where:
 - V_targ is the target GAE return (must remain unchanged)
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 
 
 def test_vf_clipping_predictions_not_targets():

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+pytest.importorskip("sortedcontainers")
 
 # Import L3 config
 from lob.config import (

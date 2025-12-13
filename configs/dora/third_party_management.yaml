@@ -2,6 +2,16 @@
 # DORA Phase 4: Third-Party ICT Risk Management Configuration
 # =============================================================================
 #
+# NOTE: This platform is an ICT Provider / Software Provider (DORA Art. 30),
+# NOT a Financial Entity (DORA Art. 2).
+#
+# This configuration serves TWO purposes:
+# 1. Managing OUR third-party providers (Art. 30 requirements for ICT Providers)
+# 2. Helping FE CLIENTS generate their ROI data (FE obligation under Art. 28(3))
+#
+# Sections marked "FOR FE CLIENTS" are tools to help our B2B clients with their
+# DORA compliance, NOT our own obligations.
+#
 # Configuration for Articles 28-44 of Regulation (EU) 2022/2554 (DORA)
 # Covering ICT Third-Party Risk Management Framework
 #
@@ -68,6 +78,10 @@ third_party_risk:
 # -----------------------------------------------------------------------------
 # Register of Information (Article 28(3))
 # -----------------------------------------------------------------------------
+# NOTE: FOR FE CLIENTS ONLY
+# ROI submission is an obligation of Financial Entities, not ICT Providers.
+# This section helps our FE clients generate ROI data about us as their provider.
+# We (as ICT Provider) provide data to support their submissions.
 register_of_information:
   # ITS submission settings
   its_submission:
@@ -86,11 +100,13 @@ register_of_information:
     nca_email: ""  # Set to NCA submission email
 
   # Entity information
+  # NOTE: This is for FE CLIENT configuration, not for this platform
+  # FE clients fill this with THEIR entity information for ROI submission
   entity:
-    lei: ""  # Legal Entity Identifier
-    entity_name: ""
-    entity_type: ""  # credit_institution, investment_firm, etc.
-    member_state: ""  # ISO country code
+    lei: ""  # FE client's Legal Entity Identifier
+    entity_name: ""  # FE client's name
+    entity_type: ""  # FE client's type: credit_institution, investment_firm, etc.
+    member_state: ""  # FE client's ISO country code
 
   # Template configuration
   templates:

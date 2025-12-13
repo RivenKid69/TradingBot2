@@ -1,0 +1,366 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ccea.platform/schemas/artifact_manifest.schema.json",
+  "title": "CCEA Artifact Manifest",
+  "description": "Schema for CCEA artifact manifest - defines strategy/model artifact metadata",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "artifact_type",
+    "entrypoint",
+    "runtime",
+    "deps_lock_digest",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of this manifest schema",
+      "examples": ["1.0.0"]
+    },
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Unique identifier for this artifact"
+    },
+    "artifact_type": {
+      "type": "string",
+      "enum": ["strategy", "model", "feature_pipeline", "ensemble"],
+      "description": "Type of artifact"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Human-readable name"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4096,
+      "description": "Description of the artifact"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?$",
+      "description": "Artifact version"
+    },
+    "entrypoint": {
+      "type": "object",
+      "required": ["module", "class"],
+      "properties": {
+        "module": {
+          "type": "string",
+          "description": "Python module path"
+        },
+        "class": {
+          "type": "string",
+          "description": "Strategy/Model class name"
+        },
+        "function": {
+          "type": "string",
+          "description": "Optional factory function"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "required": ["python_version"],
+      "properties": {
+        "python_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+          "description": "Required Python version"
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["linux", "darwin", "windows", "any"],
+          "default": "any"
+        },
+        "gpu_required": {
+          "type": "boolean",
+          "default": false
+        },
+        "min_memory_mb": {
+          "type": "integer",
+          "minimum": 256,
+          "default": 1024
+        }
+      },
+      "additionalProperties": false
+    },
+    "deps_lock_digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA256 digest of locked dependencies"
+    },
+    "model_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "digest"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Model file name"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "SHA256 digest of model file"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "References to model files with their digests"
+    },
+    "data_contract": {
+      "type": "object",
+      "properties": {
+        "input_schema": {
+          "type": "object",
+          "description": "Expected input data schema"
+        },
+        "output_schema": {
+          "type": "object",
+          "description": "Output data schema"
+        },
+        "required_features": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of required feature names"
+        },
+        "supported_instruments": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Supported instrument types"
+        }
+      },
+      "additionalProperties": false
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "filesystem": {
+          "type": "object",
+          "properties": {
+            "read": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": []
+            },
+            "write": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": []
+            }
+          },
+          "additionalProperties": false
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "egress_allowed": {
+              "type": "boolean",
+              "default": false
+            },
+            "egress_allowlist": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": []
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "risk_profile_suggested": {
+      "type": "object",
+      "description": "SUGGESTED risk profile - can be overridden by local policy",
+      "properties": {
+        "max_position_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Suggested max position as % of portfolio"
+        },
+        "max_daily_loss_pct": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Suggested max daily loss as % of portfolio"
+        },
+        "max_orders_per_minute": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Suggested max order rate"
+        },
+        "note": {
+          "type": "string",
+          "const": "These are SUGGESTIONS only. Local policy has priority.",
+          "description": "Reminder that local policy overrides"
+        }
+      },
+      "additionalProperties": false
+    },
+    "live_capabilities": {
+      "type": "object",
+      "description": "Required capabilities for live trading",
+      "properties": {
+        "requires_broker_access": {
+          "type": "boolean",
+          "default": false
+        },
+        "supported_brokers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["binance", "alpaca", "oanda", "ib", "deribit"]
+          }
+        },
+        "required_market_data": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["bars", "ticks", "orderbook", "trades"]
+          }
+        },
+        "min_latency_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum acceptable latency in ms"
+        }
+      },
+      "additionalProperties": false
+    },
+    "telemetry_schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Version of telemetry schema used"
+    },
+    "change_class": {
+      "type": "string",
+      "enum": ["TRADING_IMPACTING", "NON_TRADING_IMPACTING", "DOCUMENTATION_ONLY"],
+      "description": "Classification for approval requirements"
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["git_sha"],
+      "properties": {
+        "git_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$",
+          "description": "Git commit SHA"
+        },
+        "git_branch": {
+          "type": "string",
+          "description": "Git branch name"
+        },
+        "git_repo": {
+          "type": "string",
+          "format": "uri",
+          "description": "Git repository URL"
+        },
+        "build_id": {
+          "type": "string",
+          "description": "CI/CD build identifier"
+        },
+        "builder_version": {
+          "type": "string",
+          "description": "Version of build tool"
+        },
+        "dataset_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "digest"],
+            "properties": {
+              "name": {"type": "string"},
+              "digest": {
+                "type": "string",
+                "pattern": "^sha256:[a-f0-9]{64}$"
+              },
+              "date_range": {"type": "string"}
+            }
+          },
+          "description": "Training dataset references"
+        },
+        "training_run_id": {
+          "type": "string",
+          "description": "Training run identifier"
+        },
+        "params_hash": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$",
+          "description": "Hash of training parameters"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sbom_ref": {
+      "type": "string",
+      "description": "Reference to SBOM file (CycloneDX/SPDX)"
+    },
+    "signature": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["sigstore", "gpg", "x509"]
+        },
+        "signature_value": {
+          "type": "string"
+        },
+        "certificate": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "additionalProperties": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Creation timestamp"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Creator identifier"
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {"type": "string"},
+      "description": "Custom labels/tags"
+    }
+  },
+  "additionalProperties": false,
+
+  "$defs": {
+    "prohibited_fields": {
+      "description": "These fields are PROHIBITED in manifest to prevent order-like payloads",
+      "not": {
+        "anyOf": [
+          {"required": ["side"]},
+          {"required": ["quantity"]},
+          {"required": ["price"]},
+          {"required": ["order_type"]},
+          {"required": ["target_position"]},
+          {"required": ["execute_order"]},
+          {"required": ["place_order"]},
+          {"required": ["submit_order"]}
+        ]
+      }
+    }
+  }
+}

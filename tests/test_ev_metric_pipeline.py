@@ -12,7 +12,7 @@ from typing import Any, Optional, Sequence
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 
 def _ensure_module(name: str) -> types.ModuleType:

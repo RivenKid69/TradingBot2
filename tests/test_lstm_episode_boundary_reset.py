@@ -11,7 +11,7 @@ References:
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from sb3_contrib.common.recurrent.type_aliases import RNNStates
 
 

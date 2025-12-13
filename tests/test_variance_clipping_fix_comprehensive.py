@@ -18,7 +18,8 @@ Test Coverage:
 4. Test both quantile and categorical modes
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import pytest
 
 

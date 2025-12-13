@@ -169,12 +169,13 @@ class TestOrderState:
 
     def test_to_dict(self):
         """Test conversion to dictionary."""
-        order = OrderState(symbol="BTCUSDT", qty=10.0)
+        order = OrderState(symbol="BTCUSDT", qty=10.0, client_order_id="order123")
         data = order.to_dict()
 
         assert data["symbol"] == "BTCUSDT"
         assert data["qty"] == 10.0
-        assert "clientOrderId" in data or "client_order_id" in data
+        # Check that client_order_id is included (may be serialized as clientOrderId)
+        assert data.get("clientOrderId") == "order123" or data.get("client_order_id") == "order123"
 
     def test_copy(self):
         """Test copying order."""
@@ -542,6 +543,9 @@ class TestStatePersistence:
 
     def test_save_disabled(self, temp_file):
         """Test save when disabled."""
+        # Remove the file created by the fixture - we want to test that save_state doesn't create it
+        if temp_file.exists():
+            temp_file.unlink()
         save_state(temp_file, enabled=False)
         assert not temp_file.exists()
 

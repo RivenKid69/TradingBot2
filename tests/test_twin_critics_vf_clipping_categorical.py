@@ -13,10 +13,10 @@ Test Coverage:
 6. PPO semantics: Element-wise max(L_unclipped, L_clipped)
 """
 
-import gymnasium as gym
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
 from custom_policy_patch1 import CustomActorCriticPolicy

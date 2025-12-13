@@ -7,7 +7,8 @@ ratio when VGS scales gradients down, preventing training instability.
 See VGS_UPGD_NOISE_INTERACTION_ANALYSIS.md for full analysis.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
 import numpy as np

@@ -2,7 +2,8 @@
 Quick test script for UPGD optimizers without pytest dependency.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from optimizers import UPGD, AdaptiveUPGD, UPGDW
 

@@ -49,7 +49,8 @@ Proposed "fix": (log_prob - old_log_prob).mean()
 This computes: E[log π_new - log π_old] = -KL(π_old || π_new) ✗ WRONG (negative KL!)
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 
 

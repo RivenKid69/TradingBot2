@@ -16,6 +16,7 @@ These tests verify:
 import math
 
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.us_market_structure import (
     TickSizeEnforcer,

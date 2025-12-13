@@ -5,7 +5,7 @@ Tests the full pipeline integration.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from unittest.mock import MagicMock
 
 from adversarial import (

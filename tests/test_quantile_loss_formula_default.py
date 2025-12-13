@@ -10,7 +10,8 @@ This ensures proper asymmetric penalties:
 - Underestimation (Q < T): penalty τ
 - Overestimation (Q ≥ T): penalty (1 - τ)
 """
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import pytest
 import numpy as np
 

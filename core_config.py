@@ -84,20 +84,16 @@ class TimingProfileSpec(BaseModel):
     min_lookback_ms: Optional[int] = Field(default=None)
 
     @model_validator(mode="after")
-    def _sanitize(cls, values: "TimingProfileSpec") -> "TimingProfileSpec":
-        delay = getattr(values, "decision_delay_ms", None)
-        if delay is not None:
-            object.__setattr__(values, "decision_delay_ms", max(0, int(delay)))
-        latency = getattr(values, "latency_steps", None)
-        if latency is not None:
-            object.__setattr__(values, "latency_steps", max(0, int(latency)))
-        lookback = getattr(values, "min_lookback_ms", None)
-        if lookback is not None:
-            object.__setattr__(values, "min_lookback_ms", max(0, int(lookback)))
-        mode = getattr(values, "decision_mode", None)
-        if mode is not None:
-            object.__setattr__(values, "decision_mode", str(mode).strip())
-        return values
+    def _sanitize(self) -> "TimingProfileSpec":
+        if self.decision_delay_ms is not None:
+            object.__setattr__(self, "decision_delay_ms", max(0, int(self.decision_delay_ms)))
+        if self.latency_steps is not None:
+            object.__setattr__(self, "latency_steps", max(0, int(self.latency_steps)))
+        if self.min_lookback_ms is not None:
+            object.__setattr__(self, "min_lookback_ms", max(0, int(self.min_lookback_ms)))
+        if self.decision_mode is not None:
+            object.__setattr__(self, "decision_mode", str(self.decision_mode).strip())
+        return self
 
 
 @dataclass(frozen=True)
@@ -1154,26 +1150,22 @@ class TrainDataConfig(BaseModel):
         return values
 
     @model_validator(mode="after")
-    def _ensure_train_window_aliases(cls, values: "TrainDataConfig") -> "TrainDataConfig":
-        start = getattr(values, "start_ts", None)
-        train_start = getattr(values, "train_start_ts", None)
-        if train_start is None:
-            object.__setattr__(values, "train_start_ts", start)
-        elif start is None:
-            object.__setattr__(values, "start_ts", train_start)
-        elif start != train_start:
+    def _ensure_train_window_aliases(self) -> "TrainDataConfig":
+        if self.train_start_ts is None:
+            object.__setattr__(self, "train_start_ts", self.start_ts)
+        elif self.start_ts is None:
+            object.__setattr__(self, "start_ts", self.train_start_ts)
+        elif self.start_ts != self.train_start_ts:
             raise ValueError("start_ts and train_start_ts diverged during validation")
 
-        end = getattr(values, "end_ts", None)
-        train_end = getattr(values, "train_end_ts", None)
-        if train_end is None:
-            object.__setattr__(values, "train_end_ts", end)
-        elif end is None:
-            object.__setattr__(values, "end_ts", train_end)
-        elif end != train_end:
+        if self.train_end_ts is None:
+            object.__setattr__(self, "train_end_ts", self.end_ts)
+        elif self.end_ts is None:
+            object.__setattr__(self, "end_ts", self.train_end_ts)
+        elif self.end_ts != self.train_end_ts:
             raise ValueError("end_ts and train_end_ts diverged during validation")
 
-        return values
+        return self
 
 
 class ModelConfig(BaseModel):

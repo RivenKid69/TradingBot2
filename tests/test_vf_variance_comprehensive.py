@@ -5,7 +5,8 @@ This test suite provides 100% coverage of edge cases, backward compatibility,
 shape handling, and integration scenarios.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional
 

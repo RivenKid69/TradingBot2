@@ -4,8 +4,9 @@ COMPREHENSIVE executable tests for distributional VF clipping.
 These tests can be run without pytest to verify the fix works correctly.
 """
 
+import pytest
 import sys
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

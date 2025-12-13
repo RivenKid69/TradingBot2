@@ -11,7 +11,7 @@ Reference: PPO_BUGS_ANALYSIS_REPORT.md
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from typing import Optional
 from unittest.mock import MagicMock, patch

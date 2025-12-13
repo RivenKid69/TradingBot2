@@ -11,7 +11,8 @@ This file tests:
 7. Integration with all PPO features
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 from gymnasium import spaces

@@ -17,6 +17,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import math
+import pytest
+
+# Check for optional dependencies
+try:
+    import gymnasium
+    HAS_GYMNASIUM = True
+except ImportError:
+    HAS_GYMNASIUM = False
+
+gymnasium_required = pytest.mark.skipif(
+    not HAS_GYMNASIUM, reason="gymnasium required for distributional_ppo tests"
+)
 
 
 def test_advantage_normalization_numerical_impact():
@@ -204,6 +216,7 @@ def test_garch_volatility_check_impact():
     print("  ✓ GARCH volatility check impact verified")
 
 
+@gymnasium_required
 def test_cross_metric_consistency():
     """Test that all metrics use consistent ddof across the codebase."""
     print("\n[TEST] Cross-metric consistency...")

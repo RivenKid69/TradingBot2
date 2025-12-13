@@ -3,7 +3,8 @@ Quick smoke test for categorical VF clipping implementation.
 This can be run without pytest to verify basic functionality.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 from distributional_ppo import DistributionalPPO
 
 

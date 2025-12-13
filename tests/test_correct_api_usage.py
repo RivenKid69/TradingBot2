@@ -9,8 +9,9 @@ This test shows the proper way to configure all advanced optimization features:
 IMPORTANT: This test demonstrates the CORRECT way to use these features.
 """
 
-import gymnasium as gym
-import torch
+import pytest
+gym = pytest.importorskip("gymnasium")
+torch = pytest.importorskip("torch")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy

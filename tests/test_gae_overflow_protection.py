@@ -15,7 +15,7 @@ References:
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from typing import Tuple
 
 # Mock the necessary parts of distributional_ppo for testing

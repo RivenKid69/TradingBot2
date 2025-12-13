@@ -5,7 +5,7 @@ Tests for DORA cross-regulation integration (Phase 5).
 
 from datetime import datetime, timedelta, timezone
 
-from services.dora.cross_regulation import (
+from services.archive.dora_financial_entity.cross_regulation import (
     DORARegulationIntegration,
     LoggingAlignmentResult,
     Regulation,

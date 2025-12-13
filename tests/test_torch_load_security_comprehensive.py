@@ -17,7 +17,8 @@ import pickle
 import tempfile
 from pathlib import Path
 import re
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import pytest
 import numpy as np
 

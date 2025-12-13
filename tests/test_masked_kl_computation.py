@@ -11,8 +11,8 @@ excluding no-trade windows and masked-out transitions.
 
 import pytest
 import numpy as np
-import torch
-import gymnasium as gym
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy

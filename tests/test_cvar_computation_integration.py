@@ -10,7 +10,7 @@ This test verifies that CVaR computation works correctly with:
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from gymnasium import spaces
 from stable_baselines3.common.utils import get_device

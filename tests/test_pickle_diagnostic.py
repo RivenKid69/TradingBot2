@@ -1,6 +1,8 @@
 """Diagnostic test to find what exactly cannot be pickled."""
 
-import gymnasium as gym
+import pytest
+pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 import cloudpickle
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO

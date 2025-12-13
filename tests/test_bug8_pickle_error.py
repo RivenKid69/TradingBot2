@@ -10,7 +10,8 @@ This lambda captures the current scope, which may include unpicklable objects
 like sys.stdout/stderr (EncodedFile instances on Windows).
 """
 
-import gymnasium as gym
+import pytest
+gym = pytest.importorskip("gymnasium")
 import tempfile
 from pathlib import Path
 from stable_baselines3.common.vec_env import DummyVecEnv

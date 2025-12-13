@@ -11,7 +11,7 @@ Tests Twin Critics integration with:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from gymnasium import spaces
 from stable_baselines3.common.vec_env import DummyVecEnv

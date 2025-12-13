@@ -24,7 +24,7 @@ from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from datetime import datetime, date
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 
 # Mock missing imports before importing the module under test

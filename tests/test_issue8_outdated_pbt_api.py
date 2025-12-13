@@ -6,7 +6,7 @@ now returns 3 values instead of 2, and old code needs to be updated.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from adversarial.pbt_scheduler import PBTScheduler, PBTConfig, HyperparamConfig
 
 

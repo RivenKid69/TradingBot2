@@ -9,7 +9,7 @@ This is the FINAL comprehensive validation that verifies:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from gymnasium import spaces
 from custom_policy_patch1 import CustomActorCriticPolicy

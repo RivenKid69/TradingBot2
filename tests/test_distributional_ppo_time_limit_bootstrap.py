@@ -1,8 +1,9 @@
+import pytest
 import sys
 import types
 
 import numpy as np
-import torch
+torch = pytest.importorskip("torch")
 
 if "sb3_contrib" not in sys.modules:  # pragma: no cover - тестовый шим
     sb3_contrib = types.ModuleType("sb3_contrib")

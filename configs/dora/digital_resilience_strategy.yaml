@@ -1,6 +1,11 @@
 # Digital Operational Resilience Strategy Configuration
 # DORA Article 6(8) - Digital Operational Resilience Strategy
 #
+# NOTE: This platform is an ICT Provider / Software Provider (DORA Art. 30),
+# NOT a Financial Entity (DORA Art. 2). We implement operational resilience
+# best practices to support our B2B Financial Entity clients, but we are
+# NOT subject to the full FE DORA framework.
+#
 # This configuration defines the strategic approach to digital operational resilience
 # as required by Regulation (EU) 2022/2554 (DORA).
 #
@@ -20,11 +25,12 @@ strategy:
   approved_by: ""
   approved_date: ""
 
-  # Firm identification
+  # Entity identification
+  # NOTE: We are an ICT Provider (Art. 30), NOT a Financial Entity
   firm:
     name: ""
     lei: ""
-    type: "investment_firm"  # investment_firm, credit_institution, trading_venue, etc.
+    type: "ict_provider"  # We are ICT Provider, NOT investment_firm
     proportionality_tier: "standard"  # simplified, standard, enhanced
     is_microenterprise: false
 

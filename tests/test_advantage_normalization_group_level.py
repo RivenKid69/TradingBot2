@@ -11,7 +11,7 @@ magnitudes. This is mathematically incorrect for gradient accumulation.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 from typing import Optional, NamedTuple
 

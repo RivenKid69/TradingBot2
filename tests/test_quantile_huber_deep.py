@@ -20,6 +20,7 @@ import math
 import sys
 
 import pytest
+pytest.importorskip("torch")
 
 import test_distributional_ppo_raw_outliers  # noqa: F401
 

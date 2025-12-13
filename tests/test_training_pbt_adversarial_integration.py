@@ -20,7 +20,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import yaml
 
 from training_pbt_adversarial_integration import (

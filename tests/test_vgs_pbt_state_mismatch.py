@@ -13,7 +13,7 @@ Test strategy:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import tempfile
 import os
 import numpy as np
@@ -26,7 +26,6 @@ try:
     from variance_gradient_scaler import VarianceGradientScaler
     from adversarial.pbt_scheduler import PBTScheduler, PBTConfig, HyperparamConfig, PopulationMember
     from custom_policy_patch1 import CustomActorCriticPolicy
-    import gymnasium as gym
     from stable_baselines3.common.vec_env import DummyVecEnv
 except ImportError as e:
     pytest.skip(f"Required imports not available: {e}", allow_module_level=True)

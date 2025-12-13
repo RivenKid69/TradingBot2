@@ -12,7 +12,8 @@ Tests focus on:
 8. Performance benchmarks
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import math
 import sys

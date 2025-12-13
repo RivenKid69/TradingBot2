@@ -16,6 +16,7 @@ Test Coverage:
 
 import numpy as np
 import pytest
+pytest.importorskip("gymnasium")
 from typing import Dict, Optional
 from distributional_ppo import compute_grouped_explained_variance
 

@@ -9,7 +9,24 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from services import signal_bus
-from api.spot_signals import SpotSignalEnvelope
+from api.spot_signals import SpotSignalEnvelope, SpotSignalTargetWeightPayload, SpotSignalEconomics
+
+
+def _make_valid_payload() -> dict:
+    """Create a valid payload structure for SpotSignalEnvelope."""
+    return {
+        "kind": "target_weight",
+        "target_weight": 0.5,
+        "economics": {
+            "edge_bps": 10.0,
+            "cost_bps": 2.0,
+            "net_bps": 8.0,
+            "turnover_usd": 1000.0,
+            "act_now": True,
+            "impact": 0.0,
+            "impact_mode": "none",
+        }
+    }
 
 
 @pytest.fixture(autouse=True)
@@ -226,7 +243,7 @@ class TestLogDrop:
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload={"test": "data"}
+            payload=_make_valid_payload()
         )
 
         signal_bus.log_drop(envelope, "duplicate")
@@ -241,7 +258,7 @@ class TestLogDrop:
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload={"test": "data"}
+            payload=_make_valid_payload()
         )
 
         signal_bus.log_drop(envelope, "expired")
@@ -257,7 +274,7 @@ class TestLogDrop:
             symbol="BTCUSDT",
             bar_close_ms=1234567890000,
             expires_at_ms=1234567950000,
-            payload={"test": "data"}
+            payload=_make_valid_payload()
         )
 
         signal_bus.log_drop(envelope, "duplicate")
@@ -279,7 +296,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -302,7 +319,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -325,7 +342,7 @@ class TestPublishSignal:
         result1 = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -335,7 +352,7 @@ class TestPublishSignal:
         result2 = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -353,12 +370,14 @@ class TestPublishSignal:
 
         send_fn = MagicMock()
         now_ms = int(time.time() * 1000)
-        expires_at_ms = now_ms - 1000  # Already expired
+        # Signal was created in the past with a short validity
+        bar_close_ms = now_ms - 5000  # Bar closed 5 seconds ago
+        expires_at_ms = now_ms - 1000  # Expired 1 second ago (but after bar_close)
 
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
-            bar_close_ms=now_ms,
-            payload={"test": "data"},
+            bar_close_ms=bar_close_ms,
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -381,7 +400,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             valid_until_ms=valid_until_ms,
@@ -406,7 +425,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             valid_until_ms=valid_until_ms,
@@ -430,7 +449,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -454,7 +473,7 @@ class TestPublishSignal:
         result = signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -478,7 +497,7 @@ class TestPublishSignal:
         signal_bus.publish_signal(
             symbol="BTCUSDT",
             bar_close_ms=now_ms,
-            payload={"test": "data"},
+            payload=_make_valid_payload(),
             send_fn=send_fn,
             expires_at_ms=expires_at_ms,
             now_ms=now_ms,
@@ -506,7 +525,7 @@ class TestThreadSafety:
             result = signal_bus.publish_signal(
                 symbol="BTCUSDT",
                 bar_close_ms=now_ms,
-                payload={"test": "data"},
+                payload=_make_valid_payload(),
                 send_fn=send_fn,
                 expires_at_ms=expires_at_ms,
                 now_ms=now_ms,

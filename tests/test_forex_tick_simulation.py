@@ -21,6 +21,7 @@ from typing import List
 
 import numpy as np
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.forex_tick_simulation import (
     # Enums

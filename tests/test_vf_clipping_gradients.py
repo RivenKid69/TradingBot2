@@ -9,7 +9,8 @@ which claimed that max() creates a bias. The issue is NOT REAL - max() implement
 a trust region constraint through gradient blocking, as proven by these tests.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn.functional as F
 
 

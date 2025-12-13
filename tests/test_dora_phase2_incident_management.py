@@ -20,6 +20,16 @@ References:
 - CIR 2025/302: ITS on reporting templates
 """
 
+
+import pytest
+pytest.skip(
+    "Legacy DORA test - uses deprecated imports from services.dora.* "
+    "These modules have been migrated to services.dora_integration.*. "
+    "See tests/dora/ and tests/dora_integration/ for current tests.",
+    allow_module_level=True
+)
+
+
 import pytest
 from datetime import datetime, timedelta, timezone
 

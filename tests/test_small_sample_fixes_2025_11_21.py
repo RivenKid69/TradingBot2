@@ -73,6 +73,7 @@ _install_sb3_stub()
 import numpy as np
 import pandas as pd
 import pytest
+pytest.importorskip("torch")
 from train_model_multi_patch import sharpe_ratio, sortino_ratio  # noqa: E402
 from features_pipeline import FeaturePipeline  # noqa: E402
 

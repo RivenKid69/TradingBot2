@@ -17,6 +17,7 @@ Target: 40+ tests with <10us per match operation
 import time
 import math
 import pytest
+pytest.importorskip("sortedcontainers")
 from typing import List, Optional
 
 from lob.data_structures import (

@@ -21,7 +21,7 @@ import threading
 import tempfile
 import os
 
-from services.dora.third_party_risk import (
+from services.dora_integration.third_party import (
     # Enumerations
     ProviderType,
     ProviderCriticality,

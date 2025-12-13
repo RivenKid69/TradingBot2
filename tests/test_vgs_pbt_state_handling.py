@@ -8,7 +8,7 @@ Reference: CLAUDE.md "НЕ БАГИ" #52
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 from variance_gradient_scaler import VarianceGradientScaler

@@ -1,880 +1,60 @@
 # -*- coding: utf-8 -*-
 """
-DORA Compliance Module for AI-Powered Quantitative Research Platform.
+DORA Compliance Module - Thin Facade.
 
 Digital Operational Resilience Act (DORA) - Regulation (EU) 2022/2554.
 
-This package provides compliance tools for financial entities per DORA requirements:
+ARCHITECTURE (Post-Migration Phase 8):
+    services/core/                  - Operational resilience (14 modules) - NOT TOUCHED
+    services/dora_integration/      - Client-facing interfaces (21 modules) - ACTIVE
+    services/dora/                  - THIS FILE: thin facade for backward compatibility
+    services/archive/dora_financial_entity/  - Archived FE modules (23 modules)
 
-Phase 0 - Proportionality Assessment (Articles 2, 3(22), 4, 16):
-    - scope_verification: DORA Scope Verification (Article 2)
-    - function_classification: Critical/Important Function Classification (Article 3(22))
-    - proportionality: Entity Classification and Regime Determination (Articles 4, 16)
+USAGE:
+    # PREFERRED (direct import from integration layer):
+    from services.dora_integration.due_diligence import DORAuditReadiness
+    from services.dora_integration.incident_interface import DORAIncidentClassification
+    from services.dora_integration.contracts import DORAContractualRequirements
 
-Phase 1 - ICT Risk Management Framework (Articles 5-16):
-    - governance: Management Body Oversight and ICT Governance (Article 5)
-    - ict_risk_framework: ICT Risk Management Framework (Article 6)
-    - ict_systems: ICT Systems, Protocols and Tools (Article 7)
-    - ict_identification: ICT Risk Identification (Article 8)
-    - protection: Protection and Prevention (Article 9)
-    - detection: Anomaly Detection (Article 10)
-    - response_recovery: Response and Recovery (Article 11)
-    - backup_recovery: Backup and Recovery (Article 12)
-    - learning: Learning and Evolving (Article 13)
-    - communication: Crisis Communication (Article 14)
-    - ict_business_continuity: ICT Business Continuity (Article 15)
-    - simplified_framework: Simplified Framework for Smaller Entities (Article 16)
+    # DEPRECATED (via this facade - emits DeprecationWarning):
+    from services.dora import DORAuditReadiness  # Works but deprecated
 
-Phase 2 - ICT Incident Management & Reporting (Articles 17-23):
-    - incident_classification: Incident Classification (CDR 2024/1772)
-    - incident_management: ICT Incident Management (Article 17)
-    - incident_reporting: Major Incident Reporting (Article 19)
-    - cyber_threat_notification: Cyber Threat Notification (Article 19a)
+    # For Financial Entity modules (archived):
+    from services.archive.dora_financial_entity import DORAGovernanceFramework
 
-Phase 3 - Digital Resilience Testing (Articles 24-27):
-    - vulnerability_assessment: Vulnerability Assessments (Article 24)
-    - penetration_testing: Penetration Testing (Article 24)
-    - tlpt: Threat-Led Penetration Testing (Article 26) - if designated
+For new code, ALWAYS prefer direct imports from services.dora_integration.
 
-Phase 4 - Third-Party ICT Risk Management (Articles 28-44):
-    - third_party_risk: Third-Party Risk Assessment (Article 28)
-    - register_of_information: Register of Information (Article 28(3))
-    - contractual_requirements: Contractual Arrangements (Article 30)
-    - exit_strategies: Exit Strategies (Article 28(8))
-    - concentration_risk: ICT Concentration Risk (Article 29)
-    - ctpp_oversight: Critical Third-Party Provider Oversight (Articles 31-44)
-
-Phase 5 - Information Sharing & Integration (Article 45):
-    - threat_intelligence: Threat Intelligence Sharing
-    - cross_regulation: Cross-Regulation Integration (AI Act, MiFID II)
-
-Scope of Application:
-    Financial entities subject to DORA per Article 2(1):
-    - Investment firms (Article 2(1)(e))
-    - Crypto-asset service providers (Article 2(1)(f))
-    - Other 19 types of financial entities
+Migration History:
+    v1.0.0: Initial DORA implementation
+    v2.0.0: FE modules archived, integration layer active, facade created
+    v2.1.0: Phase 8 complete - final integration & cleanup
 
 Key Compliance Dates:
     - Application Date: 17 January 2025
     - Register of Information: 30 April 2025 (via NCAs to ESAs)
     - Reference Date for ROI: 31 March 2025
 
-Technical Standards:
-    - RTS on ICT Risk Management Framework (CDR 2024/1774)
-    - RTS on Incident Classification (CDR 2024/1772)
-    - RTS on Incident Reporting (CDR 2025/301)
-    - ITS on Register of Information (CIR 2024/2956)
-
 References:
     - DORA Full Text: https://eur-lex.europa.eu/eli/reg/2022/2554/oj
-    - DORA Article 2: https://www.digital-operational-resilience-act.com/Article_2.html
+    - DORA Article 30: https://www.digital-operational-resilience-act.com/Article_30.html
     - ESAs Technical Standards: https://www.esma.europa.eu/publications-and-data/dora
-    - CTPP Designations: https://www.esma.europa.eu/press-news/esma-news/european-supervisory-authorities-designate-critical-ict-third-party-providers
 """
 
 from __future__ import annotations
 
-__version__ = "2.1.0"  # Updated per audit fixes
-__dora_compliance_phase__ = 5  # Current implementation phase
+import warnings
+from typing import Any
+
+__version__ = "2.1.0"  # Phase 8: Final Integration & Cleanup
+__dora_compliance_phase__ = 8
 
 # =============================================================================
-# Phase 0 exports (Proportionality Assessment)
+# Re-export EVERYTHING from services.dora_integration
 # =============================================================================
 
-from services.dora.scope_verification import (
-    # Enums
-    DORAEntityType,
-    DORAScopeResult,
-    # Data structures
-    ScopeVerification,
-    EntityAuthorization,
-    # Main class
-    DORAScope,
-    # Factory functions
-    create_scope_verifier,
-    get_entity_type_description,
-)
-
-from services.dora.function_classification import (
-    # Enums
-    FunctionCriticality,
-    ImpairmentType,
-    # Data structures
-    FunctionClassification,
-    ICTService,
-    ThirdPartyProvider,
-    # Main class
-    FunctionClassifier,
-    # Factory functions
-    create_function_classifier,
-    get_platform_functions,
-    get_ict_providers,
-)
-
-from services.dora.proportionality import (
-    # Enums
-    DORARegime,
-    ExemptionType,
-    # Data structures
-    EntityClassification,
-    ProportionalityAssessment,
-    RegimeExemption,
-    # Main class
-    ProportionalityAssessor,
-    # Factory functions
-    create_proportionality_assessor,
-    assess_entity_proportionality,
-)
-
-# =============================================================================
-# Phase 1 exports (ICT Risk Management Framework - Articles 5-16)
-# =============================================================================
-
-# Article 5 - Governance
-from services.dora.governance import (
-    # Enums
-    GovernanceRole,
-    DefenceLine,
-    TrainingStatus,
-    ApprovalStatus,
-    # Data structures
-    GovernanceRoleAssignment,
-    ICTTrainingRecord,
-    FrameworkApproval,
-    AuditFinding,
-    ICTBudgetAllocation,
-    # Main class
-    DORAGovernanceFramework,
-    # Factory functions
-    create_governance_framework,
-    # Constants
-    MANDATORY_TRAINING_TOPICS,
-)
-
-# Article 6 - ICT Risk Management Framework
-from services.dora.ict_risk_framework import (
-    # Enums
-    PolicyCategory,
-    ControlDomain,
-    ControlType,
-    RiskLevel as ICTRiskLevel,
-    # Data structures
-    RiskPolicy,
-    RiskProcedure,
-    ICTControl,
-    FrameworkReview,
-    ICTRisk,
-    # Main class
-    DORAICTRiskFramework,
-    # Factory functions
-    create_ict_risk_framework,
-)
-
-# Article 7 - ICT Systems
-from services.dora.ict_systems import (
-    # Enums
-    SystemCriticality,
-    SystemType,
-    SystemStatus,
-    CapacityStatus,
-    AutomationLevel,
-    # Data structures
-    ICTSystem,
-    CapacityMetric,
-    ReliabilityMetric,
-    AutomationCapability,
-    SystemUpgrade,
-    # Main class
-    DORAICTSystemsManager,
-    # Factory functions
-    create_ict_systems_manager,
-)
-
-# Article 8 - ICT Identification
-from services.dora.ict_identification import (
-    # Enums
-    AssetType,
-    AssetClassification,
-    RiskSourceCategory,
-    ThreatCategory,
-    VulnerabilitySeverity,
-    # Data structures
-    ICTAsset,
-    RiskSource,
-    CyberThreat,
-    ICTVulnerability,
-    ICTDependency,
-    BusinessFunction,
-    # Main class
-    DORAICTIdentification,
-    # Factory functions
-    create_ict_identification,
-)
-
-# Article 9 - Protection and Prevention
-from services.dora.protection import (
-    # Enums
-    SecurityControlCategory,
-    AccessControlType,
-    AuthenticationType,
-    EncryptionType,
-    NetworkZone,
-    # Data structures
-    SecurityControl,
-    AccessPolicy,
-    EncryptionStandard,
-    NetworkSecurityRule,
-    DataProtectionPolicy,
-    # Main class
-    DORAProtection,
-    # Factory functions
-    create_protection,
-)
-
-# Article 10 - Detection
-from services.dora.detection import (
-    # Enums
-    AnomalyType,
-    AlertSeverity,
-    AlertStatus,
-    DetectionMethod,
-    MonitoringStatus,
-    # Data structures
-    DetectionRule,
-    DetectionAlert,
-    PerformanceMetric,
-    SinglePointOfFailure,
-    # Main class
-    DORADetection,
-    # Factory functions
-    create_detection,
-)
-
-# Article 11 - Response and Recovery
-from services.dora.response_recovery import (
-    # Enums
-    IncidentSeverity,
-    IncidentStatus,
-    IncidentCategory,
-    EscalationLevel,
-    CrisisStatus,
-    # Data structures
-    ICTIncident,
-    ResponseProcedure,
-    EscalationRule,
-    CrisisEvent as ResponseCrisisEvent,
-    RecoveryAction,
-    # Main class
-    DORAResponseRecovery,
-    # Factory functions
-    create_response_recovery,
-)
-
-# Article 12 - Backup and Recovery
-from services.dora.backup_recovery import (
-    # Enums
-    BackupType,
-    BackupFrequency,
-    BackupStatus,
-    RecoveryTestType,
-    RecoveryTestResult,
-    LocationType,
-    # Data structures
-    BackupPolicy,
-    BackupJob,
-    BackupLocation,
-    RecoveryTest,
-    RestorationProcedure,
-    # Main class
-    DORABackupRecovery,
-    # Factory functions
-    create_backup_recovery,
-)
-
-# Article 13 - Learning and Evolving
-from services.dora.learning import (
-    # Enums
-    ReviewType,
-    LessonCategory,
-    LessonPriority,
-    LessonStatus,
-    ImprovementType,
-    ImprovementStatus,
-    KnowledgeType,
-    # Data structures
-    PostIncidentReview,
-    LessonLearned,
-    ImprovementInitiative,
-    KnowledgeArticle,
-    TrainingNeed,
-    TrendAnalysis,
-    InformationShare,
-    # Main class
-    DORALearning,
-    # Factory functions
-    create_dora_learning,
-)
-
-# Article 14 - Communication
-from services.dora.communication import (
-    # Enums
-    CommunicationType,
-    CommunicationChannel,
-    CommunicationPriority,
-    CommunicationStatus,
-    NotificationType,
-    StakeholderType,
-    EscalationTrigger,
-    # Data structures
-    CommunicationPolicy,
-    Stakeholder,
-    CommunicationTemplate,
-    Communication,
-    EscalationRule as CommunicationEscalationRule,
-    CrisisCommunicationPlan,
-    RegulatoryNotification,
-    CommunicationLog,
-    # Main class
-    DORACommunication,
-    # Factory functions
-    create_dora_communication,
-)
-
-# Article 15 - ICT Business Continuity
-from services.dora.ict_business_continuity import (
-    # Enums
-    ContinuityStatus,
-    CriticalityLevel,
-    ImpactCategory,
-    ImpactSeverity,
-    TestType as ContinuityTestType,
-    TestResult as ContinuityTestResult,
-    ScenarioType,
-    RecoveryStrategy,
-    # Data structures
-    ICTBusinessContinuityPolicy,
-    BusinessFunction as ContinuityBusinessFunction,
-    BusinessImpactAssessment,
-    RecoveryObjective,
-    ContinuityPlan,
-    DisruptionScenario,
-    ContinuityTest,
-    CrisisEvent as ContinuityCrisisEvent,
-    AlternativeArrangement,
-    # Main class
-    DORAICTBusinessContinuity,
-    # Factory functions
-    create_dora_ict_business_continuity,
-)
-
-# Article 16 - Simplified Framework
-from services.dora.simplified_framework import (
-    # Enums
-    EntitySize,
-    SimplifiedControlCategory,
-    ControlStatus,
-    RiskLevel as SimplifiedRiskLevel,
-    IncidentPriority as SimplifiedIncidentPriority,
-    IncidentStatus as SimplifiedIncidentStatus,
-    TestType as SimplifiedTestType,
-    # Data structures
-    EligibilityCriteria,
-    SimplifiedControl,
-    SimplifiedRiskAssessment,
-    SimplifiedIncident,
-    SimplifiedBackup,
-    SimplifiedThirdParty,
-    SimplifiedTest,
-    SimplifiedAwarenessTraining,
-    AnnualReview,
-    # Constants
-    ESSENTIAL_CONTROLS,
-    # Main class
-    DORASimplifiedFramework,
-    # Factory functions
-    create_dora_simplified_framework,
-)
-
-# =============================================================================
-# Phase 2 exports (ICT Incident Management & Reporting - Articles 17-23)
-# =============================================================================
-
-# Article 17 - Incident Management
-from services.dora.incident_management import (
-    # Enums
-    ICTEventType,
-    IncidentPhase,
-    IncidentPriority as IncidentMgmtPriority,
-    IncidentStatus as IncidentMgmtStatus,
-    EscalationLevel as IncidentMgmtEscalationLevel,
-    EarlyWarningType,
-    # Data structures
-    ICTEvent,
-    DORAIncident,
-    EarlyWarningIndicator,
-    IncidentAction,
-    EscalationRule,
-    IncidentManagementConfig,
-    # Main class
-    DORAIncidentManagement,
-    # Factory functions
-    create_incident_management,
-)
-
-# Article 18 - Incident Classification
-from services.dora.incident_classification import (
-    # Enums
-    IncidentClassificationType,
-    ClientType,
-    DataType as ClassificationDataType,
-    CriticalServiceType,
-    MajorIncidentTrigger,
-    ReputationalImpactLevel,
-    # Data structures
-    ClassificationThresholds,
-    ClientImpactAssessment,
-    DurationAssessment,
-    GeographicAssessment,
-    DataLossAssessment,
-    CriticalServiceAssessment,
-    EconomicImpactAssessment,
-    ReputationalAssessment,
-    RecurringIncidentAssessment,
-    MaliciousAccessAssessment,
-    IncidentClassificationResult,
-    IncidentClassificationConfig,
-    # Main class
-    DORAIncidentClassification,
-    # Factory functions
-    create_incident_classification,
-)
-
-# Article 19 - Incident Reporting
-from services.dora.incident_reporting import (
-    # Enums
-    ReportType,
-    ReportStatus,
-    IncidentTypeCode,
-    RootCauseCategory,
-    CompetentAuthorityType,
-    # Data structures
-    CompetentAuthority as ReportingCompetentAuthority,
-    InitialNotificationReport,
-    IntermediateReport,
-    FinalReport,
-    ReportSubmission,
-    IncidentReportingConfig,
-    # Main class
-    DORAIncidentReporter,
-    # Factory functions
-    create_incident_reporter,
-)
-
-# Article 19(4) - Cyber Threat Notification
-from services.dora.cyber_threat_notification import (
-    # Enums
-    ThreatCategory,
-    ThreatSeverity,
-    ThreatStatus,
-    ThreatActorType,
-    ThreatSignificance,
-    NotificationStatus as ThreatNotificationStatus,
-    # Data structures
-    ThreatIndicator,
-    CyberThreat,
-    ThreatSignificanceAssessment,
-    ThreatNotification,
-    CyberThreatNotificationConfig,
-    # Main class
-    CyberThreatNotificationService,
-    # Factory functions
-    create_cyber_threat_notification_service,
-)
-
-# Article 20 - Reporting Templates
-from services.dora.reporting_templates import (
-    # Enums
-    IncidentTypeCode as TemplateIncidentTypeCode,
-    DataTypeCode,
-    ClientTypeCode,
-    ServiceTypeCode,
-    ResponseEffectivenessCode,
-    # Data structures
-    TimelineEvent,
-    ITSInitialNotificationTemplate,
-    ITSIntermediateReportTemplate,
-    ITSFinalReportTemplate,
-    # Main class
-    DORAReportingTemplates,
-    # Factory functions
-    create_reporting_templates,
-)
-
-# Article 22 - Supervisory Feedback
-from services.dora.supervisory_feedback import (
-    # Enums
-    FeedbackType,
-    FeedbackPriority,
-    FeedbackStatus,
-    CorrectiveActionType,
-    ResponseType,
-    # Data structures
-    CompetentAuthority as FeedbackCompetentAuthority,
-    SupervisoryFeedback,
-    CorrectiveAction,
-    FeedbackResponse,
-    FeedbackAuditEntry,
-    AnonymisedInsight,
-    # Main class
-    DORASupervisioryFeedback,
-    # Factory functions
-    create_supervisory_feedback,
-)
-
-# Article 23 - Third-Party Incidents
-from services.dora.third_party_incidents import (
-    # Enums
-    ThirdPartyProviderType,
-    ThirdPartyCriticality,
-    ThirdPartyIncidentType,
-    IncidentSeverity as ThirdPartyIncidentSeverity,
-    IncidentStatus as ThirdPartyIncidentStatus,
-    ContractualSLAStatus,
-    EscalationLevel as ThirdPartyEscalationLevel,
-    CommunicationChannel as ThirdPartyCommunicationChannel,
-    # Data structures
-    ThirdPartyProvider as ThirdPartyProviderRecord,
-    AffectedService,
-    SLAAssessment,
-    CommunicationRecord,
-    EscalationRecord,
-    MitigationAction,
-    ThirdPartyIncident,
-    PostIncidentReview as ThirdPartyPostIncidentReview,
-    # Main class
-    DORAThirdPartyIncidents,
-    # Factory functions
-    create_third_party_incidents,
-)
-
-# =============================================================================
-# Phase 3 exports (Digital Resilience Testing - Articles 24-27)
-# =============================================================================
-
-# Article 24 - Digital Operational Resilience Testing Programme
-from services.dora.resilience_testing import (
-    # Enums
-    TestCategory,
-    TestFrequency,
-    TestStatus as ResilienceTestStatus,
-    TestResult as ResilienceTestResult,
-    FindingSeverity,
-    FindingStatus,
-    TesterType as ResilienceTesterType,
-    SystemCriticality as ResilienceSystemCriticality,
-    # Data structures
-    TestScope,
-    TestDefinition,
-    TestExecution,
-    TestFinding,
-    TestingProgramme,
-    TestingCycle,
-    ResilienceTestingConfig,
-    # Main class
-    DORAResilienceTestingProgramme,
-    # Factory functions
-    create_resilience_testing_programme,
-)
-
-# Article 25 - Testing of ICT Tools and Systems
-from services.dora.ict_testing import (
-    # Enums
-    ICTSystemType,
-    SystemCriticality as ICTSystemCriticality,
-    TestingPriority,
-    VulnerabilitySeverity as ICTVulnerabilitySeverity,
-    VulnerabilityStatus,
-    TestType as ICTTestType,
-    TestStatus as ICTTestStatus,
-    TestResult as ICTTestResult,
-    RemediationStatus,
-    # Data structures
-    ICTSystemProfile,
-    SystemTestPlan,
-    SystemTest,
-    Vulnerability,
-    RemediationPlan,
-    ThirdPartyInterfaceTest,
-    ICTTestingConfig,
-    # Main class
-    DORAICTSystemTesting,
-    # Factory functions
-    create_ict_system_testing,
-)
-
-# Article 26 - Threat-Led Penetration Testing (TLPT)
-from services.dora.tlpt import (
-    # Enums
-    TLPTPhase,
-    TLPTStatus,
-    ThreatActorType as TLPTThreatActorType,
-    ThreatActorCapability,
-    AttackTechnique,
-    AttackOutcome,
-    TLPTFindingSeverity,
-    FindingCategory,
-    # Data structures
-    TLPTScope,
-    ThreatIntelligenceReport,
-    RedTeamScenario,
-    AttackAction,
-    TLPTFinding,
-    PurpleTeamSession,
-    TLPTEngagement,
-    TLPTAttestation,
-    TLPTConfig,
-    # Main class
-    DORAThreadLedPenetrationTesting,
-    # Factory functions
-    create_tlpt,
-)
-
-# Article 27 - Requirements for Testers
-from services.dora.tester_management import (
-    # Enums
-    TesterType as TLPTTesterType,
-    TesterRole,
-    CertificationCategory,
-    QualificationStatus,
-    ConflictCheckResult,
-    # Data structures
-    SecurityCertification,
-    TesterExpertise,
-    ConflictOfInterestDeclaration,
-    ProfessionalIndemnityInsurance,
-    TLPTTester,
-    TesterOrganization,
-    TesterQualificationAssessment,
-    InternalTesterApproval,
-    TesterManagementConfig,
-    # Main class
-    DORATestermanagement,
-    # Factory functions
-    create_tester_management,
-)
-
-# Article 26(3) - Pooled TLPT
-from services.dora.pooled_testing import (
-    # Enums
-    PooledTestStatus,
-    ParticipantRole,
-    ParticipantStatus,
-    CostSharingModel,
-    ProviderCriticality,
-    # Data structures
-    SharedProvider,
-    PooledTestingParticipant,
-    PooledTestingScope,
-    CostSharingAgreement,
-    PooledTestingEngagement,
-    PooledTestingResults,
-    PooledTestingConfig,
-    # Main class
-    DORAPooledTesting,
-    # Factory functions
-    create_pooled_testing,
-)
-
-# =============================================================================
-# Phase 4 exports (Third-Party ICT Risk Management - Articles 28-44)
-# =============================================================================
-
-# Article 28 - Third-Party Risk Management
-from services.dora.third_party_risk import (
-    # Enums
-    ProviderType,
-    ProviderCriticality,
-    ProviderStatus,
-    RiskCategory,
-    RiskLevel,
-    ServiceCriticality,
-    DueDiligenceStatus,
-    AssessmentType,
-    SubstitutabilityLevel as TPRSubstitutabilityLevel,
-    # Data structures
-    ICTService as ThirdPartyICTService,
-    ICTProvider,
-    ThirdPartyRisk,
-    ThirdPartyRiskAssessment,
-    DueDiligenceCheck,
-    ProviderRelationshipEvent,
-    ThirdPartyRiskConfig,
-    # Main class
-    DORAThirdPartyRiskManagement,
-    # Factory functions
-    create_third_party_risk_management,
-)
-
-# Article 28(3) - Register of Information
-from services.dora.register_of_information import (
-    # Enums
-    ContractType,
-    ServiceType,
-    FunctionType as ROIFunctionType,
-    DataLocation,
-    ProviderLocationType,
-    SubcontractingLevel,
-    RegisterStatus,
-    ExportFormat,
-    # Data structures
-    EntityInformation,
-    BranchInformation,
-    ContractualArrangement,
-    ContractualArrangementFunction,
-    ICTServiceProvider,
-    SubcontractorEntry,
-    ICTServiceRecord,
-    RegisterSubmission,
-    RegisterOfInformationConfig,
-    # Main class
-    DORARegisterOfInformation,
-    # Factory functions
-    create_register_of_information,
-)
-
-# Article 30 - Contractual Arrangements
-from services.dora.contractual_requirements import (
-    # Enums
-    RequirementType,
-    RequirementCategory,
-    ComplianceStatus,
-    GapSeverity,
-    RemediationStatus,
-    ContractStatus,
-    # Data structures
-    ContractualRequirement,
-    ContractProvision,
-    ContractAssessment,
-    ContractGap,
-    ContractAmendment,
-    SLADefinition,
-    ICTContract,
-    ContractualRequirementsConfig,
-    # Art. 30(2)(h) Termination clause templates
-    TerminationClause,
-    get_termination_clause_templates,
-    # Main class
-    DORAContractualRequirements,
-    # Factory functions
-    create_contractual_requirements,
-)
-
-# Article 30(2)(i) - Training Participation
-from services.dora.training_participation import (
-    # Enums
-    TrainingType,
-    ParticipationMode,
-    RequestStatus as TrainingRequestStatus,
-    PersonnelRole,
-    # Data structures
-    TrainingCommitment,
-    TrainingRequest,
-    TrainingSession,
-    QuarterlyUsage,
-    TrainingParticipationConfig,
-    # Main class
-    DORATrainingParticipation,
-    # Factory functions
-    create_commitment as create_training_commitment,
-    receive_request as receive_training_request,
-)
-
-# Article 28(8) - Exit Strategies
-from services.dora.exit_strategies import (
-    # Enums
-    ExitTrigger,
-    ExitPhase,
-    ExitPlanStatus,
-    TransitionType,
-    ReadinessLevel,
-    AlternativeProviderStatus,
-    RiskLevel as ExitRiskLevel,
-    # Data structures
-    AlternativeProvider,
-    DataMigrationPlan,
-    TransitionTask,
-    ExitRisk,
-    ExitCostEstimate,
-    ExitPlan,
-    ExitExecution,
-    ExitReadinessAssessment,
-    ExitStrategiesConfig,
-    # Main class
-    DORAExitStrategies,
-    # Factory functions
-    create_exit_strategies,
-)
-
-# Article 29 - Concentration Risk
-from services.dora.concentration_risk import (
-    # Enums
-    ConcentrationType,
-    RiskLevel as ConcentrationRiskLevel,
-    MitigationStatus,
-    AssessmentScope,
-    SubstitutabilityLevel,
-    # Data structures
-    ProviderDependency,
-    ConcentrationMetric,
-    ConcentrationRisk,
-    MitigationMeasure,
-    ConcentrationAssessment,
-    DependencyMap,
-    ConcentrationRiskConfig,
-    # Main class
-    DORAConcentrationRisk,
-    # Factory functions
-    create_concentration_risk,
-    get_concentration_types,
-    get_substitutability_levels,
-)
-
-# Articles 31-44 - CTPP Oversight
-from services.dora.ctpp_oversight import (
-    # Enums
-    LeadOverseer,
-    CTPPStatus,
-    OversightRecommendationType,
-    RecommendationStatus,
-    ComplianceLevel,
-    OversightExerciseType,
-    # Data structures
-    CTPPDesignation,
-    OversightRecommendation,
-    OversightExercise,
-    CTPPRiskAssessment,
-    CTPPContractRequirement,
-    EntityCTPPRelationship,
-    CTPPOversightConfig,
-    # Constants
-    DESIGNATED_CTPPS_2025,
-    # Main class
-    DORACtppOversight,
-    # Factory functions
-    create_ctpp_oversight,
-    get_lead_overseers,
-    get_designated_ctpps_list,
-    get_ctpp_requirements,
-    get_ctpp_contract_requirements,
-)
-
-# =============================================================================
-# ICT Provider Support Modules (Art. 30 obligations as ICT Provider)
-# =============================================================================
-
-# Audit Readiness (Art. 30(3)(e) - Audit and Access Rights)
-from services.dora.audit_readiness import (
-    # SLA Constants
+# Phase 1: Due Diligence & Audit Layer
+from services.dora_integration.due_diligence import (
+    # Audit Readiness
     AUDIT_SLA_ACKNOWLEDGMENT_DAYS,
     AUDIT_SLA_SCHEDULING_DAYS,
     AUDIT_SLA_EVIDENCE_STANDARD_DAYS,
@@ -882,134 +62,60 @@ from services.dora.audit_readiness import (
     AUDIT_SLA_NCA_RESPONSE_DAYS,
     EVIDENCE_RETENTION_YEARS,
     AUDIT_TYPE_SLAS,
-    # Enums
     AuditType,
     AuditScope,
     AuditStatus,
     EvidenceType,
     EvidenceCategory,
-    # Data structures
     AuditRequest,
     EvidenceItem,
     AuditFinding,
     EvidenceTemplate,
     AuditReadinessConfig,
-    # Main class
     DORAuditReadiness,
-    # Factory functions
     create_audit_readiness,
     get_standard_evidence_templates,
-)
-
-# Subcontractor Management (Art. 30(2)(b), 30(3) - Subcontracting)
-from services.dora.subcontractor_management import (
-    # Enums
-    SubcontractorType,
-    SubcontractorStatus,
-    RiskLevel as SubcontractorRiskLevel,
-    ChangeType as SubcontractorChangeType,
-    NotificationStatus as SubcontractorNotificationStatus,
-    ConsentMode,  # NEW v2.1 - Prior consent vs notification workflow
-    # Data structures
-    Subcontractor,
-    SubcontractorChange,
-    ClientSubcontractorPreference,
-    SubcontractorRiskAssessment,
-    SubcontractorConfig,
-    # Main class
-    DORASubcontractorManagement,
-    # Factory functions
-    create_subcontractor_management,
-)
-
-# Multi-Client Incident Coordination (Art. 30(2)(f) - NEW v2.1)
-from services.dora.audit_readiness import (
     IncidentNotificationStatus,
     ClientNotificationRecord,
     MultiClientIncident,
     MultiClientIncidentCoordinator,
     create_incident_coordinator,
-)
-
-# SLA Guardrails (Art. 30(2)(e), 30(3)(a) - NEW Phase 1)
-from services.dora.sla_guardrails import (
-    # Enums
-    SLATier,
-    CapacityStatus,
-    ApprovalStatus as SLAApprovalStatus,
-    InfrastructureRequirement,
-    OnCallRequirement,
-    # Data structures
-    SLATierDefinition,
-    CapacityValidation,
-    SLACommitmentRequest,
-    SLAGuardrailsConfig,
-    CurrentCapacityState,
-    # Main class
-    SLAGuardrails,
-    # Factory functions
-    create_sla_guardrails,
-    get_sla_tier_definitions,
-    get_sla_tiers,
-)
-
-# Pooled Audit Support (Art. 30(4) - NEW Phase 1)
-from services.dora.pooled_audit_support import (
-    # Enums
+    # Provider Info Package
+    ICTServiceType,
+    FunctionCriticality,
+    SubstitutabilityLevel,
+    DataSensitivity,
+    ProviderIdentification,
+    ServiceDescription,
+    ICTServiceDescription,
+    DataLocation,
+    DataLocationInfo,
+    SubcontractorInfo,
+    CertificationInfo,
+    ContractSummary,
+    ProviderInfoPackage,
+    ProviderInfoConfig,
+    DORAProviderInfoPackage,
+    ProviderInfoPackageGenerator,
+    create_provider_info_package,
+    # Pooled Audit Support
     AuditReportType,
     PooledAuditStatus,
     ParticipationStatus,
     AuditScopeArea,
-    FindingSeverity as PooledAuditFindingSeverity,
-    RemediationStatus as PooledAuditRemediationStatus,
-    # Data structures
+    FindingSeverity,
+    RemediationStatus,
     CertificationRecord,
     PooledAuditParticipant,
-    AuditFinding as PooledAuditFinding,
+    PooledAuditFinding,
     PooledAuditEngagement,
     AuditReportAccess,
     PooledAuditConfig,
-    # Main class
     PooledAuditSupport,
-    # Factory functions
     create_pooled_audit_support,
     get_audit_scope_areas,
     get_report_types,
-)
-
-# =============================================================================
-# Phase 5 exports (Information Sharing & Integration - Article 45)
-# =============================================================================
-
-from services.dora.information_sharing import (
-    # Constants
-    SHAREABLE_INFORMATION,
-    # Enums
-    CommunityType,
-    SharingChannel,
-    SharingSensitivity,
-    MembershipStatus,
-    SharingOutcome,
-    # Data structures
-    SharingCommunity,
-    InformationSharingPolicy,
-    CyberThreat,
-    ThreatIntelligence,
-    ThreatSharingRecord,
-    # Main class
-    DORAInformationSharing,
-)
-
-from services.dora.cross_regulation import (
-    Regulation,
-    ReportingRequirement,
-    IncidentAlignmentResult,
-    RiskFrameworkAlignment,
-    LoggingAlignmentResult,
-    DORARegulationIntegration,
-)
-
-from services.dora.compliance_dashboard import (
+    # Compliance Dashboard
     IssueSeverity,
     IssueStatus,
     DeadlineStatus,
@@ -1020,18 +126,687 @@ from services.dora.compliance_dashboard import (
     DORAComplianceDashboard,
 )
 
-from services.dora.unified_reporting import (
+# Phase 2: Incident Interface Layer
+from services.dora_integration.incident_interface import (
+    # Client Notification
+    ClientNotificationService,
+    DORAClientNotification,
+    ClientNotificationConfig,
+    IncidentSeverity,
+    NotificationStatus,
+    NotificationChannel,
+    IncidentCategory,
+    ClientContact,
+    IncidentNotification,
+    IncidentUpdate,
+    ClientIncident,
+    create_client_notification_service,
+    create_client_notification_system,
+    get_notification_template,
+    # Incident Classification
+    DORAIncidentClassification,
+    IncidentClassificationConfig,
+    ClassificationThresholds,
+    IncidentClassificationType,
+    ClientType,
+    DataType,
+    CriticalServiceType,
+    MajorIncidentTrigger,
+    ReputationalImpactLevel,
+    ClientImpactAssessment,
+    DurationAssessment,
+    GeographicAssessment,
+    DataLossAssessment,
+    CriticalServiceAssessment,
+    EconomicImpactAssessment,
+    ReputationalAssessment,
+    RecurringIncidentAssessment,
+    MaliciousAccessAssessment,
+    IncidentClassificationResult,
+    create_incident_classification,
+    get_default_thresholds,
+    get_classification_criteria,
+    create_client_impact_assessment,
+    create_duration_assessment,
+    create_economic_impact_assessment,
+    create_data_loss_assessment,
+    create_critical_service_assessment,
+    # Incident Reporting
+    DORAIncidentReporter,
+    IncidentReportingConfig,
     ReportType,
     ReportStatus,
+    IncidentTypeCode,
+    RootCauseCategory,
+    CompetentAuthorityType,
+    CompetentAuthority,
+    InitialNotificationReport,
+    IntermediateReport,
+    FinalReport,
+    ClientDataPackage,
+    ReportSubmission,
+    create_incident_reporter,
+    get_report_deadlines,
+    # Cyber Threat Notification
+    CyberThreatNotificationService,
+    CyberThreatNotificationConfig,
+    ThreatCategory,
+    ThreatActorType,
+    ThreatSeverity,
+    ThreatStatus,
+    ThreatSignificance,
+    ThreatIndicator,
+    CyberThreat,
+    ThreatSignificanceAssessment,
+    ThreatNotification,
+    create_cyber_threat_notification_service,
+    get_threat_categories,
+    get_threat_severities,
+    # Communication
+    DORACommunication,
+    CommunicationConfig,
+    CommunicationChannel,
+    StakeholderType,
+    CommunicationPriority,
+    CommunicationStatus,
+    CrisisPhase,
+    PolicyStatus,
+    CommunicationContact,
+    CommunicationTemplate,
+    CommunicationRecord,
+    CommunicationPolicy,
+    CrisisStatus,
+    create_communication_service,
+    get_communication_channels,
+    get_stakeholder_types,
+    get_crisis_phases,
+)
+
+# Phase 3: Third-Party Risk Interface
+from services.dora_integration.third_party import (
+    # Concentration Risk
+    DORAConcentrationRisk,
+    ConcentrationRiskConfig,
+    ConcentrationType,
+    ConcentrationRiskLevel,
+    MitigationStatus,
+    AssessmentScope,
+    ProviderDependency,
+    ConcentrationMetric,
+    ConcentrationRisk,
+    MitigationMeasure,
+    ConcentrationAssessment,
+    DependencyMap,
+    create_concentration_risk,
+    get_concentration_types,
+    get_substitutability_levels,
+    # CTPP Oversight
+    DORACtppOversight,
+    CTPPOversightConfig,
+    LeadOverseer,
+    CTPPStatus,
+    OversightRecommendationType,
+    RecommendationStatus,
+    ComplianceLevel,
+    OversightExerciseType,
+    CTPPDesignation,
+    OversightRecommendation,
+    OversightExercise,
+    CTPPRiskAssessment,
+    CTPPContractRequirement,
+    EntityCTPPRelationship,
+    DESIGNATED_CTPPS_2025,
+    create_ctpp_oversight,
+    get_lead_overseers,
+    get_designated_ctpps_list,
+    get_ctpp_requirements,
+    get_ctpp_contract_requirements,
+    # Third-Party Risk Management
+    DORAThirdPartyRiskManagement,
+    ThirdPartyRiskConfig,
+    ProviderType,
+    ProviderCriticality,
+    ServiceCriticality,
+    ProviderStatus,
+    RiskCategory,
+    RiskLevel,
+    DueDiligenceStatus,
+    AssessmentType,
+    TPRSubstitutabilityLevel,
+    ICTService,
+    ICTProvider,
+    ThirdPartyRisk,
+    ThirdPartyRiskAssessment,
+    DueDiligenceCheck,
+    ProviderRelationshipEvent,
+    create_third_party_risk_management,
+    get_provider_types,
+    get_risk_categories,
+    get_criticality_levels,
+    # Third-Party Incidents
+    DORAThirdPartyIncidents,
+    ThirdPartyProviderType,
+    ThirdPartyCriticality,
+    ThirdPartyIncidentType,
+    ContractualSLAStatus,
+    EscalationLevel,
+    ThirdPartyProvider,
+    AffectedService,
+    SLAAssessment,
+    EscalationRecord,
+    IncidentMitigationAction,
+    ThirdPartyIncident,
+    PostIncidentReview,
+    create_third_party_incidents,
+    # Subcontractor Management
+    DORASubcontractorManagement,
+    SubcontractorConfig,
+    SubcontractorType,
+    SubcontractorStatus,
+    SubcontractorRiskLevel,
+    ChangeType,
+    ConsentMode,
+    Subcontractor,
+    SubcontractorChange,
+    ClientSubcontractorPreference,
+    SubcontractorRiskAssessment,
+    create_subcontractor_management,
+)
+
+# Phase 4: Contracts & SLA Layer
+from services.dora_integration.contracts import (
+    # Contractual Requirements
+    DORAContractualRequirements,
+    ContractualRequirementsConfig,
+    RequirementCategory,
+    RequirementType,
+    GapSeverity,
+    ContractStatus,
+    ContractualRequirement,
+    ContractProvision,
+    ContractAssessment,
+    ContractGap,
+    ContractAmendment,
+    SLADefinition,
+    ICTContract,
+    TerminationClause,
+    create_contractual_requirements,
+    get_article_30_requirements,
+    get_requirement_types,
+    get_basic_requirement_count,
+    get_critical_requirement_count,
+    get_termination_clause_templates,
+    # SLA Guardrails
+    SLAGuardrails,
+    SLAGuardrailsConfig,
+    SLATier,
+    CapacityStatus,
+    ApprovalStatus,
+    InfrastructureRequirement,
+    OnCallRequirement,
+    SLATierDefinition,
+    CapacityValidation,
+    SLACommitmentRequest,
+    CurrentCapacityState,
+    create_sla_guardrails,
+    get_sla_tier_definitions,
+    get_sla_tiers,
+    # Exit Strategies
+    DORAExitStrategies,
+    ExitStrategiesConfig,
+    ExitTrigger,
+    ExitPhase,
+    ExitPlanStatus,
+    TransitionType,
+    ReadinessLevel,
+    AlternativeProviderStatus,
+    AlternativeProvider,
+    DataMigrationPlan,
+    TransitionTask,
+    ExitRisk,
+    ExitCostEstimate,
+    ExitPlan,
+    ExitExecution,
+    ExitReadinessAssessment,
+    create_exit_strategies,
+    get_exit_triggers,
+    get_exit_phases,
+    get_transition_types,
+)
+
+# Phase 5: Unified Reporting Layer
+from services.dora_integration.reporting import (
+    # Unified Reporting
     ReportChannel,
+    PackageFormat,
     ReportDestination,
+    ReportValidationResult,
     UnifiedReport,
     SubmissionPackage,
+    DeliveryRecord,
+    UnifiedReportingConfig,
     UnifiedReportingManager,
+    create_unified_reporting_manager,
+    create_report_destination,
+    get_report_statuses,
+    # Reporting Templates
+    DataTypeCode,
+    ClientTypeCode,
+    ServiceTypeCode,
+    ResponseEffectivenessCode,
+    TemplateExportFormat,
+    ITSInitialNotificationTemplate,
+    ITSIntermediateReportTemplate,
+    ITSFinalReportTemplate,
+    TimelineEvent,
+    ClientIncidentDataPackage,
+    DORAReportingTemplates,
+    create_reporting_templates,
+    get_incident_type_codes,
+    get_data_type_codes,
+    get_service_type_codes,
+    get_client_type_codes,
+    create_timeline_event,
+    # Register of Information
+    ContractType,
+    ServiceType,
+    FunctionType,
+    ProviderLocationType,
+    SubcontractingLevel,
+    ExportFormat,
+    ContractReferenceData,
+    SubcontractorData,
+    ServiceRecord,
+    ROIDataPackage,
+    ROIDataGeneratorConfig,
+    DORARegisterOfInformation,
+    create_register_of_information,
+    create_roi_data_generator,
+    get_contract_types,
+    get_service_types,
+    get_subcontracting_levels,
+    get_its_templates_provided,
+    get_its_templates_client_provides,
+)
+
+# Phase 6: Information Sharing Layer
+from services.dora_integration.sharing import (
+    SHAREABLE_INFORMATION_TYPES,
+    TLP_DEFINITIONS,
+    DEFAULT_INTELLIGENCE_RETENTION_DAYS,
+    NCA_NOTIFICATION_DEADLINE_DAYS,
+    CommunityType,
+    SharingChannel,
+    TLPLevel,
+    MembershipStatus,
+    SharingOutcome,
+    IntelligenceDirection,
+    SanitizationLevel,
+    SharingCommunity,
+    InformationSharingPolicy,
+    CyberThreatIntelligence,
+    ThreatIntelligenceRecord,
+    SharingAuditRecord,
+    NCANotification,
+    InformationSharingConfig,
+    DORAInformationSharing,
+    create_information_sharing,
+    get_shareable_information_types,
+    get_tlp_definitions,
+    get_community_types,
+    get_sharing_channels,
+    get_tlp_levels,
+    create_sharing_community,
+    create_cyber_threat,
+    create_sharing_policy,
 )
 
 # =============================================================================
-# __all__ exports
+# Re-export from Archived Financial Entity Modules
+# =============================================================================
+
+# These are FE-specific modules (Art. 2, 3-16, 17, 22, 24-27)
+# Kept for backward compatibility and reference implementations
+from services.archive.dora_financial_entity.scope_verification import (
+    DORAEntityType,
+    DORAScopeResult,
+    ScopeVerification,
+    EntityAuthorization,
+    DORAScope,
+    create_scope_verifier,
+    get_entity_type_description,
+)
+
+from services.archive.dora_financial_entity.function_classification import (
+    ImpairmentType,
+    FunctionClassification,
+    ThirdPartyProvider as FEThirdPartyProvider,
+    FunctionClassifier,
+    create_function_classifier,
+    get_platform_functions,
+    get_ict_providers,
+)
+
+from services.archive.dora_financial_entity.proportionality import (
+    DORARegime,
+    ExemptionType,
+    EntityClassification,
+    ProportionalityAssessment,
+    RegimeExemption,
+    ProportionalityAssessor,
+    create_proportionality_assessor,
+    assess_entity_proportionality,
+)
+
+from services.archive.dora_financial_entity.governance import (
+    GovernanceRole,
+    DefenceLine,
+    TrainingStatus,
+    GovernanceRoleAssignment,
+    ICTTrainingRecord,
+    FrameworkApproval,
+    ICTBudgetAllocation,
+    DORAGovernanceFramework,
+    create_governance_framework,
+    MANDATORY_TRAINING_TOPICS,
+)
+
+from services.archive.dora_financial_entity.cross_regulation import (
+    Regulation,
+    ReportingRequirement,
+    IncidentAlignmentResult,
+    RiskFrameworkAlignment,
+    LoggingAlignmentResult,
+    DORARegulationIntegration,
+)
+
+# ICT Risk Management Framework (Article 6)
+from services.archive.dora_financial_entity.ict_risk_framework import (
+    PolicyCategory,
+    ControlDomain,
+    ControlType,
+    RiskPolicy,
+    RiskProcedure,
+    ICTControl,
+    FrameworkReview,
+    ICTRisk,
+    DORAICTRiskFramework,
+    create_ict_risk_framework,
+)
+
+# Protection and Prevention (Article 9)
+from services.archive.dora_financial_entity.protection import (
+    SecurityControlCategory,
+    AccessControlType,
+    AuthenticationType,
+    EncryptionType,
+    NetworkZone,
+    SecurityControl,
+    AccessPolicy,
+    EncryptionStandard,
+    NetworkSecurityRule,
+    DataProtectionPolicy,
+    DORAProtection,
+    create_protection,
+)
+
+# Detection (Article 10)
+from services.archive.dora_financial_entity.detection import (
+    AnomalyType,
+    AlertSeverity,
+    AlertStatus,
+    DetectionMethod,
+    MonitoringStatus,
+    DetectionRule,
+    DetectionAlert,
+    PerformanceMetric,
+    SinglePointOfFailure,
+    DORADetection,
+    create_detection,
+)
+
+# Backup and Recovery (Article 12)
+from services.archive.dora_financial_entity.backup_recovery import (
+    BackupType,
+    BackupFrequency,
+    BackupStatus,
+    RecoveryTestType,
+    RecoveryTestResult,
+    LocationType,
+    BackupPolicy,
+    BackupJob,
+    BackupLocation,
+    RecoveryTest,
+    RestorationProcedure,
+    DORABackupRecovery,
+    create_backup_recovery,
+)
+
+# Learning and Evolving (Article 13)
+from services.archive.dora_financial_entity.learning import (
+    ReviewType,
+    LessonCategory,
+    LessonPriority,
+    LessonStatus,
+    ImprovementType,
+    ImprovementStatus as LearningImprovementStatus,
+    KnowledgeType,
+    PostIncidentReview as LearningPostIncidentReview,
+    LessonLearned,
+    ImprovementInitiative,
+    KnowledgeArticle,
+    TrainingNeed,
+    TrendAnalysis,
+    InformationShare,
+    DORALearning,
+    create_dora_learning,
+)
+
+# ICT Business Continuity (Article 15)
+from services.archive.dora_financial_entity.ict_business_continuity import (
+    ContinuityStatus,
+    CriticalityLevel,
+    ImpactCategory,
+    ImpactSeverity,
+    ScenarioType,
+    RecoveryStrategy,
+    ICTBusinessContinuityPolicy,
+    BusinessImpactAssessment,
+    RecoveryObjective,
+    ContinuityPlan,
+    DisruptionScenario,
+    ContinuityTest,
+    AlternativeArrangement,
+    DORAICTBusinessContinuity,
+    create_dora_ict_business_continuity,
+)
+
+# Simplified Framework (Article 16)
+from services.archive.dora_financial_entity.simplified_framework import (
+    EntitySize,
+    SimplifiedControlCategory,
+    ControlStatus as SimplifiedControlStatus,
+    EligibilityCriteria,
+    SimplifiedControl,
+    SimplifiedRiskAssessment,
+    SimplifiedIncident,
+    SimplifiedBackup,
+    SimplifiedThirdParty,
+    SimplifiedTest,
+    SimplifiedAwarenessTraining,
+    AnnualReview,
+    ESSENTIAL_CONTROLS,
+    DORASimplifiedFramework,
+    create_dora_simplified_framework,
+)
+
+# Incident Management (Article 17)
+from services.archive.dora_financial_entity.incident_management import (
+    ICTEventType,
+    IncidentPhase,
+    EarlyWarningType,
+    ICTEvent,
+    DORAIncident,
+    EarlyWarningIndicator,
+    IncidentAction,
+    IncidentManagementConfig,
+    DORAIncidentManagement,
+    create_incident_management,
+)
+
+# Resilience Testing Programme (Article 24)
+from services.archive.dora_financial_entity.resilience_testing import (
+    TestCategory,
+    TestFrequency,
+    FindingSeverity as ResilienceFindingSeverity,
+    FindingStatus as ResilienceFindingStatus,
+    TestScope,
+    TestDefinition,
+    TestExecution,
+    TestFinding,
+    TestingProgramme,
+    TestingCycle,
+    ResilienceTestingConfig,
+    DORAResilienceTestingProgramme,
+    create_resilience_testing_programme,
+)
+
+# ICT Testing (Article 25)
+from services.archive.dora_financial_entity.ict_testing import (
+    ICTSystemType,
+    TestingPriority,
+    VulnerabilityStatus,
+    RemediationStatus as ICTRemediationStatus,
+    ICTSystemProfile,
+    SystemTestPlan,
+    SystemTest,
+    Vulnerability,
+    RemediationPlan,
+    ThirdPartyInterfaceTest,
+    ICTTestingConfig,
+    DORAICTSystemTesting,
+    create_ict_system_testing,
+)
+
+# Threat-Led Penetration Testing (Article 26)
+from services.archive.dora_financial_entity.tlpt import (
+    TLPTPhase,
+    TLPTStatus,
+    ThreatActorCapability,
+    AttackTechnique,
+    AttackOutcome,
+    TLPTFindingSeverity,
+    FindingCategory,
+    TLPTScope,
+    ThreatIntelligenceReport,
+    RedTeamScenario,
+    AttackAction,
+    TLPTFinding,
+    PurpleTeamSession,
+    TLPTEngagement,
+    TLPTAttestation,
+    TLPTConfig,
+    DORAThreadLedPenetrationTesting,
+    create_tlpt,
+)
+
+# Tester Management (Article 27)
+from services.archive.dora_financial_entity.tester_management import (
+    TesterRole,
+    CertificationCategory,
+    QualificationStatus,
+    ConflictCheckResult,
+    SecurityCertification,
+    TesterExpertise,
+    ConflictOfInterestDeclaration,
+    ProfessionalIndemnityInsurance,
+    TLPTTester,
+    TesterOrganization,
+    TesterQualificationAssessment,
+    InternalTesterApproval,
+    TesterManagementConfig,
+    DORATestermanagement,
+    create_tester_management,
+)
+
+# Pooled Testing (Article 26(3))
+from services.archive.dora_financial_entity.pooled_testing import (
+    PooledTestStatus,
+    ParticipantRole,
+    ParticipantStatus as PooledParticipantStatus,
+    CostSharingModel,
+    ProviderCriticality as PooledProviderCriticality,
+    SharedProvider,
+    PooledTestingParticipant,
+    PooledTestingScope,
+    CostSharingAgreement,
+    PooledTestingEngagement,
+    PooledTestingResults,
+    PooledTestingConfig,
+    DORAPooledTesting,
+    create_pooled_testing,
+)
+
+# Training Participation (Article 30(2)(i))
+from services.archive.dora_financial_entity.training_participation import (
+    TrainingType,
+    ParticipationMode,
+    PersonnelRole,
+    TrainingCommitment,
+    TrainingRequest,
+    TrainingSession,
+    QuarterlyUsage,
+    TrainingParticipationConfig,
+    DORATrainingParticipation,
+)
+
+# =============================================================================
+# Aliases for backward compatibility
+# =============================================================================
+
+# Aliases to prevent import errors from old code
+get_report_types_incident = get_report_deadlines  # Alias
+
+# Mapping for commonly aliased exports
+NotificationStatus_SubMgmt = NotificationStatus  # Alias from subcontractor
+RiskLevel_Exit = RiskLevel  # Alias from exit strategies
+
+
+# =============================================================================
+# Deprecation Warning Handler
+# =============================================================================
+
+def __getattr__(name: str) -> Any:
+    """
+    Handle deprecated attribute access.
+
+    This is triggered when accessing attributes not explicitly imported.
+    Provides helpful migration guidance.
+    """
+    # Check if it's a known deprecated import
+    deprecated_mappings = {
+        # Old names -> new locations
+        "ProviderInfoPackageGenerator": "services.dora_integration.due_diligence.DORAProviderInfoPackage",
+        "CrisisCommunicationPlan": "services.dora_integration.incident_interface.communication",
+    }
+
+    if name in deprecated_mappings:
+        warnings.warn(
+            f"'{name}' is deprecated. Use {deprecated_mappings[name]} instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        # Try to return the attribute if available
+        try:
+            return globals()[name]
+        except KeyError:
+            pass
+
+    raise AttributeError(f"module 'services.dora' has no attribute '{name}'")
+
+
+# =============================================================================
+# __all__ exports - Everything available via `from services.dora import *`
 # =============================================================================
 
 __all__ = [
@@ -1040,642 +815,9 @@ __all__ = [
     "__dora_compliance_phase__",
 
     # =========================================================================
-    # Phase 0: Proportionality Assessment
+    # Phase 1: Due Diligence & Audit Layer
     # =========================================================================
-
-    # Scope Verification (Article 2)
-    "DORAEntityType",
-    "DORAScopeResult",
-    "ScopeVerification",
-    "EntityAuthorization",
-    "DORAScope",
-    "create_scope_verifier",
-    "get_entity_type_description",
-
-    # Function Classification (Article 3(22))
-    "FunctionCriticality",
-    "ImpairmentType",
-    "FunctionClassification",
-    "ICTService",
-    "ThirdPartyProvider",
-    "FunctionClassifier",
-    "create_function_classifier",
-    "get_platform_functions",
-    "get_ict_providers",
-
-    # Proportionality (Articles 4, 16)
-    "DORARegime",
-    "ExemptionType",
-    "EntityClassification",
-    "ProportionalityAssessment",
-    "RegimeExemption",
-    "ProportionalityAssessor",
-    "create_proportionality_assessor",
-    "assess_entity_proportionality",
-
-    # =========================================================================
-    # Phase 1: ICT Risk Management Framework (Articles 5-16)
-    # =========================================================================
-
-    # Governance (Article 5)
-    "GovernanceRole",
-    "DefenceLine",
-    "TrainingStatus",
-    "ApprovalStatus",
-    "GovernanceRoleAssignment",
-    "ICTTrainingRecord",
-    "FrameworkApproval",
-    "AuditFinding",
-    "ICTBudgetAllocation",
-    "DORAGovernanceFramework",
-    "create_governance_framework",
-    "MANDATORY_TRAINING_TOPICS",
-
-    # ICT Risk Management Framework (Article 6)
-    "PolicyCategory",
-    "ControlDomain",
-    "ControlType",
-    "ICTRiskLevel",
-    "RiskPolicy",
-    "RiskProcedure",
-    "ICTControl",
-    "FrameworkReview",
-    "ICTRisk",
-    "DORAICTRiskFramework",
-    "create_ict_risk_framework",
-
-    # ICT Systems (Article 7)
-    "SystemCriticality",
-    "SystemType",
-    "SystemStatus",
-    "CapacityStatus",
-    "AutomationLevel",
-    "ICTSystem",
-    "CapacityMetric",
-    "ReliabilityMetric",
-    "AutomationCapability",
-    "SystemUpgrade",
-    "DORAICTSystemsManager",
-    "create_ict_systems_manager",
-
-    # ICT Identification (Article 8)
-    "AssetType",
-    "AssetClassification",
-    "RiskSourceCategory",
-    "ThreatCategory",
-    "VulnerabilitySeverity",
-    "ICTAsset",
-    "RiskSource",
-    "CyberThreat",
-    "ICTVulnerability",
-    "ICTDependency",
-    "BusinessFunction",
-    "DORAICTIdentification",
-    "create_ict_identification",
-
-    # Protection and Prevention (Article 9)
-    "SecurityControlCategory",
-    "AccessControlType",
-    "AuthenticationType",
-    "EncryptionType",
-    "NetworkZone",
-    "SecurityControl",
-    "AccessPolicy",
-    "EncryptionStandard",
-    "NetworkSecurityRule",
-    "DataProtectionPolicy",
-    "DORAProtection",
-    "create_protection",
-
-    # Detection (Article 10)
-    "AnomalyType",
-    "AlertSeverity",
-    "AlertStatus",
-    "DetectionMethod",
-    "MonitoringStatus",
-    "DetectionRule",
-    "DetectionAlert",
-    "PerformanceMetric",
-    "SinglePointOfFailure",
-    "DORADetection",
-    "create_detection",
-
-    # Response and Recovery (Article 11)
-    "IncidentSeverity",
-    "IncidentStatus",
-    "IncidentCategory",
-    "EscalationLevel",
-    "CrisisStatus",
-    "ICTIncident",
-    "ResponseProcedure",
-    "EscalationRule",
-    "ResponseCrisisEvent",
-    "RecoveryAction",
-    "DORAResponseRecovery",
-    "create_response_recovery",
-
-    # Backup and Recovery (Article 12)
-    "BackupType",
-    "BackupFrequency",
-    "BackupStatus",
-    "RecoveryTestType",
-    "RecoveryTestResult",
-    "LocationType",
-    "BackupPolicy",
-    "BackupJob",
-    "BackupLocation",
-    "RecoveryTest",
-    "RestorationProcedure",
-    "DORABackupRecovery",
-    "create_backup_recovery",
-
-    # Learning and Evolving (Article 13)
-    "ReviewType",
-    "LessonCategory",
-    "LessonPriority",
-    "LessonStatus",
-    "ImprovementType",
-    "ImprovementStatus",
-    "KnowledgeType",
-    "PostIncidentReview",
-    "LessonLearned",
-    "ImprovementInitiative",
-    "KnowledgeArticle",
-    "TrainingNeed",
-    "TrendAnalysis",
-    "InformationShare",
-    "DORALearning",
-    "create_dora_learning",
-
-    # Communication (Article 14)
-    "CommunicationType",
-    "CommunicationChannel",
-    "CommunicationPriority",
-    "CommunicationStatus",
-    "NotificationType",
-    "StakeholderType",
-    "EscalationTrigger",
-    "CommunicationPolicy",
-    "Stakeholder",
-    "CommunicationTemplate",
-    "Communication",
-    "CommunicationEscalationRule",
-    "CrisisCommunicationPlan",
-    "RegulatoryNotification",
-    "CommunicationLog",
-    "DORACommunication",
-    "create_dora_communication",
-
-    # ICT Business Continuity (Article 15)
-    "ContinuityStatus",
-    "CriticalityLevel",
-    "ImpactCategory",
-    "ImpactSeverity",
-    "ContinuityTestType",
-    "ContinuityTestResult",
-    "ScenarioType",
-    "RecoveryStrategy",
-    "ICTBusinessContinuityPolicy",
-    "ContinuityBusinessFunction",
-    "BusinessImpactAssessment",
-    "RecoveryObjective",
-    "ContinuityPlan",
-    "DisruptionScenario",
-    "ContinuityTest",
-    "ContinuityCrisisEvent",
-    "AlternativeArrangement",
-    "DORAICTBusinessContinuity",
-    "create_dora_ict_business_continuity",
-
-    # Simplified Framework (Article 16)
-    "EntitySize",
-    "SimplifiedControlCategory",
-    "ControlStatus",
-    "SimplifiedRiskLevel",
-    "SimplifiedIncidentPriority",
-    "SimplifiedIncidentStatus",
-    "SimplifiedTestType",
-    "EligibilityCriteria",
-    "SimplifiedControl",
-    "SimplifiedRiskAssessment",
-    "SimplifiedIncident",
-    "SimplifiedBackup",
-    "SimplifiedThirdParty",
-    "SimplifiedTest",
-    "SimplifiedAwarenessTraining",
-    "AnnualReview",
-    "ESSENTIAL_CONTROLS",
-    "DORASimplifiedFramework",
-    "create_dora_simplified_framework",
-
-    # =========================================================================
-    # Phase 2: ICT Incident Management & Reporting (Articles 17-23)
-    # =========================================================================
-
-    # Incident Management (Article 17)
-    "ICTEventType",
-    "IncidentPhase",
-    "IncidentMgmtPriority",
-    "IncidentMgmtStatus",
-    "IncidentMgmtEscalationLevel",
-    "EarlyWarningType",
-    "ICTEvent",
-    "DORAIncident",
-    "EarlyWarningIndicator",
-    "IncidentAction",
-    "EscalationRule",
-    "IncidentManagementConfig",
-    "DORAIncidentManagement",
-    "create_incident_management",
-
-    # Incident Classification (Article 18)
-    "IncidentClassificationType",
-    "ClientType",
-    "ClassificationDataType",
-    "CriticalServiceType",
-    "MajorIncidentTrigger",
-    "ReputationalImpactLevel",
-    "ClassificationThresholds",
-    "ClientImpactAssessment",
-    "DurationAssessment",
-    "GeographicAssessment",
-    "DataLossAssessment",
-    "CriticalServiceAssessment",
-    "EconomicImpactAssessment",
-    "ReputationalAssessment",
-    "RecurringIncidentAssessment",
-    "MaliciousAccessAssessment",
-    "IncidentClassificationResult",
-    "IncidentClassificationConfig",
-    "DORAIncidentClassification",
-    "create_incident_classification",
-
-    # Incident Reporting (Article 19)
-    "ReportType",
-    "ReportStatus",
-    "IncidentTypeCode",
-    "RootCauseCategory",
-    "CompetentAuthorityType",
-    "ReportingCompetentAuthority",
-    "InitialNotificationReport",
-    "IntermediateReport",
-    "FinalReport",
-    "ReportSubmission",
-    "IncidentReportingConfig",
-    "DORAIncidentReporter",
-    "create_incident_reporter",
-
-    # Cyber Threat Notification (Article 19(4))
-    "ThreatCategory",
-    "ThreatSeverity",
-    "ThreatStatus",
-    "ThreatActorType",
-    "ThreatSignificance",
-    "ThreatNotificationStatus",
-    "ThreatIndicator",
-    "CyberThreat",
-    "ThreatSignificanceAssessment",
-    "ThreatNotification",
-    "CyberThreatNotificationConfig",
-    "CyberThreatNotificationService",
-    "create_cyber_threat_notification_service",
-
-    # Reporting Templates (Article 20)
-    "TemplateIncidentTypeCode",
-    "DataTypeCode",
-    "ClientTypeCode",
-    "ServiceTypeCode",
-    "ResponseEffectivenessCode",
-    "TimelineEvent",
-    "ITSInitialNotificationTemplate",
-    "ITSIntermediateReportTemplate",
-    "ITSFinalReportTemplate",
-    "DORAReportingTemplates",
-    "create_reporting_templates",
-
-    # Supervisory Feedback (Article 22)
-    "FeedbackType",
-    "FeedbackPriority",
-    "FeedbackStatus",
-    "CorrectiveActionType",
-    "ResponseType",
-    "FeedbackCompetentAuthority",
-    "SupervisoryFeedback",
-    "CorrectiveAction",
-    "FeedbackResponse",
-    "FeedbackAuditEntry",
-    "AnonymisedInsight",
-    "DORASupervisioryFeedback",
-    "create_supervisory_feedback",
-
-    # Third-Party Incidents (Article 23)
-    "ThirdPartyProviderType",
-    "ThirdPartyCriticality",
-    "ThirdPartyIncidentType",
-    "ThirdPartyIncidentSeverity",
-    "ThirdPartyIncidentStatus",
-    "ContractualSLAStatus",
-    "ThirdPartyEscalationLevel",
-    "ThirdPartyCommunicationChannel",
-    "ThirdPartyProviderRecord",
-    "AffectedService",
-    "SLAAssessment",
-    "CommunicationRecord",
-    "EscalationRecord",
-    "MitigationAction",
-    "ThirdPartyIncident",
-    "ThirdPartyPostIncidentReview",
-    "DORAThirdPartyIncidents",
-    "create_third_party_incidents",
-
-    # =========================================================================
-    # Phase 3: Digital Resilience Testing (Articles 24-27)
-    # =========================================================================
-
-    # Digital Operational Resilience Testing Programme (Article 24)
-    "TestCategory",
-    "TestFrequency",
-    "ResilienceTestStatus",
-    "ResilienceTestResult",
-    "FindingSeverity",
-    "FindingStatus",
-    "ResilienceTesterType",
-    "ResilienceSystemCriticality",
-    "TestScope",
-    "TestDefinition",
-    "TestExecution",
-    "TestFinding",
-    "TestingProgramme",
-    "TestingCycle",
-    "ResilienceTestingConfig",
-    "DORAResilienceTestingProgramme",
-    "create_resilience_testing_programme",
-
-    # Testing of ICT Tools and Systems (Article 25)
-    "ICTSystemType",
-    "ICTSystemCriticality",
-    "TestingPriority",
-    "ICTVulnerabilitySeverity",
-    "VulnerabilityStatus",
-    "ICTTestType",
-    "ICTTestStatus",
-    "ICTTestResult",
-    "RemediationStatus",
-    "ICTSystemProfile",
-    "SystemTestPlan",
-    "SystemTest",
-    "Vulnerability",
-    "RemediationPlan",
-    "ThirdPartyInterfaceTest",
-    "ICTTestingConfig",
-    "DORAICTSystemTesting",
-    "create_ict_system_testing",
-
-    # Threat-Led Penetration Testing (Article 26)
-    "TLPTPhase",
-    "TLPTStatus",
-    "TLPTThreatActorType",
-    "ThreatActorCapability",
-    "AttackTechnique",
-    "AttackOutcome",
-    "TLPTFindingSeverity",
-    "FindingCategory",
-    "TLPTScope",
-    "ThreatIntelligenceReport",
-    "RedTeamScenario",
-    "AttackAction",
-    "TLPTFinding",
-    "PurpleTeamSession",
-    "TLPTEngagement",
-    "TLPTAttestation",
-    "TLPTConfig",
-    "DORAThreadLedPenetrationTesting",
-    "create_tlpt",
-
-    # Requirements for Testers (Article 27)
-    "TLPTTesterType",
-    "TesterRole",
-    "CertificationCategory",
-    "QualificationStatus",
-    "ConflictCheckResult",
-    "SecurityCertification",
-    "TesterExpertise",
-    "ConflictOfInterestDeclaration",
-    "ProfessionalIndemnityInsurance",
-    "TLPTTester",
-    "TesterOrganization",
-    "TesterQualificationAssessment",
-    "InternalTesterApproval",
-    "TesterManagementConfig",
-    "DORATestermanagement",
-    "create_tester_management",
-
-    # Pooled TLPT (Article 26(3))
-    "PooledTestStatus",
-    "ParticipantRole",
-    "ParticipantStatus",
-    "CostSharingModel",
-    "ProviderCriticality",
-    "SharedProvider",
-    "PooledTestingParticipant",
-    "PooledTestingScope",
-    "CostSharingAgreement",
-    "PooledTestingEngagement",
-    "PooledTestingResults",
-    "PooledTestingConfig",
-    "DORAPooledTesting",
-    "create_pooled_testing",
-
-    # =========================================================================
-    # Phase 4: Third-Party ICT Risk Management (Articles 28-44)
-    # =========================================================================
-
-    # Third-Party Risk Management (Article 28)
-    "ProviderType",
-    "ProviderCriticality",
-    "ProviderStatus",
-    "RiskCategory",
-    "RiskLevel",
-    "ServiceCriticality",
-    "DueDiligenceStatus",
-    "AssessmentType",
-    "TPRSubstitutabilityLevel",
-    "ThirdPartyICTService",
-    "ICTProvider",
-    "ThirdPartyRisk",
-    "ThirdPartyRiskAssessment",
-    "DueDiligenceCheck",
-    "ProviderRelationshipEvent",
-    "ThirdPartyRiskConfig",
-    "DORAThirdPartyRiskManagement",
-    "create_third_party_risk_management",
-
-    # Register of Information (Article 28(3))
-    "ContractType",
-    "ServiceType",
-    "ROIFunctionType",
-    "DataLocation",
-    "ProviderLocationType",
-    "SubcontractingLevel",
-    "RegisterStatus",
-    "ExportFormat",
-    "EntityInformation",
-    "BranchInformation",
-    "ContractualArrangement",
-    "ContractualArrangementFunction",
-    "ICTServiceProvider",
-    "SubcontractorEntry",
-    "ICTServiceRecord",
-    "RegisterSubmission",
-    "RegisterOfInformationConfig",
-    "DORARegisterOfInformation",
-    "create_register_of_information",
-
-    # Contractual Arrangements (Article 30)
-    "RequirementType",
-    "RequirementCategory",
-    "ComplianceStatus",
-    "GapSeverity",
-    "RemediationStatus",
-    "ContractStatus",
-    "ContractualRequirement",
-    "ContractProvision",
-    "ContractAssessment",
-    "ContractGap",
-    "ContractAmendment",
-    "SLADefinition",
-    "ICTContract",
-    "ContractualRequirementsConfig",
-    # Art. 30(2)(h) Termination clause templates
-    "TerminationClause",
-    "get_termination_clause_templates",
-    "DORAContractualRequirements",
-    "create_contractual_requirements",
-
-    # Training Participation (Article 30(2)(i))
-    "TrainingType",
-    "ParticipationMode",
-    "TrainingRequestStatus",
-    "PersonnelRole",
-    "TrainingCommitment",
-    "TrainingRequest",
-    "TrainingSession",
-    "QuarterlyUsage",
-    "TrainingParticipationConfig",
-    "DORATrainingParticipation",
-    "create_training_commitment",
-    "receive_training_request",
-
-    # Exit Strategies (Article 28(8))
-    "ExitTrigger",
-    "ExitPhase",
-    "ExitPlanStatus",
-    "TransitionType",
-    "ReadinessLevel",
-    "AlternativeProviderStatus",
-    "ExitRiskLevel",
-    "AlternativeProvider",
-    "DataMigrationPlan",
-    "TransitionTask",
-    "ExitRisk",
-    "ExitCostEstimate",
-    "ExitPlan",
-    "ExitExecution",
-    "ExitReadinessAssessment",
-    "ExitStrategiesConfig",
-    "DORAExitStrategies",
-    "create_exit_strategies",
-
-    # Concentration Risk (Article 29)
-    "ConcentrationType",
-    "ConcentrationRiskLevel",
-    "MitigationStatus",
-    "AssessmentScope",
-    "SubstitutabilityLevel",
-    "ProviderDependency",
-    "ConcentrationMetric",
-    "ConcentrationRisk",
-    "MitigationMeasure",
-    "ConcentrationAssessment",
-    "DependencyMap",
-    "ConcentrationRiskConfig",
-    "DORAConcentrationRisk",
-    "create_concentration_risk",
-    "get_concentration_types",
-    "get_substitutability_levels",
-
-    # CTPP Oversight (Articles 31-44)
-    "LeadOverseer",
-    "CTPPStatus",
-    "OversightRecommendationType",
-    "RecommendationStatus",
-    "ComplianceLevel",
-    "OversightExerciseType",
-    "CTPPDesignation",
-    "OversightRecommendation",
-    "OversightExercise",
-    "CTPPRiskAssessment",
-    "CTPPContractRequirement",
-    "EntityCTPPRelationship",
-    "CTPPOversightConfig",
-    "DESIGNATED_CTPPS_2025",
-    "DORACtppOversight",
-    "create_ctpp_oversight",
-    "get_lead_overseers",
-    "get_designated_ctpps_list",
-    "get_ctpp_requirements",
-    "get_ctpp_contract_requirements",
-
-    # =========================================================================
-    # Phase 5: Information Sharing & Integration (Article 45)
-    # =========================================================================
-
-    # Information Sharing (Article 45)
-    "SHAREABLE_INFORMATION",
-    "CommunityType",
-    "SharingChannel",
-    "SharingSensitivity",
-    "MembershipStatus",
-    "SharingOutcome",
-    "SharingCommunity",
-    "InformationSharingPolicy",
-    "CyberThreat",
-    "ThreatIntelligence",
-    "ThreatSharingRecord",
-    "DORAInformationSharing",
-
-    # Cross Regulation Integration
-    "Regulation",
-    "ReportingRequirement",
-    "IncidentAlignmentResult",
-    "RiskFrameworkAlignment",
-    "LoggingAlignmentResult",
-    "DORARegulationIntegration",
-
-    # Compliance Dashboard
-    "IssueSeverity",
-    "IssueStatus",
-    "DeadlineStatus",
-    "ComplianceIssue",
-    "Deadline",
-    "ComplianceStatus",
-    "DORAComplianceReport",
-    "DORAComplianceDashboard",
-
-    # Unified Reporting
-    "ReportType",
-    "ReportStatus",
-    "ReportChannel",
-    "ReportDestination",
-    "UnifiedReport",
-    "SubmissionPackage",
-    "UnifiedReportingManager",
-
-    # =========================================================================
-    # ICT Provider Support Modules (Art. 30 obligations)
-    # =========================================================================
-
-    # Audit Readiness (Art. 30(3)(e))
+    # Audit Readiness
     "AUDIT_SLA_ACKNOWLEDGMENT_DAYS",
     "AUDIT_SLA_SCHEDULING_DAYS",
     "AUDIT_SLA_EVIDENCE_STANDARD_DAYS",
@@ -1696,52 +838,36 @@ __all__ = [
     "DORAuditReadiness",
     "create_audit_readiness",
     "get_standard_evidence_templates",
-
-    # Subcontractor Management (Art. 30(2)(b), 30(3))
-    "SubcontractorType",
-    "SubcontractorStatus",
-    "SubcontractorRiskLevel",
-    "SubcontractorChangeType",
-    "SubcontractorNotificationStatus",
-    "ConsentMode",  # NEW v2.1 - Prior consent vs notification workflow
-    "Subcontractor",
-    "SubcontractorChange",
-    "ClientSubcontractorPreference",
-    "SubcontractorRiskAssessment",
-    "SubcontractorConfig",
-    "DORASubcontractorManagement",
-    "create_subcontractor_management",
-
-    # Multi-Client Incident Coordination (Art. 30(2)(f) - NEW v2.1)
     "IncidentNotificationStatus",
     "ClientNotificationRecord",
     "MultiClientIncident",
     "MultiClientIncidentCoordinator",
     "create_incident_coordinator",
-
-    # SLA Guardrails (Art. 30(2)(e), 30(3)(a) - NEW Phase 1)
-    "SLATier",
-    "CapacityStatus",
-    "SLAApprovalStatus",
-    "InfrastructureRequirement",
-    "OnCallRequirement",
-    "SLATierDefinition",
-    "CapacityValidation",
-    "SLACommitmentRequest",
-    "SLAGuardrailsConfig",
-    "CurrentCapacityState",
-    "SLAGuardrails",
-    "create_sla_guardrails",
-    "get_sla_tier_definitions",
-    "get_sla_tiers",
-
-    # Pooled Audit Support (Art. 30(4) - NEW Phase 1)
+    # Provider Info Package
+    "ICTServiceType",
+    "FunctionCriticality",
+    "SubstitutabilityLevel",
+    "DataSensitivity",
+    "ProviderIdentification",
+    "ServiceDescription",
+    "ICTServiceDescription",
+    "DataLocation",
+    "DataLocationInfo",
+    "SubcontractorInfo",
+    "CertificationInfo",
+    "ContractSummary",
+    "ProviderInfoPackage",
+    "ProviderInfoConfig",
+    "DORAProviderInfoPackage",
+    "ProviderInfoPackageGenerator",
+    "create_provider_info_package",
+    # Pooled Audit Support
     "AuditReportType",
     "PooledAuditStatus",
     "ParticipationStatus",
     "AuditScopeArea",
-    "PooledAuditFindingSeverity",
-    "PooledAuditRemediationStatus",
+    "FindingSeverity",
+    "RemediationStatus",
     "CertificationRecord",
     "PooledAuditParticipant",
     "PooledAuditFinding",
@@ -1752,4 +878,390 @@ __all__ = [
     "create_pooled_audit_support",
     "get_audit_scope_areas",
     "get_report_types",
+    # Compliance Dashboard
+    "IssueSeverity",
+    "IssueStatus",
+    "DeadlineStatus",
+    "ComplianceIssue",
+    "Deadline",
+    "ComplianceStatus",
+    "DORAComplianceReport",
+    "DORAComplianceDashboard",
+
+    # =========================================================================
+    # Phase 2: Incident Interface Layer
+    # =========================================================================
+    # Client Notification
+    "ClientNotificationService",
+    "DORAClientNotification",
+    "ClientNotificationConfig",
+    "IncidentSeverity",
+    "NotificationStatus",
+    "NotificationChannel",
+    "IncidentCategory",
+    "ClientContact",
+    "IncidentNotification",
+    "IncidentUpdate",
+    "ClientIncident",
+    "create_client_notification_service",
+    "create_client_notification_system",
+    "get_notification_template",
+    # Incident Classification
+    "DORAIncidentClassification",
+    "IncidentClassificationConfig",
+    "ClassificationThresholds",
+    "IncidentClassificationType",
+    "ClientType",
+    "DataType",
+    "CriticalServiceType",
+    "MajorIncidentTrigger",
+    "ReputationalImpactLevel",
+    "ClientImpactAssessment",
+    "DurationAssessment",
+    "GeographicAssessment",
+    "DataLossAssessment",
+    "CriticalServiceAssessment",
+    "EconomicImpactAssessment",
+    "ReputationalAssessment",
+    "RecurringIncidentAssessment",
+    "MaliciousAccessAssessment",
+    "IncidentClassificationResult",
+    "create_incident_classification",
+    "get_default_thresholds",
+    "get_classification_criteria",
+    "create_client_impact_assessment",
+    "create_duration_assessment",
+    "create_economic_impact_assessment",
+    "create_data_loss_assessment",
+    "create_critical_service_assessment",
+    # Incident Reporting
+    "DORAIncidentReporter",
+    "IncidentReportingConfig",
+    "ReportType",
+    "ReportStatus",
+    "IncidentTypeCode",
+    "RootCauseCategory",
+    "CompetentAuthorityType",
+    "CompetentAuthority",
+    "InitialNotificationReport",
+    "IntermediateReport",
+    "FinalReport",
+    "ClientDataPackage",
+    "ReportSubmission",
+    "create_incident_reporter",
+    "get_report_deadlines",
+    # Cyber Threat Notification
+    "CyberThreatNotificationService",
+    "CyberThreatNotificationConfig",
+    "ThreatCategory",
+    "ThreatActorType",
+    "ThreatSeverity",
+    "ThreatStatus",
+    "ThreatSignificance",
+    "ThreatIndicator",
+    "CyberThreat",
+    "ThreatSignificanceAssessment",
+    "ThreatNotification",
+    "create_cyber_threat_notification_service",
+    "get_threat_categories",
+    "get_threat_severities",
+    # Communication
+    "DORACommunication",
+    "CommunicationConfig",
+    "CommunicationChannel",
+    "StakeholderType",
+    "CommunicationPriority",
+    "CommunicationStatus",
+    "CrisisPhase",
+    "PolicyStatus",
+    "CommunicationContact",
+    "CommunicationTemplate",
+    "CommunicationRecord",
+    "CommunicationPolicy",
+    "CrisisStatus",
+    "create_communication_service",
+    "get_communication_channels",
+    "get_stakeholder_types",
+    "get_crisis_phases",
+
+    # =========================================================================
+    # Phase 3: Third-Party Risk Interface
+    # =========================================================================
+    # Concentration Risk
+    "DORAConcentrationRisk",
+    "ConcentrationRiskConfig",
+    "ConcentrationType",
+    "ConcentrationRiskLevel",
+    "MitigationStatus",
+    "AssessmentScope",
+    "ProviderDependency",
+    "ConcentrationMetric",
+    "ConcentrationRisk",
+    "MitigationMeasure",
+    "ConcentrationAssessment",
+    "DependencyMap",
+    "create_concentration_risk",
+    "get_concentration_types",
+    "get_substitutability_levels",
+    # CTPP Oversight
+    "DORACtppOversight",
+    "CTPPOversightConfig",
+    "LeadOverseer",
+    "CTPPStatus",
+    "OversightRecommendationType",
+    "RecommendationStatus",
+    "ComplianceLevel",
+    "OversightExerciseType",
+    "CTPPDesignation",
+    "OversightRecommendation",
+    "OversightExercise",
+    "CTPPRiskAssessment",
+    "CTPPContractRequirement",
+    "EntityCTPPRelationship",
+    "DESIGNATED_CTPPS_2025",
+    "create_ctpp_oversight",
+    "get_lead_overseers",
+    "get_designated_ctpps_list",
+    "get_ctpp_requirements",
+    "get_ctpp_contract_requirements",
+    # Third-Party Risk Management
+    "DORAThirdPartyRiskManagement",
+    "ThirdPartyRiskConfig",
+    "ProviderType",
+    "ProviderCriticality",
+    "ServiceCriticality",
+    "ProviderStatus",
+    "RiskCategory",
+    "RiskLevel",
+    "DueDiligenceStatus",
+    "AssessmentType",
+    "TPRSubstitutabilityLevel",
+    "ICTService",
+    "ICTProvider",
+    "ThirdPartyRisk",
+    "ThirdPartyRiskAssessment",
+    "DueDiligenceCheck",
+    "ProviderRelationshipEvent",
+    "create_third_party_risk_management",
+    "get_provider_types",
+    "get_risk_categories",
+    "get_criticality_levels",
+    # Third-Party Incidents
+    "DORAThirdPartyIncidents",
+    "ThirdPartyProviderType",
+    "ThirdPartyCriticality",
+    "ThirdPartyIncidentType",
+    "ContractualSLAStatus",
+    "EscalationLevel",
+    "ThirdPartyProvider",
+    "AffectedService",
+    "SLAAssessment",
+    "EscalationRecord",
+    "IncidentMitigationAction",
+    "ThirdPartyIncident",
+    "PostIncidentReview",
+    "create_third_party_incidents",
+    # Subcontractor Management
+    "DORASubcontractorManagement",
+    "SubcontractorConfig",
+    "SubcontractorType",
+    "SubcontractorStatus",
+    "SubcontractorRiskLevel",
+    "ChangeType",
+    "ConsentMode",
+    "Subcontractor",
+    "SubcontractorChange",
+    "ClientSubcontractorPreference",
+    "SubcontractorRiskAssessment",
+    "create_subcontractor_management",
+
+    # =========================================================================
+    # Phase 4: Contracts & SLA Layer
+    # =========================================================================
+    # Contractual Requirements
+    "DORAContractualRequirements",
+    "ContractualRequirementsConfig",
+    "RequirementCategory",
+    "RequirementType",
+    "GapSeverity",
+    "ContractStatus",
+    "ContractualRequirement",
+    "ContractProvision",
+    "ContractAssessment",
+    "ContractGap",
+    "ContractAmendment",
+    "SLADefinition",
+    "ICTContract",
+    "TerminationClause",
+    "create_contractual_requirements",
+    "get_article_30_requirements",
+    "get_requirement_types",
+    "get_basic_requirement_count",
+    "get_critical_requirement_count",
+    "get_termination_clause_templates",
+    # SLA Guardrails
+    "SLAGuardrails",
+    "SLAGuardrailsConfig",
+    "SLATier",
+    "CapacityStatus",
+    "ApprovalStatus",
+    "InfrastructureRequirement",
+    "OnCallRequirement",
+    "SLATierDefinition",
+    "CapacityValidation",
+    "SLACommitmentRequest",
+    "CurrentCapacityState",
+    "create_sla_guardrails",
+    "get_sla_tier_definitions",
+    "get_sla_tiers",
+    # Exit Strategies
+    "DORAExitStrategies",
+    "ExitStrategiesConfig",
+    "ExitTrigger",
+    "ExitPhase",
+    "ExitPlanStatus",
+    "TransitionType",
+    "ReadinessLevel",
+    "AlternativeProviderStatus",
+    "AlternativeProvider",
+    "DataMigrationPlan",
+    "TransitionTask",
+    "ExitRisk",
+    "ExitCostEstimate",
+    "ExitPlan",
+    "ExitExecution",
+    "ExitReadinessAssessment",
+    "create_exit_strategies",
+    "get_exit_triggers",
+    "get_exit_phases",
+    "get_transition_types",
+
+    # =========================================================================
+    # Phase 5: Unified Reporting Layer
+    # =========================================================================
+    # Unified Reporting
+    "ReportChannel",
+    "PackageFormat",
+    "ReportDestination",
+    "ReportValidationResult",
+    "UnifiedReport",
+    "SubmissionPackage",
+    "DeliveryRecord",
+    "UnifiedReportingConfig",
+    "UnifiedReportingManager",
+    "create_unified_reporting_manager",
+    "create_report_destination",
+    "get_report_statuses",
+    # Reporting Templates
+    "DataTypeCode",
+    "ClientTypeCode",
+    "ServiceTypeCode",
+    "ResponseEffectivenessCode",
+    "TemplateExportFormat",
+    "ITSInitialNotificationTemplate",
+    "ITSIntermediateReportTemplate",
+    "ITSFinalReportTemplate",
+    "TimelineEvent",
+    "ClientIncidentDataPackage",
+    "DORAReportingTemplates",
+    "create_reporting_templates",
+    "get_incident_type_codes",
+    "get_data_type_codes",
+    "get_service_type_codes",
+    "get_client_type_codes",
+    "create_timeline_event",
+    # Register of Information
+    "ContractType",
+    "ServiceType",
+    "FunctionType",
+    "ProviderLocationType",
+    "SubcontractingLevel",
+    "ExportFormat",
+    "ContractReferenceData",
+    "SubcontractorData",
+    "ServiceRecord",
+    "ROIDataPackage",
+    "ROIDataGeneratorConfig",
+    "DORARegisterOfInformation",
+    "create_register_of_information",
+    "create_roi_data_generator",
+    "get_contract_types",
+    "get_service_types",
+    "get_subcontracting_levels",
+    "get_its_templates_provided",
+    "get_its_templates_client_provides",
+
+    # =========================================================================
+    # Phase 6: Information Sharing Layer
+    # =========================================================================
+    "SHAREABLE_INFORMATION_TYPES",
+    "TLP_DEFINITIONS",
+    "DEFAULT_INTELLIGENCE_RETENTION_DAYS",
+    "NCA_NOTIFICATION_DEADLINE_DAYS",
+    "CommunityType",
+    "SharingChannel",
+    "TLPLevel",
+    "MembershipStatus",
+    "SharingOutcome",
+    "IntelligenceDirection",
+    "SanitizationLevel",
+    "SharingCommunity",
+    "InformationSharingPolicy",
+    "CyberThreatIntelligence",
+    "ThreatIntelligenceRecord",
+    "SharingAuditRecord",
+    "NCANotification",
+    "InformationSharingConfig",
+    "DORAInformationSharing",
+    "create_information_sharing",
+    "get_shareable_information_types",
+    "get_tlp_definitions",
+    "get_community_types",
+    "get_sharing_channels",
+    "get_tlp_levels",
+    "create_sharing_community",
+    "create_cyber_threat",
+    "create_sharing_policy",
+
+    # =========================================================================
+    # Archived Financial Entity Modules (for backward compatibility)
+    # =========================================================================
+    "DORAEntityType",
+    "DORAScopeResult",
+    "ScopeVerification",
+    "EntityAuthorization",
+    "DORAScope",
+    "create_scope_verifier",
+    "get_entity_type_description",
+    "ImpairmentType",
+    "FunctionClassification",
+    "FEThirdPartyProvider",
+    "FunctionClassifier",
+    "create_function_classifier",
+    "get_platform_functions",
+    "get_ict_providers",
+    "DORARegime",
+    "ExemptionType",
+    "EntityClassification",
+    "ProportionalityAssessment",
+    "RegimeExemption",
+    "ProportionalityAssessor",
+    "create_proportionality_assessor",
+    "assess_entity_proportionality",
+    "GovernanceRole",
+    "DefenceLine",
+    "TrainingStatus",
+    "GovernanceRoleAssignment",
+    "ICTTrainingRecord",
+    "FrameworkApproval",
+    "ICTBudgetAllocation",
+    "DORAGovernanceFramework",
+    "create_governance_framework",
+    "MANDATORY_TRAINING_TOPICS",
+    "Regulation",
+    "ReportingRequirement",
+    "IncidentAlignmentResult",
+    "RiskFrameworkAlignment",
+    "LoggingAlignmentResult",
+    "DORARegulationIntegration",
 ]

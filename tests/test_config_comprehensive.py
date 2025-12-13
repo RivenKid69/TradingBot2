@@ -197,8 +197,9 @@ def test_train_data_config_window_sync():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        # Test case 1: start_ts provided
+        # Test case 1: start_ts provided (provide symbols to avoid network call)
         config1 = TrainDataConfig(
+            symbols=["BTCUSDT"],
             timeframe="4h",
             start_ts=1000000,
             end_ts=2000000
@@ -208,6 +209,7 @@ def test_train_data_config_window_sync():
 
         # Test case 2: train_start_ts provided
         config2 = TrainDataConfig(
+            symbols=["BTCUSDT"],
             timeframe="4h",
             train_start_ts=3000000,
             train_end_ts=4000000
@@ -217,6 +219,7 @@ def test_train_data_config_window_sync():
 
         # Test case 3: both provided with same values (should work)
         config3 = TrainDataConfig(
+            symbols=["BTCUSDT"],
             timeframe="4h",
             start_ts=5000000,
             train_start_ts=5000000,
@@ -229,6 +232,7 @@ def test_train_data_config_window_sync():
         # Test case 4: conflict (should raise error)
         with pytest.raises(ValueError, match="must match"):
             TrainDataConfig(
+                symbols=["BTCUSDT"],
                 timeframe="4h",
                 start_ts=1000000,
                 train_start_ts=2000000  # Different value

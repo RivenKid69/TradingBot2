@@ -16,7 +16,7 @@ import tempfile
 from typing import Dict, Any, Optional, Tuple
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 

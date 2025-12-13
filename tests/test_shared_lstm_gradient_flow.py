@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import pytest
 import numpy as np
-import torch
+
+torch = pytest.importorskip("torch")
+pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
 from custom_policy_patch1 import CustomActorCriticPolicy

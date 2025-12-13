@@ -43,6 +43,17 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Check for pyarrow availability (needed for feather tests)
+try:
+    import pyarrow
+    HAS_PYARROW = True
+except ImportError:
+    HAS_PYARROW = False
+
+pyarrow_required = pytest.mark.skipif(
+    not HAS_PYARROW, reason="pyarrow required for feather/parquet support"
+)
+
 from features_pipeline import FeaturePipeline, _columns_to_shift, METADATA_COLUMNS
 
 
@@ -53,6 +64,7 @@ from features_pipeline import FeaturePipeline, _columns_to_shift, METADATA_COLUM
 class TestFetchAllDataPatchNoCloseOrig:
     """Verify that fetch_all_data_patch no longer creates close_orig."""
 
+    @pyarrow_required
     def test_load_all_data_no_close_orig(self, tmp_path):
         """Test that load_all_data() no longer creates close_orig."""
         # Import here to avoid module-level import issues
@@ -286,6 +298,7 @@ class TestTradingEnvCompatibility:
 class TestFullPipelineIntegration:
     """Test full pipeline: load_all_data → features_pipeline → no double-shift."""
 
+    @pyarrow_required
     def test_full_pipeline_no_double_shift(self, tmp_path):
         """Test that data flows correctly without double-shifting."""
         from fetch_all_data_patch import load_all_data
@@ -334,6 +347,7 @@ class TestFullPipelineIntegration:
         assert pd.isna(transformed['rsi_14'].iloc[0]), "rsi_14 should be shifted"
         assert transformed['rsi_14'].iloc[1] == 50.0, "rsi_14[1] should be original rsi_14[0]"
 
+    @pyarrow_required
     def test_no_data_leakage_after_fix(self, tmp_path):
         """CRITICAL: Verify no data leakage in the fixed pipeline."""
         from fetch_all_data_patch import load_all_data

@@ -12,6 +12,7 @@ Tests cover:
 import json
 import tempfile
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.data_structures import (
     LimitOrder,

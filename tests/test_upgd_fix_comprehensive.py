@@ -8,7 +8,8 @@ Tests verify that the min-max normalization fix correctly handles:
 4. Edge cases (all zeros, uniform utilities)
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import sys
 import os
 

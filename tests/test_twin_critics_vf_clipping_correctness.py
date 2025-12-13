@@ -11,10 +11,10 @@ Created: 2025-11-22
 Purpose: Ensure the fix is correct and prevent regressions
 """
 
-import gymnasium as gym
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 
 from custom_policy_patch1 import CustomActorCriticPolicy

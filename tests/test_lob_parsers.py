@@ -12,6 +12,7 @@ import io
 import struct
 import tempfile
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.parsers import (
     LOBSTERParser,

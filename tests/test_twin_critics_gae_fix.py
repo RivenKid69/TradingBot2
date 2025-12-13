@@ -23,10 +23,10 @@ Test Coverage:
 4. Terminal bootstrap: Uses min(Q1, Q2) when Twin Critics enabled
 5. Integration test: Full rollout with Twin Critics
 """
-import gymnasium as gym
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
+gym = pytest.importorskip("gymnasium")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from unittest.mock import Mock, patch, MagicMock
 

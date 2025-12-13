@@ -2,6 +2,7 @@ import math
 import types
 
 import pytest
+pytest.importorskip("torch")
 
 try:  # noqa: SIM105
     import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed

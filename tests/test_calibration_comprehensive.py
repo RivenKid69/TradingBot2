@@ -8,6 +8,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
+# Check if parquet engine is available for tests that need it
+try:
+    pd.DataFrame().to_parquet  # Check if method exists
+    import pyarrow  # noqa: F401
+    HAS_PARQUET = True
+except (ImportError, AttributeError):
+    HAS_PARQUET = False
+
 from scripts.calibrate_dynamic_spread import (
     _read_table,
     _pick_column,
@@ -41,6 +49,7 @@ class TestReadTable:
         finally:
             path.unlink()
 
+    @pytest.mark.skipif(not HAS_PARQUET, reason="pyarrow/fastparquet not installed")
     def test_read_parquet(self):
         """Test reading Parquet file."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})

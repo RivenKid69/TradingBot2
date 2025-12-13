@@ -12,7 +12,7 @@ Date: 2025-11-23
 
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 from typing import Dict, Any
 from unittest.mock import Mock, MagicMock, patch
 

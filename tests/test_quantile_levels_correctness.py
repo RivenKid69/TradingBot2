@@ -18,7 +18,7 @@ Mathematical proof:
 import math
 import numpy as np
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 from custom_policy_patch1 import QuantileValueHead
 

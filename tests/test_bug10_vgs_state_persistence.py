@@ -4,11 +4,12 @@ Specialized Test for Bug #10: VGS State Not Preserved Across Save/Load
 This test precisely localizes the issue where VGS internal state
 (step_count, EMAs) is not correctly preserved during model save/load cycles.
 """
+import pytest
 import tempfile
 from pathlib import Path
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 import numpy as np
-import torch
+torch = pytest.importorskip("torch")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy

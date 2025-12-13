@@ -1,0 +1,377 @@
+# DORA Article 45 - Information Sharing Configuration
+#
+# This configuration governs cyber threat information sharing
+# per Regulation (EU) 2022/2554 Article 45.
+#
+# ICT Provider Context:
+#   As an ICT third-party provider, we facilitate information sharing
+#   between our financial entity clients while ensuring:
+#   - GDPR compliance (Art. 45(2)(b))
+#   - Competition law boundaries (Art. 45(2)(c))
+#   - Confidentiality of business information (Art. 45(2)(a))
+#
+# References:
+#   - DORA Article 45
+#   - ESAs Final Report on Information Sharing
+#   - Traffic Light Protocol (TLP) 2.0 - FIRST
+#   - STIX 2.1 / TAXII 2.1 Standards
+
+version: "1.0"
+last_updated: "2025-01-17"
+effective_date: "2025-01-17"
+
+# =============================================================================
+# Provider Information
+# =============================================================================
+provider:
+  name: "AI Research Platform"
+  lei: ""  # Legal Entity Identifier (to be configured)
+  jurisdiction: "EU"
+  contact:
+    dpo_email: "dpo@platform.example"
+    security_email: "security@platform.example"
+    nca_liaison_email: "compliance@platform.example"
+
+# =============================================================================
+# Sharing Policy Configuration
+# =============================================================================
+policy:
+  # Unique policy identifier
+  policy_id: "POL-SHARING-2025"
+
+  # Default Traffic Light Protocol level for outgoing intelligence
+  # Options: tlp_red, tlp_amber_strict, tlp_amber, tlp_green, tlp_clear
+  default_tlp_level: "tlp_amber"
+
+  # Allowed TLP levels for sharing
+  allowed_tlp_levels:
+    - "tlp_amber"
+    - "tlp_green"
+    - "tlp_clear"
+
+  # Default sharing channel
+  # Options: api, email, portal, secure_ftp, stix_taxii, misp, webhook
+  default_channel: "portal"
+
+  # Allowed information types per Art. 45 guidance
+  allowed_information_types:
+    - "indicators_of_compromise"
+    - "tactics_techniques_procedures"
+    - "cybersecurity_alerts"
+    - "configuration_tools"
+    - "threat_actor_profiles"
+    - "vulnerability_disclosures"
+    - "malware_signatures"
+    - "network_artifacts"
+    - "attack_patterns"
+    - "remediation_guidance"
+
+  # Blocked information types
+  blocked_information_types:
+    - "proprietary_algorithms"
+    - "trading_strategies"
+    - "client_portfolios"
+
+  # Keywords that trigger automatic sanitization
+  restricted_keywords:
+    - "client_name"
+    - "client_id"
+    - "account_number"
+    - "pricing"
+    - "trade_id"
+    - "transaction_id"
+    - "internal_ip"
+    - "employee_name"
+    - "salary"
+    - "revenue"
+    - "profit"
+    - "ssn"
+    - "passport"
+    - "credit_card"
+
+# =============================================================================
+# GDPR & Privacy Controls (Art. 45(2)(b))
+# =============================================================================
+gdpr:
+  # Require GDPR review before sharing
+  require_review: true
+
+  # Data Protection Officer contact
+  dpo_contact: "dpo@platform.example"
+
+  # Personal data patterns to detect (regex)
+  pii_patterns:
+    - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"  # Email
+    - "\\b\\d{3}[-.]?\\d{2}[-.]?\\d{4}\\b"  # SSN format
+    - "\\b(?:\\d{4}[-\\s]?){3}\\d{4}\\b"  # Credit card
+    - "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b"  # IPv4
+
+  # Automatically sanitize detected PII
+  auto_sanitize_pii: true
+
+  # Enable GDPR consent tracking
+  track_consent: true
+
+# =============================================================================
+# Competition Law Controls (Art. 45(2)(c))
+# =============================================================================
+competition:
+  # Require competition law review before sharing
+  require_review: true
+
+  # Blocked terms that may indicate competitive info
+  blocked_terms:
+    - "market_share"
+    - "customer_count"
+    - "revenue_projection"
+    - "pricing_strategy"
+    - "acquisition_target"
+
+  # Enable competition law audit logging
+  audit_logging: true
+
+# =============================================================================
+# Sanitization Configuration
+# =============================================================================
+sanitization:
+  # Enable automatic sanitization
+  enabled: true
+
+  # Default sanitization level
+  # Options: none, minimal, moderate, aggressive
+  default_level: "moderate"
+
+  # Sanitization levels by TLP
+  level_by_tlp:
+    tlp_red: "aggressive"
+    tlp_amber_strict: "aggressive"
+    tlp_amber: "moderate"
+    tlp_green: "minimal"
+    tlp_clear: "none"
+
+  # Internal hostname patterns to redact
+  internal_hostname_patterns:
+    - "\\b[a-z0-9-]+\\.(internal|local|corp)\\b"
+    - "\\b[a-z0-9-]+\\.platform\\.io\\b"
+
+  # File path patterns to redact
+  file_path_patterns:
+    - "[A-Za-z]:\\\\[\\w\\\\]+"
+    - "/home/[\\w/]+"
+    - "/var/[\\w/]+"
+
+# =============================================================================
+# Data Retention (GDPR Art. 5(1)(e))
+# =============================================================================
+retention:
+  # Intelligence retention period in days
+  intelligence_retention_days: 365
+
+  # Audit log retention period in days
+  audit_retention_days: 2555  # 7 years
+
+  # Enable automatic purging of stale data
+  auto_purge_enabled: true
+
+  # Purge frequency (cron expression)
+  purge_schedule: "0 2 * * 0"  # Sunday at 2 AM
+
+# =============================================================================
+# NCA Notification (Art. 45(3))
+# =============================================================================
+nca_notification:
+  # Enable NCA notification for community participation
+  enabled: true
+
+  # Notification deadline (days after joining)
+  notification_deadline_days: 30
+
+  # NCA contact details by jurisdiction
+  nca_contacts:
+    EU:
+      email: "nca@esma.europa.eu"
+      portal: "https://esma.europa.eu/dora-notifications"
+    DE:
+      email: "dora@bafin.de"
+      portal: "https://portal.bafin.de/dora"
+    FR:
+      email: "dora@amf-france.org"
+      portal: "https://geco.amf-france.org/dora"
+    NL:
+      email: "dora@dnb.nl"
+      portal: "https://portal.dnb.nl/dora"
+    LU:
+      email: "dora@cssf.lu"
+      portal: "https://portal.cssf.lu/dora"
+
+  # Notification template
+  template:
+    subject: "DORA Art. 45(3) - Information Sharing Arrangement Notification"
+    include_community_details: true
+    include_dpo_contact: true
+    include_safeguards_description: true
+
+# =============================================================================
+# Community Configuration
+# =============================================================================
+communities:
+  # Trusted community types
+  trusted_types:
+    - "fs_isac"
+    - "cert"
+    - "csirt"
+    - "sector_isac"
+
+  # Trust level thresholds
+  trust_thresholds:
+    high: 80
+    medium: 50
+    low: 20
+
+  # Require Data Protection Agreement for sharing
+  require_dpa: true
+
+  # Default allowed channels
+  default_channels:
+    - "portal"
+    - "api"
+
+  # Pre-approved communities (whitelist)
+  pre_approved:
+    - name: "FS-ISAC"
+      type: "fs_isac"
+      trust_level: 85
+      country: "US"
+
+    - name: "ENISA Cyber Europe"
+      type: "csirt"
+      trust_level: 90
+      country: "EU"
+
+    - name: "Euro Cyber Resilience Board"
+      type: "public_private_partnership"
+      trust_level: 80
+      country: "EU"
+
+# =============================================================================
+# STIX/TAXII Integration
+# =============================================================================
+stix_taxii:
+  # Enable STIX export
+  stix_enabled: true
+
+  # STIX version
+  stix_version: "2.1"
+
+  # TAXII server configuration
+  taxii:
+    enabled: false
+    server_url: ""
+    api_root: "/taxii2/"
+    collection_id: ""
+    auth_type: "basic"  # basic, certificate, oauth2
+
+  # STIX bundle settings
+  bundle_settings:
+    max_objects_per_bundle: 100
+    include_tlp_markings: true
+    include_confidence: true
+
+# =============================================================================
+# MISP Integration
+# =============================================================================
+misp:
+  # Enable MISP integration
+  enabled: false
+
+  # MISP server URL
+  server_url: ""
+
+  # API key (should be in secrets manager)
+  api_key_secret_path: "secrets/misp/api_key"
+
+  # Default sharing group
+  default_sharing_group: "Financial Sector ISAC"
+
+  # Attribute types to sync
+  sync_attribute_types:
+    - "ip-dst"
+    - "domain"
+    - "md5"
+    - "sha256"
+    - "url"
+
+# =============================================================================
+# Audit Configuration
+# =============================================================================
+audit:
+  # Enable comprehensive audit logging
+  enabled: true
+
+  # Log all sharing attempts (including blocked)
+  log_all_attempts: true
+
+  # Include sanitization details in audit
+  include_sanitization_details: true
+
+  # Audit storage backend
+  storage:
+    type: "database"  # database, file, external
+    table_name: "dora_sharing_audit"
+    retention_days: 2555  # 7 years
+
+  # Audit report generation
+  reports:
+    # Generate daily summary
+    daily_summary: true
+    daily_summary_recipients:
+      - "compliance@platform.example"
+
+    # Generate weekly detailed report
+    weekly_detailed: true
+    weekly_detailed_recipients:
+      - "compliance@platform.example"
+      - "security@platform.example"
+
+# =============================================================================
+# Monitoring & Alerting
+# =============================================================================
+monitoring:
+  # Enable monitoring
+  enabled: true
+
+  # Alert on blocked sharing attempts
+  alert_on_blocked: true
+
+  # Alert threshold for blocked attempts (per hour)
+  blocked_alert_threshold: 10
+
+  # Alert on failed sanitization
+  alert_on_sanitization_failure: true
+
+  # Prometheus metrics endpoint
+  metrics:
+    enabled: true
+    endpoint: "/metrics/sharing"
+    labels:
+      service: "dora_information_sharing"
+      component: "sharing"
+
+# =============================================================================
+# Feature Flags
+# =============================================================================
+features:
+  # Enable automatic community discovery
+  auto_discover_communities: false
+
+  # Enable real-time threat feed
+  real_time_feed: false
+
+  # Enable AI-powered threat classification
+  ai_classification: false
+
+  # Enable cross-client threat correlation
+  cross_client_correlation: false
+
+  # Enable threat intelligence scoring
+  threat_scoring: true

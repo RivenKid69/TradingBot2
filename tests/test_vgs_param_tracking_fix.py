@@ -4,10 +4,11 @@ Comprehensive test suite for VGS parameter tracking after model load (Bug #9).
 Tests that VGS correctly tracks policy parameters after save/load cycle.
 """
 
-import gymnasium as gym
 import tempfile
 from pathlib import Path
 import pytest
+gym = pytest.importorskip("gymnasium")
+pytest.importorskip("torch")
 from stable_baselines3.common.vec_env import DummyVecEnv
 from distributional_ppo import DistributionalPPO
 from custom_policy_patch1 import CustomActorCriticPolicy

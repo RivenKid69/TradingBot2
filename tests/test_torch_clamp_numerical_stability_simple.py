@@ -9,7 +9,7 @@ Date: 2025-11-22
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 
 class TestTorchClampNumericalStability:

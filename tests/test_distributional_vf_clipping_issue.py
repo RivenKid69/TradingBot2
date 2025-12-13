@@ -18,7 +18,8 @@ Example:
 The distribution changed RADICALLY (10x variance increase), but VF clipping allowed it!
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

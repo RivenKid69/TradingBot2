@@ -15,6 +15,7 @@ Target: 50+ tests with <1μs per message benchmark
 
 import time
 import pytest
+pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import List, Tuple
 

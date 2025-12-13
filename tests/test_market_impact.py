@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob.data_structures import (
     Fill,

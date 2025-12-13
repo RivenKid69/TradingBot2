@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
-from services.dora.ctpp_oversight import (
+from services.dora_integration.third_party import (
     # Enumerations
     LeadOverseer,
     CTPPStatus,

@@ -74,6 +74,10 @@ dependencies = [
     "optuna>=3.5.0,<4.0.0",          # Hyperparameter optimization
     "joblib>=1.3.0,<2.0.0",          # Parallel processing, model persistence
 
+    # ---- LOB/Order Book ----
+    "sortedcontainers>=2.4.0,<3.0.0",  # Sorted data structures for order book
+    "cloudpickle>=3.0.0,<4.0.0",       # Pickle for complex objects (SB3 models)
+
     # ---- Scientific Computing ----
     "scipy>=1.11.0,<2.0.0",          # Optimization, statistics
     "arch>=6.2.0,<8.0.0",            # GARCH volatility models
@@ -303,6 +307,10 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "requires_cython: marks tests that require compiled Cython modules",
     "requires_gpu: marks tests that require GPU",
+    "requires_torch: marks tests that require PyTorch",
+    "requires_gymnasium: marks tests that require gymnasium",
+    "requires_sb3: marks tests that require stable-baselines3",
+    "requires_pyarrow: marks tests that require pyarrow/parquet support",
     "phase1: forex regression phase 1 enum checks",
     "phase2: forex regression phase 2 adapter checks",
     "phase3: forex regression phase 3 slippage checks",

@@ -9,7 +9,7 @@ These are unit tests that verify the fix logic without requiring full PPO traini
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

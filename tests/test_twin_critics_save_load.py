@@ -2,7 +2,8 @@
 Tests for Twin Critics save/load functionality and backward compatibility.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 import tempfile

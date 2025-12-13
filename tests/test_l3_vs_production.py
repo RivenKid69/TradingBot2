@@ -20,6 +20,7 @@ Since we don't have actual production data, these tests:
 import math
 import time
 import pytest
+pytest.importorskip("sortedcontainers")
 import numpy as np
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass

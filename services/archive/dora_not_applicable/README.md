@@ -20,18 +20,20 @@ The modules listed below were designed for direct DORA compliance by Financial E
 
 ## Archived Modules
 
+> **Note:** All FE-specific modules are now consolidated in `services/archive/dora_financial_entity/`.
+
 ### 1. scope_verification.py
-**Original Location**: `services/dora/scope_verification.py`
+**Current Location**: `services/archive/dora_financial_entity/scope_verification.py`
 **Purpose**: Determines if DORA applies to an entity
 **Why Not Applicable**: We already know DORA applies to us via client contracts. This module helps entities determine if they're in scope - irrelevant for providers.
 
 ### 2. proportionality.py
-**Original Location**: `services/dora/proportionality.py`
+**Current Location**: `services/archive/dora_financial_entity/proportionality.py`
 **Purpose**: Assesses entity size for simplified regime eligibility
 **Why Not Applicable**: Proportionality regimes (Art. 16) apply to financial entities based on their size/complexity. As a provider, we don't use these classifications.
 
 ### 3. supervisory_feedback.py
-**Original Location**: `services/dora/supervisory_feedback.py`
+**Current Location**: `services/archive/dora_financial_entity/supervisory_feedback.py`
 **Purpose**: Manages NCA feedback and corrective actions
 **Why Not Applicable**: Direct NCA supervision applies to financial entities. We interact with NCAs only through client audits, not direct supervisory feedback loops.
 
@@ -39,15 +41,22 @@ The modules listed below were designed for direct DORA compliance by Financial E
 
 ## Archived Configurations
 
+> **Note:** All FE-specific configs are now in `services/archive/dora_financial_entity/configs/`.
+
 ### 4. nca_identification.yaml
-**Original Location**: `configs/dora/nca_identification.yaml`
+**Current Location**: `services/archive/dora_financial_entity/configs/nca_identification.yaml`
 **Purpose**: Maps entity types to competent authorities
 **Why Not Applicable**: Financial entities use this to identify their NCA. We don't have a designated NCA (unless designated as CTPP).
 
 ### 5. entity_classification.yaml
-**Original Location**: `configs/dora/entity_classification.yaml`
+**Current Location**: `services/archive/dora_financial_entity/configs/entity_classification.yaml`
 **Purpose**: Classifies financial entity types per Article 2(1)
 **Why Not Applicable**: We are not classified as a financial entity under these categories.
+
+### 6. proportionality_assessment.yaml
+**Current Location**: `services/archive/dora_financial_entity/configs/proportionality_assessment.yaml`
+**Purpose**: FE regime determination (full/simplified/microenterprise)
+**Why Not Applicable**: ICT Providers don't have DORA "regimes" - Art. 30 applies uniformly.
 
 ---
 

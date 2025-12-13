@@ -1,0 +1,286 @@
+# Third-Party Risk Management Configuration
+# DORA Articles 28, 29, 30, 31-44
+# Migration Phase 3
+
+# =============================================================================
+# Concentration Risk (Article 29)
+# =============================================================================
+concentration_risk:
+  # Thresholds for provider concentration
+  provider_concentration:
+    warning_pct: 30.0   # Warning when single provider > 30% of services
+    critical_pct: 50.0  # Critical when single provider > 50% of services
+
+  # Geographic concentration thresholds
+  geographic_concentration:
+    warning_pct: 40.0   # Warning when > 40% in single country
+    critical_pct: 60.0  # Critical when > 60% in single country
+
+  # Provider diversity requirements
+  provider_diversity:
+    max_critical_functions_per_provider: 3
+    min_providers_per_critical_function: 2
+    max_single_country_data_pct: 70.0
+
+  # Herfindahl-Hirschman Index (HHI) thresholds
+  hhi:
+    unconcentrated: 1500      # HHI < 1500 = unconcentrated market
+    moderately_concentrated: 2500  # 1500 < HHI < 2500 = moderately concentrated
+    highly_concentrated: 2500  # HHI > 2500 = highly concentrated (requires action)
+
+  # Assessment frequency
+  assessment:
+    frequency_months: 6
+    review_after_major_change: true
+
+  # Logging
+  logging:
+    log_all_events: true
+    log_path: "logs/dora/concentration_risk"
+
+# =============================================================================
+# CTPP Oversight (Articles 31-44)
+# =============================================================================
+ctpp_oversight:
+  # Designation criteria monitoring
+  designation_criteria:
+    # Systemic importance thresholds (Article 31)
+    systemic_importance:
+      financial_entities_served_threshold: 10
+      critical_functions_supported_threshold: 3
+      substitutability_threshold: "difficult_to_substitute"
+
+    # Market concentration thresholds
+    market_concentration:
+      sector_coverage_pct: 15.0  # Warning if serving > 15% of sector
+
+  # Lead Overseer mapping
+  lead_overseers:
+    banking: "EBA"
+    insurance: "EIOPA"
+    securities: "ESMA"
+    cross_sector: "JC"  # Joint Committee
+
+  # Recommendation tracking
+  recommendations:
+    response_deadline_days: 30
+    implementation_tracking: true
+
+  # Exercise scheduling
+  oversight_exercises:
+    inspection_frequency_months: 12
+    testing_frequency_months: 6
+
+  # Logging
+  logging:
+    log_all_events: true
+    log_path: "logs/dora/ctpp_oversight"
+
+# =============================================================================
+# Third-Party Risk Management (Article 28)
+# =============================================================================
+third_party_risk:
+  # Provider classification
+  classification:
+    criticality_levels:
+      - critical      # Supports critical/important functions
+      - significant   # Material dependency
+      - standard      # Regular provider
+      - limited       # Minimal impact
+
+  # Risk assessment
+  risk_assessment:
+    frequency_months: 12
+    material_provider_frequency_months: 6
+    critical_provider_frequency_months: 3
+
+    # Risk categories to assess
+    risk_categories:
+      - operational
+      - security
+      - concentration
+      - geographic
+      - financial
+      - compliance
+      - reputational
+
+    # Risk thresholds
+    thresholds:
+      high_risk_score: 70.0
+      critical_risk_score: 85.0
+
+  # Due diligence requirements
+  due_diligence:
+    # Required for all providers
+    basic:
+      - legal_entity_verification
+      - financial_stability
+      - regulatory_status
+
+    # Required for material providers
+    enhanced:
+      - security_assessment
+      - bcdr_capabilities
+      - incident_management
+      - subcontractor_chain
+
+    # Required for critical providers
+    comprehensive:
+      - on_site_audit
+      - penetration_testing
+      - staff_vetting
+      - exit_plan_validation
+
+  # Logging
+  logging:
+    log_all_events: true
+    log_path: "logs/dora/third_party_risk"
+
+# =============================================================================
+# Third-Party Incidents (Article 23)
+# =============================================================================
+third_party_incidents:
+  # Severity classification
+  severity:
+    critical:
+      response_sla_hours: 1
+      escalation_level: "executive"
+      sla_breach_threshold_hours: 4
+
+    high:
+      response_sla_hours: 4
+      escalation_level: "management"
+      sla_breach_threshold_hours: 8
+
+    medium:
+      response_sla_hours: 8
+      escalation_level: "team_lead"
+      sla_breach_threshold_hours: 24
+
+    low:
+      response_sla_hours: 24
+      escalation_level: "standard"
+      sla_breach_threshold_hours: 72
+
+  # Communication requirements
+  communication:
+    initial_notification_hours: 4
+    update_frequency_hours: 4
+    channels:
+      - email
+      - portal
+      - sms
+      - phone
+
+  # Post-incident review
+  post_incident_review:
+    required_for_severity:
+      - critical
+      - high
+    deadline_days: 5
+    root_cause_analysis: true
+    lessons_learned: true
+
+  # Logging
+  logging:
+    log_all_events: true
+    log_path: "logs/dora/third_party_incidents"
+
+# =============================================================================
+# Subcontractor Management (Article 30)
+# =============================================================================
+subcontractor_management:
+  # Notification settings
+  notifications:
+    default_notification_days: 30
+    material_change_notification_days: 60
+    critical_function_notification_days: 90
+
+  # Review settings
+  review:
+    frequency_months: 12
+    material_review_frequency_months: 6
+    critical_review_frequency_months: 3
+
+  # Consent modes (Article 30(3)(j))
+  consent_modes:
+    notification_only:
+      description: "Notify client, proceed immediately"
+      applies_to: "non_critical"
+
+    notification_with_objection:
+      description: "Client can object within period"
+      applies_to: "critical_functions"
+      objection_period_days: 30
+
+    prior_consent:
+      description: "Explicit approval required"
+      applies_to: "on_client_request"
+      auto_timeout_days: 0  # No auto-approval
+
+  # Risk thresholds
+  risk:
+    high_threshold: 70.0
+    critical_threshold: 85.0
+
+  # Required data for disclosure
+  disclosure:
+    required_fields:
+      - subcontractor_name
+      - legal_name
+      - headquarters_country
+      - services_provided
+      - data_processing_countries
+      - data_storage_countries
+      - has_data_access
+      - is_material
+      - supports_critical_functions
+
+  # Logging
+  logging:
+    log_all_events: true
+    log_path: "logs/dora/subcontractors"
+
+# =============================================================================
+# Integration Points
+# =============================================================================
+integration:
+  # Link to core subcontractor monitoring
+  core_monitoring:
+    module: "services.core.subcontractor_monitoring"
+    sync_frequency_hours: 1
+
+  # Link to incident management
+  incident_management:
+    module: "services.dora_integration.incident_interface"
+    auto_notification: true
+
+  # Link to contracts module (Phase 4)
+  contracts:
+    module: "services.dora_integration.contracts"
+    enabled: false  # Enable in Phase 4
+
+# =============================================================================
+# Compliance Indicators
+# =============================================================================
+compliance:
+  indicators:
+    - name: "no_critical_concentration"
+      check: "concentration_risk.critical_risks == 0"
+      severity: "critical"
+
+    - name: "no_single_points_of_failure"
+      check: "all(providers_per_function >= 2)"
+      severity: "high"
+
+    - name: "all_high_risks_mitigated"
+      check: "all(high_risks.mitigation_status != 'not_started')"
+      severity: "high"
+
+    - name: "reviews_up_to_date"
+      check: "no_overdue_reviews"
+      severity: "medium"
+
+    - name: "subcontractor_notifications_sent"
+      check: "all(pending_notifications == 0)"
+      severity: "medium"

@@ -11,6 +11,7 @@ Tests both OLD (buggy) and NEW (fixed) implementations to ensure:
 import math
 
 import pytest
+pytest.importorskip("torch")
 
 import test_distributional_ppo_raw_outliers  # noqa: F401
 

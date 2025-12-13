@@ -11,7 +11,8 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 import pytest
 

@@ -21,7 +21,7 @@ This test suite provides 100% coverage of the fix to ensure:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 

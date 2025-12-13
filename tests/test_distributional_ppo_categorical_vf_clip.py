@@ -7,7 +7,7 @@ quantile implementation and adherence to PPO principles.
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 
 from distributional_ppo import DistributionalPPO

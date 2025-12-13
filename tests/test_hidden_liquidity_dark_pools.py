@@ -18,6 +18,7 @@ Total: 30+ tests
 """
 
 import pytest
+pytest.importorskip("sortedcontainers")
 import time
 from typing import List, Tuple, Optional
 

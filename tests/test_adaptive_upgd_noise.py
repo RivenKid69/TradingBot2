@@ -11,7 +11,8 @@ Test Coverage:
 4. Validation Tests - Problem #4 resolution
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import pytest
 import tempfile

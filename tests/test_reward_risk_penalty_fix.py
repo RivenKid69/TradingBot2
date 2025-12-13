@@ -17,6 +17,8 @@ Research support:
 import pytest
 import numpy as np
 
+pytest.importorskip("sortedcontainers")
+
 try:
     from lob_state_cython import _compute_reward_cython
     HAVE_LOB_STATE_CYTHON = True

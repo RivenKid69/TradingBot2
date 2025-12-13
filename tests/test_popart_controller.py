@@ -4,7 +4,7 @@ import math
 from typing import Optional
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 
 pytest.importorskip("sb3_contrib")
 

@@ -27,6 +27,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import pytest
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent
@@ -441,6 +442,7 @@ def test_l3_components():
 @run_test("LOB Data Structures")
 def test_lob_data_structures():
     """Test LOB data structures."""
+    pytest.importorskip("sortedcontainers")
     from lob.data_structures import (
         LimitOrder,
         PriceLevel,

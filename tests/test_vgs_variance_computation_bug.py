@@ -11,7 +11,8 @@ But for stochastic variance Var[g] = E[g²] - E[g]², we need:
 This test demonstrates the mathematical difference and impact.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import numpy as np
 from variance_gradient_scaler import VarianceGradientScaler
 

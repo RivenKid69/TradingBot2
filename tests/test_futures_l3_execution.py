@@ -29,6 +29,7 @@ References:
 import math
 import time
 import pytest
+pytest.importorskip("sortedcontainers")
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional

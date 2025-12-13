@@ -19,7 +19,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import Mock, patch
 import threading
 
-from services.dora.exit_strategies import (
+from services.dora_integration.contracts import (
     # Enumerations
     ExitTrigger,
     ExitPhase,

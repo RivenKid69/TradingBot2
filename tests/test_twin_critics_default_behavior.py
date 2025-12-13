@@ -9,9 +9,9 @@ Tests verify that:
 """
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
-import gymnasium as gym
+gym = pytest.importorskip("gymnasium")
 from gymnasium import spaces
 from custom_policy_patch1 import CustomActorCriticPolicy
 from distributional_ppo import DistributionalPPO

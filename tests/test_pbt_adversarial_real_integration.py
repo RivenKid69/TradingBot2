@@ -19,7 +19,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np

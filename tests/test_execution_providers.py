@@ -15,6 +15,7 @@ Test coverage:
 
 import math
 import pytest
+pytest.importorskip("sortedcontainers")
 from typing import Optional
 
 from execution_providers import (

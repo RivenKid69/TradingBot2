@@ -12,7 +12,7 @@ Reference: CLAUDE.md bug fix documentation
 
 import math
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import numpy as np
 import pandas as pd
 from unittest.mock import MagicMock, patch

@@ -6,7 +6,9 @@ This test checks whether gradients flow correctly through the constraint term
 in the Augmented Lagrangian method implementation.
 """
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 import sys
 
 

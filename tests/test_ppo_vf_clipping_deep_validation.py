@@ -10,7 +10,9 @@ This module provides 100% coverage testing for the VF clipping fix:
 6. Performance and numerical stability
 """
 
-import torch
+import pytest
+
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 import numpy as np
 from typing import Tuple, Optional

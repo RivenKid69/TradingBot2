@@ -15,7 +15,7 @@ import logging
 from unittest.mock import Mock
 
 import pytest
-import torch
+torch = pytest.importorskip("torch")
 import torch.nn as nn
 from torch import Tensor
 

@@ -3,7 +3,8 @@ Standalone test for gradient flow through categorical distribution projection.
 This doesn't require pytest.
 """
 
-import torch
+import pytest
+torch = pytest.importorskip("torch")
 import sys
 
 from distributional_ppo import DistributionalPPO

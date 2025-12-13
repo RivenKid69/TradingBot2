@@ -16,6 +16,7 @@ import time
 from typing import List
 
 import pytest
+pytest.importorskip("sortedcontainers")
 
 from lob import (
     # Core structures

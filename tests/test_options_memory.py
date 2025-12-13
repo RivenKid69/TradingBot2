@@ -28,6 +28,7 @@ from typing import Dict, List, Optional, Set
 from unittest.mock import MagicMock, patch
 
 import pytest
+pytest.importorskip("sortedcontainers")
 
 # Import Phase 0.5 components
 from lob.lazy_multi_series import (

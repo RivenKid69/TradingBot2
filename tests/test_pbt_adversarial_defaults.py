@@ -12,6 +12,7 @@ Target: 100% confidence that PBT + Adversarial is enabled by default
 
 import os
 import pytest
+pytest.importorskip("torch")
 import yaml
 
 from adversarial import (
