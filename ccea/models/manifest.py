@@ -56,6 +56,8 @@ class SignatureAlgorithm(str, Enum):
     SIGSTORE = "sigstore"
     GPG = "gpg"
     X509 = "x509"
+    ED25519 = "ed25519"
+    ECDSA_P256 = "ecdsa-p256"
 
 
 class Broker(str, Enum):
@@ -229,6 +231,12 @@ class ManifestSignature(BaseModel):
     signature_value: str
     certificate: Optional[str] = None
     timestamp: Optional[datetime] = None
+    key_id: Optional[str] = Field(None, description="Key identifier used for signing")
+    signed_digest: Optional[str] = Field(
+        None,
+        pattern=r"^sha256:[a-f0-9]{64}$",
+        description="Digest that was signed"
+    )
 
     model_config = {"extra": "forbid"}
 

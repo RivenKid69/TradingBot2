@@ -60,6 +60,14 @@ from .protocol_check import (
     check_protocol_changes,
     validate_command_type,
 )
+from .artifact_check import (
+    ArtifactGuardrails,
+    GuardrailCheck,
+    GuardrailReport,
+    CheckSeverity,
+    CheckResult,
+    run_artifact_guardrails,
+)
 
 __all__ = [
     # Import checking
@@ -104,4 +112,11 @@ __all__ = [
     "ALLOWED_MESSAGE_TYPES",
     "check_protocol_changes",
     "validate_command_type",
+    # Artifact guardrails (Phase 4)
+    "ArtifactGuardrails",
+    "GuardrailCheck",
+    "GuardrailReport",
+    "CheckSeverity",
+    "CheckResult",
+    "run_artifact_guardrails",
 ]
