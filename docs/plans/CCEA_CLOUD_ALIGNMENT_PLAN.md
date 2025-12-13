@@ -101,7 +101,7 @@ Done:
 - cloud‑образ/сборка физически не содержит trading client libs и не может обратиться к broker trading API (ни прямо, ни транзитивно).
 - agent‑live собирается отдельно и содержит всё live‑необходимое.
 
-Фаза 3. Strategy API и сим/лайв паритет (2–3 недели)
+Фаза 3. Strategy API и сим/лайв паритет (2–3 недели) - COMPLETED 2025-12-13
 
 1) Единый контракт стратегии = Intent:
 - Стратегия возвращает Intent (например, OrderIntent из core_models.py).
@@ -109,14 +109,34 @@ Done:
 - В agent: Intent → local Risk Manager (enforce + hard caps) → Execution Engine → Orders → Broker Connector.
 
 2) Убрать/зафиксировать legacy:
-- “Decision/готовые ордера” не используются как контракт для live; миграция стратегий и раннеров.
+- "Decision/готовые ордера" не используются как контракт для live; миграция стратегий и раннеров.
 
-3) Запрет “signal/intent push” из cloud:
+3) Запрет "signal/intent push" из cloud:
 - В cloud API/протоколе отсутствуют сообщения, несущие live‑intent/targets.
 - Cloud отправляет только lifecycle requests (REQUEST_START/STOP/PAUSE/UPGRADE/UPDATE_CONFIG и т.п.).
 
 Done:
-- Генерация конкретных Orders находится только в agent‑раннере; cloud не умеет и не может “подсунуть” intent/targets в live.
+- Генерация конкретных Orders находится только в agent‑раннере; cloud не умеет и не может "подсунуть" intent/targets в live.
+
+Implementation Details (2025-12-13):
+- Created SimulationRunner (packages/shared/runner/simulation.py) - Cloud zone runner that routes intents to SimExecutionEngine
+- Created LiveRunner (packages/agent/runner/live.py) - Agent zone runner with full risk stack (PolicyFirewall + HardCapEnforcer + RiskChecker)
+- Created IntentAdapter (packages/shared/contracts/intent_adapter.py) - Legacy OrderIntent migration support
+- Created Intent Prohibition Guardrails (ccea/guardrails/intent_prohibition.py) - CI check for prohibited fields
+- Created Cloud API Boundary Enforcement (packages/cloud/control_plane/boundary.py) - Runtime validation
+- Added comprehensive test suite (tests/ccea/phase3/) - 104 tests covering:
+  * Strategy API and OrderIntent contract (test_strategy_api.py)
+  * Sim/Live parity validation (test_sim_live_parity.py)
+  * Legacy intent migration (test_intent_migration.py)
+  * Protocol guardrails and boundary enforcement (test_protocol_guardrails.py)
+
+Key Files:
+- packages/shared/runner/base.py - BaseRunner abstract class
+- packages/shared/runner/simulation.py - SimulationRunner for Cloud
+- packages/agent/runner/live.py - LiveRunner for Agent
+- packages/shared/contracts/intent_adapter.py - Legacy migration
+- ccea/guardrails/intent_prohibition.py - CI guardrails
+- packages/cloud/control_plane/boundary.py - Runtime boundary enforcement
 
 Фаза 4. Artifact Builder: immutable + signed + manifest + SBOM + provenance (4–6 недель)
 
