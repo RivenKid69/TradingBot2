@@ -138,7 +138,7 @@ Key Files:
 - ccea/guardrails/intent_prohibition.py - CI guardrails
 - packages/cloud/control_plane/boundary.py - Runtime boundary enforcement
 
-Фаза 4. Artifact Builder: immutable + signed + manifest + SBOM + provenance (4–6 недель)
+Фаза 4. Artifact Builder: immutable + signed + manifest + SBOM + provenance (4–6 недель) - COMPLETED 2025-12-13
 
 В cloud‑пакете реализовать builder pipeline:
 - OCI image (digest‑pinned) как основной формат; zip/wheel — только как fallback с явными ограничениями.
@@ -156,7 +156,7 @@ Done:
 - Без подписи артефакт не публикуется; agent не запускает артефакт без успешной верификации.
 - В cloud хранятся только digest/ref/метаданные; никаких секретов.
 
-Фаза 5. Agent Daemon: Local Vault + Sandbox + Policy Firewall + Reconciliation + Safe‑degraded (4–6 недель)
+Фаза 5. Agent Daemon: Local Vault + Sandbox + Policy Firewall + Reconciliation + Safe‑degraded (4–6 недель) - COMPLETED 2025-12-13
 
 1) Local Vault (secrets):
 - Использовать существующий CredentialVault как Local Vault.
@@ -194,7 +194,38 @@ Done:
 - Degraded safe режимы: cloud down / network down / data feed invalid → halt или ограничение по локальной политике.
 
 Done:
-- Агент автономно держит live‑loop, хранит ключи, enforce’ит hard caps, восстанавливается и безопасно деградирует без cloud.
+- Агент автономно держит live‑loop, хранит ключи, enforce'ит hard caps, восстанавливается и безопасно деградирует без cloud.
+
+Implementation Details (2025-12-13):
+- Created Agent Daemon (packages/agent/daemon/agentd.py) - Complete lifecycle management with states: CREATED, INITIALIZING, ENROLLING, IDLE, RUNNING, PAUSED, STOPPING, STOPPED, HALTED, ERROR
+- Created Kill Switch Manager (packages/agent/daemon/kill_switch.py) - 17 halt reason types with persistence and callbacks
+- Created Pre-flight Checker (packages/agent/daemon/preflight.py) - 14 check types covering signature, broker, policy, time sync, vault
+- Created Degraded Mode Manager (packages/agent/daemon/degraded_mode.py) - 9 degraded modes with auto-recovery support
+- Created Telemetry Buffer (packages/agent/daemon/telemetry_buffer.py) - SQLite-based durable storage with mandatory redaction
+- Created Time Sync Checker (packages/agent/daemon/time_sync.py) - NTP verification with configurable drift tolerance
+- Created Strategy Sandbox (packages/agent/daemon/sandbox.py) - Process isolation with CPU/RAM limits, Docker enterprise support
+- Created Keychain Integration (packages/agent/daemon/keychain.py) - OS keychain support (macOS/Linux/Windows) with secure fallback
+
+Added comprehensive test suite (tests/ccea/phase5/) - 175 tests covering:
+  * Kill Switch with all halt reasons (test_kill_switch.py)
+  * Pre-flight validation checks (test_preflight.py)
+  * Degraded mode handling and recovery (test_degraded_mode.py)
+  * Telemetry buffer with persistence (test_telemetry_buffer.py)
+  * Time sync verification (test_time_sync.py)
+  * Sandbox isolation (test_sandbox.py)
+  * OS keychain integration (test_keychain.py)
+  * Agent daemon lifecycle (test_agentd.py)
+
+Key Files:
+- packages/agent/daemon/__init__.py - Package initialization
+- packages/agent/daemon/agentd.py - Main Agent Daemon with lifecycle
+- packages/agent/daemon/kill_switch.py - Enhanced Kill Switch
+- packages/agent/daemon/preflight.py - Pre-flight checks
+- packages/agent/daemon/degraded_mode.py - Degraded mode manager
+- packages/agent/daemon/telemetry_buffer.py - Durable telemetry storage
+- packages/agent/daemon/time_sync.py - Time synchronization
+- packages/agent/daemon/sandbox.py - Strategy sandbox
+- packages/agent/daemon/keychain.py - OS keychain integration
 
 Фаза 6. Cloud Control Plane: модель данных, RBAC, trust/revoke, blobs (6–8 недель)
 
