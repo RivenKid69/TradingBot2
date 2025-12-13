@@ -4,10 +4,13 @@ CCEA Guardrails Module.
 
 Provides CI/CD guardrails for enforcing CCEA architectural boundaries:
 - Import boundary checking (Cloud/Agent/Shared zones)
+- Cloud dependency allowlist with transitive deps checking
 - Schema validation (no order-like payloads)
 - Protocol allowlist validation
 - Artifact signature verification
 - Redaction enforcement
+
+Phase 2 Implementation: Hard separation of Cloud/Agent/Shared zones.
 """
 
 from .import_check import (
@@ -17,6 +20,32 @@ from .import_check import (
     PROHIBITED_IN_CLOUD,
     PROHIBITED_PACKAGES,
     ZoneType,
+)
+from .cloud_allowlist import (
+    ALLOWED_THIRD_PARTY,
+    PROHIBITED_INTERNAL,
+    PROHIBITED_PATTERNS,
+    STDLIB_MODULES,
+    AllowlistCheckResult,
+    DependencyViolation,
+    TransitiveDependencyChecker,
+    is_cloud_allowed,
+    is_prohibited_internal,
+    is_prohibited_package,
+    validate_cloud_build,
+    validate_cloud_manifest,
+)
+from .build_artifact_check import (
+    PROHIBITED_CODE_PATTERNS,
+    PROHIBITED_IMPORTS,
+    PROHIBITED_MODULES,
+    ArtifactCheckResult,
+    ArtifactViolation,
+    scan_directory,
+    scan_wheel_artifact,
+    verify_cloud_artifact,
+    verify_cloud_manifest as verify_artifact_manifest,
+    verify_cloud_source,
 )
 from .schema_check import (
     validate_manifest_schema,
@@ -40,6 +69,30 @@ __all__ = [
     "PROHIBITED_IN_CLOUD",
     "PROHIBITED_PACKAGES",
     "ZoneType",
+    # Cloud allowlist (Phase 2)
+    "ALLOWED_THIRD_PARTY",
+    "PROHIBITED_INTERNAL",
+    "PROHIBITED_PATTERNS",
+    "STDLIB_MODULES",
+    "AllowlistCheckResult",
+    "DependencyViolation",
+    "TransitiveDependencyChecker",
+    "is_cloud_allowed",
+    "is_prohibited_internal",
+    "is_prohibited_package",
+    "validate_cloud_build",
+    "validate_cloud_manifest",
+    # Build artifact check (Phase 2)
+    "PROHIBITED_CODE_PATTERNS",
+    "PROHIBITED_IMPORTS",
+    "PROHIBITED_MODULES",
+    "ArtifactCheckResult",
+    "ArtifactViolation",
+    "scan_directory",
+    "scan_wheel_artifact",
+    "verify_cloud_artifact",
+    "verify_artifact_manifest",
+    "verify_cloud_source",
     # Schema validation
     "validate_manifest_schema",
     "validate_protocol_schema",
