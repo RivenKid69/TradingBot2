@@ -1,0 +1,545 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ccea.platform/schemas/protocol_messages.schema.json",
+  "title": "CCEA Protocol Messages",
+  "description": "Schema for CCEA Cloud-Agent protocol messages",
+
+  "definitions": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]{16,64}$",
+      "description": "Unique key for idempotent processing"
+    },
+    "agent_id": {
+      "type": "string",
+      "pattern": "^agent_[a-zA-Z0-9]{16,32}$",
+      "description": "Agent identifier"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "description": "SHA256 digest"
+    },
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "value"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["ed25519", "ecdsa-p256", "rsa-pss"]
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64-encoded signature"
+        },
+        "key_id": {
+          "type": "string",
+          "description": "Key identifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "command_status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "RECEIVED",
+        "AWAITING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "EXECUTING",
+        "COMPLETED",
+        "FAILED"
+      ]
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": ["APPROVED", "REJECTED", "TIMEOUT"]
+    },
+    "run_state": {
+      "type": "string",
+      "enum": [
+        "INITIALIZING",
+        "RUNNING",
+        "PAUSED",
+        "HALTED",
+        "STOPPED"
+      ]
+    },
+    "deployment_state": {
+      "type": "string",
+      "enum": [
+        "CREATED",
+        "PENDING",
+        "ENROLLED",
+        "RUNNING",
+        "PAUSED",
+        "STOPPED",
+        "REVOKED",
+        "TERMINATED"
+      ]
+    },
+
+    "prohibited_order_fields": {
+      "description": "PROHIBITED: Order-like fields that must NEVER appear in protocol",
+      "not": {
+        "anyOf": [
+          {
+            "properties": {
+              "side": {"enum": ["BUY", "SELL", "buy", "sell"]}
+            },
+            "required": ["side"]
+          },
+          {
+            "properties": {
+              "quantity": {"type": "number"}
+            },
+            "required": ["quantity"]
+          },
+          {
+            "properties": {
+              "qty": {"type": "number"}
+            },
+            "required": ["qty"]
+          },
+          {
+            "properties": {
+              "price": {"type": "number"}
+            },
+            "required": ["price"]
+          },
+          {
+            "properties": {
+              "order_type": {"enum": ["MARKET", "LIMIT"]}
+            },
+            "required": ["order_type"]
+          },
+          {
+            "properties": {
+              "target_position": {"type": "number"}
+            },
+            "required": ["target_position"]
+          },
+          {
+            "properties": {
+              "execute_order": {}
+            },
+            "required": ["execute_order"]
+          },
+          {
+            "properties": {
+              "place_order": {}
+            },
+            "required": ["place_order"]
+          },
+          {
+            "properties": {
+              "submit_order": {}
+            },
+            "required": ["submit_order"]
+          },
+          {
+            "properties": {
+              "intent": {}
+            },
+            "required": ["intent"]
+          },
+          {
+            "properties": {
+              "signal": {}
+            },
+            "required": ["signal"]
+          }
+        ]
+      }
+    },
+
+    "base_command": {
+      "type": "object",
+      "required": ["command_type", "idempotency_key", "timestamp"],
+      "properties": {
+        "command_type": {"type": "string"},
+        "idempotency_key": {"$ref": "#/definitions/idempotency_key"},
+        "timestamp": {"$ref": "#/definitions/timestamp"},
+        "signature": {"$ref": "#/definitions/signature"}
+      }
+    }
+  },
+
+  "oneOf": [
+    {"$ref": "#/definitions/messages/heartbeat"},
+    {"$ref": "#/definitions/messages/poll_commands"},
+    {"$ref": "#/definitions/messages/command_batch"},
+    {"$ref": "#/definitions/messages/command_ack"},
+    {"$ref": "#/definitions/messages/command_approval"},
+    {"$ref": "#/definitions/messages/command_result"},
+    {"$ref": "#/definitions/messages/telemetry"},
+    {"$ref": "#/definitions/messages/request_start_run"},
+    {"$ref": "#/definitions/messages/request_stop_run"},
+    {"$ref": "#/definitions/messages/request_pause_run"},
+    {"$ref": "#/definitions/messages/request_upgrade_artifact"},
+    {"$ref": "#/definitions/messages/request_update_config"},
+    {"$ref": "#/definitions/messages/request_rotate_agent_session"},
+    {"$ref": "#/definitions/messages/request_export_logs"}
+  ],
+
+  "definitions": {
+    "messages": {
+      "heartbeat": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "timestamp", "state"],
+        "properties": {
+          "message_type": {"const": "HEARTBEAT"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "state": {
+            "type": "object",
+            "properties": {
+              "deployment_state": {"$ref": "#/definitions/deployment_state"},
+              "run_state": {"$ref": "#/definitions/run_state"},
+              "agent_version": {"type": "string"},
+              "uptime_seconds": {"type": "integer", "minimum": 0},
+              "last_command_id": {"type": "string"}
+            }
+          },
+          "health": {
+            "type": "object",
+            "properties": {
+              "cpu_percent": {"type": "number", "minimum": 0, "maximum": 100},
+              "memory_percent": {"type": "number", "minimum": 0, "maximum": 100},
+              "disk_percent": {"type": "number", "minimum": 0, "maximum": 100},
+              "broker_connected": {"type": "boolean"},
+              "data_feed_ok": {"type": "boolean"}
+            }
+          },
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "poll_commands": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "timestamp"],
+        "properties": {
+          "message_type": {"const": "POLL_COMMANDS"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "last_command_id": {"type": "string"},
+          "supported_schema_versions": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "command_batch": {
+        "type": "object",
+        "required": ["message_type", "commands", "timestamp"],
+        "properties": {
+          "message_type": {"const": "COMMAND_BATCH"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "commands": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {"$ref": "#/definitions/messages/request_start_run"},
+                {"$ref": "#/definitions/messages/request_stop_run"},
+                {"$ref": "#/definitions/messages/request_pause_run"},
+                {"$ref": "#/definitions/messages/request_upgrade_artifact"},
+                {"$ref": "#/definitions/messages/request_update_config"},
+                {"$ref": "#/definitions/messages/request_rotate_agent_session"},
+                {"$ref": "#/definitions/messages/request_export_logs"}
+              ]
+            }
+          },
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "command_ack": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "command_id", "idempotency_key", "status", "timestamp"],
+        "properties": {
+          "message_type": {"const": "COMMAND_ACK"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "command_id": {"type": "string"},
+          "idempotency_key": {"$ref": "#/definitions/idempotency_key"},
+          "status": {"$ref": "#/definitions/command_status"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "message": {"type": "string"},
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "command_approval": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "command_id", "approval_status", "timestamp"],
+        "properties": {
+          "message_type": {"const": "COMMAND_APPROVAL"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "command_id": {"type": "string"},
+          "approval_status": {"$ref": "#/definitions/approval_status"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "approver": {"type": "string"},
+          "evidence_hash": {"$ref": "#/definitions/digest"},
+          "reason": {"type": "string"},
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "command_result": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "command_id", "status", "timestamp"],
+        "properties": {
+          "message_type": {"const": "COMMAND_RESULT"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "command_id": {"type": "string"},
+          "idempotency_key": {"$ref": "#/definitions/idempotency_key"},
+          "status": {"$ref": "#/definitions/command_status"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "result": {
+            "type": "object",
+            "description": "Command-specific result data"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {"type": "string"},
+              "message": {"type": "string"}
+            }
+          },
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "telemetry": {
+        "type": "object",
+        "required": ["message_type", "agent_id", "timestamp", "level", "events"],
+        "properties": {
+          "message_type": {"const": "TELEMETRY"},
+          "agent_id": {"$ref": "#/definitions/agent_id"},
+          "timestamp": {"$ref": "#/definitions/timestamp"},
+          "level": {
+            "type": "string",
+            "enum": ["AGGREGATED", "DETAILED_NON_SENSITIVE", "RAW_ORDER_EVENTS"]
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["event_type", "timestamp"],
+              "properties": {
+                "event_type": {"type": "string"},
+                "timestamp": {"$ref": "#/definitions/timestamp"},
+                "data": {"type": "object"}
+              }
+            }
+          },
+          "redaction_applied": {
+            "type": "boolean",
+            "const": true,
+            "description": "MUST always be true - redaction is mandatory"
+          },
+          "signature": {"$ref": "#/definitions/signature"}
+        },
+        "additionalProperties": false
+      },
+
+      "request_start_run": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {"$ref": "#/definitions/prohibited_order_fields"},
+          {
+            "type": "object",
+            "required": ["command_type", "deployment_id", "artifact_digest"],
+            "properties": {
+              "command_type": {"const": "REQUEST_START_RUN"},
+              "deployment_id": {"type": "string"},
+              "artifact_digest": {"$ref": "#/definitions/digest"},
+              "config_digest": {"$ref": "#/definitions/digest"},
+              "requires_approval": {
+                "type": "boolean",
+                "const": true,
+                "description": "TRADING_IMPACTING - always requires approval"
+              },
+              "change_class": {
+                "type": "string",
+                "const": "TRADING_IMPACTING"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_stop_run": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {
+            "type": "object",
+            "required": ["command_type", "deployment_id"],
+            "properties": {
+              "command_type": {"const": "REQUEST_STOP_RUN"},
+              "deployment_id": {"type": "string"},
+              "reason": {"type": "string"},
+              "requires_approval": {
+                "type": "boolean",
+                "const": false,
+                "description": "Safety operation - no approval needed"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_pause_run": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {
+            "type": "object",
+            "required": ["command_type", "deployment_id"],
+            "properties": {
+              "command_type": {"const": "REQUEST_PAUSE_RUN"},
+              "deployment_id": {"type": "string"},
+              "reason": {"type": "string"},
+              "requires_approval": {
+                "type": "boolean",
+                "const": false,
+                "description": "Safety operation - no approval needed"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_upgrade_artifact": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {"$ref": "#/definitions/prohibited_order_fields"},
+          {
+            "type": "object",
+            "required": ["command_type", "deployment_id", "new_artifact_digest"],
+            "properties": {
+              "command_type": {"const": "REQUEST_UPGRADE_ARTIFACT"},
+              "deployment_id": {"type": "string"},
+              "new_artifact_digest": {"$ref": "#/definitions/digest"},
+              "old_artifact_digest": {"$ref": "#/definitions/digest"},
+              "requires_approval": {
+                "type": "boolean",
+                "const": true,
+                "description": "TRADING_IMPACTING - always requires approval"
+              },
+              "change_class": {
+                "type": "string",
+                "const": "TRADING_IMPACTING"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_update_config": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {"$ref": "#/definitions/prohibited_order_fields"},
+          {
+            "type": "object",
+            "required": ["command_type", "deployment_id", "new_config_digest"],
+            "properties": {
+              "command_type": {"const": "REQUEST_UPDATE_CONFIG"},
+              "deployment_id": {"type": "string"},
+              "new_config_digest": {"$ref": "#/definitions/digest"},
+              "old_config_digest": {"$ref": "#/definitions/digest"},
+              "change_class": {
+                "type": "string",
+                "enum": ["TRADING_IMPACTING", "NON_TRADING_IMPACTING"]
+              },
+              "requires_approval": {
+                "type": "boolean",
+                "description": "True if change_class is TRADING_IMPACTING"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_rotate_agent_session": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {
+            "type": "object",
+            "required": ["command_type", "agent_id"],
+            "properties": {
+              "command_type": {"const": "REQUEST_ROTATE_AGENT_SESSION"},
+              "agent_id": {"$ref": "#/definitions/agent_id"},
+              "reason": {"type": "string"},
+              "requires_approval": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+
+      "request_export_logs": {
+        "allOf": [
+          {"$ref": "#/definitions/base_command"},
+          {
+            "type": "object",
+            "required": ["command_type", "agent_id", "export_config"],
+            "properties": {
+              "command_type": {"const": "REQUEST_EXPORT_LOGS"},
+              "agent_id": {"$ref": "#/definitions/agent_id"},
+              "export_config": {
+                "type": "object",
+                "properties": {
+                  "start_time": {"$ref": "#/definitions/timestamp"},
+                  "end_time": {"$ref": "#/definitions/timestamp"},
+                  "log_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["audit", "telemetry", "errors", "commands"]
+                    }
+                  },
+                  "redaction_level": {
+                    "type": "string",
+                    "enum": ["FULL", "STANDARD"],
+                    "default": "FULL"
+                  }
+                }
+              },
+              "requires_approval": {
+                "type": "boolean",
+                "const": true,
+                "description": "DATA_SENSITIVE - always requires approval"
+              },
+              "break_glass_reason": {
+                "type": "string",
+                "description": "Required reason for data export"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}
