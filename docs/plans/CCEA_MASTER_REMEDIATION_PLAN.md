@@ -11,15 +11,27 @@ Design Doc sources of truth:
 - Snapshot (byte-identical, CI-verified): `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` (created/updated by WI-TRACE-01)
 - Rendered (human-friendly): `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md` (must match snapshot SHA)
 
-## Phases
+## Macro Phases (P0/P1/P2)
 - P0: truth + CI safety rails (legal/docs/traceability/guardrails/protocol/deps/windows CI)
 - P1: working Cloud<->Agent lifecycle (enroll/heartbeat/poll/ack/approval/result + reconciliation/idempotency)
 - P2: enterprise pack + signed updates + evidence pack + cloud research job isolation/anti-abuse
 
+## Execution Phases (1-10; clearly bounded)
+- Phase 1 (P0): reproducible deps baseline — WI-DEPS-01
+- Phase 2 (P0): Windows agent stability — WI-AGENT-01, WI-AGENT-02
+- Phase 3 (P0): guardrails + CI fail-closed + trace checks — WI-CI-02, WI-CI-01, WI-TRACE-01, WI-TRACE-02
+- Phase 4 (P0): protocol/contracts consistency — WI-PROTOCOL-01, WI-PROTOCOL-02, WI-CONTRACTS-01
+- Phase 5 (P0): boundary + secrets/DLP + auth hardening — WI-CLOUD-01, WI-CLOUD-05, WI-AUTH-01
+- Phase 6 (P0): legal/docs alignment + dedrift — WI-LEGAL-01, WI-DOCS-01, WI-DOCS-02, WI-DEDRIFT-01
+- Phase 7 (P1): control plane DB/RLS + command dispatch + lifecycle APIs — WI-CLOUD-04, WI-CLOUD-03, WI-CLOUD-02
+- Phase 8 (P1): agent lifecycle + approvals + idempotency — WI-AGENT-03, WI-AGENT-04, WI-AGENT-06
+- Phase 9 (P1): runtime safety + build/artifact integrity — WI-AGENT-05, WI-CLOUD-06, WI-BUILD-01
+- Phase 10 (P2): enterprise/isolation/updates/vault — WI-CLOUD-RESEARCH-01, WI-ENTERPRISE-01, WI-ENTERPRISE-02, WI-ENTERPRISE-03, WI-VAULT-01
+
 ## Gates
-- Gate P0->P1: CI green (Ubuntu+Windows), docs-quality green, guardrails enforced fail-closed, protocol consistent+enforced, deps pinned/locked, legal/marketing aligned, invariants enforced (`Design Doc CCEA Cloud.txt:64`, `:66`, `:68`).
-- Gate P1->P2: E2E lifecycle green, boundary enforced, no duplicate orders after retries/restarts, safe-halt on uncertainty.
-- Exit P2: on-prem pack + signed evidence pack + signed updates+rollback protection + cloud research isolation/anti-abuse.
+- Gate P0->P1 (after Phase 6): CI green (Ubuntu+Windows), docs-quality green, guardrails enforced fail-closed, protocol consistent+enforced, deps pinned/locked, legal/marketing aligned, invariants enforced (`Design Doc CCEA Cloud.txt:64`, `:66`, `:68`).
+- Gate P1->P2 (after Phase 9): E2E lifecycle green, boundary enforced, no duplicate orders after retries/restarts, safe-halt on uncertainty.
+- Exit P2 (after Phase 10): on-prem pack + signed evidence pack + signed updates+rollback protection + cloud research isolation/anti-abuse.
 
 ## Work Items Catalog (authoritative)
 ```yaml
@@ -1266,7 +1278,17 @@ issues:
       [HIGH] Cloud auth требует PyJWT (packages/cloud/control_plane/dependencies.py (line 21)) — Fix: явно добавить PyJWT в зависимости/lockfiles и зафиксировать версию.
 ```
 
-## Execution Order (agent-optimized)
-- P0: WI-DEPS-01 -> WI-AGENT-01/WI-AGENT-02 -> WI-CI-02 -> WI-CI-01 -> WI-PROTOCOL-01/WI-PROTOCOL-02 -> WI-CLOUD-01/WI-CLOUD-05 -> WI-AUTH-01 -> WI-TRACE-01/WI-TRACE-02 -> WI-LEGAL-01 -> WI-DOCS-01/WI-DOCS-02 -> WI-DEDRIFT-01/WI-CONTRACTS-01
-- P1: WI-CLOUD-04 -> WI-CLOUD-02/WI-CLOUD-03 -> WI-AGENT-03 -> WI-AGENT-04 -> WI-AGENT-06 -> WI-AGENT-05 -> WI-CLOUD-06 -> WI-BUILD-01
-- P2: WI-CLOUD-RESEARCH-01 -> WI-ENTERPRISE-01 -> WI-ENTERPRISE-03 -> WI-ENTERPRISE-02 -> WI-VAULT-01
+## Execution Order (10-phase; agent-optimized)
+- Phase 1 (P0): WI-DEPS-01
+- Phase 2 (P0): WI-AGENT-01 -> WI-AGENT-02
+- Phase 3 (P0): WI-CI-02 -> WI-CI-01 -> WI-TRACE-01 -> WI-TRACE-02
+- Phase 4 (P0): WI-PROTOCOL-01 -> WI-PROTOCOL-02 -> WI-CONTRACTS-01
+- Phase 5 (P0): WI-CLOUD-01 -> WI-CLOUD-05 -> WI-AUTH-01
+- Phase 6 (P0): WI-LEGAL-01 -> WI-DOCS-01 -> WI-DOCS-02 -> WI-DEDRIFT-01
+- Gate P0->P1
+- Phase 7 (P1): WI-CLOUD-04 -> WI-CLOUD-03 -> WI-CLOUD-02
+- Phase 8 (P1): WI-AGENT-03 -> WI-AGENT-04 -> WI-AGENT-06
+- Phase 9 (P1): WI-AGENT-05 -> WI-CLOUD-06 -> WI-BUILD-01
+- Gate P1->P2
+- Phase 10 (P2): WI-CLOUD-RESEARCH-01 -> WI-ENTERPRISE-01 -> WI-ENTERPRISE-03 -> WI-ENTERPRISE-02 -> WI-VAULT-01
+- Exit P2
