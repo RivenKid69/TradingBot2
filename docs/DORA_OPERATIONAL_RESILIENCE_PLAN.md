@@ -2319,14 +2319,15 @@ subcontractor_management:
         - "Account management"
       data_processing_locations: ["US"]
       data_storage_locations: ["US"]
-      has_data_access: true  # Client API keys stored
-      data_types_accessed: ["Client brokerage credentials (encrypted)"]
+      # CCEA NOTE: Client's Agent connects directly to Alpaca. Our Cloud has NO access to client credentials.
+      has_data_access: false  # We do NOT store or access client API keys - handled by client's local Agent
+      data_types_accessed: []  # Our Cloud receives NO brokerage credentials
       certifications:
-        - "SEC/FINRA registered broker"
+        - "SEC/FINRA registered broker (Alpaca is a broker; we are NOT)"
         - "SOC 2"
-      contract_reference: "Alpaca API Agreement"
-      is_material: true
-      supports_critical_functions: true  # Trading execution
+      contract_reference: "Alpaca API Agreement (client's direct relationship)"
+      is_material: false  # Client's integration, not ours
+      supports_critical_functions: false  # Trading execution happens in client's Agent, not our Cloud
       substitutability: "medium"
       last_audit_date: "N/A"
       next_review_date: "2025-06-01"
@@ -2343,14 +2344,15 @@ subcontractor_management:
         - "Crypto trading API"
       data_processing_locations: ["Global (various jurisdictions)"]
       data_storage_locations: ["Variable - depends on Binance entity used"]
-      has_data_access: true  # Client API keys
-      data_types_accessed: ["Client exchange credentials (encrypted)"]
+      # CCEA NOTE: Client's Agent connects directly to Binance. Our Cloud has NO access to client credentials.
+      has_data_access: false  # We do NOT store or access client API keys - handled by client's local Agent
+      data_types_accessed: []  # Our Cloud receives NO exchange credentials
       certifications:
         - "Variable by jurisdiction"
         - "See regulatory_risk_assessment below"
-      contract_reference: "Binance API Terms"
-      is_material: true
-      supports_critical_functions: true  # Crypto trading
+      contract_reference: "Binance API Terms (client's direct relationship)"
+      is_material: false  # Client's integration, not ours
+      supports_critical_functions: false  # Crypto trading happens in client's Agent, not our Cloud
       substitutability: "medium"  # Kraken, Coinbase alternatives
       last_audit_date: "N/A"
       next_review_date: "2025-06-01"

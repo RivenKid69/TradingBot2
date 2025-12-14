@@ -444,7 +444,7 @@ You have the right to object to processing based on legitimate interests. We wil
 
 You have the right not to be subject to decisions based solely on automated processing that produce legal or significant effects.
 
-**Note:** The Platform executes trades based on YOUR strategies, not automated decisions by us.
+**Note:** Your local Agent executes trades based on YOUR strategies, not automated decisions by us. The Cloud Platform manages strategy deployment and monitoring only.
 
 ### 7.8 Right to Withdraw Consent (Article 7(3))
 

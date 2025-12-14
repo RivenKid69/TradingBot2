@@ -2,7 +2,9 @@
 
 ## Introduction
 
-The futures integration extends the TradingBot2 platform to support crypto perpetual futures (Binance USDT-M) and CME Group futures (via Interactive Brokers). This document provides a comprehensive overview of the architecture, components, and design decisions.
+The futures integration extends the platform to support crypto perpetual futures (Binance USDT-M) and CME Group futures (via Interactive Brokers). This document provides a comprehensive overview of the architecture, components, and design decisions.
+
+**CCEA Architecture Note**: In production, live trading runs via the local Agent daemon (`packages.agent.daemon.agentd`). The `script_live.py` entry point referenced in diagrams is for development/testing only. See `docs/CCEA_OVERVIEW.md`.
 
 ## Supported Futures Types
 

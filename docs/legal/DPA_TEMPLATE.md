@@ -68,9 +68,23 @@ The following categories of Personal Data may be processed:
 | Category | Data Elements | Purpose |
 |----------|---------------|---------|
 | Account Data | Email, name, password hash | User authentication and account management |
-| Trading Data | Strategies, backtests, execution logs | Service provision |
+| Trading Data | Strategies, backtests, redacted telemetry | Service provision (Cloud zone only) |
 | Technical Data | IP addresses, device information, logs | Security and troubleshooting |
-| Credentials | Encrypted broker API keys | Order execution on user's behalf |
+
+**IMPORTANT - CCEA Architecture Note:**
+
+Under the Cloud-Controlled Execution Architecture (CCEA), credential handling occurs **exclusively** in the customer-managed Agent zone:
+
+| Data Type | Cloud Zone | Agent Zone (Customer-Managed) |
+|-----------|-----------|------------------------------|
+| Broker API credentials | **NEVER stored or processed** | Encrypted local vault |
+| Order execution data | **NEVER accessed** | Local processing only |
+| Trading positions | **Aggregated/redacted only** | Full data locally |
+
+The Processor's Cloud infrastructure:
+- **NEVER** stores, processes, or has access to broker API keys
+- **NEVER** executes orders or connects to broker/exchange APIs
+- Only receives redacted telemetry from customer-operated Agents (if deployed)
 
 ---
 

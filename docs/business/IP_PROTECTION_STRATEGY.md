@@ -115,8 +115,14 @@ Trade secrets are protected under:
 access_control:
   repository: "Private GitLab with 2FA"
   branches: "Protected main/develop, PR required"
-  secrets: "HashiCorp Vault for API keys"
+  secrets: "Local Agent Vault (customer-managed) + OS keychain integration for API keys"
+  cloud_secrets: "HashiCorp Vault for internal Cloud infrastructure secrets only (NOT client credentials)"
   audit: "Full git history, access logs retained 7 years"
+
+# CCEA Architecture Note:
+# Broker/exchange API keys are NEVER stored in Cloud.
+# They reside in customer's local Agent encrypted vault.
+# Our Cloud infrastructure secrets (DB creds, internal APIs) use HashiCorp Vault.
 
 code_security:
   static_analysis: "Bandit, Semgrep for vulnerability scanning"

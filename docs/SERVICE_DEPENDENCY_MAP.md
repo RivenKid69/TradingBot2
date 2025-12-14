@@ -1,6 +1,8 @@
 # Service Dependency Map
 
-This document describes the service architecture, dependencies, and data flow in TradingBot2.
+This document describes the service architecture, dependencies, and data flow.
+
+**CCEA Architecture Note**: In production deployments, live trading runs via the local Agent daemon (`packages.agent.daemon.agentd`). The `script_live.py` entry point is retained for development and testing only. See `docs/CCEA_OVERVIEW.md` for the full architecture.
 
 ---
 

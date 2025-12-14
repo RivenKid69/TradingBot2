@@ -329,14 +329,24 @@ OANDA_ACCOUNT_ID=your_account_id
 
 ### Step 2: Paper Trading (Required First Step)
 
-**Always test with paper trading before using real money:**
+**Always test with paper trading before using real money.**
 
+**CCEA Architecture Note**: In production, live trading runs through the local Agent daemon which manages your credentials securely. The Cloud platform manages research, backtesting, and lifecycle - it **NEVER** stores your API keys or executes orders.
+
+**Development/Testing (via script_live.py):**
 ```bash
+# For development/testing only (not production CCEA architecture)
 # Crypto (Binance Testnet)
-python script_live.py --config configs/config_live.yaml --paper
+python script_live.py --config configs/config_live.yaml --paper --dry-run
 
 # Stocks (Alpaca Paper)
-python script_live.py --config configs/config_live_alpaca.yaml --paper
+python script_live.py --config configs/config_live_alpaca.yaml --paper --dry-run
+```
+
+**Production (via local Agent daemon):**
+```bash
+# See docs/agent/INSTALLATION.md for full Agent setup
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
 ```
 
 **Recommended paper trading period:** Minimum 4-8 weeks to observe strategy behavior across different market conditions.
@@ -345,12 +355,16 @@ python script_live.py --config configs/config_live_alpaca.yaml --paper
 
 **Only proceed after extensive paper trading and thorough risk assessment.**
 
-```bash
-# Crypto
-python script_live.py --config configs/config_live.yaml
+**Production CCEA Architecture** (Recommended):
+1. Deploy local Agent daemon (credentials stay on YOUR machine)
+2. Cloud sends lifecycle commands only (start/stop/deploy)
+3. See `docs/agent/INSTALLATION.md` for setup
+4. See `docs/runbooks/KILL_SWITCH.md` for emergency procedures
 
-# Stocks
-python script_live.py --config configs/config_live_alpaca.yaml --live
+**Development/Testing Only:**
+```bash
+# NOT for production - use Agent daemon instead
+python script_live.py --config configs/config_live.yaml --dry-run
 ```
 
 ### Safety Features

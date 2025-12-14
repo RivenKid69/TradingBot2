@@ -62,11 +62,20 @@ cp configs/examples/example_backtest_crypto.yaml configs/my_backtest.yaml
 python script_backtest.py --config configs/my_backtest.yaml --offline-config configs/offline.yaml --dataset-split val
 ```
 
-- Live trading dry-run:
+- Live trading via local Agent (CCEA architecture):
 ```bash
-cp configs/examples/example_live_crypto.yaml configs/my_live.yaml
-export BINANCE_API_KEY=...   # use environment variables, never commit secrets
-export BINANCE_API_SECRET=...
+# 1. Deploy Agent locally (credentials stay on YOUR machine, never sent to cloud)
+#    See docs/agent/INSTALLATION.md for full setup
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
+
+# 2. (Optional) Use Cloud control plane to manage runs
+#    Cloud sends lifecycle commands only - NEVER trades or stores keys
+```
+**Important**: Live trading runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
+
+For legacy/development dry-run testing:
+```bash
+# Development/testing only (not production CCEA architecture)
 python script_live.py --config configs/my_live.yaml --dry-run
 ```
 
@@ -207,11 +216,22 @@ Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
 3. Execute `python script_backtest.py --config <cfg> --offline-config configs/offline.yaml --dataset-split val`.
 4. Validate outputs: compare KPI to `benchmarks/sim_kpi_thresholds.json`, review reports in `artifacts/` and logs in `logs/`.
 
-### Live trading
-1. Preflight: `python scripts/doctor.py --verbose`; sync system clock; set API keys via environment; ensure `risk.*` and `execution.*` limits are conservative.
-2. Paper/dry run: `python script_live.py --config <cfg> --dry-run` and inspect `logs/live_*`.
-3. Go live: remove `--dry-run`, pin `asset_class`/`vendor` in the config, and monitor metrics in `artifacts/live/` plus alerts in `logs/`.
-4. Safety: keep the kill switch enabled (`runtime.kill_switch_enabled: true`), rotate keys periodically, and back up runtime state.
+### Live trading (CCEA Architecture)
+**Production: Via Local Agent**
+1. **Agent Setup**: Install and configure Agent locally (`docs/agent/INSTALLATION.md`).
+2. **Credentials**: Store broker API keys in Agent's local vault (NEVER upload to Cloud).
+3. **Deploy Strategy**: Use Cloud control plane to deploy strategy artifact to Agent.
+4. **Start Run**: Cloud sends `REQUEST_START_RUN`; Agent executes locally with your credentials.
+5. **Monitor**: Cloud receives redacted telemetry; full position data stays in Agent.
+6. **Safety**: Agent enforces local hard caps; kill switch available in `docs/runbooks/KILL_SWITCH.md`.
+
+**Development/Testing Only**:
+```bash
+# For local testing without full Agent setup
+python script_live.py --config <cfg> --dry-run
+```
+
+See `docs/runbooks/` for full operational procedures.
 
 ### Adapter debugging
 1. Validate configuration: `python -m pytest tests/test_adapters_config_validation.py -k <vendor>` and align YAML with `configs/examples`.

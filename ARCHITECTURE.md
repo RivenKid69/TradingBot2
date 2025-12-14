@@ -260,12 +260,23 @@ profiles:
 флаг `--config` и запускают соответствующие сервисы через `from_config`:
 
 ```
+# Research / backtesting (Cloud zone)
 python train_model_multi_patch.py --config configs/config_train.yaml
-python script_live.py    --config configs/config_live.yaml
 python script_backtest.py --config configs/config_sim.yaml
 python script_eval.py    --config configs/config_eval.yaml --profile vwap
 python script_eval.py    --config configs/config_eval.yaml --all-profiles
+
+# Live trading (Agent zone - CCEA architecture)
+# Production: Run Agent daemon locally
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
+
+# Development/testing only:
+python script_live.py    --config configs/config_live.yaml --dry-run
 ```
+
+**CCEA Note**: Production live trading runs via the Agent daemon (`packages.agent.daemon.agentd`).
+`script_live.py` is retained for development/testing only and should not be used in production
+CCEA deployments.
 
 ### Сравнение запусков
 

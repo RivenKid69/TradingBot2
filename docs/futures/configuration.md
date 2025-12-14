@@ -452,27 +452,26 @@ python train_model_multi_patch.py \
 
 ### Live Trading
 
+**CCEA Architecture Note**: In production, live trading runs via the local Agent daemon.
+See `docs/agent/INSTALLATION.md` for setup. The commands below are for development/testing only.
+
+**Production (via Agent daemon):**
 ```bash
-# Basic live trading (paper)
-python script_live.py \
-    --config configs/config_live_futures.yaml \
-    --paper
+# See docs/agent/INSTALLATION.md for full Agent setup
+python -m packages.agent.daemon.agentd --config configs/agent_futures.yaml
+```
 
-# Live trading (real)
+**Development/Testing Only:**
+```bash
+# Basic live trading (paper) - DEVELOPMENT ONLY
 python script_live.py \
     --config configs/config_live_futures.yaml \
-    --live
+    --paper --dry-run
 
-# With specific risk profile
+# With specific risk profile - DEVELOPMENT ONLY
 python script_live.py \
     --config configs/config_live_futures.yaml \
-    --risk-profile conservative
-
-# CME futures
-python script_live.py \
-    --config configs/config_live_futures.yaml \
-    --futures-type CME_EQUITY_INDEX \
-    --symbols ES
+    --risk-profile conservative --dry-run
 ```
 
 ### Backtest

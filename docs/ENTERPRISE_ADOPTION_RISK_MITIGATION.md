@@ -402,11 +402,14 @@ General Data Protection Regulation requirements for data handling:
 │  │  Trading Data (Non-Personal)          Personal Data (If Any)        │    │
 │  │  ┌──────────────────────────┐        ┌──────────────────────────┐  │    │
 │  │  │ • Price data             │        │ • User credentials       │  │    │
-│  │  │ • Order history          │        │ • Contact info           │  │    │
-│  │  │ • Position snapshots     │        │ • API keys (encrypted)   │  │    │
-│  │  │ • Strategy signals       │        │ • Audit user IDs         │  │    │
+│  │  │ • Backtest results       │        │ • Contact info           │  │    │
+│  │  │ • Aggregated metrics     │        │ • Audit user IDs         │  │    │
+│  │  │ • Strategy configs       │        │                          │  │    │
 │  │  │ • Performance metrics    │        │                          │  │    │
 │  │  └──────────────────────────┘        └──────────────────────────┘  │    │
+│  │                                                                      │    │
+│  │  CCEA NOTE: Broker API keys are NEVER stored in Cloud.              │    │
+│  │  They reside in customer's local Agent encrypted vault only.        │    │
 │  │           │                                    │                    │    │
 │  │           ▼                                    ▼                    │    │
 │  │  Standard Processing                  Enhanced Protection           │    │
