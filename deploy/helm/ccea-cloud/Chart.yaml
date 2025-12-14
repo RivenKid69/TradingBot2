@@ -1,0 +1,52 @@
+# CCEA Cloud Helm Chart
+#
+# Deploys the CCEA Cloud Control Plane stack to Kubernetes.
+#
+# Features:
+# - High availability deployment
+# - Horizontal pod autoscaling
+# - Ingress with TLS
+# - External secrets support
+# - Pod security policies
+# - Network policies
+#
+# Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+
+apiVersion: v2
+name: ccea-cloud
+description: CCEA Cloud Control Plane - Enterprise Kubernetes Deployment
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - ccea
+  - trading
+  - quantitative
+  - control-plane
+  - enterprise
+
+home: https://github.com/ccea/cloud
+sources:
+  - https://github.com/ccea/cloud
+
+maintainers:
+  - name: CCEA Team
+    email: support@ccea.io
+
+dependencies:
+  - name: postgresql
+    version: "13.2.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "18.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+
+annotations:
+  artifacthub.io/category: integration-delivery
+  artifacthub.io/license: MIT
+  artifacthub.io/signKey: |
+    fingerprint: XXXX
+    url: https://ccea.io/signing-key.asc

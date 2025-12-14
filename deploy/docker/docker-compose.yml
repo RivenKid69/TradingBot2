@@ -1,0 +1,416 @@
+# CCEA Cloud Stack - On-Prem/VPC Docker Compose
+#
+# This compose file deploys the complete CCEA Cloud stack for enterprise
+# on-premises or VPC deployments.
+#
+# Features:
+# - Multi-container orchestration
+# - Data persistence with volumes
+# - Network isolation
+# - TLS/mTLS support
+# - Registry mirror support
+# - Air-gapped mode compatible
+#
+# Usage:
+#   docker-compose up -d
+#   docker-compose -f docker-compose.yml -f docker-compose.airgapped.yml up -d
+#
+# Environment Variables Required:
+#   - POSTGRES_PASSWORD: Database password
+#   - REDIS_PASSWORD: Redis password (optional)
+#   - CCEA_SECRET_KEY: Application secret key
+#   - CCEA_DATA_RESIDENCY: Data residency region (default: on-prem)
+#
+# Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+
+version: "3.9"
+
+x-common-env: &common-env
+  CCEA_ENV: ${CCEA_ENV:-production}
+  CCEA_DATA_RESIDENCY: ${CCEA_DATA_RESIDENCY:-on-prem}
+  CCEA_LOG_LEVEL: ${CCEA_LOG_LEVEL:-INFO}
+  CCEA_SECRET_KEY: ${CCEA_SECRET_KEY:?CCEA_SECRET_KEY is required}
+  TZ: ${TZ:-UTC}
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+services:
+  # ==========================================================================
+  # Database Layer
+  # ==========================================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ccea-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ccea}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-ccea_cloud}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ccea} -d ${POSTGRES_DB:-ccea_cloud}"]
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY:-2G}
+          cpus: "${POSTGRES_CPUS:-2}"
+
+  redis:
+    image: redis:7-alpine
+    container_name: ccea-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-}
+      --appendonly yes
+      --maxmemory ${REDIS_MAXMEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "redis-cli", "ping"]
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY:-512M}
+          cpus: "${REDIS_CPUS:-1}"
+
+  # ==========================================================================
+  # CCEA Cloud Control Plane
+  # ==========================================================================
+
+  control-plane:
+    image: ${CCEA_IMAGE:-ccea/cloud-control-plane}:${CCEA_VERSION:-latest}
+    container_name: ccea-control-plane
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ccea}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccea_cloud}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/0
+      CCEA_COMPONENT: control-plane
+      CCEA_BIND_HOST: 0.0.0.0
+      CCEA_BIND_PORT: 8000
+      CCEA_WORKERS: ${CCEA_WORKERS:-4}
+      # Security
+      CCEA_MTLS_ENABLED: ${CCEA_MTLS_ENABLED:-false}
+      CCEA_TLS_CERT_PATH: /certs/server.crt
+      CCEA_TLS_KEY_PATH: /certs/server.key
+      CCEA_CA_CERT_PATH: /certs/ca.crt
+      # Registry
+      CCEA_REGISTRY_URL: ${CCEA_REGISTRY_URL:-http://registry:5000}
+      CCEA_REGISTRY_MIRROR_ENABLED: ${CCEA_REGISTRY_MIRROR_ENABLED:-false}
+      # Telemetry
+      CCEA_TELEMETRY_ENABLED: ${CCEA_TELEMETRY_ENABLED:-true}
+      CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+    volumes:
+      - ./certs:/certs:ro
+      - control_plane_data:/data
+    ports:
+      - "${CCEA_API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    networks:
+      - ccea-internal
+      - ccea-external
+    deploy:
+      resources:
+        limits:
+          memory: ${CONTROL_PLANE_MEMORY:-1G}
+          cpus: "${CONTROL_PLANE_CPUS:-2}"
+
+  # ==========================================================================
+  # Artifact Registry (Optional - for on-prem)
+  # ==========================================================================
+
+  registry:
+    image: registry:2
+    container_name: ccea-registry
+    restart: unless-stopped
+    profiles:
+      - registry
+      - full
+    environment:
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5000
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      REGISTRY_AUTH: ${REGISTRY_AUTH:-}
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/server.crt
+      REGISTRY_HTTP_TLS_KEY: /certs/server.key
+    volumes:
+      - registry_data:/var/lib/registry
+      - ./certs:/certs:ro
+    ports:
+      - "${REGISTRY_PORT:-5000}:5000"
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/v2/"]
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${REGISTRY_MEMORY:-512M}
+          cpus: "${REGISTRY_CPUS:-1}"
+
+  # ==========================================================================
+  # Registry Mirror (Enterprise - for air-gapped)
+  # ==========================================================================
+
+  registry-mirror:
+    image: registry:2
+    container_name: ccea-registry-mirror
+    restart: unless-stopped
+    profiles:
+      - airgapped
+      - mirror
+    environment:
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5001
+      REGISTRY_PROXY_REMOTEURL: ${UPSTREAM_REGISTRY_URL:-https://registry-1.docker.io}
+      REGISTRY_PROXY_USERNAME: ${UPSTREAM_REGISTRY_USER:-}
+      REGISTRY_PROXY_PASSWORD: ${UPSTREAM_REGISTRY_PASSWORD:-}
+    volumes:
+      - mirror_data:/var/lib/registry
+      - ./certs:/certs:ro
+    ports:
+      - "${MIRROR_PORT:-5001}:5001"
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${MIRROR_MEMORY:-1G}
+          cpus: "${MIRROR_CPUS:-1}"
+
+  # ==========================================================================
+  # Builder Service
+  # ==========================================================================
+
+  builder:
+    image: ${CCEA_IMAGE:-ccea/builder}:${CCEA_VERSION:-latest}
+    container_name: ccea-builder
+    restart: unless-stopped
+    profiles:
+      - builder
+      - full
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ccea}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccea_cloud}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/1
+      CCEA_COMPONENT: builder
+      CCEA_REGISTRY_URL: ${CCEA_REGISTRY_URL:-http://registry:5000}
+      # Signing
+      CCEA_SIGNING_ENABLED: "true"
+      CCEA_SIGNING_KEY_PATH: /keys/signing.key
+      CCEA_SIGNING_CERT_PATH: /keys/signing.crt
+      # SBOM generation
+      CCEA_SBOM_ENABLED: "true"
+      CCEA_SBOM_FORMAT: cyclonedx
+    volumes:
+      - ./keys:/keys:ro
+      - builder_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${BUILDER_MEMORY:-2G}
+          cpus: "${BUILDER_CPUS:-2}"
+
+  # ==========================================================================
+  # Telemetry Ingester
+  # ==========================================================================
+
+  telemetry-ingester:
+    image: ${CCEA_IMAGE:-ccea/telemetry-ingester}:${CCEA_VERSION:-latest}
+    container_name: ccea-telemetry
+    restart: unless-stopped
+    profiles:
+      - telemetry
+      - full
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ccea}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccea_cloud}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/2
+      CCEA_COMPONENT: telemetry-ingester
+      CCEA_BIND_PORT: 8001
+      # Redaction is MANDATORY - cannot be disabled
+      CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+      CCEA_TELEMETRY_DEFAULT_LEVEL: aggregated
+    volumes:
+      - telemetry_data:/data
+    ports:
+      - "${TELEMETRY_PORT:-8001}:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ccea-internal
+      - ccea-external
+    deploy:
+      resources:
+        limits:
+          memory: ${TELEMETRY_MEMORY:-1G}
+          cpus: "${TELEMETRY_CPUS:-2}"
+
+  # ==========================================================================
+  # Governance Service
+  # ==========================================================================
+
+  governance:
+    image: ${CCEA_IMAGE:-ccea/governance}:${CCEA_VERSION:-latest}
+    container_name: ccea-governance
+    restart: unless-stopped
+    profiles:
+      - governance
+      - full
+    environment:
+      <<: *common-env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ccea}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ccea_cloud}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/3
+      CCEA_COMPONENT: governance
+      # Retention defaults
+      CCEA_DEFAULT_RETENTION_DAYS: ${CCEA_DEFAULT_RETENTION_DAYS:-90}
+      CCEA_AUDIT_RETENTION_DAYS: ${CCEA_AUDIT_RETENTION_DAYS:-365}
+      # DSAR support
+      CCEA_DSAR_ENABLED: "true"
+    volumes:
+      - governance_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${GOVERNANCE_MEMORY:-512M}
+          cpus: "${GOVERNANCE_CPUS:-1}"
+
+  # ==========================================================================
+  # Monitoring Stack (Optional)
+  # ==========================================================================
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: ccea-prometheus
+    restart: unless-stopped
+    profiles:
+      - monitoring
+      - full
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - ccea-internal
+    deploy:
+      resources:
+        limits:
+          memory: ${PROMETHEUS_MEMORY:-1G}
+          cpus: "${PROMETHEUS_CPUS:-1}"
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: ccea-grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+      - full
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - ccea-internal
+      - ccea-external
+    deploy:
+      resources:
+        limits:
+          memory: ${GRAFANA_MEMORY:-512M}
+          cpus: "${GRAFANA_CPUS:-1}"
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+
+networks:
+  ccea-internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+  ccea-external:
+    driver: bridge
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  registry_data:
+    driver: local
+  mirror_data:
+    driver: local
+  control_plane_data:
+    driver: local
+  builder_data:
+    driver: local
+  telemetry_data:
+    driver: local
+  governance_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

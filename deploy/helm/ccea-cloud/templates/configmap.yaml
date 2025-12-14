@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ccea-cloud.fullname" . }}-config
+  labels:
+    {{- include "ccea-cloud.labels" . | nindent 4 }}
+data:
+  # CCEA Configuration
+  CCEA_ENV: {{ .Values.global.environment | default "production" | quote }}
+  CCEA_DATA_RESIDENCY: {{ .Values.global.dataResidency | quote }}
+  CCEA_AIR_GAPPED_MODE: {{ .Values.global.airGapped | quote }}
+  CCEA_LOG_LEVEL: {{ .Values.controlPlane.env.CCEA_LOG_LEVEL | default "INFO" | quote }}
+
+  # Security - Redaction is MANDATORY
+  CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+
+  # Telemetry defaults
+  CCEA_TELEMETRY_DEFAULT_LEVEL: {{ .Values.telemetryIngester.defaultLevel | default "aggregated" | quote }}
+
+  # Retention policies
+  CCEA_RETENTION_TELEMETRY_AGGREGATED: {{ .Values.governance.retention.telemetryAggregated | default 90 | quote }}
+  CCEA_RETENTION_TELEMETRY_DETAILED: {{ .Values.governance.retention.telemetryDetailed | default 30 | quote }}
+  CCEA_RETENTION_TELEMETRY_RAW: {{ .Values.governance.retention.telemetryRaw | default 7 | quote }}
+  CCEA_RETENTION_AUDIT_LOGS: {{ .Values.governance.retention.auditLogs | default 365 | quote }}
+
+  # Staged rollout configuration
+  {{- if .Values.agentUpdates.enabled }}
+  CCEA_AGENT_UPDATES_ENABLED: "true"
+  {{- if .Values.agentUpdates.stagedRollout.enabled }}
+  CCEA_STAGED_ROLLOUT_ENABLED: "true"
+  CCEA_STAGED_ROLLOUT_CONFIG: |
+    {{- .Values.agentUpdates.stagedRollout.stages | toYaml | nindent 4 }}
+  {{- end }}
+  {{- if .Values.agentUpdates.versionPinning.enabled }}
+  CCEA_VERSION_PINNING_ENABLED: "true"
+  CCEA_MIN_AGENT_VERSION: {{ .Values.agentUpdates.versionPinning.minVersion | quote }}
+  CCEA_MAX_AGENT_VERSION: {{ .Values.agentUpdates.versionPinning.maxVersion | quote }}
+  {{- end }}
+  {{- if .Values.agentUpdates.changeWindows.enabled }}
+  CCEA_CHANGE_WINDOWS_ENABLED: "true"
+  CCEA_CHANGE_WINDOWS_DAYS: {{ .Values.agentUpdates.changeWindows.allowedDays | toJson | quote }}
+  CCEA_CHANGE_WINDOWS_START_HOUR: {{ .Values.agentUpdates.changeWindows.allowedHours.start | quote }}
+  CCEA_CHANGE_WINDOWS_END_HOUR: {{ .Values.agentUpdates.changeWindows.allowedHours.end | quote }}
+  {{- end }}
+  {{- end }}
+
+  # Evidence pack exporter
+  {{- if .Values.evidencePackExporter.enabled }}
+  CCEA_EVIDENCE_EXPORTER_ENABLED: "true"
+  CCEA_EVIDENCE_EXPORTER_SCHEDULE: {{ .Values.evidencePackExporter.schedule | quote }}
+  CCEA_EVIDENCE_EXPORTER_DESTINATION: {{ .Values.evidencePackExporter.destination.type | quote }}
+  CCEA_EVIDENCE_EXPORTER_BUCKET: {{ .Values.evidencePackExporter.destination.bucket | quote }}
+  CCEA_EVIDENCE_EXPORTER_PREFIX: {{ .Values.evidencePackExporter.destination.prefix | quote }}
+  CCEA_EVIDENCE_EXPORTER_RETENTION: {{ .Values.evidencePackExporter.retentionDays | quote }}
+  {{- end }}
