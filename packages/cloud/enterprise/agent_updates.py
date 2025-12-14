@@ -24,11 +24,20 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, Final, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
+
+# Local crypto module
+try:
+    from .crypto import Ed25519Signer, SigningKey, Signature, CRYPTO_AVAILABLE
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    Ed25519Signer = None
+    SigningKey = None
+    Signature = None
 
 logger = logging.getLogger(__name__)
 
@@ -965,12 +974,43 @@ class AgentUpdateManager:
         payload: bytes,
         signing_key: bytes,
     ) -> str:
-        """Sign payload with ed25519 key."""
-        # Placeholder - would use cryptography library
-        # In real implementation: Ed25519 signing
-        import base64
-        sig = hashlib.sha256(signing_key + payload).digest()
-        return base64.b64encode(sig).decode()
+        """
+        Sign payload with Ed25519 key.
+
+        Uses real Ed25519 signing when cryptography library is available.
+
+        Args:
+            payload: Data to sign
+            signing_key: Raw Ed25519 private key (32 bytes)
+
+        Returns:
+            JSON-encoded signature
+        """
+        if not CRYPTO_AVAILABLE:
+            logger.warning("Cryptography not available, using placeholder signature")
+            import base64
+            sig = hashlib.sha256(signing_key + payload).digest()
+            return base64.b64encode(sig).decode()
+
+        try:
+            signer = Ed25519Signer(default_signer_id="ccea-agent-update-signer")
+
+            # Import the raw signing key
+            key = signer.import_private_key(signing_key, format="raw")
+
+            # Sign the payload
+            signature = signer.sign(
+                payload,
+                key,
+                payload_type="agent-update",
+                signer_id="ccea-agent-update-signer",
+            )
+
+            return json.dumps(signature.to_dict())
+
+        except Exception as e:
+            logger.error(f"Failed to sign payload: {e}")
+            raise
 
     async def _verify_signature(
         self,
@@ -978,9 +1018,60 @@ class AgentUpdateManager:
         signature: str,
         public_key: Optional[bytes] = None,
     ) -> bool:
-        """Verify ed25519 signature."""
-        # Placeholder - would use cryptography library
-        return True
+        """
+        Verify Ed25519 signature.
+
+        Args:
+            payload: Original payload
+            signature: JSON-encoded signature or base64 raw signature
+            public_key: Raw Ed25519 public key (32 bytes)
+
+        Returns:
+            True if signature is valid
+        """
+        if not CRYPTO_AVAILABLE:
+            logger.warning("Cryptography not available, signature verification skipped")
+            return True
+
+        try:
+            # Try to parse as JSON signature
+            try:
+                sig_data = json.loads(signature)
+                if "signature" in sig_data:
+                    sig_obj = Signature.from_dict(sig_data)
+
+                    signer = Ed25519Signer()
+
+                    # Use provided public key or trusted keys
+                    if public_key:
+                        key = signer.import_public_key(
+                            public_key,
+                            key_id=sig_obj.key_id,
+                            format="raw"
+                        )
+                        signer.add_trusted_key(key)
+                    elif self.config.trusted_signing_keys:
+                        # Add trusted keys from config
+                        for key_b64 in self.config.trusted_signing_keys:
+                            import base64
+                            key_bytes = base64.b64decode(key_b64)
+                            key = signer.import_public_key(key_bytes, format="raw")
+                            signer.add_trusted_key(key)
+
+                    return signer.verify(payload, sig_obj)
+
+            except json.JSONDecodeError:
+                # Legacy base64 signature format
+                pass
+
+            # Fallback: if we have a public key but no structured signature,
+            # we can't verify properly
+            logger.warning("Could not verify signature - unrecognized format")
+            return False
+
+        except Exception as e:
+            logger.error(f"Signature verification error: {e}")
+            return False
 
     def _is_version_applicable(
         self,

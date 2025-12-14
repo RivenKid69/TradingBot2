@@ -375,3 +375,164 @@ agentUpdates:
     allowedHours:
       start: 9
       end: 17
+
+# Research Job Isolation (Phase 10)
+researchJobIsolation:
+  enabled: true
+
+  # Default isolation level
+  # Options: none (dev only), process, container, gvisor, microvm
+  defaultIsolationLevel: container
+
+  # Resource limits (defaults)
+  resourceLimits:
+    cpu: "1.0"
+    memoryMB: 1024
+    timeoutSeconds: 3600
+    maxPids: 100
+    diskQuotaMB: 512
+
+  # Maximum resource limits (cannot exceed)
+  maxResourceLimits:
+    cpu: "8.0"
+    memoryMB: 16384
+    timeoutSeconds: 86400
+    diskQuotaMB: 10240
+
+  # Container settings
+  container:
+    image: python:3.11-slim
+    network: none  # Disabled by default
+    readOnlyRootfs: true
+    dropCapabilities: true
+    noNewPrivileges: true
+    userNamespace: true
+    runtime: runc  # runc, runsc (gVisor), kata
+
+  # gVisor settings (high security)
+  gvisor:
+    enabled: false
+    platform: ptrace  # ptrace or kvm
+
+  # Firecracker MicroVM (enterprise)
+  microvm:
+    enabled: false
+    kernelImage: /etc/ccea/firecracker/vmlinux
+    rootfsImage: /etc/ccea/firecracker/rootfs.ext4
+    # Requires: KVM support, firecracker binary
+
+  # Egress firewall
+  egressFirewall:
+    enabled: true
+    defaultPolicy: deny  # deny or allow
+    allowedDomains: []
+    blockedDomains: []
+    # DNS resolution
+    dnsAllowed: false
+    # Allow specific ports (when network enabled)
+    allowedPorts: [443, 80]
+
+  # Abuse detection
+  abuseDetection:
+    enabled: true
+    # Detection types
+    detectCryptoMining: true
+    detectPortScanning: true
+    detectBotnet: true
+    detectHighCpuUsage: true
+    # Thresholds
+    cpuUsageThresholdPercent: 95
+    networkConnectionsLimit: 100
+    suspiciousProcessPatterns:
+      - "minerd"
+      - "xmrig"
+      - "stratum"
+
+  # Resource quotas (per tenant)
+  quotas:
+    enabled: true
+    # Quota tiers
+    tiers:
+      free:
+        maxConcurrentJobs: 1
+        maxJobDurationSeconds: 3600
+        maxCpuCoresPerJob: 1
+        maxMemoryMBPerJob: 1024
+        maxJobsPerDay: 10
+        maxComputeMinutesPerDay: 60
+      premium:
+        maxConcurrentJobs: 5
+        maxJobDurationSeconds: 14400
+        maxCpuCoresPerJob: 4
+        maxMemoryMBPerJob: 8192
+        maxJobsPerDay: 100
+        maxComputeMinutesPerDay: 600
+      enterprise:
+        maxConcurrentJobs: 20
+        maxJobDurationSeconds: 86400
+        maxCpuCoresPerJob: 8
+        maxMemoryMBPerJob: 16384
+        maxJobsPerDay: 1000
+        maxComputeMinutesPerDay: 6000
+
+  # Tenant isolation
+  tenantIsolation:
+    enabled: true
+    # Isolation enforcement
+    enforceNamespaces: true
+    enforceNetworkPolicies: true
+    # Audit
+    auditJobExecution: true
+
+# Cryptographic Signing
+signing:
+  enabled: true
+  # Key storage
+  keyStorage:
+    type: secret  # secret, vault, kms
+    secretName: ccea-signing-keys
+  # Ed25519 keys for different purposes
+  keys:
+    evidencePack:
+      keyId: evidence-pack-signer
+      # Public key for verification (base64)
+      publicKey: ""
+    agentUpdate:
+      keyId: agent-update-signer
+      publicKey: ""
+    artifact:
+      keyId: artifact-signer
+      publicKey: ""
+  # Trusted keys for verification
+  trustedKeys: []
+  # Key rotation
+  rotation:
+    enabled: false
+    intervalDays: 365
+
+# Vault Integration (Key Management)
+vault:
+  enabled: false
+  # HashiCorp Vault
+  hashicorp:
+    enabled: false
+    address: ""
+    authMethod: kubernetes  # kubernetes, token, approle
+    secretPath: ccea/
+    # Kubernetes auth
+    role: ccea-cloud
+  # AWS KMS
+  awsKms:
+    enabled: false
+    keyId: ""
+    region: ""
+  # Azure Key Vault
+  azureKeyVault:
+    enabled: false
+    vaultUrl: ""
+  # GCP KMS
+  gcpKms:
+    enabled: false
+    keyRing: ""
+    keyName: ""
+    location: ""

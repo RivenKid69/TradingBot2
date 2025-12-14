@@ -2,9 +2,10 @@
 """
 CCEA Cloud Enterprise Package.
 
-Phase 9 Implementation: Enterprise/on-prem pack + signed agent updates.
+Phase 9/10 Implementation: Enterprise/on-prem pack + signed agent updates.
 
 This package provides enterprise features for CCEA Cloud:
+- Cryptographic Operations: Ed25519 signing and verification
 - Registry Mirror: Local artifact mirroring for air-gapped deployments
 - Evidence Pack Exporter: Audit trail and compliance documentation
 - Agent Update Manager: Signed updates with staged rollout
@@ -13,9 +14,36 @@ This package provides enterprise features for CCEA Cloud:
 
 Design Doc Reference:
     - Phase 9: Enterprise/on-prem pack + signed agent updates
+    - Phase 10: Enterprise signing and key management
     - Design Doc 16.1: Evidence pack exporter
     - Design Doc 15.2/5.2: Agent updates
 """
+
+# Cryptographic operations (Phase 10)
+try:
+    from packages.cloud.enterprise.crypto import (
+        Ed25519Signer,
+        SigningKey,
+        Signature,
+        CryptoError,
+        SignatureError,
+        VerificationError,
+        create_signer,
+        sign_data,
+        verify_data,
+        CRYPTO_AVAILABLE,
+    )
+except ImportError:
+    Ed25519Signer = None
+    SigningKey = None
+    Signature = None
+    CryptoError = Exception
+    SignatureError = Exception
+    VerificationError = Exception
+    create_signer = None
+    sign_data = None
+    verify_data = None
+    CRYPTO_AVAILABLE = False
 
 from packages.cloud.enterprise.registry_mirror import (
     RegistryMirror,
@@ -58,6 +86,17 @@ from packages.cloud.enterprise.tuf_repository import (
 )
 
 __all__ = [
+    # Cryptographic Operations (Phase 10)
+    "Ed25519Signer",
+    "SigningKey",
+    "Signature",
+    "CryptoError",
+    "SignatureError",
+    "VerificationError",
+    "create_signer",
+    "sign_data",
+    "verify_data",
+    "CRYPTO_AVAILABLE",
     # Registry Mirror
     "RegistryMirror",
     "RegistryMirrorConfig",

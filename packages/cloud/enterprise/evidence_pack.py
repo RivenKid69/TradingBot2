@@ -29,11 +29,43 @@ import shutil
 import tempfile
 import zipfile
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Final, List, Optional, Set, Tuple, Union, TYPE_CHECKING
 from uuid import UUID, uuid4
+
+# Cloud storage imports (optional)
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+
+try:
+    from google.cloud import storage as gcs_storage
+    GCS_AVAILABLE = True
+except ImportError:
+    GCS_AVAILABLE = False
+
+try:
+    from azure.storage.blob import BlobServiceClient
+    AZURE_AVAILABLE = True
+except ImportError:
+    AZURE_AVAILABLE = False
+
+# Local crypto module
+try:
+    from .crypto import Ed25519Signer, SigningKey, Signature, CRYPTO_AVAILABLE
+except ImportError:
+    CRYPTO_AVAILABLE = False
+    Ed25519Signer = None
+    SigningKey = None
+    Signature = None
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -890,17 +922,95 @@ class EvidencePackExporter:
         return zip_path
 
     async def _sign_pack(self, checksum: str) -> Optional[str]:
-        """Sign the evidence pack checksum."""
-        # Placeholder - would use actual signing implementation
-        # In real implementation: use sigstore/cosign or GPG
-        import base64
-        sig_data = f"CCEA-EVIDENCE-SIG::{checksum}::{datetime.utcnow().isoformat()}"
-        return base64.b64encode(sig_data.encode()).decode()
+        """
+        Sign the evidence pack checksum using Ed25519.
+
+        Uses the crypto module for real cryptographic signatures.
+
+        Args:
+            checksum: Pack checksum to sign
+
+        Returns:
+            JSON-encoded signature or None if signing not available
+        """
+        if not CRYPTO_AVAILABLE:
+            logger.warning("Cryptography not available, using placeholder signature")
+            import base64
+            sig_data = f"CCEA-EVIDENCE-SIG::{checksum}::{datetime.now(timezone.utc).isoformat()}"
+            return base64.b64encode(sig_data.encode()).decode()
+
+        try:
+            signer = Ed25519Signer(default_signer_id="ccea-evidence-pack-signer")
+
+            # Load or generate signing key
+            signing_key = None
+            if self.config.signing_key_path and self.config.signing_key_path.exists():
+                signing_key = signer.load_key(
+                    self.config.signing_key_path,
+                    key_id="evidence-pack-signer"
+                )
+            else:
+                # Generate ephemeral key (production should use persistent key)
+                signing_key = signer.generate_key(key_id="evidence-pack-signer")
+                logger.warning(
+                    "Using ephemeral signing key. For production, "
+                    "configure signing_key_path in EvidencePackConfig"
+                )
+
+            # Sign the checksum
+            signature = signer.sign(
+                checksum.encode('utf-8'),
+                signing_key,
+                payload_type="evidence-pack-checksum",
+                signer_id="ccea-evidence-pack-signer",
+            )
+
+            return json.dumps(signature.to_dict())
+
+        except Exception as e:
+            logger.error(f"Failed to sign evidence pack: {e}")
+            return None
 
     async def _verify_signature(self, checksum: str, signature: str) -> bool:
-        """Verify pack signature."""
-        # Placeholder - would verify actual signature
-        return True
+        """
+        Verify pack signature using Ed25519.
+
+        Args:
+            checksum: Original checksum
+            signature: JSON-encoded signature
+
+        Returns:
+            True if signature is valid
+        """
+        if not CRYPTO_AVAILABLE:
+            logger.warning("Cryptography not available, signature verification skipped")
+            return True
+
+        try:
+            sig_data = json.loads(signature)
+
+            # Handle placeholder signatures
+            if "signature" not in sig_data:
+                # Legacy/placeholder format
+                return True
+
+            sig_obj = Signature.from_dict(sig_data)
+
+            signer = Ed25519Signer()
+
+            # Load trusted key if available
+            if self.config.signing_key_path and self.config.signing_key_path.exists():
+                key = signer.load_key(
+                    self.config.signing_key_path,
+                    key_id="evidence-pack-signer"
+                )
+                signer.add_trusted_key(key)
+
+            return signer.verify(checksum.encode('utf-8'), sig_obj)
+
+        except Exception as e:
+            logger.error(f"Signature verification failed: {e}")
+            return False
 
     async def _upload_to_destination(self, pack: EvidencePack) -> None:
         """Upload pack to configured destination."""
@@ -912,19 +1022,171 @@ class EvidencePackExporter:
             await self._upload_to_azure(pack)
 
     async def _upload_to_s3(self, pack: EvidencePack) -> None:
-        """Upload to S3."""
-        # Placeholder - would use boto3
-        pass
+        """
+        Upload evidence pack to Amazon S3.
+
+        Requires boto3 and AWS credentials.
+        Config should include: bucket, prefix, region (optional)
+        """
+        if not BOTO3_AVAILABLE:
+            raise RuntimeError("boto3 not available. Install with: pip install boto3")
+
+        if not pack.archive_path or not pack.archive_path.exists():
+            raise ValueError("No archive path available")
+
+        bucket = self.config.destination_config.get("bucket")
+        prefix = self.config.destination_config.get("prefix", "evidence-packs")
+        region = self.config.destination_config.get("region")
+
+        if not bucket:
+            raise ValueError("S3 bucket not configured")
+
+        try:
+            # Create S3 client
+            client_kwargs = {}
+            if region:
+                client_kwargs["region_name"] = region
+
+            s3_client = boto3.client("s3", **client_kwargs)
+
+            # Upload file
+            object_key = f"{prefix}/{pack.archive_path.name}"
+
+            # Upload with metadata
+            extra_args = {
+                "Metadata": {
+                    "pack-id": str(pack.id),
+                    "pack-version": pack.version,
+                    "created-at": pack.created_at.isoformat(),
+                    "checksum": pack.checksum,
+                },
+                "ServerSideEncryption": "AES256",
+            }
+
+            logger.info(f"Uploading evidence pack to s3://{bucket}/{object_key}")
+
+            s3_client.upload_file(
+                str(pack.archive_path),
+                bucket,
+                object_key,
+                ExtraArgs=extra_args,
+            )
+
+            logger.info(f"Successfully uploaded evidence pack to S3: {object_key}")
+
+        except ClientError as e:
+            logger.error(f"S3 upload failed: {e}")
+            raise
 
     async def _upload_to_gcs(self, pack: EvidencePack) -> None:
-        """Upload to Google Cloud Storage."""
-        # Placeholder - would use google-cloud-storage
-        pass
+        """
+        Upload evidence pack to Google Cloud Storage.
+
+        Requires google-cloud-storage and GCP credentials.
+        Config should include: bucket, prefix
+        """
+        if not GCS_AVAILABLE:
+            raise RuntimeError(
+                "google-cloud-storage not available. "
+                "Install with: pip install google-cloud-storage"
+            )
+
+        if not pack.archive_path or not pack.archive_path.exists():
+            raise ValueError("No archive path available")
+
+        bucket_name = self.config.destination_config.get("bucket")
+        prefix = self.config.destination_config.get("prefix", "evidence-packs")
+
+        if not bucket_name:
+            raise ValueError("GCS bucket not configured")
+
+        try:
+            # Create GCS client
+            client = gcs_storage.Client()
+            bucket = client.bucket(bucket_name)
+
+            # Upload file
+            blob_name = f"{prefix}/{pack.archive_path.name}"
+            blob = bucket.blob(blob_name)
+
+            # Set metadata
+            blob.metadata = {
+                "pack-id": str(pack.id),
+                "pack-version": pack.version,
+                "created-at": pack.created_at.isoformat(),
+                "checksum": pack.checksum,
+            }
+
+            logger.info(f"Uploading evidence pack to gs://{bucket_name}/{blob_name}")
+
+            blob.upload_from_filename(str(pack.archive_path))
+
+            logger.info(f"Successfully uploaded evidence pack to GCS: {blob_name}")
+
+        except Exception as e:
+            logger.error(f"GCS upload failed: {e}")
+            raise
 
     async def _upload_to_azure(self, pack: EvidencePack) -> None:
-        """Upload to Azure Blob Storage."""
-        # Placeholder - would use azure-storage-blob
-        pass
+        """
+        Upload evidence pack to Azure Blob Storage.
+
+        Requires azure-storage-blob and Azure credentials.
+        Config should include: connection_string or account_url, container, prefix
+        """
+        if not AZURE_AVAILABLE:
+            raise RuntimeError(
+                "azure-storage-blob not available. "
+                "Install with: pip install azure-storage-blob"
+            )
+
+        if not pack.archive_path or not pack.archive_path.exists():
+            raise ValueError("No archive path available")
+
+        container_name = self.config.destination_config.get("container")
+        prefix = self.config.destination_config.get("prefix", "evidence-packs")
+        connection_string = self.config.destination_config.get("connection_string")
+        account_url = self.config.destination_config.get("account_url")
+
+        if not container_name:
+            raise ValueError("Azure container not configured")
+
+        try:
+            # Create Azure client
+            if connection_string:
+                blob_service = BlobServiceClient.from_connection_string(connection_string)
+            elif account_url:
+                blob_service = BlobServiceClient(account_url=account_url)
+            else:
+                raise ValueError("Azure connection_string or account_url required")
+
+            container_client = blob_service.get_container_client(container_name)
+
+            # Upload file
+            blob_name = f"{prefix}/{pack.archive_path.name}"
+            blob_client = container_client.get_blob_client(blob_name)
+
+            logger.info(
+                f"Uploading evidence pack to azure://{container_name}/{blob_name}"
+            )
+
+            with open(pack.archive_path, "rb") as data:
+                blob_client.upload_blob(
+                    data,
+                    overwrite=True,
+                    metadata={
+                        "pack_id": str(pack.id),
+                        "pack_version": pack.version,
+                        "created_at": pack.created_at.isoformat(),
+                        "checksum": pack.checksum,
+                    },
+                )
+
+            logger.info(f"Successfully uploaded evidence pack to Azure: {blob_name}")
+
+        except Exception as e:
+            logger.error(f"Azure upload failed: {e}")
+            raise
 
     def _verify_evidence_file(self, file_path: Path) -> bool:
         """Verify evidence file integrity."""

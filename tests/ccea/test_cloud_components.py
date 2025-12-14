@@ -173,8 +173,12 @@ class TestArtifactBuilder:
     def test_builder_creates_manifest(self, tmp_path):
         """Test that builder creates proper manifest."""
         from packages.cloud.builder.artifact_builder import ArtifactBuilder, BuildConfig
+        from ccea.crypto import generate_keypair
 
-        builder = ArtifactBuilder()
+        # Generate a signing key for the builder
+        signing_key = generate_keypair(key_id="test-artifact-signer")
+
+        builder = ArtifactBuilder(signing_key=signing_key)
 
         config = BuildConfig(
             strategy_id="momentum_v1",

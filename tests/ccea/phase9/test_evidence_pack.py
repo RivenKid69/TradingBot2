@@ -238,10 +238,27 @@ class TestEvidencePackExporter:
     @pytest.mark.asyncio
     async def test_verify_pack_success(self, temp_output):
         """Test successful pack verification."""
-        config = EvidencePackConfig(
-            output_path=temp_output,
-            compress=False,
-        )
+        from packages.cloud.enterprise.crypto import Ed25519Signer, CRYPTO_AVAILABLE
+
+        if CRYPTO_AVAILABLE:
+            # Create a signing key for the test
+            signer = Ed25519Signer()
+            key = signer.generate_key(key_id="test-pack-signer")
+            signing_key_path = temp_output / "test-signing-key.pem"
+            signer.save_key(key, signing_key_path, include_private=True)
+
+            config = EvidencePackConfig(
+                output_path=temp_output,
+                compress=False,
+                sign_pack=True,
+                signing_key_path=signing_key_path,
+            )
+        else:
+            config = EvidencePackConfig(
+                output_path=temp_output,
+                compress=False,
+            )
+
         exporter = EvidencePackExporter(config)
 
         # Export pack

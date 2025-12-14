@@ -180,21 +180,37 @@ class TestAgentUpdateManager:
     @pytest.mark.asyncio
     async def test_verify_update_signature(self, manager):
         """Test verifying update signature."""
+        from packages.cloud.enterprise.crypto import Ed25519Signer, CRYPTO_AVAILABLE
+
         update = manager.create_update(
             version="1.1.0",
             artifact_digest="sha256:test",
             artifact_url="https://example.com/test.tar.gz",
         )
 
-        # Sign update
-        signing_key = b"test_signing_key_32_bytes_long_!"
-        await manager.sign_update(update.id, signing_key)
+        if CRYPTO_AVAILABLE:
+            # Generate a real Ed25519 key pair
+            signer = Ed25519Signer()
+            key = signer.generate_key(key_id="test-signer")
+            signing_key = key.private_key_bytes
+            public_key = key.public_key_bytes
 
-        # Verify
-        is_valid, error = await manager.verify_update_signature(update.id)
+            # Sign update
+            await manager.sign_update(update.id, signing_key)
 
-        assert is_valid is True
-        assert error is None
+            # Verify with public key
+            is_valid, error = await manager.verify_update_signature(update.id, public_key)
+
+            assert is_valid is True
+            assert error is None
+        else:
+            # Without crypto, signing falls back to placeholder
+            signing_key = b"test_signing_key_32_bytes_long_!"
+            await manager.sign_update(update.id, signing_key)
+
+            # Without crypto, verification is skipped
+            is_valid, error = await manager.verify_update_signature(update.id)
+            assert is_valid is True
 
     @pytest.mark.asyncio
     async def test_verify_unsigned_update(self, manager):
