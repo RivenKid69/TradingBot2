@@ -9,11 +9,16 @@ Provides dependency injection for:
 - Authorization (RBAC)
 - Tenant context
 - Database sessions
+
+Phase 5 Security (WI-AUTH-01):
+- JWT tokens include jti for revocation support
+- Token revocation check on every authenticated request
 """
 
 from __future__ import annotations
 
 import os
+import uuid as uuid_lib
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any, Dict, List, Optional, Set
 from uuid import UUID
@@ -129,6 +134,8 @@ def create_access_token(
 
     Returns:
         Encoded JWT token
+
+    WI-AUTH-01: Includes jti (JWT ID) for token revocation support.
     """
     now = datetime.now(timezone.utc)
     expires = now + (expires_delta or timedelta(hours=JWT_EXPIRATION_HOURS))
@@ -142,6 +149,7 @@ def create_access_token(
         "is_superuser": is_superuser,
         "exp": expires,
         "iat": now,
+        "jti": str(uuid_lib.uuid4()),  # WI-AUTH-01: Unique token ID for revocation
     }
 
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -229,6 +237,8 @@ async def get_current_user(
 
     Raises:
         HTTPException: If not authenticated or invalid token
+
+    WI-AUTH-01: Checks token revocation via jti blocklist.
     """
     if credentials is None:
         raise HTTPException(
@@ -246,6 +256,18 @@ async def get_current_user(
             detail="Agent token not allowed for user endpoints",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # WI-AUTH-01: Check token revocation
+    jti = payload.get("jti")
+    if jti:
+        # Import here to avoid circular import
+        from .security.jwt_revocation import is_token_revoked
+        if is_token_revoked(jti):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
     return CurrentUser(
         id=UUID(payload["sub"]),

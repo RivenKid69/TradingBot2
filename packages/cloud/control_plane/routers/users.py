@@ -5,30 +5,39 @@ Users Router.
 CLOUD ZONE ONLY.
 
 Provides CRUD endpoints for user management.
+
+Phase 5 Security (WI-AUTH-01):
+- Argon2id password hashing
+- Password policy validation
 """
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from ..database import get_session
 from ..dependencies import PaginationDep, UserDep
 from ..models import Organization, Role, User, Workspace
+from ..security.password_hasher import hash_password as secure_hash_password
+from ..security.password_policy import validate_password, DEFAULT_PASSWORD_POLICY
 
 router = APIRouter()
 
 
 def hash_password(password: str) -> str:
-    """Hash password with SHA256 (for demo; use bcrypt in production)."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """
+    Hash password using Argon2id (WI-AUTH-01).
+
+    Argon2id is memory-hard and resistant to GPU attacks.
+    """
+    return secure_hash_password(password)
 
 
 # Request/Response models
@@ -42,6 +51,18 @@ class UserCreate(BaseModel):
     default_workspace_id: Optional[UUID] = None
     role_ids: List[UUID] = Field(default_factory=list)
 
+    @field_validator("password")
+    @classmethod
+    def validate_password_policy(cls, v: str, info) -> str:
+        """WI-AUTH-01: Validate password against policy."""
+        # Get email from values if available for context check
+        email = info.data.get("email") if hasattr(info, "data") else None
+        result = validate_password(v, email=email)
+        if not result.valid:
+            messages = [viol.message for viol in result.violations]
+            raise ValueError(f"Password policy violation: {'; '.join(messages)}")
+        return v
+
 
 class UserUpdate(BaseModel):
     """Update user request."""
@@ -52,6 +73,19 @@ class UserUpdate(BaseModel):
     default_workspace_id: Optional[UUID] = None
     is_active: Optional[bool] = None
     role_ids: Optional[List[UUID]] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_policy(cls, v: Optional[str], info) -> Optional[str]:
+        """WI-AUTH-01: Validate password against policy if provided."""
+        if v is None:
+            return v
+        email = info.data.get("email") if hasattr(info, "data") else None
+        result = validate_password(v, email=email)
+        if not result.valid:
+            messages = [viol.message for viol in result.violations]
+            raise ValueError(f"Password policy violation: {'; '.join(messages)}")
+        return v
 
 
 class RoleResponse(BaseModel):

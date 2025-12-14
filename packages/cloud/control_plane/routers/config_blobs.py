@@ -11,6 +11,11 @@ Key Concepts:
     - Immutable: once created, cannot be modified (create new blob for changes)
     - Cloud stores only desired state (not secrets)
     - JSONB for queryability of content
+
+Phase 5 Security (WI-CLOUD-05):
+    - DLP/Secret scanning before storage
+    - CloudBoundaryValidator integration
+    - Rejects any secrets or order-like payloads
 """
 
 from __future__ import annotations
@@ -28,6 +33,8 @@ from sqlalchemy import func, select
 from ..database import get_session
 from ..dependencies import PaginationDep, UserDep
 from ..models import ConfigBlob, Workspace
+from ..security.dlp_scanner import DLPScanner, scan_for_secrets
+from ..boundary import CloudBoundaryValidator
 
 router = APIRouter()
 
@@ -313,7 +320,30 @@ async def create_config_blob(
     If a blob with the same digest already exists, returns the existing blob.
 
     Requires config:create permission or superuser.
+
+    WI-CLOUD-05: Scans content for secrets and rejects if any are found.
+    Cloud NEVER stores API keys, credentials, or other sensitive data.
     """
+    # WI-CLOUD-05: DLP/Secret scanning - FAIL-CLOSED
+    dlp_result = scan_for_secrets(request.content)
+    if not dlp_result.clean:
+        findings = [f.message for f in dlp_result.findings if f.blocked]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Config blob rejected: secrets detected. Cloud NEVER stores secrets. "
+                   f"Findings: {'; '.join(findings[:3])}"
+                   + (f" and {len(findings) - 3} more..." if len(findings) > 3 else ""),
+        )
+
+    # WI-CLOUD-05: Boundary validation for order-like payloads
+    boundary_validator = CloudBoundaryValidator(strict_mode=True)
+    boundary_result = boundary_validator.validate_config(request.content)
+    if not boundary_result.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Config blob rejected: boundary violation. {boundary_result.violations[0].message}",
+        )
+
     async with get_session() as session:
         # Verify workspace access
         await _verify_workspace_access(session, request.workspace_id, current_user)

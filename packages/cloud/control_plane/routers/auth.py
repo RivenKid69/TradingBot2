@@ -5,17 +5,23 @@ Authentication Router.
 CLOUD ZONE ONLY.
 
 Provides JWT-based authentication endpoints.
+
+Phase 5 Security (WI-AUTH-01):
+- Argon2id password hashing
+- Rate limiting and account lockout
+- JWT revocation (jti blocklist)
+- Password policy validation
 """
 
 from __future__ import annotations
 
-import hashlib
 import secrets
+import uuid as uuid_lib
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,8 +33,30 @@ from ..dependencies import (
     UserDep,
     create_access_token,
     create_agent_token,
+    decode_token,
 )
 from ..models import Agent, AgentEnrollmentToken, Role, TrustState, User
+from ..security.password_hasher import (
+    PasswordHasher,
+    hash_password as secure_hash_password,
+    verify_password as secure_verify_password,
+    needs_rehash,
+)
+from ..security.rate_limiter import (
+    RateLimiter,
+    RateLimitExceeded,
+    AccountLockout,
+    get_rate_limiter,
+    check_lockout,
+    check_rate_limit,
+    record_login_attempt,
+)
+from ..security.jwt_revocation import (
+    JTIBlocklist,
+    revoke_token,
+    is_token_revoked,
+    get_blocklist,
+)
 
 router = APIRouter()
 
@@ -106,13 +134,35 @@ class AgentHeartbeatResponse(BaseModel):
 
 
 def hash_password(password: str) -> str:
-    """Hash password with SHA256 (for demo; use bcrypt in production)."""
-    return hashlib.sha256(password.encode()).hexdigest()
+    """
+    Hash password using Argon2id (WI-AUTH-01).
+
+    Argon2id is memory-hard and resistant to GPU attacks.
+    Falls back to bcrypt/PBKDF2 if Argon2 is not available.
+    """
+    return secure_hash_password(password)
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    """Verify password against hash."""
-    return hash_password(password) == hashed
+    """
+    Verify password against hash (WI-AUTH-01).
+
+    Supports Argon2id, bcrypt, PBKDF2, and legacy SHA256 (for migration).
+    """
+    return secure_verify_password(password, hashed)
+
+
+def _get_client_ip(request: Request) -> str:
+    """Extract client IP from request (handles proxies)."""
+    # Check X-Forwarded-For header for proxied requests
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # First IP in the list is the client
+        return forwarded.split(",")[0].strip()
+    # Fall back to direct connection
+    if request.client:
+        return request.client.host
+    return "unknown"
 
 
 @router.post(
@@ -122,12 +172,40 @@ def verify_password(password: str, hashed: str) -> bool:
     summary="User login",
     description="Authenticate user and return JWT token.",
 )
-async def login(request: LoginRequest) -> LoginResponse:
+async def login(request: LoginRequest, http_request: Request) -> LoginResponse:
     """
     Authenticate user with email and password.
 
     Returns JWT access token on success.
+
+    WI-AUTH-01 Security:
+    - Rate limiting per IP address
+    - Account lockout after failed attempts
+    - Argon2id password verification with rehash support
+    - JWT with unique jti for revocation support
     """
+    client_ip = _get_client_ip(http_request)
+
+    # WI-AUTH-01: Check IP rate limit
+    try:
+        check_rate_limit(client_ip)
+    except RateLimitExceeded as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=e.args[0],
+            headers={"Retry-After": str(e.retry_after)},
+        )
+
+    # WI-AUTH-01: Check account lockout
+    try:
+        check_lockout(request.email)
+    except AccountLockout as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=e.args[0],
+            headers={"Retry-After": str(e.retry_after)},
+        )
+
     async with get_session() as session:
         # Find user by email with eager loading of roles and permissions
         result = await session.execute(
@@ -138,6 +216,8 @@ async def login(request: LoginRequest) -> LoginResponse:
         user = result.scalar_one_or_none()
 
         if user is None:
+            # Record failed attempt even for non-existent users (timing attack mitigation)
+            record_login_attempt(request.email, success=False, ip_address=client_ip)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
@@ -145,10 +225,19 @@ async def login(request: LoginRequest) -> LoginResponse:
 
         # Verify password
         if not verify_password(request.password, user.password_hash):
+            # WI-AUTH-01: Record failed attempt for lockout tracking
+            record_login_attempt(request.email, success=False, ip_address=client_ip)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
             )
+
+        # WI-AUTH-01: Record successful login
+        record_login_attempt(request.email, success=True, ip_address=client_ip)
+
+        # WI-AUTH-01: Check if password needs rehashing (algorithm upgrade)
+        if needs_rehash(user.password_hash):
+            user.password_hash = hash_password(request.password)
 
         # Get user permissions
         permissions = []
@@ -157,7 +246,10 @@ async def login(request: LoginRequest) -> LoginResponse:
                 if perm.name not in permissions:
                     permissions.append(perm.name)
 
-        # Create access token
+        # WI-AUTH-01: Generate unique jti for revocation support
+        jti = str(uuid_lib.uuid4())
+
+        # Create access token with jti
         token = create_access_token(
             user_id=user.id,
             email=user.email,
@@ -184,15 +276,38 @@ async def login(request: LoginRequest) -> LoginResponse:
     summary="User logout",
     description="Invalidate current session.",
 )
-async def logout(current_user: UserDep) -> None:
+async def logout(
+    current_user: UserDep,
+    http_request: Request,
+) -> None:
     """
     Logout current user.
 
-    In a production system, this would invalidate the JWT
-    by adding it to a blocklist or rotating refresh tokens.
+    WI-AUTH-01: Revokes the current JWT token by adding its jti to the blocklist.
     """
-    # TODO: Add JWT to blocklist for revocation
-    pass
+    # Extract token from authorization header
+    auth_header = http_request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        try:
+            # Decode to get jti
+            payload = decode_token(token)
+            jti = payload.get("jti")
+            if jti:
+                # Calculate token expiry for cleanup
+                exp = payload.get("exp")
+                expires_at = datetime.fromtimestamp(exp, tz=timezone.utc) if exp else None
+
+                # WI-AUTH-01: Add token to blocklist
+                revoke_token(
+                    jti=jti,
+                    expires_at=expires_at,
+                    reason="logout",
+                    user_id=str(current_user.id),
+                )
+        except Exception:
+            # Token already invalid, nothing to revoke
+            pass
 
 
 @router.get(

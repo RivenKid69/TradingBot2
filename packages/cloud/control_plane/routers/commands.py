@@ -6,6 +6,11 @@ CLOUD ZONE ONLY.
 
 Provides CRUD endpoints for command management and approval workflow.
 Commands are sent from Cloud to Agent with idempotency and approval support.
+
+Phase 5 Security (WI-CLOUD-01):
+- Fail-closed command type validation
+- CloudBoundaryValidator integration
+- Order-like payload rejection
 """
 
 from __future__ import annotations
@@ -15,7 +20,7 @@ from typing import Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
@@ -31,6 +36,15 @@ from ..models import (
     Run,
     TrustState,
     Workspace,
+)
+from ..security.command_validation import (
+    CommandTypeValidator,
+    validate_command_type,
+    ALLOWED_COMMAND_TYPES,
+)
+from ..boundary import (
+    CloudBoundaryValidator,
+    BoundaryViolationError,
 )
 
 router = APIRouter()
@@ -113,6 +127,15 @@ class CommandCreate(BaseModel):
     change_class: ChangeClass = ChangeClass.OPERATIONAL
     requires_approval: bool = False
     expires_at: Optional[datetime] = None
+
+    @field_validator("command_type")
+    @classmethod
+    def validate_command_type(cls, v: str) -> str:
+        """Validate command_type against allowlist (WI-CLOUD-01)."""
+        result = validate_command_type(v)
+        if not result.valid:
+            raise ValueError(result.errors[0].message)
+        return result.command_type  # Return normalized (uppercase)
 
 
 class CommandUpdate(BaseModel):
@@ -411,7 +434,27 @@ async def create_command(
 
     The command will be created in PENDING status.
     If requires_approval is True, it will need to be approved before sending.
+
+    WI-CLOUD-01: Validates command_type against allowlist and checks for
+    prohibited order-like payloads via CloudBoundaryValidator.
     """
+    # WI-CLOUD-01: Boundary validation - fail-closed on violations
+    boundary_validator = CloudBoundaryValidator(strict_mode=True)
+    command_dict = {
+        "command_type": request.command_type,
+        "agent_id": str(request.agent_id),
+        "deployment_id": str(request.deployment_id) if request.deployment_id else None,
+        "run_id": str(request.run_id) if request.run_id else None,
+        "payload_ref": request.payload_ref,
+        "change_class": request.change_class.value,
+    }
+    validation_result = boundary_validator.validate_command(command_dict)
+    if not validation_result.valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Command boundary violation: {validation_result.violations[0].message}",
+        )
+
     async with get_session() as session:
         # Verify workspace access
         workspace = await _verify_workspace_access(session, workspace_id, current_user)
@@ -976,3 +1019,44 @@ async def expire_stale_commands(
         await session.commit()
 
         return {"expired_count": count}
+
+
+# ============================================================================
+# Schema/Validation Endpoints (WI-CLOUD-01)
+# ============================================================================
+
+@router.get(
+    "/types/list",
+    response_model=List[str],
+    summary="List allowed command types",
+    description="Get list of allowed command types per schema (WI-CLOUD-01).",
+)
+async def list_command_types(
+    current_user: UserDep,
+) -> List[str]:
+    """
+    List allowed command types.
+
+    Returns the enum allowlist from protocol_messages.schema.json.
+    Any command_type not in this list will be rejected.
+    """
+    return sorted(ALLOWED_COMMAND_TYPES)
+
+
+@router.get(
+    "/types/{command_type}",
+    response_model=Dict[str, any],
+    summary="Get command type info",
+    description="Get metadata about a specific command type.",
+)
+async def get_command_type_info(
+    command_type: str,
+    current_user: UserDep,
+) -> Dict[str, any]:
+    """
+    Get information about a command type.
+
+    Returns validation result and metadata for the command type.
+    """
+    result = validate_command_type(command_type)
+    return result.to_dict()
