@@ -130,6 +130,7 @@ work_items:
     effort: M
   WI-PROTOCOL-01:
     phase: P0
+    status: done
     goal: |-
       Make protocol self-consistent: schema version negotiation and constants align and are enforced.
     touch:
@@ -144,11 +145,16 @@ work_items:
       - Enforce negotiation before accepting/processing any command batch.
     acceptance:
       - schema_check and protocol_check are green; negotiation tests cover incompatible versions.
+    evidence:
+      - ccea/contracts/enums.py (shared contracts module)
+      - ccea/guardrails/version_check.py (CI check)
+      - tests/ccea/phase4/test_contracts.py (27 tests)
     standards:
       - Robustness/compatibility; Design Doc CCEA Cloud.txt:615
     effort: M
   WI-PROTOCOL-02:
     phase: P0
+    status: done
     goal: |-
       Eliminate allowlist drift for command types (REQUEST_RESUME_RUN).
     touch:
@@ -161,6 +167,9 @@ work_items:
       - If needed: add it to schema + models + boundary allowlists + guardrails + tests, with explicit security review note.
     acceptance:
       - protocol allowlist check ensures parity across schema/models/boundary.
+    evidence:
+      - packages/cloud/control_plane/commands.py (REQUEST_RESUME_RUN removed)
+      - tests/ccea/phase4/test_contracts.py::TestCommandTypeAllowlist (5 tests)
     standards:
       - Least privilege / minimize surface area
     effort: S
@@ -299,6 +308,7 @@ work_items:
     effort: L
   WI-CONTRACTS-01:
     phase: P0
+    status: done
     goal: |-
       Eliminate enum/state-machine drift between protocol models and cloud DB.
     touch:
@@ -311,6 +321,12 @@ work_items:
       - Add contract tests: schema <-> models <-> DB mapping.
     acceptance:
       - Contract tests prevent drift; schema and runtime share the same states/values.
+    evidence:
+      - ccea/contracts/__init__.py (shared contracts module)
+      - ccea/contracts/enums.py (canonical enum definitions + mappings)
+      - ccea/contracts/validation.py (contract drift detection)
+      - tests/ccea/phase4/test_contracts.py::TestContractEnums (6 tests)
+      - tests/ccea/phase4/test_contracts.py::TestContractStatusMappings (4 tests)
     standards:
       - Robustness; change control
     effort: L
@@ -1279,10 +1295,10 @@ issues:
 ```
 
 ## Execution Order (10-phase; agent-optimized)
-- Phase 1 (P0): WI-DEPS-01
-- Phase 2 (P0): WI-AGENT-01 -> WI-AGENT-02
-- Phase 3 (P0): WI-CI-02 -> WI-CI-01 -> WI-TRACE-01 -> WI-TRACE-02
-- Phase 4 (P0): WI-PROTOCOL-01 -> WI-PROTOCOL-02 -> WI-CONTRACTS-01
+- Phase 1 (P0): WI-DEPS-01 ✓ DONE
+- Phase 2 (P0): WI-AGENT-01 -> WI-AGENT-02 ✓ DONE
+- Phase 3 (P0): WI-CI-02 -> WI-CI-01 -> WI-TRACE-01 -> WI-TRACE-02 ✓ DONE
+- Phase 4 (P0): WI-PROTOCOL-01 -> WI-PROTOCOL-02 -> WI-CONTRACTS-01 ✓ DONE
 - Phase 5 (P0): WI-CLOUD-01 -> WI-CLOUD-05 -> WI-AUTH-01
 - Phase 6 (P0): WI-LEGAL-01 -> WI-DOCS-01 -> WI-DOCS-02 -> WI-DEDRIFT-01
 - Gate P0->P1

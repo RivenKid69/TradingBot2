@@ -33,14 +33,14 @@ __author__ = "CCEA Architecture Team"
 
 from typing import Final
 
-# Schema version for this release
+# Schema version for this release (must match protocol_messages.schema.json x-schema-version)
 SCHEMA_VERSION: Final[str] = "1.0.0"
 
-# Minimum supported schema version
+# Minimum supported schema version (must match protocol_messages.schema.json x-min-supported-version)
 MIN_SUPPORTED_SCHEMA_VERSION: Final[str] = "1.0.0"
 
-# Maximum supported schema version
-MAX_SUPPORTED_SCHEMA_VERSION: Final[str] = "1.99.99"
+# Maximum supported schema version (must match protocol_messages.schema.json x-max-supported-version)
+MAX_SUPPORTED_SCHEMA_VERSION: Final[str] = "1.0.0"
 
 # Phase 1 implementation flag
 PHASE_1_COMPLETE: Final[bool] = True

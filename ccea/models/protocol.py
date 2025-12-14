@@ -225,6 +225,44 @@ class AgentHealth(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class VersionNegotiation(BaseModel):
+    """
+    Version negotiation for Cloud-Agent protocol compatibility.
+
+    Uses min_supported/max_supported per Design Doc.
+    """
+    min_supported: str = Field(
+        ...,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Minimum supported schema version (MAJOR.MINOR.PATCH)"
+    )
+    max_supported: str = Field(
+        ...,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Maximum supported schema version (MAJOR.MINOR.PATCH)"
+    )
+    preferred: Optional[str] = Field(
+        None,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Preferred schema version if within range"
+    )
+
+    model_config = {"extra": "forbid"}
+
+    @model_validator(mode="after")
+    def validate_version_range(self) -> "VersionNegotiation":
+        """Ensure max_supported >= min_supported."""
+        from ccea.protocol.schema_versioning import SchemaVersion
+        min_ver = SchemaVersion.parse(self.min_supported)
+        max_ver = SchemaVersion.parse(self.max_supported)
+        if max_ver < min_ver:
+            raise ValueError(
+                f"max_supported ({self.max_supported}) must be >= "
+                f"min_supported ({self.min_supported})"
+            )
+        return self
+
+
 # ============================================================================
 # Base Message Model
 # ============================================================================
@@ -272,7 +310,10 @@ class PollCommandsMessage(BaseMessage):
     message_type: Literal[MessageType.POLL_COMMANDS] = MessageType.POLL_COMMANDS
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     last_command_id: Optional[str] = None
-    supported_schema_versions: Optional[List[str]] = None
+    version_negotiation: Optional[VersionNegotiation] = Field(
+        None,
+        description="Version negotiation using min_supported/max_supported per Design Doc"
+    )
 
 
 class CommandAckMessage(BaseMessage):

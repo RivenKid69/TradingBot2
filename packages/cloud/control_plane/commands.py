@@ -32,12 +32,14 @@ class CommandType(str, Enum):
 
     These are the ONLY commands Cloud can send.
     Adding new command types requires security review.
+
+    NOTE: REQUEST_RESUME_RUN was removed per Design Doc - not in allowed command list.
+          Use REQUEST_START_RUN to restart a stopped run.
     """
 
     REQUEST_START_RUN = "REQUEST_START_RUN"
     REQUEST_STOP_RUN = "REQUEST_STOP_RUN"
     REQUEST_PAUSE_RUN = "REQUEST_PAUSE_RUN"
-    REQUEST_RESUME_RUN = "REQUEST_RESUME_RUN"
     REQUEST_UPGRADE_ARTIFACT = "REQUEST_UPGRADE_ARTIFACT"
     REQUEST_UPDATE_CONFIG = "REQUEST_UPDATE_CONFIG"
     REQUEST_ROTATE_AGENT_SESSION = "REQUEST_ROTATE_AGENT_SESSION"

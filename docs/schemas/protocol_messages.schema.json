@@ -189,27 +189,8 @@
         "timestamp": {"$ref": "#/definitions/timestamp"},
         "signature": {"$ref": "#/definitions/signature"}
       }
-    }
-  },
+    },
 
-  "oneOf": [
-    {"$ref": "#/definitions/messages/heartbeat"},
-    {"$ref": "#/definitions/messages/poll_commands"},
-    {"$ref": "#/definitions/messages/command_batch"},
-    {"$ref": "#/definitions/messages/command_ack"},
-    {"$ref": "#/definitions/messages/command_approval"},
-    {"$ref": "#/definitions/messages/command_result"},
-    {"$ref": "#/definitions/messages/telemetry"},
-    {"$ref": "#/definitions/messages/request_start_run"},
-    {"$ref": "#/definitions/messages/request_stop_run"},
-    {"$ref": "#/definitions/messages/request_pause_run"},
-    {"$ref": "#/definitions/messages/request_upgrade_artifact"},
-    {"$ref": "#/definitions/messages/request_update_config"},
-    {"$ref": "#/definitions/messages/request_rotate_agent_session"},
-    {"$ref": "#/definitions/messages/request_export_logs"}
-  ],
-
-  "definitions": {
     "messages": {
       "heartbeat": {
         "type": "object",
@@ -251,13 +232,11 @@
           "agent_id": {"$ref": "#/definitions/agent_id"},
           "timestamp": {"$ref": "#/definitions/timestamp"},
           "last_command_id": {"type": "string"},
-          "supported_schema_versions": {
-            "type": "array",
-            "items": {"type": "string"}
-          },
+          "version_negotiation": {"$ref": "#/definitions/version_negotiation"},
           "signature": {"$ref": "#/definitions/signature"}
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "$comment": "Version negotiation uses min_supported/max_supported per Design Doc"
       },
 
       "command_batch": {
@@ -562,5 +541,22 @@
         ]
       }
     }
-  }
+  },
+
+  "oneOf": [
+    {"$ref": "#/definitions/messages/heartbeat"},
+    {"$ref": "#/definitions/messages/poll_commands"},
+    {"$ref": "#/definitions/messages/command_batch"},
+    {"$ref": "#/definitions/messages/command_ack"},
+    {"$ref": "#/definitions/messages/command_approval"},
+    {"$ref": "#/definitions/messages/command_result"},
+    {"$ref": "#/definitions/messages/telemetry"},
+    {"$ref": "#/definitions/messages/request_start_run"},
+    {"$ref": "#/definitions/messages/request_stop_run"},
+    {"$ref": "#/definitions/messages/request_pause_run"},
+    {"$ref": "#/definitions/messages/request_upgrade_artifact"},
+    {"$ref": "#/definitions/messages/request_update_config"},
+    {"$ref": "#/definitions/messages/request_rotate_agent_session"},
+    {"$ref": "#/definitions/messages/request_export_logs"}
+  ]
 }
