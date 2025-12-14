@@ -3,9 +3,11 @@
 **AI-Powered Quantitative Research Platform**
 
 **Effective Date:** December 2024
-**Version:** 1.1.0
+**Version:** 2.0.0
 
 **Regulatory Framework:** EU E-Commerce Directive 2000/31/EC, GDPR (EU) 2016/679, EU AI Act (EU) 2024/1689
+
+**Architecture:** Cloud-Controlled Execution Architecture (CCEA)
 
 ---
 
@@ -29,9 +31,49 @@ For the purposes of these Terms of Service, the following definitions apply:
 
 - **"Services"**: All features, tools, and functionalities provided by the Platform.
 
+- **"Cloud"**: The Company-operated infrastructure providing research, backtesting, monitoring, and lifecycle management services.
+
+- **"Agent"**: Optional user-operated software running locally on User's hardware that handles live trading execution, credential storage, and risk enforcement.
+
+- **"CCEA"**: Cloud-Controlled Execution Architecture, the strict separation between Cloud (research/monitoring) and Agent (execution/secrets).
+
 ---
 
 ## 2. SERVICE DESCRIPTION
+
+### 2.0 Architecture: Cloud-Controlled Execution Architecture (CCEA)
+
+**IMPORTANT - ARCHITECTURAL SEPARATION:**
+
+The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a strict separation between Cloud and Agent:
+
+| Component | Responsibility | Handles Credentials | Executes Orders |
+|-----------|---------------|---------------------|-----------------|
+| **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
+| **Agent** | Live execution, credential storage, risk enforcement | **YES (Local Only)** | **YES (Local Only)** |
+
+**Security Guarantees:**
+
+1. **Cloud NEVER stores your broker API keys or credentials** - All credentials are stored locally in your Agent's encrypted vault
+2. **Cloud NEVER generates, transmits, or executes trading orders** - All trading operations occur exclusively in your local Agent
+3. **Cloud NEVER has access to exchange trading endpoints** - Cloud cannot connect to brokers on your behalf
+4. **Cloud cannot send order-like payloads** - The protocol schema prohibits side/quantity/price fields
+5. **Telemetry is ALWAYS redacted** - Sensitive data is automatically removed before transmission
+
+**Product Modes:**
+
+| Mode | Description | Agent Required |
+|------|-------------|----------------|
+| Research SaaS | Cloud-based research, backtesting, simulation | No |
+| Live Trading | Automated execution via local Agent | Yes (User-operated) |
+| Enterprise | Self-hosted Cloud + Agent in customer infrastructure | Varies |
+
+**Your Control:**
+
+- You decide whether to deploy a local Agent
+- You control your Agent's hard caps (which Cloud CANNOT override)
+- You approve all trading-impacting changes locally
+- You can disconnect from Cloud and continue trading
 
 ### 2.1 Nature of Services
 
@@ -55,8 +97,16 @@ The Platform is **NOT**:
 - A broker-dealer or securities firm
 - A provider of personalized investment recommendations
 - A provider of financial, legal, or tax advice
+- **An order execution service** - Cloud NEVER executes orders; this is done locally by your Agent
+- **A custodian** - We do not hold your assets or credentials in Cloud
+- **A trading signal provider** - We do not transmit trading intents or signals to execute
 
-We are a **software vendor** providing tools for Users who make their own independent trading decisions.
+We are a **software vendor** providing:
+- Research and backtesting tools (Cloud)
+- Optional local execution software (Agent)
+- Monitoring and lifecycle management
+
+**All trading decisions and execution happen in YOUR environment, under YOUR control.**
 
 ### 2.3 User Control
 

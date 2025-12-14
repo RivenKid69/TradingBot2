@@ -2,12 +2,34 @@
 
 RL-first research and trading stack for crypto, equities, FX, and derivatives with simulator-to-live parity.
 
+## Architecture: Cloud-Controlled Execution Architecture (CCEA)
+
+This platform implements **CCEA** - a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
+
+| Component | Responsibility | Secrets Access | Order Execution |
+|-----------|---------------|----------------|-----------------|
+| **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
+| **Agent** | Live execution, risk enforcement, local vault, order creation | **LOCAL ONLY** | **YES** |
+
+**Key Security Guarantees:**
+- Cloud **NEVER** stores broker API keys or credentials
+- Cloud **NEVER** generates, transmits, or executes trading orders
+- Cloud **NEVER** has access to exchange trading endpoints
+- All trading operations occur **ONLY** in the Agent running locally or in user's VPC
+- Telemetry is **ALWAYS** redacted before transmission to Cloud
+
+**Product Modes:**
+1. **Retail Research SaaS (EU-friendly)**: Cloud research/simulation + optional BYO Agent
+2. **Retail Live via Local Agent**: Local auto-execution, cloud observability
+3. **Enterprise Engine (on-prem/VPC)**: Full stack in customer infrastructure
+
 ## Overview
 - Distributional PPO with twin critics, adaptive UPGD optimizer, and population-based tuning for robust policies.
 - Market-structure-aware execution: limit/market routing, TWAP/POV, slippage and fee modeling, and risk guards.
 - Multi-asset adapters (crypto, equities, FX, options) behind a unified YAML configuration and dependency injection registry.
 - Shared pipeline for training, backtesting, paper trading, and live trading with reproducible artifacts.
 - Observability and safety: structured logs, KPI benchmarks, sanity checks, and doctor tooling.
+- **Strict zone separation**: Cloud/Agent/Shared packages with CI-enforced import boundaries.
 
 ## Installation
 1. Prerequisites: Python 3.12+, git, compiler toolchain for C++/Cython extensions (see `SYSTEM_REQUIREMENTS.md`).
@@ -63,13 +85,22 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Module Architecture
 
-### ICT Provider Positioning
+### ICT Provider Positioning (CCEA Architecture)
 
 This platform is designed for **ICT Providers / Software Providers** under MiFID II scope:
-- We provide algorithmic trading infrastructure
-- Users trade through THEIR OWN broker accounts
-- Platform does NOT hold client assets
+- We provide algorithmic trading **research and infrastructure tools**
+- Users trade through **THEIR OWN broker accounts** via **local Agent**
+- Platform does NOT hold client assets or credentials in Cloud
+- Cloud **NEVER** executes orders - only lifecycle management
 - MiFID II does NOT apply directly to us
+
+**Legal Position:**
+- **NOT** an investment adviser or broker-dealer
+- **NOT** providing investment recommendations
+- **NOT** custodian of assets or credentials
+- Software vendor providing tools for independent traders
+
+See: `docs/CCEA_OVERVIEW.md` for full architecture and legal posture
 
 ### Module Structure (Post-Migration v2.0)
 
@@ -152,6 +183,15 @@ Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
 | Traditional futures/options | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
 
 ## Guides
+
+### CCEA Architecture Documentation
+- `docs/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
+- `docs/cloud/README.md` — Control plane API, builder, governance
+- `docs/agent/README.md` — Installation, vault, approvals, risk controls
+- `docs/schemas/README.md` — JSON schemas with versioning guide
+- `docs/runbooks/` — Incident response, kill-switch, recovery procedures
+
+### General Documentation
 - `claude.md` — complete project guide (RU).
 - `ARCHITECTURE.md` — system architecture and module map.
 - `DOCS_INDEX.md` — documentation hub.

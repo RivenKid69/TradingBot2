@@ -3,9 +3,11 @@
 **AI-Powered Quantitative Research Platform**
 
 **Effective Date:** December 2024
-**Version:** 1.0.0
+**Version:** 2.0.0
 
 **Legal Framework:** General Data Protection Regulation (EU) 2016/679 (GDPR)
+
+**Architecture:** Cloud-Controlled Execution Architecture (CCEA)
 
 ---
 
@@ -35,6 +37,69 @@ For Users outside the EU, our EU representative is:
 
 ---
 
+## 1A. CCEA ARCHITECTURE AND DATA ZONES
+
+### 1A.1 Architectural Overview
+
+**IMPORTANT - DATA RESIDENCY BY ARCHITECTURE:**
+
+The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, which strictly separates data processing between Cloud and Agent zones:
+
+| Zone | Data Processed | Credentials Access | Your Sensitive Data |
+|------|---------------|-------------------|---------------------|
+| **Cloud** | Research, backtesting, monitoring | **NEVER** | Aggregated telemetry only |
+| **Agent** | Execution, risk enforcement | **YES (Local Only)** | Stays on YOUR hardware |
+
+### 1A.2 Cloud Zone Data (Processed by Us)
+
+Data processed in our Cloud infrastructure:
+
+| Data Type | Processing Location | Retention |
+|-----------|-------------------|-----------|
+| Account information | Cloud (EU) | Until deletion |
+| Research/backtest jobs | Cloud (EU) | Per retention policy |
+| Strategy source code | Cloud (EU) | Until deletion |
+| Aggregated telemetry | Cloud (EU) | 90 days |
+| Audit logs | Cloud (EU) | 5 years |
+
+**Cloud NEVER receives or processes:**
+- Broker API keys or secrets
+- Trading credentials of any kind
+- Order details (side, quantity, price)
+- Real-time position data (only aggregated metrics)
+
+### 1A.3 Agent Zone Data (Processed Locally on Your Hardware)
+
+Data processed by the optional local Agent (if you deploy one):
+
+| Data Type | Storage Location | Our Access |
+|-----------|-----------------|------------|
+| Broker API credentials | Your hardware (encrypted vault) | **NONE** |
+| Order execution data | Your hardware | **NONE** |
+| Position details | Your hardware | **NONE** |
+| Local approval records | Your hardware | **NONE** |
+
+**We cannot access Agent-zone data because:**
+1. It never leaves your hardware
+2. It is encrypted with keys we do not possess
+3. The Agent operates autonomously on your infrastructure
+
+### 1A.4 Telemetry Redaction
+
+All telemetry from Agent to Cloud is **automatically redacted**:
+
+| Original Data | Transmitted Data | Redaction |
+|--------------|-----------------|-----------|
+| `symbol: "BTC-USD"` | `symbol: "[REDACTED]"` | Mandatory |
+| `quantity: 1.5` | Not transmitted | Blocked |
+| `price: 50000` | Not transmitted | Blocked |
+| `equity: 100500.25` | `equity_bucket: "100K-500K"` | Bucketed |
+| `pnl: 5.23%` | `pnl_percent: 5.2` | Rounded |
+
+**Redaction cannot be disabled** - it is enforced at the protocol level.
+
+---
+
 ## 2. DATA WE COLLECT
 
 ### 2.1 Account Data
@@ -59,17 +124,44 @@ When you use trading features, we process:
 | Execution logs | Order tracking, audit trail | Contract + Legal obligation |
 | Position data | Risk management | Contract (Art. 6(1)(b)) |
 
-### 2.3 Broker Credentials
+### 2.3 Broker Credentials (CCEA Architecture)
 
-When you connect broker accounts:
+**IMPORTANT - CREDENTIALS ARE NEVER STORED IN OUR CLOUD**
 
-| Data Type | Purpose | Legal Basis | Protection |
-|-----------|---------|-------------|------------|
-| API Key | Order execution | Contract (Art. 6(1)(b)) | AES-256-GCM encryption |
-| API Secret | Authentication | Contract (Art. 6(1)(b)) | AES-256-GCM encryption |
-| Passphrase (if applicable) | Additional security | Contract (Art. 6(1)(b)) | AES-256-GCM encryption |
+Under CCEA architecture, broker credentials are handled differently depending on your usage mode:
 
-**Security Note:** Broker credentials are encrypted at rest using AES-256-GCM encryption with per-user derived keys. They are only decrypted in memory when required for order execution.
+| Mode | Credential Storage | Who Processes | Our Access |
+|------|-------------------|--------------|------------|
+| **Research SaaS** | Not applicable | Not applicable | N/A |
+| **Live Trading (Agent)** | Your local Agent | Your hardware | **NONE** |
+| **Enterprise (Self-Hosted)** | Your infrastructure | Your servers | **NONE** |
+
+#### 2.3.1 Agent Local Vault (Live Trading Mode)
+
+When you deploy a local Agent for live trading:
+
+| Data Type | Storage Location | Encryption | Our Access |
+|-----------|-----------------|------------|------------|
+| API Key | Agent local vault | AES-256-GCM | **NONE** |
+| API Secret | Agent local vault | AES-256-GCM | **NONE** |
+| Passphrase | Agent local vault | AES-256-GCM | **NONE** |
+
+**How the Agent Vault Works:**
+1. Credentials are encrypted on YOUR hardware with keys derived from YOUR passphrase
+2. Master key never leaves your Agent's secure enclave
+3. Credentials are decrypted only in-memory when executing orders
+4. We have no ability to decrypt or access these credentials
+
+#### 2.3.2 What We DO NOT Store
+
+Our Cloud infrastructure **NEVER** stores or processes:
+- Broker API keys
+- Broker API secrets
+- Exchange credentials
+- Trading passphrases
+- Any authentication tokens for brokers
+
+**This is enforced by architecture** - Cloud has no API or mechanism to receive credentials.
 
 ### 2.4 Technical Data
 
@@ -166,13 +258,28 @@ When you delete data or your account:
 
 ## 5. DATA SHARING
 
-### 5.1 Third-Party Brokers
+### 5.1 Third-Party Brokers (CCEA Architecture)
 
-When you execute trades, we share with your connected broker(s):
+**IMPORTANT: Under CCEA architecture, WE do not share data with brokers - YOUR Agent does.**
 
-- Order details (symbol, quantity, price, type)
-- Your API credentials (for authentication)
-- **We do NOT share**: Your personal information, other strategies, or analytics
+| Operation | Who Sends | What is Sent | Our Involvement |
+|-----------|----------|--------------|-----------------|
+| Order execution | Your local Agent | Order details, credentials | **NONE** |
+| Position queries | Your local Agent | API credentials | **NONE** |
+| Account status | Your local Agent | API credentials | **NONE** |
+
+**Data flow for broker connections:**
+```
+Your Agent (local) → Broker API (direct connection)
+     ↓
+Cloud receives ONLY redacted telemetry (no order details)
+```
+
+We do NOT:
+- Store your broker credentials
+- Transmit orders on your behalf
+- Have any connection to your broker accounts
+- Receive order details (side, quantity, price)
 
 ### 5.2 No Sale of Data
 
@@ -192,7 +299,50 @@ We use the following service providers (sub-processors):
 
 **Updated List:** A current list of sub-processors is available at [URL].
 
-### 5.4 Legal Disclosure
+### 5.4 Telemetry Data (Agent → Cloud)
+
+When you operate a local Agent, it may send telemetry to Cloud for monitoring:
+
+#### 5.4.1 What Telemetry Contains (After Mandatory Redaction)
+
+| Metric Type | Data Transmitted | Sensitive Details |
+|-------------|-----------------|-------------------|
+| Performance | PnL %, drawdown % | Rounded/bucketed |
+| Health | Heartbeat, state | No trading data |
+| Errors | Error codes | No order details |
+| Equity | Bucketed range | No exact values |
+
+#### 5.4.2 What Telemetry NEVER Contains
+
+These fields are **blocked at the protocol level**:
+- Order side (buy/sell)
+- Order quantity
+- Order price
+- Symbol/asset identifiers
+- Exact position sizes
+- Exact equity values
+- Broker account identifiers
+
+#### 5.4.3 Telemetry Levels
+
+You can control telemetry verbosity (but NOT redaction - redaction is always mandatory):
+
+| Level | Data Sent | Redaction |
+|-------|-----------|-----------|
+| `NONE` | Nothing (offline mode) | N/A |
+| `MINIMAL` | Heartbeat only | Full redaction |
+| `STANDARD` | Health + aggregated metrics | Full redaction |
+| `DETAILED` | + Error diagnostics | Full redaction |
+
+#### 5.4.4 Telemetry Retention
+
+| Data Type | Retention | Deletion |
+|-----------|-----------|----------|
+| Raw telemetry | 90 days | Auto-deleted |
+| Aggregated metrics | 1 year | Anonymized |
+| Alerts/incidents | 2 years | Anonymized |
+
+### 5.5 Legal Disclosure
 
 We may disclose data when required by:
 
@@ -398,6 +548,7 @@ We will notify you of material changes to this Privacy Policy:
 | Version | Date | Summary of Changes |
 |---------|------|--------------------|
 | 1.0.0 | December 2024 | Initial release |
+| 2.0.0 | December 2024 | Added CCEA architecture sections: data zones, credential handling, telemetry redaction |
 
 ### 11.3 Review
 
@@ -452,17 +603,63 @@ If you are unsatisfied with our response, you may:
 ---
 
 **Last Updated:** December 2024
-**Document Version:** 1.0.0
+**Document Version:** 2.0.0
 
 ---
 
-## APPENDIX: DATA PROCESSING ACTIVITIES REGISTER
+## APPENDIX A: DATA PROCESSING ACTIVITIES REGISTER
 
-| Activity | Data Categories | Legal Basis | Retention | Recipients |
-|----------|----------------|-------------|-----------|------------|
-| Account Management | Email, name, password hash | Contract | Until deletion | Internal |
-| Strategy Storage | Code, parameters | Contract | Until deletion | Internal |
-| Backtesting | Historical results | Contract | 2 years | Internal |
-| Order Execution | Orders, positions | Contract | 5 years | Broker |
-| Security Monitoring | IP, logs | Legitimate Interest | 2 years | Internal |
-| Credential Storage | API keys (encrypted) | Contract | Until revoked | Broker (on use) |
+| Activity | Data Categories | Legal Basis | Retention | Recipients | Zone |
+|----------|----------------|-------------|-----------|------------|------|
+| Account Management | Email, name, password hash | Contract | Until deletion | Internal | Cloud |
+| Strategy Storage | Code, parameters | Contract | Until deletion | Internal | Cloud |
+| Backtesting | Historical results | Contract | 2 years | Internal | Cloud |
+| Security Monitoring | IP, logs | Legitimate Interest | 2 years | Internal | Cloud |
+| Telemetry Ingestion | Redacted metrics | Contract | 90 days | Internal | Cloud |
+| Audit Logging | Access records | Legal obligation | 5 years | Internal | Cloud |
+
+**Agent-Zone Activities (Processed Locally, NOT by Us):**
+
+| Activity | Data Categories | Storage | Our Access |
+|----------|----------------|---------|------------|
+| Credential Storage | API keys (encrypted) | Agent vault | **NONE** |
+| Order Execution | Orders, positions | Agent local | **NONE** |
+| Position Tracking | Real-time positions | Agent memory | **NONE** |
+| Approval Records | Local evidence | Agent storage | **NONE** |
+
+---
+
+## APPENDIX B: CCEA DATA FLOW DIAGRAM
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        YOUR INFRASTRUCTURE                            │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │                     LOCAL AGENT                                   │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │ │
+│  │  │ Credentials  │  │   Orders     │  │   Position Data      │  │ │
+│  │  │ (Encrypted)  │  │ (Generated)  │  │   (Real-time)        │  │ │
+│  │  └──────────────┘  └──────────────┘  └──────────────────────┘  │ │
+│  │         │                 │                                      │ │
+│  │         │     ┌───────────┴───────────┐                         │ │
+│  │         │     │     BROKER API        │ ← Direct connection     │ │
+│  │         └─────┤    (Your account)     │   (We have NO access)   │ │
+│  │               └───────────────────────┘                         │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
+│                               │                                       │
+│                    Redacted Telemetry Only                           │
+│                      (No credentials,                                │
+│                       no order details)                              │
+│                               │                                       │
+└───────────────────────────────┼───────────────────────────────────────┘
+                                ↓
+┌───────────────────────────────────────────────────────────────────────┐
+│                          CCEA CLOUD                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐       │
+│  │  Research    │  │  Aggregated  │  │    Audit Logs        │       │
+│  │  Jobs        │  │  Telemetry   │  │  (Access records)    │       │
+│  └──────────────┘  └──────────────┘  └──────────────────────┘       │
+│                                                                       │
+│  ❌ NO Credentials  ❌ NO Orders  ❌ NO Position Details            │
+└───────────────────────────────────────────────────────────────────────┘
+```
