@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Command Dispatcher - Sends lifecycle commands to agents.
+Command Dispatcher - DEPRECATED, use services.command_service instead.
 
 CLOUD ZONE ONLY.
+
+Phase 7 (WI-CLOUD-03): This in-memory dispatcher is DEPRECATED.
+Use packages.cloud.control_plane.services.command_service.CommandService
+for production use. The DB-backed service provides:
+- Persistent storage
+- Tenant isolation via RLS
+- Long-poll support for agents
+- Approval workflow integration
+
+This file is kept for backwards compatibility and reference.
+The types (CommandType, CommandStatus, etc.) are re-exported from here
+for existing code that imports them.
 
 Commands are LIFECYCLE requests only:
 - Start/Stop/Pause runs
@@ -16,8 +28,18 @@ PROHIBITED:
 - Direct trading instructions
 - Signal/intent transmission
 """
-
 from __future__ import annotations
+
+import warnings
+
+# Deprecation warning - module level (only when explicitly imported)
+def _warn_deprecated():
+    warnings.warn(
+        "commands.CommandDispatcher is deprecated. "
+        "Use services.command_service.CommandService instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 from dataclasses import dataclass, field
 from datetime import datetime

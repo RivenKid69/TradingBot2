@@ -16,7 +16,7 @@ Phase 5 Security (WI-CLOUD-01):
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status
@@ -1045,14 +1045,14 @@ async def list_command_types(
 
 @router.get(
     "/types/{command_type}",
-    response_model=Dict[str, any],
+    response_model=Dict[str, Any],
     summary="Get command type info",
     description="Get metadata about a specific command type.",
 )
 async def get_command_type_info(
     command_type: str,
     current_user: UserDep,
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """
     Get information about a command type.
 

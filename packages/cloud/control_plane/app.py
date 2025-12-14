@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse
 
 from .database import check_db_health, close_engine, init_db
 from .routers import (
+    agent_lifecycle,
     agents,
     auth,
     commands,
@@ -172,6 +173,12 @@ def create_app(
     )
     app.include_router(
         telemetry.router, prefix="/api/v1/telemetry", tags=["Telemetry"]
+    )
+    # Phase 7 (WI-CLOUD-02): Agent lifecycle endpoints with AgentDep auth
+    app.include_router(
+        agent_lifecycle.router,
+        prefix="/api/v1/agent",
+        tags=["Agent Lifecycle"],
     )
 
     return app

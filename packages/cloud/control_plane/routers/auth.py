@@ -15,6 +15,7 @@ Phase 5 Security (WI-AUTH-01):
 
 from __future__ import annotations
 
+import hashlib
 import secrets
 import uuid as uuid_lib
 from datetime import datetime, timedelta, timezone
