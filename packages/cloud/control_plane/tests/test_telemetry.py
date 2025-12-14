@@ -42,7 +42,7 @@ async def sample_telemetry_event(
         event_type="strategy_signal",
         event_timestamp=datetime.now(timezone.utc),
         telemetry_level=TelemetryLevel.AGGREGATED.value,
-        payload={"signal": "buy", "confidence": 0.85},
+        payload={"indicator": "bullish", "confidence": 0.85},
         redaction_applied=True,
         redaction_version="1.0.0",
     )

@@ -112,13 +112,17 @@
 
 | Guardrail ID | Name | Implementation File | Test File | Status |
 |--------------|------|---------------------|-----------|--------|
-| BT-001 | no-trading-libs-in-cloud | ccea/guardrails/import_check.py | tests/ccea/test_import_check.py | PLANNED |
-| BT-002 | no-order-payloads-in-schema | ccea/guardrails/schema_check.py | tests/ccea/test_schema_check.py | PLANNED |
-| BT-003 | artifact-signature-required | ccea/guardrails/artifact_check.py | tests/ccea/test_artifact_check.py | PLANNED |
-| BT-005 | import-boundary-check | importlinter.ini | - | PLANNED |
-| PM-001 | schema-validation | ccea/guardrails/schema_check.py | tests/ccea/test_schema_check.py | PLANNED |
-| PM-002 | protocol-allowlist | ccea/guardrails/protocol_check.py | tests/ccea/test_protocol_check.py | PLANNED |
-| PM-004 | secret-scan | .gitleaks.toml | - | PLANNED |
+| BT-001 | no-trading-libs-in-cloud | ccea/guardrails/import_check.py | tests/ccea/guardrails/test_import_check.py | DONE |
+| BT-002 | no-order-payloads-in-schema | ccea/guardrails/schema_check.py | tests/ccea/guardrails/test_schema_check.py | DONE |
+| BT-003 | artifact-signature-required | ccea/guardrails/artifact_check.py | tests/ccea/guardrails/test_artifact_check.py | DONE |
+| BT-005 | import-boundary-check | ccea/guardrails/import_check.py, importlinter.ini | tests/ccea/guardrails/test_import_check.py | DONE |
+| PM-001 | schema-validation | ccea/guardrails/schema_check.py | tests/ccea/guardrails/test_schema_check.py | DONE |
+| PM-002 | protocol-allowlist | ccea/guardrails/protocol_check.py | tests/ccea/guardrails/test_protocol_check.py | DONE |
+| PM-003 | intent-prohibition | ccea/guardrails/intent_prohibition.py | tests/ccea/guardrails/test_intent_prohibition.py | DONE |
+| PM-004 | secret-scan | .gitleaks.toml, .secrets.baseline | build-and-test.yml | DONE |
+| PM-005 | cloud-allowlist | ccea/guardrails/cloud_allowlist.py | tests/ccea/guardrails/test_cloud_allowlist.py | DONE |
+| PM-006 | design-doc-sha | ccea/guardrails/design_doc_check.py | tests/ccea/guardrails/test_design_doc_check.py | DONE |
+| PM-007 | traceability-check | ccea/guardrails/traceability_check.py | tests/ccea/guardrails/test_traceability_check.py | DONE |
 | RT-001 | signature-verification | packages/agent/artifact_verifier.py | tests/agent/test_artifact_verifier.py | PLANNED |
 | RT-005 | redaction-middleware | packages/agent/telemetry/redaction.py | tests/agent/test_redaction.py | PLANNED |
 
@@ -196,6 +200,15 @@
 | CI Guardrails defined | 9 | 9 | - | 100% |
 | Done criteria met | 10 | 10 | - | 100% |
 
+### Phase 3 Requirements (CI/Traceability Hardening)
+
+| Category | Total | Implemented | Tested | Coverage |
+|----------|-------|-------------|--------|----------|
+| CI Guardrails enforcement | 11 | 11 | 11 | 100% |
+| Pre-commit hooks added | 8 | 8 | 8 | 100% |
+| Design Doc SHA verification | 1 | 1 | 1 | 100% |
+| Traceability matrix check | 1 | 1 | 1 | 100% |
+
 ### Documentation Status
 
 | Document | Created | Reviewed | Approved |
@@ -213,5 +226,6 @@
 
 **Document Control:**
 - Author: CCEA Architecture Team
-- Last Updated: 2025-12-13
-- Next Review: After Phase 1 completion
+- Last Updated: 2025-12-15
+- Phase 3 Completion: CI/Traceability Hardening
+- Next Review: After Phase 4 completion

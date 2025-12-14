@@ -68,6 +68,21 @@ from .artifact_check import (
     CheckResult,
     run_artifact_guardrails,
 )
+from .intent_prohibition import (
+    IntentProhibitionResult,
+    IntentProhibitionViolation,
+    check_cloud_package_for_intents,
+    check_python_source_for_intent_injection,
+)
+from .design_doc_check import (
+    compute_sha256,
+    verify_design_doc_sha,
+)
+from .traceability_check import (
+    TraceabilityCheckResult,
+    TraceabilityViolation,
+    validate_traceability_matrix,
+)
 
 __all__ = [
     # Import checking
@@ -119,4 +134,16 @@ __all__ = [
     "CheckSeverity",
     "CheckResult",
     "run_artifact_guardrails",
+    # Intent prohibition (Phase 3)
+    "IntentProhibitionResult",
+    "IntentProhibitionViolation",
+    "check_cloud_package_for_intents",
+    "check_python_source_for_intent_injection",
+    # Design Doc SHA verification (Phase 3, WI-TRACE-01)
+    "compute_sha256",
+    "verify_design_doc_sha",
+    # Traceability matrix check (Phase 3, WI-TRACE-02)
+    "TraceabilityCheckResult",
+    "TraceabilityViolation",
+    "validate_traceability_matrix",
 ]

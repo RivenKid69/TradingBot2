@@ -25,3 +25,80 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+
+  # ============================================================================
+  # CCEA Guardrails (Design Doc CCEA Cloud.txt:1025)
+  # Fail-closed: all guardrails fail CI on violation
+  # ============================================================================
+  - repo: local
+    hooks:
+      # Schema check: ensure no order-like payloads in JSON schemas (BT-002)
+      - id: ccea-schema-check
+        name: CCEA Schema Check
+        description: Validate JSON schemas don't contain order-like payloads
+        entry: python -m ccea.guardrails.schema_check
+        args: [docs/schemas/]
+        language: python
+        files: '\.schema\.json$|^docs/schemas/.*\.json$'
+        pass_filenames: false
+        always_run: true
+
+      # Protocol check: validate command types against allowlist (PM-002)
+      - id: ccea-protocol-check
+        name: CCEA Protocol Check
+        description: Validate protocol command/message types against allowlist
+        entry: python -m ccea.guardrails.protocol_check
+        args: [--schema, docs/schemas/protocol_messages.schema.json]
+        language: python
+        files: 'protocol.*\.json$|ccea/models/protocol\.py$'
+        pass_filenames: false
+        always_run: true
+
+      # Import check: ensure Cloud build doesn't contain trading libs (BT-001, BT-005)
+      - id: ccea-import-check
+        name: CCEA Import Boundary Check
+        description: Ensure Cloud/Agent import boundaries are respected
+        entry: python -m ccea.guardrails.import_check
+        args: [--target, cloud, --directory, packages/cloud]
+        language: python
+        files: '^packages/cloud/.*\.py$'
+        pass_filenames: false
+
+      # Intent prohibition: ensure no intent/signal fields in Cloud code
+      - id: ccea-intent-prohibition
+        name: CCEA Intent Prohibition Check
+        description: Ensure Cloud code doesn't contain order-like intent fields
+        entry: python -m ccea.guardrails.intent_prohibition
+        args: [--cloud-path, packages/cloud]
+        language: python
+        files: '^packages/cloud/.*\.py$'
+        pass_filenames: false
+
+      # Cloud allowlist: check Cloud dependencies against allowlist
+      - id: ccea-cloud-allowlist
+        name: CCEA Cloud Allowlist Check
+        description: Validate Cloud uses only allowed dependencies
+        entry: python -m ccea.guardrails.cloud_allowlist
+        args: [--cloud-dir, packages/cloud, --no-transitive]
+        language: python
+        files: '^packages/cloud/.*\.py$'
+        pass_filenames: false
+
+      # Design Doc SHA verification (WI-TRACE-01)
+      - id: ccea-design-doc-sha
+        name: CCEA Design Doc SHA Check
+        description: Verify Design Doc snapshot matches recorded SHA256
+        entry: python -m ccea.guardrails.design_doc_check
+        language: python
+        files: 'Design.Doc.CCEA.Cloud\.txt$|Design_Doc_CCEA_Cloud\.(txt|md)$'
+        pass_filenames: false
+        always_run: true
+
+      # Traceability matrix check (WI-TRACE-02)
+      - id: ccea-traceability-check
+        name: CCEA Traceability Matrix Check
+        description: Ensure DONE status has Artifact/Check references
+        entry: python -m ccea.guardrails.traceability_check
+        language: python
+        files: 'CCEA_TRACEABILITY_MATRIX\.md$'
+        pass_filenames: false

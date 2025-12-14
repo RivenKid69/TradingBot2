@@ -45,6 +45,44 @@ jobs:
       - name: Check formatting with black
         run: python -m black --check .
 
+      # ========================================================================
+      # CCEA Guardrails (fail-closed enforcement)
+      # ========================================================================
+      - name: CCEA Schema Check (BT-002)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.schema_check docs/schemas/
+
+      - name: CCEA Protocol Check (PM-002)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.protocol_check --schema docs/schemas/protocol_messages.schema.json
+
+      - name: CCEA Import Boundary Check (BT-001, BT-005)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.import_check --target cloud --directory packages/cloud
+
+      - name: CCEA Intent Prohibition Check
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.intent_prohibition --cloud-path packages/cloud
+
+      - name: CCEA Cloud Allowlist Check
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.cloud_allowlist --cloud-dir packages/cloud --no-transitive
+
+      - name: CCEA Design Doc SHA Check (WI-TRACE-01)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.design_doc_check
+
+      - name: CCEA Traceability Matrix Check (WI-TRACE-02)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m ccea.guardrails.traceability_check
+
       - name: Lint imports (soft)
         continue-on-error: true
         env:

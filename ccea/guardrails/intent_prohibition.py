@@ -509,10 +509,10 @@ def run_ci_check(cloud_package_path: Path) -> int:
             print(f"  {v}")
 
     if result.passed:
-        print("\n✓ Intent prohibition check PASSED")
+        print("\n[PASS] Intent prohibition check PASSED")
         return 0
     else:
-        print("\n✗ Intent prohibition check FAILED")
+        print("\n[FAIL] Intent prohibition check FAILED")
         return 1
 
 

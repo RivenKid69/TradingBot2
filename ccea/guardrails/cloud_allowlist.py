@@ -418,12 +418,15 @@ def validate_cloud_build(
     py_files = list(cloud_directory.rglob("*.py"))
     result.files_checked = len(py_files)
 
+    modules_analyzed = 0
     for py_file in py_files:
-        # Skip test files
-        if "test" in py_file.name.lower() or "/tests/" in str(py_file):
+        # Skip test files for violation checking (but still count as checked)
+        is_test_file = "test" in py_file.name.lower() or "/tests/" in str(py_file)
+        if is_test_file:
             continue
 
         imports = extract_imports_from_file(py_file)
+        modules_analyzed += 1
 
         for module, line in imports:
             # Check prohibited packages
@@ -444,6 +447,9 @@ def validate_cloud_build(
                     line_number=line,
                 ))
 
+    # Set modules_checked to count of non-test Python files analyzed
+    result.modules_checked = modules_analyzed
+
     # Check transitive dependencies
     if check_transitive:
         project_root = cloud_directory.parent.parent  # Assuming packages/cloud
@@ -452,6 +458,8 @@ def validate_cloud_build(
             trans_result = checker.check_cloud_zone()
             for v in trans_result.violations:
                 result.add_violation(v)
+            # Add transitive modules checked
+            result.modules_checked += trans_result.modules_checked
 
     return result
 
@@ -558,11 +566,17 @@ def main() -> int:
     for v in result.violations:
         print(f"  {v}")
 
+    # Fail-closed: if files were found but no modules were analyzed, something is wrong
+    if result.files_checked > 0 and result.modules_checked == 0:
+        print("\n[FAIL] Cloud allowlist check FAILED")
+        print("  ERROR: files_checked > 0 but modules_checked == 0 - guardrail ineffective")
+        return 1
+
     if result.passed:
-        print("\nCloud allowlist check PASSED")
+        print("\n[PASS] Cloud allowlist check PASSED")
         return 0
     else:
-        print("\nCloud allowlist check FAILED")
+        print("\n[FAIL] Cloud allowlist check FAILED")
         if args.fail_on_violation:
             return 1
         return 0
