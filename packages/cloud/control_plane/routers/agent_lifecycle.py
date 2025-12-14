@@ -92,6 +92,7 @@ class CommandPollResponse(BaseModel):
 class PendingCommand(BaseModel):
     """Pending command for agent."""
     id: UUID
+    status: str
     idempotency_key: str
     command_type: str
     payload_ref: str
@@ -296,6 +297,7 @@ async def poll_commands(
         commands = [
             PendingCommand(
                 id=cmd.id,
+                status=cmd.status,
                 idempotency_key=cmd.idempotency_key,
                 command_type=cmd.command_type,
                 payload_ref=cmd.payload_ref,

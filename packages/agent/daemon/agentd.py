@@ -24,8 +24,13 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Optional
+from typing import Any, Callable, Dict, Final, List, Optional, Tuple
 from uuid import uuid4
+
+from packages.agent.approval.manager import ApprovalManager
+from packages.agent.cloud.client import CloudClient, CloudClientConfig
+from packages.agent.cloud.types import PendingCommand
+from packages.shared.contracts.config import ChangeClass
 
 from packages.agent.daemon.kill_switch import (
     KillSwitchManager,
@@ -87,6 +92,8 @@ class DaemonConfig:
     cloud_endpoint: Optional[str] = None
     cloud_timeout_seconds: int = 30
     heartbeat_interval_seconds: int = HEARTBEAT_INTERVAL
+    cloud_enrollment_token: Optional[str] = None
+    cloud_access_token: Optional[str] = None
 
     # Local storage
     data_dir: Path = field(default_factory=lambda: Path.home() / ".ccea")
@@ -114,6 +121,8 @@ class DaemonConfig:
             "agent_name": self.agent_name,
             "agent_version": self.agent_version,
             "cloud_endpoint": self.cloud_endpoint,
+            "cloud_enrollment_token": "***" if self.cloud_enrollment_token else None,
+            "cloud_access_token": "***" if self.cloud_access_token else None,
             "heartbeat_interval_seconds": self.heartbeat_interval_seconds,
             "data_dir": str(self.data_dir),
             "auto_recover": self.auto_recover,
@@ -250,6 +259,11 @@ class AgentDaemon:
         self._degraded_manager: Optional[DegradedModeManager] = None
         self._telemetry_buffer: Optional[TelemetryBuffer] = None
         self._sandbox: Optional[Sandbox] = None
+        self._approval_manager: ApprovalManager = ApprovalManager()
+        self._cloud_client: Optional[CloudClient] = None
+        self._executed_command_ids: set[str] = set()
+        self._pending_cloud_approval_by_command_id: Dict[str, Any] = {}
+        self._submitted_cloud_approvals: set[str] = set()
 
         # External components (set via setters)
         self._policy_firewall: Optional[Any] = None
@@ -325,6 +339,7 @@ class AgentDaemon:
                 self._init_degraded_manager()
                 self._init_telemetry_buffer()
                 self._init_preflight_checker()
+                self._init_cloud_client()
 
                 # Load saved state
                 self._load_state()
@@ -728,10 +743,33 @@ class AgentDaemon:
 
                 # Report cloud status to degraded manager
                 if self._degraded_manager:
-                    # In real implementation, this would check actual cloud connection
-                    self._degraded_manager.report_cloud_status(connected=True)
+                    self._degraded_manager.report_cloud_status(
+                        connected=bool(self._cloud_client and self._cloud_client.is_connected)
+                    )
+
+                # Cloud lifecycle heartbeat + command poll (outbound-only)
+                if self._cloud_client and self.config.cloud_access_token:
+                    self._cloud_client.access_token = self.config.cloud_access_token
+                    hb = self._cloud_client.heartbeat(
+                        agent_version=self.config.agent_version,
+                        current_state=self._state.name,
+                        last_run_id=None,
+                        health_metrics={
+                            "uptime_seconds": self._get_uptime_seconds(),
+                            "state": self._state.name,
+                        },
+                    )
+                    self._status.cloud_connected = True
+
+                    if hb.pending_commands > 0:
+                        poll = self._cloud_client.poll_commands(limit=10)
+                        if poll.commands:
+                            self._process_cloud_commands(poll.commands)
+                else:
+                    self._status.cloud_connected = False
 
             except Exception:
+                self._status.cloud_connected = False
                 pass
 
             self._stop_event.wait(self.config.heartbeat_interval_seconds)
@@ -761,6 +799,7 @@ class AgentDaemon:
         state = {
             "version": VERSION,
             "agent_id": self.agent_id,
+            "cloud_access_token": self.config.cloud_access_token,
             "saved_at": datetime.utcnow().isoformat(),
             "state": self._state.name,
             "status": self._status.to_dict(),
@@ -785,8 +824,209 @@ class AgentDaemon:
                 self.config.agent_id = state["agent_id"]
                 self._status.agent_id = state["agent_id"]
 
+            if not self.config.cloud_access_token and state.get("cloud_access_token"):
+                self.config.cloud_access_token = state["cloud_access_token"]
+
         except Exception:
             pass  # Start fresh
+
+    def _init_cloud_client(self) -> None:
+        """Initialize outbound-only CloudClient (if configured)."""
+        if not self.config.cloud_endpoint:
+            return
+
+        self._cloud_client = CloudClient(
+            CloudClientConfig(
+                base_url=self.config.cloud_endpoint,
+                timeout_seconds=self.config.cloud_timeout_seconds,
+                user_agent=f"ccea-agentd/{self.config.agent_version}",
+            ),
+            access_token=self.config.cloud_access_token,
+        )
+
+        # Best-effort enroll if token provided and no access token
+        if not self.config.cloud_access_token and self.config.cloud_enrollment_token:
+            enroll = self._cloud_client.enroll(
+                enrollment_token=self.config.cloud_enrollment_token,
+                agent_name=self.config.agent_name,
+                agent_version=self.config.agent_version,
+                capabilities=[],
+                attestation=None,
+            )
+            self.config.cloud_access_token = enroll.access_token
+            # Align local id with cloud agent UUID (string form)
+            self.config.agent_id = str(enroll.agent_id)
+            self._status.agent_id = str(enroll.agent_id)
+
+    def _process_cloud_commands(self, commands: List[PendingCommand]) -> None:
+        """
+        Process polled commands from Cloud.
+
+        Security invariant:
+        - TRADING_IMPACTING commands MUST require local approval; Cloud cannot bypass by flipping flags.
+        """
+        if not self._cloud_client:
+            return
+
+        for cmd in commands:
+            cmd_id = str(cmd.id)
+            if cmd_id in self._executed_command_ids:
+                continue
+
+            # Fail-closed change class parsing
+            try:
+                change_class = ChangeClass(cmd.change_class)
+            except Exception:
+                change_class = ChangeClass.TRADING_IMPACTING
+
+            trading_impacting = change_class == ChangeClass.TRADING_IMPACTING
+
+            # If Cloud tries to mark trading-impacting as not requiring approval -> refuse execution.
+            if trading_impacting and not cmd.requires_approval:
+                try:
+                    self._cloud_client.acknowledge_command(cmd.id)
+                    self._cloud_client.submit_command_result(
+                        command_id=cmd.id,
+                        success=False,
+                        error_message="Refused: TRADING_IMPACTING command without requires_approval (fail-closed).",
+                    )
+                    self._executed_command_ids.add(cmd_id)
+                except Exception:
+                    pass
+                continue
+
+            # Approval phase
+            if cmd.status.lower() == "pending_approval":
+                if cmd_id in self._submitted_cloud_approvals:
+                    continue
+
+                artifact_digest = cmd.payload_ref if cmd.payload_ref.startswith("sha256:") else None
+                req_id = self._pending_cloud_approval_by_command_id.get(cmd_id)
+                req = self._approval_manager.get_request(req_id) if req_id else None
+                if req is None:
+                    req = self._approval_manager.create_request(
+                        command_type=cmd.command_type,
+                        description=f"Cloud command {cmd.command_type} requires local approval",
+                        change_class=ChangeClass.TRADING_IMPACTING if trading_impacting else change_class,
+                        details={
+                            "command_id": cmd_id,
+                            "idempotency_key": cmd.idempotency_key,
+                            "payload_ref": cmd.payload_ref,
+                        },
+                        artifact_digest=artifact_digest,
+                    )
+                    self._pending_cloud_approval_by_command_id[cmd_id] = req.request_id
+
+                if req.status.name.lower() == "approved" and req.evidence_hash:
+                    try:
+                        self._cloud_client.submit_local_approval(
+                            command_id=cmd.id,
+                            approved=True,
+                            evidence_hash=f"sha256:{req.evidence_hash}",
+                            diff_summary={
+                                "command_type": cmd.command_type,
+                                "payload_ref": cmd.payload_ref,
+                            },
+                            reason=req.decision_reason or "Approved by local policy",
+                        )
+                        self._submitted_cloud_approvals.add(cmd_id)
+                    except Exception:
+                        pass
+                continue
+
+            # Execution phase
+            try:
+                self._cloud_client.acknowledge_command(cmd.id)
+            except Exception:
+                continue
+
+            ok, result, err = self._execute_cloud_command(cmd)
+            try:
+                self._cloud_client.submit_command_result(
+                    command_id=cmd.id,
+                    success=ok,
+                    result=result if ok else None,
+                    error_message=err if not ok else None,
+                )
+                self._executed_command_ids.add(cmd_id)
+            except Exception:
+                pass
+
+    def _execute_cloud_command(self, cmd: PendingCommand) -> Tuple[bool, Dict[str, Any], Optional[str]]:
+        """Execute a cloud command locally (Agent-side)."""
+        try:
+            if cmd.command_type == "REQUEST_START_RUN":
+                success, error = self.start(run_id=str(cmd.run_id) if cmd.run_id else None)
+                return (success, {"action": "started", "run_id": self._status.active_run_id}, error)
+            if cmd.command_type == "REQUEST_STOP_RUN":
+                stopped = self.stop(reason="cloud_requested")
+                return (stopped, {"action": "stopped"}, None if stopped else "Failed to stop")
+            if cmd.command_type == "REQUEST_PAUSE_RUN":
+                paused = self.pause()
+                return (paused, {"action": "paused"}, None if paused else "Failed to pause")
+            if cmd.command_type == "REQUEST_UPGRADE_ARTIFACT":
+                # Placeholder: artifact download/verification is Phase 9 (integrity) and runner integration.
+                self._log_event(TelemetryEventType.STATE_CHANGE, {"message": "Upgrade requested", "payload_ref": cmd.payload_ref})
+                return (True, {"action": "upgrade_acknowledged"}, None)
+            if cmd.command_type == "REQUEST_UPDATE_CONFIG":
+                # Placeholder: config blob retrieval + validation is handled by higher-level runner/config subsystems.
+                self._log_event(TelemetryEventType.STATE_CHANGE, {"message": "Config update requested", "payload_ref": cmd.payload_ref})
+                return (True, {"action": "config_update_acknowledged"}, None)
+            if cmd.command_type == "REQUEST_ROTATE_AGENT_SESSION":
+                return (True, {"action": "rotate_session_acknowledged"}, None)
+            if cmd.command_type == "REQUEST_EXPORT_LOGS":
+                return (True, {"action": "export_logs_acknowledged"}, None)
+            return (False, {}, f"Unknown command_type: {cmd.command_type}")
+        except Exception as e:
+            return (False, {}, str(e))
+
+    def decide_cloud_command_approval(
+        self,
+        command_id: str,
+        *,
+        approved: bool,
+        reason: str = "",
+        decided_by: str = "local_user",
+    ) -> bool:
+        """
+        Decide a pending cloud approval and submit it back to Cloud.
+
+        This is the local operator/CLI integration point.
+        """
+        if not self._cloud_client:
+            return False
+        req_id = self._pending_cloud_approval_by_command_id.get(command_id)
+        if not req_id:
+            return False
+
+        finalized = self._approval_manager.decide(
+            req_id,
+            approved=approved,
+            reason=reason,
+            decided_by=decided_by,
+        )
+        if finalized is None:
+            return False
+
+        try:
+            from uuid import UUID
+
+            self._cloud_client.submit_local_approval(
+                command_id=UUID(command_id),
+                approved=approved,
+                evidence_hash=f"sha256:{finalized.evidence_hash}" if finalized.evidence_hash else None,
+                diff_summary={
+                    "command_type": finalized.command_type,
+                    "diff_summary": finalized.diff_summary,
+                    "details": finalized.details,
+                },
+                reason=finalized.decision_reason or reason,
+            )
+            self._submitted_cloud_approvals.add(command_id)
+            del self._pending_cloud_approval_by_command_id[command_id]
+            return True
+        except Exception:
+            return False
 
     # ===== Status =====
 
@@ -882,6 +1122,11 @@ class AgentDaemon:
         """Cleanup on exit."""
         if self._state in (DaemonState.RUNNING, DaemonState.PAUSED):
             self.stop(reason="process_exit")
+        if self._cloud_client:
+            try:
+                self._cloud_client.close()
+            except Exception:
+                pass
 
     # ===== API =====
 
@@ -917,6 +1162,4 @@ class AgentDaemon:
             return self._time_checker.get_statistics()
         return {}
 
-
-# Type alias for import convenience
-from typing import Tuple
+# (No extra aliases)

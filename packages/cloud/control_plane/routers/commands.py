@@ -533,8 +533,29 @@ async def create_command(
                 detail=f"Command with idempotency key '{idem_key}' already exists",
             )
 
-        # Determine initial status
-        initial_status = CommandStatus.PENDING
+        # Determine effective change class + approval requirement (fail-closed).
+        # Design invariant: TRADING_IMPACTING requires local approval by default.
+        validator = CommandTypeValidator()
+        metadata = validator.get_metadata(request.command_type) or {}
+
+        effective_change_class = request.change_class
+        meta_change_class = metadata.get("change_class")
+        if meta_change_class:
+            try:
+                effective_change_class = ChangeClass(meta_change_class)
+            except Exception:
+                # If metadata is malformed, fail-closed to trading-impacting.
+                effective_change_class = ChangeClass.TRADING_IMPACTING
+
+        effective_requires_approval = bool(request.requires_approval)
+        if metadata.get("requires_approval_default", False):
+            effective_requires_approval = True
+        if effective_change_class == ChangeClass.TRADING_IMPACTING:
+            effective_requires_approval = True
+
+        initial_status = (
+            CommandStatus.PENDING_APPROVAL if effective_requires_approval else CommandStatus.PENDING
+        )
 
         command = Command(
             workspace_id=workspace_id,
@@ -544,8 +565,8 @@ async def create_command(
             run_id=request.run_id,
             command_type=request.command_type,
             payload_ref=request.payload_ref,
-            change_class=request.change_class.value,
-            requires_approval=request.requires_approval,
+            change_class=effective_change_class.value,
+            requires_approval=effective_requires_approval,
             status=initial_status.value,
             expires_at=request.expires_at,
         )

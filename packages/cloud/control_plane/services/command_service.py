@@ -263,6 +263,15 @@ class CommandService:
                 f"Agent {request.agent_id} not found or not enrolled"
             )
 
+        # Enforce invariant: TRADING_IMPACTING always requires local approval (Cloud cannot bypass).
+        requires_approval = bool(request.requires_approval)
+        if request.change_class == ChangeClass.TRADING_IMPACTING:
+            requires_approval = True
+
+        initial_status = (
+            CommandStatus.PENDING_APPROVAL.value if requires_approval else CommandStatus.PENDING.value
+        )
+
         # Create command
         command = Command(
             workspace_id=request.workspace_id,
@@ -273,8 +282,8 @@ class CommandService:
             command_type=request.command_type.upper(),
             payload_ref=request.payload_ref,
             change_class=request.change_class.value,
-            requires_approval=request.requires_approval,
-            status=CommandStatus.PENDING.value,
+            requires_approval=requires_approval,
+            status=initial_status,
             expires_at=request.expires_at,
         )
 
@@ -312,8 +321,12 @@ class CommandService:
         """
         now = datetime.now(timezone.utc)
 
-        # Get pending commands for this agent
-        # States: PENDING (if no approval needed), APPROVED (after approval), SENT (resend)
+        # Get pending commands for this agent.
+        # States:
+        # - PENDING (no approval needed)
+        # - PENDING_APPROVAL (awaiting local approval by agent)
+        # - APPROVED (approved by local)
+        # - SENT (re-delivery until ack)
         query = (
             select(Command)
             .where(
@@ -321,6 +334,7 @@ class CommandService:
                 Command.workspace_id == workspace_id,
                 Command.status.in_([
                     CommandStatus.PENDING.value,
+                    CommandStatus.PENDING_APPROVAL.value,
                     CommandStatus.APPROVED.value,
                     # SENT commands can be re-polled if not yet acknowledged
                     CommandStatus.SENT.value,
@@ -341,17 +355,10 @@ class CommandService:
         if has_more:
             commands = commands[:limit]
 
-        # Filter out commands that require approval but aren't approved yet
-        filtered_commands = []
-        for cmd in commands:
-            if cmd.requires_approval and cmd.status == CommandStatus.PENDING.value:
-                continue  # Skip - needs approval first
-            filtered_commands.append(cmd)
-
         return CommandPollResult(
-            commands=filtered_commands,
+            commands=commands,
             has_more=has_more,
-            poll_again_after_sec=5 if not filtered_commands else 60,
+            poll_again_after_sec=5 if not commands else 60,
         )
 
     async def get_pending_count(
@@ -378,6 +385,7 @@ class CommandService:
             Command.workspace_id == workspace_id,
             Command.status.in_([
                 CommandStatus.PENDING.value,
+                CommandStatus.PENDING_APPROVAL.value,
                 CommandStatus.APPROVED.value,
                 CommandStatus.SENT.value,
             ]),

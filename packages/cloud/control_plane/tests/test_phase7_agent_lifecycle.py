@@ -116,6 +116,7 @@ class TestAgentLifecycleModels:
         cmd_id = uuid4()
         command = PendingCommand(
             id=cmd_id,
+            status="pending",
             idempotency_key="test-key-123",
             command_type="REQUEST_START_RUN",
             payload_ref="sha256:abc123",

@@ -227,6 +227,8 @@ class ApprovalManager:
         # Generate diff summary
         if config_digest_old and config_digest_new:
             request.diff_summary = f"Config change: {config_digest_old[:8]}... -> {config_digest_new[:8]}..."
+        elif artifact_digest:
+            request.diff_summary = f"Artifact change: {artifact_digest[:16]}..."
 
         self._requests[request.request_id] = request
 
@@ -308,15 +310,56 @@ class ApprovalManager:
         if request.status != ApprovalStatus.PENDING:
             return False
 
+        from .evidence import compute_evidence_hash
+
         request.status = ApprovalStatus.DENIED
         request.decided_at = datetime.utcnow()
         request.decision_reason = reason
+        request.evidence_hash = compute_evidence_hash({
+            "request_id": str(request_id),
+            "command_type": request.command_type,
+            "config_digest_new": request.config_digest_new,
+            "artifact_digest": request.artifact_digest,
+            "approved": False,
+            "decided_by": decided_by,
+            "decided_at": request.decided_at.isoformat(),
+            "reason": reason,
+        })
 
         # Move to history
         self._history.append(request)
         del self._requests[request_id]
 
         return True
+
+    def decide(
+        self,
+        request_id: UUID,
+        *,
+        approved: bool,
+        reason: str = "",
+        decided_by: str = "local_user",
+    ) -> Optional[ApprovalRequest]:
+        """
+        Decide (approve/deny) and return the finalized request.
+
+        Returns None if not found or not actionable.
+        """
+        req = self._requests.get(request_id)
+        if req is None:
+            return None
+
+        ok = self.approve(request_id, reason=reason, decided_by=decided_by) if approved else self.deny(
+            request_id, reason=reason, decided_by=decided_by
+        )
+        if not ok:
+            return None
+
+        # Find the updated request in history (it is moved there on decision).
+        for item in reversed(self._history):
+            if item.request_id == request_id:
+                return item
+        return None
 
     def get_pending_requests(self) -> List[ApprovalRequest]:
         """Get all pending requests."""

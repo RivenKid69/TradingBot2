@@ -14,6 +14,7 @@ Key Features:
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -25,6 +26,7 @@ from packages.shared.contracts.intent import OrderIntent, IntentType, IntentSide
 from packages.agent.policy.firewall import PolicyFirewall, PolicyResult
 from packages.agent.policy.hard_caps import HardCapEnforcer
 from packages.agent.policy.risk_checker import RiskChecker, PortfolioState
+from packages.agent.reconciliation.journal import OrderJournal, JournalStatus
 
 
 class OrderStatus(str, Enum):
@@ -175,6 +177,7 @@ class LiveExecutionEngine:
         risk_checker: Optional[RiskChecker] = None,
         broker_submit: Optional[BrokerSubmitFn] = None,
         broker_name: str = "default",
+        order_journal: Optional[OrderJournal] = None,
     ):
         """
         Initialize execution engine.
@@ -195,12 +198,21 @@ class LiveExecutionEngine:
         # Order tracking
         self._orders: Dict[UUID, Order] = {}
         self._orders_by_client_id: Dict[str, Order] = {}
+        self._journal = order_journal or OrderJournal()
+        self._journal_entry_by_client_id: Dict[str, str] = {}
 
         # Portfolio state (should be updated from broker)
         self._portfolio = PortfolioState()
 
-        # Counters for idempotency
-        self._order_counter = 0
+    def _compute_client_order_id(self, intent: OrderIntent) -> str:
+        """
+        Compute a deterministic client_order_id.
+
+        Design goal (Phase 8 WI-AGENT-06): stable across retries/restarts.
+        """
+        raw = f"ccea|{self._broker_name}|{intent.strategy_id}|{intent.intent_id}"
+        digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+        return f"ccea_{digest}"
 
     def execute(
         self,
@@ -264,13 +276,49 @@ class LiveExecutionEngine:
         order = self._intent_to_order(intent, current_price)
 
         # 5. Check idempotency
-        if order.client_order_id in self._orders_by_client_id:
-            existing = self._orders_by_client_id[order.client_order_id]
-            return ExecutionResult(
-                success=True,
-                order=existing,
-                error_message="Duplicate order - returning existing",
-            )
+        if self._journal.is_duplicate(order.client_order_id):
+            existing = self._orders_by_client_id.get(order.client_order_id)
+            if existing is not None:
+                return ExecutionResult(
+                    success=True,
+                    order=existing,
+                    error_message="Duplicate order - returning existing",
+                )
+            entry = self._journal.get_by_client_id(order.client_order_id)
+            if entry:
+                recovered = Order(
+                    client_order_id=entry.client_order_id,
+                    intent_id=UUID(entry.intent_id),
+                    symbol=entry.symbol,
+                    side=entry.side,
+                    order_type=OrderType(entry.order_type),
+                    quantity=Decimal(entry.quantity),
+                    broker=self._broker_name,
+                    broker_order_id=entry.broker_order_id,
+                )
+                self._orders[recovered.order_id] = recovered
+                self._orders_by_client_id[recovered.client_order_id] = recovered
+                return ExecutionResult(
+                    success=True,
+                    order=recovered,
+                    error_message="Duplicate order - recovered from journal",
+                )
+            return ExecutionResult(success=True, error_message="Duplicate order - journal entry exists")
+
+        # 5b. Log before submission (durable)
+        entry = self._journal.log_order(
+            client_order_id=order.client_order_id,
+            intent_id=str(order.intent_id),
+            symbol=order.symbol,
+            side=order.side,
+            quantity=order.quantity,
+            order_type=order.order_type.value,
+            metadata={
+                "strategy_id": intent.strategy_id,
+                "intent_type": intent.intent_type.value,
+            },
+        )
+        self._journal_entry_by_client_id[order.client_order_id] = entry.entry_id
 
         # 6. Submit to broker
         if self._broker_submit:
@@ -279,9 +327,15 @@ class LiveExecutionEngine:
                 order.status = OrderStatus.SUBMITTED
                 order.submitted_at = datetime.utcnow()
                 order.broker_order_id = broker_id
+                self._journal.update_status(
+                    entry.entry_id,
+                    JournalStatus.SUBMITTED,
+                    broker_order_id=broker_id,
+                )
             else:
                 order.status = OrderStatus.ERROR
                 order.error_message = error
+                self._journal.update_status(entry.entry_id, JournalStatus.REJECTED)
                 return ExecutionResult(
                     success=False,
                     order=order,
@@ -311,9 +365,7 @@ class LiveExecutionEngine:
         current_price: Optional[Decimal],
     ) -> Order:
         """Convert OrderIntent to Order."""
-        # Generate deterministic client order ID
-        self._order_counter += 1
-        client_order_id = f"{intent.strategy_id}_{intent.intent_id}_{self._order_counter}"
+        client_order_id = self._compute_client_order_id(intent)
 
         # Determine side
         side = "buy" if intent.side == IntentSide.LONG else "sell"
@@ -387,6 +439,17 @@ class LiveExecutionEngine:
 
         if status == OrderStatus.FILLED:
             order.filled_at = datetime.utcnow()
+
+        entry_id = self._journal_entry_by_client_id.get(client_order_id)
+        if entry_id:
+            if status in (OrderStatus.SUBMITTED, OrderStatus.ACCEPTED, OrderStatus.PARTIALLY_FILLED):
+                self._journal.update_status(entry_id, JournalStatus.SUBMITTED, broker_order_id=broker_order_id)
+            elif status in (OrderStatus.FILLED,):
+                self._journal.update_status(entry_id, JournalStatus.CONFIRMED, broker_order_id=broker_order_id)
+            elif status in (OrderStatus.CANCELLED, OrderStatus.EXPIRED):
+                self._journal.update_status(entry_id, JournalStatus.CANCELLED, broker_order_id=broker_order_id)
+            elif status in (OrderStatus.REJECTED, OrderStatus.ERROR):
+                self._journal.update_status(entry_id, JournalStatus.REJECTED, broker_order_id=broker_order_id)
 
         return order
 

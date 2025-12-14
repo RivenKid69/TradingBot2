@@ -420,17 +420,17 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(enrolled_agent.id),
-                "command_type": "START",
-                "payload_ref": "x" * 64,
-                "change_class": "operational",
+                "command_type": "REQUEST_START_RUN",
+                "payload_ref": "sha256:" + "x" * 64,
+                "change_class": "trading_impacting",
             },
         )
 
         assert response.status_code == 201
         data = response.json()
         assert data["agent_id"] == str(enrolled_agent.id)
-        assert data["command_type"] == "START"
-        assert data["status"] == "pending"
+        assert data["command_type"] == "REQUEST_START_RUN"
+        assert data["status"] == "pending_approval"
         assert data["idempotency_key"] is not None
 
     async def test_create_command_with_idempotency_key(
@@ -447,8 +447,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(enrolled_agent.id),
-                "command_type": "STOP",
-                "payload_ref": "y" * 64,
+                "command_type": "REQUEST_STOP_RUN",
+                "payload_ref": "sha256:" + "y" * 64,
             },
         )
 
@@ -470,8 +470,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(enrolled_agent.id),
-                "command_type": "START",
-                "payload_ref": "z" * 64,
+                "command_type": "REQUEST_STOP_RUN",
+                "payload_ref": "sha256:" + "z" * 64,
             },
         )
 
@@ -491,8 +491,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(unenrolled_agent.id),
-                "command_type": "START",
-                "payload_ref": "z" * 64,
+                "command_type": "REQUEST_STOP_RUN",
+                "payload_ref": "sha256:" + "z" * 64,
             },
         )
 
@@ -511,8 +511,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(uuid4()),
-                "command_type": "START",
-                "payload_ref": "z" * 64,
+                "command_type": "REQUEST_STOP_RUN",
+                "payload_ref": "sha256:" + "z" * 64,
             },
         )
 
@@ -534,8 +534,9 @@ class TestCreateCommand:
             json={
                 "agent_id": str(enrolled_agent.id),
                 "deployment_id": str(sample_deployment.id),
-                "command_type": "RECONFIGURE",
-                "payload_ref": "d" * 64,
+                "command_type": "REQUEST_UPDATE_CONFIG",
+                "payload_ref": "sha256:" + "d" * 64,
+                "change_class": "trading_impacting",
             },
         )
 
@@ -558,8 +559,8 @@ class TestCreateCommand:
             json={
                 "agent_id": str(enrolled_agent.id),
                 "run_id": str(sample_run.id),
-                "command_type": "PAUSE",
-                "payload_ref": "r" * 64,
+                "command_type": "REQUEST_PAUSE_RUN",
+                "payload_ref": "sha256:" + "r" * 64,
             },
         )
 
@@ -580,8 +581,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(enrolled_agent.id),
-                "command_type": "CRITICAL_UPDATE",
-                "payload_ref": "a" * 64,
+                "command_type": "REQUEST_ROTATE_AGENT_SESSION",
+                "payload_ref": "sha256:" + "a" * 64,
                 "change_class": "security_sensitive",
                 "requires_approval": True,
             },
@@ -604,8 +605,8 @@ class TestCreateCommand:
             headers=superuser_headers,
             json={
                 "agent_id": str(enrolled_agent.id),
-                "command_type": "START",
-                "payload_ref": "z" * 64,
+                "command_type": "REQUEST_STOP_RUN",
+                "payload_ref": "sha256:" + "z" * 64,
             },
         )
 
