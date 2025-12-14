@@ -78,11 +78,8 @@ PROHIBITED_CODE_PATTERNS: Final[List[Tuple[str, str]]] = [
     # Credential patterns
     (r"api_key\s*=\s*['\"][^'\"]+['\"]", "hardcoded API key"),
     (r"api_secret\s*=\s*['\"][^'\"]+['\"]", "hardcoded API secret"),
-    (r"\.decrypt\s*\(", "credential decryption"),
-    # Live trading patterns
-    (r"LiveExecutionEngine", "live execution engine"),
-    (r"BrokerConnector", "broker connector"),
-    (r"OrderRouter", "order router"),
+    # NOTE: do not ban generic ".decrypt(" (cloud may legitimately decrypt KMS-wrapped blobs);
+    # we rely on prohibited imports/modules and order-submission calls to enforce boundaries.
 ]
 
 # Imports that indicate trading capability

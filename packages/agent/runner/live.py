@@ -30,6 +30,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
@@ -55,6 +56,13 @@ from packages.agent.execution.engine import (
     Order,
     OrderStatus,
     BrokerSubmitFn,
+)
+from packages.agent.reconciliation.journal import OrderJournal
+from packages.agent.reconciliation.reconciler import (
+    PositionReconciler,
+    MismatchAction,
+    FetchPositionsFn,
+    FetchOrderStatusFn,
 )
 from packages.agent.policy.firewall import PolicyFirewall, PolicyConfig, PolicyResult
 from packages.agent.policy.hard_caps import HardCapEnforcer, HardCaps, HardCapViolation
@@ -82,6 +90,11 @@ class LiveRunnerConfig(RunnerConfig):
     # Broker settings
     broker_name: str = "default"
     broker_submit_fn: Optional[BrokerSubmitFn] = None
+    fetch_broker_positions_fn: Optional[FetchPositionsFn] = None
+    fetch_broker_order_status_fn: Optional[FetchOrderStatusFn] = None
+
+    # Persistent order journal
+    order_journal_path: Optional[Path] = None
 
     # Kill switch settings
     enable_kill_switch: bool = True
@@ -109,6 +122,7 @@ class LiveRunnerConfig(RunnerConfig):
             "local_policy": self.local_policy.to_dict() if self.local_policy else None,
             "hard_caps": self.hard_caps.to_dict() if self.hard_caps else None,
             "broker_name": self.broker_name,
+            "order_journal_path": str(self.order_journal_path) if self.order_journal_path else None,
             "enable_kill_switch": self.enable_kill_switch,
             "enable_reconciliation": self.enable_reconciliation,
             "require_local_approval": self.require_local_approval,
@@ -173,6 +187,9 @@ class LiveRunner(BaseRunner):
         )
         self._risk_checker = RiskChecker()
 
+        # Persistent order journal shared with execution + reconciliation
+        self._order_journal = OrderJournal(db_path=self._live_config.order_journal_path)
+
         # Initialize execution engine
         self._execution_engine = LiveExecutionEngine(
             policy_firewall=self._policy_firewall,
@@ -180,6 +197,7 @@ class LiveRunner(BaseRunner):
             risk_checker=self._risk_checker,
             broker_submit=self._live_config.broker_submit_fn,
             broker_name=self._live_config.broker_name,
+            order_journal=self._order_journal,
         )
 
         # Strategy
@@ -191,6 +209,16 @@ class LiveRunner(BaseRunner):
             buying_power=self._config.initial_capital,
         )
 
+        # Reconciliation (safe-halt on uncertainty)
+        self._reconciler = PositionReconciler(
+            local_positions=dict(self._portfolio.positions),
+            fetch_broker_positions=self._live_config.fetch_broker_positions_fn,
+            journal=self._order_journal,
+            fetch_broker_order_status=self._live_config.fetch_broker_order_status_fn,
+            mismatch_action=MismatchAction.HALT,
+        )
+        self._last_reconcile_ts: Optional[float] = None
+
         # Tracking
         self._orders: List[Order] = []
         self._tick_count = 0
@@ -199,6 +227,39 @@ class LiveRunner(BaseRunner):
 
         # Prices
         self._prices: Dict[str, Decimal] = {}
+
+    def _maybe_reconcile(self, now_ts: float, force: bool = False) -> None:
+        """
+        Run reconciliation on start/periodic.
+
+        Safety property (Phase 9 / WI-AGENT-05): on any uncertainty we safe-halt.
+        """
+        if not self._live_config.enable_reconciliation:
+            return
+
+        if not force and self._last_reconcile_ts is not None:
+            interval = max(0, int(self._live_config.reconciliation_interval_seconds))
+            if interval > 0 and (now_ts - self._last_reconcile_ts) < interval:
+                return
+
+        # Keep local positions current
+        self._reconciler.update_local_positions(dict(self._portfolio.positions))
+
+        # Position reconciliation is mandatory only for LIVE runs; for PAPER runs it is best-effort.
+        if self._config.mode == ExecutionMode.LIVE or self._live_config.fetch_broker_positions_fn is not None:
+            pos_result = self._reconciler.reconcile()
+            if not pos_result.success or pos_result.halted:
+                self._trigger_kill_switch(f"Reconciliation failed: {pos_result.halt_reason}")
+                return
+
+        # Order reconciliation is mandatory only for LIVE runs; for PAPER runs it is best-effort.
+        if self._config.mode == ExecutionMode.LIVE or self._live_config.fetch_broker_order_status_fn is not None:
+            order_result = self._reconciler.reconcile_orders()
+            if not order_result.success or order_result.halted:
+                self._trigger_kill_switch(f"Reconciliation failed: {order_result.halt_reason}")
+                return
+
+        self._last_reconcile_ts = now_ts
 
     def initialize(self, strategy: StrategyContract) -> bool:
         """
@@ -257,6 +318,13 @@ class LiveRunner(BaseRunner):
 
         if self._strategy is None:
             return StrategyResult()
+
+        # Periodic reconciliation before any strategy execution/trading decisions
+        self._maybe_reconcile(time.time(), force=False)
+        if self._kill_switch_triggered:
+            return StrategyResult(
+                warnings=[f"Kill switch triggered: {self._kill_switch_reason}"]
+            )
 
         self._tick_count += 1
 
@@ -390,6 +458,12 @@ class LiveRunner(BaseRunner):
             self._result.errors.append(f"Cannot start: kill switch triggered ({self._kill_switch_reason})")
             return False
 
+        # Reconcile on start (safe-halt on uncertainty)
+        self._maybe_reconcile(time.time(), force=True)
+        if self._kill_switch_triggered:
+            self._result.errors.append(f"Cannot start: kill switch triggered ({self._kill_switch_reason})")
+            return False
+
         self._state = RunnerState.RUNNING
         self._result.start_time = datetime.utcnow()
         return True
@@ -488,6 +562,7 @@ class LiveRunner(BaseRunner):
         """
         self._portfolio = portfolio
         self._execution_engine.update_portfolio(portfolio)
+        self._reconciler.update_local_positions(dict(self._portfolio.positions))
 
         # Check for kill switch conditions
         if self._live_config.enable_kill_switch:

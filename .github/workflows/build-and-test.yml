@@ -153,6 +153,19 @@ jobs:
       - name: Verify build hash report
         run: make verify-hash
 
+      # ========================================================================
+      # Phase 9 (P1): zone-separated artifacts + post-build cloud artifact scan
+      # ========================================================================
+      - name: Build Cloud/Agent distributions (WI-BUILD-01)
+        env:
+          PYTHONUTF8: "1"
+        run: make dist-all
+
+      - name: Verify Cloud artifact contents (WI-BUILD-01)
+        env:
+          PYTHONUTF8: "1"
+        run: make artifact-check-cloud
+
       - name: Run test suite
         run: make test
 

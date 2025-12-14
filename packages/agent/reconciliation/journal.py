@@ -326,6 +326,35 @@ class OrderJournal:
         )
         return [self._row_to_entry(row) for row in cursor.fetchall()]
 
+    def get_orders_with_status(self, statuses: List[JournalStatus]) -> List[JournalEntry]:
+        """Get all orders matching any of the provided statuses."""
+        if not statuses:
+            return []
+
+        placeholders = ", ".join(["?"] * len(statuses))
+        values = tuple(s.value for s in statuses)
+        cursor = self._conn.execute(
+            f"""
+            SELECT * FROM orders
+            WHERE status IN ({placeholders})
+            ORDER BY created_at ASC
+            """,
+            values,
+        )
+        return [self._row_to_entry(row) for row in cursor.fetchall()]
+
+    def get_unresolved_orders(self) -> List[JournalEntry]:
+        """
+        Get orders that are unresolved/uncertain and require reconciliation.
+
+        Unresolved statuses:
+        - PENDING / SUBMITTED: potentially inflight orders (restart uncertainty)
+        - UNKNOWN: broker state unknown (must safe-halt until resolved)
+        """
+        return self.get_orders_with_status(
+            [JournalStatus.PENDING, JournalStatus.SUBMITTED, JournalStatus.UNKNOWN]
+        )
+
     def get_recent_orders(self, limit: int = 100) -> List[JournalEntry]:
         """Get recent orders."""
         cursor = self._conn.execute(

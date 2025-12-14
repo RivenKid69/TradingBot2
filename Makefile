@@ -40,6 +40,7 @@ DIST_DIR := dist
 HASH_REPORT := build_hash_report.json
 CLEAN_SCRIPT := tools/clean_artifacts.py
 VERIFY_SCRIPT := tools/verify_hash_report.py
+CCEA_VERSION := $(shell $(PYTHON) -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])")
 
 # Colors (for Unix-like systems)
 ifndef NO_COLOR
@@ -57,6 +58,7 @@ endif
 .PHONY: all build clean check-clean rebuild test verify-hash install-build-deps help
 .PHONY: format lint no-trade-mask-sample check
 .PHONY: lock-cpu lock-gpu lockfiles
+.PHONY: dist-cloud dist-agent dist-all artifact-check-cloud
 
 # Default target
 all: build
@@ -119,6 +121,26 @@ test: build
 	@echo "$(GREEN)Running tests...$(NC)"
 	$(PYTHON) -m pytest tests/ -v --tb=short
 	@echo "$(GREEN)[OK] Tests complete.$(NC)"
+
+# ============================================================================
+# Phase 9 (P1) - Zone-separated distributions + artifact content checks
+# ============================================================================
+
+dist-cloud:
+	@echo "$(GREEN)Building Cloud distribution...$(NC)"
+	$(PYTHON) tools/build_zone_distributions.py --cloud --out $(DIST_DIR)
+
+dist-agent:
+	@echo "$(GREEN)Building Agent distribution...$(NC)"
+	$(PYTHON) tools/build_zone_distributions.py --agent --out $(DIST_DIR)
+
+dist-all:
+	@echo "$(GREEN)Building Cloud + Agent distributions...$(NC)"
+	$(PYTHON) tools/build_zone_distributions.py --cloud --agent --out $(DIST_DIR)
+
+artifact-check-cloud: dist-cloud
+	@echo "$(GREEN)Scanning Cloud artifact contents...$(NC)"
+	$(PYTHON) -m ccea.guardrails.build_artifact_check --artifact $(DIST_DIR)/ccea_cloud-$(CCEA_VERSION)-py3-none-any.whl --fail-on-violation
 
 # Verify hash report exists
 verify-hash:

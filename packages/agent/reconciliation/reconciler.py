@@ -92,6 +92,7 @@ class ReconciliationResult:
 
 # Type for position fetch function
 FetchPositionsFn = Callable[[], Dict[str, Decimal]]
+FetchOrderStatusFn = Callable[[JournalEntry], Optional[JournalStatus]]
 
 
 class PositionReconciler:
@@ -116,6 +117,7 @@ class PositionReconciler:
         local_positions: Optional[Dict[str, Decimal]] = None,
         fetch_broker_positions: Optional[FetchPositionsFn] = None,
         journal: Optional[OrderJournal] = None,
+        fetch_broker_order_status: Optional[FetchOrderStatusFn] = None,
         mismatch_action: MismatchAction = MismatchAction.HALT,
         tolerance_pct: Decimal = Decimal("0.001"),  # 0.1% tolerance
     ):
@@ -132,6 +134,7 @@ class PositionReconciler:
         self._local_positions = local_positions or {}
         self._fetch_broker_positions = fetch_broker_positions
         self._journal = journal
+        self._fetch_broker_order_status = fetch_broker_order_status
         self._mismatch_action = mismatch_action
         self._tolerance_pct = tolerance_pct
 
@@ -144,9 +147,10 @@ class PositionReconciler:
         """
         result = ReconciliationResult()
 
-        # Cannot reconcile without broker connection
+        # Cannot reconcile without broker connection -> safe-halt on uncertainty
         if not self._fetch_broker_positions:
             result.success = False
+            result.halted = True
             result.halt_reason = "No broker connection for reconciliation"
             return result
 
@@ -155,6 +159,7 @@ class PositionReconciler:
             broker_positions = self._fetch_broker_positions()
         except Exception as e:
             result.success = False
+            result.halted = True
             result.halt_reason = f"Failed to fetch broker positions: {e}"
             return result
 
@@ -203,15 +208,50 @@ class PositionReconciler:
         if not self._journal:
             return result
 
-        # Get pending orders from journal
-        pending = self._journal.get_pending_orders()
+        unresolved = self._journal.get_unresolved_orders()
+        if not unresolved:
+            return result
 
-        for entry in pending:
-            # Here we would check with broker if order exists
-            # For now, mark as unknown if too old
-            age = datetime.utcnow() - entry.created_at
-            if age.total_seconds() > 3600:  # 1 hour
+        # If we have unresolved orders but no broker reconciliation capability,
+        # we must safe-halt (restart uncertainty).
+        if not self._fetch_broker_order_status:
+            result.success = False
+            result.halted = True
+            sample_ids = ", ".join(e.client_order_id for e in unresolved[:5])
+            more = "" if len(unresolved) <= 5 else f" (+{len(unresolved) - 5} more)"
+            result.halt_reason = f"Unresolved orders present; cannot reconcile: {sample_ids}{more}"
+            return result
+
+        for entry in unresolved:
+            try:
+                broker_status = self._fetch_broker_order_status(entry)
+            except Exception as e:
+                # Exception while reconciling is uncertainty -> safe-halt
+                result.success = False
+                result.halted = True
+                result.halt_reason = f"Order reconciliation failed for {entry.client_order_id}: {e}"
+                return result
+
+            if broker_status is None:
                 self._journal.update_status(entry.entry_id, JournalStatus.UNKNOWN)
+                result.success = False
+                result.halted = True
+                result.halt_reason = f"Order status unknown at broker for {entry.client_order_id}"
+                return result
+
+            if broker_status != entry.status:
+                self._journal.update_status(entry.entry_id, broker_status, broker_order_id=entry.broker_order_id)
+                result.resolved.append(entry.client_order_id)
+
+        # After reconciliation, if any unresolved remain, halt (still uncertain).
+        remaining = self._journal.get_unresolved_orders()
+        if remaining:
+            result.success = False
+            result.halted = True
+            sample_ids = ", ".join(e.client_order_id for e in remaining[:5])
+            more = "" if len(remaining) <= 5 else f" (+{len(remaining) - 5} more)"
+            result.halt_reason = f"Unresolved orders remain after reconciliation: {sample_ids}{more}"
+            return result
 
         return result
 

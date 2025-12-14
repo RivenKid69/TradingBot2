@@ -271,7 +271,7 @@ class PreflightChecker:
             (PreflightCheckType.SCHEMA_VERSION, lambda: self._check_schema_version(manifest)),
             (PreflightCheckType.MANIFEST_VALID, lambda: self._check_manifest(manifest)),
             (PreflightCheckType.DIGEST_VERIFICATION, lambda: self._check_digest(artifact_path, artifact_digest)),
-            (PreflightCheckType.SIGNATURE_VERIFICATION, lambda: self._check_signature(artifact_path, signature)),
+            (PreflightCheckType.SIGNATURE_VERIFICATION, lambda: self._check_signature(artifact_path, manifest, signature)),
             (PreflightCheckType.POLICY_FIREWALL, lambda: self._check_policy_firewall(manifest)),
             (PreflightCheckType.HARD_CAPS, lambda: self._check_hard_caps(manifest)),
             (PreflightCheckType.BROKER_CONNECTIVITY, lambda: self._check_broker_connectivity(broker_name)),
@@ -612,32 +612,62 @@ class PreflightChecker:
     def _check_signature(
         self,
         artifact_path: Optional[Path],
+        manifest: Optional[Dict[str, Any]],
         signature: Optional[bytes],
     ) -> PreflightCheck:
-        """Verify artifact signature."""
-        if artifact_path is None or signature is None:
+        """Verify artifact signature (fail-closed when artifact is present)."""
+        if artifact_path is None:
             return PreflightCheck(
                 check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
                 result=PreflightCheckResult.SKIPPED,
-                message="Signature verification skipped - no artifact or signature provided",
+                message="Signature verification skipped - no artifact provided",
                 required=False,
             )
 
-        # In production, this would verify against a trust root
-        # For now, just check signature is non-empty
-        if len(signature) == 0:
+        if not artifact_path.exists():
             return PreflightCheck(
                 check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
                 result=PreflightCheckResult.FAILED,
-                message="Empty signature",
+                message=f"Artifact not found for signature verification: {artifact_path}",
+                required=True,
+            )
+
+        # Prefer an explicit signature argument (e.g., detached signature bytes).
+        if signature is not None:
+            if len(signature) == 0:
+                return PreflightCheck(
+                    check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                    result=PreflightCheckResult.FAILED,
+                    message="Empty signature",
+                    required=True,
+                )
+            return PreflightCheck(
+                check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                result=PreflightCheckResult.PASSED,
+                message="Signature present (verification requires trust root)",
+                details={"signature_length": len(signature)},
+                required=True,
+            )
+
+        # Otherwise, require an embedded signature in the manifest.
+        sig_obj = (manifest or {}).get("signature") if isinstance(manifest, dict) else None
+        sig_value = sig_obj.get("signature_value") if isinstance(sig_obj, dict) else None
+        sig_alg = sig_obj.get("algorithm") if isinstance(sig_obj, dict) else None
+
+        if not sig_value or not isinstance(sig_value, str):
+            return PreflightCheck(
+                check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                result=PreflightCheckResult.FAILED,
+                message="Missing artifact signature (no detached signature provided and manifest.signature.signature_value missing)",
                 required=True,
             )
 
         return PreflightCheck(
             check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
             result=PreflightCheckResult.PASSED,
-            message="Signature present (verification requires trust root)",
-            details={"signature_length": len(signature)},
+            message="Embedded signature present in manifest (verification requires trust root)",
+            details={"algorithm": sig_alg},
+            required=True,
         )
 
     def _check_policy_firewall(self, manifest: Optional[Dict[str, Any]]) -> PreflightCheck:
