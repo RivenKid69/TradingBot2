@@ -139,6 +139,46 @@ api = [
     "uvicorn[standard]>=0.27.0,<1.0.0",
 ]
 
+# CCEA Agent dependencies (local execution)
+# Reference: WI-DEPS-01 - Make required runtime deps explicit and reproducible
+ccea-agent = [
+    # Cryptography for vault encryption (AES-256-GCM) and signing (Ed25519)
+    # Required by: packages/agent/vault/local_vault.py, ccea/crypto/keys.py
+    # Version: 42.x is stable, well-audited release
+    # Security: NIST-approved algorithms, FIPS-capable
+    "cryptography>=42.0.0,<44.0.0",
+]
+
+# CCEA Cloud Control Plane dependencies
+# Reference: WI-DEPS-01 - Make required runtime deps explicit and reproducible
+ccea-cloud = [
+    # Async PostgreSQL driver for SQLAlchemy
+    # Required by: packages/cloud/control_plane/database.py (postgresql+asyncpg://)
+    # Performance: Fastest async PostgreSQL driver for Python
+    "asyncpg>=0.29.0,<1.0.0",
+
+    # JWT token handling
+    # Required by: packages/cloud/control_plane/dependencies.py
+    # Security: RFC 7519 compliant
+    "PyJWT>=2.8.0,<3.0.0",
+
+    # Password hashing (Argon2id - OWASP recommended)
+    # Required by: WI-AUTH-01 - Production-grade auth
+    # Security: Winner of Password Hashing Competition, OWASP recommended
+    # Reference: NIST SP 800-63B
+    "argon2-cffi>=23.1.0,<24.0.0",
+
+    # FastAPI and SQLAlchemy for cloud control plane
+    "fastapi>=0.109.0,<1.0.0",
+    "uvicorn[standard]>=0.27.0,<1.0.0",
+    "sqlalchemy[asyncio]>=2.0.0,<3.0.0",
+]
+
+# Full CCEA stack (agent + cloud)
+ccea = [
+    "ai-quant-platform[ccea-agent,ccea-cloud]",
+]
+
 # Visualization (optional)
 viz = [
     "matplotlib>=3.8.0,<4.0.0",
@@ -189,12 +229,12 @@ build = [
 
 # Full installation (CPU)
 full-cpu = [
-    "ai-quant-platform[cpu,exchanges,api,viz,dev]",
+    "ai-quant-platform[cpu,exchanges,api,viz,dev,ccea]",
 ]
 
 # Full installation (GPU)
 full-gpu = [
-    "ai-quant-platform[gpu,exchanges,api,viz,dev]",
+    "ai-quant-platform[gpu,exchanges,api,viz,dev,ccea]",
 ]
 
 # Alias for backwards compatibility

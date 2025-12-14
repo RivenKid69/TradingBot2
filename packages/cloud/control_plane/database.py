@@ -26,10 +26,43 @@ from sqlalchemy.pool import NullPool, QueuePool
 
 
 # Environment-based configuration
-DATABASE_URL = os.getenv(
-    "CCEA_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/ccea_control_plane",
-)
+# WI-DEPS-01: For dev/test, default to SQLite to avoid requiring PostgreSQL.
+# Production MUST set CCEA_DATABASE_URL to a real PostgreSQL connection.
+#
+# Valid URL formats:
+#   - SQLite (dev/test): sqlite+aiosqlite:///./ccea_control_plane.db
+#   - PostgreSQL (prod): postgresql+asyncpg://user:pass@host:5432/ccea_control_plane
+#
+# NOTE: asyncpg is required for PostgreSQL. Install with: pip install asyncpg
+# NOTE: aiosqlite is required for SQLite async. Install with: pip install aiosqlite
+_DEFAULT_DATABASE_URL = "sqlite+aiosqlite:///./ccea_control_plane.db"
+_PROD_DATABASE_URL_EXAMPLE = "postgresql+asyncpg://postgres:postgres@localhost:5432/ccea_control_plane"
+
+DATABASE_URL = os.getenv("CCEA_DATABASE_URL", _DEFAULT_DATABASE_URL)
+
+# Validate database URL at import time
+def _validate_database_url(url: str) -> None:
+    """Validate database URL and check for required drivers."""
+    if "asyncpg" in url:
+        try:
+            import asyncpg  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "asyncpg is required for PostgreSQL async connections. "
+                "Install with: pip install asyncpg\n"
+                f"Or use SQLite for dev/test: CCEA_DATABASE_URL={_DEFAULT_DATABASE_URL}"
+            ) from e
+    elif "aiosqlite" in url:
+        try:
+            import aiosqlite  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "aiosqlite is required for SQLite async connections. "
+                "Install with: pip install aiosqlite"
+            ) from e
+
+# Validate on import (fail fast)
+_validate_database_url(DATABASE_URL)
 
 # Connection pool settings
 POOL_SIZE = int(os.getenv("CCEA_DB_POOL_SIZE", "10"))
@@ -64,21 +97,44 @@ def create_engine(
 
     Returns:
         AsyncEngine instance
+
+    Note:
+        - For SQLite, connection pooling is disabled (StaticPool used instead)
+        - For PostgreSQL, QueuePool is used in production, NullPool in test mode
     """
     db_url = url or DATABASE_URL
 
-    pool_class = NullPool if test_mode else QueuePool
+    # Validate the URL before creating engine
+    _validate_database_url(db_url)
 
-    engine = create_async_engine(
-        db_url,
-        poolclass=pool_class,
-        pool_size=pool_size if not test_mode else None,
-        max_overflow=max_overflow if not test_mode else None,
-        pool_timeout=pool_timeout if not test_mode else None,
-        pool_recycle=pool_recycle if not test_mode else None,
-        echo=echo,
-        future=True,
-    )
+    # SQLite requires special handling - no connection pooling
+    is_sqlite = db_url.startswith("sqlite")
+
+    if is_sqlite:
+        # SQLite: Use StaticPool for single-connection (thread-safe for async)
+        from sqlalchemy.pool import StaticPool
+
+        engine = create_async_engine(
+            db_url,
+            poolclass=StaticPool,
+            connect_args={"check_same_thread": False},
+            echo=echo,
+            future=True,
+        )
+    else:
+        # PostgreSQL: Use connection pooling
+        pool_class = NullPool if test_mode else QueuePool
+
+        engine = create_async_engine(
+            db_url,
+            poolclass=pool_class,
+            pool_size=pool_size if not test_mode else None,
+            max_overflow=max_overflow if not test_mode else None,
+            pool_timeout=pool_timeout if not test_mode else None,
+            pool_recycle=pool_recycle if not test_mode else None,
+            echo=echo,
+            future=True,
+        )
 
     return engine
 

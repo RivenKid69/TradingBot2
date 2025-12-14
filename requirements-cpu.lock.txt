@@ -144,6 +144,33 @@ greenlet==3.1.1
 Mako==1.3.6
 
 # -----------------------------------------------------------------------------
+# CCEA Agent Dependencies (WI-DEPS-01)
+# Reference: packages/agent/vault/local_vault.py, ccea/crypto/keys.py
+# -----------------------------------------------------------------------------
+# Cryptography for vault encryption (AES-256-GCM) and signing (Ed25519)
+# Version 42.x: stable, NIST-approved algorithms, FIPS-capable
+cryptography==42.0.8
+cffi==1.17.1
+pycparser==2.22
+
+# -----------------------------------------------------------------------------
+# CCEA Cloud Control Plane Dependencies (WI-DEPS-01)
+# Reference: packages/cloud/control_plane/database.py, dependencies.py
+# -----------------------------------------------------------------------------
+# Async PostgreSQL driver (fastest for asyncio)
+asyncpg==0.29.0
+
+# JWT token handling (RFC 7519 compliant)
+PyJWT==2.9.0
+
+# Password hashing - Argon2id (OWASP recommended, NIST SP 800-63B)
+argon2-cffi==23.1.0
+argon2-cffi-bindings==21.2.0
+
+# SQLite async for dev/test (no PostgreSQL required)
+aiosqlite==0.20.0
+
+# -----------------------------------------------------------------------------
 # Windows-specific
 # -----------------------------------------------------------------------------
 colorama==0.4.6; sys_platform == "win32"
