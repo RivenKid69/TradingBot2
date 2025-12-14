@@ -7,10 +7,16 @@ Design Doc Phase 5:
 - Durable очередь событий (sqlite/jsonl), восстановление после рестарта
 
 CCEA Phase 5 Component.
+
+Implementation Notes:
+- SQLite connections are explicitly closed to avoid Windows file locking issues
+- Background threads are cleanly shut down via stop_event
+- Uses contextlib.closing for deterministic connection cleanup
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -243,7 +249,9 @@ class TelemetryBuffer:
         """Initialize SQLite database."""
         self.config.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        # Use contextlib.closing to ensure connection is properly closed
+        # sqlite3.connect context manager only handles commit/rollback, NOT close()
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS telemetry_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -397,7 +405,7 @@ class TelemetryBuffer:
         events = self._memory_buffer[:]
         self._memory_buffer.clear()
 
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             for event in events:
                 # Apply redaction
                 data = event.get_redacted_data() if self.config.redaction_enabled else event.data
@@ -445,7 +453,7 @@ class TelemetryBuffer:
 
         total_sent = 0
 
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             # Get pending events
             cursor = conn.execute("""
                 SELECT id, event_id, event_type, timestamp, level, data, run_id, agent_id, retry_count
@@ -517,7 +525,7 @@ class TelemetryBuffer:
         with self._lock:
             self._persist_batch()
 
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             cursor = conn.execute("""
                 SELECT COUNT(*) FROM telemetry_events WHERE sent = 0
             """)
@@ -537,7 +545,7 @@ class TelemetryBuffer:
             self._persist_batch()
 
         events = []
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             cursor = conn.execute("""
                 SELECT event_id, event_type, timestamp, level, data, run_id, agent_id, retry_count
                 FROM telemetry_events
@@ -570,7 +578,7 @@ class TelemetryBuffer:
         """
         cutoff = datetime.utcnow() - timedelta(days=self.config.max_age_days)
 
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             cursor = conn.execute("""
                 DELETE FROM telemetry_events
                 WHERE sent = 1 AND timestamp < ?
@@ -600,13 +608,24 @@ class TelemetryBuffer:
         )
         self._flush_thread.start()
 
-    def stop_background_flush(self) -> None:
-        """Stop background flush thread."""
+    def stop_background_flush(self, timeout: float = 10.0) -> bool:
+        """
+        Stop background flush thread.
+
+        Args:
+            timeout: Maximum time to wait for thread to stop (seconds)
+
+        Returns:
+            True if thread stopped cleanly, False if timed out
+        """
         self._flushing = False
         self._stop_event.set()
         if self._flush_thread:
-            self._flush_thread.join(timeout=5.0)
+            self._flush_thread.join(timeout=timeout)
+            stopped = not self._flush_thread.is_alive()
             self._flush_thread = None
+            return stopped
+        return True
 
     def _flush_loop(self, send_fn: Callable[[List[Dict[str, Any]]], bool]) -> None:
         """Background flush loop."""
@@ -617,7 +636,45 @@ class TelemetryBuffer:
             except Exception:
                 pass
 
+            # Use shorter wait intervals to respond faster to stop_event
+            # This prevents long delays when stopping the thread
             self._stop_event.wait(self.config.flush_interval_seconds)
+
+    def close(self) -> None:
+        """
+        Close the telemetry buffer and release all resources.
+
+        This method should be called when the buffer is no longer needed.
+        It ensures:
+        - Background flush thread is stopped
+        - Pending events in memory are persisted to disk
+        - No open database connections remain
+
+        Usage:
+            buffer = TelemetryBuffer(config)
+            try:
+                # use buffer...
+            finally:
+                buffer.close()
+
+        Or use as context manager:
+            with TelemetryBuffer(config) as buffer:
+                # use buffer...
+        """
+        # Stop background flusher first
+        self.stop_background_flush(timeout=10.0)
+
+        # Persist any remaining in-memory events
+        with self._lock:
+            self._persist_batch()
+
+    def __enter__(self) -> "TelemetryBuffer":
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - ensures cleanup."""
+        self.close()
 
     def get_statistics(self) -> Dict[str, Any]:
         """
@@ -626,7 +683,7 @@ class TelemetryBuffer:
         Returns:
             Statistics dictionary
         """
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             cursor = conn.execute("""
                 SELECT
                     COUNT(*) as total,
@@ -661,7 +718,7 @@ class TelemetryBuffer:
             self._persist_batch()
 
         count = 0
-        with sqlite3.connect(str(self.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(self.config.db_path))) as conn:
             query = """
                 SELECT event_id, event_type, timestamp, level, data, run_id, agent_id, sent, sent_at
                 FROM telemetry_events

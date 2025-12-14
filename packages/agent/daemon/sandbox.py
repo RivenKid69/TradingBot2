@@ -8,6 +8,10 @@ Design Doc Phase 5:
 - Enterprise: ro-fs, egress allowlist, deny-by-default outbound network
 
 CCEA Phase 5 Component.
+
+Platform Notes:
+- Linux/macOS: Full resource limits via `resource` module (RLIMIT_*)
+- Windows: Limited support via psutil/Job Objects (graceful degradation)
 """
 
 from __future__ import annotations
@@ -15,7 +19,7 @@ from __future__ import annotations
 import json
 import multiprocessing
 import os
-import resource
+import platform
 import signal
 import subprocess
 import sys
@@ -27,6 +31,19 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Callable, Dict, Final, List, Optional, Tuple
 from uuid import uuid4
+
+# Platform detection
+IS_WINDOWS = platform.system() == "Windows"
+IS_POSIX = os.name == "posix"
+
+# Conditional import for POSIX resource module
+# On Windows, this module is not available
+_resource_module = None
+if IS_POSIX:
+    try:
+        import resource as _resource_module
+    except ImportError:
+        _resource_module = None
 
 
 # Constants
@@ -419,26 +436,74 @@ class Sandbox:
         memory_mb: int = DEFAULT_MEMORY_MB,
         cpu_time_seconds: int = DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
-        """Apply resource limits to current process."""
+        """
+        Apply resource limits to current process.
+
+        Platform behavior:
+        - POSIX (Linux/macOS): Uses resource module (RLIMIT_*)
+        - Windows: Graceful degradation, limits via psutil if available
+        """
+        if IS_POSIX and _resource_module is not None:
+            Sandbox._apply_posix_resource_limits(memory_mb, cpu_time_seconds)
+        elif IS_WINDOWS:
+            Sandbox._apply_windows_resource_limits(memory_mb, cpu_time_seconds)
+        # else: No resource limits available, continue without them
+
+    @staticmethod
+    def _apply_posix_resource_limits(
+        memory_mb: int = DEFAULT_MEMORY_MB,
+        cpu_time_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+    ) -> None:
+        """Apply POSIX resource limits via resource module."""
+        if _resource_module is None:
+            return
+
         try:
             # Memory limit (soft and hard)
             memory_bytes = memory_mb * 1024 * 1024
-            resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
+            _resource_module.setrlimit(_resource_module.RLIMIT_AS, (memory_bytes, memory_bytes))
 
             # CPU time limit
-            resource.setrlimit(resource.RLIMIT_CPU, (cpu_time_seconds, cpu_time_seconds))
+            _resource_module.setrlimit(_resource_module.RLIMIT_CPU, (cpu_time_seconds, cpu_time_seconds))
 
             # Core dump disabled
-            resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+            _resource_module.setrlimit(_resource_module.RLIMIT_CORE, (0, 0))
 
-            # Limit number of processes/threads
-            resource.setrlimit(resource.RLIMIT_NPROC, (100, 100))
+            # Limit number of processes/threads (not available on macOS)
+            try:
+                _resource_module.setrlimit(_resource_module.RLIMIT_NPROC, (100, 100))
+            except (AttributeError, ValueError):
+                pass  # RLIMIT_NPROC not available on all POSIX systems
 
             # Limit file descriptors
-            resource.setrlimit(resource.RLIMIT_NOFILE, (256, 256))
+            _resource_module.setrlimit(_resource_module.RLIMIT_NOFILE, (256, 256))
 
-        except (ValueError, resource.error):
+        except (ValueError, OSError, AttributeError):
             pass  # Some limits may not be available on all platforms
+
+    @staticmethod
+    def _apply_windows_resource_limits(
+        memory_mb: int = DEFAULT_MEMORY_MB,
+        cpu_time_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+    ) -> None:
+        """
+        Apply Windows resource limits.
+
+        On Windows, true process resource limits require Job Objects.
+        This is a best-effort implementation using psutil where available.
+        For production Windows isolation, consider using containers or
+        Windows Job Objects directly via ctypes/pywin32.
+        """
+        try:
+            import psutil
+            # On Windows, we can't set hard limits like on POSIX,
+            # but we can monitor and self-terminate if exceeded.
+            # This is handled at a higher level (execute() method timeout).
+            # Here we just set process priority to below-normal as a soft constraint.
+            proc = psutil.Process()
+            proc.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
+        except (ImportError, AttributeError, psutil.Error):
+            pass  # psutil not available or error setting priority
 
     def _start_process(self) -> None:
         """Start process-based sandbox."""

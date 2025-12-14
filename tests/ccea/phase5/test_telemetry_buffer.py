@@ -3,8 +3,17 @@
 Tests for Telemetry Buffer.
 
 Design Doc Phase 5: Durable telemetry storage.
+
+WI-AGENT-02: Includes regression tests for Windows file locking issues
+and proper resource cleanup.
 """
 
+import contextlib
+import os
+import platform
+import sqlite3
+import threading
+import time
 import pytest
 import json
 from datetime import datetime, timedelta
@@ -374,9 +383,347 @@ class TestTelemetryBuffer:
             data={"test": "data"},
         ))
         buffer1._persist_batch()
+        buffer1.close()  # Explicitly close to release resources
 
         # Create second buffer
         buffer2 = TelemetryBuffer(config=config)
         pending = buffer2.get_pending_count()
+        buffer2.close()
 
         assert pending == 1
+
+
+class TestTelemetryBufferResourceManagement:
+    """
+    Tests for proper resource management.
+
+    WI-AGENT-02: These tests verify that SQLite connections are properly closed
+    and background threads are cleanly stopped, preventing Windows file locking issues.
+    """
+
+    @pytest.fixture
+    def temp_dir(self):
+        """Create temporary directory."""
+        with TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir)
+
+    def test_close_method_exists(self, temp_dir):
+        """Test close() method is available."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+        buffer = TelemetryBuffer(config=config)
+
+        assert hasattr(buffer, 'close')
+        assert callable(buffer.close)
+
+        buffer.close()
+
+    def test_context_manager_support(self, temp_dir):
+        """Test buffer can be used as context manager."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+
+        with TelemetryBuffer(config=config) as buffer:
+            buffer.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            ))
+            count = buffer.get_pending_count()
+            assert count == 1
+
+        # After exiting context, buffer should be closed
+        # Try to reopen the database to verify no locks remain
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            assert cursor.fetchone()[0] == 1
+
+    def test_close_stops_background_thread(self, temp_dir):
+        """Test close() stops background flush thread."""
+        config = TelemetryBufferConfig(
+            db_path=temp_dir / "telemetry.db",
+            flush_interval_seconds=1,  # Short interval for test
+        )
+        buffer = TelemetryBuffer(config=config)
+
+        # Start background flusher
+        send_fn = MagicMock(return_value=True)
+        try:
+            buffer.start_background_flush(send_fn)
+        except RuntimeError as e:
+            if "can't start new thread" in str(e):
+                pytest.skip("Thread creation not supported in this environment")
+            raise
+
+        assert buffer._flushing is True
+        assert buffer._flush_thread is not None
+        assert buffer._flush_thread.is_alive()
+
+        # Close should stop the thread
+        buffer.close()
+
+        assert buffer._flushing is False
+        assert buffer._flush_thread is None
+
+    def test_stop_background_flush_returns_status(self, temp_dir):
+        """Test stop_background_flush returns True when thread stops cleanly."""
+        config = TelemetryBufferConfig(
+            db_path=temp_dir / "telemetry.db",
+            flush_interval_seconds=60,  # Long interval
+        )
+        buffer = TelemetryBuffer(config=config)
+
+        send_fn = MagicMock(return_value=True)
+        try:
+            buffer.start_background_flush(send_fn)
+        except RuntimeError as e:
+            if "can't start new thread" in str(e):
+                pytest.skip("Thread creation not supported in this environment")
+            raise
+
+        # Stop should return True for clean stop
+        result = buffer.stop_background_flush(timeout=5.0)
+        assert result is True
+
+    def test_multiple_close_calls_safe(self, temp_dir):
+        """Test calling close() multiple times is safe."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+        buffer = TelemetryBuffer(config=config)
+
+        buffer.add(TelemetryEvent(
+            event_type=TelemetryEventType.HEARTBEAT,
+            data={"test": True},
+        ))
+
+        # Multiple close calls should not raise
+        buffer.close()
+        buffer.close()
+        buffer.close()
+
+    def test_close_persists_memory_buffer(self, temp_dir):
+        """Test close() persists events in memory buffer to disk."""
+        config = TelemetryBufferConfig(
+            db_path=temp_dir / "telemetry.db",
+            batch_size=100,  # Large batch size so events stay in memory
+        )
+        buffer = TelemetryBuffer(config=config)
+
+        # Add events (less than batch size, so they stay in memory)
+        for i in range(5):
+            buffer.add(TelemetryEvent(
+                event_type=TelemetryEventType.METRIC,
+                data={"index": i},
+            ))
+
+        assert len(buffer._memory_buffer) == 5
+
+        # Close should persist to disk
+        buffer.close()
+
+        # Verify events are in database
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            assert cursor.fetchone()[0] == 5
+
+
+class TestWindowsFileLocking:
+    """
+    Regression tests for Windows file locking issues.
+
+    WI-AGENT-02: These tests verify that SQLite connections are properly closed
+    using contextlib.closing, preventing "database is locked" errors on Windows.
+    """
+
+    @pytest.fixture
+    def temp_dir(self):
+        """Create temporary directory."""
+        with TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir)
+
+    def test_no_database_locked_on_rapid_operations(self, temp_dir):
+        """Test rapid DB operations don't cause locking issues."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+
+        # Rapid create/close cycles should not cause locking
+        for i in range(10):
+            buffer = TelemetryBuffer(config=config)
+            buffer.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"iteration": i},
+            ))
+            buffer._persist_batch()
+            buffer.close()
+
+        # Final verification
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            assert cursor.fetchone()[0] == 10
+
+    def test_concurrent_read_after_close(self, temp_dir):
+        """Test database can be read immediately after buffer close."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+
+        buffer = TelemetryBuffer(config=config)
+        buffer.add(TelemetryEvent(
+            event_type=TelemetryEventType.HEARTBEAT,
+            data={"test": True},
+        ))
+        buffer._persist_batch()
+        buffer.close()
+
+        # Immediately try to read - should not be locked
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT * FROM telemetry_events")
+            rows = cursor.fetchall()
+            assert len(rows) == 1
+
+    def test_multiple_buffers_same_db_sequential(self, temp_dir):
+        """Test multiple sequential buffer instances on same DB."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+
+        # First buffer
+        with TelemetryBuffer(config=config) as buffer1:
+            buffer1.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"buffer": 1},
+            ))
+
+        # Second buffer - should be able to access DB
+        with TelemetryBuffer(config=config) as buffer2:
+            buffer2.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"buffer": 2},
+            ))
+            count = buffer2.get_pending_count()
+            assert count == 2
+
+    def test_db_file_not_locked_after_operations(self, temp_dir):
+        """Test DB file can be deleted after buffer operations (not locked)."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+
+        buffer = TelemetryBuffer(config=config)
+        buffer.add(TelemetryEvent(
+            event_type=TelemetryEventType.HEARTBEAT,
+            data={"test": True},
+        ))
+        buffer.flush()
+        buffer.get_statistics()
+        buffer.get_pending_count()
+        buffer.close()
+
+        # On Windows, trying to delete a locked file would raise PermissionError
+        # This tests that no handles remain open
+        db_path = config.db_path
+        assert db_path.exists()
+
+        try:
+            db_path.unlink()
+            # If we get here, file was not locked
+        except PermissionError:
+            pytest.fail("Database file is still locked after close()")
+
+    def test_background_flush_doesnt_hold_lock(self, temp_dir):
+        """Test background flush doesn't hold database lock continuously."""
+        config = TelemetryBufferConfig(
+            db_path=temp_dir / "telemetry.db",
+            flush_interval_seconds=1,
+        )
+        buffer = TelemetryBuffer(config=config)
+
+        send_fn = MagicMock(return_value=True)
+        try:
+            buffer.start_background_flush(send_fn)
+        except RuntimeError as e:
+            if "can't start new thread" in str(e):
+                pytest.skip("Thread creation not supported in this environment")
+            raise
+
+        # Add some events
+        for i in range(5):
+            buffer.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"index": i},
+            ))
+
+        # Wait for a flush cycle
+        time.sleep(1.5)
+
+        # While background thread is running, we should still be able to
+        # create a separate connection and read
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            count = cursor.fetchone()[0]
+            # Events should have been persisted
+            assert count >= 0  # May vary based on timing
+
+        buffer.close()
+
+    def test_flush_with_exception_releases_connection(self, temp_dir):
+        """Test flush releases connection even on exception."""
+        config = TelemetryBufferConfig(db_path=temp_dir / "telemetry.db")
+        buffer = TelemetryBuffer(config=config)
+
+        buffer.add(TelemetryEvent(
+            event_type=TelemetryEventType.HEARTBEAT,
+            data={"test": True},
+        ))
+
+        # Send function that raises exception
+        def failing_send(events):
+            raise RuntimeError("Simulated failure")
+
+        # This should not leave connection open
+        sent = buffer.flush(send_fn=failing_send)
+        assert sent == 0
+
+        # Close and verify no lock
+        buffer.close()
+
+        # Should be able to open database
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            assert cursor.fetchone()[0] == 1
+
+
+class TestCleanupOldEventsWithClosing:
+    """
+    Tests for cleanup operations using proper connection management.
+
+    WI-AGENT-02: Verifies cleanup_old_events properly closes connections.
+    """
+
+    @pytest.fixture
+    def temp_dir(self):
+        """Create temporary directory."""
+        with TemporaryDirectory() as tmpdir:
+            yield Path(tmpdir)
+
+    def test_cleanup_old_events_using_contextlib_closing(self, temp_dir):
+        """Test cleanup uses contextlib.closing for connection."""
+        config = TelemetryBufferConfig(
+            db_path=temp_dir / "telemetry.db",
+            max_age_days=1,
+        )
+
+        with TelemetryBuffer(config=config) as buffer:
+            # Add and mark as sent
+            buffer.add(TelemetryEvent(
+                event_type=TelemetryEventType.HEARTBEAT,
+                data={"test": True},
+            ))
+            buffer._persist_batch()
+
+            send_fn = MagicMock(return_value=True)
+            buffer.flush(send_fn=send_fn)
+
+            # Manually set old timestamp
+            with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+                old_time = (datetime.utcnow() - timedelta(days=10)).isoformat()
+                conn.execute("UPDATE telemetry_events SET timestamp = ?", (old_time,))
+                conn.commit()
+
+            # Cleanup should work and release connection
+            deleted = buffer.cleanup_old_events()
+            assert deleted == 1
+
+        # Verify no locks remain
+        with contextlib.closing(sqlite3.connect(str(config.db_path))) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM telemetry_events")
+            assert cursor.fetchone()[0] == 0

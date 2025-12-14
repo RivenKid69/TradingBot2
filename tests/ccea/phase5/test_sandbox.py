@@ -3,8 +3,13 @@
 Tests for Strategy Sandbox.
 
 Design Doc Phase 5: Process/container isolation.
+
+WI-AGENT-01: Tests include Windows compatibility checks.
 """
 
+import os
+import platform
+import sys
 import pytest
 import time
 from unittest.mock import MagicMock, patch
@@ -17,6 +22,9 @@ from packages.agent.daemon.sandbox import (
     SandboxMetrics,
     SandboxResult,
     create_sandbox,
+    IS_WINDOWS,
+    IS_POSIX,
+    _resource_module,
 )
 
 
@@ -294,3 +302,112 @@ class TestSandboxResourceLimits:
         # May or may not fail depending on platform
         # Just ensure it doesn't hang
         assert result.duration_seconds < 15
+
+
+class TestPlatformCompatibility:
+    """
+    Tests for cross-platform compatibility.
+
+    WI-AGENT-01: Verifies sandbox works on both Windows and POSIX systems.
+    """
+
+    def test_platform_detection(self):
+        """Test platform detection constants are correctly set."""
+        if platform.system() == "Windows":
+            assert IS_WINDOWS is True
+            assert IS_POSIX is False
+        else:
+            assert IS_WINDOWS is False
+            assert IS_POSIX is True
+
+    def test_resource_module_conditional_import(self):
+        """Test resource module is imported only on POSIX."""
+        if IS_POSIX:
+            # On POSIX, resource module should be available
+            assert _resource_module is not None or os.name != "posix"
+        else:
+            # On Windows, resource module should be None
+            assert _resource_module is None
+
+    def test_sandbox_import_on_any_platform(self):
+        """Test sandbox module can be imported without errors on any platform."""
+        # This test passes if we got here without ImportError
+        from packages.agent.daemon.sandbox import Sandbox, SandboxConfig
+        assert Sandbox is not None
+        assert SandboxConfig is not None
+
+    def test_apply_resource_limits_no_crash(self):
+        """Test _apply_resource_limits doesn't crash on any platform."""
+        # This should work on any platform (gracefully degrade on Windows)
+        try:
+            Sandbox._apply_resource_limits(memory_mb=256, cpu_time_seconds=60)
+        except Exception as e:
+            # Should not raise on any platform
+            pytest.fail(f"_apply_resource_limits raised {type(e).__name__}: {e}")
+
+    def test_posix_resource_limits_when_available(self):
+        """Test POSIX resource limits are applied when available."""
+        if IS_POSIX and _resource_module is not None:
+            # Should not raise
+            Sandbox._apply_posix_resource_limits(memory_mb=512, cpu_time_seconds=120)
+        else:
+            pytest.skip("POSIX resource limits not available on this platform")
+
+    @pytest.mark.skipif(not IS_WINDOWS, reason="Windows-only test")
+    def test_windows_resource_limits(self):
+        """Test Windows resource limits (graceful degradation)."""
+        # Should not raise, even if psutil is not available
+        try:
+            Sandbox._apply_windows_resource_limits(memory_mb=512, cpu_time_seconds=120)
+        except Exception as e:
+            pytest.fail(f"Windows resource limits raised {type(e).__name__}: {e}")
+
+    def test_sandbox_execute_cross_platform(self):
+        """Test sandbox execution works on any platform."""
+        # Use no isolation to test basic functionality
+        config = SandboxConfig(sandbox_type=SandboxType.NONE)
+        sandbox = Sandbox(config)
+
+        def simple_fn():
+            return "cross-platform test"
+
+        result = sandbox.execute(simple_fn)
+        assert result.success is True
+        assert "cross-platform" in result.output
+
+    def test_sandbox_process_execute_cross_platform(self):
+        """Test process sandbox works on any platform."""
+        config = SandboxConfig(sandbox_type=SandboxType.PROCESS)
+        sandbox = Sandbox(config)
+
+        def simple_fn():
+            return f"running on {platform.system()}"
+
+        result = sandbox.execute(simple_fn, timeout=30)
+
+        # Accept success or graceful failure
+        if result.success:
+            assert platform.system().lower() in result.output.lower()
+        else:
+            # On some platforms/environments, process isolation may fail
+            # but it should be a controlled failure, not a crash
+            assert result.killed_by_timeout or result.error
+
+    @pytest.mark.skipif(IS_WINDOWS, reason="POSIX-only test")
+    def test_posix_specific_limits(self):
+        """Test POSIX-specific resource limits are applied."""
+        if _resource_module is None:
+            pytest.skip("resource module not available")
+
+        # Test that we can query current limits
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+        assert soft >= 0 or soft == -1  # -1 means unlimited
+
+    @pytest.mark.skipif(not IS_WINDOWS, reason="Windows-only test")
+    def test_windows_no_resource_module(self):
+        """Test that resource module is not imported on Windows."""
+        assert _resource_module is None
+        # Verify we can still create and use sandboxes
+        sandbox = Sandbox(SandboxConfig())
+        assert sandbox is not None
