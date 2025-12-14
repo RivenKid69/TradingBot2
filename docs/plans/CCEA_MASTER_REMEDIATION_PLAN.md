@@ -1,17 +1,24 @@
 # CCEA Master Remediation Plan (single doc for AI agent)
 
+Encoding note: this file is UTF-8; in Windows PowerShell 5.1 use `Get-Content -Encoding utf8` to avoid mojibake.
+
 Issues source: `Список проблем и несогсасованностей.txt` (expected=67, actual=67)
 
 Hard invariants (Design Doc): `Design Doc CCEA Cloud.txt:64`, `Design Doc CCEA Cloud.txt:66`, `Design Doc CCEA Cloud.txt:68`, `Design Doc CCEA Cloud.txt:78`, `Design Doc CCEA Cloud.txt:1025`
 
+Design Doc sources of truth:
+- Canonical (authoritative): `Design Doc CCEA Cloud.txt` (root)
+- Snapshot (byte-identical, CI-verified): `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` (created/updated by WI-TRACE-01)
+- Rendered (human-friendly): `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md` (must match snapshot SHA)
+
 ## Phases
 - P0: truth + CI safety rails (legal/docs/traceability/guardrails/protocol/deps/windows CI)
-- P1: working Cloud↔Agent lifecycle (enroll/heartbeat/poll/ack/approval/result + reconciliation/idempotency)
+- P1: working Cloud<->Agent lifecycle (enroll/heartbeat/poll/ack/approval/result + reconciliation/idempotency)
 - P2: enterprise pack + signed updates + evidence pack + cloud research job isolation/anti-abuse
 
 ## Gates
-- Gate P0→P1: CI green (Ubuntu+Windows), docs-quality green, guardrails enforced fail-closed, protocol consistent+enforced, deps pinned/locked, legal/marketing aligned.
-- Gate P1→P2: E2E lifecycle green, boundary enforced, no duplicate orders after retries/restarts, safe-halt on uncertainty.
+- Gate P0->P1: CI green (Ubuntu+Windows), docs-quality green, guardrails enforced fail-closed, protocol consistent+enforced, deps pinned/locked, legal/marketing aligned, invariants enforced (`Design Doc CCEA Cloud.txt:64`, `:66`, `:68`).
+- Gate P1->P2: E2E lifecycle green, boundary enforced, no duplicate orders after retries/restarts, safe-halt on uncertainty.
 - Exit P2: on-prem pack + signed evidence pack + signed updates+rollback protection + cloud research isolation/anti-abuse.
 
 ## Work Items Catalog (authoritative)
@@ -159,6 +166,10 @@ work_items:
       - Add tests: reject unknown commands; reject order-like payloads; reject secrets in blobs (paired with WI-CLOUD-05).
     acceptance:
       - API rejects unknown command_type and any order-like payload; guardrails detect regressions.
+    invariants:
+      - Design Doc CCEA Cloud.txt:64
+      - Design Doc CCEA Cloud.txt:66
+      - Design Doc CCEA Cloud.txt:68
     standards:
       - OWASP ASVS (input validation)
       - Design Doc “no order-like payloads”
@@ -168,14 +179,16 @@ work_items:
     goal: |-
       Make Design Doc verifiable: snapshot + SHA in CI.
     touch:
-      - docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt
+      - Design Doc CCEA Cloud.txt
+      - docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt (new; snapshot)
       - docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md:6
     steps:
-      - Add snapshot file required by plan.
-      - Recompute SHA256 and update recorded value.
-      - Add CI check that recomputes SHA and compares.
+      - Create/update the snapshot `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` as a byte-identical copy of `Design Doc CCEA Cloud.txt`.
+      - Recompute snapshot SHA256 and update the recorded SHA in `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md`.
+      - Add CI check that recomputes snapshot SHA and compares against the recorded value.
     acceptance:
-      - CI fails if snapshot SHA mismatches recorded SHA.
+      - CI fails if snapshot SHA mismatches the recorded SHA.
+      - CI fails if snapshot is not byte-identical to `Design Doc CCEA Cloud.txt`.
     standards:
       - Provenance hygiene (documented architecture version)
     effort: S
@@ -238,7 +251,7 @@ work_items:
       - SOC2-style runbooks and change control practices
     effort: M
   WI-DOCS-02:
-    phase: P0/P1
+    phase: P0
     goal: |-
       Remove script_live.py as recommended path; move legacy to archive.
     touch:
@@ -273,7 +286,7 @@ work_items:
       - Attack surface reduction; operational clarity
     effort: L
   WI-CONTRACTS-01:
-    phase: P0/P1
+    phase: P0
     goal: |-
       Eliminate enum/state-machine drift between protocol models and cloud DB.
     touch:
@@ -283,7 +296,7 @@ work_items:
     steps:
       - Make schema the source of truth for enums/state machines.
       - Generate or centralize shared contracts; map DB stored values explicitly to protocol enums.
-      - Add contract tests: schema ↔ models ↔ DB mapping.
+      - Add contract tests: schema <-> models <-> DB mapping.
     acceptance:
       - Contract tests prevent drift; schema and runtime share the same states/values.
     standards:
@@ -340,17 +353,20 @@ work_items:
       - Reliability and auditability
     effort: M
   WI-CLOUD-05:
-    phase: P1
+    phase: P0
     goal: |-
       Config blob validation and DLP/secret scanning (cloud never stores secrets).
     touch:
       - packages/cloud/control_plane/routers/config_blobs.py:360
     steps:
-      - Validate by schema per config_type
-      - Secret/DLP scan before storing
-      - Reject secrets / forbidden patterns
+      - P0 (Gate P0->P1 minimum): secret/DLP scan before storing; reject secrets / forbidden patterns.
+      - P1 hardening: validate by schema per config_type (strict schema; explicit allowlist).
     acceptance:
-      - Tests: secrets rejected; schema enforced; no bypass in routers/services.
+      - P0: tests prove secrets are rejected; no bypass in routers/services.
+      - P1: tests prove schema is enforced per config_type (no bypass in routers/services).
+    invariants:
+      - Design Doc CCEA Cloud.txt:64
+      - Design Doc CCEA Cloud.txt:66
     standards:
       - OWASP ASVS (input validation)
       - GDPR minimization
@@ -373,7 +389,7 @@ work_items:
       - SLSA, SBOM (CycloneDX/SPDX), signing/provenance
     effort: L
   WI-AUTH-01:
-    phase: P0/P1
+    phase: P0
     goal: |-
       Production-grade auth: password hashing + session revocation + rate limiting.
     touch:
@@ -1251,7 +1267,6 @@ issues:
 ```
 
 ## Execution Order (agent-optimized)
-- P0: WI-DEPS-01 → WI-AGENT-01/WI-AGENT-02 → WI-CI-02 → WI-CI-01 → WI-PROTOCOL-01/WI-PROTOCOL-02 → WI-CLOUD-01 → WI-TRACE-01/WI-TRACE-02 → WI-LEGAL-01 → WI-DOCS-01/WI-DOCS-02 → WI-DEDRIFT-01/WI-CONTRACTS-01
-- P1: WI-CLOUD-04 → WI-AUTH-01 → WI-CLOUD-02/WI-CLOUD-03 → WI-AGENT-03 → WI-AGENT-04 → WI-AGENT-06 → WI-AGENT-05 → WI-CLOUD-05 → WI-CLOUD-06 → WI-BUILD-01
-- P2: WI-CLOUD-RESEARCH-01 → WI-ENTERPRISE-01 → WI-ENTERPRISE-03 → WI-ENTERPRISE-02 → WI-VAULT-01
-
+- P0: WI-DEPS-01 -> WI-AGENT-01/WI-AGENT-02 -> WI-CI-02 -> WI-CI-01 -> WI-PROTOCOL-01/WI-PROTOCOL-02 -> WI-CLOUD-01/WI-CLOUD-05 -> WI-AUTH-01 -> WI-TRACE-01/WI-TRACE-02 -> WI-LEGAL-01 -> WI-DOCS-01/WI-DOCS-02 -> WI-DEDRIFT-01/WI-CONTRACTS-01
+- P1: WI-CLOUD-04 -> WI-CLOUD-02/WI-CLOUD-03 -> WI-AGENT-03 -> WI-AGENT-04 -> WI-AGENT-06 -> WI-AGENT-05 -> WI-CLOUD-06 -> WI-BUILD-01
+- P2: WI-CLOUD-RESEARCH-01 -> WI-ENTERPRISE-01 -> WI-ENTERPRISE-03 -> WI-ENTERPRISE-02 -> WI-VAULT-01
