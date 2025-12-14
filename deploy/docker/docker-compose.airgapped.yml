@@ -1,0 +1,110 @@
+# CCEA Cloud Stack - Air-Gapped Deployment Override
+#
+# This overlay configures the CCEA stack for air-gapped (disconnected)
+# enterprise environments.
+#
+# Features:
+# - Local registry mirror (no internet access required)
+# - Offline artifact verification
+# - Local CA and certificate management
+# - Pre-loaded base images
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.airgapped.yml up -d
+#
+# Pre-requisites:
+#   1. Pre-pull all required images to local registry mirror
+#   2. Import CA certificates to ./certs/
+#   3. Import signing keys to ./keys/
+#   4. Configure UPSTREAM_REGISTRY_URL to local mirror
+#
+# Design Doc Reference: Phase 9 - Air-gapped scenario
+
+version: "3.9"
+
+services:
+  # Override control plane for air-gapped mode
+  control-plane:
+    environment:
+      # Disable external connectivity checks
+      CCEA_AIR_GAPPED_MODE: "true"
+      CCEA_SKIP_UPDATE_CHECK: "true"
+      CCEA_OFFLINE_VERIFICATION: "true"
+      # Use local registry only
+      CCEA_REGISTRY_URL: http://registry:5000
+      CCEA_REGISTRY_MIRROR_ENABLED: "true"
+      CCEA_REGISTRY_MIRROR_URL: http://registry-mirror:5001
+      # Disable external telemetry endpoints
+      CCEA_TELEMETRY_EXTERNAL_EXPORT: "false"
+      # Use local time sync (NTP within network only)
+      CCEA_TIME_SYNC_SERVERS: ${LOCAL_NTP_SERVER:-}
+      # Offline signature verification
+      CCEA_SIGNATURE_OFFLINE_MODE: "true"
+      CCEA_TRUSTED_ROOT_PATH: /certs/trusted-roots
+    volumes:
+      - ./certs:/certs:ro
+      - ./trusted-roots:/certs/trusted-roots:ro
+      - ./offline-artifacts:/offline-artifacts:ro
+
+  # Builder in air-gapped mode
+  builder:
+    environment:
+      CCEA_AIR_GAPPED_MODE: "true"
+      # Use local registry
+      CCEA_REGISTRY_URL: http://registry:5000
+      CCEA_PUSH_RETRY_OFFLINE: "true"
+      # Offline SBOM generation (no external CVE database)
+      CCEA_SBOM_OFFLINE_MODE: "true"
+      CCEA_SBOM_LOCAL_DB_PATH: /data/sbom-db
+      # Offline signing
+      CCEA_SIGNING_OFFLINE_MODE: "true"
+      CCEA_SIGNING_KEYLESS: "false"
+      CCEA_SIGNING_KEY_PATH: /keys/offline-signing.key
+    volumes:
+      - ./keys:/keys:ro
+      - ./sbom-db:/data/sbom-db:ro
+
+  # Local registry for air-gapped (required)
+  registry:
+    profiles: []  # Always enable in air-gapped mode
+
+  # Registry mirror pre-loaded with images
+  registry-mirror:
+    profiles: []  # Always enable in air-gapped mode
+    environment:
+      # Disable upstream proxy (fully offline)
+      REGISTRY_PROXY_REMOTEURL: ""
+    volumes:
+      - ./preloaded-images:/var/lib/registry:ro
+
+  # Telemetry in air-gapped mode
+  telemetry-ingester:
+    environment:
+      CCEA_AIR_GAPPED_MODE: "true"
+      # All telemetry stays local
+      CCEA_TELEMETRY_LOCAL_ONLY: "true"
+      CCEA_TELEMETRY_EXTERNAL_EXPORT: "false"
+      # Extended local retention
+      CCEA_TELEMETRY_LOCAL_RETENTION_DAYS: ${TELEMETRY_RETENTION_DAYS:-365}
+
+  # Governance in air-gapped mode
+  governance:
+    environment:
+      CCEA_AIR_GAPPED_MODE: "true"
+      # Export only to local paths
+      CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: "true"
+      CCEA_EVIDENCE_EXPORT_PATH: /data/evidence-exports
+
+  # Monitoring without external dependencies
+  prometheus:
+    volumes:
+      - ./monitoring/prometheus-airgapped.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    environment:
+      # Disable external plugins
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ""
+      GF_INSTALL_PLUGINS: ""
+      # Disable update checks
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"

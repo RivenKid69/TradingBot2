@@ -1,0 +1,377 @@
+# CCEA Cloud Helm Values
+#
+# Default configuration values for CCEA Cloud deployment.
+#
+# Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+
+# Global settings
+global:
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+  # Data residency region
+  dataResidency: "on-prem"
+  # Air-gapped mode
+  airGapped: false
+  # TLS configuration
+  tls:
+    enabled: true
+    secretName: ccea-tls
+  # mTLS for agent communication
+  mtls:
+    enabled: false
+    caSecretName: ccea-ca
+
+# Control Plane configuration
+controlPlane:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ccea/cloud-control-plane
+    tag: ""  # Defaults to Chart appVersion
+    pullPolicy: IfNotPresent
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "500m"
+      memory: 512Mi
+
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8000
+    annotations: {}
+
+  # Ingress configuration
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    hosts:
+      - host: ccea.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: ccea-tls
+        hosts:
+          - ccea.local
+
+  # Pod disruption budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  # Pod security context
+  podSecurityContext:
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+  # Environment variables
+  env:
+    CCEA_LOG_LEVEL: INFO
+    CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+
+  # Extra environment variables from secrets
+  envFrom: []
+  # - secretRef:
+  #     name: ccea-secrets
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity - prefer spreading across nodes
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: ccea-cloud
+                app.kubernetes.io/component: control-plane
+            topologyKey: kubernetes.io/hostname
+
+# Builder Service
+builder:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ccea/builder
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: "4"
+      memory: 4Gi
+    requests:
+      cpu: "1"
+      memory: 1Gi
+
+  # Signing configuration
+  signing:
+    enabled: true
+    # Use keyless sigstore signing (requires internet)
+    keyless: false
+    # Secret containing signing key
+    keySecretName: ccea-signing-key
+
+  # SBOM generation
+  sbom:
+    enabled: true
+    format: cyclonedx
+
+  # Service account for builder
+  serviceAccount:
+    create: true
+    annotations: {}
+
+# Telemetry Ingester
+telemetryIngester:
+  enabled: true
+  replicaCount: 2
+
+  image:
+    repository: ccea/telemetry-ingester
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: "2"
+      memory: 2Gi
+    requests:
+      cpu: "500m"
+      memory: 512Mi
+
+  # Redaction is MANDATORY
+  redaction:
+    mandatory: true
+    version: "1.0"
+
+  # Default telemetry level
+  defaultLevel: aggregated
+
+# Governance Service
+governance:
+  enabled: true
+  replicaCount: 1
+
+  image:
+    repository: ccea/governance
+    tag: ""
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "250m"
+      memory: 256Mi
+
+  # Retention defaults
+  retention:
+    telemetryAggregated: 90
+    telemetryDetailed: 30
+    telemetryRaw: 7
+    auditLogs: 365
+    commands: 90
+    approvals: 365
+
+  # DSAR support
+  dsar:
+    enabled: true
+
+# Registry (on-prem artifact storage)
+registry:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: registry
+    tag: "2"
+    pullPolicy: IfNotPresent
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "250m"
+      memory: 256Mi
+
+  # Storage
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 100Gi
+
+  # Authentication
+  auth:
+    enabled: false
+    htpasswd: ""
+
+# Registry Mirror (for air-gapped)
+registryMirror:
+  enabled: false
+  replicaCount: 1
+
+  # Upstream registry to mirror
+  upstream:
+    url: https://registry-1.docker.io
+    username: ""
+    password: ""
+
+  persistence:
+    enabled: true
+    size: 200Gi
+
+# PostgreSQL (using Bitnami subchart)
+postgresql:
+  enabled: true
+  auth:
+    database: ccea_cloud
+    username: ccea
+    existingSecret: ccea-db-secret
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+
+  primary:
+    resources:
+      limits:
+        cpu: "2"
+        memory: 2Gi
+      requests:
+        cpu: "500m"
+        memory: 512Mi
+
+    persistence:
+      enabled: true
+      size: 50Gi
+
+    # PostgreSQL configuration
+    configuration: |
+      max_connections = 200
+      shared_buffers = 512MB
+      work_mem = 16MB
+      maintenance_work_mem = 128MB
+      effective_cache_size = 1536MB
+
+  # Read replicas for HA
+  readReplicas:
+    replicaCount: 0
+
+# Redis (using Bitnami subchart)
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: ccea-redis-secret
+    existingSecretPasswordKey: password
+
+  master:
+    resources:
+      limits:
+        cpu: "1"
+        memory: 512Mi
+      requests:
+        cpu: "250m"
+        memory: 128Mi
+
+    persistence:
+      enabled: true
+      size: 10Gi
+
+  replica:
+    replicaCount: 0
+
+# Network Policies
+networkPolicies:
+  enabled: true
+
+  # Allow ingress only from specific namespaces
+  allowedNamespaces:
+    - ingress-nginx
+    - monitoring
+
+# Pod Security Policy
+podSecurityPolicy:
+  enabled: false
+
+# Service Monitor for Prometheus
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  path: /metrics
+
+# Evidence Pack Exporter
+evidencePackExporter:
+  enabled: true
+  # Schedule for automatic exports (cron format)
+  schedule: "0 2 * * *"  # 2 AM daily
+  # Export destination
+  destination:
+    type: s3  # s3, gcs, azure, local
+    bucket: ""
+    prefix: "evidence-packs"
+  # Retention for exported packs
+  retentionDays: 365
+
+# Agent Updates Distribution
+agentUpdates:
+  enabled: true
+  # Staged rollout configuration
+  stagedRollout:
+    enabled: true
+    stages:
+      - name: canary
+        percentage: 5
+        duration: 24h
+      - name: early-adopters
+        percentage: 25
+        duration: 48h
+      - name: general
+        percentage: 100
+        duration: 0
+  # Version pinning
+  versionPinning:
+    enabled: true
+    # Minimum supported agent version
+    minVersion: "1.0.0"
+    # Maximum supported agent version (empty = no limit)
+    maxVersion: ""
+  # Change windows
+  changeWindows:
+    enabled: false
+    # Allowed days/hours for updates (UTC)
+    allowedDays: [1, 2, 3, 4, 5]  # Mon-Fri
+    allowedHours:
+      start: 9
+      end: 17
