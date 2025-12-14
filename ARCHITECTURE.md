@@ -1,6 +1,77 @@
 # Архитектура проекта
 
-> **Last Updated**: 2025-12-07 | **Version**: 5.0 (MiFID II Compliance Complete)
+> **Last Updated**: 2025-12-14 | **Version**: 6.0 (CCEA Cloud Architecture Complete)
+
+## Cloud-Controlled Execution Architecture (CCEA)
+
+### Ключевой принцип (не обсуждается)
+
+```
+Cloud = research/build/monitoring/control plane (lifecycle requests)
+Agent = secrets + live loop + risk enforce + order creation/sending
+```
+
+**Cloud НИКОГДА:**
+- Не хранит broker API keys
+- Не генерирует и не передаёт ордера
+- Не имеет доступа к trading endpoints бирж
+- Не может отправить order-like payload (side/qty/price)
+
+### Архитектурная диаграмма
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLOUD ZONE                                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │   Research  │  │   Builder   │  │   Control   │  │     Monitoring      │ │
+│  │     IDE     │  │   Registry  │  │    Plane    │  │     Telemetry       │ │
+│  │ (backtest)  │  │  (signed)   │  │ (lifecycle) │  │    (redacted)       │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                                                                              │
+│  packages/cloud/: control_plane, builder, enterprise, governance, research  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ REQUEST_START_RUN, REQUEST_STOP_RUN
+                                    │ REQUEST_UPGRADE_ARTIFACT, REQUEST_UPDATE_CONFIG
+                                    │ (NO order-like payloads)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              AGENT ZONE                                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │   Local     │  │   Policy    │  │  Live Loop  │  │    Broker           │ │
+│  │   Vault     │  │  Firewall   │  │  Risk Mgmt  │  │   Connector         │ │
+│  │ (keychain)  │  │ (hard caps) │  │Intent→Order │  │   (orders)          │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                                                                              │
+│  packages/agent/: daemon, vault, policy, execution, approval, reconciliation│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Orders (created & sent locally)
+                                    ▼
+                              ┌───────────┐
+                              │ EXCHANGE  │
+                              └───────────┘
+```
+
+### Зоны модулей
+
+| Zone | Модули | Secrets | Orders | Build |
+|------|--------|---------|--------|-------|
+| **SHARED** | core_*, impl_*, simulation, features, training | No | No | Both |
+| **AGENT** | order_execution, vault, policy_firewall, live_runner | Yes | Yes | Agent only |
+| **CLOUD** | control_plane, builder, governance, research_sandbox | No | No | Cloud only |
+
+### CI Guardrails
+
+1. **no-trading-libs-in-cloud**: Cloud build не содержит order_execution модулей
+2. **no-order-payloads-in-schema**: JSON schema запрещает side/qty/price в командах
+3. **artifact-signature-required**: Артефакт подписан перед публикацией
+4. **redaction-enabled**: Telemetry redaction нельзя отключить
+5. **import-boundary-check**: Agent imports запрещены в Cloud
+
+---
+
+## Слои кода
 
 В репозитории используется слойная структура. Имена файлов и модулей начинаются с префиксов, отражающих их принадлежность к слою.
 
@@ -416,4 +487,134 @@ services/compliance/
 | Phase 7 | Testing, Certification, NCA Notification | ✅ 100% |
 
 Детали: [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md)
+
+## CCEA Protocol
+
+### Разрешённые команды (Allowlist)
+
+| Command | Direction | Description | Approval Required |
+|---------|-----------|-------------|-------------------|
+| `REQUEST_START_RUN` | Cloud→Agent | Запуск стратегии | Yes (trading_impacting) |
+| `REQUEST_STOP_RUN` | Cloud→Agent | Остановка | No (safety) |
+| `REQUEST_PAUSE_RUN` | Cloud→Agent | Пауза | No (safety) |
+| `REQUEST_UPGRADE_ARTIFACT` | Cloud→Agent | Обновление артефакта | Yes (trading_impacting) |
+| `REQUEST_UPDATE_CONFIG` | Cloud→Agent | Обновление config | Yes (если trading_impacting) |
+| `REQUEST_ROTATE_AGENT_SESSION` | Cloud→Agent | Ротация сессии | Yes |
+| `REQUEST_EXPORT_LOGS` | Cloud→Agent | Экспорт логов | Yes (data_sensitive) |
+| `HEARTBEAT` | Agent→Cloud | Статус агента | No |
+| `TELEMETRY` | Agent→Cloud | Телеметрия | No |
+
+### Запрещённые payload поля
+
+JSON payload в командах **НЕ ДОЛЖЕН** содержать:
+- `side` (BUY/SELL)
+- `quantity`
+- `price`
+- `order_type`
+- `target_position`
+
+## State Machines
+
+### Deployment State Machine
+
+```
+                    ┌─────────┐
+                    │ CREATED │
+                    └────┬────┘
+                         │ deploy
+                         ▼
+                    ┌─────────┐
+         ┌─────────│ PENDING │
+         │         └────┬────┘
+         │              │ agent_enrolled
+         │              ▼
+         │         ┌─────────┐
+         │         │ ENROLLED│
+         │         └────┬────┘
+         │              │ approve_start
+         │              ▼
+         │         ┌─────────┐
+         │    ┌────│ RUNNING │◀───┐
+         │    │    └────┬────┘    │
+         │    │ pause   │ stop    │ resume
+         │    ▼         │         │
+         │ ┌──────┐     │     ┌───┴───┐
+         │ │PAUSED│─────┴────▶│STOPPED│
+         │ └──────┘           └───────┘
+         │                        │
+         │    revoke              │ terminate
+         ▼                        ▼
+    ┌─────────┐            ┌───────────┐
+    │ REVOKED │            │ TERMINATED│
+    └─────────┘            └───────────┘
+```
+
+### Run State Machine
+
+```
+                    ┌───────────────┐
+                    │ INITIALIZING  │
+                    └──────┬────────┘
+                           │ preflight_ok
+                           ▼
+                    ┌───────────┐
+         ┌─────────│  RUNNING  │◀────────┐
+         │         └─────┬─────┘         │
+         │ pause         │ kill_switch   │ resume
+         ▼               │               │
+    ┌─────────┐          │          ┌────┴────┐
+    │ PAUSED  │◀─────────┼─────────▶│ HALTED  │
+    └────┬────┘          │          └────┬────┘
+         │ stop          │ stop          │ acknowledge
+         ▼               ▼               ▼
+    ┌───────────────────────────────────────┐
+    │              STOPPED                   │
+    └───────────────────────────────────────┘
+```
+
+## Config Layering
+
+### Приоритет конфигурации (highest to lowest)
+
+1. **Local hard caps** - НИКОГДА не может быть переопределено
+2. **Local policy firewall** - локальные ограничения
+3. **Artifact manifest risk_profile_suggested** - предлагаемый профиль
+4. **Cloud config** (blob by digest) - конфиг с сервера
+5. **Defaults** - значения по умолчанию
+
+### Trading-Impacting Changes
+
+Следующие изменения **ВСЕГДА** требуют local approve:
+
+| Category | Fields |
+|----------|--------|
+| Strategy/Model | `artifact_digest`, `model_version` |
+| Universe | `symbols`, `asset_classes` |
+| Execution | `execution_params`, `slippage_config` |
+| Risk | `risk_limits`, `position_limits` |
+| Mode | `paper_mode` → `live_mode` |
+| Schedule | `trading_schedule`, `blackout_windows` |
+| Account | `broker_account`, `adapter_config` |
+
+## Threat Model
+
+| Threat | Mitigation |
+|--------|------------|
+| RCE in Cloud | Cloud cannot execute orders, no trading libs |
+| Key exfiltration | Keys never leave Agent, redaction mandatory |
+| Artifact tampering | Digest pinning + signature verification |
+| Cloud becomes execution | No order-like payloads in protocol |
+| Abuse of cloud jobs | Sandbox + quotas + egress allowlist |
+| Man-in-the-middle | mTLS/signed messages |
+| Replay attacks | Idempotency keys + timestamps |
+| Privilege escalation | RBAC + tenant isolation |
+
+### Safe Defaults
+
+- **Redaction**: ON (cannot be disabled)
+- **Local approval**: REQUIRED for trading_impacting
+- **RAW telemetry**: OFF (opt-in, enterprise-only)
+- **Remote flatten**: DISABLED (enterprise-only by contract)
+- **Silent upgrades**: DISABLED for trading-impacting
+- **Auto-approve**: DISABLED (local policy only)
 
