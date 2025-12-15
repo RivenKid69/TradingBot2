@@ -167,12 +167,11 @@ def build_daemon_config(
     ks_config = components_config.get("kill_switch", {})
     if ks_config:
         kill_switch_cfg = KillSwitchConfig(
-            max_daily_loss_pct=ks_config.get("max_daily_loss_pct", 0.05),
-            max_drawdown_pct=ks_config.get("max_drawdown_pct", 0.10),
-            broker_error_threshold=ks_config.get("broker_error_threshold", 10),
-            latency_threshold_ms=ks_config.get("latency_threshold_ms", 1000),
-            order_spam_threshold=ks_config.get("order_spam_threshold", 100),
-            cooldown_seconds=ks_config.get("cooldown_seconds", 300),
+            max_daily_loss_pct=ks_config.get("max_daily_loss_pct", 0.30),
+            max_drawdown_pct=ks_config.get("max_drawdown_pct", 0.50),
+            max_broker_errors_per_minute=ks_config.get("max_broker_errors_per_minute", 5),
+            max_broker_errors_per_hour=ks_config.get("max_broker_errors_per_hour", 20),
+            max_consecutive_errors=ks_config.get("max_consecutive_errors", 3),
         )
 
     time_sync_cfg = None
@@ -201,7 +200,6 @@ def build_daemon_config(
             max_age_days=tel_config.get("max_age_days", 7),
             batch_size=tel_config.get("batch_size", 100),
             flush_interval_seconds=tel_config.get("flush_interval_seconds", 30),
-            enable_redaction=tel_config.get("enable_redaction", True),
         )
 
     sandbox_cfg = None
