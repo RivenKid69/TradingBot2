@@ -621,35 +621,41 @@ async def sample_enrollment_token(
 
 @pytest.fixture
 def user_token(
-    user_id: UUID,
+    sample_user: User,  # Ensure user exists in DB
     workspace_id: UUID,
     org_id: UUID,
 ) -> str:
-    """Create a user JWT token for testing."""
+    """Create a user JWT token for testing (no permissions - for permission denial tests)."""
     return create_access_token(
-        user_id=user_id,
-        email="testuser@example.com",
+        user_id=sample_user.id,
+        email=sample_user.email,
         workspace_id=workspace_id,
         org_id=org_id,
-        permissions=["config:create", "config:read", "agent:enroll", "agent:trust"],
+        permissions=[],  # No permissions - tests that need perms create their own tokens
     )
 
 
 @pytest.fixture
 def superuser_token(
-    user_id: UUID,
+    sample_user: User,  # Ensure user exists in DB
     workspace_id: UUID,
     org_id: UUID,
 ) -> str:
     """Create a superuser JWT token for testing."""
     return create_access_token(
-        user_id=user_id,
-        email="superuser@example.com",
+        user_id=sample_user.id,
+        email=sample_user.email,
         workspace_id=workspace_id,
         org_id=org_id,
         permissions=["superuser"],
         is_superuser=True,
     )
+
+
+@pytest.fixture
+def superuser_id(sample_user: User) -> UUID:
+    """Get superuser ID (same as sample_user for testing)."""
+    return sample_user.id
 
 
 @pytest.fixture

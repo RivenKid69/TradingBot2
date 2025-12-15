@@ -112,12 +112,32 @@ async def config_with_permission_headers(
     workspace_id,
 ) -> dict:
     """Create auth headers with config:create and config:read permissions."""
-    from ..models import Permission, Role
+    from uuid import uuid4
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from ..models import Permission, Role, User
     from ..routers.auth import create_access_token
 
-    # Create permissions
-    perm_create = Permission(name="config:create", description="Create config")
-    perm_read = Permission(name="config:read", description="Read config")
+    # Reload user in current session to avoid greenlet issues
+    result = await db_session.execute(
+        select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+    )
+    user = result.scalar_one()
+
+    # Create unique permissions (use uuid suffix to avoid conflicts on both name and resource/action)
+    suffix = str(uuid4())[:8]
+    perm_create = Permission(
+        name=f"config:create:{suffix}",
+        description="Create config",
+        resource=f"config:{suffix}",
+        action="create",
+    )
+    perm_read = Permission(
+        name=f"config:read:{suffix}",
+        description="Read config",
+        resource=f"config:{suffix}",
+        action="read",
+    )
     db_session.add(perm_create)
     db_session.add(perm_read)
     await db_session.commit()
@@ -126,7 +146,7 @@ async def config_with_permission_headers(
 
     # Create role with permissions
     role = Role(
-        name="config-manager-test",
+        name=f"config-manager-test-{suffix}",
         description="Config Manager",
         organization_id=org_id,
     )
@@ -137,13 +157,13 @@ async def config_with_permission_headers(
     await db_session.refresh(role)
 
     # Add role to user
-    sample_user.roles.append(role)
+    user.roles.append(role)
     await db_session.commit()
 
     # Create token with permissions
     token = create_access_token(
-        user_id=sample_user.id,
-        email=sample_user.email,
+        user_id=user.id,
+        email=user.email,
         org_id=org_id,
         workspace_id=workspace_id,
         is_superuser=False,

@@ -151,6 +151,7 @@ class TestListWorkspaces:
 
         # Create strategy version
         strategy_version = StrategyVersion(
+            workspace_id=ws.id,  # Required field
             strategy_id=strategy.id,
             version="1.0.0",
             git_sha="sha256:wstest123",
@@ -161,6 +162,7 @@ class TestListWorkspaces:
 
         # Create build
         build = Build(
+            workspace_id=ws.id,  # Required field
             strategy_version_id=strategy_version.id,
             build_number=1,
             status="completed",
@@ -171,6 +173,7 @@ class TestListWorkspaces:
 
         # Create artifact
         artifact = Artifact(
+            workspace_id=ws.id,  # Required field
             build_id=build.id,
             name="ws-test.whl",
             format="wheel",
@@ -255,15 +258,18 @@ class TestCreateWorkspace:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: "User",  # Ensure user exists in DB
     ) -> None:
         """User with workspace:create permission can create workspace."""
         from ..models import Permission, Role, User
         from ..routers.auth import create_access_token
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
-        # Get user
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         # Create permission and role
@@ -331,12 +337,13 @@ class TestCreateWorkspace:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: "User",  # Ensure user exists in DB
     ) -> None:
         """Cannot create workspace in another organization."""
         from ..models import Permission, Role, User
         from ..routers.auth import create_access_token
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         # Create another org
         other_org = Organization(name="other-org-ws", display_name="Other")
@@ -344,8 +351,10 @@ class TestCreateWorkspace:
         await db_session.commit()
         await db_session.refresh(other_org)
 
-        # Get user with permission
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="workspace:create2", description="Create WS 2")
@@ -587,15 +596,19 @@ class TestUpdateWorkspace:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: "User",  # Ensure user exists in DB
         workspace_id,
     ) -> None:
         """User with workspace:write permission can update workspace."""
         from ..models import Permission, Role, User
         from ..routers.auth import create_access_token
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="workspace:write", description="Write WS")
@@ -795,12 +808,13 @@ class TestDeleteWorkspace:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: "User",  # Ensure user exists in DB
     ) -> None:
         """User with workspace:delete permission can delete workspace."""
         from ..models import Permission, Role, User
         from ..routers.auth import create_access_token
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         # Create workspace to delete
         ws = Workspace(name="perm-delete-ws", organization_id=org_id)
@@ -808,7 +822,10 @@ class TestDeleteWorkspace:
         await db_session.commit()
         await db_session.refresh(ws)
 
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="workspace:delete", description="Delete WS")

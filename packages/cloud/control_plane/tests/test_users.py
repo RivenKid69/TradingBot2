@@ -196,7 +196,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "newuser@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "display_name": "New User",
                 "organization_id": str(sample_organization.id),
             },
@@ -215,15 +215,18 @@ class TestCreateUser:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: User,  # Ensure user exists in DB
     ) -> None:
         """User with user:create permission can create user."""
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         from ..routers.auth import create_access_token
 
-        # Get user and add permission
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="user:create", description="Create users")
@@ -258,7 +261,7 @@ class TestCreateUser:
             headers={"Authorization": f"Bearer {token}"},
             json={
                 "email": "permcreated@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(org_id),
             },
         )
@@ -278,7 +281,7 @@ class TestCreateUser:
             headers=auth_headers,
             json={
                 "email": "shouldfail@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
             },
         )
@@ -291,7 +294,7 @@ class TestCreateUser:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: User,  # Ensure user exists in DB
     ) -> None:
         """Cannot create user in another organization."""
         from ..routers.auth import create_access_token
@@ -303,10 +306,7 @@ class TestCreateUser:
         await db_session.refresh(other_org)
 
         # Even with permission, cannot create in other org
-        from sqlalchemy import select
-
-        result = await db_session.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one()
+        user = sample_user
 
         token = create_access_token(
             user_id=user.id,
@@ -322,7 +322,7 @@ class TestCreateUser:
             headers={"Authorization": f"Bearer {token}"},
             json={
                 "email": "otherorg@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(other_org.id),
             },
         )
@@ -341,7 +341,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "noorg@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(uuid4()),
             },
         )
@@ -362,7 +362,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": sample_user.email,
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
             },
         )
@@ -383,7 +383,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "withworkspace@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
                 "default_workspace_id": str(sample_workspace.id),
             },
@@ -417,7 +417,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "wrongws@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
                 "default_workspace_id": str(other_ws.id),
             },
@@ -448,7 +448,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "withrole@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
                 "role_ids": [str(role.id)],
             },
@@ -471,7 +471,7 @@ class TestCreateUser:
             headers=superuser_headers,
             json={
                 "email": "badrole@example.com",
-                "password": "password123",
+                "password": "SecureP@ss2024!",
                 "organization_id": str(sample_organization.id),
                 "role_ids": [str(uuid4())],
             },
@@ -526,11 +526,12 @@ class TestGetUser:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: User,  # Ensure user exists in DB
         sample_organization: Organization,
     ) -> None:
         """User with user:read permission can get other user in same org."""
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         from ..routers.auth import create_access_token
 
@@ -544,8 +545,10 @@ class TestGetUser:
         await db_session.commit()
         await db_session.refresh(other_user)
 
-        # Get original user and add permission
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="user:read", description="Read users")
@@ -719,10 +722,11 @@ class TestUpdateUser:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: User,  # Ensure user exists in DB
     ) -> None:
         """User with user:write permission can update other user."""
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         from ..routers.auth import create_access_token
 
@@ -736,8 +740,10 @@ class TestUpdateUser:
         await db_session.commit()
         await db_session.refresh(other_user)
 
-        # Get original user
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="user:write", description="Write users")
@@ -895,7 +901,7 @@ class TestUpdateUser:
         response = await client.patch(
             f"/api/v1/users/{user_id}",
             headers=auth_headers,
-            json={"password": "newpassword123"},
+            json={"password": "NewSecureP@ss2024!"},
         )
 
         assert response.status_code == 200
@@ -998,11 +1004,13 @@ class TestUpdateUser:
     async def test_update_user_roles_requires_permission(
         self,
         client: AsyncClient,
-        auth_headers: dict,
         db_session: AsyncSession,
         org_id,
+        sample_user: User,  # Ensure user exists in DB
     ) -> None:
-        """Changing roles requires user:assign_role permission."""
+        """Changing roles requires user:assign_role permission (in addition to user:write)."""
+        from ..routers.auth import create_access_token
+
         other_user = User(
             email="torole@example.com",
             password_hash=hash_password("password123"),
@@ -1021,9 +1029,19 @@ class TestUpdateUser:
         await db_session.commit()
         await db_session.refresh(role)
 
+        # Create token with user:write but WITHOUT user:assign_role
+        token = create_access_token(
+            user_id=sample_user.id,
+            email=sample_user.email,
+            org_id=org_id,
+            workspace_id=None,
+            is_superuser=False,
+            permissions=["user:write"],  # Has write, but not assign_role
+        )
+
         response = await client.patch(
             f"/api/v1/users/{other_user.id}",
-            headers=auth_headers,
+            headers={"Authorization": f"Bearer {token}"},
             json={"role_ids": [str(role.id)]},
         )
 
@@ -1118,10 +1136,11 @@ class TestDeleteUser:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: User,  # Ensure user exists in DB
     ) -> None:
         """User with user:delete permission can delete user."""
         from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
 
         from ..routers.auth import create_access_token
 
@@ -1135,8 +1154,10 @@ class TestDeleteUser:
         await db_session.commit()
         await db_session.refresh(to_delete)
 
-        # Get original user and add permission
-        result = await db_session.execute(select(User).where(User.id == user_id))
+        # Reload user in current session to avoid greenlet issues
+        result = await db_session.execute(
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
+        )
         user = result.scalar_one()
 
         perm = Permission(name="user:delete", description="Delete users")

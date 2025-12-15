@@ -342,15 +342,17 @@ class TestUpdateOrganization:
         client: AsyncClient,
         db_session: AsyncSession,
         org_id,
-        user_id,
+        sample_user: "User",  # Ensure user exists in DB
     ) -> None:
         """User with org:write permission can update their organization."""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
         from ..models import Permission, Role, User
 
-        # Get the user and add org:write permission
-        from sqlalchemy import select
+        # Reload user in current session to avoid greenlet issues
         result = await db_session.execute(
-            select(User).where(User.id == user_id)
+            select(User).where(User.id == sample_user.id).options(selectinload(User.roles))
         )
         user = result.scalar_one()
 

@@ -90,11 +90,7 @@ async def _verify_workspace_access(
     Returns True if access is granted.
     Raises HTTPException if access is denied.
     """
-    # Superusers have access to all workspaces
-    if current_user.is_superuser:
-        return True
-
-    # Check if workspace exists and belongs to user's organization
+    # Check if workspace exists
     result = await session.execute(
         select(Workspace).where(
             Workspace.id == workspace_id,
@@ -108,6 +104,10 @@ async def _verify_workspace_access(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workspace not found",
         )
+
+    # Superusers have access to all workspaces (but workspace must exist)
+    if current_user.is_superuser:
+        return True
 
     # Verify organization match
     if current_user.org_id != workspace.organization_id:
