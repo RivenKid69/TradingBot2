@@ -1,0 +1,410 @@
+# CCEA Cloud Helm Chart - Enterprise Values
+#
+# Use this file for enterprise/on-prem/air-gapped deployments:
+#   helm install ccea-cloud ./ccea-cloud -f values-enterprise.yaml
+#
+# Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+
+# =============================================================================
+# Global Configuration
+# =============================================================================
+
+global:
+  # For air-gapped: set to your private registry
+  imageRegistry: ""
+  imagePullSecrets: []
+
+  # Enterprise mode enables additional features
+  enterpriseMode: true
+
+  # Air-gapped mode disables external connectivity
+  airgapped: false
+
+  # Data residency (on-prem, eu, us, etc.)
+  dataResidency: "on-prem"
+
+# =============================================================================
+# Control Plane Configuration
+# =============================================================================
+
+controlPlane:
+  replicaCount: 2
+
+  image:
+    repository: ccea/cloud-control-plane
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+
+  config:
+    # Core settings
+    CCEA_ENV: "production"
+    CCEA_LOG_LEVEL: "INFO"
+    CCEA_WORKERS: "4"
+
+    # Security
+    CCEA_MTLS_ENABLED: "true"
+
+    # Telemetry (mandatory redaction cannot be disabled)
+    CCEA_TELEMETRY_ENABLED: "true"
+    CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+    CCEA_TELEMETRY_DEFAULT_LEVEL: "aggregated"
+
+    # For air-gapped deployments, uncomment:
+    # CCEA_AIR_GAPPED_MODE: "true"
+    # CCEA_SKIP_UPDATE_CHECK: "true"
+    # CCEA_OFFLINE_VERIFICATION: "true"
+    # CCEA_TELEMETRY_EXTERNAL_EXPORT: "false"
+
+  # TLS configuration
+  tls:
+    enabled: true
+    secretName: ccea-tls
+    # For mTLS
+    mtls:
+      enabled: true
+      clientCASecretName: ccea-client-ca
+
+  # Pod disruption budget for HA
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+# =============================================================================
+# Database Configuration
+# =============================================================================
+
+postgresql:
+  # Use external database for enterprise (recommended)
+  enabled: false
+
+  # External database configuration
+  external:
+    host: "postgres.internal.company.com"
+    port: 5432
+    database: "ccea_cloud"
+    existingSecret: "ccea-db-credentials"
+    sslMode: "require"
+
+  # If using bundled PostgreSQL (development only)
+  bundled:
+    enabled: false
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+
+# =============================================================================
+# Redis Configuration
+# =============================================================================
+
+redis:
+  # Use external Redis for enterprise (recommended)
+  enabled: false
+
+  external:
+    host: "redis.internal.company.com"
+    port: 6379
+    existingSecret: "ccea-redis-credentials"
+    tls: true
+
+  # If using bundled Redis
+  bundled:
+    enabled: false
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# =============================================================================
+# Artifact Registry Configuration
+# =============================================================================
+
+registry:
+  # Enable local registry for on-prem/air-gapped
+  enabled: true
+
+  replicaCount: 1
+
+  persistence:
+    enabled: true
+    size: 200Gi
+    storageClass: "fast-ssd"
+
+  # TLS for registry
+  tls:
+    enabled: true
+    secretName: ccea-registry-tls
+
+  # Registry mirror for air-gapped
+  mirror:
+    enabled: false
+    # Pre-populate with images before deployment
+
+# =============================================================================
+# Builder Service Configuration
+# =============================================================================
+
+builder:
+  enabled: true
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "1Gi"
+    limits:
+      cpu: "4000m"
+      memory: "4Gi"
+
+  config:
+    # Signing
+    CCEA_SIGNING_ENABLED: "true"
+    CCEA_SBOM_ENABLED: "true"
+    CCEA_SBOM_FORMAT: "cyclonedx"
+
+    # For air-gapped:
+    # CCEA_SIGNING_OFFLINE_MODE: "true"
+    # CCEA_SBOM_OFFLINE_MODE: "true"
+
+  # Signing key secret
+  signingKey:
+    existingSecret: "ccea-signing-key"
+
+# =============================================================================
+# Telemetry Ingester Configuration
+# =============================================================================
+
+telemetryIngester:
+  enabled: true
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"
+
+  config:
+    # Redaction is MANDATORY - cannot be disabled
+    CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
+    CCEA_TELEMETRY_DEFAULT_LEVEL: "aggregated"
+
+    # For air-gapped:
+    # CCEA_TELEMETRY_LOCAL_ONLY: "true"
+    # CCEA_TELEMETRY_EXTERNAL_EXPORT: "false"
+
+# =============================================================================
+# Governance Service Configuration
+# =============================================================================
+
+governance:
+  enabled: true
+  replicaCount: 1
+
+  config:
+    # Retention settings
+    CCEA_DEFAULT_RETENTION_DAYS: "90"
+    CCEA_AUDIT_RETENTION_DAYS: "2555"  # 7 years
+
+    # DSAR support
+    CCEA_DSAR_ENABLED: "true"
+
+    # For air-gapped:
+    # CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: "true"
+
+  # Evidence export storage
+  evidenceExport:
+    persistence:
+      enabled: true
+      size: 100Gi
+
+# =============================================================================
+# Enterprise Features
+# =============================================================================
+
+enterprise:
+  # Evidence pack exporter
+  evidencePack:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retentionDays: 365
+    sign: true
+    destinations:
+      - type: local
+        path: /data/evidence-exports
+      # - type: s3
+      #   bucket: company-evidence-archive
+      #   region: eu-west-1
+
+  # Agent updates management
+  agentUpdates:
+    enabled: true
+    # Staged rollout settings
+    stagedRollout:
+      enabled: true
+      stages:
+        - name: canary
+          percentage: 5
+          duration: "24h"
+          minSuccessRate: 99
+        - name: early_adopters
+          percentage: 25
+          duration: "48h"
+          minSuccessRate: 98
+        - name: general
+          percentage: 100
+
+    # Version pinning
+    versionPinning:
+      enabled: true
+      defaultConstraint: "minor"  # Allow minor updates
+
+    # Change windows
+    changeWindows:
+      enabled: true
+      windows:
+        - name: maintenance
+          days: [6]  # Saturday
+          startHour: 2
+          endHour: 6
+          timezone: "UTC"
+        - name: emergency
+          always: true  # For critical security updates
+
+  # Break-glass access
+  breakGlass:
+    enabled: true
+    requireApproval: true
+    maxDurationHours: 24
+    defaultDurationHours: 4
+    cooldownMinutes: 5
+    minReasonLength: 20
+
+  # TUF repository for secure updates
+  tuf:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 50Gi
+    config:
+      timestampExpiryDays: 1
+      snapshotExpiryDays: 7
+      targetsExpiryDays: 365
+      rootExpiryDays: 365
+      rootThreshold: 2
+
+# =============================================================================
+# Monitoring Configuration
+# =============================================================================
+
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "30d"
+    persistence:
+      enabled: true
+      size: 50Gi
+
+  grafana:
+    enabled: true
+    persistence:
+      enabled: true
+      size: 10Gi
+    # For air-gapped: disable plugin installation
+    plugins: []
+    config:
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+
+# =============================================================================
+# Network Policies
+# =============================================================================
+
+networkPolicy:
+  enabled: true
+
+  # Allow only internal traffic by default
+  defaultDeny: true
+
+  # Ingress rules
+  ingress:
+    # Allow from agents (outbound-only from agent perspective)
+    allowAgentConnections: true
+    agentCIDR: "0.0.0.0/0"  # Restrict in production
+
+    # Allow from monitoring
+    allowMonitoring: true
+
+  # Egress rules
+  egress:
+    # For air-gapped: deny all external
+    allowExternal: false
+
+    # Allow DNS
+    allowDNS: true
+
+    # Allow internal services
+    allowInternal: true
+
+# =============================================================================
+# Security Context
+# =============================================================================
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+  capabilities:
+    drop:
+      - ALL
+
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+# =============================================================================
+# Service Account
+# =============================================================================
+
+serviceAccount:
+  create: true
+  name: "ccea-cloud"
+  annotations: {}
+  # For cloud providers (AWS/GCP/Azure), add IAM annotations
+
+# =============================================================================
+# Ingress Configuration
+# =============================================================================
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  hosts:
+    - host: ccea.internal.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ccea-tls
+      hosts:
+        - ccea.internal.company.com

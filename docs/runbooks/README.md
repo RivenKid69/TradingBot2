@@ -1,6 +1,6 @@
 # Operational Runbooks
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-14
+> **Version**: 1.1.0 | **Last Updated**: 2025-12-15
 
 ## Overview
 
@@ -15,6 +15,10 @@ This directory contains operational runbooks for incident response, recovery pro
 | [AGENT_REVOCATION.md](./AGENT_REVOCATION.md) | Agent revocation and key rotation | High |
 | [DEGRADED_MODE.md](./DEGRADED_MODE.md) | Handling degraded operations | Medium |
 | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) | General incident response | Varies |
+| [BROKER_ERRORS.md](./BROKER_ERRORS.md) | Broker connectivity and API errors | High |
+| [LATENCY_ISSUES.md](./LATENCY_ISSUES.md) | Latency diagnosis and resolution | Medium-High |
+| [DATA_LOSS.md](./DATA_LOSS.md) | Data loss and recovery procedures | Critical |
+| [KEY_ROTATION_RUNBOOK.md](./KEY_ROTATION_RUNBOOK.md) | Key rotation procedures | High |
 
 ## Quick Reference
 
@@ -27,6 +31,9 @@ This directory contains operational runbooks for incident response, recovery pro
 | Cloud unreachable | Follow degraded mode | [DEGRADED_MODE.md](./DEGRADED_MODE.md) |
 | Data breach suspected | Incident response | [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md) |
 | System failure | Recovery procedure | [RECOVERY.md](./RECOVERY.md) |
+| Broker API errors | Diagnose and resolve | [BROKER_ERRORS.md](./BROKER_ERRORS.md) |
+| High latency detected | Investigate source | [LATENCY_ISSUES.md](./LATENCY_ISSUES.md) |
+| Data loss suspected | Recovery procedure | [DATA_LOSS.md](./DATA_LOSS.md) |
 
 ### Emergency Contacts
 
