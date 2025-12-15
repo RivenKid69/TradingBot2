@@ -15,6 +15,7 @@
 7) **Надёжность и деградация**: reconciliation, safe-halt при неопределённости, cloud-down/network-down режимы, локальные журналы.  
 8) **Privacy/GDPR**: минимизация телеметрии, уровни чувствительности, retention+deletion, EU residency по умолчанию для EU.  
 9) **Enterprise**: on-prem/VPC режим, evidence pack export, change management и access audit.
+10) **Non-goals соблюдены**: не реализуем managed-hosting агента нами, copy-trading/соц-торговлю, “cloud broker integrations с ключами пользователя”, “guaranteed profit/best execution promises” — и это поддержано guardrails/процессом.
 
 ## Как читать план
 
@@ -75,12 +76,31 @@
 
 Цель: привести cloud к реальному multi-tenant SaaS/control plane из дизайн-дока: RBAC, audit, retention/residency, DSAR, break-glass, запреты на секреты и order-like payload.
 
+### 2.0 RBAC и tenant isolation должны быть не декларацией
+- **Сделать**:
+  - Все endpoints, которые читают/пишут tenant-scoped данные, должны проверять workspace/org доступ и роли.
+  - Включить и реально использовать RLS (Postgres) в production режимах; для dev/test — явные фильтры по `workspace_id`.
+- **Где**: `packages/cloud/control_plane/models.py`, `packages/cloud/control_plane/dependencies.py`, все routers/services.
+- **Done**:
+  - Нельзя получить доступ к данным другого workspace ни через один endpoint.
+  - Есть тесты на cross-tenant access denial (RLS/фильтры).
+
 ### 2.1 Довести governance endpoints до DB-backed реализации
 - **Сделать**: заменить in-memory singleton сервисы governance на DB-backed модели и транзакции (DSAR, retention, residency, break-glass, access audit).
 - **Где**: `packages/cloud/control_plane/routers/governance.py`, `packages/cloud/control_plane/models.py`.
 - **Done**:
   - DSAR/Retention/Residency/Break-glass создают записи в БД (tenant-scoped), а не держатся в памяти процесса.
   - Любое “break-glass” пишет evidence hash + reason и попадает в `AccessAudit`.
+
+### 2.1A Agent Registry / Trust / Revoke (security ops)
+- **Сделать**:
+  - Полный жизненный цикл агента: ENROLL → (SUSPEND/REVOKE) → блокировка команд/доступа.
+  - Trust-state enforcement на agent-auth endpoints (heartbeat/poll/ack/result/approval): revoked/suspended не могут продолжать.
+  - Issue/rotate agent session tokens (security ops) с аудитом.
+- **Где**: `packages/cloud/control_plane/models.py`, `packages/cloud/control_plane/routers/agents.py`, `packages/cloud/control_plane/routers/agent_lifecycle.py`, `packages/cloud/control_plane/routers/auth.py`.
+- **Done**:
+  - Отозванный агент не может поллить команды/слать telemetry/принимать обновления.
+  - Все revoke/suspend действия попадают в audit trail.
 
 ### 2.2 Реальный AccessAudit для “кто смотрел чувствительное”
 - **Сделать**: добавить audit logging на чтение/экспорт/просмотр чувствительных данных (telemetry detailed/raw, approvals, export logs).
@@ -130,6 +150,16 @@
   - Любая попытка добавить order-like команду/поле ломает CI.
   - Любая попытка завезти trading libs в cloud artifact ломает CI (post-build scan).
 
+### 2.8 Запреты “навсегда” как контрольные проверки (не только слова)
+- **Сделать**:
+  - Статические/CI проверки, что в cloud runtime нет:
+    - брокерских submitter’ов/OMS,
+    - эндпоинтов/команд с order-like payload,
+    - кода “remote shell/remote exec” без enterprise режима и строгого аудита.
+- **Где**: `ccea/guardrails/*`, `.github/workflows/build-and-test.yml`, `packages/cloud/control_plane/boundary.py`.
+- **Done**:
+  - Добавление запрещённых паттернов ломает CI в PR.
+
 ---
 
 ## Фаза 3 — Артефакты/конфиги: supply chain end-to-end (build → sign → publish → pull → verify)
@@ -144,6 +174,14 @@
 - **Done**:
   - В manifest `format` соответствует реальному артефакту.
   - Артефакт доступен по digest ref, и агент может его получить без “магии”.
+
+### 3.1A Идемпотентность команд на стороне Cloud (стабильные idempotency keys)
+- **Сделать**:
+  - Для lifecycle-команд генерировать **детерминированные** `idempotency_key` (например: `deployment_id:command_type:artifact_digest:config_digest`), чтобы повторная выдача “того же desired state” не создавала новый “уникальный” command.
+  - Гарантировать, что “повтор” команды Cloud→Agent безопасен.
+- **Где**: `packages/cloud/control_plane/services/command_service.py`, `packages/cloud/control_plane/routers/commands.py`.
+- **Done**:
+  - Повторная выдача того же запроса не плодит новые команды и не приводит к дубликатам на агенте.
 
 ### 3.2 Подпись артефактов: обязательность и проверка на Agent
 - **Сделать**:
@@ -177,6 +215,7 @@
 - **Done**:
   - Agent fail-closed: если TRADING_IMPACTING без requires_approval — отказ и audit.
   - Cloud UI/API не позволяет создать TRADING_IMPACTING команду без approval_required.
+  - `REQUEST_STOP_RUN`/`REQUEST_PAUSE_RUN` классифицированы как safety/operational и **могут** применяться без approve (как снижение риска), но это не даёт Cloud “рычаг” управления торговым поведением (нет сигналов/targets/orders).
 
 ---
 
@@ -199,10 +238,12 @@
 - **Сделать**:
   - Хранить broker creds только локально (keychain/encrypted file), без вывода в логи/telemetry.
   - Ротация ключей — локальная операция.
+  - Поддержка нескольких broker accounts локально (явный выбор), без доступа cloud к ключам/деталям.
 - **Где**: `packages/agent/vault/*`, `packages/agent/daemon/keychain.py`, `packages/agent/telemetry/redaction.py`.
 - **Done**:
   - Невозможно отправить secret в cloud через telemetry/config/commands.
   - Есть CLI/операции для локальной ротации.
+  - Есть локальная модель “account selection”, не требующая cloud.
 
 ### 4.3 Policy Firewall + Hard Caps (Cloud не может поднять риск)
 - **Сделать**:
@@ -219,11 +260,21 @@
   - Нет пути, по которому Cloud может подсунуть intent/target/order.
   - Стратегии в live получают только локальный snapshot/данные.
 
+### 4.4A Sandbox/permissions enforcement для strategy runner
+- **Сделать**:
+  - Запуск стратегии в изоляции (process/container) с лимитами CPU/RAM.
+  - Enterprise: network egress deny-by-default + allowlist; read-only FS (кроме tmp); запрет произвольных исходящих запросов.
+  - Enforcement должен происходить на Agent, а не быть “только в manifest”.
+- **Где**: `packages/agent/daemon/sandbox.py`, `packages/shared/contracts/manifest.py` (permissions), runner wiring.
+- **Done**:
+  - Стратегия не может выйти в сеть/FS вне разрешений; попытки фиксируются и приводят к halt/deny.
+
 ### 4.5 Kill switch (локальный) + причины/действия
 - **Сделать**: реализовать triggers (loss, broker errors, latency spikes, order spam, divergence, data feed invalid) и действия (cancel, optional flatten по локальной политике, halt run).
 - **Где**: `packages/agent/daemon/kill_switch.py`, интеграция с runner/execution.
 - **Done**:
   - Kill switch реально останавливает торговлю и оставляет локальный журнал + телеметрию (redacted).
+  - Cloud не имеет команды “REMOTE_FLATTEN/FLATTEN_NOW”; flatten допускается только локально (или enterprise-режим по отдельному контракту и с усиленным аудитом).
 
 ### 4.6 Reconciliation + idempotency (без дублей при retries/restarts)
 - **Сделать**:
@@ -262,6 +313,24 @@
 - **Done**:
   - Нет inbound портов/требования открывать firewall для Agent.
   - Replay/idempotency защищены (idempotency keys + timestamps + audit).
+
+### 4.10 Local approval UX (обязательный операторский контур)
+- **Сделать**:
+  - Предоставить локальный интерфейс approve (CLI как минимум; GUI опционально) для TRADING_IMPACTING.
+  - UX должен показывать: что меняется (artifact digest/config digest), дифф/summary, affected instruments/universe/risk, локальные hard caps.
+- **Где**: `packages/agent/approval/*`, daemon integration, `docs/agent/APPROVALS.md`.
+- **Done**:
+  - Любой TRADING_IMPACTING request без решения оператора не применяется.
+  - Evidence hash/attestation сохраняются локально и репортятся в cloud (без секретов).
+
+### 4.11 Local auto-approve policies (should-have, но для “100%” должны быть)
+- **Сделать**:
+  - Локальные правила auto-approve с allowlist (workspace/strategy/instruments/change types) — только на Agent и только stricter/explicit.
+  - Cloud не может включить auto-approve удалённо и не может расширить allowlist.
+- **Где**: `packages/agent/approval/*`, `packages/agent/policy/*`, `docs/agent/APPROVALS.md`.
+- **Done**:
+  - Auto-approve действует только по локально заданной политике, с аудитом (кто/когда/по какому правилу).
+  - Для “опасных” изменений (risk limit raise, broker account change, universe расширение) auto-approve по умолчанию запрещён.
 
 ---
 
@@ -315,6 +384,7 @@
   - Нет конфликтующих определений/секций в ToS.
   - Privacy/DPA явно описывают: broker creds и execution только в customer-managed Agent.
   - AUP согласован с техограничениями (abuse detection/quotas).
+  - Non-goals явно зафиксированы: “мы не хостим агент”, “не копитрейдинг”, “cloud не брокер/не советник”, “нет cloud order routing”.
 
 ### 5.6 Incident playbooks/runbooks
 - **Сделать**: runbooks для broker errors/latency/data loss, kill switch, revoke/rotation, recovery без доступа к секретам.
@@ -336,4 +406,3 @@
 6) **Privacy/GDPR/Residency**: минимизация telemetry, уровни чувствительности, retention+deletion, EU residency default, enterprise local-only режим.  
 7) **Enterprise readiness**: on-prem pack + evidence pack + signed updates + change windows/pinning + break-glass audit.  
 8) **Docs/ToS/Marketing** не противоречат архитектуре (никаких “cloud executes/stores keys”).
-
