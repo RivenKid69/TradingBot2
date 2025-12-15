@@ -1,0 +1,135 @@
+# Cloud Exclusion Manifest
+#
+# Design Doc 0.2, 0.3, 3.1: Cloud MUST NOT contain live execution code.
+#
+# This manifest defines files/patterns that MUST be excluded from Cloud
+# containers, packages, and deployments. Any file matching these patterns
+# would turn Cloud into an execution service (Design Doc violation).
+#
+# CI/CD pipelines MUST verify these exclusions before building/deploying.
+
+version: "1.0.0"
+updated_at: "2025-01-15"
+
+# Design Doc References:
+#   0.2 - Cloud Platform (SaaS) - "Forever Forbidden" List
+#   0.3 - Agent (local/VPS/on-prem) - Sole Execution Zone
+#   3.1 - Must-Have: Cloud does not store secrets and does not call broker APIs
+#   5.1 - Live Intent Generation: Live Intent is born only on Agent
+
+# CRITICAL: These patterns indicate live execution capability
+# Cloud containers/packages MUST NOT contain these modules
+
+exclusions:
+  # Live execution runners
+  live_runners:
+    description: "Live trading execution code - AGENT ZONE ONLY"
+    patterns:
+      - "**/app.py"                       # Legacy live app (root)
+      - "**/service_signal_runner.py"     # Signal runner (executes trades)
+      - "**/script_live.py"               # Live trading script
+      - "**/script_futures_live.py"       # Futures live trading
+      - "**/services/futures_live_runner.py"  # Futures live runner
+      - "**/runner/live.py"               # Agent live runner (OK in agent/)
+    exception_paths:
+      - "packages/cloud/**"               # Cloud app.py is OK (FastAPI)
+      - "packages/agent/**"               # Agent zone - OK
+
+  # Order execution adapters
+  order_execution:
+    description: "Broker order execution code - AGENT ZONE ONLY"
+    patterns:
+      - "**/adapters/*/order_execution*.py"
+      - "**/order_submitter*.py"
+      - "**/broker_trading_client*.py"
+    exception_paths:
+      - "packages/agent/**"
+
+  # Signal/Target models (Design Doc 3.1, 5.1, 10.5)
+  signal_target_models:
+    description: "Live signal/target transmission - prohibited in Cloud"
+    patterns:
+      - "**/api/spot_signals.py"          # Live signal API
+      - "**/signal_transmitter*.py"
+      - "**/target_position*.py"
+    exception_paths: []
+
+  # API keys and secrets handlers
+  secrets_handlers:
+    description: "Secrets/API keys handling - AGENT ZONE ONLY"
+    patterns:
+      - "**/secrets_manager*.py"          # Except Cloud vault proxy
+      - "**/api_key_store*.py"
+      - "**/credential_loader*.py"
+    exception_paths:
+      - "packages/cloud/control_plane/security/secrets_proxy.py"  # Read-only proxy OK
+
+  # Kill switch and risk (Agent-side only)
+  risk_execution:
+    description: "Risk execution and kill switch - AGENT ZONE ONLY"
+    patterns:
+      - "**/kill_switch.py"               # Unless it's Cloud alerting component
+      - "**/order_cancel*.py"
+      - "**/flatten_position*.py"
+    exception_paths:
+      - "packages/cloud/control_plane/alerts/**"  # Alerting OK
+
+# Import patterns that MUST NOT appear in Cloud code
+prohibited_imports:
+  - module: "adapters.*.order_execution"
+    reason: "Order execution is Agent-only (Design Doc 0.2)"
+  - module: "api.spot_signals"
+    reason: "Live signals are prohibited in Cloud (Design Doc 5.1)"
+  - module: "service_signal_runner"
+    reason: "Signal execution is Agent-only (Design Doc 3.1)"
+  - module: "ccxt"
+    reason: "Direct exchange API access prohibited (Design Doc 0.2)"
+    note: "Use for price feeds only if isolated and not for order placement"
+  - module: "alpaca_trade_api.rest.submit_order"
+    reason: "Direct order submission prohibited in Cloud"
+
+# Function/class patterns prohibited in Cloud
+prohibited_patterns:
+  - pattern: "def submit_order"
+    reason: "Order submission is Agent-only"
+  - pattern: "def place_order"
+    reason: "Order placement is Agent-only"
+  - pattern: "def execute_signal"
+    reason: "Signal execution is Agent-only"
+  - pattern: "def set_target_position"
+    reason: "Position targeting is Agent-only"
+  - pattern: "class.*OrderSubmitter"
+    reason: "Order submission classes are Agent-only"
+  - pattern: "class.*SignalExecutor"
+    reason: "Signal execution classes are Agent-only"
+
+# CI Validation Rules
+validation:
+  # Run these checks in CI/CD before building Cloud image
+  pre_build_checks:
+    - name: "exclusion_file_check"
+      description: "Verify excluded files are not in build context"
+      fail_action: "BLOCK_BUILD"
+
+    - name: "import_scan"
+      description: "Scan for prohibited imports in Cloud code"
+      fail_action: "BLOCK_BUILD"
+
+    - name: "pattern_scan"
+      description: "Scan for prohibited function/class patterns"
+      fail_action: "BLOCK_BUILD"
+
+  # Run in container after build
+  post_build_checks:
+    - name: "container_file_audit"
+      description: "Audit container for excluded files"
+      fail_action: "FAIL_DEPLOYMENT"
+
+    - name: "module_import_test"
+      description: "Attempt to import prohibited modules (must fail)"
+      fail_action: "FAIL_DEPLOYMENT"
+
+# Contact for violations
+escalation:
+  primary: "security@company.com"
+  slack: "#ccea-security"

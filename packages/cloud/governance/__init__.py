@@ -38,24 +38,28 @@ from .residency import (
     DataRegion,
     ResidencyPolicy,
     ResidencyConfig,
+    ResidencyMode,
 )
 from .retention import (
     RetentionService,
     RetentionPolicy,
     RetentionConfig,
     PurgeResult,
+    RetentionAction,
 )
 from .break_glass import (
     BreakGlassController,
     BreakGlassRequest,
     BreakGlassReason,
     BreakGlassResult,
+    BreakGlassScope,
 )
 from .health_monitor import (
     HealthMonitorService,
     AgentHealth,
     HealthStatus,
     HealthDashboard,
+    RunStatus,
 )
 from .alert_rules import (
     AlertRulesEngine,
@@ -63,6 +67,7 @@ from .alert_rules import (
     AlertCondition,
     AlertAction,
     AlertTrigger,
+    AlertSeverity,
 )
 
 # CMK requires cryptography, make it optional
@@ -94,27 +99,32 @@ __all__ = [
     "DataRegion",
     "ResidencyPolicy",
     "ResidencyConfig",
+    "ResidencyMode",
     # Retention
     "RetentionService",
     "RetentionPolicy",
     "RetentionConfig",
     "PurgeResult",
+    "RetentionAction",
     # Break Glass
     "BreakGlassController",
     "BreakGlassRequest",
     "BreakGlassReason",
     "BreakGlassResult",
+    "BreakGlassScope",
     # Health Monitor
     "HealthMonitorService",
     "AgentHealth",
     "HealthStatus",
     "HealthDashboard",
+    "RunStatus",
     # Alert Rules
     "AlertRulesEngine",
     "AlertRule",
     "AlertCondition",
     "AlertAction",
     "AlertTrigger",
+    "AlertSeverity",
     # CMK
     "CustomerManagedKeysService",
     "CMKConfig",

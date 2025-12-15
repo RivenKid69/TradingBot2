@@ -94,26 +94,77 @@ class TrustState(str, enum.Enum):
 
 # Deployment states (Design Doc 11.1)
 class DeploymentState(str, enum.Enum):
-    """Deployment lifecycle state."""
+    """
+    Deployment lifecycle state per Design Doc 11.1.
+
+    State Machine:
+        CREATED → PENDING_APPROVAL → APPROVED → DEPLOYING → DEPLOYED
+                                                              ↓
+        HALTED ← (kill switch) ← RUNNING ← ────────────────────
+           ↓
+        SUSPENDED ← (user request)
+           ↓
+        REVOKED/RETIRED (terminal)
+    """
     CREATED = "created"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
     DEPLOYING = "deploying"
     DEPLOYED = "deployed"
     SUSPENDED = "suspended"
+    HALTED = "halted"  # Design Doc 9.4, 11.1: kill switch triggered
+    REVOKED = "revoked"  # Trust revoked
     FAILED = "failed"
     RETIRED = "retired"
 
 
+# Halt reason (Design Doc 9.4)
+class HaltReason(str, enum.Enum):
+    """
+    Reason for HALTED state per Design Doc 9.4.
+
+    Kill switch triggers include:
+    - max daily loss
+    - broker errors burst
+    - latency spike
+    - order spam
+    - state divergence
+    - data feed invalid
+    """
+    MAX_DAILY_LOSS = "max_daily_loss"
+    BROKER_ERROR_BURST = "broker_error_burst"
+    LATENCY_SPIKE = "latency_spike"
+    ORDER_SPAM = "order_spam"
+    STATE_DIVERGENCE = "state_divergence"
+    DATA_FEED_INVALID = "data_feed_invalid"
+    MANUAL_KILL_SWITCH = "manual_kill_switch"
+    RECONCILIATION_FAILURE = "reconciliation_failure"
+    TIME_SYNC_DRIFT = "time_sync_drift"
+    RISK_LIMIT_BREACH = "risk_limit_breach"
+    UNKNOWN = "unknown"
+
+
 # Run states (Design Doc 11.2)
 class RunState(str, enum.Enum):
-    """Run lifecycle state."""
+    """
+    Run lifecycle state per Design Doc 11.2.
+
+    State Machine:
+        CREATED → PENDING_APPROVAL → APPROVED → STARTING → RUNNING
+                                                              ↓
+        HALTED ← (kill switch) ← ─────────────────────────────┤
+           ↓                                                  ↓
+        STOPPED ← (user stop) ← PAUSED ← (user pause) ←──────┘
+           ↓
+        COMPLETED/FAILED (terminal)
+    """
     CREATED = "created"
     PENDING_APPROVAL = "pending_approval"
     APPROVED = "approved"
     STARTING = "starting"
     RUNNING = "running"
     PAUSED = "paused"
+    HALTED = "halted"  # Design Doc 9.4, 11.2: kill switch triggered
     STOPPING = "stopping"
     STOPPED = "stopped"
     FAILED = "failed"
@@ -864,6 +915,17 @@ class Deployment(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
         default=DeploymentState.DEPLOYED.value,
     )
 
+    # Halt info (Design Doc 9.4, 11.1)
+    halt_reason: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+    halt_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    halted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     # Metadata
     extra_metadata: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)
 
@@ -923,6 +985,17 @@ class Run(Base, TenantMixin, TimestampMixin):
     # Error handling
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     error_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
+    # Halt info (Design Doc 9.4, 11.2)
+    halt_reason: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+    halt_details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    halted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
 
     # Metrics summary
     metrics_summary: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)

@@ -27,6 +27,7 @@ from fastapi.responses import JSONResponse
 
 from .database import check_db_health, close_engine, init_db
 from .routers import (
+    agent_blobs,
     agent_lifecycle,
     agents,
     auth,
@@ -179,6 +180,12 @@ def create_app(
         agent_lifecycle.router,
         prefix="/api/v1/agent",
         tags=["Agent Lifecycle"],
+    )
+    # Design Doc 12.2, 22.2: Agent-auth endpoints for blob/artifact access
+    app.include_router(
+        agent_blobs.router,
+        prefix="/api/v1/agent",
+        tags=["Agent Blobs"],
     )
 
     return app

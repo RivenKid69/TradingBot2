@@ -386,7 +386,7 @@ async def sample_strategy(
         workspace_id=sample_workspace.id,
         name="test-strategy",
         description="A test trading strategy",
-        created_by_user_id=sample_user.id,
+        # Note: Strategy model doesn't have created_by_user_id field
     )
     db_session.add(strategy)
     await db_session.commit()
@@ -402,11 +402,11 @@ async def sample_strategy_version(
 ) -> StrategyVersion:
     """Create a sample strategy version."""
     version = StrategyVersion(
+        workspace_id=sample_strategy.workspace_id,
         strategy_id=sample_strategy.id,
         version="1.0.0",
         git_sha="abc123def456",
-        parameters={"param1": "value1"},
-        created_by_user_id=sample_user.id,
+        # Note: parameters and created_by_user_id don't exist in model
     )
     db_session.add(version)
     await db_session.commit()
@@ -422,11 +422,13 @@ async def sample_build(
 ) -> Build:
     """Create a sample build."""
     build = Build(
+        workspace_id=sample_strategy_version.workspace_id,
         strategy_version_id=sample_strategy_version.id,
         build_number=1,
         status="completed",
-        started_by_user_id=sample_user.id,
-        completed_at=datetime.now(timezone.utc),
+        started_at=datetime.now(timezone.utc),
+        finished_at=datetime.now(timezone.utc),
+        # Note: Build model doesn't have started_by_user_id or completed_at
     )
     db_session.add(build)
     await db_session.commit()
@@ -441,6 +443,7 @@ async def sample_artifact(
 ) -> Artifact:
     """Create a sample artifact."""
     artifact = Artifact(
+        workspace_id=sample_build.workspace_id,
         build_id=sample_build.id,
         name="test.whl",
         format="wheel",
@@ -506,7 +509,7 @@ async def sample_command(
         agent_id=sample_agent.id,
         command_type="STOP",
         payload={"reason": "manual"},
-        change_class=ChangeClass.STANDARD,
+        change_class=ChangeClass.OPERATIONAL,
         status=CommandStatus.PENDING,
         created_by_user_id=sample_user.id,
     )

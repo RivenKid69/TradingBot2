@@ -6,6 +6,7 @@ CLOUD ZONE ONLY.
 """
 
 from . import (
+    agent_blobs,
     agents,
     agent_lifecycle,
     auth,
@@ -16,7 +17,7 @@ from . import (
     governance,
     health,
     organizations,
-    research_jobs,
+    # research_jobs,  # TODO: Fix dependency issues
     strategies,
     telemetry,
     users,
@@ -24,6 +25,7 @@ from . import (
 )
 
 __all__ = [
+    "agent_blobs",
     "agents",
     "agent_lifecycle",
     "auth",
@@ -34,7 +36,7 @@ __all__ = [
     "governance",
     "health",
     "organizations",
-    "research_jobs",
+    # "research_jobs",
     "strategies",
     "telemetry",
     "users",

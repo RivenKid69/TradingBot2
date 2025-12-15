@@ -43,6 +43,10 @@ from ..models import (
     Run,
     TrustState,
 )
+from .change_class_enforcer import (
+    ChangeClassEnforcer,
+    ChangeClass as EnforcerChangeClass,
+)
 
 
 # ============================================================================
@@ -223,12 +227,18 @@ class CommandService:
     async def create_command(
         self,
         request: CommandCreateRequest,
+        config_has_trading_impact: bool = False,
+        artifact_change_class: Optional[str] = None,
     ) -> Command:
         """
         Create a new command.
 
+        Design Doc 7/11: Enforces change_class rules and approval requirements.
+
         Args:
             request: Command creation request
+            config_has_trading_impact: True if config diff has trading impact
+            artifact_change_class: Change class from artifact manifest
 
         Returns:
             Created command
@@ -270,16 +280,51 @@ class CommandService:
                 f"Agent {request.agent_id} not found or not enrolled"
             )
 
-        # Enforce invariant: TRADING_IMPACTING always requires local approval (Cloud cannot bypass).
-        requires_approval = bool(request.requires_approval)
-        if request.change_class == ChangeClass.TRADING_IMPACTING:
+        # Design Doc 7/11: Use ChangeClassEnforcer to determine effective change class
+        # and approval requirement. Cloud CANNOT bypass TRADING_IMPACTING approval.
+        enforcer = ChangeClassEnforcer(strict_mode=True)
+
+        # Map request change class to enforcer enum
+        try:
+            requested_class = EnforcerChangeClass(request.change_class.value)
+        except ValueError:
+            requested_class = None
+
+        determination = enforcer.determine_change_class(
+            command_type=request.command_type,
+            requested_class=requested_class,
+            config_has_trading_impact=config_has_trading_impact,
+            artifact_change_class=artifact_change_class,
+        )
+
+        # Get approval requirement from enforcer
+        approval_req = enforcer.get_approval_requirement(determination)
+
+        # Effective change class and approval state
+        effective_change_class = ChangeClass(determination.change_class.value)
+        requires_approval = approval_req.required
+
+        # Validate consistency - enforcer validation (Phase 3, 3.5: No silent upgrades)
+        is_valid, error_msg = enforcer.validate_command_approval_state(
+            command_type=request.command_type,
+            change_class=determination.change_class,
+            requires_approval=requires_approval,
+        )
+        if not is_valid:
+            # Auto-correct rather than fail - but log the override
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Change class enforcement: {error_msg}. "
+                f"Auto-correcting requires_approval to True."
+            )
             requires_approval = True
 
         initial_status = (
             CommandStatus.PENDING_APPROVAL.value if requires_approval else CommandStatus.PENDING.value
         )
 
-        # Create command
+        # Create command with enforced values
         command = Command(
             workspace_id=request.workspace_id,
             idempotency_key=idempotency_key,
@@ -288,7 +333,7 @@ class CommandService:
             run_id=request.run_id,
             command_type=request.command_type.upper(),
             payload_ref=request.payload_ref,
-            change_class=request.change_class.value,
+            change_class=effective_change_class.value,
             requires_approval=requires_approval,
             status=initial_status,
             expires_at=request.expires_at,

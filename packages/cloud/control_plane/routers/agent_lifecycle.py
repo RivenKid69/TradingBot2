@@ -26,9 +26,12 @@ References:
 from __future__ import annotations
 
 import hashlib
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -56,6 +59,10 @@ from ..services.command_service import (
     CommandNotFoundError,
     CommandResultRequest,
     CommandStateError,
+)
+from ..services.command_signer import (
+    get_cloud_signer,
+    CloudKeyNotConfiguredError,
 )
 
 
@@ -90,7 +97,12 @@ class CommandPollResponse(BaseModel):
 
 
 class PendingCommand(BaseModel):
-    """Pending command for agent."""
+    """
+    Pending command for agent.
+
+    Design Doc 10.2: All commands MUST have signature field.
+    Agent MUST verify signature before processing.
+    """
     id: UUID
     status: str
     idempotency_key: str
@@ -102,6 +114,8 @@ class PendingCommand(BaseModel):
     run_id: Optional[UUID] = None
     expires_at: Optional[datetime] = None
     created_at: datetime
+    timestamp: Optional[datetime] = None  # For replay protection
+    signature: Optional[Dict[str, Any]] = None  # Design Doc 10.2: Command signature
 
 
 class CommandAckResponse(BaseModel):
@@ -279,6 +293,9 @@ async def poll_commands(
     Returns commands in order of creation (FIFO).
     Commands requiring approval are excluded until approved.
 
+    Design Doc 10.2: All commands MUST be signed by Cloud.
+    Agent MUST verify signature before processing.
+
     WI-CLOUD-02: Implements command polling with accurate results.
     """
     async with get_session() as session:
@@ -293,23 +310,58 @@ async def poll_commands(
             limit=min(limit, 50),  # Cap at 50
         )
 
-        # Convert to response format
-        commands = [
-            PendingCommand(
-                id=cmd.id,
-                status=cmd.status,
-                idempotency_key=cmd.idempotency_key,
-                command_type=cmd.command_type,
-                payload_ref=cmd.payload_ref,
-                change_class=cmd.change_class,
-                requires_approval=cmd.requires_approval,
-                deployment_id=cmd.deployment_id,
-                run_id=cmd.run_id,
-                expires_at=cmd.expires_at,
-                created_at=cmd.created_at,
+        # Get command signer for signing commands (Design Doc 10.2)
+        try:
+            signer = get_cloud_signer()
+        except CloudKeyNotConfiguredError:
+            logger.error("Cloud signing key not configured - commands will be unsigned")
+            signer = None
+
+        # Convert to response format with signatures
+        commands = []
+        for cmd in result.commands:
+            # Build command data dict for signing
+            cmd_data = {
+                "id": str(cmd.id),
+                "status": cmd.status,
+                "idempotency_key": cmd.idempotency_key,
+                "command_type": cmd.command_type,
+                "payload_ref": cmd.payload_ref,
+                "change_class": cmd.change_class,
+                "requires_approval": cmd.requires_approval,
+                "deployment_id": str(cmd.deployment_id) if cmd.deployment_id else None,
+                "run_id": str(cmd.run_id) if cmd.run_id else None,
+                "expires_at": cmd.expires_at.isoformat() if cmd.expires_at else None,
+                "created_at": cmd.created_at.isoformat() if cmd.created_at else None,
+            }
+
+            # Sign the command (Design Doc 10.2)
+            if signer:
+                signed_data = signer.sign_command(cmd_data)
+                signature = signed_data.get("signature")
+                timestamp_str = signed_data.get("timestamp")
+                timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
+            else:
+                signature = None
+                timestamp = datetime.now(timezone.utc)
+
+            commands.append(
+                PendingCommand(
+                    id=cmd.id,
+                    status=cmd.status,
+                    idempotency_key=cmd.idempotency_key,
+                    command_type=cmd.command_type,
+                    payload_ref=cmd.payload_ref,
+                    change_class=cmd.change_class,
+                    requires_approval=cmd.requires_approval,
+                    deployment_id=cmd.deployment_id,
+                    run_id=cmd.run_id,
+                    expires_at=cmd.expires_at,
+                    created_at=cmd.created_at,
+                    timestamp=timestamp,
+                    signature=signature,
+                )
             )
-            for cmd in result.commands
-        ]
 
         return CommandPollResponse(
             commands=commands,

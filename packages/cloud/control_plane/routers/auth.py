@@ -58,6 +58,14 @@ from ..security.jwt_revocation import (
     is_token_revoked,
     get_blocklist,
 )
+from ..services.command_signer import (
+    get_cloud_signer,
+    CloudKeyNotConfiguredError,
+)
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -107,13 +115,19 @@ class AgentEnrollRequest(BaseModel):
 
 
 class AgentEnrollResponse(BaseModel):
-    """Agent enrollment response."""
+    """
+    Agent enrollment response.
+
+    Design Doc 10.2: cloud_public_key is provided so Agent can verify
+    signatures on commands from Cloud.
+    """
 
     agent_id: UUID
     access_token: str
     token_type: str = "bearer"
     workspace_id: UUID
     org_id: UUID
+    cloud_public_key: Optional[str] = None  # Design Doc 10.2: For command verification
 
 
 class AgentHeartbeatRequest(BaseModel):
@@ -400,11 +414,23 @@ async def enroll_agent(request: AgentEnrollRequest) -> AgentEnrollResponse:
             capabilities=agent.capabilities,
         )
 
+        # Get Cloud's public key for command verification (Design Doc 10.2)
+        cloud_public_key = None
+        try:
+            signer = get_cloud_signer()
+            cloud_public_key = signer.get_public_key_pem()
+        except CloudKeyNotConfiguredError:
+            logger.warning(
+                "Cloud signing key not configured. Agent will not be able to verify "
+                "command signatures. Configure CCEA_CLOUD_PRIVATE_KEY for production."
+            )
+
         return AgentEnrollResponse(
             agent_id=agent.id,
             access_token=token,
             workspace_id=agent.workspace_id,
             org_id=workspace.organization_id,
+            cloud_public_key=cloud_public_key,
         )
 
 

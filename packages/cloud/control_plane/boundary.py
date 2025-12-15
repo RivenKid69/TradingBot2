@@ -549,3 +549,236 @@ def assert_no_intent_fields(data: Dict[str, Any]) -> None:
                 field_path=v.location,
             ) for v in violations]
         )
+
+
+# ============================================================================
+# Config Validation (Design Doc 3.1, 5.1)
+# ============================================================================
+
+# Fields that indicate live signal/target content - PROHIBITED in configs
+PROHIBITED_CONFIG_PATTERNS: Final[FrozenSet[str]] = frozenset({
+    # Signal/target fields (Design Doc 5.1)
+    "signal",
+    "signals",
+    "target_position",
+    "target_positions",
+    "target_qty",
+    "target_weight",
+    "live_signal",
+    "execute_now",
+
+    # Order-like fields (Design Doc 10.5)
+    "order",
+    "orders",
+    "place_order",
+    "submit_order",
+    "order_type",
+    "limit_price",
+    "stop_price",
+    "time_in_force",
+    "side",
+    "qty",
+    "quantity",
+
+    # Intent fields
+    "intent",
+    "trade_intent",
+    "execution_intent",
+})
+
+
+class ConfigBoundaryValidator:
+    """
+    Validates config blobs for Cloud boundary compliance.
+
+    Design Doc 3.1, 5.1: Config blobs stored in Cloud MUST NOT contain:
+    - Live signals or targets
+    - Order-like payloads
+    - API keys or secrets
+
+    Usage:
+        validator = ConfigBoundaryValidator()
+        result = validator.validate(config_content)
+        if not result.valid:
+            reject_config(result.violations)
+    """
+
+    def __init__(self, strict_mode: bool = True):
+        """
+        Initialize validator.
+
+        Args:
+            strict_mode: If True, treat any violation as blocking
+        """
+        self._strict_mode = strict_mode
+
+    def validate(self, config: Dict[str, Any]) -> BoundaryValidationResult:
+        """
+        Validate a config blob for boundary compliance.
+
+        Args:
+            config: Config content dictionary
+
+        Returns:
+            BoundaryValidationResult
+        """
+        result = BoundaryValidationResult()
+
+        # Check for prohibited config patterns
+        self._check_prohibited_patterns(config, "", result)
+
+        # Check for signals/targets structure
+        self._check_signal_target_structure(config, result)
+
+        return result
+
+    def _check_prohibited_patterns(
+        self,
+        obj: Any,
+        path: str,
+        result: BoundaryValidationResult,
+    ) -> None:
+        """Check object recursively for prohibited patterns."""
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                current_path = f"{path}.{key}" if path else key
+                key_lower = key.lower()
+
+                # Check against prohibited patterns
+                if key_lower in PROHIBITED_CONFIG_PATTERNS:
+                    result.add_violation(BoundaryViolation(
+                        violation_type=BoundaryViolationType.PROHIBITED_FIELD,
+                        severity="critical",
+                        message=f"Prohibited config field '{key}' - potential signal/target injection",
+                        field_path=current_path,
+                    ))
+
+                # Also check against general prohibited fields
+                if key_lower in PROHIBITED_INTENT_FIELDS:
+                    result.add_violation(BoundaryViolation(
+                        violation_type=BoundaryViolationType.INTENT_INJECTION,
+                        severity="critical",
+                        message=f"Intent field '{key}' not allowed in config",
+                        field_path=current_path,
+                    ))
+
+                # Recurse
+                self._check_prohibited_patterns(value, current_path, result)
+
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                self._check_prohibited_patterns(item, f"{path}[{i}]", result)
+
+    def _check_signal_target_structure(
+        self,
+        config: Dict[str, Any],
+        result: BoundaryValidationResult,
+    ) -> None:
+        """Check for signal/target-like structures."""
+        # Pattern: lists of dicts with symbol + qty/weight/side
+        def is_signal_like(items: list) -> bool:
+            if not items or not isinstance(items[0], dict):
+                return False
+            first = items[0]
+            signal_keys = {"symbol", "ticker", "instrument"}
+            value_keys = {"qty", "quantity", "weight", "side", "direction"}
+            has_symbol = any(k.lower() in signal_keys for k in first.keys())
+            has_value = any(k.lower() in value_keys for k in first.keys())
+            return has_symbol and has_value
+
+        def check_lists(obj: Any, path: str) -> None:
+            if isinstance(obj, dict):
+                for key, value in obj.items():
+                    current_path = f"{path}.{key}" if path else key
+                    if isinstance(value, list) and value:
+                        if is_signal_like(value):
+                            result.add_violation(BoundaryViolation(
+                                violation_type=BoundaryViolationType.INTENT_INJECTION,
+                                severity="critical",
+                                message=f"Signal-like structure detected at '{current_path}'",
+                                field_path=current_path,
+                            ))
+                    check_lists(value, current_path)
+            elif isinstance(obj, list):
+                for i, item in enumerate(obj):
+                    check_lists(item, f"{path}[{i}]")
+
+        check_lists(config, "")
+
+
+# Add validate_config method to CloudBoundaryValidator for backwards compatibility
+CloudBoundaryValidator.validate_config = lambda self, config: ConfigBoundaryValidator(
+    strict_mode=self._strict_mode
+).validate(config)
+
+
+# ============================================================================
+# Signal Isolation Validator (Design Doc 5.1)
+# ============================================================================
+
+class SignalIsolationValidator:
+    """
+    Validates that signal/target code is isolated from Cloud.
+
+    Design Doc 5.1: Live Intent is born only on Agent.
+    Cloud CANNOT store, transmit, or process live signals/targets.
+
+    This validator can be used to check:
+    1. Config blobs for signal content
+    2. API responses for signal leakage
+    3. Module imports for signal dependencies
+    """
+
+    # Import patterns that indicate signal handling
+    SIGNAL_IMPORT_PATTERNS: Final[FrozenSet[str]] = frozenset({
+        "api.spot_signals",
+        "service_signal_runner",
+        "signal_executor",
+        "target_position_manager",
+        "live_signal",
+    })
+
+    def validate_no_signal_imports(
+        self,
+        module_name: str,
+        imported_modules: List[str],
+    ) -> BoundaryValidationResult:
+        """
+        Validate that module doesn't import signal handling code.
+
+        Args:
+            module_name: Name of module being checked
+            imported_modules: List of modules imported by this module
+
+        Returns:
+            BoundaryValidationResult
+        """
+        result = BoundaryValidationResult()
+
+        for imported in imported_modules:
+            imported_lower = imported.lower()
+            for pattern in self.SIGNAL_IMPORT_PATTERNS:
+                if pattern in imported_lower:
+                    result.add_violation(BoundaryViolation(
+                        violation_type=BoundaryViolationType.INTENT_INJECTION,
+                        severity="critical",
+                        message=f"Signal import '{imported}' not allowed in Cloud module '{module_name}'",
+                        field_path=f"import:{imported}",
+                    ))
+
+        return result
+
+    def validate_api_response(
+        self,
+        response: Dict[str, Any],
+    ) -> BoundaryValidationResult:
+        """
+        Validate that API response doesn't contain signals/targets.
+
+        Args:
+            response: API response dictionary
+
+        Returns:
+            BoundaryValidationResult
+        """
+        return ConfigBoundaryValidator().validate(response)

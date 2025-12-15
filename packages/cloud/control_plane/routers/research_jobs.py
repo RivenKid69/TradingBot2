@@ -33,11 +33,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Body, BackgroundTa
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from packages.cloud.control_plane.database import get_session
 from packages.cloud.control_plane.dependencies import (
-    get_db,
-    get_current_user,
-    get_current_workspace,
+    UserDep,
 )
+
+# Aliases for compatibility
+get_db = get_session  # get_session is async contextmanager
+get_current_user = UserDep  # Use UserDep for current user
+get_current_workspace = None  # TODO: Implement if needed
 
 
 # ============================================================================
