@@ -280,6 +280,67 @@ ALLOWED_DETAILED_FIELDS: FrozenSet[str] = frozenset({
 
 
 # ============================================================================
+# Enterprise RAW_ORDER_EVENTS Fields (Design Doc: enterprise-only)
+# ============================================================================
+
+# ALLOWED_RAW_ORDER_FIELDS: Enterprise-only telemetry for auditing/compliance
+# IMPORTANT: Only available with enterprise license and explicit opt-in
+# Stored in isolated enterprise storage with strict access controls
+ALLOWED_RAW_ORDER_FIELDS: FrozenSet[str] = frozenset({
+    # Order fields - enterprise audit/compliance only
+    "side",
+    "quantity",
+    "qty",
+    "price",
+    "order_type",
+    "limit_price",
+    "stop_price",
+    "order_id",
+    "client_order_id",
+    "filled_qty",
+    "remaining_qty",
+    "average_price",
+    "fill_price",
+    "fill_qty",
+    "execution_id",
+    "trade_id",
+    "commission",
+    "slippage",
+
+    # Position fields - enterprise audit only
+    "position_side",
+    "position_size",
+    "entry_price",
+    "exit_price",
+    "unrealized_pnl",
+    "realized_pnl",
+
+    # Signal/Intent fields - for compliance audit trail
+    "signal",
+    "intent",
+    "target_position",
+    "target_qty",
+
+    # Order lifecycle
+    "order_status",
+    "order_created_at",
+    "order_submitted_at",
+    "order_filled_at",
+    "order_cancelled_at",
+
+    # Execution timing for latency analysis
+    "signal_timestamp",
+    "submit_timestamp",
+    "ack_timestamp",
+    "fill_timestamp",
+    "exchange_timestamp",
+})
+
+# Enterprise config check marker - actual implementation in enterprise module
+ENTERPRISE_RAW_ORDER_ENABLED_HEADER = "X-CCEA-Enterprise-Raw-Order-Enabled"
+
+
+# ============================================================================
 # Data Classes
 # ============================================================================
 
@@ -322,19 +383,35 @@ class TelemetryValidator:
     """
     Validates telemetry payloads before cloud ingestion.
 
-    CRITICAL: This validator ensures no order/intent data reaches the cloud.
+    CRITICAL: This validator ensures no order/intent data reaches the cloud
+    EXCEPT when enterprise RAW_ORDER_EVENTS mode is explicitly enabled.
+
     It implements a defense-in-depth approach with multiple validation layers.
+
+    Enterprise RAW_ORDER_EVENTS mode (Design Doc):
+    - Only available with enterprise license
+    - Requires explicit opt-in per workspace
+    - Data stored in isolated enterprise storage
+    - Subject to strict access controls and audit logging
     """
 
-    def __init__(self, strict_mode: bool = True):
+    def __init__(
+        self,
+        strict_mode: bool = True,
+        enterprise_raw_order_enabled: bool = False,
+    ):
         """
         Initialize validator.
 
         Args:
             strict_mode: If True, reject on any prohibited field.
                          If False, sanitize and allow (not recommended for production).
+            enterprise_raw_order_enabled: If True, allow RAW_ORDER_EVENTS level
+                         for enterprise customers. MUST be combined with proper
+                         enterprise license validation.
         """
         self.strict_mode = strict_mode
+        self.enterprise_raw_order_enabled = enterprise_raw_order_enabled
         self._compiled_patterns = self._compile_credential_patterns()
 
     def _compile_credential_patterns(self) -> List[Tuple[re.Pattern, str]]:
@@ -378,12 +455,27 @@ class TelemetryValidator:
             blocked = True
 
         # 2. Scan for prohibited order/intent fields
-        order_violations = self._scan_prohibited_fields(
-            payload, PROHIBITED_ORDER_FIELDS, "order/intent"
-        )
-        if order_violations:
-            violations.extend(order_violations)
-            blocked = True
+        # EXCEPTION: Enterprise RAW_ORDER_EVENTS mode allows order fields
+        if telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value:
+            if not self.enterprise_raw_order_enabled:
+                violations.append(ValidationViolation(
+                    violation_type=ViolationType.RAW_ORDER_DATA,
+                    severity=ValidationSeverity.CRITICAL,
+                    field_path="telemetry_level",
+                    message="RAW_ORDER_EVENTS level requires enterprise license. "
+                            "Contact sales@ccea.io to enable this feature.",
+                    blocked=True,
+                ))
+                blocked = True
+            # Enterprise mode: order fields are allowed, skip order scan
+        else:
+            # Non-enterprise: block all order fields
+            order_violations = self._scan_prohibited_fields(
+                payload, PROHIBITED_ORDER_FIELDS, "order/intent"
+            )
+            if order_violations:
+                violations.extend(order_violations)
+                blocked = True
 
         # 3. Scan for broker credentials (CRITICAL)
         credential_violations = self._scan_credential_patterns(payload)
@@ -411,10 +503,13 @@ class TelemetryValidator:
                     blocked = True
 
         # 6. Deep scan for intent injection
-        intent_violations = self._deep_scan_intent_injection(payload)
-        if intent_violations:
-            violations.extend(intent_violations)
-            blocked = True
+        # Skip for enterprise RAW_ORDER_EVENTS mode - order structures are expected
+        if not (telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value
+                and self.enterprise_raw_order_enabled):
+            intent_violations = self._deep_scan_intent_injection(payload)
+            if intent_violations:
+                violations.extend(intent_violations)
+                blocked = True
 
         # Create sanitized payload if not blocking
         sanitized = None
@@ -587,8 +682,20 @@ class TelemetryValidator:
             return ALLOWED_AGGREGATED_FIELDS
         elif telemetry_level == TelemetryLevel.DETAILED_NON_SENSITIVE.value:
             return ALLOWED_AGGREGATED_FIELDS | ALLOWED_DETAILED_FIELDS
+        elif telemetry_level == TelemetryLevel.RAW_ORDER_EVENTS.value:
+            # RAW_ORDER_EVENTS - enterprise only with full order fields
+            # Only returned if enterprise_raw_order_enabled is True
+            if self.enterprise_raw_order_enabled:
+                return (
+                    ALLOWED_AGGREGATED_FIELDS |
+                    ALLOWED_DETAILED_FIELDS |
+                    ALLOWED_RAW_ORDER_FIELDS
+                )
+            else:
+                # Not enterprise - return minimal set (validation will fail anyway)
+                return ALLOWED_AGGREGATED_FIELDS
         else:
-            # RAW_ORDER_EVENTS - enterprise only, very restricted
+            # Unknown level - return minimal set
             return ALLOWED_AGGREGATED_FIELDS
 
     def _check_unknown_fields(
@@ -741,6 +848,7 @@ def validate_telemetry_payload(
     telemetry_level: str = TelemetryLevel.AGGREGATED.value,
     redaction_applied: bool = True,
     strict_mode: bool = True,
+    enterprise_raw_order_enabled: bool = False,
 ) -> ValidationResult:
     """
     Convenience function to validate a telemetry payload.
@@ -750,11 +858,15 @@ def validate_telemetry_payload(
         telemetry_level: Level of telemetry
         redaction_applied: Whether redaction has been applied
         strict_mode: Whether to use strict validation
+        enterprise_raw_order_enabled: Whether enterprise RAW_ORDER_EVENTS is enabled
 
     Returns:
         ValidationResult
     """
-    validator = TelemetryValidator(strict_mode=strict_mode)
+    validator = TelemetryValidator(
+        strict_mode=strict_mode,
+        enterprise_raw_order_enabled=enterprise_raw_order_enabled,
+    )
     return validator.validate(payload, telemetry_level, redaction_applied)
 
 
@@ -806,4 +918,6 @@ __all__ = [
     "PROHIBITED_PII_FIELDS",
     "ALLOWED_AGGREGATED_FIELDS",
     "ALLOWED_DETAILED_FIELDS",
+    "ALLOWED_RAW_ORDER_FIELDS",  # Enterprise RAW_ORDER_EVENTS fields
+    "ENTERPRISE_RAW_ORDER_ENABLED_HEADER",
 ]

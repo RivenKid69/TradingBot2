@@ -118,8 +118,8 @@ class AgentEnrollResponse(BaseModel):
     """
     Agent enrollment response.
 
-    Design Doc 10.2: cloud_public_key is provided so Agent can verify
-    signatures on commands from Cloud.
+    Design Doc 10.2, 15.2: cloud_public_key is provided so Agent can verify
+    signatures on commands from Cloud. Key versioning via key_id supports rotation.
     """
 
     agent_id: UUID
@@ -128,6 +128,8 @@ class AgentEnrollResponse(BaseModel):
     workspace_id: UUID
     org_id: UUID
     cloud_public_key: Optional[str] = None  # Design Doc 10.2: For command verification
+    cloud_key_id: Optional[str] = None      # Design Doc 15.2: Key version identifier
+    cloud_key_fingerprint: Optional[str] = None  # For key verification
 
 
 class AgentHeartbeatRequest(BaseModel):
@@ -414,11 +416,16 @@ async def enroll_agent(request: AgentEnrollRequest) -> AgentEnrollResponse:
             capabilities=agent.capabilities,
         )
 
-        # Get Cloud's public key for command verification (Design Doc 10.2)
+        # Get Cloud's public key for command verification (Design Doc 10.2, 15.2)
         cloud_public_key = None
+        cloud_key_id = None
+        cloud_key_fingerprint = None
         try:
             signer = get_cloud_signer()
-            cloud_public_key = signer.get_public_key_pem()
+            key_info = signer.get_key_info()
+            cloud_public_key = key_info.public_key_pem
+            cloud_key_id = key_info.key_id
+            cloud_key_fingerprint = key_info.fingerprint
         except CloudKeyNotConfiguredError:
             logger.warning(
                 "Cloud signing key not configured. Agent will not be able to verify "
@@ -431,6 +438,58 @@ async def enroll_agent(request: AgentEnrollRequest) -> AgentEnrollResponse:
             workspace_id=agent.workspace_id,
             org_id=workspace.organization_id,
             cloud_public_key=cloud_public_key,
+            cloud_key_id=cloud_key_id,
+            cloud_key_fingerprint=cloud_key_fingerprint,
+        )
+
+
+class CloudPublicKeyResponse(BaseModel):
+    """
+    Response with Cloud's public key for signature verification.
+
+    Design Doc 10.2, 15.2: Agents need Cloud's public key to verify
+    command signatures. Key rotation is supported via key_id versioning.
+    """
+    key_id: str
+    algorithm: str
+    public_key_pem: str
+    fingerprint: str
+    issued_at: datetime
+
+
+@router.get(
+    "/cloud/public-key",
+    response_model=CloudPublicKeyResponse,
+    summary="Get Cloud public key",
+    description="Get Cloud's public key for signature verification (Design Doc 10.2).",
+)
+async def get_cloud_public_key() -> CloudPublicKeyResponse:
+    """
+    Get Cloud's public key for signature verification.
+
+    Agents use this key to verify that commands actually came from Cloud.
+    Key rotation is supported - agents should store key_id with the key
+    and verify signatures against the correct key version.
+
+    Design Doc 10.2: All Cloud-to-Agent messages are signed.
+    Design Doc 15.2: Key rotation/versioning is supported.
+    """
+    try:
+        signer = get_cloud_signer()
+        key_info = signer.get_key_info()
+
+        return CloudPublicKeyResponse(
+            key_id=key_info.key_id,
+            algorithm=key_info.algorithm,
+            public_key_pem=key_info.public_key_pem,
+            fingerprint=key_info.fingerprint,
+            issued_at=key_info.created_at,
+        )
+
+    except CloudKeyNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Cloud signing key not configured. Contact administrator.",
         )
 
 

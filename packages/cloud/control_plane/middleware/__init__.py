@@ -7,6 +7,7 @@ Phase 2 Implementation: Operational governance, audit, privacy.
 This module provides middleware for:
     - AuditMiddleware: Automatic audit logging for sensitive operations
     - TelemetryValidator: Validation and rejection of prohibited telemetry fields
+    - AgentSignatureMiddleware: Verification of agent request signatures (Design Doc 10.2)
 
 CLOUD ZONE ONLY.
 """
@@ -37,6 +38,21 @@ from .telemetry_validation import (
     PROHIBITED_PII_FIELDS,
     ALLOWED_AGGREGATED_FIELDS,
     ALLOWED_DETAILED_FIELDS,
+    ALLOWED_RAW_ORDER_FIELDS,
+    ENTERPRISE_RAW_ORDER_ENABLED_HEADER,
+)
+
+from .agent_signature import (
+    HEADER_SIGNATURE,
+    HEADER_FINGERPRINT,
+    HEADER_TIMESTAMP,
+    HEADER_KEY_ID,
+    SignatureVerificationResult,
+    SignatureConfig,
+    AgentSignatureVerifier,
+    AgentSignatureMiddleware,
+    get_agent_public_key_from_db,
+    create_agent_signature_middleware,
 )
 
 __all__ = [
@@ -64,4 +80,17 @@ __all__ = [
     "PROHIBITED_PII_FIELDS",
     "ALLOWED_AGGREGATED_FIELDS",
     "ALLOWED_DETAILED_FIELDS",
+    "ALLOWED_RAW_ORDER_FIELDS",
+    "ENTERPRISE_RAW_ORDER_ENABLED_HEADER",
+    # Agent Signature (Design Doc 10.2)
+    "HEADER_SIGNATURE",
+    "HEADER_FINGERPRINT",
+    "HEADER_TIMESTAMP",
+    "HEADER_KEY_ID",
+    "SignatureVerificationResult",
+    "SignatureConfig",
+    "AgentSignatureVerifier",
+    "AgentSignatureMiddleware",
+    "get_agent_public_key_from_db",
+    "create_agent_signature_middleware",
 ]

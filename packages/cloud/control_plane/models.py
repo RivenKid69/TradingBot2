@@ -1094,6 +1094,9 @@ class ApprovalRecord(Base, TenantMixin, TimestampMixin):
     Approval record for commands.
 
     Includes evidence hash and attestation for audit trail.
+
+    Design Doc 6.2, 12.2: Structured approval evidence with immutable blob references.
+    All digests link to actual stored blobs for full audit trail.
     """
     __tablename__ = "approval_records"
 
@@ -1122,8 +1125,23 @@ class ApprovalRecord(Base, TenantMixin, TimestampMixin):
     # Reason
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Diff shown at approval time
+    # Diff shown at approval time (structured, links to blobs)
     diff_summary: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)
+
+    # Design Doc 6.2, 12.2: Immutable blob references for structured evidence
+    # These link to actual ConfigBlob/Artifact digests for audit verification
+    config_blob_digest: Mapped[Optional[str]] = mapped_column(
+        String(128), nullable=True, comment="ConfigBlob digest at approval time"
+    )
+    manifest_digest: Mapped[Optional[str]] = mapped_column(
+        String(128), nullable=True, comment="Artifact manifest digest at approval time"
+    )
+    previous_state_digest: Mapped[Optional[str]] = mapped_column(
+        String(128), nullable=True, comment="Previous configuration state digest"
+    )
+    new_state_digest: Mapped[Optional[str]] = mapped_column(
+        String(128), nullable=True, comment="New configuration state digest"
+    )
 
     # Relationships
     command: Mapped["Command"] = relationship(back_populates="approvals")

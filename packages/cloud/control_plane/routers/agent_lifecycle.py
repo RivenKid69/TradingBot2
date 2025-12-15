@@ -140,12 +140,29 @@ class CommandResultResponse(BaseModel):
 
 
 class LocalApprovalRequest(BaseModel):
-    """Local approval request from agent."""
+    """
+    Local approval request from agent.
+
+    Design Doc 6.2, 12.2: Structured approval evidence with immutable blob references.
+    """
     approved: bool
     evidence_hash: Optional[str] = Field(None, max_length=128)
     attestation: Optional[Dict[str, Any]] = None
     diff_summary: Optional[Dict[str, Any]] = None
     reason: Optional[str] = None
+    # Design Doc 6.2, 12.2: Immutable blob references
+    config_blob_digest: Optional[str] = Field(
+        None, max_length=128, description="ConfigBlob digest at approval time"
+    )
+    manifest_digest: Optional[str] = Field(
+        None, max_length=128, description="Artifact manifest digest at approval time"
+    )
+    previous_state_digest: Optional[str] = Field(
+        None, max_length=128, description="Previous configuration state digest"
+    )
+    new_state_digest: Optional[str] = Field(
+        None, max_length=128, description="New configuration state digest"
+    )
 
 
 class LocalApprovalResponse(BaseModel):
@@ -546,7 +563,7 @@ async def submit_local_approval(
                     detail="Command has expired",
                 )
 
-        # Create approval record
+        # Create approval record (Design Doc 6.2, 12.2)
         now = datetime.now(timezone.utc)
         approval = ApprovalRecord(
             workspace_id=command.workspace_id,
@@ -557,6 +574,11 @@ async def submit_local_approval(
             attestation=request.attestation,
             reason=request.reason,
             diff_summary=request.diff_summary,
+            # Design Doc 6.2, 12.2: Immutable blob references
+            config_blob_digest=request.config_blob_digest,
+            manifest_digest=request.manifest_digest,
+            previous_state_digest=request.previous_state_digest,
+            new_state_digest=request.new_state_digest,
         )
         session.add(approval)
 

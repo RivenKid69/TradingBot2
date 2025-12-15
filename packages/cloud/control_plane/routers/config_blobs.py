@@ -43,7 +43,7 @@ router = APIRouter()
 # Constants
 # ============================================================================
 
-# Valid config types
+# Valid config types (Design Doc 12.2: command_payload added for command whitelist)
 VALID_CONFIG_TYPES = frozenset([
     "strategy",
     "risk",
@@ -55,6 +55,8 @@ VALID_CONFIG_TYPES = frozenset([
     "alert",
     "monitoring",
     "custom",
+    "command_payload",  # Design Doc 12.2: Payload blobs for commands
+    "sbom",             # Design Doc 8.4: SBOM storage
 ])
 
 # Maximum content size (10 MB)
@@ -608,3 +610,216 @@ async def list_config_types(
     Returns list of allowed config_type values.
     """
     return sorted(VALID_CONFIG_TYPES)
+
+
+# ============================================================================
+# SBOM Storage and Retrieval (Design Doc 8.4, 16.1)
+# ============================================================================
+
+class SBOMCreateRequest(BaseModel):
+    """
+    SBOM create request.
+
+    Design Doc 8.4: SBOM mandatory and accessible.
+    """
+    workspace_id: UUID
+    artifact_digest: str = Field(..., description="Associated artifact digest")
+    sbom_format: str = Field(default="cyclonedx-json", description="SBOM format")
+    content: Dict[str, Any] = Field(..., description="SBOM content")
+
+
+class SBOMResponse(BaseModel):
+    """
+    SBOM response.
+
+    Design Doc 8.4, 16.1: SBOM storage + retrieval.
+    """
+    id: UUID
+    workspace_id: UUID
+    digest: str
+    artifact_digest: str
+    sbom_format: str
+    size_bytes: int
+    content: Dict[str, Any]
+    created_at: datetime
+
+
+@router.post(
+    "/sbom",
+    response_model=SBOMResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Store SBOM",
+    description="Store SBOM for an artifact (Design Doc 8.4).",
+)
+async def create_sbom(
+    request: SBOMCreateRequest,
+    current_user: UserDep,
+) -> SBOMResponse:
+    """
+    Store SBOM for an artifact.
+
+    Design Doc 8.4: SBOM is mandatory for all artifacts.
+    SBOMs are stored as config blobs with type='sbom' and linked to artifacts.
+
+    Requires config:create permission or superuser.
+    """
+    async with get_session() as session:
+        # Verify workspace access
+        await _verify_workspace_access(session, request.workspace_id, current_user)
+
+        # Check permission
+        if not current_user.is_superuser and not current_user.has_permission("config:create"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission required: config:create",
+            )
+
+        # Build SBOM content with metadata
+        sbom_content = {
+            "artifact_digest": request.artifact_digest,
+            "sbom_format": request.sbom_format,
+            "sbom": request.content,
+        }
+
+        # Compute digest and size
+        digest = _compute_digest(sbom_content)
+        size_bytes = _compute_size_bytes(sbom_content)
+
+        # Check size limit
+        if size_bytes > MAX_CONTENT_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"SBOM too large. Maximum size is {MAX_CONTENT_SIZE_BYTES} bytes",
+            )
+
+        # Check if SBOM with same digest already exists
+        existing_result = await session.execute(
+            select(ConfigBlob).where(
+                ConfigBlob.workspace_id == request.workspace_id,
+                ConfigBlob.digest == digest,
+            )
+        )
+        existing_blob = existing_result.scalar_one_or_none()
+
+        if existing_blob:
+            # Return existing SBOM
+            return SBOMResponse(
+                id=existing_blob.id,
+                workspace_id=existing_blob.workspace_id,
+                digest=existing_blob.digest,
+                artifact_digest=request.artifact_digest,
+                sbom_format=request.sbom_format,
+                size_bytes=existing_blob.size_bytes,
+                content=existing_blob.content.get("sbom", {}),
+                created_at=existing_blob.created_at,
+            )
+
+        # Create new SBOM blob
+        blob = ConfigBlob(
+            workspace_id=request.workspace_id,
+            digest=digest,
+            content=sbom_content,
+            size_bytes=size_bytes,
+            config_type="sbom",
+            schema_version="sbom/v1",
+            created_by_user_id=current_user.id,
+        )
+        session.add(blob)
+        await session.commit()
+        await session.refresh(blob)
+
+        return SBOMResponse(
+            id=blob.id,
+            workspace_id=blob.workspace_id,
+            digest=blob.digest,
+            artifact_digest=request.artifact_digest,
+            sbom_format=request.sbom_format,
+            size_bytes=blob.size_bytes,
+            content=request.content,
+            created_at=blob.created_at,
+        )
+
+
+@router.get(
+    "/sbom/by-artifact/{artifact_digest}",
+    response_model=SBOMResponse,
+    summary="Get SBOM by artifact",
+    description="Get SBOM for an artifact (Design Doc 8.4, 16.1).",
+)
+async def get_sbom_by_artifact(
+    artifact_digest: str,
+    current_user: UserDep,
+    workspace_id: Optional[UUID] = None,
+) -> SBOMResponse:
+    """
+    Get SBOM for an artifact.
+
+    Design Doc 8.4, 16.1: SBOM must be accessible to agents/enterprise.
+
+    Searches for SBOM blob that references the given artifact digest.
+
+    Requires config:read permission or superuser.
+    """
+    async with get_session() as session:
+        # Check permission
+        if not current_user.is_superuser and not current_user.has_permission("config:read"):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permission required: config:read",
+            )
+
+        # Build query for SBOM blobs containing this artifact_digest
+        # Note: This uses JSON contains check - implementation depends on DB
+        if workspace_id:
+            await _verify_workspace_access(session, workspace_id, current_user)
+            result = await session.execute(
+                select(ConfigBlob).where(
+                    ConfigBlob.workspace_id == workspace_id,
+                    ConfigBlob.config_type == "sbom",
+                )
+            )
+        elif current_user.is_superuser:
+            result = await session.execute(
+                select(ConfigBlob).where(ConfigBlob.config_type == "sbom").limit(100)
+            )
+        else:
+            # Get workspaces for user's org
+            ws_result = await session.execute(
+                select(Workspace.id).where(
+                    Workspace.organization_id == current_user.org_id,
+                    Workspace.is_active == True,
+                )
+            )
+            workspace_ids = [row[0] for row in ws_result.fetchall()]
+            if not workspace_ids:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="SBOM not found for artifact",
+                )
+            result = await session.execute(
+                select(ConfigBlob).where(
+                    ConfigBlob.workspace_id.in_(workspace_ids),
+                    ConfigBlob.config_type == "sbom",
+                ).limit(100)
+            )
+
+        blobs = result.scalars().all()
+
+        # Find SBOM matching artifact_digest
+        for blob in blobs:
+            if blob.content and blob.content.get("artifact_digest") == artifact_digest:
+                return SBOMResponse(
+                    id=blob.id,
+                    workspace_id=blob.workspace_id,
+                    digest=blob.digest,
+                    artifact_digest=artifact_digest,
+                    sbom_format=blob.content.get("sbom_format", "unknown"),
+                    size_bytes=blob.size_bytes,
+                    content=blob.content.get("sbom", {}),
+                    created_at=blob.created_at,
+                )
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"SBOM not found for artifact: {artifact_digest}",
+        )

@@ -32,6 +32,7 @@ from ..models import (
     ChangeClass,
     Command,
     CommandStatus,
+    ConfigBlob,
     Deployment,
     Run,
     TrustState,
@@ -93,17 +94,38 @@ COMMAND_STATE_TRANSITIONS: Dict[CommandStatus, List[CommandStatus]] = {
 # ============================================================================
 
 class ApprovalCreate(BaseModel):
-    """Create approval request."""
+    """
+    Create approval request.
+
+    Design Doc 6.2, 12.2: Structured approval evidence with immutable blob references.
+    """
 
     approved: bool
     reason: Optional[str] = None
     evidence_hash: Optional[str] = None
     attestation: Optional[dict] = None
     diff_summary: Optional[dict] = None
+    # Design Doc 6.2, 12.2: Immutable blob references
+    config_blob_digest: Optional[str] = Field(
+        None, max_length=128, description="ConfigBlob digest at approval time"
+    )
+    manifest_digest: Optional[str] = Field(
+        None, max_length=128, description="Artifact manifest digest at approval time"
+    )
+    previous_state_digest: Optional[str] = Field(
+        None, max_length=128, description="Previous configuration state digest"
+    )
+    new_state_digest: Optional[str] = Field(
+        None, max_length=128, description="New configuration state digest"
+    )
 
 
 class ApprovalResponse(BaseModel):
-    """Approval response."""
+    """
+    Approval response.
+
+    Design Doc 6.2, 12.2: Includes structured evidence with immutable blob references.
+    """
 
     id: UUID
     command_id: UUID
@@ -113,6 +135,11 @@ class ApprovalResponse(BaseModel):
     attestation: Optional[dict]
     reason: Optional[str]
     diff_summary: Optional[dict]
+    # Design Doc 6.2, 12.2: Immutable blob references
+    config_blob_digest: Optional[str] = None
+    manifest_digest: Optional[str] = None
+    previous_state_digest: Optional[str] = None
+    new_state_digest: Optional[str] = None
     created_at: datetime
 
 
@@ -221,6 +248,11 @@ def _approval_to_response(approval: ApprovalRecord) -> ApprovalResponse:
         attestation=approval.attestation,
         reason=approval.reason,
         diff_summary=approval.diff_summary,
+        # Design Doc 6.2, 12.2: Immutable blob references
+        config_blob_digest=approval.config_blob_digest,
+        manifest_digest=approval.manifest_digest,
+        previous_state_digest=approval.previous_state_digest,
+        new_state_digest=approval.new_state_digest,
         created_at=approval.created_at,
     )
 
@@ -515,6 +547,36 @@ async def create_command(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Run not found in this workspace",
+                )
+
+        # Design Doc 12.2, 10.4: Validate payload_ref against existing ConfigBlob
+        # Cloud creates/validates payload_ref (digest) and links to real ConfigBlob
+        # This ensures command payload is "whitelisted" - only known blobs allowed
+        if request.payload_ref:
+            blob_result = await session.execute(
+                select(ConfigBlob).where(
+                    ConfigBlob.workspace_id == workspace_id,
+                    ConfigBlob.digest == request.payload_ref,
+                )
+            )
+            config_blob = blob_result.scalar_one_or_none()
+
+            if config_blob is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid payload_ref: no ConfigBlob with digest '{request.payload_ref}' "
+                           f"exists in this workspace. Create the payload blob first via "
+                           f"POST /config-blobs with config_type='command_payload'.",
+                )
+
+            # Optionally verify config_type is appropriate for commands
+            # Allow 'command_payload', 'strategy', 'execution', 'risk' as valid types for commands
+            valid_command_payload_types = {"command_payload", "strategy", "execution", "risk", "environment", "custom"}
+            if config_blob.config_type not in valid_command_payload_types:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid payload_ref: ConfigBlob type '{config_blob.config_type}' "
+                           f"is not valid for commands. Expected one of: {sorted(valid_command_payload_types)}",
                 )
 
         # Generate or use provided idempotency key
@@ -909,7 +971,7 @@ async def create_approval(
         # Get approver identity
         approver = str(current_user.id)
 
-        # Create approval record
+        # Create approval record (Design Doc 6.2, 12.2)
         approval = ApprovalRecord(
             workspace_id=command.workspace_id,
             command_id=command_id,
@@ -919,6 +981,11 @@ async def create_approval(
             attestation=request.attestation,
             reason=request.reason,
             diff_summary=request.diff_summary,
+            # Design Doc 6.2, 12.2: Immutable blob references
+            config_blob_digest=request.config_blob_digest,
+            manifest_digest=request.manifest_digest,
+            previous_state_digest=request.previous_state_digest,
+            new_state_digest=request.new_state_digest,
         )
         session.add(approval)
 
