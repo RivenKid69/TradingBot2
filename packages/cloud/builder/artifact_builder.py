@@ -48,7 +48,10 @@ class BuildConfig:
     requirements_file: Optional[Path] = None
 
     # Output
-    output_format: ArtifactFormat = ArtifactFormat.OCI_IMAGE
+    # IMPORTANT: Format MUST match actual artifact type (Phase 3, 3.1)
+    # ZIP_BUNDLE is default for Python strategies
+    # OCI_IMAGE requires actual OCI image building
+    output_format: ArtifactFormat = ArtifactFormat.ZIP_BUNDLE
     output_path: Optional[Path] = None
 
     # Signing
@@ -187,6 +190,10 @@ class ArtifactBuilder:
             if result.errors:
                 return result
 
+            # Phase 3 (3.1): Validate format honesty
+            if not self._validate_format_honesty(config, artifact_file, result):
+                return result
+
             # Compute digest
             artifact_digest = compute_file_hash(artifact_file, with_prefix=True)
 
@@ -269,6 +276,48 @@ class ArtifactBuilder:
             and f"{os.getenv('GITHUB_SERVER_URL')}/{os.getenv('GITHUB_REPOSITORY')}/actions/runs/{os.getenv('GITHUB_RUN_ID')}",
             deps_lock_digest=deps_lock_digest,
         )
+
+    def _validate_format_honesty(
+        self,
+        config: BuildConfig,
+        artifact_path: Path,
+        result: BuildResult,
+    ) -> bool:
+        """
+        Validate that declared format matches actual artifact.
+
+        Phase 3 (3.1): Format field MUST be honest.
+        """
+        import zipfile
+        import tarfile
+
+        actual_format = None
+
+        # Detect actual format
+        if artifact_path.exists():
+            if zipfile.is_zipfile(artifact_path):
+                actual_format = ArtifactFormat.ZIP_BUNDLE
+            elif tarfile.is_tarfile(artifact_path):
+                # Could be OCI image tarball
+                actual_format = ArtifactFormat.OCI_IMAGE
+            elif artifact_path.suffix == ".whl":
+                actual_format = ArtifactFormat.WHEEL
+
+        if actual_format is None:
+            result.warnings.append(
+                f"Could not determine actual artifact format for {artifact_path}"
+            )
+            return True  # Allow, but warn
+
+        if config.output_format != actual_format:
+            result.errors.append(
+                f"Format mismatch: declared format is {config.output_format.value}, "
+                f"but actual artifact is {actual_format.value}. "
+                f"Format MUST match actual artifact type (Phase 3, 3.1)."
+            )
+            return False
+
+        return True
 
     def _package_artifact(
         self,

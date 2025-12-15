@@ -156,6 +156,9 @@ class CommandCreateRequest:
     requires_approval: bool = False
     expires_at: Optional[datetime] = None
     idempotency_key: Optional[str] = None
+    # Phase 3 (3.1A): Components for deterministic idempotency key
+    artifact_digest: Optional[str] = None
+    config_digest: Optional[str] = None
 
 
 @dataclass
@@ -241,8 +244,12 @@ class CommandService:
                 f"Allowed: {sorted(ALLOWED_COMMAND_TYPES)}"
             )
 
-        # Generate or use provided idempotency key
-        idempotency_key = request.idempotency_key or self._generate_idempotency_key()
+        # Phase 3 (3.1A): Generate DETERMINISTIC idempotency key based on command content
+        # This ensures "same desired state" doesn't create duplicate commands
+        if request.idempotency_key:
+            idempotency_key = request.idempotency_key
+        else:
+            idempotency_key = self._generate_deterministic_idempotency_key(request)
 
         # Check for duplicate
         existing = await self.session.execute(
@@ -660,8 +667,42 @@ class CommandService:
         return result.scalar_one_or_none()
 
     def _generate_idempotency_key(self) -> str:
-        """Generate a unique idempotency key."""
+        """Generate a unique idempotency key (legacy, random)."""
         return secrets.token_urlsafe(24)
+
+    def _generate_deterministic_idempotency_key(
+        self,
+        request: CommandCreateRequest,
+    ) -> str:
+        """
+        Generate a DETERMINISTIC idempotency key based on command content.
+
+        Phase 3 (3.1A): Key is computed from semantic content of the command,
+        so "same desired state" produces the same key.
+
+        This ensures:
+        - Duplicate requests don't create multiple commands
+        - Safe retry behavior in Cloud→Agent communication
+        - Agent can safely re-poll without duplicate execution
+
+        Args:
+            request: Command creation request
+
+        Returns:
+            Deterministic idempotency key
+        """
+        from .idempotency import generate_deterministic_idempotency_key
+
+        return generate_deterministic_idempotency_key(
+            workspace_id=request.workspace_id,
+            agent_id=request.agent_id,
+            command_type=request.command_type,
+            deployment_id=request.deployment_id,
+            run_id=request.run_id,
+            artifact_digest=request.artifact_digest,
+            config_digest=request.config_digest,
+            payload_ref=request.payload_ref,
+        )
 
     @staticmethod
     def validate_command_type(command_type: str) -> Tuple[bool, str]:
