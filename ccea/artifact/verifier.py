@@ -155,7 +155,7 @@ class ArtifactVerifier:
         trusted_keys: Optional[Dict[str, PublicKeyTypes]] = None,
         allowed_registries: Optional[Set[str]] = None,
         schema_policy: Optional[SchemaVersionPolicy] = None,
-        require_sbom: bool = False,
+        require_sbom: bool = True,
         strict_mode: bool = True,
     ):
         """
@@ -165,7 +165,7 @@ class ArtifactVerifier:
             trusted_keys: Dictionary of key_id -> public_key
             allowed_registries: Set of allowed registry URLs/names
             schema_policy: Schema version policy
-            require_sbom: Whether to require SBOM
+            require_sbom: Whether to require SBOM (Design Doc: default True)
             strict_mode: Strict rejection mode (default True)
         """
         self._trusted_keys: Dict[str, PublicKeyTypes] = trusted_keys or {}
@@ -503,6 +503,7 @@ class VerificationCache:
 def create_verifier_from_key_manager(
     key_manager: "KeyManager",
     allowed_registries: Optional[Set[str]] = None,
+    require_sbom: bool = True,
 ) -> ArtifactVerifier:
     """
     Create verifier using KeyManager.
@@ -510,6 +511,7 @@ def create_verifier_from_key_manager(
     Args:
         key_manager: KeyManager instance
         allowed_registries: Allowed registries
+        require_sbom: Whether to require SBOM (Design Doc: default True)
 
     Returns:
         Configured ArtifactVerifier
@@ -518,6 +520,7 @@ def create_verifier_from_key_manager(
 
     verifier = ArtifactVerifier(
         allowed_registries=allowed_registries,
+        require_sbom=require_sbom,
     )
 
     # Add all valid signing keys

@@ -709,8 +709,8 @@ class Artifact(Base, TenantMixin, TimestampMixin):
     size_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Security
-    signature_ref: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Sigstore ref
-    signature_algorithm: Mapped[str] = mapped_column(String(50), default="sigstore")
+    signature_ref: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # Signature reference
+    signature_algorithm: Mapped[str] = mapped_column(String(50), default="ed25519")  # Design Doc: Ed25519 default
     is_signed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # SBOM
@@ -1392,6 +1392,293 @@ class AccessAudit(Base, TenantMixin, TimestampMixin):
         Index("ix_audit_resource", "resource_type", "resource_id"),
         Index("ix_audit_break_glass", "is_break_glass"),
         Index("ix_audit_time", "created_at"),
+    )
+
+
+# ============================================================================
+# Governance Models (Design Doc Phase 10: DB-backed governance)
+# ============================================================================
+
+class ResidencyPolicyType(str, enum.Enum):
+    """Residency mode."""
+    CLOUD = "cloud"
+    ENTERPRISE_LOCAL = "enterprise_local"
+    HYBRID = "hybrid"
+
+
+class DSARRequestStatus(str, enum.Enum):
+    """DSAR request status."""
+    PENDING = "pending"
+    VERIFIED = "verified"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class DSARRequestType(str, enum.Enum):
+    """DSAR request type."""
+    ACCESS = "access"
+    ERASURE = "erasure"
+    PORTABILITY = "portability"
+    RECTIFICATION = "rectification"
+    RESTRICTION = "restriction"
+
+
+class GovernancePolicy(Base, TenantMixin, TimestampMixin):
+    """
+    Governance policy record - source of truth for residency, retention, and other policies.
+
+    Design Doc Phase 10: DB-backed governance policies.
+    """
+    __tablename__ = "governance_policies"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Policy type
+    policy_type: Mapped[str] = mapped_column(String(50), nullable=False)  # residency, retention, etc.
+
+    # Data type this policy applies to (for retention)
+    data_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Policy configuration (JSON)
+    config: Mapped[Dict] = mapped_column(PortableJSON, nullable=False, default=dict)
+
+    # Status
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Creator
+    created_by_user_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "policy_type", "data_type", name="uq_governance_policy"),
+        Index("ix_governance_policy_type", "policy_type"),
+    )
+
+
+class DSARRequest(Base, TenantMixin, TimestampMixin):
+    """
+    DSAR (Data Subject Access Request) record.
+
+    Design Doc Phase 10: DB-backed DSAR workflow.
+    """
+    __tablename__ = "dsar_requests"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Subject
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Request details
+    request_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(50),
+        default=DSARRequestStatus.PENDING.value,
+    )
+
+    # Data categories
+    data_categories: Mapped[Optional[List[str]]] = mapped_column(PortableStringArray100, nullable=True)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Identity verification
+    verification_method: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verified_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Deadlines (GDPR: 30 days, extendable to 90)
+    deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    extended_deadline: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Processing
+    processed_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Export info (for ACCESS/PORTABILITY)
+    export_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    export_checksum: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+
+    # Statistics
+    records_processed: Mapped[int] = mapped_column(Integer, default=0)
+    records_deleted: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Notes
+    notes: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)
+
+    __table_args__ = (
+        Index("ix_dsar_user", "user_id"),
+        Index("ix_dsar_status", "status"),
+        Index("ix_dsar_deadline", "deadline"),
+    )
+
+
+class LegalHold(Base, TenantMixin, TimestampMixin):
+    """
+    Legal hold on data - prevents automatic purge.
+
+    Design Doc Phase 10: DB-backed legal holds.
+    """
+    __tablename__ = "legal_holds"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # What's on hold
+    data_type: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Hold details
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    hold_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    released_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    released_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # Creator
+    created_by_user_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "data_type", name="uq_legal_hold_workspace_type"),
+        Index("ix_legal_hold_active", "is_active"),
+    )
+
+
+class BreakGlassRequest(Base, TenantMixin, TimestampMixin):
+    """
+    Break-glass access request for emergency access.
+
+    Design Doc Phase 10: DB-backed break-glass audit.
+    """
+    __tablename__ = "break_glass_requests"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Requester
+    requested_by: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Request details
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    scope: Mapped[str] = mapped_column(String(100), nullable=False)  # what's being accessed
+    resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Duration
+    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    # Approval
+    approved: Mapped[bool] = mapped_column(Boolean, default=False)
+    approved_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Evidence
+    evidence_hash: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+
+    # Revocation
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_by: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index("ix_break_glass_requester", "requested_by"),
+        Index("ix_break_glass_valid", "valid_until"),
+    )
+
+
+class GovernanceAuditLog(Base, TenantMixin, TimestampMixin):
+    """
+    Governance audit log - tracks all governance operations.
+
+    Design Doc Phase 10: Comprehensive audit trail.
+    """
+    __tablename__ = "governance_audit_logs"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Action
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Actor
+    actor_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    actor_type: Mapped[str] = mapped_column(String(50), default="user")  # user, system, scheduler
+
+    # Details
+    details: Mapped[Dict] = mapped_column(PortableJSON, nullable=False, default=dict)
+
+    # Related entities
+    policy_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("governance_policies.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    dsar_request_id: Mapped[Optional[UUID]] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("dsar_requests.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index("ix_governance_audit_action", "action"),
+        Index("ix_governance_audit_time", "created_at"),
     )
 
 

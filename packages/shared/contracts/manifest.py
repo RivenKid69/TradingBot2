@@ -31,9 +31,15 @@ class ArtifactFormat(str, Enum):
 
 
 class SignatureAlgorithm(str, Enum):
-    """Signature algorithm used."""
+    """
+    Signature algorithm used.
 
-    SIGSTORE = "sigstore"  # Default for cloud
+    Design Doc: Actual signing uses Ed25519 via ccea.crypto.signing.
+    ED25519 is the default and recommended algorithm.
+    """
+
+    ED25519 = "ed25519"  # Default: Ed25519 via ccea.crypto.signing
+    SIGSTORE = "sigstore"  # Future: Sigstore/Cosign integration
     GPG = "gpg"  # Enterprise/offline
     NONE = "none"  # Only for development
 
@@ -50,7 +56,7 @@ class Signature:
     Artifact signature information.
     """
 
-    algorithm: SignatureAlgorithm = SignatureAlgorithm.SIGSTORE
+    algorithm: SignatureAlgorithm = SignatureAlgorithm.ED25519
     signature_value: str = ""
     certificate: Optional[str] = None
     timestamp: Optional[datetime] = None
@@ -69,8 +75,15 @@ class Signature:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Signature:
         """Create from dictionary."""
+        algo_str = data.get("algorithm", "ed25519")
+        # Handle backwards compatibility: treat "sigstore" as "ed25519" if it's the default
+        try:
+            algorithm = SignatureAlgorithm(algo_str)
+        except ValueError:
+            algorithm = SignatureAlgorithm.ED25519
+
         return cls(
-            algorithm=SignatureAlgorithm(data.get("algorithm", "sigstore")),
+            algorithm=algorithm,
             signature_value=data.get("signature_value", ""),
             certificate=data.get("certificate"),
             timestamp=datetime.fromisoformat(data["timestamp"])
@@ -213,6 +226,152 @@ class RuntimeRequirements:
 
 
 @dataclass
+class NetworkPermissions:
+    """
+    Network permission configuration.
+
+    Design Doc: Sandbox network permissions.
+    """
+
+    enabled: bool = False
+    egress_allowlist: List[str] = field(default_factory=list)
+    max_connections: int = 10
+    timeout_seconds: int = 30
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "enabled": self.enabled,
+            "egress_allowlist": self.egress_allowlist,
+            "max_connections": self.max_connections,
+            "timeout_seconds": self.timeout_seconds,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "NetworkPermissions":
+        """Create from dictionary."""
+        return cls(
+            enabled=data.get("enabled", False),
+            egress_allowlist=data.get("egress_allowlist", []),
+            max_connections=data.get("max_connections", 10),
+            timeout_seconds=data.get("timeout_seconds", 30),
+        )
+
+
+@dataclass
+class FilesystemPermissions:
+    """
+    Filesystem permission configuration.
+
+    Design Doc: Sandbox filesystem permissions.
+    """
+
+    readonly: bool = True
+    allowed_paths: List[str] = field(default_factory=list)
+    temp_dir_allowed: bool = True
+    max_file_size_mb: int = 100
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "readonly": self.readonly,
+            "allowed_paths": self.allowed_paths,
+            "temp_dir_allowed": self.temp_dir_allowed,
+            "max_file_size_mb": self.max_file_size_mb,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "FilesystemPermissions":
+        """Create from dictionary."""
+        return cls(
+            readonly=data.get("readonly", True),
+            allowed_paths=data.get("allowed_paths", []),
+            temp_dir_allowed=data.get("temp_dir_allowed", True),
+            max_file_size_mb=data.get("max_file_size_mb", 100),
+        )
+
+
+@dataclass
+class ResourcePermissions:
+    """
+    Resource limit configuration.
+
+    Design Doc: Sandbox resource limits.
+    """
+
+    max_memory_mb: int = 512
+    max_cpu_percent: float = 100.0
+    max_execution_time_seconds: int = 3600
+    max_threads: int = 4
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "max_memory_mb": self.max_memory_mb,
+            "max_cpu_percent": self.max_cpu_percent,
+            "max_execution_time_seconds": self.max_execution_time_seconds,
+            "max_threads": self.max_threads,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ResourcePermissions":
+        """Create from dictionary."""
+        return cls(
+            max_memory_mb=data.get("max_memory_mb", 512),
+            max_cpu_percent=data.get("max_cpu_percent", 100.0),
+            max_execution_time_seconds=data.get("max_execution_time_seconds", 3600),
+            max_threads=data.get("max_threads", 4),
+        )
+
+
+@dataclass
+class Permissions:
+    """
+    Complete permission block for artifact manifest.
+
+    Design Doc: Unified permissions contract between Cloud (builder) and Agent (verifier).
+    This is the single source of truth for sandbox permissions.
+
+    IMPORTANT: Agent enforces these permissions via SandboxPermissionsEnforcer.
+    deny-by-default: If permissions block is missing, agent uses most restrictive defaults.
+    """
+
+    network: NetworkPermissions = field(default_factory=NetworkPermissions)
+    filesystem: FilesystemPermissions = field(default_factory=FilesystemPermissions)
+    resources: ResourcePermissions = field(default_factory=ResourcePermissions)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "network": self.network.to_dict(),
+            "filesystem": self.filesystem.to_dict(),
+            "resources": self.resources.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Permissions":
+        """Create from dictionary."""
+        return cls(
+            network=NetworkPermissions.from_dict(data.get("network", {})),
+            filesystem=FilesystemPermissions.from_dict(data.get("filesystem", {})),
+            resources=ResourcePermissions.from_dict(data.get("resources", {})),
+        )
+
+    @classmethod
+    def default_restrictive(cls) -> "Permissions":
+        """Create default restrictive permissions (deny-by-default)."""
+        return cls(
+            network=NetworkPermissions(enabled=False, egress_allowlist=[]),
+            filesystem=FilesystemPermissions(readonly=True, allowed_paths=[]),
+            resources=ResourcePermissions(
+                max_memory_mb=256,
+                max_cpu_percent=50.0,
+                max_execution_time_seconds=300,
+            ),
+        )
+
+
+@dataclass
 class RiskProfileSuggested:
     """
     Suggested risk profile from artifact.
@@ -271,6 +430,9 @@ class ArtifactManifest:
     # Runtime
     runtime: RuntimeRequirements = field(default_factory=RuntimeRequirements)
 
+    # Permissions (Design Doc: unified contract for sandbox enforcement)
+    permissions: Permissions = field(default_factory=Permissions)
+
     # Risk (suggested, not enforced)
     risk_profile_suggested: RiskProfileSuggested = field(
         default_factory=RiskProfileSuggested
@@ -303,6 +465,7 @@ class ArtifactManifest:
             "sbom_ref": self.sbom_ref,
             "provenance": self.provenance.to_dict(),
             "runtime": self.runtime.to_dict(),
+            "permissions": self.permissions.to_dict(),
             "risk_profile_suggested": self.risk_profile_suggested.to_dict(),
             "data_contract": self.data_contract,
             "telemetry_schema_version": self.telemetry_schema_version,
@@ -328,6 +491,7 @@ class ArtifactManifest:
             sbom_ref=data.get("sbom_ref"),
             provenance=Provenance.from_dict(data.get("provenance", {})),
             runtime=RuntimeRequirements.from_dict(data.get("runtime", {})),
+            permissions=Permissions.from_dict(data.get("permissions", {})),
             risk_profile_suggested=RiskProfileSuggested(
                 **data.get("risk_profile_suggested", {})
             ),

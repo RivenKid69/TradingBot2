@@ -154,7 +154,8 @@ class TestArtifactVerifier:
         """Test unsigned artifacts with warning in non-strict mode."""
         artifact_path, manifest_path = sample_artifact
 
-        verifier = ArtifactVerifier(strict_mode=False)
+        # Disable SBOM requirement for this test (testing signature behavior only)
+        verifier = ArtifactVerifier(strict_mode=False, require_sbom=False)
 
         report = verifier.verify(
             artifact_path=artifact_path,
@@ -173,9 +174,10 @@ class TestArtifactVerifier:
         signer = ArtifactSigner.from_keypair(keypair)
         signature = signer.sign_file(artifact_path)
 
-        # Update manifest with signature
+        # Update manifest with signature and sbom_ref (for SBOM enforcement)
         manifest = json.loads(manifest_path.read_text())
         manifest["signature"] = signature.to_dict()
+        manifest["sbom_ref"] = "sha256:dummy_sbom_ref"  # Add SBOM reference
         manifest_path.write_text(json.dumps(manifest))
 
         # Verify

@@ -36,12 +36,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from packages.cloud.control_plane.database import get_session
 from packages.cloud.control_plane.dependencies import (
     UserDep,
+    WorkspaceDep,
+    get_current_workspace,
 )
 
 # Aliases for compatibility
 get_db = get_session  # get_session is async contextmanager
 get_current_user = UserDep  # Use UserDep for current user
-get_current_workspace = None  # TODO: Implement if needed
 
 
 # ============================================================================
@@ -231,9 +232,8 @@ router = APIRouter(prefix="/research", tags=["research-jobs"])
 async def submit_job(
     request: JobSubmitRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Submit a new research job.
@@ -256,8 +256,8 @@ async def submit_job(
     # For now, create job record
 
     job = create_research_job(
-        workspace_id=workspace["id"],
-        user_id=current_user["id"],
+        workspace_id=workspace.id,
+        user_id=current_user.id,
         name=request.name,
         description=request.description,
         tags=request.tags,
@@ -293,12 +293,11 @@ async def submit_job(
 
 @router.get("/jobs", response_model=JobListResponse)
 async def list_jobs(
+    current_user: UserDep,
+    workspace: WorkspaceDep,
     state: Optional[str] = Query(None, description="Filter by state"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
 ):
     """
     List research jobs for the current workspace.
@@ -317,9 +316,8 @@ async def list_jobs(
 @router.get("/jobs/{job_id}", response_model=JobDetailResponse)
 async def get_job(
     job_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get details of a specific job.
@@ -333,10 +331,9 @@ async def get_job(
 @router.post("/jobs/{job_id}/cancel", response_model=JobResponse)
 async def cancel_job(
     job_id: UUID,
+    current_user: UserDep,
+    workspace: WorkspaceDep,
     reason: str = Body(default="User cancelled", embed=True),
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
 ):
     """
     Cancel a running job.
@@ -350,10 +347,9 @@ async def cancel_job(
 @router.get("/jobs/{job_id}/logs", response_model=JobLogsResponse)
 async def get_job_logs(
     job_id: UUID,
+    current_user: UserDep,
+    workspace: WorkspaceDep,
     tail: int = Query(1000, ge=1, le=10000, description="Number of lines"),
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
 ):
     """
     Get stdout/stderr logs for a job.
@@ -366,9 +362,8 @@ async def get_job_logs(
 @router.get("/jobs/{job_id}/alerts", response_model=List[AbuseAlertResponse])
 async def get_job_alerts(
     job_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get abuse alerts for a job.
@@ -379,9 +374,8 @@ async def get_job_alerts(
 @router.get("/jobs/{job_id}/violations", response_model=List[EgressViolationResponse])
 async def get_job_violations(
     job_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get egress policy violations for a job.
@@ -395,9 +389,8 @@ async def get_job_violations(
 
 @router.get("/quota", response_model=QuotaResponse)
 async def get_quota(
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get quota configuration for the current workspace.
@@ -418,9 +411,8 @@ async def get_quota(
 
 @router.get("/quota/usage", response_model=QuotaUsageResponse)
 async def get_quota_usage(
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get current quota usage for the workspace.
@@ -447,9 +439,8 @@ async def get_quota_usage(
 
 @router.get("/egress/policy", response_model=EgressPolicyResponse)
 async def get_egress_policy(
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get egress policy for the current workspace.
@@ -471,9 +462,8 @@ async def get_egress_policy(
 @router.put("/egress/policy", response_model=EgressPolicyResponse)
 async def update_egress_policy(
     request: EgressPolicyUpdateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Update egress policy for the workspace.
@@ -501,9 +491,8 @@ async def update_egress_policy(
 
 @router.get("/stats")
 async def get_research_stats(
-    db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-    workspace: dict = Depends(get_current_workspace),
+    current_user: UserDep,
+    workspace: WorkspaceDep,
 ):
     """
     Get research job statistics for the workspace.

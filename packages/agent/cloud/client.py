@@ -495,3 +495,72 @@ class CloudClient:
             executed_at=datetime.fromisoformat(data["executed_at"]) if data.get("executed_at") else None,
         )
 
+    def send_telemetry(
+        self,
+        events: list[Dict[str, Any]],
+    ) -> bool:
+        """
+        Send telemetry events to Cloud.
+
+        Design Doc Phase 5: Agent telemetry upload to Cloud.
+        Uses agent-auth endpoint /api/v1/agent/telemetry.
+
+        Args:
+            events: List of telemetry event dictionaries
+
+        Returns:
+            True if telemetry was accepted by Cloud
+
+        Raises:
+            CloudClientError: If request fails
+        """
+        if not events:
+            return True
+
+        payload = {
+            "events": events,
+            "batch_size": len(events),
+        }
+
+        try:
+            resp = self._request(
+                "POST",
+                "/api/v1/agent/telemetry",
+                json_body=payload,
+                auth_required=True,
+            )
+            data = resp.json()
+            return data.get("accepted", False)
+        except Exception as e:
+            self._last_error = str(e)
+            return False
+
+    def send_telemetry_batch(
+        self,
+        events: list[Dict[str, Any]],
+        max_batch_size: int = 100,
+    ) -> int:
+        """
+        Send telemetry events in batches.
+
+        Design Doc Phase 5: Batch telemetry upload for efficiency.
+
+        Args:
+            events: List of telemetry event dictionaries
+            max_batch_size: Maximum events per batch
+
+        Returns:
+            Number of events successfully sent
+        """
+        total_sent = 0
+
+        for i in range(0, len(events), max_batch_size):
+            batch = events[i:i + max_batch_size]
+            if self.send_telemetry(batch):
+                total_sent += len(batch)
+            else:
+                # Stop on first failure
+                break
+
+        return total_sent
+

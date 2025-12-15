@@ -891,5 +891,143 @@ async def get_agent_status(
         }
 
 
+# ============================================================================
+# Agent Telemetry Endpoint (Design Doc Phase 5)
+# ============================================================================
+
+class AgentTelemetryRequest(BaseModel):
+    """Agent telemetry submission request."""
+    events: List[Dict[str, Any]] = Field(..., max_length=1000)
+    batch_size: int = Field(default=0, ge=0, le=1000)
+
+
+class AgentTelemetryResponse(BaseModel):
+    """Agent telemetry submission response."""
+    accepted: bool
+    events_received: int
+    events_stored: int
+    errors: List[str] = Field(default_factory=list)
+
+
+@router.post(
+    "/telemetry",
+    response_model=AgentTelemetryResponse,
+    summary="Submit agent telemetry",
+    description="Submit telemetry events from agent to cloud storage.",
+)
+async def submit_agent_telemetry(
+    request: AgentTelemetryRequest,
+    current_agent: AgentDep,
+) -> AgentTelemetryResponse:
+    """
+    Submit telemetry events from agent.
+
+    Design Doc Phase 5:
+    - Agent-auth endpoint for telemetry upload
+    - Events are stored in cloud telemetry storage
+    - Mandatory redaction applied before storage
+    - Returns acceptance status
+
+    Security:
+    - Agent must be enrolled
+    - Events are workspace-scoped
+    - Sensitive data is redacted
+    """
+    async with get_session() as session:
+        # Verify agent is enrolled
+        await verify_agent_enrolled(session, current_agent)
+
+        events_received = len(request.events)
+        events_stored = 0
+        errors: List[str] = []
+
+        # Import telemetry service for storage
+        try:
+            from ..services.telemetry_service import TelemetryService
+
+            telemetry_service = TelemetryService(session)
+
+            for event in request.events:
+                try:
+                    # Apply mandatory redaction
+                    redacted_event = _redact_telemetry_event(event)
+
+                    # Add agent context
+                    redacted_event["agent_id"] = str(current_agent.id)
+                    redacted_event["workspace_id"] = str(current_agent.workspace_id)
+
+                    # Store event
+                    await telemetry_service.store_agent_event(
+                        agent_id=current_agent.id,
+                        workspace_id=current_agent.workspace_id,
+                        event_data=redacted_event,
+                    )
+                    events_stored += 1
+
+                except Exception as e:
+                    errors.append(f"Event {event.get('event_id', 'unknown')}: {str(e)}")
+
+            logger.info(
+                "Agent telemetry received",
+                extra={
+                    "agent_id": str(current_agent.id),
+                    "events_received": events_received,
+                    "events_stored": events_stored,
+                    "errors_count": len(errors),
+                }
+            )
+
+        except ImportError:
+            # TelemetryService not available - log and accept
+            logger.warning(
+                "TelemetryService not available, events logged only",
+                extra={
+                    "agent_id": str(current_agent.id),
+                    "events_received": events_received,
+                }
+            )
+            # Still mark as stored (logged)
+            events_stored = events_received
+
+        return AgentTelemetryResponse(
+            accepted=True,
+            events_received=events_received,
+            events_stored=events_stored,
+            errors=errors[:10],  # Limit error list
+        )
+
+
+def _redact_telemetry_event(event: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Apply mandatory redaction to telemetry event.
+
+    Design Doc Phase 5: Mandatory redaction of sensitive data.
+    """
+    sensitive_patterns = [
+        "key", "secret", "password", "token", "credential",
+        "api_key", "api_secret", "access_token", "refresh_token",
+        "bearer", "authorization", "auth", "private",
+    ]
+
+    def redact_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+        result = {}
+        for key, value in d.items():
+            key_lower = key.lower()
+            if any(p in key_lower for p in sensitive_patterns):
+                result[key] = "[REDACTED]"
+            elif isinstance(value, dict):
+                result[key] = redact_dict(value)
+            elif isinstance(value, list):
+                result[key] = [
+                    redact_dict(item) if isinstance(item, dict) else item
+                    for item in value
+                ]
+            else:
+                result[key] = value
+        return result
+
+    return redact_dict(event)
+
+
 # Update forward reference for Pydantic
 CommandPollResponse.model_rebuild()

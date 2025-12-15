@@ -1561,6 +1561,9 @@ class AgentDaemon:
                         poll = self._cloud_client.poll_commands(limit=10)
                         if poll.commands:
                             self._process_cloud_commands(poll.commands)
+
+                    # Design Doc Phase 5: Flush telemetry to Cloud
+                    self._flush_telemetry_to_cloud()
                 else:
                     self._status.cloud_connected = False
 
@@ -1569,6 +1572,40 @@ class AgentDaemon:
                 pass
 
             self._stop_event.wait(self.config.heartbeat_interval_seconds)
+
+    def _flush_telemetry_to_cloud(self) -> None:
+        """
+        Flush buffered telemetry events to Cloud.
+
+        Design Doc Phase 5: End-to-end telemetry pipeline.
+        Uses CloudClient.send_telemetry() to upload buffered events.
+        """
+        if not self._telemetry_buffer or not self._cloud_client:
+            return
+
+        def send_fn(events: List[Dict[str, Any]]) -> bool:
+            """Send function for telemetry buffer flush."""
+            try:
+                return self._cloud_client.send_telemetry(events)
+            except Exception as e:
+                self._log_event(TelemetryEventType.ERROR, {
+                    "error_type": "TelemetryUploadError",
+                    "message": str(e),
+                })
+                return False
+
+        try:
+            sent_count = self._telemetry_buffer.flush(send_fn=send_fn)
+            if sent_count > 0:
+                self._log_event(TelemetryEventType.STATE_CHANGE, {
+                    "message": f"Flushed {sent_count} telemetry events to Cloud",
+                    "events_sent": sent_count,
+                })
+        except Exception as e:
+            self._log_event(TelemetryEventType.ERROR, {
+                "error_type": "TelemetryFlushError",
+                "message": str(e),
+            })
 
     def _monitor_loop(self) -> None:
         """Background monitoring loop."""

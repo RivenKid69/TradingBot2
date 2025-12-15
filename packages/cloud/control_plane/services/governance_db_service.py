@@ -289,23 +289,75 @@ class GovernanceDBService:
         created_by: Optional[UUID] = None,
     ) -> None:
         """Persist residency policy to database."""
-        # This would use the actual DB model. For now, we simulate with a query.
-        # In production, this would be:
-        # db_policy = GovernancePolicy(
-        #     workspace_id=workspace_id,
-        #     policy_type=GovernancePolicyType.RESIDENCY.value,
-        #     config=policy.to_dict(),
-        #     created_by=created_by,
-        # )
-        # self._session.add(db_policy)
-        # await self._session.commit()
+        from ..models import GovernancePolicy
+
+        # Check if policy already exists
+        existing = await self._session.execute(
+            select(GovernancePolicy).where(
+                GovernancePolicy.workspace_id == workspace_id,
+                GovernancePolicy.policy_type == "residency",
+            )
+        )
+        db_policy = existing.scalar_one_or_none()
+
+        policy_config = {
+            "workspace_id": str(policy.workspace_id),
+            "primary_region": policy.primary_region.value,
+            "failover_region": policy.failover_region.value if policy.failover_region else None,
+            "mode": policy.mode.name,
+            "gdpr_compliant": policy.gdpr_compliant,
+            "telemetry_local": policy.telemetry_local,
+            "allowed_regions": [r.value for r in policy.allowed_regions],
+        }
+
+        if db_policy:
+            # Update existing
+            db_policy.config = policy_config
+            db_policy.enabled = True
+        else:
+            # Create new
+            db_policy = GovernancePolicy(
+                workspace_id=workspace_id,
+                policy_type="residency",
+                config=policy_config,
+                enabled=True,
+                created_by_user_id=created_by,
+            )
+            self._session.add(db_policy)
+
+        await self._session.commit()
         logger.info(f"Persisted residency policy for workspace {workspace_id}")
 
     async def _load_residency_policy(self, workspace_id: UUID) -> Optional[ResidencyPolicy]:
         """Load residency policy from database."""
-        # This would use the actual DB model to load the policy
-        # In production, this would query the database and reconstruct the policy
-        return None
+        from ..models import GovernancePolicy
+
+        result = await self._session.execute(
+            select(GovernancePolicy).where(
+                GovernancePolicy.workspace_id == workspace_id,
+                GovernancePolicy.policy_type == "residency",
+                GovernancePolicy.enabled == True,
+            )
+        )
+        db_policy = result.scalar_one_or_none()
+
+        if not db_policy:
+            return None
+
+        config = db_policy.config
+        policy = ResidencyPolicy(
+            workspace_id=config.get("workspace_id", str(workspace_id)),
+            primary_region=DataRegion(config.get("primary_region", "us_east")),
+            failover_region=DataRegion(config["failover_region"]) if config.get("failover_region") else None,
+            mode=ResidencyMode[config.get("mode", "CLOUD")],
+            gdpr_compliant=config.get("gdpr_compliant", False),
+            telemetry_local=config.get("telemetry_local", False),
+        )
+
+        # Register in memory manager
+        self._residency_manager._policies[str(workspace_id)] = policy
+
+        return policy
 
     # ===== Retention Policy Methods =====
 
@@ -445,8 +497,71 @@ class GovernanceDBService:
         created_by: Optional[UUID] = None,
     ) -> None:
         """Persist retention policy to database."""
-        # In production, this would update DataRetentionPolicy model
-        logger.info(f"Persisted retention policy for workspace {workspace_id}")
+        from ..models import GovernancePolicy, DataRetentionPolicy
+
+        # Try GovernancePolicy model first (unified governance)
+        try:
+            existing = await self._session.execute(
+                select(GovernancePolicy).where(
+                    GovernancePolicy.workspace_id == workspace_id,
+                    GovernancePolicy.policy_type == "retention",
+                    GovernancePolicy.data_type == policy.data_type,
+                )
+            )
+            db_policy = existing.scalar_one_or_none()
+
+            policy_config = {
+                "data_type": policy.data_type,
+                "retention_days": policy.retention_days,
+                "action": policy.action.name,
+                "enabled": policy.enabled,
+                "last_applied": policy.last_applied.isoformat() if policy.last_applied else None,
+            }
+
+            if db_policy:
+                db_policy.config = policy_config
+                db_policy.enabled = policy.enabled
+            else:
+                db_policy = GovernancePolicy(
+                    workspace_id=workspace_id,
+                    policy_type="retention",
+                    data_type=policy.data_type,
+                    config=policy_config,
+                    enabled=policy.enabled,
+                    created_by_user_id=created_by,
+                )
+                self._session.add(db_policy)
+
+            # Also update legacy DataRetentionPolicy for compatibility
+            try:
+                legacy_result = await self._session.execute(
+                    select(DataRetentionPolicy).where(
+                        DataRetentionPolicy.workspace_id == workspace_id,
+                        DataRetentionPolicy.data_type == policy.data_type,
+                    )
+                )
+                legacy_policy = legacy_result.scalar_one_or_none()
+
+                if legacy_policy:
+                    legacy_policy.retention_days = policy.retention_days
+                    legacy_policy.auto_purge_enabled = policy.enabled
+                else:
+                    legacy_policy = DataRetentionPolicy(
+                        workspace_id=workspace_id,
+                        data_type=policy.data_type,
+                        retention_days=policy.retention_days,
+                        auto_purge_enabled=policy.enabled,
+                    )
+                    self._session.add(legacy_policy)
+            except Exception:
+                pass  # Legacy model may not exist
+
+            await self._session.commit()
+            logger.info(f"Persisted retention policy for workspace {workspace_id}, data_type={policy.data_type}")
+
+        except Exception as e:
+            logger.warning(f"Failed to persist retention policy: {e}")
+            await self._session.rollback()
 
     # ===== DSAR Methods =====
 
@@ -593,8 +708,49 @@ class GovernanceDBService:
         request: DSARRequest,
     ) -> None:
         """Persist DSAR request to database."""
-        # In production, this would create/update a DB record
-        logger.info(f"Persisted DSAR request {request.id} for workspace {workspace_id}")
+        from ..models import DSARRequest as DBDSARRequest
+
+        try:
+            # Check if request exists
+            existing = await self._session.execute(
+                select(DBDSARRequest).where(
+                    DBDSARRequest.id == UUID(request.id),
+                )
+            )
+            db_request = existing.scalar_one_or_none()
+
+            if db_request:
+                # Update existing
+                db_request.status = request.status.value
+                db_request.verification_method = request.verification_method
+                db_request.verified_at = request.verified_at
+                db_request.completed_at = request.completed_at
+                db_request.export_path = request.export_path
+                db_request.export_checksum = request.export_checksum
+                db_request.records_processed = request.records_processed
+                db_request.records_deleted = request.records_deleted
+                db_request.notes = {"notes": request.notes} if request.notes else None
+            else:
+                # Create new
+                db_request = DBDSARRequest(
+                    id=UUID(request.id),
+                    workspace_id=workspace_id,
+                    user_id=UUID(request.user_id),
+                    request_type=request.request_type.value,
+                    status=request.status.value,
+                    data_categories=list(request.data_categories) if request.data_categories else None,
+                    reason=request.reason,
+                    deadline=request.deadline,
+                    extended_deadline=request.extended_deadline,
+                )
+                self._session.add(db_request)
+
+            await self._session.commit()
+            logger.info(f"Persisted DSAR request {request.id} for workspace {workspace_id}")
+
+        except Exception as e:
+            logger.warning(f"Failed to persist DSAR request: {e}")
+            await self._session.rollback()
 
     # ===== Compliance Reports =====
 

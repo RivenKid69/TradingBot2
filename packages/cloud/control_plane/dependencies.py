@@ -429,10 +429,61 @@ async def get_admin_session() -> AsyncSession:
         yield session
 
 
+class CurrentWorkspace(BaseModel):
+    """Current workspace context."""
+
+    id: UUID
+    name: str
+    org_id: UUID
+    settings: Dict[str, Any] = Field(default_factory=dict)
+
+
+async def get_current_workspace(
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CurrentWorkspace:
+    """
+    Get current workspace from authenticated user context.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        Current workspace context
+
+    Raises:
+        HTTPException: If no workspace selected or workspace not found
+    """
+    if current_user.workspace_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No workspace selected",
+        )
+
+    async with get_session() as session:
+        result = await session.execute(
+            select(Workspace).where(Workspace.id == current_user.workspace_id)
+        )
+        workspace = result.scalar_one_or_none()
+
+        if workspace is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workspace not found",
+            )
+
+        return CurrentWorkspace(
+            id=workspace.id,
+            name=workspace.name,
+            org_id=workspace.organization_id,
+            settings=workspace.settings or {},
+        )
+
+
 # Type aliases for FastAPI dependencies
 UserDep = Annotated[CurrentUser, Depends(get_current_user)]
 AgentDep = Annotated[CurrentAgent, Depends(get_current_agent)]
 OptionalUserDep = Annotated[Optional[CurrentUser], Depends(get_optional_user)]
+WorkspaceDep = Annotated[CurrentWorkspace, Depends(get_current_workspace)]
 WorkspaceSessionDep = Annotated[AsyncSession, Depends(get_workspace_session)]
 AdminSessionDep = Annotated[AsyncSession, Depends(get_admin_session)]
 
