@@ -2,6 +2,10 @@
 """
 CCEA Artifact Runner.
 
+.. deprecated:: 2.0.0
+    This module is DEPRECATED. Use `packages.agent.runner` instead.
+    WI-DEDRIFT-01: ccea/agent/* deprecated in favor of packages/agent/*
+
 Handles artifact execution:
 - Artifact download and verification
 - Sandbox setup
@@ -15,6 +19,13 @@ Security:
 """
 
 from __future__ import annotations
+
+import warnings as _warnings
+_warnings.warn(
+    "ccea.agent.runner is deprecated. Use packages.agent.runner instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import json
 import logging

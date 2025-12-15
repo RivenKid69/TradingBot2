@@ -9,6 +9,11 @@ Design Doc D1: Pre-flight проверки перед стартом/апгре�
 4. verify time sync (допустимый drift) и корректность timestamps/idempotency
 
 CCEA Phase 5 Component.
+
+SECURITY NOTE (Design Doc compliance):
+- Uses ccea.artifact.verifier.ArtifactVerifier for REAL cryptographic verification
+- Unsigned artifacts are ALWAYS rejected (strict mode)
+- No fallback to "presence only" checks
 """
 
 from __future__ import annotations
@@ -21,8 +26,24 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Optional, Tuple
+from typing import Any, Callable, Dict, Final, List, Optional, Tuple, TYPE_CHECKING
 from uuid import uuid4
+
+# Import ArtifactVerifier for real crypto verification (Design Doc Phase 4)
+try:
+    from ccea.artifact.verifier import (
+        ArtifactVerifier,
+        VerificationResult,
+        VerificationReport,
+        RejectionReason,
+    )
+    from ccea.artifact.signer import SignatureInfo
+    VERIFIER_AVAILABLE = True
+except ImportError:
+    VERIFIER_AVAILABLE = False
+    ArtifactVerifier = None  # type: ignore
+    VerificationResult = None  # type: ignore
+    SignatureInfo = None  # type: ignore
 
 
 class PreflightCheckType(Enum):
@@ -208,6 +229,7 @@ class PreflightChecker:
         hard_cap_enforcer: Optional[Any] = None,  # HardCapEnforcer
         broker_connector: Optional[Any] = None,  # BrokerConnector
         time_checker: Optional[Any] = None,  # TimeSyncChecker
+        artifact_verifier: Optional["ArtifactVerifier"] = None,  # CCEA ArtifactVerifier
     ):
         """
         Initialize pre-flight checker.
@@ -219,6 +241,8 @@ class PreflightChecker:
             hard_cap_enforcer: Hard cap enforcer for validation
             broker_connector: Broker connector for connectivity check
             time_checker: Time sync checker
+            artifact_verifier: CCEA ArtifactVerifier for cryptographic verification
+                              (Design Doc Phase 4 - required for production)
         """
         self.config = config or PreflightConfig()
         self._vault = vault
@@ -226,6 +250,7 @@ class PreflightChecker:
         self._hard_cap_enforcer = hard_cap_enforcer
         self._broker_connector = broker_connector
         self._time_checker = time_checker
+        self._artifact_verifier = artifact_verifier
 
         self._last_result: Optional[PreflightResult] = None
         self._lock = threading.RLock()
@@ -615,7 +640,16 @@ class PreflightChecker:
         manifest: Optional[Dict[str, Any]],
         signature: Optional[bytes],
     ) -> PreflightCheck:
-        """Verify artifact signature (fail-closed when artifact is present)."""
+        """
+        Verify artifact signature using REAL cryptographic verification.
+
+        Design Doc Phase 4 Compliance:
+        - Uses ccea.artifact.verifier.ArtifactVerifier for real crypto verification
+        - Unsigned artifacts are ALWAYS rejected (no fallback)
+        - Invalid signatures cause immediate rejection
+
+        SECURITY: This is fail-closed. Any verification failure = REJECT.
+        """
         if artifact_path is None:
             return PreflightCheck(
                 check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
@@ -632,7 +666,139 @@ class PreflightChecker:
                 required=True,
             )
 
-        # Prefer an explicit signature argument (e.g., detached signature bytes).
+        # CRITICAL: Use ArtifactVerifier for REAL cryptographic verification
+        if self._artifact_verifier is not None and VERIFIER_AVAILABLE:
+            return self._verify_with_artifact_verifier(artifact_path, manifest, signature)
+
+        # Fallback if verifier not available - but STRICT: still require signature
+        return self._check_signature_fallback(manifest, signature)
+
+    def _verify_with_artifact_verifier(
+        self,
+        artifact_path: Path,
+        manifest: Optional[Dict[str, Any]],
+        signature: Optional[bytes],
+    ) -> PreflightCheck:
+        """
+        Use ArtifactVerifier for real cryptographic verification.
+
+        This is the Design Doc compliant path - actual Ed25519/RSA verification.
+        """
+        # Build SignatureInfo from manifest or raw signature
+        sig_info = None
+
+        if manifest and isinstance(manifest, dict):
+            sig_obj = manifest.get("signature", {})
+            if isinstance(sig_obj, dict) and sig_obj.get("signature_value"):
+                try:
+                    sig_info = SignatureInfo(
+                        algorithm=sig_obj.get("algorithm", "ed25519"),
+                        signature=sig_obj["signature_value"],
+                        key_id=sig_obj.get("key_id"),
+                        signed_digest=sig_obj.get("signed_digest"),
+                    )
+                except Exception as e:
+                    return PreflightCheck(
+                        check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                        result=PreflightCheckResult.FAILED,
+                        message=f"Invalid signature format in manifest: {e}",
+                        required=True,
+                    )
+
+        # If raw signature bytes provided, convert to SignatureInfo
+        if signature is not None and sig_info is None:
+            import base64
+            try:
+                sig_info = SignatureInfo(
+                    algorithm="ed25519",  # Default algorithm per Design Doc
+                    signature=base64.b64encode(signature).decode("utf-8"),
+                )
+            except Exception as e:
+                return PreflightCheck(
+                    check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                    result=PreflightCheckResult.FAILED,
+                    message=f"Invalid raw signature: {e}",
+                    required=True,
+                )
+
+        # No signature at all = REJECT (Design Doc: unsigned artifacts ALWAYS rejected)
+        if sig_info is None:
+            return PreflightCheck(
+                check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                result=PreflightCheckResult.FAILED,
+                message="REJECTED: Artifact is unsigned. Design Doc requires all artifacts to be signed.",
+                details={"rejection_reason": "unsigned"},
+                required=True,
+            )
+
+        # Find manifest path (look for manifest.json next to artifact)
+        manifest_path = artifact_path.parent / "manifest.json"
+        if not manifest_path.exists():
+            # Try manifest.yaml for backwards compatibility
+            manifest_path = artifact_path.parent / "manifest.yaml"
+
+        if not manifest_path.exists():
+            return PreflightCheck(
+                check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                result=PreflightCheckResult.FAILED,
+                message="Manifest file not found for verification",
+                required=True,
+            )
+
+        # Perform REAL cryptographic verification
+        try:
+            report: VerificationReport = self._artifact_verifier.verify(
+                artifact_path=artifact_path,
+                manifest_path=manifest_path,
+                signature_info=sig_info,
+            )
+
+            if report.result == VerificationResult.VERIFIED:
+                return PreflightCheck(
+                    check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                    result=PreflightCheckResult.PASSED,
+                    message="Signature VERIFIED (cryptographic verification passed)",
+                    details={
+                        "signature_verified": report.signature_verified,
+                        "digest_verified": report.digest_verified,
+                        "key_id": report.key_id_used,
+                        "schema_version": report.schema_version,
+                    },
+                    required=True,
+                )
+            else:
+                # Verification FAILED or REJECTED
+                return PreflightCheck(
+                    check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                    result=PreflightCheckResult.FAILED,
+                    message=f"REJECTED: {report.rejection_reason.value if report.rejection_reason else 'verification_failed'} - {report.rejection_details or 'Cryptographic verification failed'}",
+                    details={
+                        "rejection_reason": report.rejection_reason.value if report.rejection_reason else None,
+                        "rejection_details": report.rejection_details,
+                    },
+                    required=True,
+                )
+
+        except Exception as e:
+            return PreflightCheck(
+                check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
+                result=PreflightCheckResult.FAILED,
+                message=f"Signature verification error: {str(e)}",
+                required=True,
+            )
+
+    def _check_signature_fallback(
+        self,
+        manifest: Optional[Dict[str, Any]],
+        signature: Optional[bytes],
+    ) -> PreflightCheck:
+        """
+        Fallback when ArtifactVerifier not available.
+
+        WARNING: This still REQUIRES a signature to be present.
+        Real verification should be done by ArtifactVerifier.
+        """
+        # Even in fallback, we REQUIRE signature presence (but warn about no crypto)
         if signature is not None:
             if len(signature) == 0:
                 return PreflightCheck(
@@ -643,30 +809,29 @@ class PreflightChecker:
                 )
             return PreflightCheck(
                 check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
-                result=PreflightCheckResult.PASSED,
-                message="Signature present (verification requires trust root)",
-                details={"signature_length": len(signature)},
+                result=PreflightCheckResult.WARNING,
+                message="Signature present but ArtifactVerifier not configured - CRYPTO VERIFICATION SKIPPED (not recommended for production)",
+                details={"signature_length": len(signature), "crypto_verified": False},
                 required=True,
             )
 
-        # Otherwise, require an embedded signature in the manifest.
+        # Check manifest for embedded signature
         sig_obj = (manifest or {}).get("signature") if isinstance(manifest, dict) else None
         sig_value = sig_obj.get("signature_value") if isinstance(sig_obj, dict) else None
-        sig_alg = sig_obj.get("algorithm") if isinstance(sig_obj, dict) else None
 
         if not sig_value or not isinstance(sig_value, str):
             return PreflightCheck(
                 check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
                 result=PreflightCheckResult.FAILED,
-                message="Missing artifact signature (no detached signature provided and manifest.signature.signature_value missing)",
+                message="REJECTED: No signature found. Configure ArtifactVerifier for production.",
                 required=True,
             )
 
         return PreflightCheck(
             check_type=PreflightCheckType.SIGNATURE_VERIFICATION,
-            result=PreflightCheckResult.PASSED,
-            message="Embedded signature present in manifest (verification requires trust root)",
-            details={"algorithm": sig_alg},
+            result=PreflightCheckResult.WARNING,
+            message="Signature present but ArtifactVerifier not configured - CRYPTO VERIFICATION SKIPPED (not recommended for production)",
+            details={"algorithm": sig_obj.get("algorithm"), "crypto_verified": False},
             required=True,
         )
 

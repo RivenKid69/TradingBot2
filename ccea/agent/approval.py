@@ -2,6 +2,10 @@
 """
 CCEA Agent Approval Manager.
 
+.. deprecated:: 2.0.0
+    This module is DEPRECATED. Use `packages.agent.approval` instead.
+    WI-DEDRIFT-01: ccea/agent/* deprecated in favor of packages/agent/*
+
 Handles local approval workflow for TRADING_IMPACTING commands:
 - Approval request queue
 - Local approval UI/CLI integration
@@ -15,6 +19,13 @@ Security:
 """
 
 from __future__ import annotations
+
+import warnings as _warnings
+_warnings.warn(
+    "ccea.agent.approval is deprecated. Use packages.agent.approval instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import hashlib
 import json

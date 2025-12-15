@@ -1,6 +1,6 @@
 # Архитектура проекта
 
-> **Last Updated**: 2025-12-14 | **Version**: 6.0 (CCEA Cloud Architecture Complete)
+> **Last Updated**: 2025-12-15 | **Version**: 6.1 (Design Doc Compliance Complete)
 
 ## Cloud-Controlled Execution Architecture (CCEA)
 
@@ -68,6 +68,36 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 3. **artifact-signature-required**: Артефакт подписан перед публикацией
 4. **redaction-enabled**: Telemetry redaction нельзя отключить
 5. **import-boundary-check**: Agent imports запрещены в Cloud
+
+### Canonical Stack (v6.1)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CANONICAL STACK                          │
+├─────────────────────────────────────────────────────────────┤
+│  packages/cloud/*     ← Cloud Control Plane (production)    │
+│  packages/agent/*     ← Agent Runtime (production)          │
+│  packages/shared/*    ← Shared contracts                    │
+├─────────────────────────────────────────────────────────────┤
+│  ccea/artifact/*      ← Signer + Verifier (integrated)      │
+│  ccea/crypto/*        ← Signatures/keys                     │
+│  ccea/guardrails/*    ← CI boundary checks                  │
+│  ccea/models/*        ← State machines, protocol            │
+├─────────────────────────────────────────────────────────────┤
+│  ccea/agent/*         ← DEPRECATED (use packages/agent/*)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Design Doc Compliance (v6.1)
+
+| Feature | Implementation | Status |
+|---------|---------------|--------|
+| **Crypto signature verification** | `ccea.artifact.verifier.ArtifactVerifier` integrated into `packages/agent/daemon/preflight.py` | ✅ |
+| **REQUEST_UPGRADE_ARTIFACT** | `packages/agent/daemon/agentd.py:_handle_upgrade_artifact()` | ✅ |
+| **REQUEST_UPDATE_CONFIG** | `packages/agent/daemon/agentd.py:_handle_update_config()` | ✅ |
+| **Manifest format** | JSON canonical (`manifest.json`), YAML legacy supported | ✅ |
+| **Unsigned artifact rejection** | Fail-closed: unsigned = REJECTED | ✅ |
+| **ccea/agent/* deprecation** | DeprecationWarning emitted on import | ✅ |
 
 ---
 

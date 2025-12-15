@@ -2,6 +2,21 @@
 """
 CCEA Agent Daemon.
 
+.. deprecated:: 2.0.0
+    This module is DEPRECATED. Use `packages.agent.daemon.agentd` instead.
+
+    **CANONICAL IMPLEMENTATION**: packages/agent/daemon/agentd.py
+
+    Migration::
+
+        # Old (deprecated)
+        from ccea.agent.daemon import AgentDaemon
+
+        # New (canonical)
+        from packages.agent.daemon.agentd import AgentDaemon
+
+    WI-DEDRIFT-01: ccea/agent/* deprecated in favor of packages/agent/*
+
 Main agent daemon that orchestrates:
 - Enrollment with cloud
 - Heartbeat sending
@@ -17,6 +32,14 @@ Security:
 """
 
 from __future__ import annotations
+
+import warnings as _warnings
+
+_warnings.warn(
+    "ccea.agent.daemon is deprecated. Use packages.agent.daemon.agentd instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import json
 import logging

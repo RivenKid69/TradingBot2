@@ -37,8 +37,24 @@ import yaml
 # Constants
 ARTIFACT_CACHE_DIR: Final[str] = ".ccea/artifacts"
 MAX_ARTIFACT_SIZE_MB: Final[int] = 500
-MANIFEST_FILENAME: Final[str] = "manifest.yaml"
+# Design Doc standardization: manifest.json is canonical format (matches builder)
+# manifest.yaml supported for backwards compatibility
+MANIFEST_FILENAME: Final[str] = "manifest.json"
+MANIFEST_FILENAME_LEGACY: Final[str] = "manifest.yaml"
 SUPPORTED_FORMATS: Final[Set[str]] = {".tar.gz", ".tgz", ".zip", ".whl"}
+
+# Import ArtifactVerifier for cryptographic verification (Design Doc Phase 4)
+try:
+    from ccea.artifact.verifier import (
+        ArtifactVerifier,
+        VerificationResult,
+        VerificationReport,
+    )
+    from ccea.artifact.signer import SignatureInfo
+    VERIFIER_AVAILABLE = True
+except ImportError:
+    VERIFIER_AVAILABLE = False
+    ArtifactVerifier = None  # type: ignore
 
 
 class ArtifactType(Enum):
@@ -116,19 +132,23 @@ class ArtifactManifest:
         }
 
     @classmethod
-    def from_yaml(cls, yaml_content: str) -> "ArtifactManifest":
-        """Parse manifest from YAML content."""
-        data = yaml.safe_load(yaml_content) or {}
+    def from_dict(cls, data: Dict[str, Any]) -> "ArtifactManifest":
+        """Parse manifest from dictionary (works for both JSON and YAML sources)."""
         permissions = data.get("permissions", {})
 
-        artifact_type_str = data.get("type", "strategy").upper()
+        artifact_type_str = data.get("type", data.get("artifact_type", "strategy")).upper()
         artifact_type = getattr(ArtifactType, artifact_type_str, ArtifactType.STRATEGY)
+
+        # Handle entrypoint - can be string or dict (Design Doc format)
+        entrypoint = data.get("entrypoint", "")
+        if isinstance(entrypoint, dict):
+            entrypoint = f"{entrypoint.get('module', '')}.{entrypoint.get('class_name', '')}"
 
         return cls(
             name=data.get("name", ""),
             version=data.get("version", ""),
             artifact_type=artifact_type,
-            entrypoint=data.get("entrypoint", ""),
+            entrypoint=entrypoint,
             permissions=permissions,
             network_allowed=permissions.get("network", {}).get("enabled", False),
             egress_allowlist=permissions.get("network", {}).get("egress_allowlist", []),
@@ -140,10 +160,43 @@ class ArtifactManifest:
                 "max_execution_time_seconds", 3600
             ),
             dependencies=data.get("dependencies", []),
-            python_version=data.get("python_version", ">=3.10"),
-            author=data.get("author", ""),
+            python_version=data.get("python_version", data.get("runtime", {}).get("python_version", ">=3.10")),
+            author=data.get("author", data.get("provenance", {}).get("author", "")),
             description=data.get("description", ""),
         )
+
+    @classmethod
+    def from_yaml(cls, yaml_content: str) -> "ArtifactManifest":
+        """Parse manifest from YAML content (legacy format)."""
+        data = yaml.safe_load(yaml_content) or {}
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_json(cls, json_content: str) -> "ArtifactManifest":
+        """Parse manifest from JSON content (canonical format per Design Doc)."""
+        data = json.loads(json_content)
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_file(cls, manifest_path: Path) -> "ArtifactManifest":
+        """
+        Parse manifest from file (auto-detect format).
+
+        Supports both JSON (canonical) and YAML (legacy) formats.
+        """
+        with open(manifest_path, "r") as f:
+            content = f.read()
+
+        if manifest_path.suffix == ".json":
+            return cls.from_json(content)
+        elif manifest_path.suffix in (".yaml", ".yml"):
+            return cls.from_yaml(content)
+        else:
+            # Try JSON first, then YAML
+            try:
+                return cls.from_json(content)
+            except json.JSONDecodeError:
+                return cls.from_yaml(content)
 
     @classmethod
     def default_restrictive(cls) -> "ArtifactManifest":
@@ -286,6 +339,30 @@ class ArtifactManager:
         self._index_path = self._cache_dir / "index.json"
         self._load_index()
 
+    def _find_manifest_path(self, extracted_path: Path) -> Optional[Path]:
+        """
+        Find manifest file in extracted artifact directory.
+
+        Tries JSON first (canonical per Design Doc), then YAML (legacy).
+
+        Args:
+            extracted_path: Path to extracted artifact
+
+        Returns:
+            Path to manifest file, or None if not found
+        """
+        # Try canonical JSON format first
+        json_path = extracted_path / MANIFEST_FILENAME
+        if json_path.exists():
+            return json_path
+
+        # Fall back to legacy YAML format
+        yaml_path = extracted_path / MANIFEST_FILENAME_LEGACY
+        if yaml_path.exists():
+            return yaml_path
+
+        return None
+
     def _load_index(self) -> None:
         """Load artifact index from disk."""
         if not self._index_path.exists():
@@ -313,11 +390,10 @@ class ArtifactManager:
                     artifact.archive_path = Path(artifact_data["archive_path"])
                 if artifact_data.get("extracted_path"):
                     artifact.extracted_path = Path(artifact_data["extracted_path"])
-                    # Reload manifest
-                    manifest_path = artifact.extracted_path / MANIFEST_FILENAME
-                    if manifest_path.exists():
-                        with open(manifest_path) as mf:
-                            artifact.manifest = ArtifactManifest.from_yaml(mf.read())
+                    # Reload manifest - try JSON first (canonical), then YAML (legacy)
+                    manifest_path = self._find_manifest_path(artifact.extracted_path)
+                    if manifest_path and manifest_path.exists():
+                        artifact.manifest = ArtifactManifest.from_file(manifest_path)
 
                 if artifact.extracted_path and artifact.extracted_path.exists():
                     self._artifacts[artifact_id] = artifact
@@ -432,11 +508,10 @@ class ArtifactManager:
             extracted_path = self._extract_artifact(artifact)
             artifact.extracted_path = extracted_path
 
-            # Parse manifest
-            manifest_path = extracted_path / MANIFEST_FILENAME
-            if manifest_path.exists():
-                with open(manifest_path) as f:
-                    artifact.manifest = ArtifactManifest.from_yaml(f.read())
+            # Parse manifest - try JSON first (canonical), then YAML (legacy)
+            manifest_path = self._find_manifest_path(extracted_path)
+            if manifest_path and manifest_path.exists():
+                artifact.manifest = ArtifactManifest.from_file(manifest_path)
                 artifact.name = artifact.manifest.name or artifact.name
                 artifact.version = artifact.manifest.version
                 artifact.artifact_type = artifact.manifest.artifact_type
@@ -709,3 +784,144 @@ class ArtifactManager:
                 for state in ArtifactState
             },
         }
+
+    def download_verify_and_prepare(
+        self,
+        url: str,
+        expected_digest: str,
+        deployment_id: Optional[str] = None,
+        artifact_name: Optional[str] = None,
+        signature_info: Optional[Dict[str, Any]] = None,
+        verifier: Optional["ArtifactVerifier"] = None,
+    ) -> Tuple[Artifact, Optional["VerificationReport"]]:
+        """
+        Download artifact with FULL cryptographic verification.
+
+        Design Doc Phase 4 compliant - uses ArtifactVerifier for:
+        - Digest verification
+        - Signature verification (Ed25519)
+        - Schema version check
+        - Registry allowlist check
+
+        Args:
+            url: Download URL (presigned)
+            expected_digest: Expected SHA-256 digest
+            deployment_id: Associated deployment ID
+            artifact_name: Optional artifact name
+            signature_info: Signature information dict (algorithm, signature, key_id)
+            verifier: Optional ArtifactVerifier instance
+
+        Returns:
+            Tuple of (Artifact, VerificationReport)
+
+        Raises:
+            ArtifactDownloadError: Download failed
+            ArtifactVerificationError: Verification failed
+        """
+        # First download and do basic digest verification
+        artifact = self.download_and_verify(
+            url=url,
+            expected_digest=expected_digest,
+            deployment_id=deployment_id,
+            artifact_name=artifact_name,
+        )
+
+        verification_report = None
+
+        # If verifier provided, do FULL cryptographic verification
+        if verifier is not None and VERIFIER_AVAILABLE and artifact.extracted_path:
+            manifest_path = self._find_manifest_path(artifact.extracted_path)
+
+            if manifest_path is None:
+                artifact.state = ArtifactState.FAILED
+                artifact.error = "No manifest found for signature verification"
+                raise ArtifactVerificationError(artifact.error)
+
+            # Build SignatureInfo if provided
+            sig_info = None
+            if signature_info:
+                sig_info = SignatureInfo(
+                    algorithm=signature_info.get("algorithm", "ed25519"),
+                    signature=signature_info.get("signature", ""),
+                    key_id=signature_info.get("key_id"),
+                    signed_digest=signature_info.get("signed_digest"),
+                )
+
+            # Perform cryptographic verification
+            verification_report = verifier.verify(
+                artifact_path=artifact.extracted_path / (artifact.manifest.entrypoint.split(".")[0] + ".py")
+                    if artifact.manifest and artifact.manifest.entrypoint
+                    else manifest_path,  # Verify manifest if no entrypoint
+                manifest_path=manifest_path,
+                signature_info=sig_info,
+                expected_digest=expected_digest.replace("sha256:", "") if expected_digest.startswith("sha256:") else expected_digest,
+            )
+
+            if verification_report.result != VerificationResult.VERIFIED:
+                artifact.state = ArtifactState.FAILED
+                reason = verification_report.rejection_reason.value if verification_report.rejection_reason else "unknown"
+                artifact.error = f"Cryptographic verification failed: {reason} - {verification_report.rejection_details}"
+                self._save_index()
+                raise ArtifactVerificationError(artifact.error)
+
+        self._save_index()
+        return artifact, verification_report
+
+    def prepare_upgrade(
+        self,
+        current_artifact_id: Optional[str],
+        new_artifact: Artifact,
+    ) -> bool:
+        """
+        Prepare for atomic upgrade from current to new artifact.
+
+        Args:
+            current_artifact_id: Currently active artifact (can be None)
+            new_artifact: New artifact to upgrade to
+
+        Returns:
+            True if ready for swap
+        """
+        if new_artifact.state != ArtifactState.READY:
+            return False
+
+        # Verify new artifact is actually ready
+        if not new_artifact.extracted_path or not new_artifact.extracted_path.exists():
+            return False
+
+        return True
+
+    def execute_upgrade(
+        self,
+        current_artifact_id: Optional[str],
+        new_artifact_id: str,
+    ) -> bool:
+        """
+        Execute atomic upgrade from current to new artifact.
+
+        This should be called after prepare_upgrade() succeeds.
+
+        Args:
+            current_artifact_id: Currently active artifact (can be None)
+            new_artifact_id: New artifact ID to activate
+
+        Returns:
+            True if upgrade successful
+        """
+        new_artifact = self._artifacts.get(new_artifact_id)
+        if not new_artifact or new_artifact.state != ArtifactState.READY:
+            return False
+
+        # Deactivate current if exists
+        if current_artifact_id:
+            current = self._artifacts.get(current_artifact_id)
+            if current:
+                current.state = ArtifactState.INACTIVE
+
+        # Activate new
+        new_artifact.state = ArtifactState.ACTIVE
+        new_artifact.activated_at = datetime.utcnow()
+        self._active_artifact = new_artifact_id
+
+        self._save_index()
+        return True

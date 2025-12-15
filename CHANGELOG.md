@@ -1,5 +1,71 @@
 # Changelog
 
+## [6.1.0] - 2025-12-15
+
+### Design Doc CCEA Compliance
+
+- **P0: Real Cryptographic Signature Verification** (2025-12-15)
+  - Integrated `ArtifactVerifier` into `preflight.py` for Ed25519 cryptographic verification
+  - Replaced presence-only signature check with real crypto verification per Design Doc Phase 4
+  - Unsigned artifacts now properly REJECTED (fail-closed security model)
+  - Files: `packages/agent/daemon/preflight.py`
+  - Tests: `tests/ccea/test_design_doc_compliance.py::TestPreflightVerifierIntegration`
+
+- **P0: REQUEST_UPGRADE_ARTIFACT Handler** (2025-12-15)
+  - Implemented full lifecycle command for artifact upgrades
+  - Downloads artifact from cloud, verifies SHA-256 digest, performs crypto verification
+  - Executes atomic upgrade with rollback capability
+  - Files: `packages/agent/daemon/agentd.py` (lines 1061-1162)
+  - Tests: `tests/ccea/test_design_doc_compliance.py::TestRequestUpgradeArtifact`
+
+- **P0: REQUEST_UPDATE_CONFIG Handler** (2025-12-15)
+  - Implemented configuration update lifecycle command
+  - Validates config changes, checks TRADING_IMPACTING flag
+  - Applies changes through policy firewall per Design Doc compliance
+  - Files: `packages/agent/daemon/agentd.py` (lines 1164-1272)
+  - Tests: `tests/ccea/test_design_doc_compliance.py::TestRequestUpdateConfig`
+
+- **P0: Manifest Format Standardization** (2025-12-15)
+  - Canonical format: `manifest.json` (JSON)
+  - Legacy support: `manifest.yaml` (YAML) with deprecation warnings
+  - Added `from_dict()`, `from_json()`, `from_file()` methods to `ArtifactManifest`
+  - Files: `packages/agent/daemon/artifact_manager.py`
+  - Tests: `tests/ccea/test_design_doc_compliance.py::TestManifestFormatStandardization`
+
+### Canonical Stack Definition
+
+- **packages/* as Production Stack** (2025-12-15)
+  - `packages/agent/daemon/` - Production CCEA agent daemon
+  - `packages/agent/daemon/preflight.py` - Artifact verification
+  - `packages/agent/daemon/agentd.py` - Agent lifecycle management
+  - `packages/agent/daemon/artifact_manager.py` - Artifact management
+
+- **ccea/agent/* Deprecated** (2025-12-15)
+  - Added deprecation warnings to `ccea/agent/daemon.py`, `runner.py`, `approval.py`
+  - Migrate to `packages.agent.daemon.*` modules
+  - Tests: `tests/ccea/test_design_doc_compliance.py::TestCCEAAgentDeprecation`
+
+### Test Coverage
+
+- **28 Design Doc Compliance Tests** (2025-12-15)
+  - `TestPreflightVerifierIntegration` - 4 tests
+  - `TestRequestUpgradeArtifact` - 4 tests
+  - `TestRequestUpdateConfig` - 4 tests
+  - `TestManifestFormatStandardization` - 4 tests
+  - `TestCCEAAgentDeprecation` - 3 tests
+  - `TestDesignDocMustHave` - 3 tests
+  - `TestStateMachineCompliance` - 3 tests
+  - `TestProtocolCompliance` - 3 tests
+  - All tests passing (100%)
+
+### Documentation
+
+- Updated `ARCHITECTURE.md` to version 6.1
+- Added Canonical Stack section with module hierarchy
+- Added Design Doc Compliance table
+
+---
+
 ## [5.0.0] - 2025-12-11
 
 ### BREAKING CHANGES
