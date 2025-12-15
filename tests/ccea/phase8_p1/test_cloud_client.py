@@ -43,6 +43,7 @@ def test_cloud_client_enroll_signs_and_parses_response():
         CloudClientConfig(base_url="https://cloud.example", timeout_seconds=5),
         identity=AgentIdentity.generate(),
         transport=httpx.MockTransport(handler),
+        verify_cloud_signatures=False,
     )
     res = client.enroll(
         enrollment_token="enroll-token",
@@ -85,6 +86,7 @@ def test_cloud_client_heartbeat_includes_bearer_auth_and_signature():
         identity=AgentIdentity.generate(),
         access_token="agent.jwt.token",
         transport=httpx.MockTransport(handler),
+        verify_cloud_signatures=False,
     )
 
     hb = client.heartbeat(agent_version="1.0.0", current_state="RUNNING")

@@ -9,6 +9,11 @@ Outbound-only client for Cloud Control Plane lifecycle:
 - submit local approvals
 - submit command results
 
+Security Features (Design Doc 10.2):
+- All outbound messages signed by Agent
+- All commands from Cloud verified by Agent
+- Fail-closed on signature verification failure
+
 This package MUST NOT be imported by Cloud zone code.
 """
 
@@ -18,6 +23,15 @@ from .client import (
     CloudClientError,
 )
 
+from .signature_verifier import (
+    CloudSignatureVerifier,
+    CloudSignatureVerifierConfig,
+    SignatureVerificationError,
+    VerificationResult,
+    VerifiedCloudMessage,
+    create_verifier_from_enrollment,
+)
+
 from .types import (
     AgentEnrollResult,
     AgentHeartbeatResult,
@@ -25,9 +39,18 @@ from .types import (
 )
 
 __all__ = [
+    # Client
     "CloudClient",
     "CloudClientConfig",
     "CloudClientError",
+    # Signature Verification
+    "CloudSignatureVerifier",
+    "CloudSignatureVerifierConfig",
+    "SignatureVerificationError",
+    "VerificationResult",
+    "VerifiedCloudMessage",
+    "create_verifier_from_enrollment",
+    # Types
     "AgentEnrollResult",
     "AgentHeartbeatResult",
     "PendingCommand",

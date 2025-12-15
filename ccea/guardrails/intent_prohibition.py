@@ -389,12 +389,15 @@ def check_python_source_for_intent_injection(
 
 def check_cloud_package_for_intents(
     cloud_package_path: Path,
+    exclude_tests: bool = True,
 ) -> IntentProhibitionResult:
     """
     Check entire Cloud package for intent prohibition violations.
 
     Args:
         cloud_package_path: Path to packages/cloud
+        exclude_tests: If True, exclude test files (they need prohibited
+                       fields to test the guardrails themselves)
 
     Returns:
         IntentProhibitionResult with all violations
@@ -408,6 +411,24 @@ def check_cloud_package_for_intents(
     python_files = list(cloud_package_path.rglob("*.py"))
 
     for py_file in python_files:
+        # Skip test files - they legitimately need prohibited fields
+        # to test that guardrails detect them correctly
+        if exclude_tests:
+            # Check if file is in a tests directory (relative to cloud_package_path)
+            # This avoids matching pytest temp directories that contain "test_"
+            try:
+                relative_path = py_file.relative_to(cloud_package_path)
+                relative_str = str(relative_path)
+                if (
+                    relative_str.startswith("tests/")
+                    or "/tests/" in relative_str
+                    or py_file.name.startswith("test_")
+                    or py_file.name.endswith("_test.py")
+                ):
+                    continue
+            except ValueError:
+                pass  # Not relative, check anyway
+
         try:
             source = py_file.read_text(encoding="utf-8")
             file_result = check_python_source_for_intent_injection(

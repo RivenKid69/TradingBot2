@@ -367,6 +367,25 @@ class OrderJournal:
         )
         return [self._row_to_entry(row) for row in cursor.fetchall()]
 
+    def get_all_entries(self) -> List[JournalEntry]:
+        """
+        Get all journal entries.
+
+        Design Doc Phase 8 WI-AGENT-06:
+        Used for sequence recovery on restart - scans all entries
+        to find the highest sequence number for the current deployment/run.
+
+        Returns:
+            List of all journal entries
+        """
+        cursor = self._conn.execute(
+            """
+            SELECT * FROM orders
+            ORDER BY created_at ASC
+            """
+        )
+        return [self._row_to_entry(row) for row in cursor.fetchall()]
+
     def _row_to_entry(self, row: sqlite3.Row) -> JournalEntry:
         """Convert database row to entry."""
         return JournalEntry(

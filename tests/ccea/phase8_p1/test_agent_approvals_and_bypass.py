@@ -69,6 +69,7 @@ def test_trading_impacting_command_auto_approval_submits_evidence(tmp_path: Path
         identity=AgentIdentity.generate(),
         access_token="agent.jwt.token",
         transport=httpx.MockTransport(handler),
+        verify_cloud_signatures=False,
     )
 
     daemon = AgentDaemon(
@@ -136,6 +137,7 @@ def test_manual_local_approval_submission(tmp_path: Path):
         identity=AgentIdentity.generate(),
         access_token="agent.jwt.token",
         transport=httpx.MockTransport(handler),
+        verify_cloud_signatures=False,
     )
 
     daemon = AgentDaemon(
@@ -191,6 +193,7 @@ def test_cloud_cannot_bypass_trading_impacting_approval(tmp_path: Path):
         identity=AgentIdentity.generate(),
         access_token="agent.jwt.token",
         transport=httpx.MockTransport(handler),
+        verify_cloud_signatures=False,
     )
 
     daemon = AgentDaemon(

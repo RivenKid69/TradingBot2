@@ -1,0 +1,301 @@
+# =============================================================================
+# CCEA Agent Configuration Example
+# =============================================================================
+#
+# This is a complete example configuration for the CCEA Agent Daemon.
+# Copy this file to your preferred location and customize for your environment.
+#
+# Design Doc References:
+# - Section 4.2: Agent Components
+# - Section 9: Agent runtime, sandbox, secrets, enforcement
+# - Section 12: Configuration layering
+#
+# Configuration Priority (highest to lowest):
+# 1. CLI arguments (--cloud-endpoint, etc.)
+# 2. Environment variables (CCEA_CLOUD_ENDPOINT, etc.)
+# 3. This config file
+# 4. Built-in defaults
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Agent Identity
+# -----------------------------------------------------------------------------
+agent:
+  # Unique agent ID (auto-generated if not provided)
+  # After enrollment, this is assigned by Cloud and persisted locally
+  agent_id: null
+
+  # Human-readable name for this agent
+  name: "my-trading-agent"
+
+  # Agent version (matches daemon version)
+  version: "1.0.0"
+
+  # Local data directory for state, logs, artifacts, journals
+  # Defaults to ~/.ccea if not specified
+  data_dir: "~/.ccea"
+
+  # State persistence file (relative to data_dir)
+  state_file: "daemon_state.json"
+
+  # Behavior flags
+  auto_recover: true           # Attempt automatic recovery from errors
+  require_preflight: true      # Run preflight checks before start
+  enable_telemetry: true       # Enable telemetry collection
+  safe_shutdown_timeout_seconds: 30  # Graceful shutdown timeout
+
+# -----------------------------------------------------------------------------
+# Cloud Connection (Control Plane)
+# Design Doc Section 10: Protocol Agent↔Cloud
+# -----------------------------------------------------------------------------
+cloud:
+  # Cloud control plane endpoint URL
+  # REQUIRED for cloud-connected operation
+  # endpoint: "https://cloud.ccea.example.com"
+  endpoint: null
+
+  # One-time enrollment token (TTL-limited, from Cloud UI)
+  # Used for initial agent registration, consumed after enrollment
+  # ENV: CCEA_ENROLLMENT_TOKEN
+  enrollment_token: null
+
+  # Access token (obtained after successful enrollment)
+  # Automatically persisted to state file after enrollment
+  # ENV: CCEA_ACCESS_TOKEN
+  access_token: null
+
+  # Connection timeout
+  timeout_seconds: 30
+
+  # Heartbeat interval (Design Doc 10.4.1)
+  heartbeat_interval_seconds: 30
+
+  # Command poll interval
+  poll_interval_seconds: 5
+
+# -----------------------------------------------------------------------------
+# Broker Connection
+# Design Doc Section 9.1/9.3: Secrets and Live Loop
+# NOTE: Actual credentials stored in Local Vault, NOT in this config file
+# -----------------------------------------------------------------------------
+broker:
+  # Default broker adapter
+  # Options: binance, alpaca, oanda, deribit, interactive_brokers
+  adapter: "alpaca"
+
+  # Paper/Live mode
+  # IMPORTANT: Switching paper↔live is TRADING_IMPACTING, requires local approval
+  mode: "paper"
+
+  # Broker-specific settings (non-sensitive only)
+  settings:
+    # Alpaca example
+    base_url: "https://paper-api.alpaca.markets"  # paper trading
+    # base_url: "https://api.alpaca.markets"      # live trading
+
+    # Binance example
+    # testnet: true  # Use testnet for paper trading
+
+    # OANDA example
+    # practice: true  # Use practice account
+
+# -----------------------------------------------------------------------------
+# Risk Management
+# Design Doc Section 9.4/9.5: Kill Switch and Risk Enforce
+# -----------------------------------------------------------------------------
+risk:
+  # Daily loss limit (percentage of equity)
+  max_daily_loss_pct: 0.05  # 5%
+
+  # Maximum drawdown from peak
+  max_drawdown_pct: 0.10  # 10%
+
+  # Position limits
+  max_position_pct: 0.25  # 25% of equity per position
+  max_total_exposure_pct: 1.0  # 100% total exposure
+
+  # Order limits
+  max_order_rate_per_min: 60
+  max_orders_per_day: 500
+
+  # Hard caps (cannot be exceeded, even by Cloud commands)
+  # Design Doc Section 7.3: Policy Firewall
+  hard_caps:
+    absolute_max_position: 10000000  # $10M
+    absolute_max_daily_loss: 1000000  # $1M
+    absolute_max_drawdown_pct: 0.75  # 75%
+
+# -----------------------------------------------------------------------------
+# Approval Policy
+# Design Doc Section 5/7: TRADING_IMPACTING changes require local approval
+# -----------------------------------------------------------------------------
+approval:
+  # Auto-approval settings (LOCAL ONLY - Cloud cannot set these)
+  auto_approve:
+    enabled: false  # Disable by default for safety
+
+    # Whitelist for auto-approval (if enabled)
+    allowed_command_types:
+      - "REQUEST_UPDATE_CONFIG"  # Only non-impacting config updates
+
+    # Require previous manual approval before auto-approve
+    require_previous_approval: true
+
+    # Maximum artifact size for auto-approve (MB)
+    max_artifact_size_mb: 100
+
+  # Approval timeout (seconds)
+  timeout_seconds: 300  # 5 minutes
+
+  # Require approval for these changes (always, cannot be disabled)
+  always_require:
+    - paper_to_live  # Switching from paper to live
+    - risk_limit_increase  # Relaxing risk limits
+    - new_instrument_class  # Adding new asset class
+    - broker_change  # Changing broker adapter
+
+# -----------------------------------------------------------------------------
+# Component Configurations
+# -----------------------------------------------------------------------------
+components:
+  # Kill Switch
+  # Design Doc Section 9.4
+  kill_switch:
+    max_daily_loss_pct: 0.05
+    max_drawdown_pct: 0.10
+    broker_error_threshold: 10  # Errors before trigger
+    latency_threshold_ms: 1000  # Max acceptable latency
+    order_spam_threshold: 100   # Orders per minute
+    cooldown_seconds: 300       # Cooldown after trigger
+
+  # Time Sync
+  # Design Doc Section 9.5: Reconciliation requires accurate time
+  time_sync:
+    max_drift_seconds: 5.0      # Max allowed drift
+    check_interval_seconds: 60
+    ntp_servers:
+      - "pool.ntp.org"
+      - "time.google.com"
+      - "time.cloudflare.com"
+
+  # Degraded Mode
+  # Design Doc Section 9.8: Safe degraded modes
+  degraded_mode:
+    cloud_unreachable_threshold_seconds: 120
+    data_feed_stale_threshold_seconds: 30
+    broker_unreachable_threshold_seconds: 60
+    auto_recover: true
+
+  # Telemetry Buffer
+  # Design Doc Section 13: Telemetry levels
+  telemetry:
+    # Buffer settings
+    max_buffer_size: 100000     # Max events in buffer
+    max_age_days: 7             # Auto-cleanup age
+    batch_size: 100             # Events per flush
+    flush_interval_seconds: 30
+
+    # MANDATORY - cannot be disabled
+    enable_redaction: true
+
+    # Telemetry level
+    # Options: AGGREGATED (default), DETAILED_NON_SENSITIVE, RAW_ORDER_EVENTS
+    level: "AGGREGATED"
+
+  # Keychain (OS integration)
+  # Design Doc Section 9.1: Local Vault
+  keychain:
+    use_keychain: true          # Prefer OS keychain
+    fallback_to_env: true       # Allow ENV fallback (dev)
+    fallback_to_file: true      # Allow file fallback (dev)
+    require_keychain_for_live: false  # Require keychain for live trading
+
+  # Sandbox (Strategy isolation)
+  # Design Doc Section 9.2
+  sandbox:
+    # Type: process, container, none
+    type: "process"
+
+    # Resource limits
+    cpu_limit: null             # CPU cores (null = unlimited)
+    memory_limit_mb: 4096       # Memory limit
+    timeout_seconds: 3600       # 1 hour max runtime
+
+    # Security (enterprise)
+    readonly_fs: false
+    egress_allowlist: []        # Empty = allow all (configure for production)
+    deny_outbound_by_default: false
+
+  # Preflight Checks
+  preflight:
+    check_vault: true
+    check_broker_connection: true
+    check_time_sync: true
+    check_policy_firewall: true
+    check_artifact_signature: true
+    check_schema_version: true
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+logging:
+  level: "INFO"                 # DEBUG, INFO, WARNING, ERROR
+  file: null                    # Log file path (null = stdout only)
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+  # Separate log files
+  audit_log: "audit.log"        # Audit trail
+  trade_log: "trades.log"       # Trade journal
+
+# -----------------------------------------------------------------------------
+# Advanced Settings
+# -----------------------------------------------------------------------------
+advanced:
+  # Reconciliation interval
+  reconciliation_interval_seconds: 60
+
+  # State persistence interval
+  state_save_interval_seconds: 60
+
+  # Idempotency
+  # Design Doc Section 9.5: client_order_id determinism
+  idempotency:
+    # Include these in client_order_id generation
+    include_deployment_id: true
+    include_run_id: true
+    include_sequence: true
+    # Sequence storage
+    sequence_file: "order_sequence.json"
+
+  # Circuit breaker
+  circuit_breaker:
+    failure_threshold: 5
+    recovery_timeout_seconds: 60
+
+# -----------------------------------------------------------------------------
+# Environment-Specific Overrides
+# -----------------------------------------------------------------------------
+# These sections can override any setting above based on environment
+
+development:
+  broker:
+    mode: "paper"
+  risk:
+    max_daily_loss_pct: 0.10    # More lenient for dev
+  logging:
+    level: "DEBUG"
+
+production:
+  broker:
+    mode: "live"                # Or "paper" for paper-trading prod
+  risk:
+    max_daily_loss_pct: 0.03    # Tighter for prod
+  components:
+    sandbox:
+      type: "container"
+      readonly_fs: true
+      deny_outbound_by_default: true
+      egress_allowlist:
+        - "api.alpaca.markets"
+        - "paper-api.alpaca.markets"

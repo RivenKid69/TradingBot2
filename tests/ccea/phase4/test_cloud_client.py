@@ -368,7 +368,7 @@ class TestCloudClientCommands:
 
     @pytest.fixture
     def client(self):
-        """Create authenticated cloud client."""
+        """Create authenticated cloud client with signature verification disabled."""
         config = CloudClientConfig(base_url="https://api.example.com")
         mock_transport = Mock()
         with patch("httpx.Client") as mock_client:
@@ -376,6 +376,7 @@ class TestCloudClientCommands:
                 config,
                 transport=mock_transport,
                 access_token="test-token",
+                verify_cloud_signatures=False,  # Disable for testing
             )
             client._client = mock_client.return_value
             yield client

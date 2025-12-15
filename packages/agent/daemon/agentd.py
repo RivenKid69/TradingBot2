@@ -40,6 +40,11 @@ from packages.agent.daemon.kill_switch import (
     HaltSeverity,
     HaltAction,
 )
+from packages.agent.daemon.kill_switch_executor import (
+    KillSwitchExecutor,
+    KillSwitchExecutorConfig,
+    ExecutionResult,
+)
 from packages.agent.daemon.time_sync import TimeSyncChecker, TimeSyncConfig
 from packages.agent.daemon.preflight import PreflightChecker, PreflightConfig, PreflightResult
 from packages.agent.daemon.degraded_mode import (
@@ -101,6 +106,7 @@ class DaemonConfig:
 
     # Component configs
     kill_switch_config: Optional[KillSwitchConfig] = None
+    kill_switch_executor_config: Optional[KillSwitchExecutorConfig] = None
     time_sync_config: Optional[TimeSyncConfig] = None
     preflight_config: Optional[PreflightConfig] = None
     degraded_mode_config: Optional[DegradedModeConfig] = None
@@ -254,6 +260,7 @@ class AgentDaemon:
         self._keychain: Optional[KeychainManager] = None
         self._vault: Optional[Any] = None  # LocalVault
         self._kill_switch: Optional[KillSwitchManager] = None
+        self._kill_switch_executor: Optional[KillSwitchExecutor] = None
         self._time_checker: Optional[TimeSyncChecker] = None
         self._preflight_checker: Optional[PreflightChecker] = None
         self._degraded_manager: Optional[DegradedModeManager] = None
@@ -604,11 +611,41 @@ class AgentDaemon:
         )
 
     def _init_kill_switch(self) -> None:
-        """Initialize kill switch manager."""
+        """
+        Initialize kill switch manager with executor integration.
+
+        Design Doc Section 9.4:
+        - KillSwitchExecutor bridges KillSwitchManager with BrokerConnector
+        - Executor handles actual order cancellation and position flattening
+        - Manager handles trigger logic and state management
+        """
+        # Create executor (broker connector set later via set_broker_connector)
+        self._kill_switch_executor = KillSwitchExecutor(
+            broker_connector=self._broker_connector,
+            config=self.config.kill_switch_executor_config,
+            on_action=self._handle_kill_switch_action,
+        )
+
+        # Create manager with executor callbacks
         self._kill_switch = KillSwitchManager(
             config=self.config.kill_switch_config,
             on_trigger=self._handle_kill_switch,
+            cancel_orders_fn=self._kill_switch_executor.cancel_all_orders,
+            flatten_fn=self._kill_switch_executor.flatten_all_positions,
         )
+
+    def _handle_kill_switch_action(self, action: str, details: Dict[str, Any]) -> None:
+        """
+        Handle kill switch executor action for telemetry.
+
+        Args:
+            action: Action name (e.g., 'cancel_orders_started', 'flatten_positions_result')
+            details: Action details
+        """
+        self._log_event(TelemetryEventType.KILL_SWITCH, {
+            "executor_action": action,
+            **details,
+        })
 
     def _init_time_checker(self) -> None:
         """Initialize time sync checker."""
@@ -1312,10 +1349,17 @@ class AgentDaemon:
         self._live_runner = runner
 
     def set_broker_connector(self, connector: Any) -> None:
-        """Set broker connector."""
+        """
+        Set broker connector.
+
+        Also updates the kill switch executor to use the new connector
+        for order cancellation and position flattening.
+        """
         self._broker_connector = connector
         if self._preflight_checker:
             self._preflight_checker._broker_connector = connector
+        if self._kill_switch_executor:
+            self._kill_switch_executor.set_broker_connector(connector)
 
     def set_on_state_change(self, callback: Callable[[DaemonState], None]) -> None:
         """Set state change callback."""

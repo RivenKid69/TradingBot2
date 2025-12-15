@@ -167,10 +167,19 @@ class LiveExecutionEngine:
     - All intents must pass through local policy stack
     - All orders are logged in durable journal BEFORE submission
 
+    IDEMPOTENCY (Design Doc Phase 8 WI-AGENT-06):
+    - client_order_id is computed deterministically from stable identifiers
+    - deployment_id: Fixed per deployment, survives restarts
+    - run_id: Identifies the current run, increments on restart
+    - sequence: Monotonic counter per run, recovered from journal on restart
+    - This ensures the same logical order gets the same client_order_id
+
     Usage:
         engine = LiveExecutionEngine(
             policy_firewall=firewall,
             broker_submit=broker.submit_order,
+            deployment_id="deploy_123",
+            run_id="run_456",
         )
 
         result = engine.execute(intent)
@@ -186,6 +195,8 @@ class LiveExecutionEngine:
         broker_submit: Optional[BrokerSubmitFn] = None,
         broker_name: str = "default",
         order_journal: Optional[OrderJournal] = None,
+        deployment_id: Optional[str] = None,
+        run_id: Optional[str] = None,
     ):
         """
         Initialize execution engine.
@@ -196,12 +207,20 @@ class LiveExecutionEngine:
             risk_checker: Pre-trade risk checks
             broker_submit: Function to submit orders to broker
             broker_name: Name of broker for orders
+            order_journal: Durable order journal
+            deployment_id: Stable deployment identifier (survives restarts)
+            run_id: Run identifier (increments on restart)
         """
         self._policy = policy_firewall or PolicyFirewall()
         self._hard_caps = hard_cap_enforcer or HardCapEnforcer()
         self._risk_checker = risk_checker or RiskChecker()
         self._broker_submit = broker_submit
         self._broker_name = broker_name
+
+        # Idempotency identifiers (Design Doc Phase 8 WI-AGENT-06)
+        self._deployment_id = deployment_id or str(uuid4())
+        self._run_id = run_id or str(uuid4())
+        self._sequence: int = 0  # Monotonic counter per run
 
         # Order tracking
         self._orders: Dict[UUID, Order] = {}
@@ -212,15 +231,72 @@ class LiveExecutionEngine:
         # Portfolio state (should be updated from broker)
         self._portfolio = PortfolioState()
 
+        # Recover sequence from journal on restart
+        self._recover_sequence_from_journal()
+
+    def _recover_sequence_from_journal(self) -> None:
+        """
+        Recover sequence counter from journal on restart.
+
+        Design Doc Phase 8 WI-AGENT-06:
+        On restart, we need to find the highest sequence number used
+        in the current run to continue from there.
+        """
+        # Get all entries for this deployment and run
+        entries = self._journal.get_all_entries()
+        max_seq = 0
+
+        for entry in entries:
+            # Check if entry belongs to this deployment/run
+            metadata = entry.metadata or {}
+            entry_deployment = metadata.get("deployment_id", "")
+            entry_run = metadata.get("run_id", "")
+
+            if entry_deployment == self._deployment_id and entry_run == self._run_id:
+                entry_seq = metadata.get("sequence", 0)
+                if isinstance(entry_seq, int) and entry_seq > max_seq:
+                    max_seq = entry_seq
+
+        self._sequence = max_seq
+
     def _compute_client_order_id(self, intent: OrderIntent) -> str:
         """
         Compute a deterministic client_order_id.
 
-        Design goal (Phase 8 WI-AGENT-06): stable across retries/restarts.
+        Design Doc Phase 8 WI-AGENT-06: stable across retries/restarts.
+
+        The client_order_id is computed from:
+        - broker_name: Identifies the broker
+        - strategy_id: Identifies the strategy
+        - intent_id: Unique identifier for the intent (stable for same intent object)
+
+        This ensures:
+        1. Same intent -> same client_order_id (idempotency/duplicate detection)
+        2. After restart, same intent produces same ID (journal lookup works)
+        3. Different strategies produce different IDs
+
+        NOTE: deployment_id and run_id are NOT included in client_order_id.
+        They are tracked in journal metadata for audit/monitoring purposes.
+        This allows the same intent to be detected as duplicate across restarts.
         """
+        # Build deterministic client_order_id from stable identifiers
+        # Using intent_id ensures same intent object -> same client_order_id
         raw = f"ccea|{self._broker_name}|{intent.strategy_id}|{intent.intent_id}"
         digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
         return f"ccea_{digest}"
+
+    def _record_sequence_for_order(self) -> int:
+        """
+        Record sequence number for the current order.
+
+        This is called AFTER client_order_id is computed and order is accepted.
+        Sequence is for audit/monitoring, not for ID computation.
+
+        Returns:
+            The sequence number for this order
+        """
+        self._sequence += 1
+        return self._sequence
 
     def execute(
         self,
@@ -331,6 +407,10 @@ class LiveExecutionEngine:
             return ExecutionResult(success=True, error_message="Duplicate order - journal entry exists")
 
         # 5b. Log before submission (durable)
+        # Record sequence for this order (for audit/monitoring)
+        order_sequence = self._record_sequence_for_order()
+
+        # Include idempotency fields for recovery on restart (Design Doc Phase 8 WI-AGENT-06)
         entry = self._journal.log_order(
             client_order_id=order.client_order_id,
             intent_id=str(order.intent_id),
@@ -341,6 +421,10 @@ class LiveExecutionEngine:
             metadata={
                 "strategy_id": intent.strategy_id,
                 "intent_type": intent.intent_type.value,
+                # Idempotency fields for sequence recovery
+                "deployment_id": self._deployment_id,
+                "run_id": self._run_id,
+                "sequence": order_sequence,
             },
         )
         self._journal_entry_by_client_id[order.client_order_id] = entry.entry_id
@@ -500,3 +584,55 @@ class LiveExecutionEngine:
     def get_orders_for_symbol(self, symbol: str) -> List[Order]:
         """Get all orders for symbol."""
         return [o for o in self._orders.values() if o.symbol == symbol]
+
+    # ===== Idempotency State (Design Doc Phase 8 WI-AGENT-06) =====
+
+    @property
+    def deployment_id(self) -> str:
+        """Get deployment ID."""
+        return self._deployment_id
+
+    @property
+    def run_id(self) -> str:
+        """Get run ID."""
+        return self._run_id
+
+    @property
+    def sequence(self) -> int:
+        """Get current sequence number."""
+        return self._sequence
+
+    def get_idempotency_state(self) -> Dict[str, Any]:
+        """
+        Get current idempotency state for monitoring/debugging.
+
+        Returns:
+            Dictionary with deployment_id, run_id, sequence
+        """
+        return {
+            "deployment_id": self._deployment_id,
+            "run_id": self._run_id,
+            "sequence": self._sequence,
+            "broker_name": self._broker_name,
+        }
+
+    def set_deployment_id(self, deployment_id: str) -> None:
+        """
+        Set deployment ID.
+
+        WARNING: Only use for initialization - changing this mid-run
+        will break idempotency guarantees.
+        """
+        self._deployment_id = deployment_id
+
+    def set_run_id(self, run_id: str) -> None:
+        """
+        Set run ID and reset sequence.
+
+        Call this when starting a new run to ensure proper isolation.
+        Sequence is reset to 0 for the new run.
+        """
+        self._run_id = run_id
+        self._sequence = 0
+        # Re-recover sequence in case there are existing entries for this run
+        self._recover_sequence_from_journal()

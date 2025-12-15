@@ -25,6 +25,11 @@ import httpx
 from ccea.crypto.keys import KeyAlgorithm, generate_keypair, load_private_key
 from ccea.crypto.signing import sign_message
 
+from .signature_verifier import (
+    CloudSignatureVerifier,
+    CloudSignatureVerifierConfig,
+    SignatureVerificationError,
+)
 from .types import (
     AgentEnrollResult,
     AgentHeartbeatResult,
@@ -89,6 +94,7 @@ class CloudClient:
     Integrity:
     - Adds a request signature header for tamper-evident telemetry/debugging.
       (Cloud may choose to verify using enrolled public key.)
+    - Verifies Cloud signatures on incoming commands (Design Doc 10.2)
     """
 
     def __init__(
@@ -98,12 +104,23 @@ class CloudClient:
         identity: Optional[AgentIdentity] = None,
         access_token: Optional[str] = None,
         transport: Optional[httpx.BaseTransport] = None,
+        signature_verifier: Optional[CloudSignatureVerifier] = None,
+        verify_cloud_signatures: bool = True,
     ):
         self._config = config
         self._identity = identity or AgentIdentity.generate()
         self._access_token = access_token
         self._last_ok_at: Optional[datetime] = None
         self._last_error: Optional[str] = None
+
+        # Cloud signature verification (Design Doc 10.2)
+        self._verify_cloud_signatures = verify_cloud_signatures
+        self._signature_verifier = signature_verifier or CloudSignatureVerifier(
+            config=CloudSignatureVerifierConfig(
+                enforce_verification=verify_cloud_signatures,
+                allow_unsigned=not verify_cloud_signatures,
+            )
+        )
 
         self._client = httpx.Client(
             base_url=self._config.base_url.rstrip("/"),
@@ -131,6 +148,23 @@ class CloudClient:
         # "Connected" means: last successful request within 2 heartbeat intervals.
         age = datetime.now(timezone.utc) - self._last_ok_at
         return age.total_seconds() <= max(30, self._config.timeout_seconds * 2)
+
+    @property
+    def signature_verifier(self) -> CloudSignatureVerifier:
+        """Get signature verifier for Cloud messages."""
+        return self._signature_verifier
+
+    def set_cloud_public_key(self, public_key_pem: str) -> None:
+        """
+        Set Cloud's public key for signature verification.
+
+        This should be called after enrollment when Cloud provides its public key.
+        Design Doc 10.2: Agent MUST verify Cloud signatures.
+
+        Args:
+            public_key_pem: Cloud's public key in PEM format
+        """
+        self._signature_verifier.set_cloud_public_key(public_key_pem)
 
     def close(self) -> None:
         self._client.close()
@@ -205,6 +239,12 @@ class CloudClient:
             org_id=UUID(str(data["org_id"])),
         )
         self._access_token = result.access_token
+
+        # Set Cloud's public key for signature verification (Design Doc 10.2)
+        cloud_public_key = data.get("cloud_public_key")
+        if cloud_public_key:
+            self.set_cloud_public_key(cloud_public_key)
+
         return result
 
     def heartbeat(
@@ -231,15 +271,41 @@ class CloudClient:
         )
 
     def poll_commands(self, *, limit: int = 10) -> CommandPollResult:
+        """
+        Poll for pending commands from Cloud.
+
+        Design Doc 10.2: All commands MUST be signed by Cloud.
+        Agent MUST verify signatures before processing.
+
+        Args:
+            limit: Maximum number of commands to fetch
+
+        Returns:
+            CommandPollResult with verified commands
+
+        Raises:
+            SignatureVerificationError: If any command has invalid signature
+        """
         resp = self._request(
             "GET",
             f"/api/v1/agent/commands/poll?limit={int(limit)}",
             auth_required=True,
         )
         data = resp.json()
-        commands = [PendingCommand.from_dict(c) for c in data.get("commands", [])]
+
+        # Verify signature on each command (Design Doc 10.2)
+        raw_commands = data.get("commands", [])
+        verified_commands = []
+
+        for cmd_data in raw_commands:
+            # Verify command signature before processing
+            if self._verify_cloud_signatures:
+                self._signature_verifier.verify_or_raise(cmd_data)
+
+            verified_commands.append(PendingCommand.from_dict(cmd_data))
+
         return CommandPollResult(
-            commands=commands,
+            commands=verified_commands,
             has_more=bool(data.get("has_more", False)),
             poll_again_after_sec=int(data.get("poll_again_after_sec", 60)),
         )
