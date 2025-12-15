@@ -120,6 +120,9 @@ class EvidenceRecord:
             "config_hash": self.config_hash,
             "artifact_hash": self.artifact_hash,
         }
+        # Include previous_hash if this is part of a chain
+        if "previous_hash" in self.metadata:
+            content["previous_hash"] = self.metadata["previous_hash"]
         computed = compute_evidence_hash(content)
         return computed == self.evidence_hash
 
@@ -176,3 +179,202 @@ class EvidenceStore:
         """Export all records as JSON."""
         records = [r.to_dict() for r in self._records.values()]
         return json.dumps(records, indent=2)
+
+    def verify_all(self) -> tuple[bool, list[str]]:
+        """
+        Verify all records' integrity.
+
+        Returns:
+            Tuple of (all_valid, list of invalid record IDs)
+        """
+        invalid = []
+        for record in self._records.values():
+            if not record.verify_hash():
+                invalid.append(record.record_id)
+        return len(invalid) == 0, invalid
+
+
+class EvidenceChain:
+    """
+    Chain of evidence records with cryptographic linking.
+
+    Each record references the hash of the previous record,
+    creating an immutable audit trail.
+    """
+
+    def __init__(self):
+        """Initialize chain."""
+        self._chain: list[EvidenceRecord] = []
+        self._previous_hash: Optional[str] = None
+
+    def add(self, record: EvidenceRecord) -> str:
+        """
+        Add record to chain.
+
+        The record's metadata is updated to include the previous
+        record's hash, creating the chain link.
+
+        Args:
+            record: Evidence record to add
+
+        Returns:
+            Record's evidence hash
+        """
+        # Add chain link
+        if self._previous_hash:
+            record.metadata["previous_hash"] = self._previous_hash
+            # Recompute hash with chain link
+            content = {
+                "request_id": record.request_id,
+                "command_type": record.command_type,
+                "decision": record.decision,
+                "decided_by": record.decided_by,
+                "decided_at": record.decided_at.isoformat(),
+                "config_hash": record.config_hash,
+                "artifact_hash": record.artifact_hash,
+                "previous_hash": self._previous_hash,
+            }
+            record.evidence_hash = compute_evidence_hash(content)
+
+        self._chain.append(record)
+        self._previous_hash = record.evidence_hash
+
+        return record.evidence_hash
+
+    def verify_chain(self) -> tuple[bool, list[str]]:
+        """
+        Verify entire chain integrity.
+
+        Returns:
+            Tuple of (is_valid, list of errors)
+        """
+        errors: list[str] = []
+        prev_hash: Optional[str] = None
+
+        for i, record in enumerate(self._chain):
+            # Verify record hash
+            if not record.verify_hash():
+                errors.append(f"Record {i}: Hash mismatch")
+
+            # Verify chain link
+            if i > 0:
+                expected_prev = record.metadata.get("previous_hash")
+                if expected_prev != prev_hash:
+                    errors.append(f"Record {i}: Chain link broken")
+
+            prev_hash = record.evidence_hash
+
+        return len(errors) == 0, errors
+
+    def get_latest(self) -> Optional[EvidenceRecord]:
+        """Get most recent record."""
+        if self._chain:
+            return self._chain[-1]
+        return None
+
+    def get_all(self) -> list[EvidenceRecord]:
+        """Get all records in chain order."""
+        return self._chain.copy()
+
+    def export(self) -> list[Dict[str, Any]]:
+        """Export chain as list of dicts."""
+        return [r.to_dict() for r in self._chain]
+
+    def import_chain(self, data: list[Dict[str, Any]]) -> bool:
+        """
+        Import and verify chain from data.
+
+        Args:
+            data: List of record dictionaries
+
+        Returns:
+            True if imported and verified successfully
+        """
+        records = [EvidenceRecord.from_dict(d) for d in data]
+
+        # Verify imported chain
+        temp = EvidenceChain()
+        temp._chain = records
+        if records:
+            temp._previous_hash = records[-1].evidence_hash
+
+        is_valid, _ = temp.verify_chain()
+        if not is_valid:
+            return False
+
+        self._chain = records
+        if records:
+            self._previous_hash = records[-1].evidence_hash
+
+        return True
+
+    def __len__(self) -> int:
+        """Get chain length."""
+        return len(self._chain)
+
+
+def create_evidence_record(
+    request_id: str,
+    command_type: str,
+    approved: bool,
+    decided_by: str,
+    config_hash: Optional[str] = None,
+    artifact_hash: Optional[str] = None,
+    reason: str = "",
+    change_class: str = "trading_impacting",
+    description: str = "",
+    strategy_id: str = "",
+    agent_id: str = "",
+) -> EvidenceRecord:
+    """
+    Create a new evidence record with computed hash.
+
+    Args:
+        request_id: Original request ID
+        command_type: Type of command
+        approved: Whether approved
+        decided_by: Who decided
+        config_hash: Config digest
+        artifact_hash: Artifact digest
+        reason: Decision reason
+        change_class: Change classification
+        description: Human-readable description
+        strategy_id: Strategy identifier
+        agent_id: Agent identifier
+
+    Returns:
+        EvidenceRecord with computed hash
+    """
+    from uuid import uuid4
+
+    decided_at = datetime.utcnow()
+    decision = "approved" if approved else "denied"
+
+    # Compute evidence hash
+    content = {
+        "request_id": request_id,
+        "command_type": command_type,
+        "decision": decision,
+        "decided_by": decided_by,
+        "decided_at": decided_at.isoformat(),
+        "config_hash": config_hash,
+        "artifact_hash": artifact_hash,
+    }
+    evidence_hash = compute_evidence_hash(content)
+
+    return EvidenceRecord(
+        record_id=str(uuid4()),
+        request_id=request_id,
+        command_type=command_type,
+        decision=decision,
+        decided_by=decided_by,
+        decided_at=decided_at,
+        evidence_hash=evidence_hash,
+        config_hash=config_hash,
+        artifact_hash=artifact_hash,
+        agent_id=agent_id,
+        strategy_id=strategy_id,
+        description=description,
+        reason=reason,
+        change_class=change_class,
+    )

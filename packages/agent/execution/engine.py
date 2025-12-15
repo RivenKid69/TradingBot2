@@ -149,15 +149,23 @@ class LiveExecutionEngine:
     Live Execution Engine - Converts intents to orders.
 
     AGENT ZONE ONLY - Never in Cloud.
+    CLOUD INJECTION PROTECTION - Intents must originate from local strategy execution.
 
     Flow:
-    1. Receive OrderIntent from strategy
-    2. Validate against Policy Firewall
-    3. Validate against Hard Caps
-    4. Run pre-trade risk checks
-    5. Convert to Order
-    6. Submit to broker via connector
-    7. Track status and report
+    1. Receive OrderIntent from strategy (LOCAL ONLY)
+    2. Validate intent origin (REJECT if from Cloud)
+    3. Validate against Policy Firewall
+    4. Validate against Hard Caps
+    5. Run pre-trade risk checks
+    6. Convert to Order
+    7. Submit to broker via connector
+    8. Track status and report
+
+    SECURITY:
+    - Cloud CANNOT create or modify OrderIntents
+    - Cloud CANNOT submit orders directly
+    - All intents must pass through local policy stack
+    - All orders are logged in durable journal BEFORE submission
 
     Usage:
         engine = LiveExecutionEngine(
@@ -218,6 +226,7 @@ class LiveExecutionEngine:
         self,
         intent: OrderIntent,
         current_price: Optional[Decimal] = None,
+        origin: str = "local",
     ) -> ExecutionResult:
         """
         Execute an OrderIntent.
@@ -225,10 +234,26 @@ class LiveExecutionEngine:
         Args:
             intent: OrderIntent to execute
             current_price: Current market price
+            origin: Origin of intent (must be "local" or "strategy")
 
         Returns:
             ExecutionResult with order status
         """
+        # SECURITY: Reject intents from Cloud
+        # Cloud can send commands, but NEVER intents directly
+        if origin not in ("local", "strategy", "runner"):
+            return ExecutionResult(
+                success=False,
+                error_message=f"Intent origin '{origin}' not allowed - Cloud injection blocked",
+            )
+
+        # SECURITY: Validate intent has local strategy_id
+        if not intent.strategy_id:
+            return ExecutionResult(
+                success=False,
+                error_message="Intent missing strategy_id - origin cannot be verified",
+            )
+
         # Skip passive intents
         if intent.is_passive:
             return ExecutionResult(
