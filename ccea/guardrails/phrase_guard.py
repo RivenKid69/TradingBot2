@@ -220,6 +220,8 @@ EXCLUDED_DIRS: Final[FrozenSet[str]] = frozenset({
     "docs/archive/",
     "docs/plans",      # Planning docs discuss issues to fix, not actual problems
     "docs/plans/",
+    "docs/design",     # Design documents discuss issues to fix, not actual problems
+    "docs/design/",
     "docs/contracts",  # Contract templates may have negation context
     "docs/contracts/",
     ".git",

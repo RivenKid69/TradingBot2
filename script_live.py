@@ -801,6 +801,52 @@ def main() -> None:
     args = p.parse_args()
 
     # ==========================================================================
+    # CCEA Architecture Runtime Guard (Phase 1.5)
+    # ==========================================================================
+    # This script is for DEVELOPMENT/TESTING ONLY.
+    # Production CCEA deployments MUST use the Agent daemon:
+    #   python -m packages.agent.daemon.agentd --config configs/agent.yaml
+    #
+    # See: docs/archive/LEGACY_STACKS.md
+    # See: ARCHITECTURE.md (CCEA Protocol section)
+    # ==========================================================================
+
+    import os
+    import sys
+
+    # Check for production mode environment variable
+    _ccea_mode = os.environ.get("CCEA_PRODUCTION_MODE", "").lower()
+    _allow_legacy = os.environ.get("CCEA_ALLOW_LEGACY_LIVE", "").lower() in ("1", "true", "yes")
+
+    if _ccea_mode in ("1", "true", "yes") and not _allow_legacy:
+        sys.stderr.write(
+            "\n"
+            "╔══════════════════════════════════════════════════════════════════╗\n"
+            "║  ERROR: script_live.py is NOT for production CCEA deployments   ║\n"
+            "║                                                                  ║\n"
+            "║  Production live trading MUST use the Agent daemon:             ║\n"
+            "║    python -m packages.agent.daemon.agentd --config agent.yaml   ║\n"
+            "║                                                                  ║\n"
+            "║  This script is retained for development/testing only.          ║\n"
+            "║  Set CCEA_ALLOW_LEGACY_LIVE=1 to override (NOT recommended).    ║\n"
+            "║                                                                  ║\n"
+            "║  See: docs/archive/LEGACY_STACKS.md                             ║\n"
+            "╚══════════════════════════════════════════════════════════════════╝\n"
+            "\n"
+        )
+        sys.exit(1)
+
+    # Always emit deprecation warning for awareness
+    import warnings
+    warnings.warn(
+        "script_live.py is deprecated for production use. "
+        "Use 'python -m packages.agent.daemon.agentd' for CCEA production deployments. "
+        "See docs/archive/LEGACY_STACKS.md for migration guide.",
+        DeprecationWarning,
+        stacklevel=1
+    )
+
+    # ==========================================================================
     # Load and prepare configuration
     # ==========================================================================
 
