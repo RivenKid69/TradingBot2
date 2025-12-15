@@ -566,3 +566,165 @@ class TestAgentHeartbeatEndpoint:
         )
 
         assert response.status_code == 422
+
+
+class TestMFAEndpoints:
+    """Tests for MFA (Multi-Factor Authentication) endpoints (Design Doc 4.1)."""
+
+    async def test_mfa_setup_returns_secret(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ) -> None:
+        """MFA setup should return TOTP secret and backup codes."""
+        response = await client.post(
+            "/api/v1/auth/mfa/setup",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "secret" in data
+        assert len(data["secret"]) >= 16
+        assert "provisioning_uri" in data
+        assert "backup_codes" in data
+        assert len(data["backup_codes"]) == 10
+
+    async def test_mfa_setup_requires_auth(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        """MFA setup without authentication should return 401."""
+        response = await client.post("/api/v1/auth/mfa/setup")
+        assert response.status_code == 401
+
+    async def test_mfa_verify_invalid_token(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        """MFA verify with invalid token should return 401."""
+        response = await client.post(
+            "/api/v1/auth/mfa/verify",
+            json={
+                "mfa_token": "invalid-mfa-token",
+                "totp_code": "123456",
+            },
+        )
+
+        assert response.status_code == 401
+        assert "Invalid or expired MFA token" in response.json()["detail"]
+
+    async def test_mfa_verify_invalid_code_format(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        """MFA verify with invalid code format should return 422."""
+        response = await client.post(
+            "/api/v1/auth/mfa/verify",
+            json={
+                "mfa_token": "some-token",
+                "totp_code": "12345",  # Only 5 digits, need 6
+            },
+        )
+
+        assert response.status_code == 422
+
+    async def test_mfa_confirm_requires_setup(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        db_session: AsyncSession,
+        sample_user: User,
+    ) -> None:
+        """MFA confirm without setup should return 400."""
+        # Ensure MFA is not setup
+        sample_user.mfa_secret = None
+        await db_session.commit()
+
+        response = await client.post(
+            "/api/v1/auth/mfa/confirm",
+            headers=auth_headers,
+            json={"totp_code": "123456"},
+        )
+
+        assert response.status_code == 400
+        assert "MFA setup not started" in response.json()["detail"]
+
+    async def test_mfa_disable_requires_enabled(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        db_session: AsyncSession,
+        sample_user: User,
+    ) -> None:
+        """MFA disable when not enabled should return 400."""
+        # Ensure MFA is not enabled
+        sample_user.mfa_enabled = False
+        await db_session.commit()
+
+        response = await client.post(
+            "/api/v1/auth/mfa/disable",
+            headers=auth_headers,
+            json={"totp_code": "123456"},
+        )
+
+        assert response.status_code == 400
+        assert "MFA is not enabled" in response.json()["detail"]
+
+    async def test_login_with_mfa_returns_mfa_token(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """Login with MFA enabled should return MFA token."""
+        # Create organization
+        org = Organization(name="mfa-test-org", display_name="MFA Test Org")
+        db_session.add(org)
+        await db_session.commit()
+        await db_session.refresh(org)
+
+        # Create user with MFA enabled
+        password = "testpassword123"
+        user = User(
+            email="mfauser@example.com",
+            password_hash=hash_password(password),
+            display_name="MFA User",
+            organization_id=org.id,
+            mfa_enabled=True,
+            mfa_secret="JBSWY3DPEHPK3PXP",  # Test secret
+        )
+        db_session.add(user)
+        await db_session.commit()
+
+        response = await client.post(
+            "/api/v1/auth/login",
+            json={"email": "mfauser@example.com", "password": password},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "requires_mfa" in data
+        assert data["requires_mfa"] is True
+        assert "mfa_token" in data
+
+
+class TestCloudPublicKeyEndpoint:
+    """Tests for GET /auth/cloud/public-key endpoint (Design Doc 10.2)."""
+
+    async def test_cloud_public_key_returns_key_info(
+        self,
+        client: AsyncClient,
+    ) -> None:
+        """Cloud public key endpoint should return key information."""
+        response = await client.get("/api/v1/auth/cloud/public-key")
+
+        # May be 200 (key configured) or 503 (key not configured)
+        assert response.status_code in [200, 503]
+
+        if response.status_code == 200:
+            data = response.json()
+            assert "key_id" in data
+            assert "algorithm" in data
+            assert "public_key_pem" in data
+            assert "fingerprint" in data
+            assert "issued_at" in data

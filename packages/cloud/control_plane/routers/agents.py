@@ -658,3 +658,239 @@ async def reinstate_agent(
 
         deploy_count = await _get_agent_deployment_count(session, agent.id)
         return _agent_to_response(agent, deploy_count)
+
+
+# Key Rotation endpoints (Design Doc 15.2)
+KEY_ROTATION_GRACE_PERIOD_HOURS = 24  # Grace period for old key
+
+
+class KeyRotationRequest(BaseModel):
+    """Request to rotate agent key."""
+
+    new_public_key: str = Field(..., min_length=64, max_length=4096)
+
+
+class KeyRotationResponse(BaseModel):
+    """Key rotation response."""
+
+    agent_id: UUID
+    key_version: int
+    previous_key_valid_until: datetime
+    message: str
+
+
+class KeyRotationConfirmRequest(BaseModel):
+    """Confirm key rotation."""
+
+    signature: str = Field(..., description="Signature proving possession of new key")
+
+
+@router.post(
+    "/{agent_id}/rotate-key",
+    response_model=KeyRotationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Initiate key rotation",
+    description="Initiate agent key rotation (Design Doc 15.2).",
+)
+async def rotate_agent_key(
+    agent_id: UUID,
+    request: KeyRotationRequest,
+    current_user: UserDep,
+) -> KeyRotationResponse:
+    """
+    Initiate agent key rotation.
+
+    Design Doc 15.2:
+    - Agent submits new public key
+    - Previous key remains valid for grace period
+    - Both keys can be used during grace period
+    - After grace period, only new key is valid
+
+    Requires agent:trust permission or superuser.
+    """
+    async with get_session() as session:
+        result = await session.execute(select(Agent).where(Agent.id == agent_id))
+        agent = result.scalar_one_or_none()
+
+        if agent is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Agent not found",
+            )
+
+        # Check workspace access
+        ws_result = await session.execute(
+            select(Workspace).where(Workspace.id == agent.workspace_id)
+        )
+        workspace = ws_result.scalar_one_or_none()
+
+        if not current_user.is_superuser:
+            if workspace is None or current_user.org_id != workspace.organization_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied",
+                )
+            if not current_user.has_permission("agent:trust"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Permission required: agent:trust",
+                )
+
+        # Check agent trust state
+        if agent.trust_state == TrustState.REVOKED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot rotate key for revoked agent",
+            )
+
+        # Store previous key for grace period
+        now = datetime.now(timezone.utc)
+        grace_until = now + timedelta(hours=KEY_ROTATION_GRACE_PERIOD_HOURS)
+
+        agent.previous_public_key = agent.public_key
+        agent.public_key = request.new_public_key
+        agent.key_version = (agent.key_version or 1) + 1
+        agent.key_rotated_at = now
+        agent.key_rotation_grace_until = grace_until
+        agent.updated_at = now
+
+        await session.commit()
+        await session.refresh(agent)
+
+        return KeyRotationResponse(
+            agent_id=agent.id,
+            key_version=agent.key_version,
+            previous_key_valid_until=grace_until,
+            message=f"Key rotated successfully. Previous key valid until {grace_until.isoformat()}.",
+        )
+
+
+@router.post(
+    "/{agent_id}/complete-key-rotation",
+    status_code=status.HTTP_200_OK,
+    summary="Complete key rotation",
+    description="Complete key rotation by invalidating old key (Design Doc 15.2).",
+)
+async def complete_key_rotation(
+    agent_id: UUID,
+    current_user: UserDep,
+) -> dict:
+    """
+    Complete key rotation early, invalidating the old key.
+
+    Design Doc 15.2:
+    - Can be called to end grace period early
+    - After this, only the new key is valid
+    - Useful when old key is compromised
+
+    Requires agent:trust permission or superuser.
+    """
+    async with get_session() as session:
+        result = await session.execute(select(Agent).where(Agent.id == agent_id))
+        agent = result.scalar_one_or_none()
+
+        if agent is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Agent not found",
+            )
+
+        # Check workspace access
+        ws_result = await session.execute(
+            select(Workspace).where(Workspace.id == agent.workspace_id)
+        )
+        workspace = ws_result.scalar_one_or_none()
+
+        if not current_user.is_superuser:
+            if workspace is None or current_user.org_id != workspace.organization_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied",
+                )
+            if not current_user.has_permission("agent:trust"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Permission required: agent:trust",
+                )
+
+        if not agent.previous_public_key:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No key rotation in progress",
+            )
+
+        # Clear previous key
+        agent.previous_public_key = None
+        agent.key_rotation_grace_until = None
+        agent.updated_at = datetime.now(timezone.utc)
+
+        await session.commit()
+
+        return {
+            "message": "Key rotation completed. Previous key invalidated.",
+            "key_version": agent.key_version,
+        }
+
+
+@router.get(
+    "/{agent_id}/key-info",
+    status_code=status.HTTP_200_OK,
+    summary="Get agent key info",
+    description="Get agent's current key status (Design Doc 15.2).",
+)
+async def get_agent_key_info(
+    agent_id: UUID,
+    current_user: UserDep,
+) -> dict:
+    """
+    Get agent key information.
+
+    Returns current key version and rotation status.
+    """
+    async with get_session() as session:
+        result = await session.execute(select(Agent).where(Agent.id == agent_id))
+        agent = result.scalar_one_or_none()
+
+        if agent is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Agent not found",
+            )
+
+        # Check workspace access
+        ws_result = await session.execute(
+            select(Workspace).where(Workspace.id == agent.workspace_id)
+        )
+        workspace = ws_result.scalar_one_or_none()
+
+        if not current_user.is_superuser:
+            if workspace is None or current_user.org_id != workspace.organization_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied",
+                )
+
+        now = datetime.now(timezone.utc)
+        rotation_in_progress = (
+            agent.previous_public_key is not None
+            and agent.key_rotation_grace_until is not None
+            and agent.key_rotation_grace_until > now
+        )
+
+        return {
+            "agent_id": str(agent.id),
+            "key_version": agent.key_version or 1,
+            "key_algorithm": agent.key_algorithm,
+            "public_key_fingerprint": hashlib.sha256(
+                agent.public_key.encode()
+            ).hexdigest()[:16],
+            "rotation_in_progress": rotation_in_progress,
+            "previous_key_valid_until": (
+                agent.key_rotation_grace_until.isoformat()
+                if rotation_in_progress
+                else None
+            ),
+            "last_rotation": (
+                agent.key_rotated_at.isoformat() if agent.key_rotated_at else None
+            ),
+        }

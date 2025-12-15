@@ -1613,3 +1613,171 @@ class TestReinstateAgent:
         )
 
         assert response.status_code == 403
+
+
+class TestAgentKeyRotation:
+    """Tests for agent key rotation endpoints (Design Doc 15.2)."""
+
+    async def test_rotate_key_success(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        superuser_headers: dict,
+        sample_workspace: Workspace,
+    ) -> None:
+        """Superuser can rotate agent key."""
+        # Create agent
+        old_key = "old_public_key_" + "a" * 50
+        agent = Agent(
+            name="key-rotation-agent",
+            workspace_id=sample_workspace.id,
+            trust_state=TrustState.ENROLLED,
+            public_key=old_key,
+            agent_version="1.0.0",
+            key_version=1,
+        )
+        db_session.add(agent)
+        await db_session.commit()
+        await db_session.refresh(agent)
+
+        new_key = "new_public_key_" + "b" * 50
+        response = await client.post(
+            f"/api/v1/agents/{agent.id}/rotate-key",
+            headers=superuser_headers,
+            json={"new_public_key": new_key},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["key_version"] == 2
+        assert "previous_key_valid_until" in data
+
+        # Verify in database
+        await db_session.refresh(agent)
+        assert agent.public_key == new_key
+        assert agent.previous_public_key == old_key
+        assert agent.key_version == 2
+        assert agent.key_rotation_grace_until is not None
+
+    async def test_rotate_key_revoked_agent_fails(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        superuser_headers: dict,
+        sample_workspace: Workspace,
+    ) -> None:
+        """Cannot rotate key for revoked agent."""
+        agent = Agent(
+            name="revoked-key-agent",
+            workspace_id=sample_workspace.id,
+            trust_state=TrustState.REVOKED,
+            public_key="a" * 64,
+            agent_version="1.0.0",
+        )
+        db_session.add(agent)
+        await db_session.commit()
+        await db_session.refresh(agent)
+
+        response = await client.post(
+            f"/api/v1/agents/{agent.id}/rotate-key",
+            headers=superuser_headers,
+            json={"new_public_key": "b" * 64},
+        )
+
+        assert response.status_code == 400
+        assert "revoked" in response.json()["detail"].lower()
+
+    async def test_complete_key_rotation(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        superuser_headers: dict,
+        sample_workspace: Workspace,
+    ) -> None:
+        """Complete key rotation invalidates old key."""
+        agent = Agent(
+            name="complete-rotation-agent",
+            workspace_id=sample_workspace.id,
+            trust_state=TrustState.ENROLLED,
+            public_key="new_key_" + "a" * 50,
+            previous_public_key="old_key_" + "b" * 50,
+            agent_version="1.0.0",
+            key_version=2,
+            key_rotation_grace_until=datetime.now(timezone.utc) + timedelta(hours=24),
+        )
+        db_session.add(agent)
+        await db_session.commit()
+        await db_session.refresh(agent)
+
+        response = await client.post(
+            f"/api/v1/agents/{agent.id}/complete-key-rotation",
+            headers=superuser_headers,
+        )
+
+        assert response.status_code == 200
+
+        # Verify old key is cleared
+        await db_session.refresh(agent)
+        assert agent.previous_public_key is None
+        assert agent.key_rotation_grace_until is None
+
+    async def test_complete_rotation_no_rotation_in_progress(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        superuser_headers: dict,
+        sample_workspace: Workspace,
+    ) -> None:
+        """Complete rotation fails if no rotation in progress."""
+        agent = Agent(
+            name="no-rotation-agent",
+            workspace_id=sample_workspace.id,
+            trust_state=TrustState.ENROLLED,
+            public_key="a" * 64,
+            previous_public_key=None,  # No rotation in progress
+            agent_version="1.0.0",
+        )
+        db_session.add(agent)
+        await db_session.commit()
+        await db_session.refresh(agent)
+
+        response = await client.post(
+            f"/api/v1/agents/{agent.id}/complete-key-rotation",
+            headers=superuser_headers,
+        )
+
+        assert response.status_code == 400
+        assert "No key rotation in progress" in response.json()["detail"]
+
+    async def test_get_key_info(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        superuser_headers: dict,
+        sample_workspace: Workspace,
+    ) -> None:
+        """Get key info returns current key status."""
+        agent = Agent(
+            name="key-info-agent",
+            workspace_id=sample_workspace.id,
+            trust_state=TrustState.ENROLLED,
+            public_key="a" * 64,
+            agent_version="1.0.0",
+            key_version=1,
+            key_algorithm="ed25519",
+        )
+        db_session.add(agent)
+        await db_session.commit()
+        await db_session.refresh(agent)
+
+        response = await client.get(
+            f"/api/v1/agents/{agent.id}/key-info",
+            headers=superuser_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["key_version"] == 1
+        assert data["key_algorithm"] == "ed25519"
+        assert "public_key_fingerprint" in data
+        assert data["rotation_in_progress"] is False

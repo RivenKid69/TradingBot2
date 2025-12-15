@@ -36,6 +36,26 @@ class ArtifactType(str, Enum):
     ENSEMBLE = "ensemble"
 
 
+class SandboxType(str, Enum):
+    """Type of sandbox for artifact execution."""
+    PROCESS = "process"  # Default process-level isolation
+    CONTAINER = "container"  # Container-based isolation
+    VM = "vm"  # VM-level isolation (enterprise)
+    WASM = "wasm"  # WebAssembly sandbox
+
+
+class Timeframe(str, Enum):
+    """Trading timeframe."""
+    M1 = "1m"
+    M5 = "5m"
+    M15 = "15m"
+    M30 = "30m"
+    H1 = "1h"
+    H4 = "4h"
+    D1 = "1d"
+    W1 = "1w"
+
+
 class Platform(str, Enum):
     """Target platform."""
     LINUX = "linux"
@@ -284,6 +304,33 @@ class ArtifactManifest(BaseModel):
         None,
         pattern=r"^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$"
     )
+
+    # Strategy reference (Design Doc 8.2)
+    strategy_id: Optional[str] = Field(
+        None,
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        max_length=128,
+        description="Associated strategy identifier"
+    )
+
+    # Sandbox configuration (Design Doc 8.2)
+    sandbox_type: SandboxType = Field(
+        SandboxType.PROCESS,
+        description="Type of sandbox for execution"
+    )
+
+    # Build timestamp (Design Doc 8.2)
+    built_at: Optional[datetime] = Field(
+        None,
+        description="When the artifact was built"
+    )
+
+    # Trading timeframe (Design Doc 8.2)
+    timeframe: Optional[Timeframe] = Field(
+        None,
+        description="Trading timeframe for the strategy"
+    )
+
     model_refs: Optional[List[ModelRef]] = None
     data_contract: Optional[DataContract] = None
     permissions: Optional[Permissions] = None

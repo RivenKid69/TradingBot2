@@ -30,6 +30,28 @@ class ArtifactFormat(str, Enum):
     WHEEL = "wheel"  # Python package
 
 
+class SandboxType(str, Enum):
+    """Type of sandbox for artifact execution."""
+
+    PROCESS = "process"  # Default process-level isolation
+    CONTAINER = "container"  # Container-based isolation
+    VM = "vm"  # VM-level isolation (enterprise)
+    WASM = "wasm"  # WebAssembly sandbox
+
+
+class Timeframe(str, Enum):
+    """Trading timeframe."""
+
+    M1 = "1m"
+    M5 = "5m"
+    M15 = "15m"
+    M30 = "30m"
+    H1 = "1h"
+    H4 = "4h"
+    D1 = "1d"
+    W1 = "1w"
+
+
 class SignatureAlgorithm(str, Enum):
     """
     Signature algorithm used.
@@ -445,8 +467,15 @@ class ArtifactManifest:
     # Change classification
     change_class: str = "trading_impacting"
 
+    # Sandbox configuration (Design Doc 8.2)
+    sandbox_type: SandboxType = SandboxType.PROCESS
+
+    # Trading timeframe (Design Doc 8.2)
+    timeframe: Optional[Timeframe] = None
+
     # Timestamps
     created_at: datetime = field(default_factory=datetime.utcnow)
+    built_at: Optional[datetime] = None  # When artifact was built
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -470,12 +499,31 @@ class ArtifactManifest:
             "data_contract": self.data_contract,
             "telemetry_schema_version": self.telemetry_schema_version,
             "change_class": self.change_class,
+            "sandbox_type": self.sandbox_type.value,
+            "timeframe": self.timeframe.value if self.timeframe else None,
             "created_at": self.created_at.isoformat(),
+            "built_at": self.built_at.isoformat() if self.built_at else None,
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> ArtifactManifest:
         """Create from dictionary."""
+        # Parse sandbox_type with fallback
+        sandbox_type_str = data.get("sandbox_type", "process")
+        try:
+            sandbox_type = SandboxType(sandbox_type_str)
+        except ValueError:
+            sandbox_type = SandboxType.PROCESS
+
+        # Parse timeframe with fallback
+        timeframe_str = data.get("timeframe")
+        timeframe = None
+        if timeframe_str:
+            try:
+                timeframe = Timeframe(timeframe_str)
+            except ValueError:
+                pass
+
         return cls(
             schema_version=data.get("schema_version", CURRENT_SCHEMA_VERSION),
             artifact_id=UUID(data["artifact_id"]) if "artifact_id" in data else uuid4(),
@@ -498,9 +546,14 @@ class ArtifactManifest:
             data_contract=data.get("data_contract", {}),
             telemetry_schema_version=data.get("telemetry_schema_version", "1.0.0"),
             change_class=data.get("change_class", "trading_impacting"),
+            sandbox_type=sandbox_type,
+            timeframe=timeframe,
             created_at=datetime.fromisoformat(data["created_at"])
             if "created_at" in data
             else datetime.utcnow(),
+            built_at=datetime.fromisoformat(data["built_at"])
+            if data.get("built_at")
+            else None,
         )
 
     def is_schema_compatible(

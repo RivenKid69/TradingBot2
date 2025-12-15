@@ -510,6 +510,22 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     mfa_secret: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    # MFA enforcement (Design Doc 4.1)
+    mfa_backup_codes_hash: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, comment="Hashed backup codes for MFA recovery"
+    )
+    mfa_verified_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+        comment="When MFA was successfully verified first time"
+    )
+    failed_mfa_attempts: Mapped[int] = mapped_column(
+        Integer, default=0, comment="Failed MFA attempts for lockout"
+    )
+    mfa_locked_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True,
+        comment="MFA lockout expiry time"
+    )
+
     # SSO
     sso_subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
@@ -846,6 +862,29 @@ class Agent(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
     # Device info
     device_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     os_info: Mapped[Optional[Dict]] = mapped_column(PortableJSON, nullable=True)
+
+    # Key rotation tracking (Design Doc 15.2)
+    key_version: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
+        server_default="1",
+        comment="Key version for rotation tracking",
+    )
+    previous_public_key: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Previous public key for grace period during rotation",
+    )
+    key_rotated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp of last key rotation",
+    )
+    key_rotation_grace_until: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Until when previous key is still valid",
+    )
 
     # Relationships
     deployments: Mapped[List["Deployment"]] = relationship(
@@ -1679,6 +1718,155 @@ class GovernanceAuditLog(Base, TenantMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_governance_audit_action", "action"),
         Index("ix_governance_audit_time", "created_at"),
+    )
+
+
+# ============================================================================
+# Experiments Tracking (Design Doc - Feature Flags & A/B Testing)
+# ============================================================================
+
+class ExperimentState(str, enum.Enum):
+    """Experiment lifecycle state."""
+    DRAFT = "draft"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+
+class Experiment(Base, TenantMixin, TimestampMixin, SoftDeleteMixin):
+    """
+    Experiment definition for feature flags and A/B testing.
+
+    Tracks experiments across deployments with variant assignments.
+    """
+    __tablename__ = "experiments"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Identity
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # State
+    state: Mapped[str] = mapped_column(
+        String(50),
+        default=ExperimentState.DRAFT.value,
+    )
+
+    # Configuration
+    hypothesis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    metric_keys: Mapped[Optional[List[str]]] = mapped_column(
+        PortableStringArray100,
+        nullable=True,
+        comment="Metrics to track for this experiment",
+    )
+    start_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Variants configuration
+    variants: Mapped[Optional[Dict]] = mapped_column(
+        PortableJSON,
+        nullable=True,
+        comment="Variant definitions: {variant_id: {name, weight, config}}",
+    )
+    default_variant: Mapped[str] = mapped_column(String(50), default="control")
+
+    # Traffic allocation
+    traffic_percentage: Mapped[int] = mapped_column(
+        Integer,
+        default=100,
+        comment="Percentage of eligible traffic included in experiment",
+    )
+
+    # Results
+    results_summary: Mapped[Optional[Dict]] = mapped_column(
+        PortableJSON,
+        nullable=True,
+        comment="Summary statistics and results",
+    )
+    winner_variant: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
+    # Relationships
+    assignments: Mapped[List["ExperimentAssignment"]] = relationship(
+        back_populates="experiment",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name", name="uq_experiment_workspace_name"),
+        Index("ix_experiment_state", "state"),
+    )
+
+
+class ExperimentAssignment(Base, TenantMixin, TimestampMixin):
+    """
+    Experiment variant assignment for a specific entity (deployment, user, etc.).
+
+    Tracks which variant an entity is assigned to.
+    """
+    __tablename__ = "experiment_assignments"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
+
+    # Experiment reference
+    experiment_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("experiments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Entity being assigned (polymorphic)
+    entity_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="Type of entity: deployment, agent, user",
+    )
+    entity_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True),
+        nullable=False,
+        comment="ID of the assigned entity",
+    )
+
+    # Assignment
+    variant: Mapped[str] = mapped_column(String(50), nullable=False)
+    assigned_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+    )
+
+    # Tracking
+    first_exposure_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When entity was first exposed to variant",
+    )
+    conversion_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="When conversion event occurred (if any)",
+    )
+    metrics: Mapped[Optional[Dict]] = mapped_column(
+        PortableJSON,
+        nullable=True,
+        comment="Collected metrics for this assignment",
+    )
+
+    # Relationships
+    experiment: Mapped["Experiment"] = relationship(back_populates="assignments")
+
+    __table_args__ = (
+        UniqueConstraint("experiment_id", "entity_type", "entity_id", name="uq_experiment_assignment"),
+        Index("ix_experiment_assignment_entity", "entity_type", "entity_id"),
     )
 
 

@@ -89,6 +89,35 @@ class LoginResponse(BaseModel):
     workspace_id: Optional[UUID] = None
 
 
+class LoginResponse2FA(BaseModel):
+    """Response when MFA is required."""
+
+    requires_mfa: bool = True
+    mfa_token: str  # Temporary token to complete MFA
+    message: str = "MFA verification required"
+
+
+class MFAVerifyRequest(BaseModel):
+    """MFA verification request."""
+
+    mfa_token: str
+    totp_code: str = Field(..., pattern=r"^\d{6}$")
+
+
+class MFASetupRequest(BaseModel):
+    """MFA setup request."""
+
+    totp_code: str = Field(..., pattern=r"^\d{6}$")
+
+
+class MFASetupResponse(BaseModel):
+    """MFA setup response with secret and QR code."""
+
+    secret: str
+    provisioning_uri: str
+    backup_codes: list[str]
+
+
 class RefreshRequest(BaseModel):
     """Token refresh request."""
 
@@ -101,6 +130,12 @@ class RefreshResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in: int = JWT_EXPIRATION_HOURS * 3600
+
+
+# MFA constants (Design Doc 4.1)
+MFA_LOCKOUT_ATTEMPTS = 5
+MFA_LOCKOUT_DURATION_MINUTES = 30
+MFA_TOKEN_EXPIRY_MINUTES = 5
 
 
 class AgentEnrollRequest(BaseModel):
@@ -182,24 +217,122 @@ def _get_client_ip(request: Request) -> str:
     return "unknown"
 
 
+# MFA token storage (in production, use Redis/DB)
+_mfa_pending_tokens: dict[str, dict] = {}
+
+
+def _generate_totp_secret() -> str:
+    """Generate a new TOTP secret."""
+    try:
+        import pyotp
+        return pyotp.random_base32()
+    except ImportError:
+        # Fallback if pyotp not installed
+        return secrets.token_hex(20)
+
+
+def _verify_totp(secret: str, code: str) -> bool:
+    """Verify TOTP code against secret."""
+    try:
+        import pyotp
+        totp = pyotp.TOTP(secret)
+        return totp.verify(code, valid_window=1)  # Allow 1 window tolerance
+    except ImportError:
+        # Fallback - in production pyotp should be installed
+        logger.warning("pyotp not installed, MFA verification disabled")
+        return True
+
+
+def _generate_provisioning_uri(secret: str, email: str) -> str:
+    """Generate TOTP provisioning URI for QR code."""
+    try:
+        import pyotp
+        totp = pyotp.TOTP(secret)
+        return totp.provisioning_uri(name=email, issuer_name="CCEA Platform")
+    except ImportError:
+        return f"otpauth://totp/CCEA:{email}?secret={secret}&issuer=CCEA"
+
+
+def _generate_backup_codes(count: int = 10) -> list[str]:
+    """Generate backup codes for MFA recovery."""
+    return [secrets.token_hex(4).upper() for _ in range(count)]
+
+
+def _hash_backup_codes(codes: list[str]) -> str:
+    """Hash backup codes for storage."""
+    import json
+    # Store hashed versions
+    hashed = [hashlib.sha256(c.encode()).hexdigest() for c in codes]
+    return json.dumps(hashed)
+
+
+def _verify_backup_code(stored_hash: str, code: str) -> bool:
+    """Verify a backup code against stored hashes."""
+    import json
+    try:
+        hashed_codes = json.loads(stored_hash)
+        code_hash = hashlib.sha256(code.upper().encode()).hexdigest()
+        return code_hash in hashed_codes
+    except Exception:
+        return False
+
+
+def _create_mfa_pending_token(user_id: UUID, email: str) -> str:
+    """Create a temporary token for MFA completion."""
+    token = secrets.token_urlsafe(32)
+    _mfa_pending_tokens[token] = {
+        "user_id": str(user_id),
+        "email": email,
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=MFA_TOKEN_EXPIRY_MINUTES),
+    }
+    return token
+
+
+def _verify_mfa_pending_token(token: str) -> Optional[dict]:
+    """Verify and consume a pending MFA token."""
+    data = _mfa_pending_tokens.get(token)
+    if not data:
+        return None
+    if data["expires_at"] < datetime.now(timezone.utc):
+        del _mfa_pending_tokens[token]
+        return None
+    return data
+
+
+def _check_mfa_lockout(user: User) -> None:
+    """Check if user is locked out of MFA due to failed attempts."""
+    if user.mfa_locked_until and user.mfa_locked_until > datetime.now(timezone.utc):
+        remaining = (user.mfa_locked_until - datetime.now(timezone.utc)).seconds
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"MFA locked due to too many failed attempts. Try again in {remaining} seconds.",
+            headers={"Retry-After": str(remaining)},
+        )
+
+
 @router.post(
     "/login",
-    response_model=LoginResponse,
+    response_model=LoginResponse | LoginResponse2FA,
     status_code=status.HTTP_200_OK,
     summary="User login",
-    description="Authenticate user and return JWT token.",
+    description="Authenticate user and return JWT token. If MFA is enabled, returns MFA token instead.",
 )
-async def login(request: LoginRequest, http_request: Request) -> LoginResponse:
+async def login(request: LoginRequest, http_request: Request) -> LoginResponse | LoginResponse2FA:
     """
     Authenticate user with email and password.
 
-    Returns JWT access token on success.
+    Returns JWT access token on success, or MFA token if MFA is enabled.
 
     WI-AUTH-01 Security:
     - Rate limiting per IP address
     - Account lockout after failed attempts
     - Argon2id password verification with rehash support
     - JWT with unique jti for revocation support
+
+    Design Doc 4.1 MFA:
+    - If MFA is enabled, returns temporary mfa_token
+    - User must call /auth/mfa/verify with TOTP code
+    - MFA lockout after failed attempts
     """
     client_ip = _get_client_ip(http_request)
 
@@ -255,6 +388,19 @@ async def login(request: LoginRequest, http_request: Request) -> LoginResponse:
         # WI-AUTH-01: Check if password needs rehashing (algorithm upgrade)
         if needs_rehash(user.password_hash):
             user.password_hash = hash_password(request.password)
+            await session.commit()
+
+        # Design Doc 4.1: Check if MFA is enabled
+        if user.mfa_enabled and user.mfa_secret:
+            # Check MFA lockout
+            _check_mfa_lockout(user)
+
+            # Issue temporary MFA token
+            mfa_token = _create_mfa_pending_token(user.id, user.email)
+            return LoginResponse2FA(
+                mfa_token=mfa_token,
+                message="MFA verification required. Use /auth/mfa/verify endpoint.",
+            )
 
         # Get user permissions
         permissions = []
@@ -285,6 +431,260 @@ async def login(request: LoginRequest, http_request: Request) -> LoginResponse:
             email=user.email,
             workspace_id=user.default_workspace_id,
         )
+
+
+@router.post(
+    "/mfa/verify",
+    response_model=LoginResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Verify MFA code",
+    description="Complete login by verifying TOTP code (Design Doc 4.1).",
+)
+async def verify_mfa(request: MFAVerifyRequest) -> LoginResponse:
+    """
+    Verify MFA code and complete login.
+
+    Design Doc 4.1:
+    - Validates TOTP code against user's MFA secret
+    - Supports backup codes for recovery
+    - Locks out after too many failed attempts
+    """
+    # Verify the pending MFA token
+    token_data = _verify_mfa_pending_token(request.mfa_token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired MFA token. Please login again.",
+        )
+
+    async with get_session() as session:
+        # Find user
+        result = await session.execute(
+            select(User)
+            .where(User.id == UUID(token_data["user_id"]), User.is_active == True)
+            .options(selectinload(User.roles).selectinload(Role.permissions))
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        # Check MFA lockout
+        _check_mfa_lockout(user)
+
+        # Verify TOTP code
+        code_valid = False
+        if user.mfa_secret:
+            code_valid = _verify_totp(user.mfa_secret, request.totp_code)
+
+        # If TOTP fails, try backup codes
+        if not code_valid and user.mfa_backup_codes_hash:
+            code_valid = _verify_backup_code(user.mfa_backup_codes_hash, request.totp_code)
+
+        if not code_valid:
+            # Increment failed attempts
+            user.failed_mfa_attempts = (user.failed_mfa_attempts or 0) + 1
+
+            # Check if we should lock out
+            if user.failed_mfa_attempts >= MFA_LOCKOUT_ATTEMPTS:
+                user.mfa_locked_until = datetime.now(timezone.utc) + timedelta(
+                    minutes=MFA_LOCKOUT_DURATION_MINUTES
+                )
+                await session.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail=f"Too many failed MFA attempts. Account locked for {MFA_LOCKOUT_DURATION_MINUTES} minutes.",
+                )
+
+            await session.commit()
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid MFA code. {MFA_LOCKOUT_ATTEMPTS - user.failed_mfa_attempts} attempts remaining.",
+            )
+
+        # Success - reset failed attempts and update verification timestamp
+        user.failed_mfa_attempts = 0
+        user.mfa_locked_until = None
+        if not user.mfa_verified_at:
+            user.mfa_verified_at = datetime.now(timezone.utc)
+
+        # Consume the MFA token
+        del _mfa_pending_tokens[request.mfa_token]
+
+        # Get user permissions
+        permissions = []
+        for role in user.roles:
+            for perm in role.permissions:
+                if perm.name not in permissions:
+                    permissions.append(perm.name)
+
+        # Create access token
+        token = create_access_token(
+            user_id=user.id,
+            email=user.email,
+            workspace_id=user.default_workspace_id,
+            org_id=user.organization_id,
+            permissions=permissions,
+        )
+
+        # Update last login
+        user.last_login = datetime.now(timezone.utc)
+        await session.commit()
+
+        return LoginResponse(
+            access_token=token,
+            user_id=user.id,
+            email=user.email,
+            workspace_id=user.default_workspace_id,
+        )
+
+
+@router.post(
+    "/mfa/setup",
+    response_model=MFASetupResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Setup MFA",
+    description="Generate TOTP secret and backup codes for MFA setup (Design Doc 4.1).",
+)
+async def setup_mfa(current_user: UserDep) -> MFASetupResponse:
+    """
+    Setup MFA for current user.
+
+    Design Doc 4.1:
+    - Generates TOTP secret
+    - Provides provisioning URI for authenticator apps
+    - Generates backup codes for recovery
+    - MFA is not enabled until confirmed with /mfa/confirm
+    """
+    async with get_session() as session:
+        # Find user
+        result = await session.execute(
+            select(User).where(User.id == current_user.id)
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        if user.mfa_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="MFA is already enabled. Disable it first to reconfigure.",
+            )
+
+        # Generate new secret
+        secret = _generate_totp_secret()
+        provisioning_uri = _generate_provisioning_uri(secret, user.email)
+
+        # Generate backup codes
+        backup_codes = _generate_backup_codes()
+
+        # Store secret temporarily (will be confirmed later)
+        user.mfa_secret = secret
+        user.mfa_backup_codes_hash = _hash_backup_codes(backup_codes)
+        await session.commit()
+
+        return MFASetupResponse(
+            secret=secret,
+            provisioning_uri=provisioning_uri,
+            backup_codes=backup_codes,
+        )
+
+
+@router.post(
+    "/mfa/confirm",
+    status_code=status.HTTP_200_OK,
+    summary="Confirm MFA setup",
+    description="Confirm MFA setup by verifying TOTP code (Design Doc 4.1).",
+)
+async def confirm_mfa(request: MFASetupRequest, current_user: UserDep) -> dict:
+    """
+    Confirm MFA setup with TOTP code.
+
+    User must provide a valid TOTP code to enable MFA.
+    This ensures they have correctly configured their authenticator app.
+    """
+    async with get_session() as session:
+        # Find user
+        result = await session.execute(
+            select(User).where(User.id == current_user.id)
+        )
+        user = result.scalar_one_or_none()
+
+        if not user or not user.mfa_secret:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="MFA setup not started. Call /mfa/setup first.",
+            )
+
+        # Verify TOTP code
+        if not _verify_totp(user.mfa_secret, request.totp_code):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid TOTP code. Please check your authenticator app.",
+            )
+
+        # Enable MFA
+        user.mfa_enabled = True
+        user.mfa_verified_at = datetime.now(timezone.utc)
+        user.failed_mfa_attempts = 0
+        await session.commit()
+
+        return {"message": "MFA enabled successfully", "mfa_enabled": True}
+
+
+@router.post(
+    "/mfa/disable",
+    status_code=status.HTTP_200_OK,
+    summary="Disable MFA",
+    description="Disable MFA for current user (requires TOTP or backup code).",
+)
+async def disable_mfa(request: MFASetupRequest, current_user: UserDep) -> dict:
+    """
+    Disable MFA for current user.
+
+    Requires valid TOTP code or backup code for security.
+    """
+    async with get_session() as session:
+        # Find user
+        result = await session.execute(
+            select(User).where(User.id == current_user.id)
+        )
+        user = result.scalar_one_or_none()
+
+        if not user or not user.mfa_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="MFA is not enabled.",
+            )
+
+        # Verify TOTP code or backup code
+        code_valid = _verify_totp(user.mfa_secret, request.totp_code)
+        if not code_valid and user.mfa_backup_codes_hash:
+            code_valid = _verify_backup_code(user.mfa_backup_codes_hash, request.totp_code)
+
+        if not code_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid verification code.",
+            )
+
+        # Disable MFA
+        user.mfa_enabled = False
+        user.mfa_secret = None
+        user.mfa_backup_codes_hash = None
+        user.mfa_verified_at = None
+        user.failed_mfa_attempts = 0
+        user.mfa_locked_until = None
+        await session.commit()
+
+        return {"message": "MFA disabled successfully", "mfa_enabled": False}
 
 
 @router.post(

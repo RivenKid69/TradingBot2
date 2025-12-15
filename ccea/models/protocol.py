@@ -298,11 +298,20 @@ class BaseCommand(BaseMessage):
 # ============================================================================
 
 class HeartbeatMessage(BaseMessage):
-    """Heartbeat message from agent to cloud."""
+    """
+    Heartbeat message from agent to cloud.
+
+    Design Doc: HEARTBEAT includes agent state, health metrics, and capabilities.
+    Capabilities advertise what features the agent supports.
+    """
     message_type: Literal[MessageType.HEARTBEAT] = MessageType.HEARTBEAT
     agent_id: str = Field(..., pattern=r"^agent_[a-zA-Z0-9]{16,32}$")
     state: AgentState
     health: Optional[AgentHealth] = None
+    capabilities: Optional[List[str]] = Field(
+        None,
+        description="Agent capabilities: e.g., 'live_trading', 'paper_trading', 'backtesting', 'gpu'"
+    )
 
 
 class PollCommandsMessage(BaseMessage):
