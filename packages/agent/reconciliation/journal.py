@@ -410,3 +410,451 @@ class OrderJournal:
         if self._conn:
             self._conn.close()
             self._conn = None
+
+
+class CommandStatus(str, Enum):
+    """Cloud command execution status."""
+
+    RECEIVED = "received"      # Command received from Cloud
+    IN_PROGRESS = "in_progress"  # Execution started
+    COMPLETED = "completed"    # Successfully executed
+    FAILED = "failed"         # Execution failed
+    SKIPPED = "skipped"       # Skipped (duplicate/expired)
+
+
+@dataclass
+class CommandEntry:
+    """
+    Journal entry for a cloud command.
+
+    Design Doc 10.4.2: Tracks command idempotency across restarts.
+    """
+
+    command_id: str
+    idempotency_key: str
+    command_type: str
+    status: CommandStatus
+    payload_ref: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
+    error_message: Optional[str] = None
+    received_at: datetime = field(default_factory=datetime.utcnow)
+    executed_at: Optional[datetime] = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "command_id": self.command_id,
+            "idempotency_key": self.idempotency_key,
+            "command_type": self.command_type,
+            "status": self.status.value,
+            "payload_ref": self.payload_ref,
+            "result": self.result,
+            "error_message": self.error_message,
+            "received_at": self.received_at.isoformat(),
+            "executed_at": self.executed_at.isoformat() if self.executed_at else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "CommandEntry":
+        """Create from dictionary."""
+        return cls(
+            command_id=data["command_id"],
+            idempotency_key=data["idempotency_key"],
+            command_type=data["command_type"],
+            status=CommandStatus(data.get("status", "received")),
+            payload_ref=data.get("payload_ref"),
+            result=data.get("result"),
+            error_message=data.get("error_message"),
+            received_at=datetime.fromisoformat(data["received_at"])
+            if "received_at" in data
+            else datetime.utcnow(),
+            executed_at=datetime.fromisoformat(data["executed_at"])
+            if data.get("executed_at")
+            else None,
+            created_at=datetime.fromisoformat(data["created_at"])
+            if "created_at" in data
+            else datetime.utcnow(),
+            updated_at=datetime.fromisoformat(data["updated_at"])
+            if "updated_at" in data
+            else datetime.utcnow(),
+        )
+
+
+class CommandJournal:
+    """
+    Persistent journal for cloud command execution.
+
+    Design Doc 10.4.2/9.5:
+    - Provides idempotency across agent restarts
+    - Tracks command execution status
+    - Prevents duplicate execution of the same command
+
+    AGENT ZONE ONLY.
+
+    Usage:
+        journal = CommandJournal()
+
+        # Before executing command
+        if journal.is_executed(command_id, idempotency_key):
+            skip_command()  # Already executed
+
+        # Mark command received
+        journal.log_received(command_id, idempotency_key, command_type)
+
+        # Execute command
+        try:
+            result = execute_command(...)
+            journal.mark_completed(command_id, result)
+        except Exception as e:
+            journal.mark_failed(command_id, str(e))
+
+        # On restart: recover state
+        executed_ids = journal.get_executed_command_ids()
+    """
+
+    def __init__(
+        self,
+        db_path: Optional[Path] = None,
+    ):
+        """
+        Initialize command journal.
+
+        Args:
+            db_path: Path to SQLite database
+        """
+        self._db_path = db_path or Path.home() / ".ccea" / "command_journal.db"
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn: Optional[sqlite3.Connection] = None
+        self._init_db()
+
+    def _init_db(self) -> None:
+        """Initialize database schema."""
+        self._conn = sqlite3.connect(str(self._db_path))
+        self._conn.row_factory = sqlite3.Row
+
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS commands (
+                command_id TEXT PRIMARY KEY,
+                idempotency_key TEXT NOT NULL,
+                command_type TEXT NOT NULL,
+                status TEXT NOT NULL,
+                payload_ref TEXT,
+                result TEXT,
+                error_message TEXT,
+                received_at TEXT NOT NULL,
+                executed_at TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
+        self._conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_idempotency_key
+            ON commands(idempotency_key)
+            """
+        )
+
+        self._conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_command_status
+            ON commands(status)
+            """
+        )
+
+        self._conn.commit()
+
+    def log_received(
+        self,
+        command_id: str,
+        idempotency_key: str,
+        command_type: str,
+        payload_ref: Optional[str] = None,
+    ) -> CommandEntry:
+        """
+        Log command receipt.
+
+        Design Doc 10.4.2: Mark command RECEIVED before execution.
+
+        Args:
+            command_id: Cloud command ID
+            idempotency_key: Idempotency key
+            command_type: Command type (e.g., REQUEST_START_RUN)
+            payload_ref: Reference to command payload
+
+        Returns:
+            Created journal entry
+        """
+        now = datetime.utcnow()
+        entry = CommandEntry(
+            command_id=command_id,
+            idempotency_key=idempotency_key,
+            command_type=command_type,
+            status=CommandStatus.RECEIVED,
+            payload_ref=payload_ref,
+            received_at=now,
+            created_at=now,
+            updated_at=now,
+        )
+
+        try:
+            self._conn.execute(
+                """
+                INSERT INTO commands (
+                    command_id, idempotency_key, command_type, status,
+                    payload_ref, received_at, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry.command_id,
+                    entry.idempotency_key,
+                    entry.command_type,
+                    entry.status.value,
+                    entry.payload_ref,
+                    entry.received_at.isoformat(),
+                    entry.created_at.isoformat(),
+                    entry.updated_at.isoformat(),
+                ),
+            )
+            self._conn.commit()
+        except sqlite3.IntegrityError:
+            # Already exists - fetch existing entry
+            return self.get_entry(command_id)
+
+        return entry
+
+    def mark_in_progress(self, command_id: str) -> bool:
+        """Mark command as in progress."""
+        return self._update_status(command_id, CommandStatus.IN_PROGRESS)
+
+    def mark_completed(
+        self,
+        command_id: str,
+        result: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """
+        Mark command as completed.
+
+        Design Doc 10.4.2: Mark COMPLETED after successful execution.
+        """
+        now = datetime.utcnow()
+        cursor = self._conn.execute(
+            """
+            UPDATE commands
+            SET status = ?, result = ?, executed_at = ?, updated_at = ?
+            WHERE command_id = ?
+            """,
+            (
+                CommandStatus.COMPLETED.value,
+                json.dumps(result) if result else None,
+                now.isoformat(),
+                now.isoformat(),
+                command_id,
+            ),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def mark_failed(
+        self,
+        command_id: str,
+        error_message: str,
+    ) -> bool:
+        """
+        Mark command as failed.
+
+        Design Doc 10.4.2: Mark FAILED if execution fails.
+        """
+        now = datetime.utcnow()
+        cursor = self._conn.execute(
+            """
+            UPDATE commands
+            SET status = ?, error_message = ?, executed_at = ?, updated_at = ?
+            WHERE command_id = ?
+            """,
+            (
+                CommandStatus.FAILED.value,
+                error_message,
+                now.isoformat(),
+                now.isoformat(),
+                command_id,
+            ),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def mark_skipped(
+        self,
+        command_id: str,
+        reason: str = "duplicate",
+    ) -> bool:
+        """Mark command as skipped (duplicate/expired)."""
+        now = datetime.utcnow()
+        cursor = self._conn.execute(
+            """
+            UPDATE commands
+            SET status = ?, error_message = ?, updated_at = ?
+            WHERE command_id = ?
+            """,
+            (
+                CommandStatus.SKIPPED.value,
+                reason,
+                now.isoformat(),
+                command_id,
+            ),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def _update_status(self, command_id: str, status: CommandStatus) -> bool:
+        """Update command status."""
+        cursor = self._conn.execute(
+            """
+            UPDATE commands
+            SET status = ?, updated_at = ?
+            WHERE command_id = ?
+            """,
+            (status.value, datetime.utcnow().isoformat(), command_id),
+        )
+        self._conn.commit()
+        return cursor.rowcount > 0
+
+    def is_executed(self, command_id: str, idempotency_key: Optional[str] = None) -> bool:
+        """
+        Check if command has already been executed.
+
+        Design Doc 10.4.2: Prevent duplicate execution.
+
+        Args:
+            command_id: Command ID to check
+            idempotency_key: Optional idempotency key to check
+
+        Returns:
+            True if command already executed (COMPLETED or FAILED)
+        """
+        # Check by command_id
+        cursor = self._conn.execute(
+            """
+            SELECT status FROM commands
+            WHERE command_id = ?
+            """,
+            (command_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            status = row["status"]
+            return status in (CommandStatus.COMPLETED.value, CommandStatus.FAILED.value, CommandStatus.SKIPPED.value)
+
+        # Also check by idempotency_key if provided
+        if idempotency_key:
+            cursor = self._conn.execute(
+                """
+                SELECT status FROM commands
+                WHERE idempotency_key = ? AND status IN (?, ?, ?)
+                """,
+                (
+                    idempotency_key,
+                    CommandStatus.COMPLETED.value,
+                    CommandStatus.FAILED.value,
+                    CommandStatus.SKIPPED.value,
+                ),
+            )
+            return cursor.fetchone() is not None
+
+        return False
+
+    def get_entry(self, command_id: str) -> Optional[CommandEntry]:
+        """Get command entry by ID."""
+        cursor = self._conn.execute(
+            "SELECT * FROM commands WHERE command_id = ?",
+            (command_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return self._row_to_entry(row)
+        return None
+
+    def get_by_idempotency_key(self, idempotency_key: str) -> Optional[CommandEntry]:
+        """Get command entry by idempotency key."""
+        cursor = self._conn.execute(
+            "SELECT * FROM commands WHERE idempotency_key = ?",
+            (idempotency_key,),
+        )
+        row = cursor.fetchone()
+        if row:
+            return self._row_to_entry(row)
+        return None
+
+    def get_executed_command_ids(self) -> set[str]:
+        """
+        Get all executed command IDs.
+
+        Design Doc 10.4.2: Used on startup to restore state.
+
+        Returns:
+            Set of command IDs that have been executed
+        """
+        cursor = self._conn.execute(
+            """
+            SELECT command_id FROM commands
+            WHERE status IN (?, ?, ?)
+            """,
+            (
+                CommandStatus.COMPLETED.value,
+                CommandStatus.FAILED.value,
+                CommandStatus.SKIPPED.value,
+            ),
+        )
+        return {row["command_id"] for row in cursor.fetchall()}
+
+    def get_pending_commands(self) -> List[CommandEntry]:
+        """Get commands that are pending (RECEIVED or IN_PROGRESS)."""
+        cursor = self._conn.execute(
+            """
+            SELECT * FROM commands
+            WHERE status IN (?, ?)
+            ORDER BY received_at ASC
+            """,
+            (CommandStatus.RECEIVED.value, CommandStatus.IN_PROGRESS.value),
+        )
+        return [self._row_to_entry(row) for row in cursor.fetchall()]
+
+    def get_recent_commands(self, limit: int = 100) -> List[CommandEntry]:
+        """Get recent commands."""
+        cursor = self._conn.execute(
+            """
+            SELECT * FROM commands
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return [self._row_to_entry(row) for row in cursor.fetchall()]
+
+    def _row_to_entry(self, row: sqlite3.Row) -> CommandEntry:
+        """Convert database row to entry."""
+        return CommandEntry(
+            command_id=row["command_id"],
+            idempotency_key=row["idempotency_key"],
+            command_type=row["command_type"],
+            status=CommandStatus(row["status"]),
+            payload_ref=row["payload_ref"],
+            result=json.loads(row["result"]) if row["result"] else None,
+            error_message=row["error_message"],
+            received_at=datetime.fromisoformat(row["received_at"]),
+            executed_at=datetime.fromisoformat(row["executed_at"]) if row["executed_at"] else None,
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]),
+        )
+
+    def close(self) -> None:
+        """Close database connection."""
+        if self._conn:
+            self._conn.close()
+            self._conn = None

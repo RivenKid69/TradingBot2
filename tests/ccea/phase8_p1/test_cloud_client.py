@@ -23,7 +23,7 @@ def test_cloud_client_enroll_signs_and_parses_response():
         assert request.method == "POST"
         assert request.url.path == "/api/v1/auth/agent/enroll"
         assert "X-CCEA-Signature" in request.headers
-        assert "X-CCEA-Public-Key-Fingerprint" in request.headers
+        assert "X-CCEA-Key-Fingerprint" in request.headers
 
         body = json.loads(request.content.decode("utf-8"))
         captured["body"] = body

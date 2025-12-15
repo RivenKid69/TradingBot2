@@ -20,7 +20,6 @@ Security:
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import logging
@@ -197,25 +196,17 @@ class AgentSignatureVerifier:
             )
 
         # Build message to verify (body + timestamp if present)
+        # Design Doc 10.2: bytes-to-sign = body_bytes + b"|" + timestamp_iso
         message = body
         if timestamp_str:
-            # Include timestamp in signed data
+            # Include timestamp in signed data (MUST match agent signing format)
             message = body + b"|" + timestamp_str.encode("utf-8")
 
-        # Decode signature
-        try:
-            signature = base64.b64decode(signature_b64)
-        except Exception as e:
-            self._failed_count += 1
-            return SignatureVerificationResult(
-                verified=False,
-                agent_id=agent_id,
-                error=f"Invalid signature encoding: {e}"
-            )
-
         # Verify signature
+        # NOTE: verify_signature() expects base64-encoded signature string, NOT raw bytes
+        # The agent sends base64-encoded signature in header
         try:
-            is_valid = verify_signature(message, signature, public_key)
+            is_valid = verify_signature(message, signature_b64, public_key)
         except Exception as e:
             logger.error(f"Signature verification error: {e}")
             self._failed_count += 1

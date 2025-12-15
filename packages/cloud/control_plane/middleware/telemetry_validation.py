@@ -897,6 +897,150 @@ def assert_no_order_fields(payload: Dict[str, Any]) -> None:
 
 
 # ============================================================================
+# Middleware (Design Doc 13/14)
+# ============================================================================
+
+import logging
+from fastapi import Request, status
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response, JSONResponse
+
+middleware_logger = logging.getLogger(__name__)
+
+
+class TelemetryValidationMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware for validating telemetry data in requests.
+
+    Design Doc 13/14: Validates telemetry payloads before ingestion.
+    - Blocks prohibited order/intent fields
+    - Requires mandatory redaction for non-aggregated telemetry
+    - Supports enterprise RAW_ORDER_EVENTS mode
+
+    CLOUD ZONE ONLY.
+    """
+
+    # Paths that should be validated for telemetry
+    TELEMETRY_PATHS = frozenset({
+        "/api/v1/telemetry",
+        "/api/v1/agent/telemetry",
+    })
+
+    def __init__(
+        self,
+        app,
+        strict_mode: bool = True,
+    ):
+        """
+        Initialize middleware.
+
+        Args:
+            app: FastAPI/Starlette application
+            strict_mode: Whether to use strict validation
+        """
+        super().__init__(app)
+        self.strict_mode = strict_mode
+        self.validator = TelemetryValidator(strict_mode=strict_mode)
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        """Process request with telemetry validation."""
+        # Only validate telemetry paths with POST/PUT
+        if not self._should_validate(request):
+            return await call_next(request)
+
+        # Read and validate body for telemetry endpoints
+        try:
+            body = await request.body()
+            if body:
+                import json
+                try:
+                    data = json.loads(body)
+                except json.JSONDecodeError:
+                    return await call_next(request)
+
+                # Get telemetry level from payload
+                telemetry_level = data.get(
+                    "telemetry_level",
+                    data.get("level", TelemetryLevel.AGGREGATED.value)
+                )
+                redaction_applied = data.get("redaction_applied", True)
+
+                # Check for enterprise mode
+                enterprise_enabled = request.headers.get(
+                    ENTERPRISE_RAW_ORDER_ENABLED_HEADER
+                ) == "true"
+
+                # Create validator with enterprise mode if needed
+                if enterprise_enabled:
+                    validator = TelemetryValidator(
+                        strict_mode=self.strict_mode,
+                        enterprise_raw_order_enabled=True,
+                    )
+                else:
+                    validator = self.validator
+
+                # Validate payload
+                payload = data.get("payload", data.get("metrics", data))
+                result = validator.validate(
+                    payload,
+                    telemetry_level,
+                    redaction_applied,
+                )
+
+                if not result.valid:
+                    middleware_logger.warning(
+                        f"Telemetry validation failed: {len(result.violations)} violations",
+                        extra={
+                            "path": request.url.path,
+                            "violations": [
+                                {"type": v.violation_type.value, "path": v.field_path}
+                                for v in result.violations[:10]  # Limit to 10
+                            ],
+                        }
+                    )
+
+                    # Return detailed error for rejected telemetry
+                    return JSONResponse(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        content={
+                            "detail": "Telemetry validation failed",
+                            "type": "telemetry_validation_error",
+                            "violations": [
+                                {
+                                    "type": v.violation_type.value,
+                                    "severity": v.severity.value,
+                                    "field_path": v.field_path,
+                                    "message": v.message,
+                                }
+                                for v in result.critical_violations[:5]
+                            ],
+                        }
+                    )
+
+                # Store validation result in request state
+                request.state.telemetry_validated = True
+                request.state.telemetry_validation_result = result
+
+        except Exception as e:
+            middleware_logger.error(f"Error in telemetry validation: {e}")
+            # Continue with request - don't block on validation errors
+            pass
+
+        return await call_next(request)
+
+    def _should_validate(self, request: Request) -> bool:
+        """Check if request should be validated."""
+        if request.method not in ("POST", "PUT"):
+            return False
+
+        path = request.url.path.rstrip("/")
+        for telemetry_path in self.TELEMETRY_PATHS:
+            if path.startswith(telemetry_path.rstrip("/")):
+                return True
+        return False
+
+
+# ============================================================================
 # Exports
 # ============================================================================
 
@@ -910,6 +1054,7 @@ __all__ = [
     # Classes
     "TelemetryValidator",
     "RedactionEnforcer",
+    "TelemetryValidationMiddleware",
     # Functions
     "validate_telemetry_payload",
     "assert_no_order_fields",

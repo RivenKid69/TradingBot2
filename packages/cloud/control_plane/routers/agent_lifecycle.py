@@ -525,6 +525,7 @@ async def agent_heartbeat(
 async def poll_commands(
     current_agent: AgentDep,
     limit: int = 10,
+    x_protocol_version: Optional[str] = Header(None, alias="X-Protocol-Version"),
 ) -> CommandPollResponse:
     """
     Poll for pending commands.
@@ -535,8 +536,15 @@ async def poll_commands(
     Design Doc 10.2: All commands MUST be signed by Cloud.
     Agent MUST verify signature before processing.
 
+    Design Doc 10.3/10.4: Version negotiation MUST be completed before polling.
+
     WI-CLOUD-02: Implements command polling with accurate results.
     """
+    # Design Doc 10.3/10.4: Verify version negotiation completed
+    negotiated_version = await verify_version_negotiated(
+        str(current_agent.id), x_protocol_version
+    )
+
     async with get_session() as session:
         # Verify agent
         await verify_agent_enrolled(session, current_agent)
@@ -550,11 +558,22 @@ async def poll_commands(
         )
 
         # Get command signer for signing commands (Design Doc 10.2)
+        # FAIL-CLOSED: In production, unsigned commands MUST NOT be sent
+        import os
+        is_production = os.environ.get("CCEA_ENV", "development") == "production"
+
         try:
             signer = get_cloud_signer()
         except CloudKeyNotConfiguredError:
-            logger.error("Cloud signing key not configured - commands will be unsigned")
-            signer = None
+            if is_production:
+                logger.error("Cloud signing key not configured in production - refusing to send unsigned commands")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Command signing service unavailable. Contact administrator.",
+                )
+            else:
+                logger.warning("Cloud signing key not configured (development mode) - commands will be unsigned")
+                signer = None
 
         # Convert to response format with signatures
         commands = []
@@ -626,6 +645,7 @@ async def poll_commands(
 async def acknowledge_command(
     command_id: UUID,
     current_agent: AgentDep,
+    x_protocol_version: Optional[str] = Header(None, alias="X-Protocol-Version"),
 ) -> CommandAckResponse:
     """
     Acknowledge receipt of a command.
@@ -633,8 +653,12 @@ async def acknowledge_command(
     Agent calls this after receiving command via poll.
     Transitions command to ACKNOWLEDGED state.
 
+    Design Doc 10.3/10.4: Version negotiation MUST be completed before acknowledgement.
     WI-CLOUD-02: Command acknowledgement for delivery confirmation.
     """
+    # Design Doc 10.3/10.4: Verify version negotiation completed
+    await verify_version_negotiated(str(current_agent.id), x_protocol_version)
+
     async with get_session() as session:
         # Verify agent
         await verify_agent_enrolled(session, current_agent)
@@ -681,6 +705,7 @@ async def submit_command_result(
     command_id: UUID,
     request: CommandResultSubmission,
     current_agent: AgentDep,
+    x_protocol_version: Optional[str] = Header(None, alias="X-Protocol-Version"),
 ) -> CommandResultResponse:
     """
     Submit execution result for a command.
@@ -688,8 +713,12 @@ async def submit_command_result(
     Agent calls this after executing a command.
     Transitions command to EXECUTED or FAILED state.
 
+    Design Doc 10.3/10.4: Version negotiation MUST be completed before result submission.
     WI-CLOUD-02: Command result for execution tracking.
     """
+    # Design Doc 10.3/10.4: Verify version negotiation completed
+    await verify_version_negotiated(str(current_agent.id), x_protocol_version)
+
     async with get_session() as session:
         # Verify agent
         await verify_agent_enrolled(session, current_agent)
@@ -739,6 +768,7 @@ async def submit_local_approval(
     command_id: UUID,
     request: LocalApprovalRequest,
     current_agent: AgentDep,
+    x_protocol_version: Optional[str] = Header(None, alias="X-Protocol-Version"),
 ) -> LocalApprovalResponse:
     """
     Submit local approval for a command.
@@ -746,12 +776,16 @@ async def submit_local_approval(
     Agent calls this when local approval is required (TRADING_IMPACTING).
     Transitions command from PENDING_APPROVAL to APPROVED or REJECTED.
 
+    Design Doc 10.3/10.4: Version negotiation MUST be completed before approval submission.
     WI-CLOUD-02: Local approval workflow for trading-impacting changes.
 
     Design Doc reference:
     - All TRADING_IMPACTING changes require local approval by default
     - Approval evidence hash is recorded for audit
     """
+    # Design Doc 10.3/10.4: Verify version negotiation completed
+    await verify_version_negotiated(str(current_agent.id), x_protocol_version)
+
     async with get_session() as session:
         # Verify agent
         db_agent = await verify_agent_enrolled(session, current_agent)

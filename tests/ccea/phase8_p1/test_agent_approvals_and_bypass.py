@@ -71,6 +71,9 @@ def test_trading_impacting_command_auto_approval_submits_evidence(tmp_path: Path
         transport=httpx.MockTransport(handler),
         verify_cloud_signatures=False,
     )
+    # Mark version as negotiated for test purposes (Design Doc 10.3)
+    cloud_client._version_negotiated = True
+    cloud_client._negotiated_version = "1.0.0"
 
     daemon = AgentDaemon(
         DaemonConfig(
@@ -139,6 +142,9 @@ def test_manual_local_approval_submission(tmp_path: Path):
         transport=httpx.MockTransport(handler),
         verify_cloud_signatures=False,
     )
+    # Mark version as negotiated for test purposes (Design Doc 10.3)
+    cloud_client._version_negotiated = True
+    cloud_client._negotiated_version = "1.0.0"
 
     daemon = AgentDaemon(
         DaemonConfig(
@@ -195,6 +201,9 @@ def test_cloud_cannot_bypass_trading_impacting_approval(tmp_path: Path):
         transport=httpx.MockTransport(handler),
         verify_cloud_signatures=False,
     )
+    # Mark version as negotiated for test purposes (Design Doc 10.3)
+    cloud_client._version_negotiated = True
+    cloud_client._negotiated_version = "1.0.0"
 
     daemon = AgentDaemon(
         DaemonConfig(

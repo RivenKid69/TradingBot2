@@ -18,6 +18,7 @@ Provides REST API for:
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
 
@@ -26,6 +27,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from .database import check_db_health, close_engine, init_db
+from .middleware.audit_middleware import AuditMiddleware, AuditConfig
+from .middleware.agent_signature import (
+    AgentSignatureMiddleware,
+    SignatureConfig,
+    get_agent_public_key_from_db,
+)
+from .middleware.telemetry_validation import TelemetryValidationMiddleware
 from .routers import (
     agent_blobs,
     agent_lifecycle,
@@ -76,6 +84,57 @@ Cloud CANNOT send order-like payloads. All trading decisions
 are made locally by the Agent. Cloud only sends lifecycle commands.
 """
 APP_VERSION = "1.0.0"
+
+
+def _add_security_middleware(app: FastAPI) -> None:
+    """
+    Add security middleware to the application.
+
+    Design Doc compliance:
+    - AuditMiddleware: Logs all sensitive operations
+    - AgentSignatureMiddleware: Verifies agent request signatures
+    - TelemetryValidationMiddleware: Validates telemetry data
+
+    Middleware order matters: they execute in reverse order of registration.
+    """
+    is_production = os.environ.get("CCEA_ENV", "development") == "production"
+
+    # 1. Audit middleware - logs all sensitive operations
+    audit_config = AuditConfig(
+        enabled=True,
+        log_request_body=not is_production,  # Only in dev for debugging
+        log_response_body=False,  # Never log response bodies
+        sensitive_paths={
+            "/api/v1/auth/",
+            "/api/v1/agent/",
+            "/api/v1/commands/",
+            "/api/v1/agents/",
+            "/api/v1/deployments/",
+        },
+    )
+    app.add_middleware(AuditMiddleware, config=audit_config)
+
+    # 2. Agent signature verification middleware (Design Doc 10.2)
+    # In production, use strict mode to reject unsigned agent requests
+    signature_config = SignatureConfig(
+        strict_mode=is_production,
+        verify_timestamp=True,
+        max_timestamp_age=300,  # 5 minutes
+        log_unverified=True,
+    )
+    app.add_middleware(
+        AgentSignatureMiddleware,
+        config=signature_config,
+        get_agent_public_key=get_agent_public_key_from_db,
+    )
+
+    # 3. Telemetry validation middleware (Design Doc 13/14)
+    app.add_middleware(TelemetryValidationMiddleware)
+
+    logger.info(
+        f"Security middleware added (production_mode={is_production}, "
+        f"signature_strict={signature_config.strict_mode})"
+    )
 
 
 @asynccontextmanager
@@ -137,6 +196,9 @@ def create_app(
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+    # Security middleware (Design Doc compliance)
+    _add_security_middleware(app)
 
     # Exception handlers
     @app.exception_handler(Exception)

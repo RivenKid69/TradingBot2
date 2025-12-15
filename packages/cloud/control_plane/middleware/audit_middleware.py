@@ -51,6 +51,20 @@ _audit_context: ContextVar[Optional["AuditContext"]] = ContextVar(
 # ============================================================================
 
 @dataclass
+class AuditConfig:
+    """
+    Configuration for AuditMiddleware.
+
+    Design Doc compliance: Controls what gets logged and when.
+    """
+    enabled: bool = True
+    log_request_body: bool = False  # Only enable in development
+    log_response_body: bool = False  # Never enable in production
+    sensitive_paths: Set[str] = field(default_factory=set)
+    excluded_paths: Set[str] = field(default_factory=lambda: {"/api/v1/health/"})
+
+
+@dataclass
 class AuditEntry:
     """Audit entry data."""
     action: AuditAction
@@ -488,6 +502,11 @@ class AuditMiddleware(BaseHTTPMiddleware):
 
     Logs access to sensitive endpoints and resources.
     """
+
+    def __init__(self, app, config: Optional[AuditConfig] = None):
+        """Initialize middleware with optional configuration."""
+        super().__init__(app)
+        self.config = config or AuditConfig()
 
     async def dispatch(
         self,

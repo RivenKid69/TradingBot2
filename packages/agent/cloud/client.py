@@ -113,6 +113,10 @@ class CloudClient:
         self._last_ok_at: Optional[datetime] = None
         self._last_error: Optional[str] = None
 
+        # Version negotiation (Design Doc 10.3/10.4)
+        self._negotiated_version: Optional[str] = None
+        self._version_negotiation_required = True
+
         # Cloud signature verification (Design Doc 10.2)
         self._verify_cloud_signatures = verify_cloud_signatures
         self._signature_verifier = signature_verifier or CloudSignatureVerifier(
@@ -170,14 +174,23 @@ class CloudClient:
         self._client.close()
 
     def _signed_headers(self, body: Optional[bytes]) -> Dict[str, str]:
+        """
+        Build signed headers for outbound request.
+
+        Design Doc 10.2: bytes-to-sign = body_bytes + b"|" + timestamp_iso
+        This ensures timestamp is included in signature for replay protection.
+        """
         now = datetime.now(timezone.utc).isoformat()
         payload = body if body is not None else b""
-        signature = sign_message(payload, self._identity.private_key())
+        # Design Doc 10.2: Include timestamp in signed message for replay protection
+        message_to_sign = payload + b"|" + now.encode("utf-8")
+        signature = sign_message(message_to_sign, self._identity.private_key())
         return {
             "X-CCEA-Timestamp": now,
             "X-CCEA-Signature": signature,
             "X-CCEA-Signature-Alg": self._identity.algorithm,
-            "X-CCEA-Public-Key-Fingerprint": self._identity.public_key_fingerprint(),
+            # Use consistent header name with middleware
+            "X-CCEA-Key-Fingerprint": self._identity.public_key_fingerprint(),
         }
 
     def _request(
@@ -270,12 +283,110 @@ class CloudClient:
             next_heartbeat_sec=int(data.get("next_heartbeat_sec", 60)),
         )
 
+    def negotiate_version(
+        self,
+        *,
+        min_supported: str = "1.0.0",
+        max_supported: str = "1.0.0",
+        preferred: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Negotiate protocol version with Cloud.
+
+        Design Doc 10.3/10.4: Version MUST be negotiated before commands.
+
+        Args:
+            min_supported: Agent's minimum supported version
+            max_supported: Agent's maximum supported version
+            preferred: Agent's preferred version
+
+        Returns:
+            Negotiation result dict
+
+        Raises:
+            CloudClientError: If negotiation fails
+        """
+        payload = {
+            "min_supported": min_supported,
+            "max_supported": max_supported,
+        }
+        if preferred:
+            payload["preferred"] = preferred
+
+        resp = self._request(
+            "POST",
+            "/api/v1/agent/negotiate-version",
+            json_body=payload,
+            auth_required=True,
+        )
+        data = resp.json()
+
+        # Store negotiated version
+        if data.get("status") == "SUCCESS" and data.get("selected_version"):
+            self._negotiated_version = data["selected_version"]
+            self._version_negotiation_required = False
+
+        return data
+
+    @property
+    def negotiated_version(self) -> Optional[str]:
+        """Get the negotiated protocol version."""
+        return self._negotiated_version
+
+    def _ensure_version_negotiated(self) -> None:
+        """
+        Ensure version has been negotiated.
+
+        Design Doc 10.3/10.4: Version MUST be negotiated before commands.
+
+        Raises:
+            CloudClientError: If version not yet negotiated
+        """
+        if self._version_negotiation_required and not self._negotiated_version:
+            raise CloudClientError(
+                "Protocol version not negotiated. Call negotiate_version() first."
+            )
+
+    def _request_with_version(
+        self,
+        method: str,
+        path: str,
+        *,
+        json_body: Optional[Dict[str, Any]] = None,
+        auth_required: bool = True,
+    ) -> httpx.Response:
+        """Make request with version header."""
+        headers: Dict[str, str] = {}
+        body_bytes = _canonical_json_bytes(json_body) if json_body is not None else None
+        headers.update(self._signed_headers(body_bytes))
+
+        # Add negotiated version header
+        if self._negotiated_version:
+            headers["X-Protocol-Version"] = self._negotiated_version
+
+        if auth_required:
+            if not self._access_token:
+                raise CloudClientError("Missing access_token for authenticated request")
+            headers["Authorization"] = f"Bearer {self._access_token}"
+
+        try:
+            resp = self._client.request(method, path, json=json_body, headers=headers)
+            resp.raise_for_status()
+            self._last_ok_at = datetime.now(timezone.utc)
+            self._last_error = None
+            return resp
+        except Exception as e:
+            self._last_error = str(e)
+            raise
+
     def poll_commands(self, *, limit: int = 10) -> CommandPollResult:
         """
         Poll for pending commands from Cloud.
 
         Design Doc 10.2: All commands MUST be signed by Cloud.
         Agent MUST verify signatures before processing.
+
+        Design Doc 10.3/10.4: Version MUST be negotiated before polling.
 
         Args:
             limit: Maximum number of commands to fetch
@@ -285,8 +396,12 @@ class CloudClient:
 
         Raises:
             SignatureVerificationError: If any command has invalid signature
+            CloudClientError: If version not negotiated
         """
-        resp = self._request(
+        # Design Doc 10.3/10.4: Ensure version negotiated
+        self._ensure_version_negotiated()
+
+        resp = self._request_with_version(
             "GET",
             f"/api/v1/agent/commands/poll?limit={int(limit)}",
             auth_required=True,
@@ -311,7 +426,9 @@ class CloudClient:
         )
 
     def acknowledge_command(self, command_id: UUID) -> CommandAckResult:
-        resp = self._request(
+        """Acknowledge receipt of a command."""
+        self._ensure_version_negotiated()
+        resp = self._request_with_version(
             "POST",
             f"/api/v1/agent/commands/{command_id}/ack",
             auth_required=True,
@@ -333,6 +450,8 @@ class CloudClient:
         diff_summary: Optional[Dict[str, Any]] = None,
         reason: Optional[str] = None,
     ) -> Dict[str, Any]:
+        """Submit local approval for a command."""
+        self._ensure_version_negotiated()
         payload: Dict[str, Any] = {
             "approved": bool(approved),
             "evidence_hash": evidence_hash,
@@ -340,7 +459,7 @@ class CloudClient:
             "diff_summary": diff_summary,
             "reason": reason,
         }
-        resp = self._request(
+        resp = self._request_with_version(
             "POST",
             f"/api/v1/agent/commands/{command_id}/approval",
             json_body=payload,
@@ -356,12 +475,14 @@ class CloudClient:
         result: Optional[Dict[str, Any]] = None,
         error_message: Optional[str] = None,
     ) -> CommandResultAck:
+        """Submit command execution result."""
+        self._ensure_version_negotiated()
         payload: Dict[str, Any] = {
             "success": bool(success),
             "result": result,
             "error_message": error_message,
         }
-        resp = self._request(
+        resp = self._request_with_version(
             "POST",
             f"/api/v1/agent/commands/{command_id}/result",
             json_body=payload,

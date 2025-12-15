@@ -299,7 +299,7 @@ class TestCloudClientSigning:
         assert "X-CCEA-Timestamp" in headers
         assert "X-CCEA-Signature" in headers
         assert "X-CCEA-Signature-Alg" in headers
-        assert "X-CCEA-Public-Key-Fingerprint" in headers
+        assert "X-CCEA-Key-Fingerprint" in headers
 
 
 class TestCloudClientHeartbeat:
@@ -379,6 +379,9 @@ class TestCloudClientCommands:
                 verify_cloud_signatures=False,  # Disable for testing
             )
             client._client = mock_client.return_value
+            # Design Doc 10.3: Mark version as negotiated for test purposes
+            client._version_negotiated = True
+            client._negotiated_version = "1.0.0"
             yield client
 
     def test_poll_commands(self, client):

@@ -61,6 +61,27 @@ from packages.agent.daemon.telemetry_buffer import (
 )
 from packages.agent.daemon.keychain import KeychainManager, KeychainConfig
 from packages.agent.daemon.sandbox import Sandbox, SandboxConfig, SandboxType
+from packages.agent.daemon.sandbox_enforcer import SandboxPermissionsEnforcer, EnforcedPermissions
+from packages.agent.daemon.artifact_manager import (
+    ArtifactManager,
+    Artifact,
+    ArtifactManifest,
+    ArtifactVerificationError,
+    ArtifactDownloadError,
+)
+from packages.agent.runner.live import LiveRunner, LiveRunnerConfig
+from packages.agent.execution.engine import LiveExecutionEngine, OrderStatus
+from packages.agent.reconciliation.reconciler import PositionReconciler, MismatchAction
+from packages.agent.reconciliation.journal import (
+    OrderJournal,
+    JournalStatus,
+    CommandJournal,
+    CommandStatus as CommandJournalStatus,
+)
+from packages.agent.policy.firewall import PolicyFirewall, PolicyConfig
+from packages.agent.policy.hard_caps import HardCapEnforcer, HardCaps
+from packages.agent.policy.risk_checker import RiskChecker, PortfolioState
+from packages.shared.contracts.config import ExecutionMode
 
 
 # Constants
@@ -194,6 +215,583 @@ class DaemonStatus:
         }
 
 
+@dataclass
+class RunControllerConfig:
+    """
+    Configuration for RunController.
+
+    Design Doc Section 4.2/5.1/9.3: Live run controller configuration.
+    """
+    # Execution mode
+    execution_mode: ExecutionMode = ExecutionMode.LIVE
+
+    # Sandbox
+    sandbox_enabled: bool = True
+    sandbox_type: SandboxType = SandboxType.PROCESS
+    deny_outbound_by_default: bool = True
+    readonly_fs: bool = True
+
+    # Reconciliation
+    reconcile_on_start: bool = True
+    reconcile_interval_seconds: int = RECONCILIATION_INTERVAL
+    reconcile_on_restart: bool = True
+    safe_halt_on_mismatch: bool = True
+
+    # Policy
+    require_policy_validation: bool = True
+    require_risk_checks: bool = True
+
+    # Idempotency (Design Doc 9.5)
+    deployment_id: Optional[str] = None
+    run_id: Optional[str] = None
+
+
+class RunController:
+    """
+    Live Run Controller - Orchestrates live trading execution.
+
+    Design Doc Sections 4.2/5.1/9.3:
+    - Raises sandbox with policy enforcement
+    - Loads artifact/manifest via ArtifactManager
+    - Runs strategy in isolated process/container
+    - Routes OrderIntents through PolicyFirewall + HardCapEnforcer + RiskChecker
+    - Executes via LiveExecutionEngine
+    - Journals via OrderJournal
+    - Performs mandatory reconciliation
+
+    AGENT ZONE ONLY - Never in Cloud zone.
+
+    Usage:
+        controller = RunController(config)
+
+        # Initialize with artifact
+        controller.initialize(artifact_manager, artifact_id)
+
+        # Start live run
+        success, error = controller.start_run()
+
+        # Tick loop
+        while running:
+            controller.tick(market_data)
+
+        # Stop
+        controller.stop_run()
+    """
+
+    def __init__(
+        self,
+        config: Optional[RunControllerConfig] = None,
+        policy_firewall: Optional[PolicyFirewall] = None,
+        hard_cap_enforcer: Optional[HardCapEnforcer] = None,
+        risk_checker: Optional[RiskChecker] = None,
+        order_journal: Optional[OrderJournal] = None,
+        reconciler: Optional[PositionReconciler] = None,
+        broker_connector: Optional[Any] = None,
+        kill_switch: Optional[KillSwitchManager] = None,
+        on_intent: Optional[Callable[[Any], None]] = None,
+        on_order: Optional[Callable[[Any], None]] = None,
+        on_error: Optional[Callable[[str], None]] = None,
+    ):
+        """
+        Initialize run controller.
+
+        Args:
+            config: Controller configuration
+            policy_firewall: Policy validation
+            hard_cap_enforcer: Hard cap enforcement
+            risk_checker: Risk checking
+            order_journal: Order journaling
+            reconciler: Position reconciliation
+            broker_connector: Broker for order execution
+            kill_switch: Kill switch manager
+            on_intent: Callback for intents
+            on_order: Callback for orders
+            on_error: Callback for errors
+        """
+        self.config = config or RunControllerConfig()
+
+        # Components
+        self._policy_firewall = policy_firewall
+        self._hard_cap_enforcer = hard_cap_enforcer
+        self._risk_checker = risk_checker
+        self._order_journal = order_journal or OrderJournal()
+        self._reconciler = reconciler
+        self._broker_connector = broker_connector
+        self._kill_switch = kill_switch
+
+        # Sandbox and artifact management
+        self._sandbox: Optional[Sandbox] = None
+        self._sandbox_enforcer: Optional[SandboxPermissionsEnforcer] = None
+        self._artifact_manager: Optional[ArtifactManager] = None
+        self._current_artifact: Optional[Artifact] = None
+        self._current_manifest: Optional[ArtifactManifest] = None
+
+        # Execution engine
+        self._execution_engine: Optional[LiveExecutionEngine] = None
+        self._live_runner: Optional[LiveRunner] = None
+
+        # Callbacks
+        self._on_intent = on_intent
+        self._on_order = on_order
+        self._on_error = on_error
+
+        # State
+        self._is_running = False
+        self._is_initialized = False
+        self._run_id: Optional[str] = None
+        self._portfolio_state = PortfolioState()
+
+        # IPC queues for sandbox communication
+        self._intent_queue: Optional[Any] = None  # multiprocessing.Queue
+        self._command_queue: Optional[Any] = None
+
+        # Threading
+        self._lock = threading.RLock()
+        self._stop_event = threading.Event()
+        self._reconcile_thread: Optional[threading.Thread] = None
+
+    @property
+    def is_running(self) -> bool:
+        """Check if run controller is active."""
+        return self._is_running
+
+    @property
+    def is_initialized(self) -> bool:
+        """Check if run controller is initialized."""
+        return self._is_initialized
+
+    def initialize(
+        self,
+        artifact_manager: ArtifactManager,
+        artifact_id: Optional[str] = None,
+        manifest: Optional[ArtifactManifest] = None,
+    ) -> bool:
+        """
+        Initialize run controller with artifact.
+
+        Args:
+            artifact_manager: Artifact manager instance
+            artifact_id: Artifact ID to use (if None, uses active artifact)
+            manifest: Optional manifest override
+
+        Returns:
+            True if initialization successful
+        """
+        with self._lock:
+            if self._is_initialized:
+                return True
+
+            try:
+                self._artifact_manager = artifact_manager
+
+                # Get artifact
+                if artifact_id:
+                    self._current_artifact = artifact_manager.get_artifact(artifact_id)
+                else:
+                    self._current_artifact = artifact_manager.get_active_artifact()
+
+                if self._current_artifact:
+                    self._current_manifest = self._current_artifact.manifest
+                elif manifest:
+                    self._current_manifest = manifest
+                else:
+                    self._current_manifest = ArtifactManifest.default_restrictive()
+
+                # Initialize sandbox enforcer
+                self._sandbox_enforcer = SandboxPermissionsEnforcer(
+                    on_violation=self._handle_sandbox_violation,
+                )
+
+                # Initialize sandbox from manifest
+                if self.config.sandbox_enabled:
+                    self._init_sandbox()
+
+                # Initialize execution engine
+                self._init_execution_engine()
+
+                # Initialize live runner if artifact available
+                if self._current_artifact and self._current_artifact.extracted_path:
+                    self._init_live_runner()
+
+                self._is_initialized = True
+                return True
+
+            except Exception as e:
+                if self._on_error:
+                    self._on_error(f"RunController initialization failed: {e}")
+                return False
+
+    def _init_sandbox(self) -> None:
+        """Initialize sandbox with enforced permissions from manifest."""
+        if not self._sandbox_enforcer or not self._current_manifest:
+            return
+
+        # Compute enforced permissions from manifest + local policy
+        permissions = self._sandbox_enforcer.compute_permissions(
+            manifest=self._current_manifest,
+            artifact_id=self._current_artifact.artifact_id if self._current_artifact else "",
+        )
+
+        # Apply Design Doc 9.2: deny-by-default egress and read-only FS
+        sandbox_config = SandboxConfig(
+            sandbox_type=self.config.sandbox_type,
+            cpu_limit=permissions.max_cpu_percent / 100.0,
+            memory_limit_mb=permissions.max_memory_mb,
+            timeout_seconds=permissions.max_execution_time_seconds,
+            network_enabled=permissions.network_enabled,
+            egress_allowlist=permissions.egress_allowlist,
+            deny_outbound_by_default=self.config.deny_outbound_by_default,
+            readonly_fs=self.config.readonly_fs or permissions.filesystem_readonly,
+            allowed_paths=[Path(p) for p in permissions.allowed_paths],
+        )
+
+        self._sandbox = Sandbox(
+            config=sandbox_config,
+            on_error=self._handle_sandbox_error,
+        )
+
+    def _init_execution_engine(self) -> None:
+        """Initialize live execution engine."""
+        # Generate deployment_id and run_id for idempotency
+        deployment_id = self.config.deployment_id or str(uuid4())
+        run_id = self.config.run_id or str(uuid4())
+
+        # Broker submit function
+        broker_submit = None
+        if self._broker_connector and hasattr(self._broker_connector, "submit_order"):
+            broker_submit = self._create_broker_submit_fn()
+
+        self._execution_engine = LiveExecutionEngine(
+            policy_firewall=self._policy_firewall or PolicyFirewall(),
+            hard_cap_enforcer=self._hard_cap_enforcer or HardCapEnforcer(),
+            risk_checker=self._risk_checker or RiskChecker(),
+            broker_submit=broker_submit,
+            broker_name=self._broker_connector.name if self._broker_connector and hasattr(self._broker_connector, "name") else "default",
+            order_journal=self._order_journal,
+            deployment_id=deployment_id,
+            run_id=run_id,
+        )
+
+    def _create_broker_submit_fn(self) -> Callable:
+        """Create broker submit function."""
+        def submit(order) -> Tuple[bool, Optional[str], Optional[str]]:
+            try:
+                result = self._broker_connector.submit_order(
+                    symbol=order.symbol,
+                    side=order.side,
+                    quantity=order.quantity,
+                    order_type=order.order_type.value,
+                    limit_price=order.limit_price,
+                    stop_price=order.stop_price,
+                    time_in_force=order.time_in_force,
+                    client_order_id=order.client_order_id,
+                )
+                return (result.success, result.broker_order_id, result.error_message if not result.success else None)
+            except Exception as e:
+                return (False, None, str(e))
+        return submit
+
+    def _init_live_runner(self) -> None:
+        """Initialize live runner for strategy execution."""
+        if not self._current_artifact or not self._current_artifact.extracted_path:
+            return
+
+        runner_config = LiveRunnerConfig(
+            mode=self.config.execution_mode,
+        )
+
+        self._live_runner = LiveRunner(config=runner_config)
+
+    def start_run(
+        self,
+        run_id: Optional[str] = None,
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Start a live trading run.
+
+        Design Doc 9.3/9.5:
+        - Performs mandatory reconciliation before first tick
+        - Starts sandbox
+        - Initializes strategy in isolated process
+        - Begins execution loop
+
+        Args:
+            run_id: Optional run ID
+
+        Returns:
+            (success, error_message)
+        """
+        with self._lock:
+            if self._is_running:
+                return True, None
+
+            if not self._is_initialized:
+                return False, "RunController not initialized"
+
+            try:
+                self._run_id = run_id or str(uuid4())
+                self._stop_event.clear()
+
+                # Design Doc 9.5: Mandatory reconciliation on start
+                if self.config.reconcile_on_start:
+                    reconcile_result = self._perform_reconciliation()
+                    if not reconcile_result.success and self.config.safe_halt_on_mismatch:
+                        return False, f"Reconciliation failed: {reconcile_result.error} - safe halt"
+
+                # Start sandbox
+                if self._sandbox:
+                    if not self._sandbox.start():
+                        return False, "Failed to start sandbox"
+
+                # Start reconciliation thread
+                if self.config.reconcile_interval_seconds > 0:
+                    self._start_reconciliation_thread()
+
+                self._is_running = True
+                return True, None
+
+            except Exception as e:
+                return False, str(e)
+
+    def stop_run(self, reason: str = "user_requested") -> bool:
+        """
+        Stop the current run.
+
+        Args:
+            reason: Reason for stopping
+
+        Returns:
+            True if stopped successfully
+        """
+        with self._lock:
+            if not self._is_running:
+                return True
+
+            self._stop_event.set()
+
+            # Stop reconciliation thread
+            if self._reconcile_thread:
+                self._reconcile_thread.join(timeout=5)
+
+            # Stop sandbox
+            if self._sandbox:
+                self._sandbox.stop()
+
+            # Final reconciliation
+            if self.config.reconcile_on_restart:
+                self._perform_reconciliation()
+
+            self._is_running = False
+            return True
+
+    def tick(
+        self,
+        market_data: Optional[Dict[str, Any]] = None,
+        portfolio_state: Optional[PortfolioState] = None,
+    ) -> List[Any]:
+        """
+        Execute one tick of the trading loop.
+
+        Design Doc 5.1: Main execution tick
+        - Receives market data
+        - Gets intents from strategy (via sandbox IPC)
+        - Validates intents through policy stack
+        - Executes valid intents
+
+        Args:
+            market_data: Current market data
+            portfolio_state: Current portfolio state
+
+        Returns:
+            List of execution results
+        """
+        if not self._is_running:
+            return []
+
+        results = []
+
+        # Update portfolio state
+        if portfolio_state:
+            self._portfolio_state = portfolio_state
+            if self._execution_engine:
+                self._execution_engine.update_portfolio(portfolio_state)
+
+        # Check kill switch
+        if self._kill_switch and self._kill_switch.is_triggered:
+            return []
+
+        # Get intents from strategy via IPC (if sandbox running)
+        intents = self._get_strategy_intents(market_data)
+
+        # Execute each intent
+        for intent in intents:
+            if self._on_intent:
+                self._on_intent(intent)
+
+            result = self._execute_intent(intent)
+            results.append(result)
+
+            if self._on_order and result.order:
+                self._on_order(result.order)
+
+        return results
+
+    def _get_strategy_intents(self, market_data: Optional[Dict[str, Any]]) -> List[Any]:
+        """Get intents from strategy via sandbox IPC."""
+        # This is a simplified implementation
+        # Full implementation would communicate with strategy process via IPC
+        intents = []
+
+        if self._intent_queue:
+            try:
+                while not self._intent_queue.empty():
+                    intent = self._intent_queue.get_nowait()
+                    intents.append(intent)
+            except Exception:
+                pass
+
+        return intents
+
+    def _execute_intent(self, intent: Any) -> Any:
+        """Execute a single intent through the policy stack."""
+        if not self._execution_engine:
+            from packages.agent.execution.engine import ExecutionResult
+            return ExecutionResult(
+                success=False,
+                error_message="Execution engine not initialized",
+            )
+
+        # Execute through engine (handles policy validation)
+        return self._execution_engine.execute(
+            intent=intent,
+            current_price=None,  # Would come from market data
+            origin="runner",  # Local origin
+        )
+
+    def _perform_reconciliation(self) -> Any:
+        """
+        Perform position reconciliation.
+
+        Design Doc 9.5: Mandatory reconciliation
+        - Reconciles broker positions with local state
+        - Safe-halts on unrecoverable mismatches
+        """
+        @dataclass
+        class ReconcileResult:
+            success: bool = True
+            error: Optional[str] = None
+            mismatches: List[Any] = field(default_factory=list)
+
+        if not self._reconciler:
+            return ReconcileResult()
+
+        try:
+            # Fetch broker positions
+            broker_positions = {}
+            if self._broker_connector and hasattr(self._broker_connector, "fetch_positions"):
+                broker_positions = self._broker_connector.fetch_positions()
+
+            # Fetch broker open orders
+            broker_orders = {}
+            if self._broker_connector and hasattr(self._broker_connector, "fetch_order_status"):
+                broker_orders = self._broker_connector.get_open_orders()
+
+            # Reconcile positions
+            result = self._reconciler.reconcile(
+                local_positions=self._portfolio_state.positions,
+                broker_positions=broker_positions,
+            )
+
+            # Reconcile orders
+            order_result = self._reconciler.reconcile_orders(
+                local_orders={},  # From order journal
+                broker_orders={str(o.order_id): o for o in broker_orders} if broker_orders else {},
+            )
+
+            if not result.is_consistent or not order_result.is_consistent:
+                # Check if safe-halt is required
+                if self.config.safe_halt_on_mismatch:
+                    return ReconcileResult(
+                        success=False,
+                        error="Position mismatch detected - safe halt",
+                        mismatches=result.mismatches + order_result.mismatches,
+                    )
+
+            return ReconcileResult(success=True)
+
+        except Exception as e:
+            return ReconcileResult(success=False, error=str(e))
+
+    def _start_reconciliation_thread(self) -> None:
+        """Start background reconciliation thread."""
+        self._reconcile_thread = threading.Thread(
+            target=self._reconciliation_loop,
+            daemon=True,
+        )
+        self._reconcile_thread.start()
+
+    def _reconciliation_loop(self) -> None:
+        """Background reconciliation loop."""
+        while not self._stop_event.is_set():
+            try:
+                result = self._perform_reconciliation()
+                if not result.success and self.config.safe_halt_on_mismatch:
+                    # Trigger kill switch on reconciliation failure
+                    if self._kill_switch:
+                        reason = HaltReason(
+                            reason_type=HaltReasonType.RECONCILIATION_MISMATCH,
+                            severity=HaltSeverity.CRITICAL,
+                            message=f"Reconciliation failed: {result.error}",
+                            trigger_source="RunController",
+                        )
+                        self._kill_switch.trigger(reason, HaltAction.HALT_ONLY)
+
+            except Exception:
+                pass
+
+            self._stop_event.wait(self.config.reconcile_interval_seconds)
+
+    def _handle_sandbox_violation(self, violation: Any) -> None:
+        """Handle sandbox permission violation."""
+        if self._on_error:
+            self._on_error(f"Sandbox violation: {violation.details}")
+
+    def _handle_sandbox_error(self, error: str) -> None:
+        """Handle sandbox error."""
+        if self._on_error:
+            self._on_error(f"Sandbox error: {error}")
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get run controller status."""
+        return {
+            "is_running": self._is_running,
+            "is_initialized": self._is_initialized,
+            "run_id": self._run_id,
+            "has_sandbox": self._sandbox is not None,
+            "sandbox_running": self._sandbox.is_running if self._sandbox else False,
+            "has_execution_engine": self._execution_engine is not None,
+            "has_reconciler": self._reconciler is not None,
+            "artifact_id": self._current_artifact.artifact_id if self._current_artifact else None,
+            "artifact_name": self._current_artifact.name if self._current_artifact else None,
+            "execution_mode": self.config.execution_mode.value if hasattr(self.config.execution_mode, "value") else str(self.config.execution_mode),
+        }
+
+    def set_broker_connector(self, connector: Any) -> None:
+        """Set broker connector."""
+        self._broker_connector = connector
+        # Update execution engine's broker submit function
+        if self._execution_engine and connector:
+            self._execution_engine._broker_submit = self._create_broker_submit_fn()
+
+    def set_reconciler(self, reconciler: PositionReconciler) -> None:
+        """Set position reconciler."""
+        self._reconciler = reconciler
+
+    def set_kill_switch(self, kill_switch: KillSwitchManager) -> None:
+        """Set kill switch manager."""
+        self._kill_switch = kill_switch
+
+
 class AgentDaemon:
     """
     CCEA Agent Daemon (agentd) - Core lifecycle manager.
@@ -268,16 +866,25 @@ class AgentDaemon:
         self._sandbox: Optional[Sandbox] = None
         self._approval_manager: ApprovalManager = ApprovalManager()
         self._cloud_client: Optional[CloudClient] = None
-        self._executed_command_ids: set[str] = set()
+
+        # Cloud command tracking (Design Doc 10.4.2: durable journal for idempotency)
+        self._command_journal: Optional[CommandJournal] = None
+        self._executed_command_ids: set[str] = set()  # In-memory cache backed by journal
         self._pending_cloud_approval_by_command_id: Dict[str, Any] = {}
         self._submitted_cloud_approvals: set[str] = set()
 
         # External components (set via setters)
-        self._policy_firewall: Optional[Any] = None
-        self._hard_cap_enforcer: Optional[Any] = None
-        self._live_runner: Optional[Any] = None
-        self._reconciler: Optional[Any] = None
+        self._policy_firewall: Optional[PolicyFirewall] = None
+        self._hard_cap_enforcer: Optional[HardCapEnforcer] = None
+        self._live_runner: Optional[LiveRunner] = None
+        self._reconciler: Optional[PositionReconciler] = None
         self._broker_connector: Optional[Any] = None
+
+        # Run controller (Design Doc 4.2/5.1/9.3)
+        self._run_controller: Optional[RunController] = None
+        self._run_controller_config: Optional[RunControllerConfig] = None
+        self._artifact_manager: Optional[ArtifactManager] = None
+        self._order_journal: Optional[OrderJournal] = None
 
         # Threading
         self._lock = threading.RLock()
@@ -347,6 +954,18 @@ class AgentDaemon:
                 self._init_telemetry_buffer()
                 self._init_preflight_checker()
                 self._init_cloud_client()
+
+                # Initialize sandbox from config (Design Doc 9.2)
+                self._init_sandbox()
+
+                # Initialize artifact manager (Design Doc Phase 4)
+                self._init_artifact_manager()
+
+                # Initialize run controller (Design Doc 4.2/5.1/9.3)
+                self._init_run_controller()
+
+                # Initialize command journal (Design Doc 10.4.2)
+                self._init_command_journal()
 
                 # Load saved state
                 self._load_state()
@@ -679,6 +1298,146 @@ class AgentDaemon:
             time_checker=self._time_checker,
         )
 
+    def _init_sandbox(self) -> None:
+        """
+        Initialize sandbox from config.
+
+        Design Doc Section 9.2:
+        - deny-by-default egress
+        - read-only filesystem
+        - process/container isolation
+        """
+        if not self.config.sandbox_config:
+            # Create default sandbox config with secure defaults
+            self.config.sandbox_config = SandboxConfig(
+                sandbox_type=SandboxType.PROCESS,
+                deny_outbound_by_default=True,
+                readonly_fs=True,
+            )
+
+        self._sandbox = Sandbox(
+            config=self.config.sandbox_config,
+            on_error=self._handle_sandbox_error,
+        )
+
+    def _handle_sandbox_error(self, error: str) -> None:
+        """Handle sandbox error."""
+        self._log_event(TelemetryEventType.ERROR, {
+            "error_type": "SandboxError",
+            "message": error,
+        })
+
+    def _init_artifact_manager(self) -> None:
+        """
+        Initialize artifact manager.
+
+        Design Doc Phase 4:
+        - Manages artifact download/verification
+        - Supports OCI and ZIP formats
+        - Pinned digest enforcement
+        """
+        artifact_cache_dir = self.config.data_dir / "artifacts"
+        self._artifact_manager = ArtifactManager(
+            cache_dir=artifact_cache_dir,
+            on_progress=self._handle_artifact_progress,
+        )
+
+    def _handle_artifact_progress(self, artifact_id: str, progress: float) -> None:
+        """Handle artifact download progress."""
+        self._log_event(TelemetryEventType.STATE_CHANGE, {
+            "message": f"Artifact download progress: {progress:.1f}%",
+            "artifact_id": artifact_id,
+            "progress_pct": progress,
+        })
+
+    def _init_run_controller(self) -> None:
+        """
+        Initialize run controller for live execution.
+
+        Design Doc Sections 4.2/5.1/9.3:
+        - Orchestrates live trading execution
+        - Integrates sandbox, policy firewall, execution engine
+        - Mandatory reconciliation
+        """
+        # Create run controller config
+        self._run_controller_config = RunControllerConfig(
+            execution_mode=ExecutionMode.LIVE,
+            sandbox_enabled=self.config.sandbox_config is not None,
+            sandbox_type=self.config.sandbox_config.sandbox_type if self.config.sandbox_config else SandboxType.PROCESS,
+            deny_outbound_by_default=True,
+            readonly_fs=True,
+            reconcile_on_start=True,
+            reconcile_interval_seconds=RECONCILIATION_INTERVAL,
+            safe_halt_on_mismatch=True,
+        )
+
+        # Initialize order journal
+        journal_path = self.config.data_dir / "order_journal.db"
+        self._order_journal = OrderJournal(db_path=journal_path)
+
+        # Create run controller
+        self._run_controller = RunController(
+            config=self._run_controller_config,
+            policy_firewall=self._policy_firewall,
+            hard_cap_enforcer=self._hard_cap_enforcer,
+            order_journal=self._order_journal,
+            reconciler=self._reconciler,
+            broker_connector=self._broker_connector,
+            kill_switch=self._kill_switch,
+            on_intent=self._handle_run_controller_intent,
+            on_order=self._handle_run_controller_order,
+            on_error=self._handle_run_controller_error,
+        )
+
+        # Initialize run controller with artifact manager
+        if self._artifact_manager:
+            self._run_controller.initialize(self._artifact_manager)
+
+    def _handle_run_controller_intent(self, intent: Any) -> None:
+        """Handle intent from run controller."""
+        self._log_event(TelemetryEventType.TRADE, {
+            "event": "intent_received",
+            "intent_id": str(intent.intent_id) if hasattr(intent, "intent_id") else "unknown",
+            "symbol": intent.symbol if hasattr(intent, "symbol") else "unknown",
+        })
+
+    def _handle_run_controller_order(self, order: Any) -> None:
+        """Handle order from run controller."""
+        self._log_event(TelemetryEventType.TRADE, {
+            "event": "order_submitted",
+            "order_id": str(order.order_id) if hasattr(order, "order_id") else "unknown",
+            "symbol": order.symbol if hasattr(order, "symbol") else "unknown",
+            "side": order.side if hasattr(order, "side") else "unknown",
+        })
+        self._status.orders_today += 1
+
+    def _handle_run_controller_error(self, error: str) -> None:
+        """Handle error from run controller."""
+        self._log_event(TelemetryEventType.ERROR, {
+            "error_type": "RunControllerError",
+            "message": error,
+        })
+
+    def _init_command_journal(self) -> None:
+        """
+        Initialize command journal for idempotent command delivery.
+
+        Design Doc 10.4.2:
+        - Durable journal persists command execution state across restarts
+        - Prevents duplicate execution of the same command
+        - Recovers executed command IDs on startup
+        """
+        journal_path = self.config.data_dir / "command_journal.db"
+        self._command_journal = CommandJournal(db_path=journal_path)
+
+        # Restore executed command IDs from journal (Design Doc 10.4.2)
+        self._executed_command_ids = self._command_journal.get_executed_command_ids()
+
+        self._log_event(TelemetryEventType.STATE_CHANGE, {
+            "message": "Command journal initialized",
+            "restored_command_count": len(self._executed_command_ids),
+        })
+
     # ===== Callbacks =====
 
     def _handle_kill_switch(self, reason: HaltReason) -> None:
@@ -899,6 +1658,8 @@ class AgentDaemon:
         """
         Process polled commands from Cloud.
 
+        Design Doc 10.4.2: Uses CommandJournal for idempotent command delivery.
+
         Security invariant:
         - TRADING_IMPACTING commands MUST require local approval; Cloud cannot bypass by flipping flags.
         """
@@ -907,7 +1668,12 @@ class AgentDaemon:
 
         for cmd in commands:
             cmd_id = str(cmd.id)
+
+            # Check both in-memory cache and durable journal (Design Doc 10.4.2)
             if cmd_id in self._executed_command_ids:
+                continue
+            if self._command_journal and self._command_journal.is_executed(cmd_id, cmd.idempotency_key):
+                self._executed_command_ids.add(cmd_id)  # Update in-memory cache
                 continue
 
             # Fail-closed change class parsing
@@ -921,6 +1687,15 @@ class AgentDaemon:
             # If Cloud tries to mark trading-impacting as not requiring approval -> refuse execution.
             if trading_impacting and not cmd.requires_approval:
                 try:
+                    # Log to journal as received then failed (Design Doc 10.4.2)
+                    if self._command_journal:
+                        self._command_journal.log_received(
+                            cmd_id, cmd.idempotency_key, cmd.command_type, cmd.payload_ref
+                        )
+                        self._command_journal.mark_failed(
+                            cmd_id, "Refused: TRADING_IMPACTING without requires_approval"
+                        )
+
                     self._cloud_client.acknowledge_command(cmd.id)
                     self._cloud_client.submit_command_result(
                         command_id=cmd.id,
@@ -977,7 +1752,22 @@ class AgentDaemon:
             except Exception:
                 continue
 
+            # Log to journal as RECEIVED before execution (Design Doc 10.4.2)
+            if self._command_journal:
+                self._command_journal.log_received(
+                    cmd_id, cmd.idempotency_key, cmd.command_type, cmd.payload_ref
+                )
+                self._command_journal.mark_in_progress(cmd_id)
+
             ok, result, err = self._execute_cloud_command(cmd)
+
+            # Update journal with result (Design Doc 10.4.2)
+            if self._command_journal:
+                if ok:
+                    self._command_journal.mark_completed(cmd_id, result)
+                else:
+                    self._command_journal.mark_failed(cmd_id, err or "Unknown error")
+
             try:
                 self._cloud_client.submit_command_result(
                     command_id=cmd.id,
@@ -1360,6 +2150,14 @@ class AgentDaemon:
             self._preflight_checker._broker_connector = connector
         if self._kill_switch_executor:
             self._kill_switch_executor.set_broker_connector(connector)
+        if self._run_controller:
+            self._run_controller.set_broker_connector(connector)
+
+    def set_reconciler(self, reconciler: PositionReconciler) -> None:
+        """Set position reconciler."""
+        self._reconciler = reconciler
+        if self._run_controller:
+            self._run_controller.set_reconciler(reconciler)
 
     def set_on_state_change(self, callback: Callable[[DaemonState], None]) -> None:
         """Set state change callback."""
