@@ -38,8 +38,37 @@ WI-DEDRIFT-01: This module is marked for deprecation.
 Canonical stack: packages/agent/*
 """
 
+from __future__ import annotations
+
+import os
 import warnings
 
+# ============================================================================
+# CI GUARDRAIL: Block import in CI environments
+# ============================================================================
+# This guardrail prevents accidental use of deprecated modules in CI.
+# Set CCEA_ALLOW_DEPRECATED=true to bypass (for migration testing only).
+
+_IN_CI = os.environ.get("CI", "").lower() in ("true", "1", "yes")
+_ALLOW_DEPRECATED = os.environ.get("CCEA_ALLOW_DEPRECATED", "").lower() in ("true", "1", "yes")
+_STRICT_DEPRECATION = os.environ.get("CCEA_STRICT_DEPRECATION", "").lower() in ("true", "1", "yes")
+
+if (_IN_CI or _STRICT_DEPRECATION) and not _ALLOW_DEPRECATED:
+    raise ImportError(
+        "\n"
+        "=" * 70 + "\n"
+        "DEPRECATED MODULE IMPORT BLOCKED\n"
+        "=" * 70 + "\n"
+        "ccea.agent is DEPRECATED and cannot be imported in CI.\n\n"
+        "Migration:\n"
+        "  from ccea.agent.daemon -> from packages.agent.daemon.agentd\n"
+        "  from ccea.agent.approval -> from packages.agent.daemon.approval_handler\n"
+        "  from ccea.agent.runner -> from packages.agent.execution.engine\n\n"
+        "To bypass (migration testing only): CCEA_ALLOW_DEPRECATED=true\n"
+        "=" * 70
+    )
+
+# Emit warning for non-CI environments
 warnings.warn(
     "ccea.agent is deprecated. Use packages.agent instead. "
     "See packages/agent/daemon/agentd.py for canonical implementation.",

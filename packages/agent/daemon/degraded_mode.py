@@ -24,9 +24,10 @@ class DegradedMode(Enum):
     Types of degraded modes.
 
     Each mode has specific behavior and restrictions.
+    Design Doc 9.6, 13.2: Cloud down / network down handling.
     """
     NORMAL = auto()  # Full functionality
-    CLOUD_UNREACHABLE = auto()  # Cloud connection lost
+    CLOUD_UNREACHABLE = auto()  # Cloud connection lost (Design Doc 9.6)
     NETWORK_DEGRADED = auto()  # Partial network issues
     DATA_FEED_STALE = auto()  # Market data is stale
     DATA_FEED_INVALID = auto()  # Market data is invalid
@@ -34,6 +35,17 @@ class DegradedMode(Enum):
     HIGH_LATENCY = auto()  # Latency exceeds threshold
     RATE_LIMITED = auto()  # Hit rate limits
     MANUAL_RESTRICT = auto()  # Manual restriction mode
+    CLOUD_GRACE_PERIOD = auto()  # In grace period after cloud loss (Design Doc 9.6)
+
+
+class TradingMode(Enum):
+    """
+    Agent trading mode.
+    Design Doc 9.6: Different behavior in BACKTEST vs PAPER vs LIVE.
+    """
+    BACKTEST = "backtest"  # No real broker, cloud optional
+    PAPER = "paper"  # Paper trading, cloud optional
+    LIVE = "live"  # Live trading, strict degradation policy
 
 
 class DegradedModeAction(Enum):
@@ -49,12 +61,22 @@ class DegradedModeAction(Enum):
 class DegradedModeConfig:
     """
     Configuration for degraded mode handling.
+
+    Design Doc 9.6, 13.2: Specific policies for LIVE mode cloud loss.
     """
+    # Trading mode (affects degradation policy)
+    trading_mode: TradingMode = TradingMode.PAPER
+
     # Thresholds
     cloud_timeout_seconds: int = 60
     data_stale_threshold_seconds: int = 30
     latency_threshold_ms: int = 2000
     broker_timeout_seconds: int = 30
+
+    # Design Doc 9.6: LIVE-specific cloud loss thresholds
+    live_cloud_grace_period_seconds: int = 300  # 5 min grace period in LIVE
+    live_cloud_max_duration_seconds: int = 3600  # 1 hour max without cloud in LIVE
+    live_force_halt_on_cloud_loss: bool = False  # Force halt if cloud lost (conservative)
 
     # Actions by mode
     cloud_unreachable_action: DegradedModeAction = DegradedModeAction.CONTINUE
@@ -62,6 +84,9 @@ class DegradedModeConfig:
     data_feed_invalid_action: DegradedModeAction = DegradedModeAction.HALT
     broker_unreachable_action: DegradedModeAction = DegradedModeAction.HALT
     high_latency_action: DegradedModeAction = DegradedModeAction.RESTRICT
+
+    # Design Doc 9.6: LIVE-specific actions (overrides above when trading_mode=LIVE)
+    live_cloud_unreachable_action: DegradedModeAction = DegradedModeAction.RESTRICT
 
     # Recovery
     auto_recover: bool = True
@@ -72,18 +97,37 @@ class DegradedModeConfig:
     notify_on_enter: bool = True
     notify_on_exit: bool = True
 
+    # Design Doc 13.2: Local telemetry when cloud is down
+    local_telemetry_enabled: bool = True
+    local_telemetry_buffer_size: int = 10000
+    local_telemetry_path: str = "/var/lib/ccea/telemetry_buffer"
+    local_telemetry_sync_on_reconnect: bool = True
+
+    def get_cloud_unreachable_action(self) -> DegradedModeAction:
+        """Get cloud unreachable action based on trading mode."""
+        if self.trading_mode == TradingMode.LIVE:
+            if self.live_force_halt_on_cloud_loss:
+                return DegradedModeAction.HALT
+            return self.live_cloud_unreachable_action
+        return self.cloud_unreachable_action
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
+            "trading_mode": self.trading_mode.value,
             "cloud_timeout_seconds": self.cloud_timeout_seconds,
             "data_stale_threshold_seconds": self.data_stale_threshold_seconds,
             "latency_threshold_ms": self.latency_threshold_ms,
             "broker_timeout_seconds": self.broker_timeout_seconds,
+            "live_cloud_grace_period_seconds": self.live_cloud_grace_period_seconds,
+            "live_cloud_max_duration_seconds": self.live_cloud_max_duration_seconds,
+            "live_force_halt_on_cloud_loss": self.live_force_halt_on_cloud_loss,
             "cloud_unreachable_action": self.cloud_unreachable_action.value,
             "data_feed_stale_action": self.data_feed_stale_action.value,
             "data_feed_invalid_action": self.data_feed_invalid_action.value,
             "broker_unreachable_action": self.broker_unreachable_action.value,
             "high_latency_action": self.high_latency_action.value,
+            "local_telemetry_enabled": self.local_telemetry_enabled,
         }
 
 

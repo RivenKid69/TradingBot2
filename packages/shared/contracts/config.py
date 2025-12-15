@@ -39,16 +39,68 @@ class ChangeClass(str, Enum):
     Classification of configuration changes.
 
     From Design Doc 7.1 - determines approval requirements.
+
+    CANONICAL SOURCE: This is the single source of truth for ChangeClass.
+    All other modules should import from here:
+    - packages/cloud/control_plane/models.py
+    - ccea/contracts/enums.py
+    - packages/agent/*
+
+    Values:
+        TRADING_IMPACTING: Changes that affect trading behavior.
+            Requires local approval at agent. Examples: position limits,
+            symbols, strategy parameters.
+
+        OPERATIONAL: Changes that affect operations but not trading.
+            May be applied remotely with audit. Examples: logging level,
+            telemetry settings, maintenance windows.
+
+        INFORMATIONAL: Read-only or no-impact changes.
+            No approval needed. Examples: status queries, metadata updates.
+
+        DATA_SENSITIVE: Changes involving sensitive data.
+            Requires approval and audit. Examples: log export, data export.
+
+        SAFETY_OPERATION: Safety-critical operations.
+            Bypass normal approval for emergency. Examples: kill switch,
+            pause trading, flatten positions.
     """
 
     # Trading-impacting - requires local approval
     TRADING_IMPACTING = "trading_impacting"
 
-    # Operational - may be applied remotely
+    # Operational - may be applied remotely with audit
     OPERATIONAL = "operational"
 
     # Informational - no approval needed
     INFORMATIONAL = "informational"
+
+    # Data-sensitive - requires approval and audit (GDPR/compliance)
+    DATA_SENSITIVE = "data_sensitive"
+
+    # Safety operations - bypass normal approval for emergency
+    SAFETY_OPERATION = "safety_operation"
+
+    @classmethod
+    def requires_local_approval(cls, change_class: "ChangeClass") -> bool:
+        """Check if change class requires local agent approval."""
+        return change_class in (
+            cls.TRADING_IMPACTING,
+            cls.DATA_SENSITIVE,
+        )
+
+    @classmethod
+    def is_safety_operation(cls, change_class: "ChangeClass") -> bool:
+        """Check if change class is a safety operation."""
+        return change_class == cls.SAFETY_OPERATION
+
+    @classmethod
+    def can_bypass_approval(cls, change_class: "ChangeClass") -> bool:
+        """Check if change class can bypass normal approval (safety ops only)."""
+        return change_class in (
+            cls.SAFETY_OPERATION,
+            cls.INFORMATIONAL,
+        )
 
 
 # Fields that are TRADING_IMPACTING (require local approval)

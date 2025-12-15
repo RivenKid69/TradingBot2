@@ -62,6 +62,10 @@ class PreflightCheckType(Enum):
     MANIFEST_VALID = auto()
     RESOURCES_AVAILABLE = auto()
     NETWORK_CONNECTIVITY = auto()
+    # Design Doc 9.2, 2.1: Manifest permissions enforcement (fail-closed)
+    MANIFEST_PERMISSIONS = auto()
+    EGRESS_POLICY = auto()
+    FILESYSTEM_POLICY = auto()
 
 
 class PreflightCheckResult(Enum):
@@ -289,6 +293,7 @@ class PreflightChecker:
         result = PreflightResult(run_id=run_id, artifact_digest=artifact_digest)
 
         # Run checks in order
+        # Design Doc 9.2, 2.1: Manifest permission checks are REQUIRED and FAIL-CLOSED
         checks = [
             (PreflightCheckType.VAULT_UNLOCKED, self._check_vault_unlocked),
             (PreflightCheckType.CREDENTIALS_AVAILABLE, lambda: self._check_credentials(broker_name)),
@@ -297,6 +302,10 @@ class PreflightChecker:
             (PreflightCheckType.MANIFEST_VALID, lambda: self._check_manifest(manifest)),
             (PreflightCheckType.DIGEST_VERIFICATION, lambda: self._check_digest(artifact_path, artifact_digest)),
             (PreflightCheckType.SIGNATURE_VERIFICATION, lambda: self._check_signature(artifact_path, manifest, signature)),
+            # Design Doc 9.2, 2.1: Manifest permissions MUST be validated (fail-closed)
+            (PreflightCheckType.MANIFEST_PERMISSIONS, lambda: self._check_manifest_permissions(manifest)),
+            (PreflightCheckType.EGRESS_POLICY, lambda: self._check_egress_policy(manifest)),
+            (PreflightCheckType.FILESYSTEM_POLICY, lambda: self._check_filesystem_policy(manifest)),
             (PreflightCheckType.POLICY_FIREWALL, lambda: self._check_policy_firewall(manifest)),
             (PreflightCheckType.HARD_CAPS, lambda: self._check_hard_caps(manifest)),
             (PreflightCheckType.BROKER_CONNECTIVITY, lambda: self._check_broker_connectivity(broker_name)),
@@ -998,3 +1007,216 @@ class PreflightChecker:
                 message="Network connectivity check failed",
                 required=False,
             )
+
+    def _check_manifest_permissions(self, manifest: Optional[Dict[str, Any]]) -> PreflightCheck:
+        """
+        Check manifest permissions against local policy.
+
+        Design Doc 9.2, 2.1: Manifest permissions MUST be enforced by sandbox.
+        This is FAIL-CLOSED - any permission issue = REJECT.
+        """
+        if manifest is None:
+            return PreflightCheck(
+                check_type=PreflightCheckType.MANIFEST_PERMISSIONS,
+                result=PreflightCheckResult.FAILED,
+                message="REJECTED: No manifest - cannot determine permissions (fail-closed)",
+                required=True,
+            )
+
+        permissions = manifest.get("permissions", {})
+        violations = []
+
+        # Check network permissions
+        network_allowed = permissions.get("network_allowed", manifest.get("network_allowed", False))
+        egress_allowlist = permissions.get("egress_allowlist", manifest.get("egress_allowlist", []))
+
+        if network_allowed and not egress_allowlist:
+            violations.append("network_allowed=true but no egress_allowlist specified (unbounded network access denied)")
+
+        # Check resource limits
+        max_memory_mb = permissions.get("max_memory_mb", manifest.get("max_memory_mb", 512))
+        max_cpu_percent = permissions.get("max_cpu_percent", manifest.get("max_cpu_percent", 100.0))
+        max_execution_time_seconds = permissions.get(
+            "max_execution_time_seconds",
+            manifest.get("max_execution_time_seconds", 3600)
+        )
+
+        # Enforce reasonable limits (Design Doc: hard caps)
+        if max_memory_mb > 16384:  # 16GB max
+            violations.append(f"max_memory_mb ({max_memory_mb}) exceeds limit (16384)")
+
+        if max_cpu_percent > 400:  # 4 cores max
+            violations.append(f"max_cpu_percent ({max_cpu_percent}) exceeds limit (400)")
+
+        if max_execution_time_seconds > 86400:  # 24 hours max
+            violations.append(f"max_execution_time_seconds ({max_execution_time_seconds}) exceeds limit (86400)")
+
+        # Check filesystem permissions
+        filesystem_readonly = permissions.get("filesystem_readonly", manifest.get("filesystem_readonly", True))
+        allowed_paths = permissions.get("allowed_paths", manifest.get("allowed_paths", []))
+
+        if not filesystem_readonly and not allowed_paths:
+            violations.append("filesystem_readonly=false but no allowed_paths specified (unbounded write access denied)")
+
+        # Check for dangerous paths in allowed_paths
+        dangerous_paths = ["/etc", "/var", "/usr", "/bin", "/sbin", "/root", "/home"]
+        for path in allowed_paths:
+            for dangerous in dangerous_paths:
+                if path.startswith(dangerous):
+                    violations.append(f"dangerous path in allowed_paths: {path}")
+
+        if violations:
+            return PreflightCheck(
+                check_type=PreflightCheckType.MANIFEST_PERMISSIONS,
+                result=PreflightCheckResult.FAILED,
+                message=f"REJECTED: Permission violations: {'; '.join(violations)}",
+                details={
+                    "violations": violations,
+                    "network_allowed": network_allowed,
+                    "egress_allowlist": egress_allowlist,
+                    "filesystem_readonly": filesystem_readonly,
+                },
+                required=True,
+            )
+
+        return PreflightCheck(
+            check_type=PreflightCheckType.MANIFEST_PERMISSIONS,
+            result=PreflightCheckResult.PASSED,
+            message="Manifest permissions validated",
+            details={
+                "network_allowed": network_allowed,
+                "egress_allowlist_count": len(egress_allowlist),
+                "filesystem_readonly": filesystem_readonly,
+                "max_memory_mb": max_memory_mb,
+            },
+        )
+
+    def _check_egress_policy(self, manifest: Optional[Dict[str, Any]]) -> PreflightCheck:
+        """
+        Validate egress policy from manifest.
+
+        Design Doc 9.2: Egress MUST be explicitly allowed via allowlist.
+        No allowlist = no network access (fail-closed).
+        """
+        if manifest is None:
+            return PreflightCheck(
+                check_type=PreflightCheckType.EGRESS_POLICY,
+                result=PreflightCheckResult.SKIPPED,
+                message="No manifest - egress check skipped",
+                required=False,
+            )
+
+        permissions = manifest.get("permissions", {})
+        network_allowed = permissions.get("network_allowed", manifest.get("network_allowed", False))
+
+        if not network_allowed:
+            return PreflightCheck(
+                check_type=PreflightCheckType.EGRESS_POLICY,
+                result=PreflightCheckResult.PASSED,
+                message="Network disabled - no egress policy needed",
+            )
+
+        egress_allowlist = permissions.get("egress_allowlist", manifest.get("egress_allowlist", []))
+
+        if not egress_allowlist:
+            return PreflightCheck(
+                check_type=PreflightCheckType.EGRESS_POLICY,
+                result=PreflightCheckResult.FAILED,
+                message="REJECTED: Network enabled but no egress allowlist (fail-closed)",
+                required=True,
+            )
+
+        # Validate allowlist entries
+        invalid_entries = []
+        for entry in egress_allowlist:
+            if not isinstance(entry, str):
+                invalid_entries.append(str(entry))
+                continue
+            # Check for wildcard abuse
+            if entry == "*" or entry == "*.*":
+                invalid_entries.append(f"Wildcard entry not allowed: {entry}")
+            # Check for IP ranges (should be specific hosts)
+            if "/" in entry and not entry.startswith("http"):
+                # Looks like CIDR - only allow /32 (single IP)
+                if not entry.endswith("/32"):
+                    invalid_entries.append(f"CIDR ranges not allowed (use specific hosts): {entry}")
+
+        if invalid_entries:
+            return PreflightCheck(
+                check_type=PreflightCheckType.EGRESS_POLICY,
+                result=PreflightCheckResult.FAILED,
+                message=f"REJECTED: Invalid egress entries: {', '.join(invalid_entries)}",
+                details={"invalid_entries": invalid_entries},
+                required=True,
+            )
+
+        return PreflightCheck(
+            check_type=PreflightCheckType.EGRESS_POLICY,
+            result=PreflightCheckResult.PASSED,
+            message=f"Egress policy valid ({len(egress_allowlist)} allowed destinations)",
+            details={"egress_count": len(egress_allowlist), "entries": egress_allowlist},
+        )
+
+    def _check_filesystem_policy(self, manifest: Optional[Dict[str, Any]]) -> PreflightCheck:
+        """
+        Validate filesystem policy from manifest.
+
+        Design Doc 2.1: Filesystem access MUST be explicitly allowed.
+        No allowed_paths + write = denied (fail-closed).
+        """
+        if manifest is None:
+            return PreflightCheck(
+                check_type=PreflightCheckType.FILESYSTEM_POLICY,
+                result=PreflightCheckResult.SKIPPED,
+                message="No manifest - filesystem check skipped",
+                required=False,
+            )
+
+        permissions = manifest.get("permissions", {})
+        filesystem_readonly = permissions.get("filesystem_readonly", manifest.get("filesystem_readonly", True))
+
+        if filesystem_readonly:
+            return PreflightCheck(
+                check_type=PreflightCheckType.FILESYSTEM_POLICY,
+                result=PreflightCheckResult.PASSED,
+                message="Filesystem readonly - no write policy needed",
+            )
+
+        allowed_paths = permissions.get("allowed_paths", manifest.get("allowed_paths", []))
+
+        if not allowed_paths:
+            return PreflightCheck(
+                check_type=PreflightCheckType.FILESYSTEM_POLICY,
+                result=PreflightCheckResult.FAILED,
+                message="REJECTED: Write enabled but no allowed_paths (fail-closed)",
+                required=True,
+            )
+
+        # Validate paths
+        dangerous_patterns = [
+            "/etc/", "/var/", "/usr/", "/bin/", "/sbin/",
+            "/root/", "/home/", "/proc/", "/sys/", "/dev/",
+            "../", "~/"
+        ]
+
+        dangerous_found = []
+        for path in allowed_paths:
+            for pattern in dangerous_patterns:
+                if pattern in path or path.startswith(pattern.rstrip("/")):
+                    dangerous_found.append(f"{path} (matches {pattern})")
+
+        if dangerous_found:
+            return PreflightCheck(
+                check_type=PreflightCheckType.FILESYSTEM_POLICY,
+                result=PreflightCheckResult.FAILED,
+                message=f"REJECTED: Dangerous write paths: {', '.join(dangerous_found)}",
+                details={"dangerous_paths": dangerous_found},
+                required=True,
+            )
+
+        return PreflightCheck(
+            check_type=PreflightCheckType.FILESYSTEM_POLICY,
+            result=PreflightCheckResult.PASSED,
+            message=f"Filesystem policy valid ({len(allowed_paths)} allowed paths)",
+            details={"allowed_paths": allowed_paths},
+        )

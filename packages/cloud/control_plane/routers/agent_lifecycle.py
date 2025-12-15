@@ -3,10 +3,12 @@
 Agent Lifecycle Router - Authenticated endpoints for agent operations.
 
 Phase 7 (WI-CLOUD-02): Implements agent-auth lifecycle endpoints.
+Phase 10: Protocol versioning negotiation (Design Doc 10.3/10.4)
 
 CLOUD ZONE ONLY.
 
 Provides authenticated endpoints for:
+- Version negotiation (Design Doc 10.3/10.4)
 - Heartbeat with accurate pending command count
 - Command polling (long-poll ready)
 - Command acknowledgement
@@ -17,9 +19,11 @@ Security:
 - All endpoints require AgentDep authentication
 - Agent must be enrolled (trust_state = ENROLLED)
 - Commands are workspace-scoped
+- Version negotiation MUST complete before commands are accepted
 
 References:
 - Design Doc: Agent polling and command delivery
+- Design Doc 10.3/10.4: Protocol version negotiation
 - WI-CLOUD-02: Implement agent-auth lifecycle endpoints
 """
 
@@ -33,8 +37,8 @@ from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Header, HTTPException, status
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,14 +68,93 @@ from ..services.command_signer import (
     get_cloud_signer,
     CloudKeyNotConfiguredError,
 )
+from ccea.protocol.schema_versioning import (
+    SchemaVersionNegotiator,
+    VersionNegotiationRequest,
+    NegotiationStatus,
+    CURRENT_SCHEMA_VERSION,
+    MIN_SUPPORTED_VERSION,
+    MAX_SUPPORTED_VERSION,
+)
 
 
 router = APIRouter()
 
 
 # ============================================================================
+# Version Negotiator Singleton
+# ============================================================================
+
+# Cloud-side version negotiator (Design Doc 10.3/10.4)
+_version_negotiator = SchemaVersionNegotiator(
+    min_supported=MIN_SUPPORTED_VERSION,
+    max_supported=MAX_SUPPORTED_VERSION,
+    prefer_latest=True,
+)
+
+# Store negotiated versions per agent
+_negotiated_versions: Dict[str, str] = {}
+
+
+# ============================================================================
 # Request/Response Models
 # ============================================================================
+
+# ----- Version Negotiation Models (Design Doc 10.3/10.4) -----
+
+class VersionNegotiateRequest(BaseModel):
+    """
+    Version negotiation request from Agent.
+
+    Design Doc 10.3/10.4: Agent sends supported version range,
+    Cloud responds with selected version or error.
+    """
+    min_supported: str = Field(
+        ...,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Agent's minimum supported protocol version"
+    )
+    max_supported: str = Field(
+        ...,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Agent's maximum supported protocol version"
+    )
+    preferred: Optional[str] = Field(
+        None,
+        pattern=r"^\d+\.\d+\.\d+$",
+        description="Agent's preferred version (optional)"
+    )
+
+    @field_validator("max_supported")
+    @classmethod
+    def validate_version_range(cls, v: str, info) -> str:
+        """Ensure max_supported >= min_supported."""
+        min_ver_str = info.data.get("min_supported")
+        if min_ver_str:
+            # Parse and compare
+            min_parts = [int(x) for x in min_ver_str.split(".")]
+            max_parts = [int(x) for x in v.split(".")]
+            if max_parts < min_parts:
+                raise ValueError(
+                    f"max_supported ({v}) must be >= min_supported ({min_ver_str})"
+                )
+        return v
+
+
+class VersionNegotiateResponse(BaseModel):
+    """
+    Version negotiation response to Agent.
+
+    Design Doc 10.3/10.4: Cloud returns selected version or error.
+    Agent MUST verify version before proceeding.
+    """
+    status: str = Field(..., description="PENDING, SUCCESS, FAILED, TIMEOUT")
+    selected_version: Optional[str] = Field(None, description="Negotiated protocol version")
+    cloud_min: str = Field(..., description="Cloud's minimum supported version")
+    cloud_max: str = Field(..., description="Cloud's maximum supported version")
+    error_message: Optional[str] = Field(None, description="Error message if failed")
+    negotiated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 
 class AgentHeartbeatRequest(BaseModel):
     """Agent heartbeat request."""
@@ -94,6 +177,8 @@ class CommandPollResponse(BaseModel):
     commands: List["PendingCommand"]
     has_more: bool
     poll_again_after_sec: int
+    # Design Doc 10.3/10.4: Include negotiated version in response
+    protocol_version: Optional[str] = Field(None, description="Negotiated protocol version")
 
 
 class PendingCommand(BaseModel):
@@ -227,6 +312,143 @@ async def verify_agent_enrolled(
         )
 
     return db_agent
+
+
+async def verify_version_negotiated(
+    agent_id: str,
+    x_protocol_version: Optional[str] = Header(None, alias="X-Protocol-Version"),
+) -> str:
+    """
+    Verify version has been negotiated for this agent.
+
+    Design Doc 10.3/10.4: Version MUST be negotiated before commands.
+    Returns negotiated version or raises 428 Precondition Required.
+
+    Args:
+        agent_id: Agent identifier
+        x_protocol_version: Protocol version header from agent
+
+    Returns:
+        Negotiated version string
+
+    Raises:
+        HTTPException 428: If version not negotiated
+        HTTPException 400: If version mismatch
+    """
+    negotiated = _negotiated_versions.get(agent_id)
+
+    if not negotiated:
+        raise HTTPException(
+            status_code=status.HTTP_428_PRECONDITION_REQUIRED,
+            detail={
+                "error": "version_not_negotiated",
+                "message": "Protocol version negotiation required. Call POST /negotiate-version first.",
+                "cloud_min": MIN_SUPPORTED_VERSION,
+                "cloud_max": MAX_SUPPORTED_VERSION,
+            }
+        )
+
+    # Verify header matches negotiated version if provided
+    if x_protocol_version and x_protocol_version != negotiated:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "version_mismatch",
+                "message": f"Protocol version mismatch. Header: {x_protocol_version}, Negotiated: {negotiated}",
+                "negotiated_version": negotiated,
+            }
+        )
+
+    return negotiated
+
+
+# ============================================================================
+# Version Negotiation Endpoint (Design Doc 10.3/10.4)
+# ============================================================================
+
+@router.post(
+    "/negotiate-version",
+    response_model=VersionNegotiateResponse,
+    summary="Negotiate protocol version",
+    description="Negotiate protocol version between Agent and Cloud. MUST be called before polling commands.",
+)
+async def negotiate_version(
+    request: VersionNegotiateRequest,
+    current_agent: AgentDep,
+) -> VersionNegotiateResponse:
+    """
+    Negotiate protocol version with Agent.
+
+    Design Doc 10.3/10.4:
+    - Agent sends supported version range
+    - Cloud responds with selected version or error
+    - Negotiation MUST complete before any commands are accepted
+    - Selected version is cached for subsequent requests
+
+    Security:
+    - Version negotiation is MANDATORY before command operations
+    - Mismatch in versions results in negotiation failure
+    - Agent MUST verify returned version is within its supported range
+    """
+    async with get_session() as session:
+        # Verify agent is enrolled
+        await verify_agent_enrolled(session, current_agent)
+
+        # Create internal negotiation request
+        agent_id_str = f"agent_{str(current_agent.id).replace('-', '')[:24]}"
+        internal_request = VersionNegotiationRequest(
+            agent_id=agent_id_str,
+            min_supported=request.min_supported,
+            max_supported=request.max_supported,
+            preferred=request.preferred,
+        )
+
+        # Perform negotiation
+        result = _version_negotiator.negotiate(internal_request)
+
+        # Cache successful negotiation
+        if result.is_success() and result.selected_version:
+            _negotiated_versions[str(current_agent.id)] = str(result.selected_version)
+
+            logger.info(
+                "Protocol version negotiated",
+                extra={
+                    "agent_id": str(current_agent.id),
+                    "selected_version": str(result.selected_version),
+                    "agent_range": f"[{request.min_supported}-{request.max_supported}]",
+                    "cloud_range": f"[{MIN_SUPPORTED_VERSION}-{MAX_SUPPORTED_VERSION}]",
+                }
+            )
+
+        return VersionNegotiateResponse(
+            status=result.status.value,
+            selected_version=str(result.selected_version) if result.selected_version else None,
+            cloud_min=MIN_SUPPORTED_VERSION,
+            cloud_max=MAX_SUPPORTED_VERSION,
+            error_message=result.error_message,
+            negotiated_at=result.negotiated_at,
+        )
+
+
+@router.get(
+    "/version-info",
+    response_model=Dict[str, Any],
+    summary="Get protocol version info",
+    description="Get Cloud protocol version information.",
+)
+async def get_version_info() -> Dict[str, Any]:
+    """
+    Get Cloud protocol version information.
+
+    Returns Cloud's supported version range for client discovery.
+    No authentication required for version discovery.
+    """
+    return {
+        "current_version": CURRENT_SCHEMA_VERSION,
+        "min_supported": MIN_SUPPORTED_VERSION,
+        "max_supported": MAX_SUPPORTED_VERSION,
+        "documentation": "https://docs.ccea.io/protocol-versions",
+    }
 
 
 # ============================================================================
@@ -380,10 +602,14 @@ async def poll_commands(
                 )
             )
 
+        # Get negotiated version for this agent (Design Doc 10.3/10.4)
+        negotiated_version = _negotiated_versions.get(str(current_agent.id))
+
         return CommandPollResponse(
             commands=commands,
             has_more=result.has_more,
             poll_again_after_sec=result.poll_again_after_sec,
+            protocol_version=negotiated_version,
         )
 
 

@@ -24,8 +24,16 @@ from typing import Optional, Tuple
 # Constants
 # ============================================================================
 
-DEFAULT_SNAPSHOT_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt")
-DEFAULT_RENDERED_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md")
+# Primary path (root location) - actual location of Design Doc
+PRIMARY_SNAPSHOT_PATH = Path("Design Doc CCEA Cloud.txt")
+
+# Legacy paths (for backwards compatibility)
+LEGACY_SNAPSHOT_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt")
+LEGACY_RENDERED_PATH = Path("docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md")
+
+# Default to primary path, fall back to legacy
+DEFAULT_SNAPSHOT_PATH = PRIMARY_SNAPSHOT_PATH
+DEFAULT_RENDERED_PATH = LEGACY_RENDERED_PATH
 
 # Regex to extract SHA256 from rendered document
 SHA256_PATTERN = re.compile(r'\*\*SHA256\*\*:\s*([a-fA-F0-9]{64})')
@@ -74,20 +82,56 @@ def extract_recorded_sha256(rendered_path: Path) -> Optional[str]:
         return None
 
 
+def find_design_doc_path() -> Optional[Path]:
+    """
+    Find the Design Doc snapshot file.
+
+    Searches in multiple locations for compatibility.
+
+    Returns:
+        Path to Design Doc or None if not found
+    """
+    # Try paths in order of preference
+    candidates = [
+        PRIMARY_SNAPSHOT_PATH,
+        LEGACY_SNAPSHOT_PATH,
+        Path("Design Doc CCEA Cloud.txt"),
+        Path("docs/Design Doc CCEA Cloud.txt"),
+        Path("design_doc.txt"),
+    ]
+
+    for path in candidates:
+        if path.exists():
+            return path
+
+    return None
+
+
 def verify_design_doc_sha(
-    snapshot_path: Path = DEFAULT_SNAPSHOT_PATH,
+    snapshot_path: Optional[Path] = None,
     rendered_path: Path = DEFAULT_RENDERED_PATH,
 ) -> Tuple[bool, str]:
     """
     Verify that Design Doc snapshot matches recorded SHA256.
 
     Args:
-        snapshot_path: Path to snapshot .txt file
+        snapshot_path: Path to snapshot .txt file (auto-detected if None)
         rendered_path: Path to rendered .md file
 
     Returns:
         Tuple of (passed, message)
     """
+    # Auto-detect snapshot path if not provided
+    if snapshot_path is None:
+        snapshot_path = find_design_doc_path()
+        if snapshot_path is None:
+            return False, (
+                f"Design Doc not found. Searched:\n"
+                f"  - {PRIMARY_SNAPSHOT_PATH}\n"
+                f"  - {LEGACY_SNAPSHOT_PATH}\n"
+                "Please ensure Design Doc is in one of these locations."
+            )
+
     # Check snapshot exists
     if not snapshot_path.exists():
         return False, f"Snapshot file not found: {snapshot_path}"
