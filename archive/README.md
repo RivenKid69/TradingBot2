@@ -13,6 +13,11 @@ archive/
 │   ├── reports_2025_11_27/     # Analysis reports
 │   └── verification_2025_11/   # Verification summaries
 │
+├── 2025_12_cleanup/            # December 2025 cleanup
+│   ├── completed_plans/        # Completed alignment plans (internal)
+│   ├── migration_reports/      # Phase 8 completion report
+│   └── audits/                 # DOC_AUDIT_PHASE_11, DOCUMENTATION_ALIGNMENT_REPORT
+│
 ├── deprecated/                 # Deprecated code and modules
 │   ├── audits/                 # Old audit reports
 │   ├── debug_archive/          # Debug scripts (historical)
@@ -45,9 +50,10 @@ archive/
 | Directory | Size | Contents |
 |-----------|------|----------|
 | `2025_11/` | ~5 MB | November 2025 reports, audits, fixes |
+| `2025_12_cleanup/` | ~500 KB | December 2025 completed plans, reports |
 | `deprecated/` | ~6 MB | Deprecated services, tests, old reports |
 | `root_files/` | ~340 KB | Old root-level files |
-| **Total** | ~11.4 MB | |
+| **Total** | ~12 MB | |
 
 ## Notes
 
