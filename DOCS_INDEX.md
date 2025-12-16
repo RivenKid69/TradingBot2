@@ -1,6 +1,8 @@
 # AI-Powered Quantitative Research Platform - Documentation Index
 
 > **Navigation Hub** для всей документации проекта
+>
+> **Canonical Reference:** [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
 
 ---
 
@@ -29,7 +31,45 @@
 
 ---
 
-## 📊 Статус проекта (2025-12-08)
+## 🏗️ CCEA Cloud Architecture (Canonical)
+
+**Reference:** [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) - единственный источник истины для архитектуры CCEA.
+
+### Core Architecture
+| Document | Description |
+|----------|-------------|
+| [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md) | ⭐ **Обзор архитектуры** - Cloud/Agent разделение, зоны безопасности |
+| [CCEA Protocol](docs/architecture/CCEA_PROTOCOL.md) | Протокол взаимодействия Cloud ↔ Agent |
+| [CCEA Data Model](docs/architecture/CCEA_DATA_MODEL.md) | Модели данных и сущности |
+| [CCEA State Machine](docs/architecture/CCEA_STATE_MACHINE.md) | Состояния Deployment и Run |
+
+### Security & Privacy
+| Document | Description |
+|----------|-------------|
+| [CCEA Privacy](docs/architecture/CCEA_PRIVACY.md) | Приватность, GDPR, уровни телеметрии |
+| [CCEA CI Guardrails](docs/architecture/CCEA_CI_GUARDRAILS.md) | CI проверки безопасности границы |
+
+### Operations & Business
+| Document | Description |
+|----------|-------------|
+| [CCEA Rollout Plan](docs/architecture/CCEA_ROLLOUT_PLAN.md) | Фазы внедрения и Open Questions |
+| [Marketing Guidelines](docs/business/CCEA_MARKETING_GUIDELINES.md) | Правила маркетинговых коммуникаций |
+| [ToS Guidelines](docs/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md) | Руководство по Terms of Service |
+
+### Design Documents
+| Document | Description |
+|----------|-------------|
+| [Target Architecture](docs/design/CCEA_CLOUD/TARGET_CCEA_ARCHITECTURE.md) | Целевая архитектура с диаграммами |
+| [Cloud README](docs/cloud/README.md) | Cloud компоненты |
+
+**Ключевые принципы CCEA:**
+- **Cloud** = Research, Training, Backtest, Artifact Management (no trading)
+- **Agent** = Execution, Risk, Vault, Broker Integration (user-controlled)
+- **Граница** = Только lifecycle commands, никаких orders/intents/secrets
+
+---
+
+## 📊 Статус проекта (2025-12-16)
 
 **Production Ready** - Все критические исправления применены и протестированы. **14,000+ автоматизированных тестов.**
 
@@ -306,6 +346,6 @@ python tools/check_feature_parity.py
 
 ---
 
-**Last Updated**: 2025-12-08 (MiFID II 100%, EU AI Act 100%, DORA 100%, 14,000+ tests)
+**Last Updated**: 2025-12-16 (MiFID II 100%, EU AI Act 100%, DORA 100%, CCEA Architecture Complete, 14,000+ tests)
 **Status**: ✅ Production Ready
-**Version**: 6.0 (DORA Phase 5 Complete)
+**Version**: 7.0 (CCEA Cloud Architecture Complete)
