@@ -4,7 +4,7 @@ RL-first research and trading stack for crypto, equities, FX, and derivatives wi
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
-> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/CCEA_OVERVIEW.md)
+> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md)
 
 This platform implements **CCEA** - a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
 
@@ -80,7 +80,7 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 # 2. (Optional) Use Cloud control plane to manage runs
 #    Cloud sends lifecycle commands only - NEVER trades or stores keys
 ```
-**Important**: Live trading runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
+**Important**: Live trading runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md).
 
 For legacy/development dry-run testing:
 ```bash
@@ -118,7 +118,7 @@ This platform is designed for **ICT Providers / Software Providers** under MiFID
 - **NOT** custodian of assets or credentials
 - Software vendor providing tools for independent traders
 
-See: `docs/CCEA_OVERVIEW.md` for full architecture and legal posture
+See: `docs/architecture/CCEA_OVERVIEW.md` for full architecture and legal posture
 
 ### Module Structure (Post-Migration v2.0)
 
@@ -203,11 +203,19 @@ Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
 ## Guides
 
 ### CCEA Architecture Documentation
-- `docs/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
+- `docs/architecture/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
 - `docs/cloud/README.md` — Control plane API, builder, governance
 - `docs/agent/README.md` — Installation, vault, approvals, risk controls
 - `docs/schemas/README.md` — JSON schemas with versioning guide
 - `docs/runbooks/` — Incident response, kill-switch, recovery procedures
+
+### Business & Legal Documentation
+- `docs/business/CCEA_MARKETING_GUIDELINES.md` — Approved language, disclaimers, compliance
+- `docs/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md` — ToS requirements, liability
+- `docs/business/PRICING_DIFFERENTIATION_STRATEGY.md` — Product modes, pricing tiers
+- `docs/business/OPEN_CORE_BUSINESS_MODEL.md` — Open-source strategy, licensing
+- `docs/business/COMPETITIVE_MOAT.md` — Competitive advantage analysis
+- `docs/business/IP_PROTECTION_STRATEGY.md` — IP protection, patents, trade secrets
 
 ### General Documentation
 - `claude.md` — complete project guide (RU).

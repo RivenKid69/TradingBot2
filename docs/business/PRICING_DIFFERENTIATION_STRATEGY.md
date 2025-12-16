@@ -2,9 +2,17 @@
 
 ## CCEA Platform - Segment-Based Pricing Framework
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Date:** December 2025
 **Classification:** Internal Strategy Document
+
+---
+
+## Architecture Reference
+
+This pricing document is aligned with the **Cloud-Controlled Execution Architecture (CCEA)**. See [CCEA_OVERVIEW.md](../architecture/CCEA_OVERVIEW.md) for complete architectural details.
+
+**Key Principle:** Cloud provides intelligence (training, backtest, artifacts), Agent provides execution. Pricing varies by deployment mode and capability access.
 
 ---
 
@@ -112,9 +120,86 @@ Based on industry analysis of quantitative trading market structure ([QuantBluep
 
 ---
 
-## 2. Pricing Model Architecture
+## 2. Product Modes (CCEA Architecture)
 
-### 2.1 Multi-Metric Pricing Framework
+### 2.1 Three Deployment Modes
+
+Per the CCEA Design Document, the platform operates in three distinct modes:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         CCEA PRODUCT MODES                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  MODE 1: RETAIL RESEARCH SaaS (EU-Friendly)                                  │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  • Cloud-only access: Backtest, Simulation, Training                     │ │
+│  │  • NO live execution capability                                          │ │
+│  │  • Paper trading and research only                                       │ │
+│  │  • Target: Students, researchers, strategy developers                    │ │
+│  │  • Regulatory: Pure software provider (no broker license needed)         │ │
+│  │  • Pricing: Starter, Pro tiers ($0-$2,000/month)                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                               │
+│  MODE 2: RETAIL LIVE via Local Agent (BYO Host)                              │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  • Cloud services + Customer-deployed Agent                              │ │
+│  │  • Agent runs on customer's machine/server                               │ │
+│  │  • Customer controls API keys, execution, kill switch                    │ │
+│  │  • Target: Active traders, small prop firms                              │ │
+│  │  • Regulatory: Software provider (customer executes)                     │ │
+│  │  • Pricing: Pro, Team tiers ($500-$10,000/month)                         │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                               │
+│  MODE 3: ENTERPRISE ENGINE (On-Prem/VPC)                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  • Full stack deployed in customer environment                           │ │
+│  │  • Cloud components run in customer's VPC/on-premise                     │ │
+│  │  • Complete air-gap option available                                     │ │
+│  │  • Target: Banks, large hedge funds, asset managers                      │ │
+│  │  • Regulatory: Software license (customer owns entire stack)             │ │
+│  │  • Pricing: Enterprise tier ($100K-$2M+/year)                            │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Mode Feature Matrix
+
+| Feature | Research SaaS | Live via Agent | Enterprise Engine |
+|---------|---------------|----------------|-------------------|
+| **Cloud Services** | | | |
+| Strategy Workspace | ✅ | ✅ | ✅ (in customer VPC) |
+| Backtest & Simulation | ✅ | ✅ | ✅ |
+| Training Service | ✅ | ✅ | ✅ |
+| Artifact Builder | ✅ | ✅ | ✅ |
+| **Agent Capabilities** | | | |
+| Live Execution | ❌ | ✅ | ✅ |
+| Local API Key Storage | N/A | ✅ | ✅ |
+| Local Risk Manager | N/A | ✅ | ✅ |
+| Kill Switch | N/A | ✅ | ✅ |
+| **Deployment** | | | |
+| Location | Our Cloud | Our Cloud + Customer | Customer VPC/On-Prem |
+| Agent Host | N/A | Customer | Customer |
+| Air-Gap Option | ❌ | ❌ | ✅ |
+| **Regulatory** | | | |
+| Our Position | Software Provider | Software Provider | Software Licensor |
+| Execution Owner | N/A | Customer | Customer |
+| API Keys Holder | N/A | Customer (local) | Customer (local) |
+
+### 2.3 Mode-to-Tier Mapping
+
+| Product Mode | Available Pricing Tiers | Target AUM |
+|--------------|------------------------|------------|
+| **Research SaaS** | Free, Starter, Starter Pro | N/A (research only) |
+| **Live via Agent** | Pro, Pro Plus, Pro Max, Team, Team Plus | $100K - $500M |
+| **Enterprise Engine** | Team Enterprise, Enterprise (all variants) | $500M+ |
+
+---
+
+## 3. Pricing Model Architecture
+
+### 3.1 Multi-Metric Pricing Framework
 
 Per [Financial Services SaaS Pricing in 2024](https://www.getmonetizely.com/articles/financial-services-saas-pricing-in-2024-strategies-for-success), fintech companies typically use 3-4 pricing metrics. Our model uses:
 
@@ -125,7 +210,7 @@ Per [Financial Services SaaS Pricing in 2024](https://www.getmonetizely.com/arti
 | **Data Consumption** | API calls, historical data | Pro+ tiers |
 | **AUM-Based** | Percentage of managed assets | Enterprise only |
 
-### 2.2 Tier Structure
+### 3.2 Tier Structure
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
