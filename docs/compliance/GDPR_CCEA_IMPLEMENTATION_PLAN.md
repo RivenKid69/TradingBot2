@@ -24,10 +24,10 @@ The Design Doc explicitly requires:
 
 - **Data minimization**: collect only what’s necessary for monitoring, billing (if needed), support (with consent).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L873` (14.1), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1736` (6.1).
-- **Telemetry sensitivity levels** with **AGGREGATED default** and raw order events as opt-in/enterprise-only.  
-  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846` (13.1–13.2).
-  EU-only posture clarification: `RAW_ORDER_EVENTS` is implemented only as **Agent-local export** (no Cloud ingestion/storage).  
-  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
+- **Telemetry sensitivity levels** with **AGGREGATED default** and an opt-in technical level (`DETAILED_NON_SENSITIVE`) for non-sensitive debugging/ops.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846` (13.1–13.2), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`.
+  EU-only posture clarification: `RAW_ORDER_EVENTS` is **not** a Cloud telemetry level and is implemented only as **Agent-local export** (no Cloud ingestion/storage).  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
 - **Mandatory redaction** before telemetry transmission: remove secrets, mask account identifiers, forbid env var logging.  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L863` (13.3), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1728` (5.4).
 - **Retention per tenant + auto-purge + export/delete (DSAR)**.  
@@ -68,7 +68,7 @@ The minimal GDPR subset for this project typically includes:
 These constraints are required for the platform’s compliance posture and must remain invariant:
 
 1. **Cloud never receives** broker credentials, API keys/tokens, or env vars (redaction + validation + CI guardrails).
-2. Cloud never receives **order-like payloads** (side/qty/price/order id/fill details) unless explicitly enterprise-only and contractually scoped.
+2. Cloud never receives **order-like payloads** (side/qty/price/order id/fill details); no Cloud exceptions in the EU-only posture.
 3. **Cloud telemetry sensitivity levels are fixed and named**: `AGGREGATED` (default) and `DETAILED_NON_SENSITIVE` (opt-in).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`.
 4. **`RAW_ORDER_EVENTS` is not a Cloud telemetry level in the EU-only posture**: raw order/fill events never reach Cloud and are never ingested/stored in Cloud; if needed for enterprise due diligence/support, it is **Agent-local export only** (customer-controlled storage) with explicit governance.  
