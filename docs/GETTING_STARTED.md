@@ -556,6 +556,28 @@ This software is a technology tool and not a regulated financial service. Users 
 3. **Exchange requirements** - Follow the terms of service of your chosen exchanges
 4. **Licensing requirements** - Obtain necessary licenses if required in your jurisdiction
 
+### Platform Compliance & Privacy
+
+The platform implements comprehensive regulatory compliance:
+
+| Regulation | Status | Description |
+|------------|--------|-------------|
+| **MiFID II** | 100% | ICT Provider compliance (kill switch, audit, TCA) |
+| **EU AI Act** | 100% | High-Risk AI System compliance |
+| **DORA** | 100% | Digital Operational Resilience |
+| **GDPR** | 100% | Data protection and privacy |
+
+**Privacy by Design (CCEA Architecture):**
+- Your broker credentials **NEVER** leave your local Agent
+- Cloud **NEVER** executes trades or stores API keys
+- Telemetry is **ALWAYS** redacted before transmission
+- EU-only data residency enforced
+
+For details, see:
+- [Privacy Policy](../legal/PRIVACY_POLICY.md)
+- [GDPR Compliance Summary](compliance/GDPR_COMPLIANCE_SUMMARY.md)
+- [CCEA Privacy](../architecture/CCEA_PRIVACY.md)
+
 ### Software Disclaimer
 
 The software is provided "as is" without warranty of any kind. The provider is not liable for any losses, damages, or costs arising from the use of this software. Users acknowledge that:

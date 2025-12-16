@@ -69,7 +69,7 @@
 
 ---
 
-## 📊 Статус проекта (2025-12-16)
+## 📊 Статус проекта (2025-12-17)
 
 **Production Ready** - Все критические исправления применены и протестированы. **14,000+ автоматизированных тестов.**
 
@@ -87,6 +87,7 @@
 | **MiFID II Compliance** | ✅ Production | 7/7 фаз (100%) |
 | **EU AI Act Compliance** | ✅ Production | Phase 4/4 (100%) |
 | **DORA Compliance** | ✅ Production | Phase 5/5 (100%) |
+| **GDPR Compliance** | ✅ Production | Phase 9/9 (100%) |
 
 **⚠️ Переобучите модели**, если они обучены до 2025-11-26.
 
@@ -212,6 +213,40 @@
 - Phase 5: Information Sharing, Compliance Dashboard & Unified Reporting
 
 **Total DORA Tests: ~1,015 passed**
+
+### GDPR Compliance (100% Complete)
+
+| Файл | Описание |
+|------|----------|
+| [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) | ⭐ **GDPR Summary** - обзор статуса compliance |
+| [docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md](docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md) | ⭐ **Master GDPR reference** - все 9 фаз |
+| [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md) | Privacy Policy (v3.0.0) |
+| [docs/legal/TERMS_OF_SERVICE.md](docs/legal/TERMS_OF_SERVICE.md) | Terms of Service (v3.0.0) |
+| [docs/legal/DPA_TEMPLATE.md](docs/legal/DPA_TEMPLATE.md) | DPA Template (v2.0.0) |
+| [packages/cloud/governance/](packages/cloud/governance/) | 15+ модулей GDPR governance |
+
+**Реализованные фазы (CCEA-aligned):**
+- Phase 0: Data Mapping, RoPA, Controller/Processor Roles
+- Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
+- Phase 2: Data Minimization, Telemetry Contracts, CI Guardrails
+- Phase 3: EU-Only Residency Enforcement
+- Phase 4: Retention Policies, Auto-Purge, Legal Holds
+- Phase 5: DSAR Workflows (Access, Portability, Erasure)
+- Phase 6: RBAC, Access Audit, Break-Glass Procedures
+- Phase 7: Security Controls (Art. 32), Breach Workflow (Art. 33-34)
+- Phase 8: Continuous Compliance, Privacy-by-Design CI Checks
+- Phase 9: Enterprise/On-Prem/VPC Posture
+
+**GDPR Key Documents:**
+
+| Документ | Описание |
+|----------|----------|
+| [GDPR_RISK_SCOPE_MEMO.md](docs/compliance/GDPR_RISK_SCOPE_MEMO.md) | Scope, data map, roles |
+| [DSAR_SOP.md](docs/compliance/DSAR_SOP.md) | DSAR procedures |
+| [SUBPROCESSORS_REGISTER.md](docs/compliance/SUBPROCESSORS_REGISTER.md) | EU subprocessors list |
+| [BREACH_RESPONSE_SOP.md](docs/compliance/BREACH_RESPONSE_SOP.md) | Breach notification workflow |
+| [RETENTION_POLICY_SPEC.md](docs/compliance/RETENTION_POLICY_SPEC.md) | Retention policies |
+| [CCEA_PRIVACY_GUARANTEES_CHECKLIST.md](docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md) | Privacy guarantees |
 
 ---
 
@@ -342,10 +377,12 @@ python tools/check_feature_parity.py
 | MiFID II Compliance | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) |
 | EU AI Act Compliance | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) |
 | DORA Compliance | [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) |
+| GDPR Compliance | [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) |
+| Privacy & Legal | [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md) |
 | Исторические отчёты | `docs/archive/` |
 
 ---
 
-**Last Updated**: 2025-12-16 (MiFID II 100%, EU AI Act 100%, DORA 100%, CCEA Architecture Complete, 14,000+ tests)
+**Last Updated**: 2025-12-17 (MiFID II 100%, EU AI Act 100%, DORA 100%, GDPR 100%, CCEA Architecture Complete, 14,000+ tests)
 **Status**: ✅ Production Ready
-**Version**: 7.0 (CCEA Cloud Architecture Complete)
+**Version**: 7.1 (GDPR Compliance Complete)

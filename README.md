@@ -92,7 +92,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**14,000+ automated tests** | **MiFID II 100%** | **EU AI Act 100%** | **DORA 100%** | **CCEA 100%** | **Production Ready**
+**14,000+ automated tests** | **MiFID II 100%** | **EU AI Act 100%** | **DORA 100%** | **GDPR 100%** | **CCEA 100%** | **Production Ready**
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
@@ -189,6 +189,28 @@ Digital Operational Resilience Act - all 5 phases complete (~1,015 tests):
 - Phase 5: Information Sharing, Dashboard & Unified Reporting
 
 Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
+
+### GDPR (Regulation 2016/679)
+General Data Protection Regulation - all 9 phases complete (CCEA-aligned):
+- Phase 0: Data mapping, RoPA, Controller/Processor roles
+- Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
+- Phase 2: Data minimization, telemetry contracts, CI guardrails
+- Phase 3: EU-only data residency enforcement
+- Phase 4: Retention policies, auto-purge, legal holds
+- Phase 5: DSAR workflows (access, portability, erasure)
+- Phase 6: RBAC, access audit, break-glass procedures
+- Phase 7: Security controls (Art. 32), breach workflow (Art. 33-34)
+- Phase 8: Continuous compliance, privacy-by-design CI checks
+- Phase 9: Enterprise/on-prem/VPC posture
+
+**CCEA Privacy Guarantees:**
+- Cloud **NEVER** receives broker credentials or API keys
+- Cloud **NEVER** receives order-like payloads in commands
+- Telemetry **ALWAYS** redacted before transmission
+- **EU-only** data residency enforced at runtime
+- DSAR scope is Cloud-only; Agent data is customer-controlled
+
+Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 
 ## Supported Exchanges
 | Asset class | Vendor(s) | Path | Modes | Status |
