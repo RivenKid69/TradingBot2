@@ -159,6 +159,31 @@ from .residency_drift import (
     NON_EU_REGIONS,
 )
 
+# Retention Service with Legal Hold (GDPR Phase 4)
+from .retention_service import (
+    # Constants
+    MIN_RETENTION_DAYS,
+    DEFAULT_RETENTION_DAYS,
+    MAX_RETENTION_DAYS,
+    COMPLIANCE_DATA_CATEGORIES,
+    ALL_DATA_CATEGORIES,
+    # Enums
+    RetentionAction as RetentionActionV2,
+    PurgeStatus,
+    LegalHoldStatus,
+    # Data classes
+    RetentionPolicy as RetentionPolicyV2,
+    LegalHold,
+    PurgeEvent,
+    RetentionValidationResult,
+    PurgeSchedulerConfig,
+    PurgeSchedulerState,
+    # Services
+    RetentionPolicyRegistry,
+    LegalHoldService,
+    AutoPurgeScheduler,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -264,4 +289,22 @@ __all__ = [
     "EU_AZURE_REGIONS",
     "ALL_EU_REGIONS",
     "NON_EU_REGIONS",
+    # Retention Service with Legal Hold (GDPR Phase 4)
+    "MIN_RETENTION_DAYS",
+    "DEFAULT_RETENTION_DAYS",
+    "MAX_RETENTION_DAYS",
+    "COMPLIANCE_DATA_CATEGORIES",
+    "ALL_DATA_CATEGORIES",
+    "RetentionActionV2",
+    "PurgeStatus",
+    "LegalHoldStatus",
+    "RetentionPolicyV2",
+    "LegalHold",
+    "PurgeEvent",
+    "RetentionValidationResult",
+    "PurgeSchedulerConfig",
+    "PurgeSchedulerState",
+    "RetentionPolicyRegistry",
+    "LegalHoldService",
+    "AutoPurgeScheduler",
 ]

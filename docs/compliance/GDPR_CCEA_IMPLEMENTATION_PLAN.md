@@ -360,7 +360,9 @@ DoD:
 - 220 tests passing for governance module (no regression)
 - 99 tests passing for all guardrails (no regression)
 
-### Phase 4 — Retention per tenant + auto-purge + legal hold
+### Phase 4 — Retention per tenant + auto-purge + legal hold [COMPLETED - 2025-12-16]
+
+**Status**: ✅ **COMPLETED**
 
 **Goal**: storage limitation and lifecycle control (Art. 5(1)(e)).
 
@@ -377,6 +379,89 @@ Deliverables:
 DoD:
 - A scheduled purge run produces an auditable purge event including counts (deleted/archived/aggregated/anonymized) and timestamps per workspace.
 - Integration tests seed data older than cutoff and prove it is deleted/changed according to policy; legal hold (if enabled) prevents deletion for the scoped dataset.
+
+**Implementation Summary (2025-12-16):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Retention Policy Specification | ✅ Done | `docs/compliance/RETENTION_POLICY_SPEC.md` |
+| RetentionPolicyRegistry (Code) | ✅ Done | `packages/cloud/governance/retention_service.py` |
+| LegalHoldService (Code) | ✅ Done | `packages/cloud/governance/retention_service.py` |
+| AutoPurgeScheduler (Code) | ✅ Done | `packages/cloud/governance/retention_service.py` |
+| Database Models | ✅ Done | `packages/cloud/control_plane/models.py` (DataRetentionPolicy, LegalHold, GovernanceAuditLog) |
+| Comprehensive Tests | ✅ Done | `packages/cloud/governance/tests/test_retention_service.py` |
+
+**Key Components:**
+
+1. **RetentionPolicyRegistry** (`retention_service.py`)
+   - Per-workspace retention policy management
+   - Minimum retention enforcement (7 years for compliance data: approval_records, access_audits, break_glass_requests, dsar_requests, governance_audit_logs, legal_hold_records, billing_records)
+   - Maximum retention limits for sensitive data
+   - Default retention periods per data category (from RoPA)
+   - Full audit trail for policy changes
+   - Validation API for proposed retention periods
+
+2. **LegalHoldService** (`retention_service.py`)
+   - Create/release legal holds with mandatory reason (10+ chars)
+   - Indefinite or time-bounded holds (hold_until)
+   - Automatic expiry detection and processing
+   - Hold extension workflow with audit
+   - Blocks auto-purge and DSAR erasure for held data
+   - Full audit trail (create, extend, release, expire, block events)
+
+3. **AutoPurgeScheduler** (`retention_service.py`)
+   - Configurable scheduler (interval, batch size, max runtime)
+   - Respects legal holds (skips held data types)
+   - Produces auditable PurgeEvent for every operation
+   - Supports multiple retention actions: DELETE, ARCHIVE, ANONYMIZE, AGGREGATE
+   - Dry-run mode for preview without deletion
+   - Statistics and event log APIs
+   - Updates policy last_purge_at after execution
+
+4. **PurgeEvent** (Audit Schema)
+   ```json
+   {
+     "event_id": "uuid",
+     "event_type": "purge_completed|purge_skipped|purge_failed",
+     "workspace_id": "uuid",
+     "data_type": "alerts|telemetry_aggregated|...",
+     "status": "completed|skipped|failed",
+     "retention_config": {
+       "retention_days": 90,
+       "cutoff_date": "ISO8601"
+     },
+     "results": {
+       "records_deleted": 1000,
+       "records_archived": 0,
+       "records_anonymized": 0,
+       "records_aggregated": 0
+     },
+     "execution": {
+       "started_at": "ISO8601",
+       "completed_at": "ISO8601",
+       "duration_seconds": 1.5,
+       "executor": "scheduler"
+     },
+     "legal_hold_blocked": false,
+     "skip_reason": null
+   }
+   ```
+
+5. **Retention Period Matrix** (from `RETENTION_POLICY_SPEC.md`)
+   - Compliance data (7-year minimum): approval_records, access_audits, break_glass_requests, dsar_requests, governance_audit_logs, legal_hold_records, billing_records
+   - Telemetry: RAW (7d), DETAILED (30d), AGGREGATED (90d)
+   - Operational: alerts (365d), commands (180d), config_blobs (365d)
+   - Sessions: session_data (24h)
+
+**Test Results:**
+- 60 tests passing for retention service module
+- 280 tests passing for governance module (no regression)
+- Integration tests verify:
+  - Purge correctness (data older than cutoff deleted)
+  - Legal hold blocking (held data not deleted)
+  - Compliance minimum enforcement (7-year retention cannot be reduced)
+  - Workspace isolation (holds don't affect other workspaces)
+  - Full audit trail generation
 
 ### Phase 5 — DSAR: access/export/delete (Cloud data) with CCEA boundary clarity
 
