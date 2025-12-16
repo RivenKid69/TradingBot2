@@ -1,6 +1,6 @@
 # Projected Case Studies
 
-## QuantBot AI - Research-Backed Value Projections
+## CCEA Platform - Research-Backed Value Projections
 
 **Document Version:** 1.0
 **Date:** December 2025
@@ -44,7 +44,7 @@ Each case study includes the **specific research basis** for projections.
 
 #### Time-to-Market Reduction
 
-| Metric | Without QuantBot | With QuantBot | Improvement | Research Basis |
+| Metric | Without CCEA | With CCEA | Improvement | Research Basis |
 |--------|------------------|---------------|-------------|----------------|
 | **Strategy deployment** | 3-6 months | 7-14 days | **85-90%** faster | McKinsey "AI in Trading" (2023) |
 | **Backtest infrastructure** | 4-8 weeks | 1 day | **96%** faster | COCOMO II estimates |
@@ -55,13 +55,13 @@ Each case study includes the **specific research basis** for projections.
 
 #### Development Cost Savings
 
-| Cost Category | Build In-House | With QuantBot | Savings |
+| Cost Category | Build In-House | With CCEA | Savings |
 |---------------|----------------|---------------|---------|
 | **Senior ML Engineer** (12 mo) | €120,000 | Not needed | €120,000 |
 | **Quant Developer** (12 mo) | €95,000 | €47,500 (6 mo) | €47,500 |
 | **Infrastructure** | €24,000/yr | Included | €24,000 |
 | **Data feeds** | €18,000/yr | Included | €18,000 |
-| **QuantBot License** | - | €12,000/yr | (€12,000) |
+| **CCEA License** | - | €12,000/yr | (€12,000) |
 | **Total Year 1** | **€257,000** | **€59,500** | **€197,500** |
 
 **Research Reference:** Robert Half "2024 Technology Salary Guide" for EU compensation benchmarks. Cloud infrastructure costs from AWS/GCP published pricing.
@@ -84,7 +84,7 @@ Each case study includes the **specific research basis** for projections.
 
 ```
 Investment (Year 1):
-  - QuantBot Pro license: €12,000
+  - CCEA Pro license: €12,000
   - Reduced quant salary (6 mo saved): Benefit
   - Infrastructure savings: Benefit
 
@@ -128,7 +128,7 @@ Per Deloitte "Investment Management Technology Outlook 2024":
 
 #### Infrastructure Modernization Timeline
 
-| Phase | Traditional Approach | With QuantBot | Time Saved |
+| Phase | Traditional Approach | With CCEA | Time Saved |
 |-------|---------------------|---------------|------------|
 | **Requirements** | 2-3 months | 2 weeks | 85% |
 | **Core development** | 12-18 months | N/A (pre-built) | 100% |
@@ -166,7 +166,7 @@ Per Deloitte "Investment Management Technology Outlook 2024":
 | Y5 | €156M | €7.80M | +100 bps | €1,560,000 |
 | **Total** | | | | **€5,402,500** |
 
-**QuantBot Investment:**
+**CCEA Investment:**
 - Team Plus license: €64,800/year × 5 = €324,000
 - Implementation/training: €50,000 (one-time)
 - **Total investment: €374,000**
@@ -223,7 +223,7 @@ Per Oliver Wyman "The Future of Trading Technology" (2023):
 
 #### Build vs Buy Analysis
 
-| Component | Build In-House | With QuantBot | Savings |
+| Component | Build In-House | With CCEA | Savings |
 |-----------|----------------|---------------|---------|
 | **Distributional RL engine** | €2.5M + 24 mo | Included | €2.5M + time |
 | **L3 LOB simulation** | €1.5M + 18 mo | Included | €1.5M + time |
@@ -315,7 +315,7 @@ Per Preqin "Emerging Manager Report 2024":
 
 ### Projected Timeline: Research to Revenue
 
-| Milestone | Traditional Path | With QuantBot | Acceleration |
+| Milestone | Traditional Path | With CCEA | Acceleration |
 |-----------|------------------|---------------|--------------|
 | **Strategy development** | 6-12 months | 2-4 months | 3-6x faster |
 | **Backtest infrastructure** | 3-6 months | 1 week | 12-24x faster |
@@ -330,19 +330,19 @@ Per Preqin "Emerging Manager Report 2024":
 
 ### Cost Comparison: Year 1
 
-| Item | DIY Approach | With QuantBot | Savings |
+| Item | DIY Approach | With CCEA | Savings |
 |------|--------------|---------------|---------|
 | **Cloud infrastructure** | €6,000 | Included | €6,000 |
 | **Data feeds** | €12,000 | Included | €12,000 |
 | **Development time** (opportunity cost) | €60,000 | €20,000 | €40,000 |
 | **Backtest software** | €3,000 | Included | €3,000 |
 | **Risk tools** | €2,000 | Included | €2,000 |
-| **QuantBot Starter Pro** | - | €948 | (€948) |
+| **CCEA Starter Pro** | - | €948 | (€948) |
 | **Total** | **€83,000** | **€20,948** | **€62,052** |
 
 ### Path to Institutional Allocation
 
-| Stage | Requirement | How QuantBot Helps |
+| Stage | Requirement | How CCEA Helps |
 |-------|-------------|-------------------|
 | **Seed investors** | Compelling backtest | Professional-grade simulation |
 | **Family offices** | 12-mo live track | Accelerated time-to-live |
@@ -355,7 +355,7 @@ Per Preqin "Emerging Manager Report 2024":
 
 Assuming successful 18-month track record with 1.5 Sharpe:
 
-| Fundraise Stage | Amount | Typical Timing | With QuantBot |
+| Fundraise Stage | Amount | Typical Timing | With CCEA |
 |-----------------|--------|----------------|---------------|
 | **Seed round** | €1-5M | Month 18-24 | Month 12-15 |
 | **Series A** | €10-25M | Month 30-36 | Month 24-30 |

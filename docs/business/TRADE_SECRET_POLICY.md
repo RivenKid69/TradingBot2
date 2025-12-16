@@ -10,7 +10,7 @@
 ## 1. Purpose and Scope
 
 ### 1.1 Purpose
-This policy establishes comprehensive measures to identify, protect, and manage trade secrets owned by QuantBot AI ("Company"). It ensures compliance with applicable trade secret laws and maintains the competitive advantage derived from proprietary technology.
+This policy establishes comprehensive measures to identify, protect, and manage trade secrets owned by CCEA Platform ("Company"). It ensures compliance with applicable trade secret laws and maintains the competitive advantage derived from proprietary technology.
 
 ### 1.2 Legal Basis
 - **European Union:** Directive (EU) 2016/943 on Trade Secrets
@@ -423,7 +423,7 @@ All personnel with access to Company systems must sign:
 TRADE SECRET POLICY ACKNOWLEDGMENT
 
 I, [Name], acknowledge that I have received, read, and understand the
-QuantBot AI Trade Secret Protection Policy (TSP-001).
+CCEA AI Trade Secret Protection Policy (TSP-001).
 
 I agree to:
 1. Protect all trade secrets in accordance with this policy

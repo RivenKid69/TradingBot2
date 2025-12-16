@@ -1,6 +1,6 @@
 # Sales Channel Evolution Strategy
 
-## QuantBot AI - From Founder-Led to Multi-Channel GTM
+## CCEA Platform - From Founder-Led to Multi-Channel GTM
 
 **Document Version:** 2.0
 **Date:** December 2025
@@ -95,7 +95,7 @@ Per [ProductiveShop](https://productiveshop.com/founder-led-sales/):
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Channel Types for QuantBot
+### 2.2 Channel Types for CCEA
 
 | Channel | Description | Timeline | Revenue Potential |
 |---------|-------------|----------|-------------------|
@@ -369,7 +369,7 @@ Per [BNP Paribas Prime Brokerage](https://thehedgefundjournal.com/bnpps-prime-br
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐          │
-│  │ Prime Broker│───▶│  QuantBot   │───▶│ Hedge Fund  │          │
+│  │ Prime Broker│───▶│  CCEA   │───▶│ Hedge Fund  │          │
 │  │ Cap Intro   │    │  Technology │    │  Client     │          │
 │  └─────────────┘    └─────────────┘    └─────────────┘          │
 │                                                                   │
@@ -574,7 +574,7 @@ Per [CFA Institute](https://www.cfainstitute.org/en/membership/society):
 > Would you be open to making an introduction? I'd be happy to share a brief intro blurb you can forward:
 >
 > ---
-> '[Target Name], I wanted to introduce you to [Your Name] from QuantBot AI. They're helping systematic funds automate execution optimization with ML — [Reference Customer] has seen [X% improvement]. Given your focus on [their specific area], I thought it might be worth a conversation.'
+> '[Target Name], I wanted to introduce you to [Your Name] from CCEA Platform. They're helping systematic funds automate execution optimization with ML — [Reference Customer] has seen [X% improvement]. Given your focus on [their specific area], I thought it might be worth a conversation.'
 > ---
 >
 > Happy to reciprocate if there's anyone in my network who could be helpful to you."

@@ -1,35 +1,36 @@
-# QuantBot SDK
+# CCEA SDK
 
-[![PyPI version](https://badge.fury.io/py/quantbot-sdk.svg)](https://badge.fury.io/py/quantbot-sdk)
+[![PyPI version](https://badge.fury.io/py/ccea-sdk.svg)](https://badge.fury.io/py/ccea-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://docs.quantbot.ai)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://docs.ccea.ai)
 
-**Official Python SDK for QuantBot AI - Institutional-Grade Quantitative Trading Platform**
+**Official Python SDK for CCEA Platform - Cloud-Controlled Execution Architecture**
 
 ## Overview
 
-QuantBot SDK provides easy access to the QuantBot AI platform for:
+CCEA SDK provides easy access to the CCEA Cloud platform for:
 - 📊 Market data streaming (crypto, equities, forex, futures)
-- 🤖 Strategy signal generation via REST/WebSocket APIs
-- 📈 Backtesting result retrieval and analysis
+- 🤖 Strategy development via REST/WebSocket APIs
+- 📈 Backtesting and simulation in the Cloud
+- 📦 Artifact management (strategy deployment)
 - 🛡️ Risk monitoring and alerts
 
-> **Note:** This SDK connects to the QuantBot AI cloud platform. For the full platform including proprietary RL execution engine and L3 simulation, see our [Enterprise offerings](https://quantbot.ai/enterprise).
+> **Note:** This SDK connects to the CCEA Cloud platform. For local execution, see the [CCEA Agent](https://github.com/ccea-platform/ccea-agent) repository. The Agent handles live order execution in your own environment.
 
 ## Installation
 
 ```bash
-pip install quantbot-sdk
+pip install ccea-sdk
 ```
 
 ## Quick Start
 
 ```python
-from quantbot import QuantBotClient
+from quantbot import CCEAClient
 
 # Initialize client
-client = QuantBotClient(api_key="your-api-key")
+client = CCEAClient(api_key="your-api-key")
 
 # Get market data
 bars = client.get_bars("BTCUSDT", timeframe="1h", limit=100)
@@ -96,10 +97,10 @@ print(f"Max Drawdown: {risk.max_drawdown:.1%}")
 
 ## Documentation
 
-- [Getting Started Guide](https://docs.quantbot.ai/getting-started)
-- [API Reference](https://docs.quantbot.ai/api-reference)
+- [Getting Started Guide](https://docs.ccea.ai/getting-started)
+- [API Reference](https://docs.ccea.ai/api-reference)
 - [Examples](./examples/)
-- [FAQ](https://docs.quantbot.ai/faq)
+- [FAQ](https://docs.ccea.ai/faq)
 
 ## Examples
 
@@ -111,7 +112,7 @@ See the [examples/](./examples/) directory for:
 
 ## Enterprise Features
 
-The SDK connects to QuantBot AI's cloud platform. For advanced features, consider our Enterprise offering:
+The SDK connects to CCEA AI's cloud platform. For advanced features, consider our Enterprise offering:
 
 | Feature | SDK (Free) | Cloud Pro | Enterprise |
 |---------|------------|-----------|------------|
@@ -123,7 +124,7 @@ The SDK connects to QuantBot AI's cloud platform. For advanced features, conside
 | On-premise deployment | ❌ | ❌ | ✅ |
 | Dedicated support | ❌ | ✅ | ✅ |
 
-[Contact Sales](https://quantbot.ai/enterprise)
+[Contact Sales](https://ccea.ai/enterprise)
 
 ## Contributing
 
@@ -135,16 +136,16 @@ By contributing, you agree to our [Contributor License Agreement](./CLA.md).
 
 This SDK is released under the [MIT License](./LICENSE).
 
-**Note:** This license applies only to the SDK client code. The QuantBot AI platform, including the RL execution engine and simulation infrastructure, is proprietary software available under separate license terms.
+**Note:** This license applies only to the SDK client code. The CCEA AI platform, including the RL execution engine and simulation infrastructure, is proprietary software available under separate license terms.
 
 ## Support
 
-- 📧 Email: support@quantbot.ai
-- 💬 Discord: [QuantBot Community](https://discord.gg/quantbot)
-- 📚 Docs: [docs.quantbot.ai](https://docs.quantbot.ai)
+- 📧 Email: support@ccea.ai
+- 💬 Discord: [CCEA Community](https://discord.gg/quantbot)
+- 📚 Docs: [docs.ccea.ai](https://docs.ccea.ai)
 
 ---
 
-**QuantBot AI** - Institutional-Grade Quantitative Trading Platform
+**CCEA AI** - Institutional-Grade Quantitative Trading Platform
 
-© 2025 QuantBot AI. SDK released under MIT License. Platform proprietary.
+© 2025 CCEA AI. SDK released under MIT License. Platform proprietary.

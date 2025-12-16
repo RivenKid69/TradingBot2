@@ -1,6 +1,6 @@
 # Build vs Buy Analysis
 
-## QuantBot AI Infrastructure Decision Framework
+## CCEA AI Infrastructure Decision Framework
 
 **Document Version:** 1.0
 **Date:** December 2025
@@ -16,7 +16,7 @@ This document provides a **comprehensive framework** for evaluating the build-vs
 
 > **For firms with AUM < €500M, buying specialized infrastructure delivers 4-7x better ROI than building in-house**, based on COCOMO II cost modeling and industry benchmarks.
 
-| Decision Factor | Build In-House | Buy QuantBot | Advantage |
+| Decision Factor | Build In-House | Buy CCEA | Advantage |
 |-----------------|----------------|--------------|-----------|
 | **Time to Production** | 18-36 months | 1-4 weeks | **72-156x faster** |
 | **5-Year TCO** | €1.5M - €5M | €120K - €600K | **75-90% savings** |
@@ -37,7 +37,7 @@ Using **COCOMO II** (Constructive Cost Model) from Boehm et al. (2000), we estim
 Effort (person-months) = 2.94 × (KLOC)^1.0997 × Π(Effort Multipliers)
 ```
 
-**QuantBot Equivalent System:**
+**CCEA Equivalent System:**
 - **Core ML Engine:** ~15 KLOC (Python)
 - **Execution Simulation:** ~12 KLOC
 - **Risk Management:** ~8 KLOC
@@ -121,7 +121,7 @@ For trading systems specifically, maintenance is higher due to:
 
 ### 2.3 Buy: Subscription Cost
 
-| QuantBot Tier | Annual Cost | Includes |
+| CCEA Tier | Annual Cost | Includes |
 |---------------|-------------|----------|
 | Pro | €24,000 | Full platform, standard support |
 | Team | €60,000 | Multi-user, priority support |
@@ -186,7 +186,7 @@ Based on McKinsey (2024) "State of AI" and industry case studies:
 
 **McKinsey Reference:** "72% of organizations have adopted AI, but only 14% have deployed it in production for trading/risk applications. Average time to production for complex ML: 18-24 months."
 
-### 4.2 Buy Timeline (QuantBot)
+### 4.2 Buy Timeline (CCEA)
 
 | Phase | Duration | Key Milestones |
 |-------|----------|----------------|
@@ -319,7 +319,7 @@ Time Saved: 25 months
 | Refinitiv Eikon | €22K/user | Data + analytics | All |
 | QuantConnect | €5-40K | Backtesting + live | Retail-small |
 | Alpaca | Free-€300 | Execution only | Retail |
-| **QuantBot** | €24-120K | End-to-end ML platform | Prop/Funds |
+| **CCEA** | €24-120K | End-to-end ML platform | Prop/Funds |
 
 ---
 

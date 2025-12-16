@@ -2,90 +2,123 @@
 
 ## Executive Summary
 
-QuantBot AI employs a **multi-layered IP protection strategy** combining trade secrets, patent protection, and strategic open-source licensing to maximize both competitive moat and market adoption.
+CCEA Platform employs a **multi-layered IP protection strategy** combining trade secrets, patent protection, and strategic open-source licensing to maximize both competitive moat and market adoption.
 
 | Protection Layer | Coverage | Status |
 |------------------|----------|--------|
-| **Trade Secrets** | Core RL Engine, Execution Algorithms, Risk Models | ✅ Active |
+| **Trade Secrets** | Cloud RL Engine, Training Service, Backtest Engine | ✅ Active |
 | **Patents** | Novel CVaR-RL Architecture, Sim-to-Live System | 📋 Filing Q1 2025 |
-| **Private Repository** | 100% of proprietary codebase | ✅ Active |
-| **Open-Source SDK** | Client libraries, examples, connectors | 📋 Planned |
+| **Private Cloud Repository** | 100% of proprietary Cloud codebase | ✅ Active |
+| **Open-Source Agent** | Execution Agent, broker connectors | ✅ Active (MIT) |
+| **Open-Source SDK** | Client libraries, examples | 📋 Planned |
 | **Contractual (NDA)** | All employees, contractors, beta clients | ✅ Active |
 
 **Key Statement for Investors:**
-> "Core RL execution & risk engine is protected by trade secrets and patent-pending innovations. The proprietary codebase remains in a private monorepo with strict access controls, while strategic open-source components drive adoption without compromising competitive advantage."
+> "Core RL training, backtest engine, and artifact management are protected in our Cloud as trade secrets and patent-pending innovations. The CCEA Agent (local execution) is open-source to drive adoption, while Cloud services remain proprietary—this split maximizes adoption without compromising competitive advantage and ensures regulatory compliance by keeping execution in customer environments."
 
 ---
 
 ## 1. Repository Architecture
 
-### 1.1 Private Monorepo (Core IP)
+### 1.1 Private Cloud Repository (Core IP)
 
 **Repository:** Private GitLab/GitHub Enterprise
 **Access:** Restricted to authorized personnel with signed IP agreements
 
 ```
-quantbot-core/ (PRIVATE)
-├── core_*/           # Core abstractions & models
-├── impl_*/           # Implementation layer
-├── service_*/        # Business logic services
-├── strategies/       # Proprietary trading strategies
-├── lob/              # L3 LOB simulation engine
-├── adapters/         # Exchange integration (proprietary protocols)
-├── distributional_ppo.py    # Novel RL architecture
-├── execution_sim.py         # Execution simulation engine
-├── risk_guard.py            # Risk management system
-└── [11,000+ proprietary components]
+ccea-cloud/ (PRIVATE - Proprietary)
+├── services/
+│   ├── auth_accounts/       # Auth & Accounts Service
+│   ├── strategy_workspace/  # Strategy Workspace
+│   ├── backtest_sim/        # Backtest & Sim Engine
+│   ├── training_service/    # Training Service (RL)
+│   ├── artifact_builder/    # Artifact Builder
+│   ├── artifact_registry/   # Artifact Registry
+│   ├── agent_registry/      # Agent Registry
+│   ├── control_plane/       # Control Plane
+│   └── telemetry/           # Telemetry & Monitoring
+├── core/
+│   ├── distributional_ppo.py    # Novel RL architecture
+│   ├── execution_sim.py         # Execution simulation engine
+│   ├── risk_guard.py            # Risk management system
+│   └── [11,000+ proprietary components]
+├── lob/                         # L3 LOB simulation engine
+└── features/                    # Proprietary feature engineering
 ```
 
-**Protected Elements:**
+**Protected Cloud Elements (Trade Secrets):**
 - Distributional PPO with Twin Critics architecture
 - CVaR-aware policy optimization
 - L3 Limit Order Book simulation with market impact models
 - Variance Gradient Scaler (VGS) for training stability
-- Multi-asset execution providers (crypto, equity, forex, futures)
 - Proprietary feature engineering pipeline (63+ features)
+- Training Service orchestration
+- Artifact Builder and Registry internals
 
-### 1.2 Public SDK Repository (Open-Core Edge)
+### 1.2 Public Agent Repository (Open-Source Execution)
 
 **Repository:** GitHub Public (MIT License)
-**Purpose:** Lower adoption friction, demonstrate capability, attract talent
+**Purpose:** Customer-controlled execution, regulatory compliance, trust building
 
 ```
-quantbot-sdk/ (PUBLIC - MIT License)
-├── quantbot_client/     # Python client library
-│   ├── api.py           # REST API wrapper
-│   ├── websocket.py     # Real-time data streaming
-│   └── models.py        # Data models (no business logic)
+ccea-agent/ (PUBLIC - MIT License)
+├── agent/
+│   ├── daemon.py           # Agent Daemon service
+│   ├── runner.py           # Strategy Runner
+│   ├── vault.py            # Local Vault (credential storage)
+│   ├── risk_manager.py     # Local Risk Manager + Kill Switch
+│   ├── reconciler.py       # Reconciler service
+│   ├── journal.py          # Local Journal
+│   └── connectors/
+│       ├── binance.py      # Broker connector
+│       ├── alpaca.py
+│       └── oanda.py
+├── approval_ui/            # Approval UI/CLI
 ├── examples/
-│   ├── basic_backtest.ipynb
-│   ├── signal_generation.ipynb
-│   └── risk_monitoring.ipynb
-├── connectors/
-│   ├── binance_public.py    # Public API only
-│   ├── alpaca_public.py
-│   └── oanda_public.py
+│   ├── basic_setup.md
+│   ├── broker_config.md
+│   └── risk_limits.md
 ├── docs/
 │   ├── getting_started.md
-│   ├── api_reference.md
-│   └── tutorials/
+│   ├── architecture.md
+│   └── security.md
+└── README.md
+```
+
+### 1.3 Public SDK Repository (Cloud Client)
+
+**Repository:** GitHub Public (MIT License)
+**Purpose:** Lower adoption friction for Cloud API access
+
+```
+ccea-sdk/ (PUBLIC - MIT License)
+├── ccea/
+│   ├── client.py           # Cloud API client
+│   ├── websocket.py        # Real-time data streaming
+│   └── models/
+│       ├── intents.py      # Intent data models
+│       ├── orders.py       # Order data models
+│       └── artifacts.py    # Artifact data models
+├── examples/
+│   ├── backtest_example.ipynb
+│   └── strategy_workspace.ipynb
 └── README.md
 ```
 
 **What's Open (MIT License):**
-- API client libraries
-- Basic data models and schemas
-- Example notebooks (non-proprietary strategies)
-- Public market data connectors
-- Documentation and tutorials
+- CCEA Agent (complete execution layer)
+- SDK client libraries
+- Broker connectors
+- Local risk management
+- Kill switch implementation
+- Documentation and examples
 
-**What's NOT Open (Trade Secret):**
-- RL training algorithms
-- Execution simulation engine
-- Risk management logic
+**What's NOT Open (Cloud - Trade Secret):**
+- RL training algorithms (Training Service)
+- L3 LOB simulation (Backtest Engine)
+- Artifact Builder internals
 - Proprietary feature calculations
-- L3 LOB models
-- Any production trading strategies
+- Any Cloud-hosted business logic
 
 ---
 
@@ -100,13 +133,14 @@ Trade secrets are protected under:
 
 **Reference:** *Kewanee Oil Co. v. Bicron Corp.*, 416 U.S. 470 (1974) - Established that trade secrets can coexist with patent protection.
 
-### 2.2 Qualifying Criteria (Met by QuantBot)
+### 2.2 Qualifying Criteria (Met by CCEA)
 
-| Criterion | QuantBot Implementation |
+| Criterion | CCEA Implementation |
 |-----------|------------------------|
-| **Derives economic value from secrecy** | ✅ Core algorithms provide 15-25% performance edge |
+| **Derives economic value from secrecy** | ✅ Cloud algorithms provide 15-25% performance edge |
 | **Not generally known** | ✅ Novel CVaR-RL architecture, unpublished |
 | **Reasonable efforts to maintain secrecy** | ✅ See Section 2.3 |
+| **Clear separation from open components** | ✅ Agent is open, Cloud is secret |
 
 ### 2.3 Security Measures Implemented
 
@@ -291,21 +325,27 @@ Q1 2026: National phase entries (EU, UK, Singapore, Japan)
 
 ### 4.1 Strategic Rationale
 
-**Why Open-Source the Edge:**
+**Why Open-Source the Agent and SDK:**
 
-1. **Reduced Adoption Friction**
-   - `pip install quantbot-sdk` vs complex enterprise sales
-   - Self-service evaluation before purchase decision
+1. **Regulatory Compliance**
+   - Customer owns and controls execution code
+   - Clear legal positioning as Software Provider
+   - Customer can audit Agent for security
 
-2. **Developer Community**
-   - Contributors improve connectors, find bugs
+2. **Reduced Adoption Friction**
+   - `pip install ccea-agent` vs complex enterprise sales
+   - Self-service evaluation before Cloud subscription
+
+3. **Trust Building**
+   - Financial firms can inspect execution code
+   - Open-source Agent demonstrates no hidden backdoors
+   - Customer controls kill switch
+
+4. **Developer Community**
+   - Contributors improve broker connectors, find bugs
    - Talent pipeline (hire from community)
 
-3. **Standards Influence**
-   - Establish data model conventions
-   - Become "default" client library
-
-4. **Grant/Committee Optics**
+5. **Grant/Committee Optics**
    - Open-source contribution demonstrates community value
    - Aligns with EU innovation grant criteria
 
@@ -320,12 +360,12 @@ Q1 2026: National phase entries (EU, UK, Singapore, Japan)
 
 ### 4.2 License Selection
 
-**Public SDK: MIT License**
+**CCEA Agent + SDK: MIT License**
 
 ```
 MIT License
 
-Copyright (c) 2025 QuantBot AI
+Copyright (c) 2025 CCEA Platform
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -338,26 +378,35 @@ copies of the Software...
 - Maximum permissiveness drives adoption
 - No copyleft concerns for enterprise users
 - Compatible with client internal systems
+- **Regulatory advantage:** Customer runs MIT-licensed execution code
 
-**Core Engine: Proprietary License**
+**Cloud Platform: Proprietary License**
 
 ```
-QuantBot AI Proprietary License
+CCEA Cloud Proprietary License
 
 This software is proprietary and confidential. Unauthorized copying,
 distribution, modification, public display, or public performance of this
 software is strictly prohibited. Access is granted only under signed
 Enterprise License Agreement or SaaS Terms of Service.
 
-© 2025 QuantBot AI. All rights reserved.
+Scope: All Cloud-hosted services including Training Service, Backtest Engine,
+Artifact Builder/Registry, Control Plane, and Telemetry.
+
+© 2025 CCEA Platform. All rights reserved.
 ```
 
-### 4.3 Contribution Guidelines (Public SDK)
+### 4.3 Contribution Guidelines (Agent + SDK)
 
 Contributors must sign CLA (Contributor License Agreement) granting:
 - Copyright assignment for contributions
 - Patent grant for any contributed code
 - Right to relicense under proprietary terms if needed
+
+**Contribution Areas:**
+- Agent: Broker connectors, risk management improvements, UI/CLI
+- SDK: Client libraries, data models, examples
+- NOT accepted: Contributions to Cloud code (proprietary)
 
 ---
 
@@ -465,13 +514,15 @@ Available for investor review:
 
 ### For Innovation Assessment
 
-> "QuantBot AI's core technology—a distributional reinforcement learning engine optimized for risk-aware financial execution—represents a significant technical innovation protected by multiple IP mechanisms:
+> "CCEA Platform's core technology—a Cloud-Controlled Execution Architecture with distributional reinforcement learning optimized for risk-aware financial execution—represents a significant technical innovation protected by multiple IP mechanisms:
 >
 > 1. **Patent-Pending Technology:** We are filing patent applications for our novel CVaR-integrated policy optimization and unified multi-asset simulation architecture, which have no direct prior art in the trading technology space.
 >
-> 2. **Trade Secret Protection:** Our proprietary codebase of 11,000+ components, including 597 test files with 11,063 test cases, is maintained in a private repository with enterprise-grade security controls.
+> 2. **Trade Secret Protection:** Our proprietary Cloud codebase of 11,000+ components, including 597 test files with 11,063 test cases, is maintained in a private repository with enterprise-grade security controls.
 >
-> 3. **Open Innovation Contribution:** While protecting our core IP, we contribute to the broader ecosystem through open-source SDK libraries under MIT license, demonstrating commitment to industry advancement.
+> 3. **Open Innovation Contribution:** We contribute to the broader ecosystem through open-source CCEA Agent and SDK libraries under MIT license. The open Agent enables customer-controlled execution while our Cloud provides proprietary intelligence.
+>
+> 4. **Regulatory Innovation:** Our Cloud/Agent architecture uniquely positions us as a Software Provider rather than Investment Advisor—customers own and control execution while we provide tools. This is a novel approach to regulatory compliance in the AI trading space.
 >
 > This balanced approach ensures sustainable competitive advantage while fostering innovation ecosystem growth—key criteria for endorsement under the Innovator Founder visa program."
 
@@ -479,11 +530,11 @@ Available for investor review:
 
 > "Our IP strategy enables multiple revenue streams:
 >
-> - **SaaS Platform:** Core protected technology delivered as service
-> - **Enterprise Licensing:** On-premise deployment for hedge funds requiring data sovereignty
-> - **SDK Monetization:** Freemium model with paid tiers for advanced features
+> - **Cloud SaaS Platform:** Core protected technology (Training, Backtest, Artifacts) delivered as service
+> - **Agent Distribution:** Open-source Agent drives adoption, Cloud subscription drives revenue
+> - **Enterprise Tiers:** Higher SLA, more agents, premium features
 >
-> Patent protection provides defensibility for investor confidence, while open-source components reduce customer acquisition costs by 40-60% compared to traditional enterprise sales."
+> The Cloud/Agent split creates unique value: patent protection provides defensibility, open-source Agent reduces customer acquisition costs by 40-60%, and the architecture supports regulatory compliance across jurisdictions."
 
 ---
 
@@ -515,7 +566,8 @@ Available for investor review:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-12-05 | QuantBot AI | Initial release |
+| 1.0 | 2025-12-05 | CCEA Platform | Initial release |
+| 2.0 | 2025-12 | CCEA Platform | Updated for CCEA Cloud/Agent architecture |
 
 **Classification:** CONFIDENTIAL - For Investor/Committee Review Only
 

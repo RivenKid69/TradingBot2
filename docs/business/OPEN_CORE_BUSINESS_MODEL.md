@@ -1,8 +1,8 @@
 # Open-Core Business Model Strategy
 
-## QuantBot AI - Strategic Framework
+## CCEA Platform - Strategic Framework
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Date:** December 2025
 **Classification:** Internal Strategy Document
 
@@ -19,16 +19,17 @@ Open-core is a business model where a company:
 
 **Key Insight:** The open component drives adoption and community; the proprietary component drives revenue.
 
-### 1.2 Why Open-Core for QuantBot?
+### 1.2 Why Open-Core for CCEA?
 
 | Driver | How Open-Core Helps |
 |--------|---------------------|
 | **Market Entry** | Lower friction than enterprise sales |
-| **Trust Building** | Financial firms can inspect SDK code |
+| **Trust Building** | Financial firms can inspect SDK and Agent code |
 | **Developer Adoption** | Familiar model (pip install) |
 | **Competitive Response** | Hard to compete against "free" |
 | **Talent Acquisition** | Hire from contributor community |
 | **Grant Eligibility** | Open-source contribution valued |
+| **Legal Positioning** | Customer-owned execution supports Software Provider status |
 
 ---
 
@@ -52,7 +53,7 @@ Open-core is a business model where a company:
 - Managed infrastructure
 - Enterprise security features
 
-**Lesson for QuantBot:** Open the "substrate" (SDK, connectors), monetize the "intelligence" (RL engine, risk management).
+**Lesson for CCEA:** Open the "substrate" (SDK, Agent connectors), monetize the "intelligence" (Cloud services, RL training, risk management).
 
 ### 2.2 Elastic: License Evolution
 
@@ -76,7 +77,7 @@ Open-core is a business model where a company:
 - Advanced security (RBAC)
 - Alerting and monitoring
 
-**Lesson for QuantBot:** Start with MIT for maximum adoption, but reserve right to change license for proprietary components if cloud providers try to commoditize.
+**Lesson for CCEA:** Start with MIT for Agent and SDK for maximum adoption, but reserve right to change license for proprietary Cloud components if providers try to commoditize.
 
 ### 2.3 GitLab: CE vs EE
 
@@ -102,7 +103,7 @@ Open-core is a business model where a company:
 | Premium | $19/user/month | CI/CD, security |
 | Ultimate | $99/user/month | Compliance, support |
 
-**Lesson for QuantBot:** Clear tier differentiation with enterprise features gated.
+**Lesson for CCEA:** Clear tier differentiation with enterprise Cloud features gated.
 
 ### 2.4 HashiCorp: Multi-Product Open-Core
 
@@ -128,35 +129,64 @@ Open-core is a business model where a company:
 - Multi-tenancy
 - Premium support
 
-**Lesson for QuantBot:** Consider future multi-product expansion with consistent open-core pattern.
+**Lesson for CCEA:** Consider future multi-product expansion with consistent open-core pattern across Cloud/Agent architecture.
 
 ---
 
-## 3. QuantBot Open-Core Architecture
+## 3. CCEA Open-Core Architecture
 
-### 3.1 Repository Structure
+### 3.1 CCEA Cloud/Agent Split
+
+Per the CCEA (Cloud-Controlled Execution Architecture) design:
+
+| Component | Location | Open/Proprietary |
+|-----------|----------|------------------|
+| **CCEA Agent** | Customer Premises | Open (MIT) |
+| **SDK/Client Libraries** | Developer Workstation | Open (MIT) |
+| **Cloud Platform** | Our Infrastructure | Proprietary |
+
+**Key Design Principle:** Live order execution happens in the customer's environment (Agent), NOT in cloud. This positions us as a **Software Provider / ICT Provider**, not an Investment Advisor.
+
+### 3.2 Repository Structure
 
 ```
-ORGANIZATION: quantbot-ai
+ORGANIZATION: ccea-platform
 
-├── quantbot-sdk (PUBLIC - MIT License)
+├── ccea-agent (PUBLIC - MIT License)
 │   │
-│   ├── quantbot/
-│   │   ├── client.py          # API client
-│   │   ├── websocket.py       # Real-time streaming
-│   │   ├── models/
-│   │   │   ├── orders.py      # Order data models
-│   │   │   ├── positions.py   # Position data models
-│   │   │   └── signals.py     # Signal data models
+│   ├── agent/
+│   │   ├── daemon.py          # Agent Daemon service
+│   │   ├── runner.py          # Strategy Runner
+│   │   ├── vault.py           # Local Vault integration
+│   │   ├── risk_manager.py    # Risk Manager + Kill Switch
+│   │   ├── reconciler.py      # Reconciler service
+│   │   ├── journal.py         # Local Journal
 │   │   └── connectors/
-│   │       ├── binance.py     # Public API only
+│   │       ├── binance.py     # Broker connectors
 │   │       ├── alpaca.py
 │   │       └── oanda.py
 │   │
+│   ├── approval_ui/           # Approval UI/CLI
+│   │
 │   ├── examples/
-│   │   ├── basic_backtest.ipynb
-│   │   ├── signal_streaming.ipynb
-│   │   └── portfolio_analytics.ipynb
+│   │   ├── basic_setup.md
+│   │   ├── broker_config.md
+│   │   └── risk_limits.md
+│   │
+│   ├── LICENSE (MIT)
+│   ├── README.md
+│   └── pyproject.toml
+
+├── ccea-sdk (PUBLIC - MIT License)
+│   │
+│   ├── ccea/
+│   │   ├── client.py          # Cloud API client
+│   │   ├── websocket.py       # Real-time streaming
+│   │   ├── models/
+│   │   │   ├── intents.py     # Intent data models
+│   │   │   ├── orders.py      # Order data models
+│   │   │   ├── artifacts.py   # Artifact data models
+│   │   │   └── signals.py     # Signal data models
 │   │
 │   ├── docs/
 │   │   ├── getting_started.md
@@ -164,67 +194,78 @@ ORGANIZATION: quantbot-ai
 │   │   └── tutorials/
 │   │
 │   ├── LICENSE (MIT)
-│   ├── README.md
 │   └── pyproject.toml
 
-└── quantbot-core (PRIVATE - Proprietary)
+└── ccea-cloud (PRIVATE - Proprietary)
     │
-    ├── core_*/           # Core abstractions
-    ├── impl_*/           # Implementation layer
-    ├── service_*/        # Business logic
-    ├── strategies/       # Trading strategies
-    ├── lob/              # L3 LOB simulation
-    ├── adapters/         # Exchange adapters (proprietary)
-    ├── distributional_ppo.py
-    ├── execution_sim.py
-    ├── risk_guard.py
-    └── [11,000+ proprietary components]
+    ├── services/
+    │   ├── auth_accounts/     # Auth & Accounts
+    │   ├── strategy_workspace/# Strategy Workspace
+    │   ├── backtest_sim/      # Backtest & Sim Engine
+    │   ├── training_service/  # Training Service (RL)
+    │   ├── artifact_builder/  # Artifact Builder
+    │   ├── artifact_registry/ # Artifact Registry
+    │   ├── agent_registry/    # Agent Registry
+    │   ├── control_plane/     # Control Plane
+    │   └── telemetry/         # Telemetry & Monitoring
+    │
+    ├── core/
+    │   ├── distributional_ppo.py
+    │   ├── execution_sim.py
+    │   ├── risk_guard.py
+    │   └── [11,000+ proprietary components]
+    │
+    └── lob/                   # L3 LOB simulation
 ```
 
-### 3.2 Feature Distribution Matrix
+### 3.3 Feature Distribution Matrix (CCEA Tiers)
 
-| Feature Category | Open SDK | Cloud Pro | Enterprise |
-|------------------|----------|-----------|------------|
-| **Data Access** | | | |
-| Market data API | ✅ | ✅ | ✅ |
-| Historical data | Limited | ✅ | ✅ |
-| Real-time streaming | ✅ | ✅ | ✅ |
-| **Backtesting** | | | |
-| Basic backtest | ✅ | ✅ | ✅ |
-| L2 execution sim | ❌ | ✅ | ✅ |
-| L3 LOB simulation | ❌ | ❌ | ✅ |
-| **Strategy** | | | |
-| Signal API | ✅ | ✅ | ✅ |
-| Custom strategy training | ❌ | ✅ | ✅ |
-| Multi-asset strategies | ❌ | ✅ | ✅ |
-| **Risk Management** | | | |
-| Basic risk metrics | ✅ | ✅ | ✅ |
-| CVaR-aware optimization | ❌ | ✅ | ✅ |
-| Advanced risk guards | ❌ | ❌ | ✅ |
-| **Deployment** | | | |
-| Cloud (multi-tenant) | N/A | ✅ | ✅ |
-| On-premise | ❌ | ❌ | ✅ |
-| Private cloud | ❌ | ❌ | ✅ |
-| **Support** | | | |
-| Community support | ✅ | ✅ | ✅ |
-| Email support | ❌ | ✅ | ✅ |
-| Dedicated CSM | ❌ | ❌ | ✅ |
-| SLA | ❌ | 99.9% | 99.95% |
+| Feature Category | Agent (Open) | Cloud Solo | Cloud Pro | Enterprise |
+|------------------|--------------|------------|-----------|------------|
+| **Agent Components** | | | | |
+| Agent Daemon | ✅ | ✅ | ✅ | ✅ |
+| Local Risk Manager | ✅ | ✅ | ✅ | ✅ |
+| Kill Switch | ✅ | ✅ | ✅ | ✅ |
+| Broker Connectors | Basic | ✅ | ✅ | ✅ |
+| Local Vault | ✅ | ✅ | ✅ | ✅ |
+| **Cloud Services** | | | | |
+| Strategy Workspace | ❌ | 1 strategy | 5 strategies | Unlimited |
+| Backtest Engine | ❌ | Limited | ✅ | ✅ |
+| L3 LOB Simulation | ❌ | ❌ | ✅ | ✅ |
+| Training Service (RL) | ❌ | Basic | ✅ | ✅ |
+| Artifact Builder | ❌ | ✅ | ✅ | ✅ |
+| **Control Plane** | | | | |
+| Agent Registry | ❌ | 1 agent | 3 agents | Unlimited |
+| Remote Intent Control | ❌ | ✅ | ✅ | ✅ |
+| Telemetry Dashboard | ❌ | Basic | ✅ | ✅ |
+| **Execution** | | | | |
+| Paper Trading | ✅ | ✅ | ✅ | ✅ |
+| Live Trading | ✅ | ✅ | ✅ | ✅ |
+| Multi-broker | ❌ | ❌ | ✅ | ✅ |
+| **Support** | | | | |
+| Community support | ✅ | ✅ | ✅ | ✅ |
+| Email support | ❌ | ✅ | ✅ | ✅ |
+| Dedicated CSM | ❌ | ❌ | ❌ | ✅ |
+| SLA | ❌ | 99.5% | 99.9% | 99.95% |
 
-### 3.3 Pricing Model
+**Note:** Live execution always runs on the customer's Agent, ensuring regulatory compliance and customer ownership of trading decisions.
+
+### 3.4 Pricing Model
 
 | Tier | Price | Target Customer |
 |------|-------|-----------------|
-| **SDK (Free)** | $0 | Developers, students, researchers |
-| **Cloud Pro** | $500/month | Small quant teams, indie traders |
+| **Agent Only (Free)** | $0 | Developers, students, researchers |
+| **Cloud Solo** | $99/month | Individual quants, indie traders |
+| **Cloud Pro** | $500/month | Small quant teams, family offices |
 | **Cloud Team** | $2,000/month | Small funds, trading desks |
-| **Enterprise** | Custom ($50K+/year) | Institutional clients |
+| **Enterprise** | Custom ($50K+/year) | Institutional clients, prop firms |
 
 **Revenue Drivers:**
-- Compute usage (backtest hours)
-- Data consumption (market data calls)
-- Seat licenses (team size)
-- Feature upgrades (L3 simulation, custom models)
+- Cloud compute usage (backtest hours, training GPU)
+- Artifact storage and deployment
+- Agent registrations (number of live agents)
+- Feature upgrades (L3 simulation, custom RL models)
+- SLA tier and support level
 
 ---
 
@@ -235,7 +276,7 @@ ORGANIZATION: quantbot-ai
 ```
 MIT License
 
-Copyright (c) 2025 QuantBot AI
+Copyright (c) 2025 CCEA Platform
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -252,18 +293,19 @@ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 ```
 
-**Why MIT:**
+**Why MIT for Agent and SDK:**
 - Maximum permissiveness for adoption
 - No copyleft concerns for enterprise
 - Compatible with proprietary internal systems
 - Industry standard for developer tools
+- **Supports legal positioning:** Customer runs open-source code, making decisions locally
 
-### 4.2 Proprietary License
+### 4.2 Proprietary License (Cloud Platform)
 
 ```
-QUANTBOT AI PROPRIETARY LICENSE
+CCEA CLOUD PROPRIETARY LICENSE
 
-Copyright (c) 2025 QuantBot AI. All Rights Reserved.
+Copyright (c) 2025 CCEA Platform. All Rights Reserved.
 
 This software and associated documentation files (the "Software") are
 proprietary and confidential.
@@ -275,16 +317,22 @@ RESTRICTIONS:
 3. The Software may only be used under a valid license agreement.
 
 ACCESS:
-- SaaS access via QuantBot AI cloud platform (terms of service)
+- SaaS access via CCEA Cloud platform (terms of service)
 - Enterprise access via signed Enterprise License Agreement
 - Evaluation access via time-limited trial agreement
 
-For licensing inquiries: enterprise@quantbot.ai
+SCOPE:
+The proprietary license covers Cloud services only:
+- Training Service, Backtest Engine, Artifact Builder/Registry
+- Control Plane, Telemetry, Agent Registry
+- Strategy Workspace and all Cloud-hosted components
+
+For licensing inquiries: enterprise@ccea.ai
 ```
 
 ### 4.3 Contributor License Agreement (CLA)
 
-For open SDK contributions:
+For open Agent and SDK contributions:
 
 ```
 CONTRIBUTOR LICENSE AGREEMENT
@@ -292,11 +340,11 @@ CONTRIBUTOR LICENSE AGREEMENT
 By submitting a Contribution, you agree that:
 
 1. GRANT OF COPYRIGHT LICENSE
-   You grant QuantBot AI a perpetual, worldwide, non-exclusive, royalty-free
+   You grant CCEA Platform a perpetual, worldwide, non-exclusive, royalty-free
    license to use, copy, modify, and distribute your Contribution.
 
 2. GRANT OF PATENT LICENSE
-   You grant QuantBot AI a perpetual, worldwide, non-exclusive, royalty-free
+   You grant CCEA Platform a perpetual, worldwide, non-exclusive, royalty-free
    patent license for any patents you own that cover your Contribution.
 
 3. AUTHORITY
@@ -335,43 +383,52 @@ By submitting a Contribution, you agree that:
 | Committer | 10+ PRs, consistent quality | Direct commit access |
 | Maintainer | Proven leadership | Release management, code review |
 
-**Contribution Areas (SDK only):**
-- Bug fixes
+**Contribution Areas (Agent and SDK):**
+- Bug fixes in Agent and SDK
 - Documentation improvements
-- New connector integrations
-- Example notebooks
+- New broker connector integrations
+- Example configurations
 - Performance optimizations
+- Local risk management enhancements
+- Approval UI/CLI improvements
 
-**NOT Open for Contribution:**
-- Core RL algorithms
-- Execution simulation
-- Risk management
-- Proprietary features
+**NOT Open for Contribution (Cloud Proprietary):**
+- Core RL algorithms (Training Service)
+- L3 LOB simulation (Backtest Engine)
+- Artifact Builder logic
+- Control Plane services
+- Any Cloud-hosted component
 
 ### 5.3 Ecosystem Development
+
+**Agent Integrations (encourage/support):**
+- Grafana dashboards for Agent telemetry
+- Custom Approval UI implementations
+- Local monitoring integrations
+- Container orchestration (Docker, K8s)
 
 **SDK Integrations (encourage/support):**
 - Jupyter/JupyterLab extensions
 - VS Code extension
-- Streamlit apps
-- Grafana dashboards
+- Streamlit apps for strategy visualization
 
 **Partner Integrations:**
-- Cloud providers (AWS, GCP, Azure)
+- Cloud providers (AWS, GCP, Azure) - for customer Agent hosting
 - Data providers (Polygon, Alpaca, Binance)
-- Broker integrations
+- Broker integrations (via Agent connectors)
 
 ---
 
 ## 6. Competitive Response
 
-### 6.1 If Competitor Forks SDK
+### 6.1 If Competitor Forks Agent/SDK
 
 **Mitigation:**
-1. SDK is only the "edge" – limited value without platform
-2. Continuous innovation in SDK keeps fork outdated
+1. Agent is only the "edge" – limited value without Cloud platform
+2. Continuous innovation in Agent keeps fork outdated
 3. Brand and community are non-forkable
-4. Enterprise features remain proprietary
+4. Cloud services (Training, Backtest, Artifacts) remain proprietary
+5. **Key advantage:** Our trained models and calibration data cannot be forked
 
 ### 6.2 If Cloud Provider Offers Competing Service
 
@@ -411,7 +468,8 @@ By submitting a Contribution, you agree that:
 
 | Metric | Target |
 |--------|--------|
-| SDK → Cloud Pro | 2% of active SDK users |
+| Agent Only → Cloud Solo | 5% of active Agent users |
+| Cloud Solo → Cloud Pro | 15% upgrade rate |
 | Cloud Pro → Team | 20% upgrade rate |
 | Team → Enterprise | 10% escalation rate |
 
@@ -428,22 +486,24 @@ By submitting a Contribution, you agree that:
 ## 8. Implementation Roadmap
 
 ### Phase 1: Foundation (Q1 2025)
-- [ ] Extract SDK from monorepo
-- [ ] Create public GitHub repository
+- [ ] Extract Agent from monorepo (ccea-agent)
+- [ ] Extract SDK from monorepo (ccea-sdk)
+- [ ] Create public GitHub repositories
 - [ ] Implement CLA signing workflow
 - [ ] Launch documentation site
-- [ ] PyPI package publication
+- [ ] PyPI package publication (ccea-agent, ccea-sdk)
 
 ### Phase 2: Community (Q2 2025)
 - [ ] Discord community launch
-- [ ] First blog posts / tutorials
-- [ ] Webinar series kickoff
-- [ ] Conference submissions
+- [ ] First blog posts / tutorials on CCEA architecture
+- [ ] Webinar series: "Understanding Cloud/Agent Split"
+- [ ] Conference submissions (QuantCon, NeurIPS)
 
 ### Phase 3: Expansion (Q3-Q4 2025)
 - [ ] Contributor program launch
-- [ ] Partner integrations
-- [ ] SDK v2.0 with expanded features
+- [ ] Partner integrations (broker connectors)
+- [ ] Agent v2.0 with expanded broker support
+- [ ] SDK v2.0 with enhanced Cloud integration
 - [ ] Community meetup events
 
 ---

@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document outlines a **systematic approach** to acquiring customer testimonials, case studies, and social proof for QuantBot AI. The strategy addresses the critical gap of lacking confirmed customer references by establishing:
+This document outlines a **systematic approach** to acquiring customer testimonials, case studies, and social proof for CCEA Platform. The strategy addresses the critical gap of lacking confirmed customer references by establishing:
 
 1. **Pilot-to-Testimonial Pipeline** — Converting pilot participants to advocates
 2. **Tiered Evidence Program** — From quotes to full case studies
@@ -60,7 +60,7 @@ Per **Nielsen** and **Demand Gen** research:
 |------------|--------------|--------------|---------|
 | QuantConnect | 50+ quotes | 10+ | 200+ (G2) |
 | Alpaca | 100+ quotes | 20+ | 150+ |
-| **QuantBot (Current)** | **0** | **0** | **0** |
+| **CCEA (Current)** | **0** | **0** | **0** |
 
 ---
 
@@ -125,11 +125,11 @@ I noticed you just [deployed your first strategy / achieved X].
 Congratulations!
 
 Would you mind sharing a quick 1-2 sentence quote about your
-experience with QuantBot? It would really help other [prop traders /
+experience with CCEA? It would really help other [prop traders /
 quant teams] understand the value.
 
 Something like:
-"QuantBot helped us [specific outcome]. I especially appreciated
+"CCEA helped us [specific outcome]. I especially appreciated
 [feature/benefit]."
 
 [Your name]
@@ -140,7 +140,7 @@ P.S. I can send a draft for your approval if that's easier.
 **Formal Testimonial Request (Post-Pilot):**
 
 ```
-Subject: Would you share your QuantBot story?
+Subject: Would you share your CCEA story?
 
 Hi [Name],
 
@@ -189,7 +189,7 @@ Best,
 
 **Example Templates:**
 
-> "QuantBot cut our time-to-market from months to days."
+> "CCEA cut our time-to-market from months to days."
 > — [Name], [Title], [Company]
 
 > "The CVaR-aware execution gave us confidence we weren't taking on tail risk."
@@ -207,24 +207,24 @@ Best,
 
 ```
 [Opening: Context/Challenge]
-Before QuantBot, we [describe challenge].
+Before CCEA, we [describe challenge].
 
 [Middle: Solution/Experience]
-QuantBot [specific capability] allowed us to [specific action].
+CCEA [specific capability] allowed us to [specific action].
 
 [Closing: Result/Recommendation]
-We've [quantified result]. I'd recommend QuantBot to any
+We've [quantified result]. I'd recommend CCEA to any
 [target audience] looking to [benefit].
 ```
 
 **Example:**
 
-> "Before QuantBot, building our own backtesting infrastructure was
-> consuming half our development resources. With QuantBot's pre-built
+> "Before CCEA, building our own backtesting infrastructure was
+> consuming half our development resources. With CCEA's pre-built
 > ML pipeline and risk management, we deployed our first strategy in
 > under two weeks instead of the 6 months we had budgeted. We've
 > since launched three additional strategies and our Sharpe ratio
-> improved by 0.3. I'd recommend QuantBot to any prop firm looking
+> improved by 0.3. I'd recommend CCEA to any prop firm looking
 > to accelerate their quant capabilities without the infrastructure
 > burden."
 > — [Name], CTO, [Company]
@@ -238,7 +238,7 @@ We've [quantified result]. I'd recommend QuantBot to any
 
 1. **Introduction (15 sec):** Name, role, company overview
 2. **Challenge (30 sec):** What problem were you trying to solve?
-3. **Solution (45 sec):** How did QuantBot help?
+3. **Solution (45 sec):** How did CCEA help?
 4. **Results (45 sec):** What outcomes did you achieve?
 5. **Recommendation (15 sec):** Who would you recommend this to?
 
@@ -267,7 +267,7 @@ We've [quantified result]. I'd recommend QuantBot to any
 - Results: [2-3 bullet points with metrics]
 
 ## The Challenge
-[2-3 paragraphs on the situation before QuantBot]
+[2-3 paragraphs on the situation before CCEA]
 
 ## The Solution
 [2-3 paragraphs on implementation and adoption]
@@ -290,7 +290,7 @@ We've [quantified result]. I'd recommend QuantBot to any
 [Metric]
 
 ## Looking Forward
-[Future plans with QuantBot]
+[Future plans with CCEA]
 
 ## About [Company]
 [Brief company description]
@@ -381,7 +381,7 @@ Subject: 30 seconds to help us grow?
 
 Hi [Name],
 
-Thank you for choosing QuantBot!
+Thank you for choosing CCEA!
 
 We're building our presence on [G2/Capterra], and your review
 would really help other traders discover our platform.
@@ -584,7 +584,7 @@ All testimonials require signed release covering:
 
 > "Customer testimonials reflect individual experiences and may not
 > be typical. Past performance is not indicative of future results.
-> [QuantBot] does not guarantee any specific investment outcomes."
+> [CCEA] does not guarantee any specific investment outcomes."
 
 ---
 

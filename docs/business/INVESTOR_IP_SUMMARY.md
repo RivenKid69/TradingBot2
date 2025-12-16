@@ -1,4 +1,4 @@
-# QuantBot AI - Intellectual Property Summary
+# CCEA Platform - Intellectual Property Summary
 
 ## For Investors & Startup Visa Committees
 
@@ -10,11 +10,11 @@
 
 ## Executive Summary
 
-QuantBot AI has developed a **defensible, multi-layered IP strategy** that protects $5M+ in proprietary technology while enabling rapid market adoption through strategic open-source components.
+CCEA Platform has developed a **defensible, multi-layered IP strategy** that protects $5M+ in proprietary technology while enabling rapid market adoption through strategic open-source components.
 
 ### Competitive Moat Score: 8.45/10 (Wide Moat Category)
 
-Using Morgan Stanley's ROIC-based moat framework (Mauboussin & Callahan, 2014), QuantBot achieves:
+Using Morgan Stanley's ROIC-based moat framework (Mauboussin & Callahan, 2014), CCEA achieves:
 
 | Moat Dimension | Score | Evidence |
 |----------------|-------|----------|
@@ -175,7 +175,7 @@ Q1 2026: National Phase Entries
 | **GitLab** | GitLab CE | Enterprise | $11B |
 | **Confluent** | Apache Kafka | Platform | $6B |
 
-### QuantBot Open-Core Model
+### CCEA Open-Core Model
 
 **Open (MIT License):**
 - Python SDK client library
@@ -204,7 +204,7 @@ Q1 2026: National Phase Entries
 
 ### For Innovation Assessment
 
-> "QuantBot AI's core technology represents **significant technical innovation** in the quantitative trading infrastructure space:
+> "CCEA AI's core technology represents **significant technical innovation** in the quantitative trading infrastructure space:
 >
 > - **Patent-Pending Technology:** Filing Q1 2025 for novel CVaR-integrated RL execution system with no direct prior art
 > - **Trade Secret Protection:** Proprietary codebase of 11,000+ components with enterprise security controls
@@ -250,6 +250,6 @@ Available for qualified investors:
 
 ---
 
-**Confidentiality Notice:** This document contains confidential information about QuantBot AI's intellectual property strategy. Distribution without authorization is prohibited.
+**Confidentiality Notice:** This document contains confidential information about CCEA AI's intellectual property strategy. Distribution without authorization is prohibited.
 
-© 2025 QuantBot AI. All rights reserved.
+© 2025 CCEA AI. All rights reserved.

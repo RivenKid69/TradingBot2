@@ -1,8 +1,8 @@
 # Customer Value Framework
 
-## QuantBot AI - ROI Calculator & Value Quantification
+## CCEA Platform - ROI Calculator & Value Quantification
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Date:** December 2025
 **Classification:** Sales Tools
 
@@ -10,33 +10,41 @@
 
 ## Executive Summary
 
-This document provides a **rigorous, research-backed framework** for quantifying the value QuantBot AI delivers to customers. It serves as:
+This document provides a **rigorous, research-backed framework** for quantifying the value CCEA Platform (Cloud-Controlled Execution Architecture) delivers to customers. It serves as:
 
 1. **Sales tool** — ROI calculator for prospect conversations
 2. **Pricing justification** — Value-based pricing support
 3. **Customer success metric** — Tracking actual value delivered
 
-**Key Finding:** QuantBot delivers **10-25x ROI** for typical customers, with payback periods of **1-3 months**.
+**Key Finding:** CCEA delivers **10-25x ROI** for typical customers, with payback periods of **1-3 months**.
+
+**CCEA-Specific Value:** Unique Cloud/Agent architecture provides additional value through regulatory compliance, customer-controlled execution, and clear legal positioning as Software Provider.
 
 ---
 
 ## 1. Value Framework Overview
 
-### 1.1 The Four Value Pillars
+### 1.1 The Five Value Pillars
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        TOTAL CUSTOMER VALUE                            │
-├─────────────────┬─────────────────┬─────────────────┬─────────────────┤
-│   TIME VALUE    │   COST VALUE    │ PERFORMANCE     │   RISK VALUE    │
-│                 │                 │    VALUE        │                 │
-├─────────────────┼─────────────────┼─────────────────┼─────────────────┤
-│ - Faster TTM    │ - Build vs Buy  │ - Alpha         │ - Drawdown      │
-│ - Reduced dev   │ - Infrastructure│   improvement   │   reduction     │
-│ - Automation    │ - Maintenance   │ - Sharpe gain   │ - Tail risk     │
-│ - Iteration     │ - Data costs    │ - Capacity      │ - Capital eff   │
-└─────────────────┴─────────────────┴─────────────────┴─────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│                             TOTAL CUSTOMER VALUE                                    │
+├─────────────────┬─────────────────┬─────────────────┬─────────────────┬────────────┤
+│   TIME VALUE    │   COST VALUE    │ PERFORMANCE     │   RISK VALUE    │ COMPLIANCE │
+│                 │                 │    VALUE        │                 │   VALUE    │
+├─────────────────┼─────────────────┼─────────────────┼─────────────────┼────────────┤
+│ - Faster TTM    │ - Build vs Buy  │ - Alpha         │ - Drawdown      │ - MiFID II │
+│ - Reduced dev   │ - Infrastructure│   improvement   │   reduction     │ - MAR      │
+│ - Automation    │ - Maintenance   │ - Sharpe gain   │ - Tail risk     │ - Local    │
+│ - Iteration     │ - Data costs    │ - Capacity      │ - Capital eff   │   control  │
+└─────────────────┴─────────────────┴─────────────────┴─────────────────┴────────────┘
 ```
+
+**CCEA Architecture Value:** The Cloud/Agent split provides unique compliance value:
+- Customer owns and controls live execution (Agent runs locally)
+- Customer credentials never leave their environment
+- Clear audit trail separates "tool provider" from "decision maker"
+- Positions vendor as Software Provider, not Investment Advisor
 
 ### 1.2 Value by Customer Segment
 
@@ -56,13 +64,13 @@ This document provides a **rigorous, research-backed framework** for quantifying
 
 #### Time Savings by Activity
 
-| Activity | Traditional | With QuantBot | Savings | Confidence |
-|----------|-------------|---------------|---------|------------|
-| Backtest infrastructure | 4-8 weeks | 1 day | 95-98% | High |
-| Feature engineering | 6-12 weeks | 2-3 days | 95-97% | High |
-| ML model development | 12-24 weeks | 1-2 weeks | 80-92% | High |
-| Risk system integration | 6-10 weeks | 2-3 days | 94-97% | High |
-| Production deployment | 4-8 weeks | 1 week | 75-88% | Medium-High |
+| Activity | Traditional | With CCEA | Savings | Confidence |
+|----------|-------------|-----------|---------|------------|
+| Backtest infrastructure | 4-8 weeks | 1 day (Cloud) | 95-98% | High |
+| Feature engineering | 6-12 weeks | 2-3 days (Cloud) | 95-97% | High |
+| ML model development | 12-24 weeks | 1-2 weeks (Training Service) | 80-92% | High |
+| Risk system integration | 6-10 weeks | 2-3 days (Agent) | 94-97% | High |
+| Production deployment | 4-8 weeks | 1 week (Agent + Artifact) | 75-88% | Medium-High |
 | **Total Strategy Launch** | **32-62 weeks** | **3-5 weeks** | **85-92%** | **High** |
 
 ### 2.2 Time Value Calculator
@@ -72,14 +80,14 @@ This document provides a **rigorous, research-backed framework** for quantifying
 Time Value ($) = Time Saved (months) × Monthly Opportunity Cost
 
 Where:
-- Time Saved = Traditional Timeline - QuantBot Timeline
+- Time Saved = Traditional Timeline - CCEA Timeline
 - Monthly Opportunity Cost = AUM × (Expected Monthly Return) + Fixed Costs
 ```
 
 **Example Calculation (€10M AUM Fund):**
 ```
 Traditional timeline: 9 months
-QuantBot timeline: 2 months
+CCEA timeline: 2 months (Cloud + Agent deployment)
 Time saved: 7 months
 
 Monthly opportunity cost:
@@ -123,7 +131,7 @@ Where:
 ```
 Effort (person-months) = 2.94 × (KLOC)^1.0997 × Product(Effort Multipliers)
 
-For QuantBot-equivalent system (43 KLOC, high complexity):
+For CCEA-equivalent system (43 KLOC, high complexity):
 Base effort = 2.94 × 43^1.0997 × 1.4 (complexity) = 80 person-months
 ```
 
@@ -158,24 +166,26 @@ Base effort = 2.94 × 43^1.0997 × 1.4 (complexity) = 80 person-months
 
 ### 3.4 Full TCO Comparison (5 Year)
 
-| Cost Category | Build In-House | With QuantBot | Savings |
-|---------------|----------------|---------------|---------|
+| Cost Category | Build In-House | With CCEA | Savings |
+|---------------|----------------|-----------|---------|
 | **Year 1** | | | |
 | Development | €557,000 | €0 | €557,000 |
-| Infrastructure | €69,600 | Included | €69,600 |
-| QuantBot License | €0 | €24,000 (Team) | (€24,000) |
+| Infrastructure | €69,600 | Included (Cloud) | €69,600 |
+| CCEA License | €0 | €24,000 (Team tier) | (€24,000) |
 | **Year 1 Total** | **€626,600** | **€24,000** | **€602,600** |
 | | | | |
 | **Years 2-5 (each)** | | | |
 | Maintenance (20%) | €111,400 | €0 | €111,400 |
-| Infrastructure | €69,600 | Included | €69,600 |
+| Infrastructure | €69,600 | Included (Cloud) | €69,600 |
 | Feature updates | €80,000 | Included | €80,000 |
-| QuantBot License | €0 | €24,000 | (€24,000) |
+| CCEA License | €0 | €24,000 | (€24,000) |
 | **Per Year Total** | **€261,000** | **€24,000** | **€237,000** |
 | | | | |
 | **5-Year TCO** | **€1,670,600** | **€120,000** | **€1,550,600** |
 
 **ROI = €1,550,600 / €120,000 = 12.9x**
+
+**Note:** CCEA Agent is open-source (MIT), so only Cloud subscription is paid. Agent deployment on customer infrastructure is free.
 
 ---
 
@@ -219,8 +229,8 @@ If fund charges 20% performance fee:
 
 ### 4.3 Alpha Value by Segment
 
-| Segment | AUM | Projected Alpha | Annual Value | QuantBot Cost | ROI |
-|---------|-----|-----------------|--------------|---------------|-----|
+| Segment | AUM | Projected Alpha | Annual Value | CCEA Cost | ROI |
+|---------|-----|-----------------|--------------|-----------|-----|
 | Small Prop (€5M) | €5M | 100-200 bps | €50-100K | €6K | 8-17x |
 | Mid-Size (€75M) | €75M | 50-100 bps | €375-750K | €65K | 6-12x |
 | Enterprise (€500M) | €500M | 25-50 bps | €1.25-2.5M | €250K | 5-10x |
@@ -330,7 +340,7 @@ Annual savings: €60M × 10% = €6M/year
 Total ROI = (Time Value + Cost Value + Performance Value + Risk Value - Investment) / Investment
 
 Where:
-- Investment = QuantBot License + Implementation + Training
+- Investment = CCEA Cloud License + Agent Implementation + Training
 ```
 
 ### 6.2 Segment-Specific ROI Templates
@@ -460,28 +470,33 @@ Where:
 
 ### 9.1 Build vs Buy Summary
 
-| Factor | Build | QuantBot | Winner |
-|--------|-------|----------|--------|
-| **Time to value** | 18-24 months | 2-4 weeks | QuantBot |
-| **5-year TCO** | €1.5-3M | €120-500K | QuantBot |
-| **Performance risk** | High | Low (proven) | QuantBot |
+| Factor | Build | CCEA | Winner |
+|--------|-------|------|--------|
+| **Time to value** | 18-24 months | 2-4 weeks | CCEA |
+| **5-year TCO** | €1.5-3M | €120-500K | CCEA |
+| **Performance risk** | High | Low (proven) | CCEA |
 | **Customization** | Unlimited | Configurable | Build |
 | **Support** | Internal | 24/7 included | Tie |
-| **IP ownership** | Yes | License | Build |
+| **IP ownership** | Yes | License + Open Agent | CCEA |
+| **Regulatory compliance** | Complex | Built-in (Cloud/Agent) | CCEA |
+| **Credential control** | Internal | Customer-owned (Agent) | Tie |
 
-**Net Assessment:** QuantBot wins for 90%+ of use cases. Build only justified for:
+**Net Assessment:** CCEA wins for 90%+ of use cases. Build only justified for:
 - Unique, non-replicable requirements
 - Core competitive advantage needs
-- Regulatory constraints requiring full IP ownership
+- Full IP ownership without any external dependencies
+
+**CCEA Advantage:** Open-source Agent means customer owns execution code (MIT license), while Cloud provides proprietary intelligence.
 
 ### 9.2 Alternative Solutions Comparison
 
-| Solution | Strengths | Weaknesses | vs QuantBot |
-|----------|-----------|------------|-------------|
-| **In-house** | Full control | Slow, expensive | QuantBot faster/cheaper |
-| **QuantConnect** | Cheap, community | No execution sim | QuantBot more complete |
-| **Bloomberg** | Data, ecosystem | Expensive, no ML | QuantBot better value |
-| **Kx/kdb+** | Fast, proven | Complex, expensive | QuantBot easier |
+| Solution | Strengths | Weaknesses | vs CCEA |
+|----------|-----------|------------|---------|
+| **In-house** | Full control | Slow, expensive | CCEA faster/cheaper |
+| **QuantConnect** | Cheap, community | No execution sim | CCEA more complete |
+| **Bloomberg** | Data, ecosystem | Expensive, no ML | CCEA better value |
+| **Kx/kdb+** | Fast, proven | Complex, expensive | CCEA easier |
+| **Other SaaS** | Various | Centralized execution | CCEA better compliance (local Agent) |
 
 ---
 
@@ -517,20 +532,28 @@ Slide 1: Your Current Situation
 - Time to deploy: [X months]
 - Annual tech spend: [€X]
 - Current Sharpe: [X]
+- Regulatory concerns: [X]
 
-Slide 2: The QuantBot Difference
+Slide 2: The CCEA Difference
 - Deployment: [Y days] (X% faster)
 - Cost: €[Y]/year (X% savings)
 - Projected Sharpe: [Y] (+X improvement)
+- Compliance: Cloud/Agent architecture
 
-Slide 3: Your ROI
+Slide 3: Architecture Value
+- Cloud: Training, Backtest, Artifacts (our infrastructure)
+- Agent: Execution, Risk, Kill Switch (your infrastructure)
+- Your credentials never leave your environment
+- Clear legal positioning as Software Provider
+
+Slide 4: Your ROI
 - Year 1 value: €[X]
 - Investment: €[Y]
 - ROI: [X]x
 - Payback: [X] months
 
-Slide 4: Next Steps
-- Pilot program
+Slide 5: Next Steps
+- Pilot program (Agent deployment)
 - Validation metrics
 - Implementation timeline
 ```

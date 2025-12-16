@@ -1,6 +1,6 @@
 # Pricing Differentiation Strategy
 
-## QuantBot AI - Segment-Based Pricing Framework
+## CCEA Platform - Segment-Based Pricing Framework
 
 **Document Version:** 1.0
 **Date:** December 2025
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document establishes a **comprehensive pricing differentiation strategy** for QuantBot AI, addressing the critical weakness of one-size-fits-all pricing. Our framework is built on:
+This document establishes a **comprehensive pricing differentiation strategy** for CCEA Platform, addressing the critical weakness of one-size-fits-all pricing. Our framework is built on:
 
 - **Value-based pricing principles** (Pearson Ham Group methodology)
 - **Multi-metric pricing** aligned with fintech best practices (McKinsey research: 40% more market share)
