@@ -10,6 +10,11 @@
 # - TLS/mTLS support
 # - Registry mirror support
 # - Air-gapped mode compatible
+# - Phase 9: Enterprise posture enforcement
+#   - Telemetry stays local by default
+#   - EU-only data residency
+#   - Local evidence pack export
+#   - Offline verification support
 #
 # Usage:
 #   docker-compose up -d
@@ -19,9 +24,16 @@
 #   - POSTGRES_PASSWORD: Database password
 #   - REDIS_PASSWORD: Redis password (optional)
 #   - CCEA_SECRET_KEY: Application secret key
-#   - CCEA_DATA_RESIDENCY: Data residency region (default: on-prem)
+#   - CCEA_DATA_RESIDENCY: Data residency region (default: on-prem, MUST be EU)
+#
+# Phase 9 Environment Variables (Enterprise Posture):
+#   - CCEA_DEPLOYMENT_MODE: on_prem_full, air_gapped, vpc_managed
+#   - CCEA_TELEMETRY_LOCAL_ONLY: true (telemetry stays local)
+#   - CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: true (local evidence export)
+#   - CCEA_POSTURE_VALIDATION_ENABLED: true (periodic posture checks)
 #
 # Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+# GDPR Implementation: Phase 9 - Enterprise/on-prem/VPC posture
 
 version: "3.9"
 
@@ -31,6 +43,11 @@ x-common-env: &common-env
   CCEA_LOG_LEVEL: ${CCEA_LOG_LEVEL:-INFO}
   CCEA_SECRET_KEY: ${CCEA_SECRET_KEY:?CCEA_SECRET_KEY is required}
   TZ: ${TZ:-UTC}
+  # Phase 9: Enterprise posture configuration
+  CCEA_DEPLOYMENT_MODE: ${CCEA_DEPLOYMENT_MODE:-on_prem_full}
+  CCEA_TELEMETRY_LOCAL_ONLY: ${CCEA_TELEMETRY_LOCAL_ONLY:-true}
+  CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: ${CCEA_EVIDENCE_EXPORT_LOCAL_ONLY:-true}
+  CCEA_POSTURE_VALIDATION_ENABLED: ${CCEA_POSTURE_VALIDATION_ENABLED:-true}
 
 x-healthcheck-defaults: &healthcheck-defaults
   interval: 30s
@@ -301,11 +318,17 @@ services:
       CCEA_COMPONENT: governance
       # Retention defaults
       CCEA_DEFAULT_RETENTION_DAYS: ${CCEA_DEFAULT_RETENTION_DAYS:-90}
-      CCEA_AUDIT_RETENTION_DAYS: ${CCEA_AUDIT_RETENTION_DAYS:-365}
+      CCEA_AUDIT_RETENTION_DAYS: ${CCEA_AUDIT_RETENTION_DAYS:-2555}  # 7 years (compliance)
       # DSAR support
       CCEA_DSAR_ENABLED: "true"
+      # Phase 9: Enterprise posture settings
+      CCEA_EVIDENCE_EXPORT_PATH: "/data/evidence-exports"
+      CCEA_POSTURE_VALIDATION_INTERVAL: "24h"
+      CCEA_RESIDENCY_DRIFT_CHECK_ENABLED: "true"
+      CCEA_RESIDENCY_DRIFT_CHECK_INTERVAL: "1h"
     volumes:
       - governance_data:/data
+      - evidence_exports:/data/evidence-exports
     depends_on:
       postgres:
         condition: service_healthy
@@ -409,6 +432,8 @@ volumes:
   telemetry_data:
     driver: local
   governance_data:
+    driver: local
+  evidence_exports:  # Phase 9: Local evidence pack storage
     driver: local
   prometheus_data:
     driver: local

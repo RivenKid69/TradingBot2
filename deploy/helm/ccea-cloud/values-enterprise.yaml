@@ -4,6 +4,14 @@
 #   helm install ccea-cloud ./ccea-cloud -f values-enterprise.yaml
 #
 # Design Doc Reference: Phase 9 - Enterprise/on-prem pack
+# GDPR Implementation: Phase 9 - Enterprise/on-prem/VPC posture
+#
+# This configuration enforces:
+#   - EU-only data residency
+#   - "Telemetry stays local" mode by default
+#   - Local evidence pack export
+#   - Offline verification for air-gapped
+#   - Customer-managed key support
 
 # =============================================================================
 # Global Configuration
@@ -20,8 +28,30 @@ global:
   # Air-gapped mode disables external connectivity
   airgapped: false
 
-  # Data residency (on-prem, eu, us, etc.)
+  # Data residency (MUST be EU-only: on-prem, eu, or EU region)
+  # Valid values: on-prem, eu, eu-west-1, eu-central-1, etc.
   dataResidency: "on-prem"
+
+  # Phase 9: Enterprise posture configuration
+  enterprisePosture:
+    # Deployment mode: on_prem_full, air_gapped, vpc_managed, enterprise_cloud
+    deploymentMode: "on_prem_full"
+
+    # Telemetry stays local (no Cloud export)
+    telemetryLocalOnly: true
+
+    # Evidence export configuration
+    evidenceExportLocalOnly: true
+    evidenceExportPath: "/data/evidence-exports"
+
+    # Offline verification for artifact signatures
+    offlineVerification: true
+
+    # Customer-managed key configuration (optional)
+    customerManagedKeys:
+      enabled: false
+      # provider: aws_kms  # or gcp_kms, azure_keyvault, hsm, pkcs11
+      # keyId: ""
 
 # =============================================================================
 # Control Plane Configuration
@@ -220,19 +250,39 @@ governance:
   config:
     # Retention settings
     CCEA_DEFAULT_RETENTION_DAYS: "90"
-    CCEA_AUDIT_RETENTION_DAYS: "2555"  # 7 years
+    CCEA_AUDIT_RETENTION_DAYS: "2555"  # 7 years (compliance requirement)
 
     # DSAR support
     CCEA_DSAR_ENABLED: "true"
 
-    # For air-gapped:
-    # CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: "true"
+    # Phase 9: Enterprise posture settings
+    # Evidence export for on-prem/air-gapped
+    CCEA_EVIDENCE_EXPORT_LOCAL_ONLY: "true"
+    CCEA_EVIDENCE_EXPORT_PATH: "/data/evidence-exports"
+
+    # Posture validation
+    CCEA_POSTURE_VALIDATION_ENABLED: "true"
+    CCEA_POSTURE_VALIDATION_INTERVAL: "24h"
+
+    # Residency enforcement
+    CCEA_RESIDENCY_DRIFT_CHECK_ENABLED: "true"
+    CCEA_RESIDENCY_DRIFT_CHECK_INTERVAL: "1h"
 
   # Evidence export storage
   evidenceExport:
     persistence:
       enabled: true
       size: 100Gi
+      storageClass: "fast-ssd"
+
+  # Phase 9: Posture service
+  posture:
+    # Enterprise deployment mode
+    deploymentMode: "on_prem_full"
+    # Telemetry local mode (default for on-prem)
+    telemetryLocalOnly: true
+    # RAW telemetry (enterprise only, requires explicit opt-in)
+    rawTelemetryEnabled: false
 
 # =============================================================================
 # Enterprise Features

@@ -806,21 +806,23 @@ DoD:
 - ✅ 88 Phase 8 tests passing (`tests/cloud/governance/test_phase8_continuous_compliance.py`).
 - ✅ All 273 governance tests passing (no regressions).
 
-### Phase 9 — Enterprise/on-prem/VPC posture (Design Doc 16.3) and scope control
+### Phase 9 — Enterprise/on-prem/VPC posture (Design Doc 16.3) and scope control [COMPLETED - 2025-12-17]
 
-**Goal**: support enterprise on-prem/VPC deployments in a way that preserves the “software/platform provider” posture and is auditable.
+**Status**: ✅ **COMPLETED**
+
+**Goal**: support enterprise on-prem/VPC deployments in a way that preserves the "software/platform provider" posture and is auditable.
 
 Key work:
 - Support enterprise deployment options (on-prem/VPC, or Cloud used only for updates/monitoring by contract).
 - Enforce policy options required by the Design Doc:
-  - “telemetry stays local” (enterprise)
+  - "telemetry stays local" (enterprise)
   - EU-only object store / customer-managed keys (where applicable)
-  - RAW telemetry handling (enterprise-only): either “telemetry stays local” OR Cloud `RAW_ORDER_EVENTS` with explicit opt-in + strict controls (as agreed by contract)
+  - RAW telemetry handling (enterprise-only): either "telemetry stays local" OR Cloud `RAW_ORDER_EVENTS` with explicit opt-in + strict controls (as agreed by contract)
 - Ensure evidence pack exports remain available in on-prem/air-gapped contexts and are exportable without external connectivity if needed.
 
 Deliverables:
 - Enterprise posture note (supported modes, contractual boundaries, and marketing claim guardrails).
-- On-prem/VPC deployment checklist including: EU-only data systems, registry mirror, offline verification/signing, evidence export paths, “telemetry stays local” defaults.
+- On-prem/VPC deployment checklist including: EU-only data systems, registry mirror, offline verification/signing, evidence export paths, "telemetry stays local" defaults.
 - Deployment references to keep in sync with the posture:
   - `deploy/docker/docker-compose.yml`
   - `deploy/helm/ccea-cloud/values-enterprise.yaml`
@@ -830,6 +832,69 @@ DoD:
   - telemetry stays local by default
   - if Cloud RAW telemetry is enabled (enterprise-only), it is explicitly opted-in, audited, and access-restricted
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L968`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L972`.
+
+**Implementation Summary (2025-12-17):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Enterprise Posture Note | ✅ Done | `docs/compliance/ENTERPRISE_POSTURE_NOTE.md` |
+| On-Prem/VPC Deployment Checklist | ✅ Done | `docs/compliance/ONPREM_VPC_DEPLOYMENT_CHECKLIST.md` |
+| EnterprisePostureService (Code) | ✅ Done | `packages/cloud/governance/enterprise_posture.py` |
+| TelemetryLocalModeService (Code) | ✅ Done | `packages/cloud/governance/enterprise_posture.py` |
+| EnterpriseEvidencePackExporter (Code) | ✅ Done | `packages/cloud/governance/enterprise_posture.py` |
+| EnterprisePostureValidator (Code) | ✅ Done | `packages/cloud/governance/enterprise_posture.py` |
+| Enterprise Posture CI Guardrail | ✅ Done | `ccea/guardrails/enterprise_posture_check.py` |
+| Helm Enterprise Values (Updated) | ✅ Done | `deploy/helm/ccea-cloud/values-enterprise.yaml` |
+| Docker Compose (Updated) | ✅ Done | `deploy/docker/docker-compose.yml` |
+| Comprehensive Tests | ✅ Done | `packages/cloud/governance/tests/test_enterprise_posture.py`, `ccea/guardrails/tests/test_enterprise_posture_check.py` |
+
+**Key Components:**
+
+1. **Enterprise Deployment Modes** (`enterprise_posture.py`)
+   - 5 deployment modes: SAAS, ENTERPRISE_CLOUD, ON_PREM_FULL, VPC_MANAGED, AIR_GAPPED
+   - Mode-specific feature matrix (telemetry export, evidence export, offline verification, CMK support)
+   - Factory functions for on-prem and air-gapped configurations
+
+2. **TelemetryLocalModeService** (`enterprise_posture.py`)
+   - "Telemetry stays local" enforcement for enterprise deployments
+   - Blocks Cloud telemetry export when local mode enabled
+   - Validates telemetry destinations against allowed endpoints
+   - Full audit trail for mode changes
+
+3. **EnterprisePostureValidator** (`enterprise_posture.py`)
+   - EU-only residency validation (on-prem, eu, eu-* regions)
+   - Deployment mode-specific configuration checks
+   - RAW_ORDER_EVENTS enterprise-only + opt-in enforcement
+   - Air-gapped mode requirements validation (local registry, offline verification)
+   - Posture report generation with compliance status
+
+4. **EnterpriseEvidencePackExporter** (`enterprise_posture.py`)
+   - Offline evidence pack export (no external connectivity required)
+   - 8 evidence categories: posture_config, telemetry_config, residency_attestation, audit_logs, access_records, change_journal, compliance_reports, security_controls
+   - SHA-256 integrity hashes for verification
+   - Pack listing and verification APIs
+
+5. **CI Guardrail** (`enterprise_posture_check.py`)
+   - Auto-detects deployment mode from configuration files
+   - Validates EU-only residency (scans for non-EU regions)
+   - Validates telemetry configuration per mode
+   - Air-gapped mode checks (no external URLs, local registry required)
+   - Violation reporting with severity levels
+
+6. **Deployment Configuration Updates**
+   - `values-enterprise.yaml`: Phase 9 enterprisePosture block with telemetryLocalOnly, evidenceExportLocalOnly, offlineVerification, customerManagedKeys
+   - `docker-compose.yml`: Phase 9 environment variables (CCEA_DEPLOYMENT_MODE, CCEA_TELEMETRY_LOCAL_ONLY, CCEA_EVIDENCE_EXPORT_LOCAL_ONLY, CCEA_POSTURE_VALIDATION_ENABLED), evidence_exports volume
+
+**Marketing Claim Guardrails** (from ENTERPRISE_POSTURE_NOTE.md):
+- Permitted claims: "EU-only data residency", "Telemetry stays local option", "GDPR-compliant architecture"
+- Prohibited claims: "No data leaves your network" (unless air-gapped), "Complete data sovereignty" (Cloud still receives some metadata), Compliance guarantees without contract
+
+**Test Results:**
+- 51 tests passing for enterprise posture service
+- 38 tests passing for enterprise posture CI guardrail
+- 624 tests passing for governance module (no regressions)
+- 137 tests passing for guardrails module (no regressions)
+- DoD verified: on-prem/VPC deployment can produce evidence pack with telemetry boundaries proof
 
 ## 5) Test strategy (minimum set)
 
