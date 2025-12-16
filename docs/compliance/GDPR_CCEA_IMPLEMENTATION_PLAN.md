@@ -10,8 +10,8 @@
 
 This plan implements **only** the GDPR elements needed for this project’s architecture and positioning as a **software/platform provider**, aligned with CCEA constraints:
 
-- **Default telemetry is aggregated**, with **mandatory redaction** before leaving the Agent.
-- **No secrets** (API keys, tokens), **no env vars**, and **no order-like payloads** are allowed to reach Cloud (enforced by schema/CI).
+- **Telemetry has three sensitivity levels**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in) — with **mandatory redaction** before leaving the Agent.
+- **No secrets** (API keys, tokens), **no env vars**, and **no order-like payloads in Cloud→Agent commands** are allowed (enforced by schema/CI); telemetry is separately governed by sensitivity level.
 - **EU data residency by default** (and in this project: EU-only).
 - **Retention per tenant + auto-purge + DSAR export/delete**.
 - **RBAC + access audit + break-glass** for incident-only exceptional access.
@@ -24,10 +24,8 @@ The Design Doc explicitly requires:
 
 - **Data minimization**: collect only what’s necessary for monitoring, billing (if needed), support (with consent).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L873` (14.1), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1736` (6.1).
-- **Telemetry sensitivity levels** with **AGGREGATED default** and an opt-in technical level (`DETAILED_NON_SENSITIVE`) for non-sensitive debugging/ops.  
-  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846` (13.1–13.2), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`.
-  EU-only posture clarification: `RAW_ORDER_EVENTS` is **not** a Cloud telemetry level and is implemented only as **Agent-local export** (no Cloud ingestion/storage).  
-  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
+- **Telemetry sensitivity levels** with **AGGREGATED default**, an opt-in technical level (`DETAILED_NON_SENSITIVE`), and **optional `RAW_ORDER_EVENTS`** (dangerous; enterprise-only + explicit opt-in in this product posture).
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846` (13.1–13.2), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
 - **Mandatory redaction** before telemetry transmission: remove secrets, mask account identifiers, forbid env var logging.  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L863` (13.3), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1728` (5.4).
 - **Retention per tenant + auto-purge + export/delete (DSAR)**.  
@@ -55,6 +53,7 @@ The Design Doc explicitly requires:
 The minimal GDPR subset for this project typically includes:
 
 - **Art. 5** (principles: minimization, storage limitation), **Art. 6** (lawful basis)
+- **Art. 13–14** (transparency obligations: what is processed, why, and boundaries)
 - **Art. 12–23** (data subject rights: access, portability, erasure; response timing)
 - **Art. 25** (privacy by design/default)
 - **Art. 28** (processor obligations / DPAs where applicable)
@@ -68,12 +67,13 @@ The minimal GDPR subset for this project typically includes:
 These constraints are required for the platform’s compliance posture and must remain invariant:
 
 1. **Cloud never receives** broker credentials, API keys/tokens, or env vars (redaction + validation + CI guardrails).
-2. Cloud never receives **order-like payloads** (side/qty/price/order id/fill details); no Cloud exceptions in the EU-only posture.
-3. **Cloud telemetry sensitivity levels are fixed and named**: `AGGREGATED` (default) and `DETAILED_NON_SENSITIVE` (opt-in).  
-   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`.
-4. **`RAW_ORDER_EVENTS` is not a Cloud telemetry level in the EU-only posture**: raw order/fill events never reach Cloud and are never ingested/stored in Cloud; if needed for enterprise due diligence/support, it is **Agent-local export only** (customer-controlled storage) with explicit governance.  
-   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
-5. Default telemetry is **AGGREGATED** (retail/pro); any increase in sensitivity is explicit, audited, and controlled; enterprise may support “telemetry stays local”.  
+2. **Cloud→Agent protocol commands** never carry **order-like payloads** (side/qty/price/order id/fill details); forbidden at schema + CI (“no order commands”).
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L750`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L754`.
+3. **Cloud telemetry sensitivity levels are fixed and named**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in).
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`.
+4. **Order/fill-like fields are forbidden in Cloud telemetry** unless `telemetry_level == RAW_ORDER_EVENTS` and the workspace is explicitly enabled for enterprise RAW (gated, audited, retention-minimized, access-restricted).
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
+5. Default telemetry is **AGGREGATED** (retail/pro); any increase in sensitivity is explicit, audited, and controlled; enterprise may select “telemetry stays local” (local-only mode) instead of Cloud ingestion.
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
 6. **Telemetry redaction is always on** and cannot be disabled by configuration/feature flag; env var logging is forbidden.  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
@@ -93,17 +93,20 @@ These constraints are required for the platform’s compliance posture and must 
 
 ### 3.1 Canonical stance: `RAW_ORDER_EVENTS`
 
-The Design Doc allows `RAW_ORDER_EVENTS` as an opt-in sensitivity level, but also flags it as dangerous for privacy/IP.  
-Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`.
+The Design Doc allows `RAW_ORDER_EVENTS` as an opt-in sensitivity level and flags it as dangerous for privacy/IP.
+Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
 
 **Decision for this EU-only product posture**:
-- `RAW_ORDER_EVENTS` is **not implemented as Cloud telemetry ingestion** and **does not exist in the Cloud telemetry protocol/schema** for the EU-only posture.
-- If raw order/fill events are needed at all, they are **enterprise-only Agent-local exports** to customer-controlled storage (“telemetry stays local”), contractually scoped, and gated by break-glass / explicit approvals as applicable.
+- `RAW_ORDER_EVENTS` is supported as a telemetry sensitivity level **only for enterprise** and only with **explicit per-workspace opt-in**, with strict validation (allowlist fields), minimal retention, and access controls.
+- Default remains `AGGREGATED`; `DETAILED_NON_SENSITIVE` is opt-in for ops/debugging; enterprise may choose “telemetry stays local” instead of Cloud ingestion.
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`.
 
 **Required alignment work**:
 - Ensure protocol/schema, documentation, and runtime enforcement are consistent:
-  - Cloud telemetry schema contains only `AGGREGATED` and `DETAILED_NON_SENSITIVE`.
-  - Any raw order event capability is implemented only as an Agent-local export interface (not Cloud ingestion), with explicit governance and audit trails.
+  - Cloud telemetry schema contains `AGGREGATED`, `DETAILED_NON_SENSITIVE`, `RAW_ORDER_EVENTS` per Design Doc.
+  - Non-RAW levels must reject order/fill-like fields; RAW must be blocked unless enterprise + explicit opt-in is proven and audited.
+  - Evidence pack must support telemetry export “by sensitivity level” including RAW when (and only when) enabled.
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L958`.
 
 ## 4) Phased execution plan
 
@@ -125,7 +128,8 @@ Deliverables:
 
 DoD:
 - A RoPA-lite table exists with columns: system, data category, purpose, lawful basis, retention, residency, access roles, subprocessors.
-- A Cloud↔Agent data flow diagram exists and labels Cloud telemetry levels (`AGGREGATED`/`DETAILED_NON_SENSITIVE`), and documents that raw order events are Agent-local only (no Cloud ingestion).
+- A Cloud↔Agent data flow diagram exists and labels Cloud telemetry levels (`AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`), and documents RAW gating (enterprise-only, explicit opt-in) and “telemetry stays local” option.
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`.
 - Every listed data store/log stream has: owner, retention, lawful basis, and residency=EU (no blanks).
 
 ### Phase 1 — Transparency + legal artifacts aligned to CCEA
@@ -145,11 +149,14 @@ DoD:
 - Public/legal docs and engineering reality are consistent (no contradictions about credentials, order data, telemetry levels, EU-only residency, DSAR boundaries).
 - “CCEA privacy guarantees” checklist is explicitly stated:
   - Cloud never receives secrets/credentials/env vars
-  - No order-like payloads exist in protocol/commands
-  - Telemetry is redacted and default AGGREGATED
+  - No order-like payloads exist in Cloud→Agent protocol commands
+  - Telemetry is redacted; defaults to `AGGREGATED`; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is enterprise-only + explicit opt-in (and may be “telemetry stays local” instead)
   - EU-only residency for all data systems and subprocessors
   - DSAR scope is Cloud-only; Agent data remains customer-controlled
 - A subprocessors/services list exists that includes region evidence (EU-only) and review timestamps (for inclusion in the evidence pack).
+- Support-with-consent is enforceable:
+  - A consent record exists (who/what/when/scope/expiry) and is auditable
+  - Consent can be revoked and revocation is enforced (support export blocked without active consent)
 
 ### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts)
 
@@ -158,8 +165,12 @@ DoD:
 Key work:
 - Enforce “no order-like payloads” at protocol schema level and CI (explicit prohibited fields like side/qty/price).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
-- Telemetry contract (Cloud ingestion): `AGGREGATED` default; `DETAILED_NON_SENSITIVE` is opt-in; any increase in sensitivity requires explicit config + audit event.
-- Enforce the EU-only posture decision for raw order events: `RAW_ORDER_EVENTS` does not exist in Cloud telemetry schema/ingestion; raw order/fill data may exist only as Agent-local exports (enterprise-only).
+- Telemetry contract (Cloud ingestion): `AGGREGATED` default; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is enterprise-only + explicit opt-in; any increase in sensitivity requires explicit config + audit event.
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`.
+- Enforce RAW safety boundaries:
+  - Non-RAW telemetry rejects order/fill-like fields and intent-like structures (“no order payloads unless RAW”)
+  - RAW telemetry is blocked unless enterprise + explicit opt-in is proven and audited
+  - RAW telemetry retention is minimized and access is restricted (RBAC + break-glass for support access)
 - Mandatory redaction rules (secrets, identifiers, env vars) validated with tests, including “cannot be disabled by feature flag”.  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
 - Implement CI guardrails as non-bypassable build constraints (see `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md`):
@@ -171,13 +182,16 @@ Key work:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1043`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 - Enforce digest pinning + registry allowlist invariants (“no latest” and no unknown registries).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L911`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L913`.
-- Remove any `RAW_ORDER_EVENTS` mention/fields from the Cloud telemetry protocol schema and ingestion code paths; add contract tests proving raw fields are rejected and schema does not include RAW telemetry as a Cloud level.  
-  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L750`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
+- Ensure protocol schema includes `RAW_ORDER_EVENTS` as a telemetry level per Design Doc, while guardrails enforce enterprise-only explicit opt-in and strict validation.
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L742`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`.
 - Add regression tests for redaction + schema guardrails.
 
 Deliverables:
-- “Telemetry data dictionary (Cloud ingestion)” (allowed/forbidden fields per Cloud telemetry level, using the canonical IDs: `AGGREGATED`/`DETAILED_NON_SENSITIVE`)
-- “RAW_ORDER_EVENTS local export spec (enterprise-only)” (Agent-local only: format, retention, encryption option, access controls, audit events)
+- “Telemetry data dictionary (Cloud ingestion)” (allowed/forbidden fields per Cloud telemetry level, using the canonical IDs: `AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`)
+- “RAW_ORDER_EVENTS handling spec (enterprise-only)”:
+  - Cloud ingestion gates (enterprise + explicit opt-in + audit events)
+  - Optional Agent-local export path (customer-controlled storage) as “telemetry stays local” mode
+  - Retention + encryption + access controls + break-glass expectations
 - CI checks/tests proving:
   - order-like payloads rejected
   - secrets/env vars never shipped
@@ -185,9 +199,12 @@ Deliverables:
 - A protocol change review checklist and journal format for new command types (recorded in the evidence pack change journal).
 
 DoD:
-- A PR that attempts to introduce order-like payloads or secrets in telemetry fails CI.
+- A PR that attempts to introduce order-like payloads in Cloud→Agent protocol commands, or in non-`RAW_ORDER_EVENTS` telemetry, or introduces secrets/env vars in any telemetry, fails CI.
 - A PR that attempts to disable redaction (even via feature flag/config) fails CI and/or tests.
-- `RAW_ORDER_EVENTS` is absent from Cloud telemetry schema/ingestion; any attempt to add it fails CI/contract tests.
+- `RAW_ORDER_EVENTS` exists as a telemetry level, but:
+  - any non-enterprise attempt to send RAW is rejected
+  - any RAW attempt without explicit opt-in is rejected
+  - any order-like fields in non-RAW telemetry are rejected
 - A PR that introduces a new command type without a recorded security review approval fails CI.
 - A PR that attempts to reference an artifact/config by anything other than digest (or uses “latest”) fails CI.
 
@@ -271,6 +288,8 @@ Deliverables:
 - RBAC policy definitions + enforcement points
 - Access-audit event schema + storage + export
 - Break-glass workflow and logs
+- Explicit permission model for deploy/upgrade/change management (who can request vs approve)
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L966`.
 
 DoD:
 - Every sensitive access is attributable to a principal and request_id; break-glass additionally has a reason, scope, and expiry time; all are exportable.
@@ -324,7 +343,7 @@ Key work:
 - Enforce policy options required by the Design Doc:
   - “telemetry stays local” (enterprise)
   - EU-only object store / customer-managed keys (where applicable)
-  - Agent-local raw order events export only (no Cloud ingestion), if required by enterprise
+  - RAW telemetry handling (enterprise-only): either “telemetry stays local” OR Cloud `RAW_ORDER_EVENTS` with explicit opt-in + strict controls (as agreed by contract)
 - Ensure evidence pack exports remain available in on-prem/air-gapped contexts and are exportable without external connectivity if needed.
 
 Deliverables:
@@ -335,15 +354,20 @@ Deliverables:
   - `deploy/helm/ccea-cloud/values-enterprise.yaml`
 
 DoD:
-- An on-prem/VPC deployment (EU-only posture) can produce an evidence pack and prove residency/telemetry boundaries in that mode (telemetry stays local by default; no Cloud RAW ingestion).  
+- An on-prem/VPC deployment (EU-only posture) can produce an evidence pack and prove residency/telemetry boundaries in that mode:
+  - telemetry stays local by default
+  - if Cloud RAW telemetry is enabled (enterprise-only), it is explicitly opted-in, audited, and access-restricted
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L968`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L972`.
 
 ## 5) Test strategy (minimum set)
 
 Minimum automated coverage to make the posture durable:
 
-- **Schema/contract tests**: forbid order-like payloads; validate telemetry event schema by sensitivity level.
-- **Telemetry posture tests**: Cloud telemetry schema contains only `AGGREGATED` and `DETAILED_NON_SENSITIVE`; any raw order/fill event fields are rejected; enterprise raw order events are only Agent-local exports.
+- **Schema/contract tests**: forbid order-like payloads in Cloud→Agent commands; validate telemetry event schema by sensitivity level (including “order-like allowed only in `RAW_ORDER_EVENTS` when gated).
+- **Telemetry posture tests**:
+  - Cloud telemetry schema contains `AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS` per Design Doc
+  - non-RAW telemetry rejects order/fill-like fields
+  - `RAW_ORDER_EVENTS` is rejected unless enterprise + explicit opt-in is proven and audited
 - **Redaction tests**: secrets/env vars/account identifiers are always redacted (including nested structures).
 - **Residency tests**: EU-only configuration validation (endpoints, buckets, DB regions).
 - **Retention tests**: purge jobs remove data past cutoff; legal hold blocks deletion.
@@ -370,8 +394,8 @@ To support customer due diligence and audits, be able to export:
 - Access accountability: RBAC policy snapshots + access audit logs + break-glass events (reason, scope, duration)
 - Telemetry evidence:
   - telemetry export by sensitivity level:
-    - Cloud telemetry: `AGGREGATED` / `DETAILED_NON_SENSITIVE`
-    - Agent-local export (enterprise-only, customer-controlled): `RAW_ORDER_EVENTS`
+    - Cloud telemetry: `AGGREGATED` / `DETAILED_NON_SENSITIVE` / `RAW_ORDER_EVENTS` (RAW only when enterprise + explicit opt-in is enabled)
+    - Agent-local export option (enterprise, customer-controlled): “telemetry stays local”
   - proof of redaction middleware mandatory (tests + configuration constraints)
   - log export requests with redaction (`REQUEST_EXPORT_LOGS`) as an auditable export type  
     Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1651`.

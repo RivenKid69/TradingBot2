@@ -59,6 +59,7 @@ class EvidenceTypeEnum(str, Enum):
     KILL_SWITCH_EVENTS = "kill_switch_events"
     TELEMETRY_AGGREGATED = "telemetry_aggregated"
     TELEMETRY_DETAILED = "telemetry_detailed"
+    TELEMETRY_RAW = "telemetry_raw"
     ACCESS_AUDIT = "access_audit"
     BREAK_GLASS_EVENTS = "break_glass_events"
     CONFIG_CHANGES = "config_changes"
