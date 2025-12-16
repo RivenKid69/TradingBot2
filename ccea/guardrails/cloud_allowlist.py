@@ -100,7 +100,9 @@ PROHIBITED_INTERNAL: Final[FrozenSet[str]] = frozenset([
 PROHIBITED_PATTERNS: Final[FrozenSet[str]] = frozenset([
     "order_execution",
     "options_execution",
-    "_private",  # Private trading endpoints
+    "_private.",  # Private trading endpoints (e.g. binance_spot_private.foo)
+    ".private.",  # Private modules
+    "spot_private",  # Binance spot private API
     "live_loop",
     "broker_connector",
 ])
@@ -264,6 +266,15 @@ def is_cloud_allowed(module: str) -> bool:
     if any(module.startswith(prefix) for prefix in [
         "core_", "impl_", "adapters.base", "adapters.models",
         "adapters.registry", "adapters.config", "adapters.websocket_base",
+    ]):
+        return True
+
+    # Allow CCEA shared infrastructure modules (crypto, models, guardrails)
+    # These are needed by Cloud for command signing and validation
+    if any(module.startswith(prefix) for prefix in [
+        "ccea.crypto",  # Cryptographic utilities for signing/verification
+        "ccea.models",  # Shared data models and protocols
+        "ccea.guardrails",  # CI/CD guardrails
     ]):
         return True
 

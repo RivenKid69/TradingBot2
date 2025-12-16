@@ -13,10 +13,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Final, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Final, List, Optional, Set
 from uuid import UUID, uuid4
 
 from packages.shared.contracts.config import ChangeClass
+
+if TYPE_CHECKING:
+    from .persistence import ApprovalPersistence
+
+from . import metrics as approval_metrics
 
 
 class ApprovalStatus(str, Enum):
@@ -142,6 +147,7 @@ class ApprovalManager:
         auto_approve_operational: bool = True,
         approval_timeout_seconds: int = 300,
         on_approval_requested: Optional[ApprovalCallbackFn] = None,
+        persistence: Optional["ApprovalPersistence"] = None,
     ):
         """
         Initialize approval manager.
@@ -150,10 +156,12 @@ class ApprovalManager:
             auto_approve_operational: Auto-approve OPERATIONAL changes
             approval_timeout_seconds: Timeout for approval requests
             on_approval_requested: Callback when approval requested
+            persistence: Optional persistence layer for durable storage
         """
         self._auto_approve_operational = auto_approve_operational
         self._timeout_seconds = approval_timeout_seconds
         self._on_approval_requested = on_approval_requested
+        self._persistence = persistence
 
         # Request storage
         self._requests: Dict[UUID, ApprovalRequest] = {}
@@ -161,6 +169,55 @@ class ApprovalManager:
 
         # Auto-approve whitelist (LOCAL only)
         self._auto_approve_commands: Set[str] = set()
+
+        # Load pending from persistence if available
+        if self._persistence:
+            self._load_from_persistence()
+
+    def _load_from_persistence(self) -> None:
+        """Load pending requests from persistence layer."""
+        if not self._persistence:
+            return
+
+        pending_data = self._persistence.load_all_pending()
+        for data in pending_data:
+            try:
+                request = ApprovalRequest(
+                    request_id=UUID(data["request_id"]),
+                    change_class=ChangeClass(data.get("change_class", "TRADING_IMPACTING")),
+                    command_type=data.get("command_type", ""),
+                    description=data.get("description", ""),
+                    details=data.get("details", {}),
+                    config_digest_old=data.get("config_digest_old"),
+                    config_digest_new=data.get("config_digest_new"),
+                    artifact_digest=data.get("artifact_digest"),
+                    diff_summary=data.get("diff_summary"),
+                    status=ApprovalStatus(data.get("status", "pending")),
+                    created_at=datetime.fromisoformat(data["created_at"])
+                    if data.get("created_at")
+                    else datetime.utcnow(),
+                    expires_at=datetime.fromisoformat(data["expires_at"])
+                    if data.get("expires_at")
+                    else None,
+                    decided_at=datetime.fromisoformat(data["decided_at"])
+                    if data.get("decided_at")
+                    else None,
+                    evidence_hash=data.get("evidence_hash"),
+                    decision_reason=data.get("decision_reason"),
+                )
+                self._requests[request.request_id] = request
+            except (KeyError, ValueError):
+                continue  # Skip invalid records
+
+    def _persist_pending(self, request: ApprovalRequest) -> None:
+        """Save pending request to persistence."""
+        if self._persistence:
+            self._persistence.save_pending(request.request_id, request.to_dict())
+
+    def _persist_history(self, request: ApprovalRequest) -> None:
+        """Save completed request to history persistence."""
+        if self._persistence:
+            self._persistence.save_history(request.request_id, request.to_dict())
 
     def create_request(
         self,
@@ -208,6 +265,9 @@ class ApprovalManager:
                 decision_reason="Auto-approved by local policy",
             )
             self._history.append(request)
+            self._persist_history(request)
+            # Record auto-approval metric
+            approval_metrics.record_auto_approved(command_type, change_class.value)
             return request
 
         # Create pending request
@@ -231,6 +291,11 @@ class ApprovalManager:
             request.diff_summary = f"Artifact change: {artifact_digest[:16]}..."
 
         self._requests[request.request_id] = request
+        self._persist_pending(request)
+
+        # Record metrics
+        approval_metrics.record_request_created(command_type, change_class.value)
+        approval_metrics.set_pending_count(len(self._requests))
 
         # Notify callback
         if self._on_approval_requested:
@@ -282,7 +347,18 @@ class ApprovalManager:
 
         # Move to history
         self._history.append(request)
+        self._persist_history(request)
         del self._requests[request_id]
+
+        # Record metrics
+        latency = (request.decided_at - request.created_at).total_seconds()
+        approval_metrics.record_decision(
+            command_type=request.command_type,
+            decision="approved",
+            decided_by=decided_by,
+            latency_seconds=latency,
+        )
+        approval_metrics.set_pending_count(len(self._requests))
 
         return True
 
@@ -328,7 +404,18 @@ class ApprovalManager:
 
         # Move to history
         self._history.append(request)
+        self._persist_history(request)
         del self._requests[request_id]
+
+        # Record metrics
+        latency = (request.decided_at - request.created_at).total_seconds()
+        approval_metrics.record_decision(
+            command_type=request.command_type,
+            decision="denied",
+            decided_by=decided_by,
+            latency_seconds=latency,
+        )
+        approval_metrics.set_pending_count(len(self._requests))
 
         return True
 
@@ -364,11 +451,21 @@ class ApprovalManager:
     def get_pending_requests(self) -> List[ApprovalRequest]:
         """Get all pending requests."""
         # Check for expired
+        expired_count = 0
         for request in list(self._requests.values()):
             if request.is_expired:
                 request.status = ApprovalStatus.EXPIRED
+                request.decided_at = datetime.utcnow()
+                request.decision_reason = "Expired"
                 self._history.append(request)
+                self._persist_history(request)
                 del self._requests[request.request_id]
+                # Record expired metric
+                approval_metrics.record_expired(request.command_type)
+                expired_count += 1
+
+        if expired_count > 0:
+            approval_metrics.set_pending_count(len(self._requests))
 
         return list(self._requests.values())
 

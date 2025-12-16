@@ -28,6 +28,19 @@ from .evidence import (
     compute_evidence_hash,
 )
 
+from .cli import (
+    ApprovalCLI,
+    main as approval_cli_main,
+    create_cli_parser,
+)
+
+from .persistence import (
+    ApprovalPersistence,
+    ApprovalPersistenceConfig,
+)
+
+from . import metrics as approval_metrics
+
 __all__ = [
     "ApprovalManager",
     "ApprovalRequest",
@@ -35,4 +48,10 @@ __all__ = [
     "ApprovalStatus",
     "EvidenceRecord",
     "compute_evidence_hash",
+    "ApprovalCLI",
+    "approval_cli_main",
+    "create_cli_parser",
+    "ApprovalPersistence",
+    "ApprovalPersistenceConfig",
+    "approval_metrics",
 ]

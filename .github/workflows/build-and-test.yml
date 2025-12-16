@@ -71,7 +71,7 @@ jobs:
       - name: CCEA Cloud Allowlist Check
         env:
           PYTHONUTF8: "1"
-        run: python -m ccea.guardrails.cloud_allowlist --cloud-dir packages/cloud --no-transitive
+        run: python -m ccea.guardrails.cloud_allowlist --cloud-dir packages/cloud
 
       - name: CCEA Design Doc SHA Check (WI-TRACE-01)
         env:

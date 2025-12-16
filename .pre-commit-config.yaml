@@ -79,7 +79,7 @@ repos:
         name: CCEA Cloud Allowlist Check
         description: Validate Cloud uses only allowed dependencies
         entry: python -m ccea.guardrails.cloud_allowlist
-        args: [--cloud-dir, packages/cloud, --no-transitive]
+        args: [--cloud-dir, packages/cloud]
         language: python
         files: '^packages/cloud/.*\.py$'
         pass_filenames: false
