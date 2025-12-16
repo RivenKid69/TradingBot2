@@ -4,6 +4,69 @@
 
 This document provides detailed deployment architectures, security specifications, and infrastructure diagrams for enterprise deployment of the AI-Powered Quantitative Research Platform. Designed for European prop trading firms with strict regulatory requirements (MiFID II, GDPR, DORA).
 
+**Architecture Foundation**: All deployments are based on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict security boundaries between research/monitoring (Cloud Zone) and live trading execution (Agent Zone).
+
+---
+
+## CCEA Zone Architecture Overview
+
+The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with strict zone separation:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CLOUD ZONE (Research & Control)                      │
+│  Deployment: Shared SaaS / Customer VPC / On-Premises (self-hosted)         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Research   │  │   Artifact   │  │   Control    │  │   Telemetry     │  │
+│  │     IDE      │  │   Builder    │  │    Plane     │  │   Monitoring    │  │
+│  │  Backtesting │  │   (signed)   │  │  (lifecycle) │  │  (redacted)     │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  SECURITY GUARANTEES:                                                        │
+│  - NO trading credentials stored                                             │
+│  - NO order generation or transmission                                       │
+│  - NO access to exchange trading endpoints                                   │
+│  - NO order-like payloads (side/qty/price)                                   │
+│  - Mandatory telemetry redaction                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Lifecycle Commands Only:
+                                    │ - REQUEST_START_RUN
+                                    │ - REQUEST_STOP_RUN
+                                    │ - REQUEST_UPGRADE_ARTIFACT
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AGENT ZONE (Execution & Secrets)                     │
+│  Deployment: Customer On-Premises / Customer VPC / User Machine             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Local      │  │   Policy     │  │  Live Loop   │  │    Broker       │  │
+│  │   Vault      │  │  Firewall    │  │   Runner     │  │   Connector     │  │
+│  │  (HSM/KMS)   │  │ (hard caps)  │  │ Intent→Order │  │  (execution)    │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  SECURITY GUARANTEES:                                                        │
+│  - Secrets NEVER leave this zone                                             │
+│  - All orders created and sent from this zone                                │
+│  - Hard caps enforced locally                                                │
+│  - Artifact signature verification required                                  │
+│  - Local approval required for trading-impacting commands                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │  BROKER / EXCHANGE  │
+                         └─────────────────────┘
+```
+
+### Enterprise CCEA Deployment Options
+
+| Option | Cloud Zone Location | Agent Zone Location | Use Case |
+|--------|---------------------|---------------------|----------|
+| **Shared SaaS + Local Agent** | Our EU Infrastructure | Customer machine/VPC | Quick start, retail-friendly |
+| **Private VPC + VPC Agent** | Customer AWS/GCP/Azure VPC | Same VPC (segregated) | Enterprise, data sovereignty |
+| **On-Premises (Full)** | Customer data center | Same data center (segregated) | High-security, air-gapped capable |
+| **Hybrid** | Our EU Infrastructure | Customer on-premises | Research SaaS + local execution |
+
 ---
 
 ## Table of Contents

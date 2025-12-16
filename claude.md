@@ -399,6 +399,33 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 - **Local approval**: REQUIRED for trading_impacting
 - **Artifact signature verification**: REQUIRED
 - **Auto-approve**: DISABLED (local policy only)
+- **RAW telemetry**: OFF (enterprise opt-in only)
+- **Remote flatten position**: DISABLED (enterprise by contract only)
+
+### Legal Posture (ВАЖНО!)
+
+| Мы являемся | Мы НЕ являемся |
+|-------------|----------------|
+| Software Provider / ICT Provider | Investment Adviser |
+| Algorithmic trading research tools | Broker-Dealer |
+| Strategy development platform | Custodian |
+| Infrastructure for users | Asset Manager |
+
+**Регуляторные ссылки:**
+- **MiFID II**: Software tool exclusion (ESMA Q&A ESMA35-43-349)
+- **EU AI Act**: Transparency provider (Article 50), Not high-risk AI deployer
+- **GDPR**: Data Controller with EU data residency
+- **DORA**: ICT Service Provider (contractual compliance)
+
+### Threat Model (ключевые угрозы)
+
+| Угроза | Защита CCEA |
+|--------|-------------|
+| RCE in Cloud | Cloud has no trading libs, no broker APIs |
+| Key exfiltration | Keys never leave Agent, mandatory redaction |
+| Artifact tampering | Digest pinning + signature verification |
+| Cloud becomes execution | No order-like payloads in protocol schema |
+| Replay attacks | Idempotency keys + timestamps |
 
 ### Ключевые файлы
 

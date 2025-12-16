@@ -13,6 +13,79 @@
 
 This policy establishes the principles, responsibilities, and procedures for protecting personal data processed by our organization in compliance with the General Data Protection Regulation (EU) 2016/679 (GDPR) and applicable national data protection laws.
 
+**Architecture Foundation**: Our data protection measures are built on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict zone separation and mandatory data protection controls.
+
+---
+
+## 1.1 CCEA Data Protection Model
+
+### Zone-Based Data Separation
+
+Our platform implements strict data separation between Cloud Zone and Agent Zone:
+
+| Data Category | Cloud Zone | Agent Zone | Protection Mechanism |
+|---------------|------------|------------|---------------------|
+| **Trading Credentials** | ❌ NEVER stored | ✅ Local Vault only | Architecture enforcement |
+| **Broker API Keys** | ❌ NEVER accessed | ✅ HSM/KMS/Keychain | Secrets never leave Agent |
+| **User Strategies** | ✅ Research/backtest | ✅ Execution | Encryption + access control |
+| **Telemetry Data** | ✅ Redacted only | Raw at source | Mandatory redaction middleware |
+| **Order Data** | ❌ NEVER generated | ✅ Created locally | No order payloads in Cloud |
+
+### Mandatory Telemetry Redaction
+
+All telemetry sent from Agent to Cloud passes through mandatory redaction:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TELEMETRY REDACTION PIPELINE                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Agent Zone:                                                                 │
+│  ┌─────────────┐    ┌─────────────────┐    ┌─────────────────────────────┐  │
+│  │  Raw        │ → │  Redaction      │ → │  Sanitized Telemetry         │  │
+│  │  Telemetry  │    │  Middleware     │    │  (ready for transmission)   │  │
+│  │             │    │  (MANDATORY)    │    │                             │  │
+│  │  - PII      │    │  Removes:       │    │  - Anonymized metrics       │  │
+│  │  - Secrets  │    │  - API keys     │    │  - Performance data         │  │
+│  │  - Signals  │    │  - Passwords    │    │  - Error logs (safe)        │  │
+│  │             │    │  - Auth tokens  │    │                             │  │
+│  └─────────────┘    │  - Trading IDs  │    └─────────────────────────────┘  │
+│                     └─────────────────┘              │                       │
+│                                                      │                       │
+└──────────────────────────────────────────────────────│───────────────────────┘
+                                                       │
+                                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLOUD ZONE                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Telemetry Storage (receives only sanitized data)                    │    │
+│  │  - CANNOT reconstruct secrets                                        │    │
+│  │  - CANNOT identify trading positions                                 │    │
+│  │  - CANNOT replay trading activity                                    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Redaction Levels
+
+| Level | What's Redacted | When Used | Can Be Disabled |
+|-------|-----------------|-----------|-----------------|
+| **MANDATORY** | API keys, passwords, tokens | Always | ❌ No |
+| **DEFAULT** | + PII, account IDs, trading signals | Production | ❌ No (retail), Yes (enterprise by contract) |
+| **RAW** | Nothing (full telemetry) | Enterprise opt-in | Yes (requires signed agreement) |
+
+**Enterprise RAW Telemetry**: Available only via explicit contractual agreement. Customer acknowledges responsibility for GDPR compliance of raw data. Must implement their own DPA with end-users.
+
+### CCEA GDPR Alignment
+
+| GDPR Principle | CCEA Implementation |
+|----------------|---------------------|
+| **Data Minimization** | Cloud never receives trading credentials |
+| **Storage Limitation** | Secrets stored only in local Agent vault |
+| **Integrity & Confidentiality** | Mandatory redaction prevents secret exposure |
+| **Privacy by Design** | Architecture enforces data separation |
+| **Accountability** | Audit trail of all data flows |
+
 ---
 
 ## 2. Scope

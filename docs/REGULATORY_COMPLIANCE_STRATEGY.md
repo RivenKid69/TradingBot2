@@ -85,44 +85,82 @@ Under EU law, our activities fall under:
 
 *Source: ESMA Q&A on MiFID II/MiFIR investor protection topics (ESMA35-43-349)*
 
-### 1.4 Service Delivery Model
+### 1.4 Service Delivery Model: CCEA Architecture
+
+Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** which provides strict security boundaries that reinforce our regulatory position as a software vendor:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     OUR PLATFORM (SaaS)                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ Backtesting │  │ Risk        │  │ Strategy    │              │
-│  │ Engine      │  │ Analytics   │  │ Development │              │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
-│                         │                                        │
-│              API / Dashboard Access                              │
-└─────────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              CLIENT (Regulated Trading Firm)                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
-│  │ Their       │  │ Their       │  │ Their       │              │
-│  │ Broker      │  │ Compliance  │  │ Execution   │              │
-│  └─────────────┘  └─────────────┘  └─────────────┘              │
-│                                                                  │
-│  CLIENT is responsible for: MiFID II compliance, trade          │
-│  execution, client suitability, best execution, reporting       │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CLOUD ZONE (Our SaaS Infrastructure)                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Research   │  │   Artifact   │  │   Control    │  │   Telemetry     │  │
+│  │     IDE      │  │   Builder    │  │    Plane     │  │  (redacted)     │  │
+│  │  Backtesting │  │  (signed)    │  │ (lifecycle)  │  │  Monitoring     │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  CLOUD GUARANTEES (enforced at architecture level):                         │
+│  - NEVER stores broker API keys or trading credentials                      │
+│  - NEVER generates, transmits, or executes trading orders                   │
+│  - NEVER has access to exchange trading endpoints                           │
+│  - NEVER sends order-like payloads (side/qty/price)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Lifecycle Commands Only:
+                                    │ - REQUEST_START_RUN
+                                    │ - REQUEST_STOP_RUN
+                                    │ - REQUEST_UPGRADE_ARTIFACT
+                                    │ (NO side/qty/price/order_type)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    OPTIONAL: AGENT ZONE (User's Local Environment)           │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Local      │  │   Policy     │  │  Live Loop   │  │    Broker       │  │
+│  │   Vault      │  │  Firewall    │  │   Runner     │  │   Connector     │  │
+│  │ (keychain)   │  │ (hard caps)  │  │ Intent→Order │  │  (execution)    │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  CLIENT CONTROLS: Secrets stay local, Hard caps enforced, Orders created    │
+│  and sent locally by user's own Agent running on their infrastructure       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Orders (created & sent by Agent)
+                                    ▼
+                         ┌─────────────────────┐
+                         │  BROKER / EXCHANGE  │
+                         │  (Client's own)     │
+                         └─────────────────────┘
 ```
+
+**CCEA Regulatory Significance**:
+
+| CCEA Guarantee | Regulatory Impact |
+|----------------|-------------------|
+| Cloud never stores credentials | Not a custodian, no custody requirements |
+| Cloud never sends orders | Not an execution venue, no broker-dealer license |
+| Agent runs locally | Client retains execution control, our liability limited |
+| Mandatory telemetry redaction | GDPR compliant, no accidental secret exposure |
+| Signed artifacts only | Supply chain security, audit trail |
 
 ### 1.5 What We Explicitly Do NOT Do
 
-To maintain our software vendor status, we contractually commit to NOT:
+To maintain our software vendor status, we contractually commit to NOT doing the following. These commitments are **enforced by CCEA architecture**, not just policy:
 
-1. **Execute trades** on behalf of any client
-2. **Manage assets** or portfolios on a discretionary basis
-3. **Provide investment advice** (personalized recommendations)
-4. **Handle client funds** or provide custody services
-5. **Make trading decisions** for clients
-6. **Access client brokerage accounts** with execution authority
-7. **Guarantee investment performance** or returns
-8. **Market our services** as investment advice or asset management
+| Commitment | CCEA Enforcement Mechanism |
+|------------|---------------------------|
+| **Execute trades** on behalf of any client | Cloud has no trading libs, no broker API access |
+| **Manage assets** or portfolios on a discretionary basis | Cloud cannot send order-like payloads |
+| **Provide investment advice** (personalized recommendations) | Platform is a tool, not advice |
+| **Handle client funds** or provide custody services | Cloud never stores credentials |
+| **Make trading decisions** for clients | Orders created only by local Agent |
+| **Access client brokerage accounts** with execution authority | Secrets stored only in local vault |
+| **Guarantee investment performance** or returns | Terms of Service disclaimers |
+| **Market our services** as investment advice | Onboarding disclaimers required |
+
+**CCEA Technical Enforcement**:
+- **CI Guardrails**: Build-time checks prevent trading libs in Cloud
+- **Schema Validation**: Protocol rejects payloads with side/qty/price fields
+- **Mandatory Redaction**: Telemetry middleware blocks secret transmission
+- **Signature Verification**: Agent rejects unsigned/tampered artifacts
 
 ---
 
@@ -130,15 +168,44 @@ To maintain our software vendor status, we contractually commit to NOT:
 
 ### 2.1 Applicable EU Regulations
 
-| Regulation | Applicability | Our Obligations |
-|------------|---------------|-----------------|
-| **GDPR** (2016/679) | ✅ Directly applicable | Full compliance required |
-| **MiFID II** (2014/65/EU) | ⚠️ Indirect (via clients) | Support client compliance |
-| **MAR** (596/2014) | ⚠️ Indirect | No market manipulation |
-| **DORA** (2022/2554) | ⚠️ Potential future | ICT risk management |
-| **EU AI Act** (2024/1689) | ⚠️ Monitoring | Risk classification TBD |
-| **NIS2** (2022/2555) | ⚠️ Potential | Cybersecurity measures |
-| **E-Commerce Directive** | ✅ Applicable | Information requirements |
+| Regulation | Applicability | Our Obligations | CCEA Alignment |
+|------------|---------------|-----------------|----------------|
+| **GDPR** (2016/679) | ✅ Directly applicable | Full compliance required | Mandatory redaction, EU residency |
+| **MiFID II** (2014/65/EU) | ⚠️ Indirect (via clients) | Support client compliance | Software tool exclusion (ESMA Q&A) |
+| **MAR** (596/2014) | ⚠️ Indirect | No market manipulation | Cloud cannot send orders |
+| **DORA** (2022/2554) | ✅ ICT Provider | ICT risk management | Contractual compliance |
+| **EU AI Act** (2024/1689) | ✅ Transparency | Article 50 transparency | Not high-risk AI deployer |
+| **NIS2** (2022/2555) | ⚠️ Potential | Cybersecurity measures | NIST CSF 2.0 aligned |
+| **E-Commerce Directive** | ✅ Applicable | Information requirements | Privacy notices compliant |
+
+#### 2.1.1 DORA Compliance (Regulation 2022/2554)
+
+As an **ICT Service Provider** to financial entities, we have specific obligations under DORA:
+
+| DORA Requirement | Our Compliance | CCEA Alignment |
+|------------------|----------------|----------------|
+| **ICT Risk Management** | NIST CSF 2.0 framework | Zone separation limits blast radius |
+| **Incident Reporting** | 72-hour notification | Telemetry provides evidence |
+| **Operational Resilience Testing** | Annual DR/BC testing | Agent runs independently |
+| **Third-Party Risk** | Sub-processor management | Signed artifacts, SBOM |
+| **Contractual Requirements** | DPA/Security addendum | CCEA guarantees in contract |
+
+#### 2.1.2 EU AI Act Compliance (Regulation 2024/1689)
+
+Our position under the EU AI Act:
+
+| Aspect | Our Classification | Rationale |
+|--------|-------------------|-----------|
+| **Role** | AI Provider | We develop and provide AI-enabled trading tools |
+| **Risk Level** | Not High-Risk | Trading tools, not credit scoring/HR/law enforcement |
+| **Obligations** | Article 50 Transparency | Users must know they're interacting with AI |
+| **Model Training** | User's responsibility | Users train on their data via our tools |
+
+**CCEA AI Act Alignment**:
+- Transparency notices in UI (Article 50)
+- Model decision explanations available
+- Users control model deployment decisions
+- No autonomous trading without user approval
 
 ### 2.2 ESMA Guidelines Relevant to Our Operations
 

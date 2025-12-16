@@ -12,6 +12,66 @@
 
 This document defines our cybersecurity framework aligned with NIST CSF 2.0, providing comprehensive security controls for our B2B SaaS trading platform. Our security program is designed to protect client trading strategies, ensure platform availability, and maintain regulatory compliance.
 
+**Security Architecture Foundation**: All security controls are built on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict zone separation between research/monitoring (Cloud Zone) and live trading execution (Agent Zone).
+
+---
+
+## 1.1 CCEA Security Model
+
+### Zone-Based Security Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         CLOUD ZONE (Research & Control)                      │
+│                                                                              │
+│  SECURITY GUARANTEES (enforced at architecture level):                       │
+│  ✗ NO trading credentials stored (secrets never enter Cloud)                │
+│  ✗ NO order generation or transmission (no trading libs in build)           │
+│  ✗ NO access to exchange trading endpoints (no broker APIs)                 │
+│  ✗ NO order-like payloads (side/qty/price blocked in schema)                │
+│  ✓ Mandatory telemetry redaction (secrets blocked in transmission)          │
+│  ✓ Signed artifacts only (supply chain security)                            │
+│                                                                              │
+│  COMPONENTS: Research IDE, Backtesting, Artifact Builder, Control Plane     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Lifecycle Commands Only
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AGENT ZONE (Execution & Secrets)                     │
+│                                                                              │
+│  SECURITY GUARANTEES (enforced locally):                                     │
+│  ✓ Secrets stored in local vault (HSM/KMS/keychain)                         │
+│  ✓ All orders created and sent locally (never via Cloud)                    │
+│  ✓ Hard caps enforced by Policy Firewall (cannot be bypassed)               │
+│  ✓ Artifact signature verification required (tamper detection)              │
+│  ✓ Local approval required for trading-impacting commands                   │
+│                                                                              │
+│  COMPONENTS: Local Vault, Policy Firewall, Live Loop, Broker Connector      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### CCEA Threat Model
+
+| Threat | Attack Vector | CCEA Mitigation |
+|--------|---------------|-----------------|
+| **RCE in Cloud** | Exploit in web app | Cloud has no trading libs, no broker APIs - blast radius limited |
+| **Key Exfiltration** | Memory dump, logs | Keys never leave Agent zone, mandatory redaction in telemetry |
+| **Artifact Tampering** | MITM, supply chain | Digest pinning + signature verification required |
+| **Cloud as Execution** | Rogue insider | No order-like payloads allowed in protocol schema |
+| **Replay Attacks** | Message replay | Idempotency keys + timestamps in all commands |
+| **Unauthorized Trading** | Compromised Cloud | Local approval required for trading-impacting commands |
+
+### CI/CD Security Guardrails
+
+| Guardrail | Description | Enforcement |
+|-----------|-------------|-------------|
+| `no-trading-libs-in-cloud` | Cloud build cannot include order_execution modules | Build-time check |
+| `no-broker-clients-in-cloud` | Cloud cannot import private trading clients | Import boundary check |
+| `no-order-payloads-in-schema` | Schema prohibits side/qty/price fields | Schema validation |
+| `artifact-signature-required` | All artifacts must be signed before deployment | Deployment gate |
+| `redaction-enabled` | Telemetry must have redaction middleware active | Runtime check |
+
 ---
 
 ## 2. Framework Overview

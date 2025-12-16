@@ -129,13 +129,31 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 **Planned EU Entity**: B.V. (Netherlands) or SAS (France)
 
-**Regulatory Position**: Software vendor (not regulated financial entity)
+**Regulatory Position**: Software Provider / ICT Provider (not regulated financial entity)
 
-We provide technology tools to trading firms who are themselves regulated. We do NOT:
-- Execute trades on behalf of clients (no broker-dealer license required)
-- Manage client assets (no investment adviser registration)
-- Provide investment advice or recommendations
-- Handle or custody client funds
+We provide technology tools to trading firms who are themselves regulated. Our **Cloud-Controlled Execution Architecture (CCEA)** ensures clear regulatory boundaries:
+
+**What We Are**:
+- Algorithmic trading research tools provider
+- Strategy development and backtesting platform
+- Infrastructure for users to run their own trading systems
+
+**What We Are NOT** (enforced by CCEA architecture):
+
+| We Are NOT | Why (CCEA Guarantee) |
+|------------|---------------------|
+| **Investment Adviser** | We do not provide personalized investment advice |
+| **Broker-Dealer** | Cloud NEVER executes trades; users execute via their own brokers |
+| **Custodian** | Cloud NEVER stores or accesses user trading credentials |
+| **Asset Manager** | We do not manage portfolios or make investment decisions |
+| **Execution Service** | Cloud NEVER sends orders; Agent runs locally under user control |
+
+**CCEA Security Guarantees** (enforced at architecture level):
+- Cloud NEVER stores broker API keys or trading credentials
+- Cloud NEVER generates, transmits, or executes trading orders
+- Cloud NEVER has access to exchange trading endpoints
+- All live trading occurs ONLY in user's local Agent environment
+- Mandatory telemetry redaction prevents secret leakage
 
 **Regulatory Framework Positioning**:
 
@@ -269,6 +287,64 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 | **Configuration** | YAML, Pydantic | Type-safe configuration |
 | **Testing** | Pytest, CI/CD | Quality assurance (11,063 tests) |
 | **Deployment** | Docker, Kubernetes | Cloud-native scalability |
+
+### 3.4 CCEA: Cloud-Controlled Execution Architecture
+
+Our platform implements a **Cloud-Controlled Execution Architecture (CCEA)** that provides strict security boundaries between research and execution:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLOUD ZONE                                      │
+│                         (Our SaaS Infrastructure)                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Research   │  │   Artifact   │  │   Control    │  │   Telemetry     │  │
+│  │     IDE      │  │   Builder    │  │    Plane     │  │  (redacted)     │  │
+│  │  Backtesting │  │  (signed)    │  │ (lifecycle)  │  │  Monitoring     │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  Security: No trading libs, No broker APIs, No order payloads               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    │ Lifecycle Commands Only:
+                                    │ (NO side/qty/price/order payloads)
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              AGENT ZONE                                      │
+│                      (User's Local Machine / VPC)                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  │
+│  │   Local      │  │   Policy     │  │  Live Loop   │  │    Broker       │  │
+│  │   Vault      │  │  Firewall    │  │   Runner     │  │   Connector     │  │
+│  │ (keychain)   │  │ (hard caps)  │  │ Intent→Order │  │  (execution)    │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
+│                                                                              │
+│  Security: Secrets local, Hard caps enforced, Orders created locally        │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 3.4.1 Zone Responsibilities
+
+| Zone | What It Does | What It NEVER Does |
+|------|--------------|-------------------|
+| **Cloud** | Research IDE, Backtesting, Artifact build/sign, Monitoring, Lifecycle management | Store secrets, Generate orders, Access trading APIs |
+| **Agent** | Store secrets (local vault), Enforce risk limits, Run live loop, Create and send orders | Run without user consent, Bypass local limits, Share secrets |
+
+#### 3.4.2 Product Deployment Modes
+
+| Mode | Cloud Responsibilities | Agent Location | Target Users |
+|------|----------------------|----------------|--------------|
+| **Research SaaS** | Full IDE, backtesting, analytics | Not required | Individual researchers |
+| **Retail Live** | Monitoring, lifecycle, artifacts | User's machine | Active traders |
+| **Enterprise** | Self-hosted available | Customer VPC/on-prem | Hedge funds, prop firms |
+
+#### 3.4.3 Regulatory Benefits of CCEA
+
+This architecture provides clear regulatory benefits:
+
+1. **Not an Execution Venue**: Cloud never executes or transmits orders
+2. **Not a Custodian**: Cloud never holds or accesses trading credentials
+3. **Software Tool Classification**: Analogous to Bloomberg Terminal, QuantConnect
+4. **Client Control**: Users retain full control over execution decisions
+5. **Audit Trail**: Complete separation enables clear compliance documentation
 
 ---
 
