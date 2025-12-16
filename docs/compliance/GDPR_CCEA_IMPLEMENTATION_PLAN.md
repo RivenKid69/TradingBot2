@@ -35,6 +35,17 @@ The Design Doc explicitly requires:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L898` (14.4), `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1751` (6.3).
 - **Protocol constraints**: commands are enumerated/versioned; **order-like payloads are prohibited at schema + CI level**.  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1693`.
+- **CI guardrails as “hard constraints”** (build-time enforcement, not optional tests):  
+  - Cloud builds **must not** include broker trading client libraries  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1029`.  
+  - Redaction middleware **must be mandatory and not disableable by feature flag**  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.  
+  - Signed artifacts required; unsigned artifacts rejected  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1045`.
+- **Evidence pack / auditability exports** (enterprise due diligence): digests, signatures, SBOM, approvals/change journal, incident logs, telemetry export by sensitivity.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L945`.
+- **Change management**: TRADING_IMPACTING always requires local approval + auditable diff trail.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 
 ## 2) GDPR articles in scope (provider-focused)
 
@@ -58,6 +69,22 @@ These constraints are required for the platform’s compliance posture and must 
 3. Default telemetry is **AGGREGATED**; any increase in sensitivity is explicit, audited, and controlled.
 4. EU-only residency: all storage, backups, logs, observability, and support tooling remain in EU.
 5. Break-glass access is time-bound, scope-limited, reason-required, and fully audited.
+6. Cloud builds **must not** contain broker trading client libraries (import/dependency boundary enforced in CI).  
+7. Telemetry redaction is **always on** and cannot be disabled by configuration/feature flag.
+
+### 3.1 Canonical stance: `RAW_ORDER_EVENTS`
+
+The Design Doc allows `RAW_ORDER_EVENTS` as an opt-in sensitivity level, but also flags it as dangerous for privacy/IP.  
+Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`.
+
+**Decision for this EU-only product posture**:
+- `RAW_ORDER_EVENTS` is **disabled by default** and **not available** for retail/pro.  
+- If supported at all, it is **enterprise-only**, contractually scoped (DPA + explicit lawful basis), requires a privacy/security review (DPIA trigger), and must be technically gated (server-side + agent-side).
+
+**Required alignment work**:
+- Ensure the protocol/schema, documentation, and runtime enforcement are consistent: either
+  - remove `RAW_ORDER_EVENTS` from the protocol schema and all docs, or
+  - keep it in schema but enforce “enterprise-only” with explicit allowlisting, audits, and tests proving non-enterprise cannot enable it.
 
 ## 4) Phased execution plan
 
@@ -94,16 +121,32 @@ Deliverables:
 - DSAR SOP (intake, verify, process, respond) + templates
 
 DoD:
-- Public/legal docs and engineering reality are consistent (no contradictions about raw orders/credentials).
+- Public/legal docs and engineering reality are consistent (no contradictions about credentials, order data, telemetry levels, EU-only residency, DSAR boundaries).
+- “CCEA privacy guarantees” checklist is explicitly stated:
+  - Cloud never receives secrets/credentials/env vars
+  - No order-like payloads exist in protocol/commands
+  - Telemetry is redacted and default AGGREGATED
+  - EU-only residency for all data systems and subprocessors
+  - DSAR scope is Cloud-only; Agent data remains customer-controlled
 
 ### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts)
 
 **Goal**: make violations mechanically hard (or impossible).
 
 Key work:
-- Enforce “no order-like payloads” at protocol schema level and CI.
+- Enforce “no order-like payloads” at protocol schema level and CI (explicit prohibited fields like side/qty/price).  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
 - Telemetry contract: AGGREGATED default; sensitivity increases require explicit config and audit.
-- Mandatory redaction rules (secrets, identifiers, env vars) validated with tests.
+- Mandatory redaction rules (secrets, identifiers, env vars) validated with tests, including “cannot be disabled by feature flag”.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
+- Implement CI guardrails as non-bypassable build constraints (see `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md`):
+  - No trading libs in cloud (dependency/import boundary)  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1029`.
+  - Artifact signature required (pipeline publish gate; agent rejects unsigned)  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1045`.
+- Resolve `RAW_ORDER_EVENTS` posture and enforce it:
+  - Decide: “removed from schema” vs “enterprise-only gated”
+  - Add tests that prove non-enterprise cannot enable/send raw telemetry.
 - Add regression tests for redaction + schema guardrails.
 
 Deliverables:
@@ -115,6 +158,8 @@ Deliverables:
 
 DoD:
 - A PR that attempts to introduce order-like payloads or secrets in telemetry fails CI.
+- A PR that attempts to disable redaction (even via feature flag/config) fails CI and/or tests.
+- `RAW_ORDER_EVENTS` is either removed from protocol schema, or has enterprise-only gating with tests proving enforcement.
 
 ### Phase 3 — EU-only data residency enforcement (tenant/workspace)
 
@@ -122,12 +167,17 @@ DoD:
 
 Key work:
 - Enforce EU region selection and prevent cross-region storage/processing.
-- Validate all dependencies (DB, object store, logs, monitoring, alerting, support tooling) are EU-resident.
+- Validate all dependencies are EU-resident, including:
+  - primary DBs and replicas
+  - object storage + backups/snapshots
+  - observability (logs, metrics, traces) + alert routing
+  - email delivery and ticketing/support tooling (if used)
+  - artifact registry/storage and SBOM storage
 - Implement residency policy checks and evidence exports.
 
 Deliverables:
 - Residency policy enforcement code + config defaults (EU-only)
-- Automated “EU-only drift check” (CI or deployment validation)
+- Automated “EU-only drift check” (CI or deployment validation) that fails if any endpoint/bucket/region is not in EU.
 - Evidence pack: list of EU services/subprocessors and regions
 
 DoD:
@@ -178,6 +228,11 @@ Key work:
 - RBAC inside workspace (read vs admin vs support scopes).
 - Access audit log: who accessed what/when, especially for sensitive datasets and DSAR exports.
 - Break-glass: reason required, scope limited, time bounded, fully audited.
+- Change management (Design Doc “trading-impacting” protections):
+  - TRADING_IMPACTING changes always require local approval (no silent updates)
+  - Approval records include diff/evidence hashes and are exportable
+  - Audit trail includes who requested, who approved, and what changed  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 
 Deliverables:
 - RBAC policy definitions + enforcement points
@@ -235,11 +290,24 @@ Minimum automated coverage to make the posture durable:
 
 To support customer due diligence and audits, be able to export:
 
-- Retention policies + purge job logs (counts, timestamps)
-- DSAR request logs (status, deadlines, exports, deletions)
-- Access audit logs + break-glass events (reason, scope, duration)
-- Telemetry contracts and CI guardrails evidence (“no secrets/no orders”)
-- EU-only residency evidence (infra config + runtime checks)
+- Artifact inventory: versions, digests, signatures; SBOM; provenance metadata  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L945`.
+- Change journal: deploy/upgrade/approval records; config blob digests; who requested/approved; diffs/evidence hashes  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
+- Incident evidence: kill-switch events, halt reasons, incident logs (as applicable)  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L952`.
+- Data lifecycle evidence: retention policies + purge job logs (counts, timestamps) + legal hold actions (if used)
+- DSAR evidence: request logs (status, deadlines, identity verification, exports, deletions)
+- Access accountability: RBAC policy snapshots + access audit logs + break-glass events (reason, scope, duration)
+- Telemetry evidence:
+  - telemetry export by sensitivity level (AGGREGATED/DETAILED; RAW only if enterprise-gated)
+  - proof of redaction middleware mandatory (tests + configuration constraints)
+  - log export requests with redaction (`REQUEST_EXPORT_LOGS`) as an auditable export type  
+    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1651`.
+- EU-only residency evidence:
+  - residency policy configuration
+  - “EU-only drift check” outputs
+  - subprocessors list with EU regions and review timestamps
 
 ## 7) References (official and widely-used guidance)
 
@@ -251,4 +319,3 @@ EU guidance (EDPB):
 
 Operational best practice (for engineering controls):
 - ISO/IEC 27001/27002 and NIST CSF as control catalog references for Art. 32 mapping (select only what matches CCEA risk profile).
-
