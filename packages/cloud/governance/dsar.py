@@ -27,8 +27,11 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, List, Optional, Set
+from typing import Any, Callable, Dict, Final, List, Optional, Set, TYPE_CHECKING
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from .consent import SupportConsentService, ConsentScope
 
 
 # ============================================================================
@@ -41,7 +44,7 @@ DSAR_RESPONSE_DEADLINE_DAYS: Final[int] = 30
 # Extension allowed once for complex requests
 DSAR_EXTENSION_DAYS: Final[int] = 60
 
-# Data categories subject to DSAR
+# Data categories subject to DSAR (Cloud-controlled, IN SCOPE)
 DSAR_DATA_CATEGORIES: Final[Set[str]] = {
     "telemetry_events",
     "alerts",
@@ -52,6 +55,34 @@ DSAR_DATA_CATEGORIES: Final[Set[str]] = {
     "agent_data",
     "run_data",
     "deployment_data",
+}
+
+# CCEA boundary notice for DSAR responses
+CCEA_BOUNDARY_NOTICE: Final[str] = """
+CCEA Architecture Data Boundary Notice
+
+Your request has been processed for all personal data held in our Cloud systems.
+Due to our Cloud-Controlled Execution Architecture (CCEA), certain data categories
+are stored exclusively in your local Agent environment and are not accessible to us:
+
+- Broker API credentials (API keys, secrets, tokens)
+- Local execution logs (unless explicitly exported to Cloud)
+- Order and fill data (unless RAW_ORDER_EVENTS telemetry is enabled)
+- Local vault contents
+- Position data (unless transmitted via enabled telemetry)
+
+For access to Agent-local data, please contact your system administrator or access
+your Agent's local storage directly. We cannot export or delete data that we do not
+receive or store.
+""".strip()
+
+# Data categories OUT OF SCOPE (Agent-controlled)
+DSAR_OUT_OF_SCOPE_CATEGORIES: Final[Set[str]] = {
+    "broker_credentials",
+    "local_execution_logs",
+    "order_fill_data",
+    "local_vault_contents",
+    "position_data_local",
 }
 
 
@@ -162,6 +193,11 @@ class DSARResult:
     error: Optional[str] = None
     processing_time_seconds: float = 0.0
 
+    # CCEA boundary information
+    ccea_boundary_notice: str = CCEA_BOUNDARY_NOTICE
+    in_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_DATA_CATEGORIES))
+    out_of_scope_categories: Set[str] = field(default_factory=lambda: set(DSAR_OUT_OF_SCOPE_CATEGORIES))
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         return {
@@ -175,6 +211,9 @@ class DSARResult:
             "export_checksum": self.export_checksum,
             "error": self.error,
             "processing_time_seconds": self.processing_time_seconds,
+            "ccea_boundary_notice": self.ccea_boundary_notice,
+            "in_scope_categories": list(self.in_scope_categories),
+            "out_of_scope_categories": list(self.out_of_scope_categories),
         }
 
 
@@ -444,7 +483,7 @@ class DSARService:
         export_filename = f"dsar_export_{request.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
         export_path = self._export_dir / export_filename
 
-        # Write export
+        # Write export with CCEA boundary notice
         export_data = {
             "metadata": {
                 "request_id": request.id,
@@ -453,6 +492,16 @@ class DSARService:
                 "exported_at": datetime.utcnow().isoformat(),
                 "data_categories": list(request.data_categories),
                 "record_count": len(records),
+            },
+            "ccea_boundary": {
+                "notice": CCEA_BOUNDARY_NOTICE,
+                "in_scope_categories": list(DSAR_DATA_CATEGORIES),
+                "out_of_scope_categories": list(DSAR_OUT_OF_SCOPE_CATEGORIES),
+                "explanation": (
+                    "This export contains only Cloud-controlled data. "
+                    "Agent-zone data (broker credentials, local logs, order/fill data) "
+                    "is stored on your local Agent and is not accessible to us."
+                ),
             },
             "data": records,
         }

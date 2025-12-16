@@ -3,7 +3,7 @@
 **AI-Powered Quantitative Research Platform**
 
 **Effective Date:** December 2024
-**Version:** 2.0.0
+**Version:** 3.0.0
 
 **Regulatory Framework:** EU E-Commerce Directive 2000/31/EC, GDPR (EU) 2016/679, EU AI Act (EU) 2024/1689
 
@@ -74,6 +74,42 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 - You control your Agent's hard caps (which Cloud CANNOT override)
 - You approve all trading-impacting changes locally
 - You can disconnect from Cloud and continue trading
+
+### 2.0.1 CCEA Privacy Guarantees (Binding Commitments)
+
+The following privacy guarantees are **architectural invariants** that are legally binding under these Terms:
+
+**A. Cloud Never Receives Secrets**
+- Cloud **NEVER** stores or processes your broker API keys, secrets, or credentials
+- Cloud **NEVER** receives environment variables or tokens
+- Violation of this guarantee constitutes a material breach of these Terms
+
+**B. No Order-like Payloads in Protocol**
+- Cloud→Agent commands **NEVER** contain order-like payloads (side, quantity, price, order_id, target_position)
+- This is enforced at the protocol schema level and verified by CI guardrails
+- New command types require security review and auditable approval
+
+**C. Telemetry Sensitivity Levels**
+The Platform implements three telemetry levels with strict controls:
+
+| Level | Description | Opt-in | Order Data |
+|-------|-------------|--------|------------|
+| **AGGREGATED** | Default for all tiers | No | Forbidden |
+| **DETAILED_NON_SENSITIVE** | Technical debugging | Yes | Forbidden |
+| **RAW_ORDER_EVENTS** | Enterprise-only | Enterprise + Explicit | Allowed (masked) |
+
+- Telemetry redaction is **always mandatory** and cannot be disabled
+- `RAW_ORDER_EVENTS` is available **only** to enterprise customers with explicit per-workspace opt-in
+
+**D. EU-only Data Residency**
+- All data storage, backups, logs, and processing are in EU (eu-central-1, eu-west-1)
+- All sub-processors are located in EU
+- EU-only residency is enforced by automated drift checks (fail-closed)
+
+**E. DSAR Scope Boundaries**
+- DSAR requests apply to Cloud-controlled data only
+- Agent-zone data remains under your control and is not accessible to us
+- We cannot export or delete data we never receive
 
 ### 2.1 Nature of Services
 
@@ -546,7 +582,7 @@ For live trading features, you will be asked to explicitly acknowledge specific 
 ---
 
 **Last Updated:** December 2024
-**Document Version:** 1.0.0
+**Document Version:** 3.0.0
 
 ---
 
@@ -569,3 +605,4 @@ For live trading features, you will be asked to explicitly acknowledge specific 
 |---------|------|---------|
 | 1.0.0 | December 2024 | Initial release |
 | 1.1.0 | December 2024 | Added Section 2A: AI Disclosure per EU AI Act Article 50 |
+| 3.0.0 | December 2024 | GDPR Phase 1: Added Section 2.0.1 CCEA Privacy Guarantees with binding commitments (secrets, order payloads, telemetry levels, EU-only residency, DSAR boundaries) |

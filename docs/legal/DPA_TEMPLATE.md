@@ -1,6 +1,6 @@
 # Data Processing Agreement
 
-**Version:** 1.0.0
+**Version:** 2.0.0
 **Effective Date:** [DATE]
 **Last Updated:** December 2024
 
@@ -86,6 +86,31 @@ The Processor's Cloud infrastructure:
 - **NEVER** executes orders or connects to broker/exchange APIs
 - Only receives redacted telemetry from customer-operated Agents (if deployed)
 
+### 3.1 Telemetry Sensitivity Levels
+
+The Platform implements three telemetry sensitivity levels. Controller selects the level per workspace:
+
+| Level | Data Processed | Controller Tier | Opt-in Required | Retention |
+|-------|----------------|-----------------|-----------------|-----------|
+| **AGGREGATED** | PnL %, drawdown, error rates, health status | All | No (default) | 90 days |
+| **DETAILED_NON_SENSITIVE** | + timestamps, state transitions, queue depths | All | Yes | 30 days |
+| **RAW_ORDER_EVENTS** | + order events (masked), fill events, positions | Enterprise only | Yes (explicit) | 7-30 days |
+
+**RAW_ORDER_EVENTS Processing Requirements:**
+
+If Controller enables `RAW_ORDER_EVENTS`:
+- Controller must be on Enterprise tier
+- Controller must provide explicit per-workspace opt-in
+- Consent record must be created (who, what, when, scope, expiry)
+- Processing is audited and access-restricted
+- Alternative: Controller may select "telemetry stays local" mode (no Cloud transmission)
+
+**Data Never Processed (at any level):**
+- Broker API keys, secrets, credentials
+- Environment variables
+- Unmasked account identifiers
+- Order-like payloads in commands (side, quantity, price)
+
 ---
 
 ## 4. Categories of Data Subjects
@@ -131,6 +156,31 @@ Pursuant to GDPR Article 28(3), the Processor shall:
 **5.8 Audit**
 - Make available all information necessary to demonstrate compliance
 - Allow for and contribute to audits and inspections conducted by the Controller or an authorized auditor
+
+**5.9 Support Access with Consent**
+
+The Processor shall implement support-with-consent controls:
+
+- Support staff access to Controller data requires **explicit consent** from an authorized Controller representative
+- Consent must be recorded with: who (user_id), what (scope), when (timestamp), scope (workspace/data type), expiry (time limit)
+- Default consent expiry: 72 hours (maximum: 30 days)
+- Controller may revoke consent at any time with immediate effect
+- All support access is logged in the governance audit trail
+- Support data export is blocked without active, non-expired consent
+
+**Consent Record Structure:**
+
+| Field | Description |
+|-------|-------------|
+| consent_id | Unique identifier |
+| user_id | Controller representative granting consent |
+| workspace_id | Scope of access |
+| granted_at | UTC timestamp |
+| expires_at | Expiry timestamp |
+| scope | Data types accessible (e.g., telemetry, logs, config) |
+| purpose | Reason for access (linked to support ticket) |
+| support_ticket_id | Associated ticket reference |
+| revoked_at | Revocation timestamp (if revoked) |
 
 ---
 
@@ -395,17 +445,31 @@ Signature: _______________________
 
 ---
 
-## Annex B: Sub-processor List
+## Annex B: Sub-processor List (EU-only)
 
-| Sub-processor | Purpose | Location | Safeguards |
-|--------------|---------|----------|------------|
-| Amazon Web Services (AWS) | Cloud infrastructure | EU (Frankfurt, Dublin) | DPA, SCCs |
-| [Payment Provider] | Payment processing | EU | DPA, PCI-DSS |
-| [Email Service] | Transactional emails | EU | DPA |
+**All sub-processors are located within the European Union.** The Processor does not engage sub-processors outside the EU.
+
+| Sub-processor | Purpose | Region (EU-only) | DPA Status | Last Review |
+|--------------|---------|------------------|------------|-------------|
+| Amazon Web Services (AWS) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) | 2025-01-15 |
+| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Signed | 2025-01-15 |
+| Stripe | Payment processing | EU (Ireland) | Signed (Stripe DPA) | 2025-01-15 |
+| AWS SES / SendGrid | Transactional email | EU | Signed | 2025-01-15 |
+| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Signed | 2025-01-15 |
 
 ### Sub-processor Change Notification
 
+- **Notification period:** 30 days prior to new sub-processor engagement
+- **Method:** Email to Controller's designated contact + in-app notification
+- **Objection process:** Controller may object within 30 days on reasonable grounds
+- **Resolution:** If objection is not resolved within 30 days, Controller may terminate affected Services without penalty
+
 To be notified of Sub-processor changes, contact: [NOTIFICATION EMAIL]
+
+### EU-only Residency Evidence
+
+The current sub-processor register with EU-only evidence is maintained at:
+`docs/compliance/SUBPROCESSORS_REGISTER.md`
 
 ---
 
@@ -428,6 +492,7 @@ Clause 18: Forum - Courts of [MEMBER STATE]
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0.0 | December 2024 | Initial version | [AUTHOR] |
+| 2.0.0 | December 2024 | GDPR Phase 1: Added Section 3.1 Telemetry Sensitivity Levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS), Section 5.9 Support Access with Consent, EU-only sub-processor list with review timestamps | Compliance Team |
 
 ---
 

@@ -132,7 +132,9 @@ DoD:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`.
 - Every listed data store/log stream has: owner, retention, lawful basis, and residency=EU (no blanks).
 
-### Phase 1 — Transparency + legal artifacts aligned to CCEA
+### Phase 1 — Transparency + legal artifacts aligned to CCEA [COMPLETED - 2025-12-16]
+
+**Status**: ✅ **COMPLETED**
 
 **Goal**: external commitments match the actual CCEA design (no overpromising, no mismatches).
 
@@ -157,6 +159,38 @@ DoD:
 - Support-with-consent is enforceable:
   - A consent record exists (who/what/when/scope/expiry) and is auditable
   - Consent can be revoked and revocation is enforced (support export blocked without active consent)
+
+**Implementation Summary (2025-12-16):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Updated Privacy Policy | ✅ Done | `docs/legal/PRIVACY_POLICY.md` (v3.0.0) |
+| Updated Terms of Service | ✅ Done | `docs/legal/TERMS_OF_SERVICE.md` (v3.0.0) |
+| Updated DPA Template | ✅ Done | `docs/legal/DPA_TEMPLATE.md` (v2.0.0) |
+| DSAR SOP | ✅ Done | `docs/compliance/DSAR_SOP.md` |
+| DSAR Response Templates | ✅ Done | Included in DSAR_SOP.md |
+| Subprocessors Register | ✅ Done | `docs/compliance/SUBPROCESSORS_REGISTER.md` |
+| Support Consent Policy | ✅ Done | `docs/compliance/SUPPORT_CONSENT_POLICY.md` |
+| CCEA Privacy Guarantees Checklist | ✅ Done | `docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md` |
+| Support Consent Service (Code) | ✅ Done | `packages/cloud/governance/consent.py` |
+| DSAR CCEA Boundary Updates | ✅ Done | `packages/cloud/governance/dsar.py` |
+| Tests | ✅ Done | `packages/cloud/governance/tests/test_consent.py`, `test_dsar_phase1.py` |
+
+**Key Additions:**
+- Privacy Policy Section 7A: CCEA Privacy Guarantees Checklist
+- Privacy Policy Section 7B: Support-with-Consent Policy
+- Privacy Policy Section 5.4.3: Telemetry Sensitivity Levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS)
+- Terms of Service Section 2.0.1: CCEA Privacy Guarantees (Binding Commitments)
+- DPA Section 3.1: Telemetry Sensitivity Levels
+- DPA Section 5.9: Support Access with Consent
+- Full DSAR SOP with CCEA boundary notice
+- Subprocessors Register with EU-only evidence and review timestamps
+- SupportConsentService with auditable consent workflow
+
+**Test Results:**
+- 96 tests passing for governance module
+- 84 tests passing for Phase 2 governance (existing tests - no regression)
+- DSAR exports now include CCEA boundary notice
 
 ### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts)
 

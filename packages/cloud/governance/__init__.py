@@ -103,6 +103,18 @@ from .policy_engine import (
     create_default_deployment_policy,
 )
 
+# Support Consent (GDPR Phase 1)
+from .consent import (
+    SupportConsentService,
+    ConsentRequest,
+    ConsentRecord,
+    ConsentType,
+    ConsentStatus,
+    ConsentScope,
+    ConsentVerificationResult,
+    get_consent_service,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -161,4 +173,13 @@ __all__ = [
     "ComparisonOperator",
     "create_default_risk_policy",
     "create_default_deployment_policy",
+    # Support Consent (GDPR Phase 1)
+    "SupportConsentService",
+    "ConsentRequest",
+    "ConsentRecord",
+    "ConsentType",
+    "ConsentStatus",
+    "ConsentScope",
+    "ConsentVerificationResult",
+    "get_consent_service",
 ]

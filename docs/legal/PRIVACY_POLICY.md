@@ -3,7 +3,7 @@
 **AI-Powered Quantitative Research Platform**
 
 **Effective Date:** December 2024
-**Version:** 2.0.0
+**Version:** 3.0.0
 
 **Legal Framework:** General Data Protection Regulation (EU) 2016/679 (GDPR)
 
@@ -287,17 +287,24 @@ We do NOT:
 
 We never sell, rent, or trade your personal information to third parties for marketing or any other purposes.
 
-### 5.3 Sub-Processors
+### 5.3 Sub-Processors (EU-only)
 
-We use the following service providers (sub-processors):
+**All sub-processors are located within the European Union.** We do not use any sub-processors outside the EU.
 
-| Provider | Purpose | Location | Safeguards |
-|----------|---------|----------|------------|
-| AWS (Amazon Web Services) | Cloud infrastructure | EU (eu-central-1, eu-west-1) | DPA, SCCs |
-| [Email Provider] | Transactional email | EU | DPA, SCCs |
-| [Analytics Provider] | Usage analytics (optional) | EU | DPA, Consent |
+| Provider | Purpose | Region (EU-only) | DPA Status | Last Review |
+|----------|---------|------------------|------------|-------------|
+| AWS (Amazon Web Services) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) | 2025-01-15 |
+| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Signed | 2025-01-15 |
+| Stripe | Payment processing | EU (Ireland) | Signed (Stripe DPA) | 2025-01-15 |
+| AWS SES / SendGrid | Transactional email | EU | Signed | 2025-01-15 |
+| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Signed | 2025-01-15 |
 
-**Updated List:** A current list of sub-processors is available at [URL].
+**Sub-processor change notification:**
+- **Notification period:** 30 days prior to new sub-processor engagement
+- **Method:** Email to billing contact + in-app notification
+- **Objection process:** Customer may object within 30 days; if unresolved, termination right applies
+
+**Updated List:** The current sub-processor register with EU-only evidence is maintained at [docs/compliance/SUBPROCESSORS_REGISTER.md](../compliance/SUBPROCESSORS_REGISTER.md).
 
 ### 5.4 Telemetry Data (Agent → Cloud)
 
@@ -323,24 +330,50 @@ These fields are **blocked at the protocol level**:
 - Exact equity values
 - Broker account identifiers
 
-#### 5.4.3 Telemetry Levels
+#### 5.4.3 Telemetry Sensitivity Levels (CCEA Design)
 
-You can control telemetry verbosity (but NOT redaction - redaction is always mandatory):
+The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is always mandatory and cannot be disabled** at any level.
 
-| Level | Data Sent | Redaction |
-|-------|-----------|-----------|
-| `NONE` | Nothing (offline mode) | N/A |
-| `MINIMAL` | Heartbeat only | Full redaction |
-| `STANDARD` | Health + aggregated metrics | Full redaction |
-| `DETAILED` | + Error diagnostics | Full redaction |
+| Level | Description | Data Included | Opt-in Required |
+|-------|-------------|---------------|-----------------|
+| **`AGGREGATED`** | Default for all tiers | PnL %, drawdown %, exposure (bucketed), error rates, health status, latency percentiles | No (default) |
+| **`DETAILED_NON_SENSITIVE`** | Technical debugging | All AGGREGATED plus: timestamps, state transitions, signal metrics, queue depths, memory/CPU | Yes (explicit) |
+| **`RAW_ORDER_EVENTS`** | Enterprise-only | All DETAILED plus: order events (masked account IDs), fill events, position changes | Yes (enterprise + explicit consent) |
+
+**Level-specific restrictions:**
+
+| Level | Order/Fill Data | Account Identifiers | Retention | Access |
+|-------|-----------------|---------------------|-----------|--------|
+| `AGGREGATED` | **Forbidden** | **Forbidden** | 90 days (configurable) | Workspace members |
+| `DETAILED_NON_SENSITIVE` | **Forbidden** | **Forbidden** | 30 days (configurable) | Authorized workspace members |
+| `RAW_ORDER_EVENTS` | Allowed (masked) | Masked only | 7 days (max 30) | Workspace admins + break-glass |
+
+**RAW_ORDER_EVENTS requirements:**
+- Available **only** to enterprise tier customers
+- Requires **explicit per-workspace opt-in** (audited)
+- Consent record must exist with: who, what, when, scope, expiry
+- Minimal retention enforced (7 days default, maximum 30 days)
+- Access restricted to workspace admins with audit trail
+- Alternative: "telemetry stays local" mode (no Cloud transmission)
+
+**What RAW_ORDER_EVENTS NEVER contains** (even at enterprise level):
+- API keys, secrets, or credentials
+- Unmasked account identifiers
+- Environment variables
 
 #### 5.4.4 Telemetry Retention
 
-| Data Type | Retention | Deletion |
-|-----------|-----------|----------|
-| Raw telemetry | 90 days | Auto-deleted |
-| Aggregated metrics | 1 year | Anonymized |
-| Alerts/incidents | 2 years | Anonymized |
+| Sensitivity Level | Default Retention | Maximum Retention | Deletion |
+|-------------------|-------------------|-------------------|----------|
+| `AGGREGATED` | 90 days | Configurable per tenant | Auto-purged |
+| `DETAILED_NON_SENSITIVE` | 30 days | 90 days | Auto-purged |
+| `RAW_ORDER_EVENTS` | 7 days | 30 days | Auto-purged + audit event |
+
+All telemetry is subject to:
+- **Tenant-specific retention policies** (can reduce but not exceed maximums)
+- **Auto-purge with auditable records** (purge job logs counts, timestamps)
+- **Legal hold capability** (suspends deletion when active)
+- **DSAR export/delete** (data subject rights honored within retention period)
 
 ### 5.5 Legal Disclosure
 
@@ -458,6 +491,131 @@ You have the right to lodge a complaint with a supervisory authority:
   - Website: https://autoriteitpersoonsgegevens.nl
 - **Your country:** Contact your local data protection authority
 
+### 7.10 DSAR Scope Boundaries (CCEA-specific)
+
+**Important:** Due to the CCEA architecture, DSAR (Data Subject Access Request) scope is limited to Cloud-controlled data:
+
+**IN SCOPE (Cloud-controlled, we can export/delete):**
+- User account data (email, display_name, preferences)
+- Organization membership records
+- Workspace membership and roles
+- Strategy metadata (owned by user/workspace)
+- Telemetry data (at enabled sensitivity level)
+- Command history and approval records
+- Access audit logs (where user is subject)
+- Support interaction records
+
+**OUT OF SCOPE (Agent-controlled, customer responsibility):**
+- Broker credentials (never in Cloud)
+- Local execution logs (unless exported via REQUEST_EXPORT_LOGS)
+- Order/fill data (unless RAW_ORDER_EVENTS enabled and transmitted)
+- Local vault contents
+- Position data (unless transmitted via telemetry)
+
+**Standard DSAR response:**
+> "Your request has been processed for all personal data held in our Cloud systems. Data stored in your local Agent environment (including broker credentials, local logs, and order data) is under your control and not accessible to us. Please contact your system administrator for access to Agent-local data."
+
+---
+
+## 7A. CCEA PRIVACY GUARANTEES CHECKLIST
+
+This section provides an explicit checklist of privacy guarantees enforced by the CCEA architecture. These are **architectural invariants** that cannot be overridden by configuration.
+
+### 7A.1 Cloud Never Receives Secrets
+
+| Guarantee | Enforcement | Verification |
+|-----------|-------------|--------------|
+| **No broker API keys in Cloud** | Schema validation, CI guardrails | Build-time + runtime |
+| **No API secrets in Cloud** | Redaction middleware (mandatory) | Cannot be disabled |
+| **No OAuth tokens in Cloud** | Protocol prohibition | Schema enforcement |
+| **No environment variables in Cloud** | Forbidden in telemetry schema | CI tests |
+
+### 7A.2 No Order-like Payloads in Protocol
+
+| Guarantee | Enforcement | Verification |
+|-----------|-------------|--------------|
+| **No side (buy/sell) in commands** | JSON Schema prohibition | Build-time CI |
+| **No quantity in commands** | JSON Schema prohibition | Build-time CI |
+| **No price in commands** | JSON Schema prohibition | Build-time CI |
+| **No order_id in commands** | JSON Schema prohibition | Build-time CI |
+| **No target_position in commands** | JSON Schema prohibition | Build-time CI |
+
+### 7A.3 Telemetry Controls
+
+| Guarantee | Enforcement | Verification |
+|-----------|-------------|--------------|
+| **Default is AGGREGATED** | Config default | Runtime check |
+| **DETAILED_NON_SENSITIVE requires opt-in** | Explicit configuration | Audit event |
+| **RAW_ORDER_EVENTS requires enterprise + opt-in** | Tier check + consent record | Audit trail |
+| **Redaction is always on** | Cannot be disabled by flag | CI test + runtime |
+| **Order data forbidden in non-RAW** | Schema validation | Runtime rejection |
+
+### 7A.4 EU-only Data Residency
+
+| Guarantee | Enforcement | Verification |
+|-----------|-------------|--------------|
+| **All storage in EU** | Region configuration | Drift check (fail-closed) |
+| **All backups in EU** | Backup region policy | Automated verification |
+| **All logs in EU** | CloudWatch region lock | Infrastructure audit |
+| **All sub-processors in EU** | Contractual + DPA | Quarterly review |
+
+### 7A.5 DSAR Boundaries
+
+| Guarantee | Enforcement | Verification |
+|-----------|-------------|--------------|
+| **DSAR scope is Cloud-only** | Architecture | Process documentation |
+| **Agent data is customer-controlled** | No Cloud access | Cannot export what we don't have |
+| **Response includes boundary explanation** | Template enforcement | SOP compliance |
+
+---
+
+## 7B. SUPPORT WITH CONSENT
+
+### 7B.1 Support Data Access Policy
+
+Support staff access to customer data requires **explicit consent** with auditable records.
+
+**Consent requirements:**
+- **Who:** Identity of the user granting consent
+- **What:** Specific data or scope of access
+- **When:** Timestamp of consent grant
+- **Scope:** Bounded by workspace/data type
+- **Expiry:** Time-limited (default: 72 hours, max: 30 days)
+
+### 7B.2 Consent Record Structure
+
+Each support consent record contains:
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| `consent_id` | Unique identifier | Yes |
+| `user_id` | User granting consent | Yes |
+| `workspace_id` | Scope of access | Yes |
+| `granted_at` | Timestamp (UTC) | Yes |
+| `expires_at` | Expiry timestamp | Yes |
+| `scope` | Data types accessible | Yes |
+| `purpose` | Reason for access | Yes |
+| `support_ticket_id` | Associated ticket | Yes |
+| `revoked_at` | Revocation timestamp | If revoked |
+
+### 7B.3 Consent Revocation
+
+You can revoke support consent at any time:
+
+- **Method:** Account Settings > Privacy > Support Access, or contact DPO
+- **Effect:** Immediate (access blocked within seconds)
+- **Audit:** Revocation is logged with timestamp and actor
+
+**Enforcement:** Support data export is blocked without active, non-expired consent.
+
+### 7B.4 Auditable Evidence
+
+All support access is logged in the governance audit trail:
+- Every data access during support session
+- Every export generated
+- Support session start/end timestamps
+- Consent verification at access time
+
 ---
 
 ## 8. COOKIES AND TRACKING
@@ -549,6 +707,7 @@ We will notify you of material changes to this Privacy Policy:
 |---------|------|--------------------|
 | 1.0.0 | December 2024 | Initial release |
 | 2.0.0 | December 2024 | Added CCEA architecture sections: data zones, credential handling, telemetry redaction |
+| 3.0.0 | December 2024 | GDPR Phase 1: Added CCEA telemetry levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS), CCEA Privacy Guarantees Checklist (Section 7A), Support-with-Consent policy (Section 7B), DSAR scope boundaries, EU-only sub-processor list with review timestamps |
 
 ### 11.3 Review
 
@@ -603,7 +762,7 @@ If you are unsatisfied with our response, you may:
 ---
 
 **Last Updated:** December 2024
-**Document Version:** 2.0.0
+**Document Version:** 3.0.0
 
 ---
 
