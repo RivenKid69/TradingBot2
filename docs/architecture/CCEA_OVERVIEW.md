@@ -525,13 +525,59 @@ All marketing materials must include:
 
 ## 15. Related Documents
 
+### Architecture Documentation
+
 | Document | Purpose |
 |----------|---------|
+| [CCEA_DATA_MODEL.md](./CCEA_DATA_MODEL.md) | Database entities and relationships |
+| [CCEA_STATE_MACHINE.md](./CCEA_STATE_MACHINE.md) | Deployment and Run state machines |
+| [CCEA_PROTOCOL.md](./CCEA_PROTOCOL.md) | Agent↔Cloud communication protocol |
+| [CCEA_ROLLOUT_PLAN.md](./CCEA_ROLLOUT_PLAN.md) | Implementation phases and open questions |
+| [CCEA_CI_GUARDRAILS.md](./CCEA_CI_GUARDRAILS.md) | CI/CD security guardrails |
+| [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) | Privacy, GDPR, and data governance |
+
+### Agent Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [Agent README](../agent/README.md) | Agent zone overview |
+| [INSTALLATION.md](../agent/INSTALLATION.md) | Agent installation guide |
+| [LOCAL_VAULT.md](../agent/LOCAL_VAULT.md) | Credential storage |
+| [APPROVALS.md](../agent/APPROVALS.md) | Local approval system |
+| [RISK_CONTROLS.md](../agent/RISK_CONTROLS.md) | Policy firewall and hard caps |
+| [DEGRADED_MODES.md](../agent/DEGRADED_MODES.md) | Safe degradation handling |
+
+### Cloud Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [Cloud README](../cloud/README.md) | Cloud zone overview |
+| [CONTROL_PLANE_API.md](../cloud/CONTROL_PLANE_API.md) | REST API reference |
+| [ARTIFACT_BUILDER.md](../cloud/ARTIFACT_BUILDER.md) | Build and signing guide |
+| [GOVERNANCE.md](../cloud/GOVERNANCE.md) | RBAC, retention, residency |
+| [EVIDENCE_PACK.md](../cloud/EVIDENCE_PACK.md) | Enterprise audit export |
+| [ENTERPRISE.md](../cloud/ENTERPRISE.md) | Enterprise deployment |
+
+### Business Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [CCEA_MARKETING_GUIDELINES.md](../business/CCEA_MARKETING_GUIDELINES.md) | Approved marketing language |
+| [CCEA_TERMS_OF_SERVICE_GUIDELINES.md](../business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md) | ToS requirements |
 | [OPEN_CORE_BUSINESS_MODEL.md](../business/OPEN_CORE_BUSINESS_MODEL.md) | Business model details |
 | [IP_PROTECTION_STRATEGY.md](../business/IP_PROTECTION_STRATEGY.md) | IP and trade secret protection |
 | [PRICING_DIFFERENTIATION_STRATEGY.md](../business/PRICING_DIFFERENTIATION_STRATEGY.md) | Pricing by product mode |
-| [CUSTOMER_VALUE_FRAMEWORK.md](../business/CUSTOMER_VALUE_FRAMEWORK.md) | Customer ROI analysis |
 | [COMPETITIVE_MOAT.md](../business/COMPETITIVE_MOAT.md) | Competitive advantage analysis |
+
+### Operational Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [Runbooks README](../runbooks/README.md) | Operational procedures |
+| [KILL_SWITCH.md](../runbooks/KILL_SWITCH.md) | Emergency halt procedures |
+| [INCIDENT_RESPONSE.md](../runbooks/INCIDENT_RESPONSE.md) | Incident handling |
+| [RECOVERY.md](../runbooks/RECOVERY.md) | Recovery procedures |
+| [Protocol Schemas](../schemas/README.md) | JSON schema reference |
 
 ---
 
