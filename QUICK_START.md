@@ -1,6 +1,24 @@
 # Quick Start Guide
 
 > **5-минутный старт** для 4 основных asset classes: Crypto, US Equities, Forex, Futures
+>
+> **CCEA Architecture**: Этот проект использует [Cloud-Controlled Execution Architecture](docs/CCEA_OVERVIEW.md) — Cloud (research/simulation) и Agent (live execution) строго разделены.
+
+---
+
+## ⚠️ Важно: CCEA Architecture
+
+Перед началом работы ознакомьтесь с ключевыми принципами архитектуры:
+
+| Зона | Что делает | Что НЕ делает |
+|------|------------|---------------|
+| **Cloud** | Research, backtesting, simulation, monitoring, lifecycle management | Хранение ключей, генерация ордеров, доступ к trading API |
+| **Agent** | Live execution, хранение секретов, риск-контроли, создание ордеров | Работа без согласия пользователя |
+
+**Ключевые гарантии:**
+- Cloud **НИКОГДА** не хранит broker API keys
+- Cloud **НИКОГДА** не генерирует и не передаёт ордера
+- Все торговые операции происходят **ТОЛЬКО** в Agent локально
 
 ---
 
@@ -11,7 +29,8 @@
 3. [US Equities (акции на Alpaca)](#2-us-equities-акции-на-alpaca)
 4. [Forex (валюты на OANDA)](#3-forex-валюты-на-oanda)
 5. [Futures (фьючерсы)](#4-futures-фьючерсы)
-6. [Что дальше?](#что-дальше)
+6. [Live Trading (CCEA)](#live-trading-ccea-architecture)
+7. [Что дальше?](#что-дальше)
 
 ---
 
@@ -335,6 +354,106 @@ SPAN Margin Avg: $12,400
 
 ---
 
+## Live Trading (CCEA Architecture)
+
+> **Ключевой принцип**: Live trading происходит **ТОЛЬКО** через локальный Agent. Cloud управляет lifecycle (start/stop/deploy), но **НИКОГДА** не выполняет ордера и не хранит ваши credentials.
+
+### Продуктовые режимы
+
+| Режим | Описание | Cloud | Agent |
+|-------|----------|-------|-------|
+| **Retail Research SaaS** | Research + optional live | Research, Sim, Monitoring | Опционально (для live) |
+| **Retail Live** | Auto-execution локально | Lifecycle, Telemetry | Local vault + execution |
+| **Enterprise** | On-prem/VPC | Self-hosted | HSM/KMS, air-gapped |
+
+### Шаг 1: Установка Agent
+
+```bash
+# Agent устанавливается на ВАШЕЙ машине (BYO host)
+# Credentials остаются ТОЛЬКО у вас - никогда не отправляются в Cloud
+
+# Установка Agent daemon
+pip install -e packages/agent/
+
+# Просмотр справки
+python -m packages.agent.daemon.agentd --help
+```
+
+### Шаг 2: Настройка Local Vault (секреты)
+
+```bash
+# Все API ключи хранятся ТОЛЬКО локально в Local Vault
+# Cloud никогда не получает доступ к вашим секретам
+
+# Настройка credentials (интерактивно)
+python -m packages.agent.vault.setup
+
+# Или через environment variables (ваш выбор)
+export BINANCE_API_KEY="your_key"
+export BINANCE_API_SECRET="your_secret"
+```
+
+**Важно**:
+- Секреты хранятся в OS keychain или зашифрованном файле
+- Телеметрия автоматически редактируется перед отправкой в Cloud
+- Логи никогда не содержат секретов
+
+### Шаг 3: Запуск Agent
+
+```bash
+# Запуск Agent daemon
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
+
+# Agent будет:
+# - Подключаться к Cloud для получения lifecycle commands
+# - Загружать подписанные артефакты стратегий
+# - Запрашивать локальное подтверждение для trading-impacting изменений
+# - Выполнять торговлю ЛОКАЛЬНО с вашими credentials
+```
+
+### Шаг 4: Deploy стратегии через Cloud
+
+```bash
+# Cloud отправляет REQUEST_START_RUN (НЕ ордер!)
+# Agent показывает diff и запрашивает локальное подтверждение
+
+# Пример deploy через CLI
+python -m packages.cloud.cli deploy \
+    --strategy my_momentum_v2 \
+    --agent agent-001 \
+    --mode LIVE
+```
+
+### Trading-Impacting vs Non-Impacting
+
+| Категория | Примеры | Требует Approval |
+|-----------|---------|------------------|
+| **Trading-Impacting** | Новая версия стратегии, PAPER→LIVE, риск-лимиты, universe инструментов | ✅ Да (локально) |
+| **Non-Impacting** | Log level, telemetry verbosity, UI параметры | ❌ Нет |
+
+### Safe Defaults (нельзя отключить)
+
+- **Redaction**: ON (обязательно) — секреты не уходят в Cloud
+- **Local Approval**: REQUIRED для trading-impacting изменений
+- **Artifact Signature**: REQUIRED — Agent проверяет подпись
+- **RAW Telemetry**: OFF (только enterprise opt-in)
+
+### Development/Testing Only
+
+```bash
+# Для локального тестирования БЕЗ полной CCEA инфраструктуры
+# НЕ для production!
+python script_live.py --config configs/config_live.yaml --dry-run
+```
+
+**Документация CCEA:**
+- [CCEA Overview](docs/CCEA_OVERVIEW.md) — полный обзор архитектуры
+- [Agent Installation](docs/agent/INSTALLATION.md) — установка Agent
+- [Local Vault](docs/agent/LOCAL_VAULT.md) — управление секретами
+- [Risk Controls](docs/agent/RISK_CONTROLS.md) — локальные hard caps
+
+---
+
 ## Что дальше?
 
 ### 1. Изучите Reference Pipelines
@@ -355,18 +474,31 @@ SPAN Margin Avg: $12,400
 python tools/check_risk_config.py --config your_config.yaml
 ```
 
-### 3. Запустите Live Trading (Paper)
+### 3. Запустите Live Trading (CCEA Architecture)
 
+**Production (через Agent):**
 ```bash
+# 1. Установите и настройте Agent (см. раздел "Live Trading (CCEA)")
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
+
+# 2. Deploy стратегию через Cloud control plane
+# Cloud отправляет REQUEST_START_RUN → Agent запрашивает локальное подтверждение
+```
+
+**Development/Testing Only:**
+```bash
+# Только для локального тестирования БЕЗ CCEA инфраструктуры
 # Crypto (Binance Testnet)
-python script_live.py --config configs/quickstart/crypto_momentum.yaml --paper
+python script_live.py --config configs/quickstart/crypto_momentum.yaml --paper --dry-run
 
 # Equity (Alpaca Paper)
-python script_live.py --config configs/quickstart/equity_swing.yaml --paper
+python script_live.py --config configs/quickstart/equity_swing.yaml --paper --dry-run
 
 # Forex (OANDA Practice)
-python script_live.py --config configs/quickstart/forex_carry.yaml --paper
+python script_live.py --config configs/quickstart/forex_carry.yaml --paper --dry-run
 ```
+
+> **Важно**: `script_live.py` предназначен только для разработки. Production live trading **ВСЕГДА** через Agent.
 
 ### 4. Мониторинг
 

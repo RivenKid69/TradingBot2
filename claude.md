@@ -311,6 +311,24 @@ python script_live.py --config configs/config_live_forex.yaml --asset-class fore
 ## 🏗️ CCEA: Cloud-Controlled Execution Architecture
 
 > **Status**: 100% Complete | **Tests**: 117 CCEA test files | **Version**: 2.0.0
+>
+> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/CCEA_OVERVIEW.md)
+
+### Терминология (Design Doc §2)
+
+| Термин | Определение |
+|--------|-------------|
+| **Cloud** | Наши SaaS сервисы |
+| **Agent** | Клиентский runtime (daemon) в среде пользователя |
+| **Strategy** | Пользовательский код/модель, выдающий Intent |
+| **Intent** | Высокоуровневое намерение (target exposure), НЕ "готовый ордер" |
+| **Order** | Конкретный приказ брокеру (создаётся ТОЛЬКО в Agent) |
+| **Deployment** | Связь: артефакт стратегии + конфигурация + целевой агент |
+| **Run** | Конкретный запуск стратегии на агенте |
+| **Command** | Lifecycle request от Cloud к Agent (НЕ ордер!) |
+| **Approval** | Локальное подтверждение trading-значимого изменения |
+| **TRADING_IMPACTING** | Класс изменений, влияющих на торговое поведение |
+| **NON_IMPACTING** | Изменения без влияния на торговлю (логи, UI, telemetry) |
 
 ### Ключевой принцип (НЕ НАРУШАТЬ!)
 
@@ -383,6 +401,35 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 - `side` (BUY/SELL)
 - `quantity`, `price`, `order_type`
 - `target_position`, `intent`, `signal`
+
+### Классификация изменений (Design Doc §7)
+
+**TRADING_IMPACTING (требует локальный approve):**
+| Категория | Примеры |
+|-----------|---------|
+| Strategy/Model | Новый build/версия стратегии или модели |
+| Mode | PAPER↔LIVE переключение |
+| Universe | Изменение инструментов |
+| Risk | Изменение риск-лимитов (любое ослабление) |
+| Broker | Изменение брокер-адаптера/аккаунта |
+| Execution | order_types, time-in-force, max order rate |
+| Schedule | Расписание live (если влияет на торговые сессии) |
+| Parameters | Параметры стратегии, влияющие на сигналы |
+
+**NON_IMPACTING (применяется без approve):**
+- Уровень логирования
+- Telemetry verbosity
+- UI/UX параметры
+- Non-functional конфиги раннера
+
+### Policy Firewall (Design Doc §7.3)
+
+Agent хранит **локальную политику hard caps**:
+- Абсолютные верхние границы риска
+- Запрещённые инструменты/типы ордеров
+- Запрет авто-approve для определённых изменений
+
+**Cloud НЕ МОЖЕТ поднять риск выше hard caps никогда.**
 
 ### CI Guardrails
 
