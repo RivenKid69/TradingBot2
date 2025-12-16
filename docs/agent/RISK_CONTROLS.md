@@ -1,6 +1,6 @@
 # Risk Controls: Policy Firewall & Hard Caps
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-14
+> **Version**: 1.0.0 | **Last Updated**: 2025-12-16
 
 ## Overview
 

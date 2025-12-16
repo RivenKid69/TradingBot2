@@ -1,6 +1,6 @@
 # Incident Response Runbook
 
-> **Severity**: Varies | **Last Updated**: 2025-12-14
+> **Severity**: Varies | **Last Updated**: 2025-12-16
 
 ## Overview
 

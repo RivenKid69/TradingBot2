@@ -1,6 +1,6 @@
 # Kill Switch Runbook
 
-> **Severity**: Critical | **Last Updated**: 2025-12-14
+> **Severity**: Critical | **Last Updated**: 2025-12-16
 
 ## Overview
 

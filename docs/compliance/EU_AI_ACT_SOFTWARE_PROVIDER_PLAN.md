@@ -2,7 +2,7 @@
 
 **Version**: 2.0
 **Created**: 2025-12-10
-**Last Updated**: 2025-12-10
+**Last Updated**: 2025-12-16
 **Target**: GPAI Provider + Article 50 Transparency
 **Deadline**: 2 August 2026
 **Phase 2 Status**: ✅ COMPLETED
@@ -823,7 +823,7 @@ This policy is reviewed annually and updated as required by:
 
 ---
 
-**Last Updated**: 2025-12-10
+**Last Updated**: 2025-12-16
 **Next Review**: 2026-06-10
 ```
 

@@ -153,7 +153,7 @@ Per Article 14 of the EU AI Act, the following oversight measures are recommende
 
 *This model card is provided in accordance with Article 53(1)(b) of Regulation (EU) 2024/1689 (EU AI Act).*
 
-*Last Updated: 2025-12-10*
+*Last Updated**: 2025-12-16*
 
 ---
 
