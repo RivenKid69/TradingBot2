@@ -13,7 +13,7 @@ This plan implements **only** the GDPR elements needed for this project’s arch
 - **No secrets** (API keys, tokens), **no env vars**, and **no order-like payloads** are allowed to reach Cloud (enforced by schema/CI).
 - **EU data residency by default** (and in this project: EU-only).
 - **Retention per tenant + auto-purge + DSAR export/delete**.
-- **RBAC + access audit + break-glass** for exceptional access.
+- **RBAC + access audit + break-glass** for incident-only exceptional access.
 
 This plan is not a substitute for legal advice. It is an engineering/compliance implementation plan that should be reviewed by counsel for the final determination of roles (Controller/Processor) and policy wording.
 
@@ -66,11 +66,25 @@ These constraints are required for the platform’s compliance posture and must 
 
 1. **Cloud never receives** broker credentials, API keys/tokens, or env vars (redaction + validation + CI guardrails).
 2. Cloud never receives **order-like payloads** (side/qty/price/order id/fill details) unless explicitly enterprise-only and contractually scoped.
-3. Default telemetry is **AGGREGATED**; any increase in sensitivity is explicit, audited, and controlled.
-4. EU-only residency: all storage, backups, logs, observability, and support tooling remain in EU.
-5. Break-glass access is time-bound, scope-limited, reason-required, and fully audited.
-6. Cloud builds **must not** contain broker trading client libraries (import/dependency boundary enforced in CI).  
-7. Telemetry redaction is **always on** and cannot be disabled by configuration/feature flag.
+3. **Telemetry levels are fixed and named**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE`, `RAW_ORDER_EVENTS` (opt-in, enterprise-only).  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`.
+4. Default telemetry is **AGGREGATED** (retail/pro); any increase in sensitivity is explicit, audited, and controlled; enterprise may support “telemetry stays local”.  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
+5. **Telemetry redaction is always on** and cannot be disabled by configuration/feature flag; env var logging is forbidden.  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
+6. EU-only residency: all storage, backups, logs, observability, and support tooling remain in EU; **EU-only drift checks are mandatory** (fail closed).  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745`.
+7. Break-glass access is **incident-only**, time-bound, scope-limited, reason-required, and fully audited.
+8. Cloud builds **must not** contain broker trading client libraries (import/dependency boundary enforced in CI).  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1029`.
+9. **Order-like payloads are prohibited at schema + CI** (hard constraint, not “best effort”).  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
+10. **Artifacts/config blobs are referenced only by digest** (no “latest”); **unsigned artifacts are rejected**; **registry allowlist is enforced**.  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L911`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L913`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1045`.
+11. **New protocol command types require security review and auditable approval** (recorded in the change journal).  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1043`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
+12. **Remote shell into Agent is prohibited** in the EU-only posture (no feature); any enterprise exception must be contractually scoped + break-glass + auditable.  
+   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L943`.
 
 ### 3.1 Canonical stance: `RAW_ORDER_EVENTS`
 
@@ -105,7 +119,9 @@ Deliverables:
 - RoPA-lite table (system → data → purpose → lawful basis → retention → access)
 
 DoD:
-- Each data store/log stream is assigned an owner, retention, lawful basis, and residency location (EU).
+- A RoPA-lite table exists with columns: system, data category, purpose, lawful basis, retention, residency, access roles, subprocessors.
+- A Cloud↔Agent data flow diagram exists and labels telemetry levels (`AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`).
+- Every listed data store/log stream has: owner, retention, lawful basis, and residency=EU (no blanks).
 
 ### Phase 1 — Transparency + legal artifacts aligned to CCEA
 
@@ -113,7 +129,7 @@ DoD:
 
 Key work:
 - Update Privacy Policy / ToS language to reflect: CCEA zones, what Cloud receives/never receives, telemetry redaction, EU-only, retention and DSAR.
-- Finalize DPA templates and “support-with-consent” rules.
+- Finalize DPA templates and “support-with-consent” rules (how consent is captured, logged, and revoked; what data may be shared).
 - Establish DSAR intake and identity verification approach proportional to risk.
 
 Deliverables:
@@ -128,6 +144,7 @@ DoD:
   - Telemetry is redacted and default AGGREGATED
   - EU-only residency for all data systems and subprocessors
   - DSAR scope is Cloud-only; Agent data remains customer-controlled
+- A subprocessors/services list exists that includes region evidence (EU-only) and review timestamps (for inclusion in the evidence pack).
 
 ### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts)
 
@@ -136,7 +153,7 @@ DoD:
 Key work:
 - Enforce “no order-like payloads” at protocol schema level and CI (explicit prohibited fields like side/qty/price).  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.
-- Telemetry contract: AGGREGATED default; sensitivity increases require explicit config and audit.
+- Telemetry contract: `AGGREGATED` default; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is opt-in and enterprise-only; any increase in sensitivity requires explicit config + audit event.
 - Mandatory redaction rules (secrets, identifiers, env vars) validated with tests, including “cannot be disabled by feature flag”.  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
 - Implement CI guardrails as non-bypassable build constraints (see `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md`):
@@ -144,22 +161,29 @@ Key work:
     Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1029`.
   - Artifact signature required (pipeline publish gate; agent rejects unsigned)  
     Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1045`.
+- Enforce “new protocol command types require security review” (fail closed without approval/journal entry).  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1043`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
+- Enforce digest pinning + registry allowlist invariants (“no latest” and no unknown registries).  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L911`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L913`.
 - Resolve `RAW_ORDER_EVENTS` posture and enforce it:
   - Decide: “removed from schema” vs “enterprise-only gated”
   - Add tests that prove non-enterprise cannot enable/send raw telemetry.
 - Add regression tests for redaction + schema guardrails.
 
 Deliverables:
-- “Telemetry data dictionary” (allowed fields per telemetry level)
+- “Telemetry data dictionary” (allowed/forbidden fields per telemetry level, using the canonical IDs: `AGGREGATED`/`DETAILED_NON_SENSITIVE`/`RAW_ORDER_EVENTS`)
 - CI checks/tests proving:
   - order-like payloads rejected
   - secrets/env vars never shipped
   - redaction always enabled
+- A protocol change review checklist and journal format for new command types (recorded in the evidence pack change journal).
 
 DoD:
 - A PR that attempts to introduce order-like payloads or secrets in telemetry fails CI.
 - A PR that attempts to disable redaction (even via feature flag/config) fails CI and/or tests.
 - `RAW_ORDER_EVENTS` is either removed from protocol schema, or has enterprise-only gating with tests proving enforcement.
+- A PR that introduces a new command type without a recorded security review approval fails CI.
+- A PR that attempts to reference an artifact/config by anything other than digest (or uses “latest”) fails CI.
 
 ### Phase 3 — EU-only data residency enforcement (tenant/workspace)
 
@@ -178,10 +202,11 @@ Key work:
 Deliverables:
 - Residency policy enforcement code + config defaults (EU-only)
 - Automated “EU-only drift check” (CI or deployment validation) that fails if any endpoint/bucket/region is not in EU.
+- Drift check produces a machine-readable report (e.g., JSON) listing every configured endpoint/bucket/region/subprocessor used at runtime (for evidence pack storage).
 - Evidence pack: list of EU services/subprocessors and regions
 
 DoD:
-- Automated check proves no configured endpoints/storage locations are outside EU.
+- Automated drift check fails closed if any configured endpoint/storage/support tool is outside EU, and produces a stored report artifact.
 
 ### Phase 4 — Retention per tenant + auto-purge + legal hold
 
@@ -198,7 +223,8 @@ Deliverables:
 - Tests: purge correctness; legal hold prevents deletion for scoped datasets
 
 DoD:
-- Data older than retention window is removed/aggregated/anon’d automatically and provably.
+- A scheduled purge run produces an auditable purge event including counts (deleted/archived/aggregated/anonymized) and timestamps per workspace.
+- Integration tests seed data older than cutoff and prove it is deleted/changed according to policy; legal hold (if enabled) prevents deletion for the scoped dataset.
 
 ### Phase 5 — DSAR: access/export/delete (Cloud data) with CCEA boundary clarity
 
@@ -218,7 +244,8 @@ Deliverables:
 - DSAR audit records and metrics
 
 DoD:
-- End-to-end tests: create DSAR → verify → export/delete → response within SLA.
+- End-to-end tests: create DSAR → (identity verify where required) → export/delete → immutable audit record exists for each step.
+- DSAR deadline rules are explicit: standard 30 days, one extension to 60 days when justified; tests prove deadline computation and state transitions.
 
 ### Phase 6 — Access control, access audit, and break-glass
 
@@ -227,7 +254,7 @@ DoD:
 Key work:
 - RBAC inside workspace (read vs admin vs support scopes).
 - Access audit log: who accessed what/when, especially for sensitive datasets and DSAR exports.
-- Break-glass: reason required, scope limited, time bounded, fully audited.
+- Break-glass: **incident-only**, reason required, scope limited, time bounded, fully audited (and included in the evidence pack).
 - Change management (Design Doc “trading-impacting” protections):
   - TRADING_IMPACTING changes always require local approval (no silent updates)
   - Approval records include diff/evidence hashes and are exportable
@@ -240,7 +267,7 @@ Deliverables:
 - Break-glass workflow and logs
 
 DoD:
-- Every sensitive access is attributable to a principal, reason (if break-glass), and time window.
+- Every sensitive access is attributable to a principal and request_id; break-glass additionally has a reason, scope, and expiry time; all are exportable.
 
 ### Phase 7 — Security controls (Art. 32) + breach workflow (Art. 33–34)
 
@@ -248,16 +275,23 @@ DoD:
 
 Key work:
 - Security baseline: encryption at rest/in transit, key management, MFA for privileged roles, secrets management, logging/monitoring.
+- Supply chain (Design Doc 15.1): signed artifacts, pinned digests, allowlist registries, SBOM stored and retrievable by digest.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L909`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L911`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L913`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L915`.
+- Agent updates (Design Doc 15.2): signed agent updates, staged rollout, rollback, enterprise version pinning + change windows.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L917`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L921`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L923`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L925`.
+- Cloud research execution isolation (Design Doc 15.3): sandboxing, CPU/RAM quotas, egress allowlist, abuse detection.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L927`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L931`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L933`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L935`.
 - Personal data breach decision tree and notification workflow (72h to supervisory authority where required).
 - Tabletop exercises and evidence retention (runbooks, timelines, outputs).
 
 Deliverables:
 - Breach SOP + templates (authority notification, user notification if applicable)
 - Tabletop report + evidence artifacts
-- Security control checklist mapped to Art. 32
+- Security control checklist mapped to Art. 32 (explicitly including the Design Doc 15.1/15.2/15.3 measures above)
 
 DoD:
-- A simulated breach produces a complete notification package and evidence trail within targets.
+- A simulated breach produces a complete notification decision package and evidence trail within defined targets (72h external deadline; internal tabletop produces draft package + timeline within 24h).
+- Evidence pack can export: signed artifact inventory + SBOM + change journal + staged rollout/rollback records + research sandbox policy/violations.
 
 ### Phase 8 — Continuous compliance (prevent regressions)
 
@@ -273,7 +307,26 @@ Deliverables:
 - Metrics dashboards and periodic reports
 
 DoD:
-- No new data flows ship without classification, retention, and redaction requirements.
+- CI fails closed if a new data store/log stream/telemetry field ships without recorded: classification, retention, residency, and redaction requirements (in a registered data inventory entry).
+
+### Phase 9 — Enterprise/on-prem/VPC posture (Design Doc 16.3) and scope control
+
+**Goal**: ensure the “software/platform provider” posture remains true in enterprise deployments and that any enterprise positioning is backed by enforceable controls.
+
+Key work:
+- Document and support enterprise deployment options (on-prem/VPC, or cloud used only for updates/monitoring by contract).
+- Enforce policy options required by the Design Doc:
+  - “telemetry stays local” (enterprise)
+  - EU-only object store / customer-managed keys (where applicable)
+- Ensure evidence pack exports remain available in on-prem/air-gapped contexts.
+
+Deliverables:
+- Enterprise posture note (what is supported vs out of scope for EU-only SaaS release) and “marketing claim guardrails” for enterprise modes.
+- On-prem/VPC deployment checklist including: EU-only data systems, registry mirror, offline verification/signing, evidence export paths.
+
+DoD:
+- If enterprise/on-prem/VPC is marketed as supported, a deployment can produce an evidence pack and prove residency/telemetry boundaries in that mode; otherwise the plan explicitly marks it “not shipped / not claimed” and blocks marketing language.  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L968`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L972`.
 
 ## 5) Test strategy (minimum set)
 
@@ -285,6 +338,9 @@ Minimum automated coverage to make the posture durable:
 - **Retention tests**: purge jobs remove data past cutoff; legal hold blocks deletion.
 - **DSAR integration tests**: access/export/delete workflows and deadline calculations.
 - **RBAC/break-glass tests**: unauthorized access denied; break-glass requires reason and expires.
+- **Supply-chain tests**: unsigned artifacts rejected; digest pinning enforced; registry allowlist enforced; SBOM required and retrievable.
+- **Agent update tests (enterprise)**: signed updates required; staged rollout/rollback produces auditable records; version pinning/change windows enforced.
+- **Research isolation tests**: sandbox/egress/quota policies enforced; abuse detection events are generated and exportable.
 
 ## 6) Evidence pack (audit-ready, aligned with the Design Doc)
 
@@ -296,11 +352,13 @@ To support customer due diligence and audits, be able to export:
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 - Incident evidence: kill-switch events, halt reasons, incident logs (as applicable)  
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L952`.
+- Security policies (high level) and operational SOPs relevant to audit (DSAR, retention, breach, break-glass)  
+  Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L956`.
 - Data lifecycle evidence: retention policies + purge job logs (counts, timestamps) + legal hold actions (if used)
 - DSAR evidence: request logs (status, deadlines, identity verification, exports, deletions)
 - Access accountability: RBAC policy snapshots + access audit logs + break-glass events (reason, scope, duration)
 - Telemetry evidence:
-  - telemetry export by sensitivity level (AGGREGATED/DETAILED; RAW only if enterprise-gated)
+  - telemetry export by sensitivity level (`AGGREGATED`/`DETAILED_NON_SENSITIVE`; `RAW_ORDER_EVENTS` only if enterprise-gated)
   - proof of redaction middleware mandatory (tests + configuration constraints)
   - log export requests with redaction (`REQUEST_EXPORT_LOGS`) as an auditable export type  
     Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1651`.
