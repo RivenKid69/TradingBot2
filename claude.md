@@ -310,9 +310,9 @@ python script_live.py --config configs/config_live_forex.yaml --asset-class fore
 
 ## 🏗️ CCEA: Cloud-Controlled Execution Architecture
 
-> **Status**: 100% Complete | **Tests**: 117 CCEA test files | **Version**: 2.0.0
+> **Status**: 100% Complete | **Tests**: 104 CCEA test files | **Version**: 2.0.0
 >
-> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/CCEA_OVERVIEW.md)
+> **Reference**: [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) (canonical source) | [CCEA Overview](docs/CCEA_OVERVIEW.md)
 
 ### Терминология (Design Doc §2)
 
@@ -478,12 +478,18 @@ Agent хранит **локальную политику hard caps**:
 
 | Файл | Описание |
 |------|----------|
-| `docs/CCEA_OVERVIEW.md` | Полный обзор архитектуры |
-| `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md` | Design Doc |
-| `docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md` | Матрица трассируемости |
+| `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` | **Canonical Design Doc** (полный) |
+| `docs/CCEA_OVERVIEW.md` | Обзор архитектуры |
+| `docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md` | Матрица трассируемости требований |
+| `docs/design/CCEA_CLOUD/CCEA_SEQUENCE_DIAGRAMS.md` | Sequence diagrams |
+| `docs/architecture/CCEA_PROTOCOL.md` | Протокол Agent↔Cloud |
+| `docs/architecture/CCEA_STATE_MACHINE.md` | State machine: Deployment/Run |
+| `docs/architecture/CCEA_DATA_MODEL.md` | Модель данных (сущности) |
+| `docs/architecture/CCEA_PRIVACY.md` | Privacy/GDPR/Data Residency |
+| `docs/architecture/CCEA_CI_GUARDRAILS.md` | CI Guardrails |
 | `packages/agent/daemon/agentd.py` | Agent daemon |
 | `packages/cloud/control_plane/` | Control Plane API |
-| `tests/ccea/` | 117 тестовых файлов |
+| `tests/ccea/` | 104 тестовых файлов |
 
 ### Запуск
 
@@ -7173,7 +7179,7 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ### ✅ Production Ready
 
-Все критические исправления применены и протестированы. **871 test files, 14,000+ tests** с 97%+ pass rate. MiFID II 100%, EU AI Act 100%, DORA 100%. **CCEA 100% Complete** (117 test files).
+Все критические исправления применены и протестированы. **871 test files, 14,000+ tests** с 97%+ pass rate. MiFID II 100%, EU AI Act 100%, DORA 100%. **CCEA 100% Complete** (104 test files).
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7196,7 +7202,7 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 | **Forex Integration** | ✅ Production | 18 test files (Phase 11) |
 | Forex Parametric TCA | ✅ Production | In test_forex_parametric_tca.py |
 | OANDA Adapter | ✅ Production | In test_forex_foundation.py |
-| **CCEA Architecture** | ✅ Production | 117 test files (100% Design Doc compliance) |
+| **CCEA Architecture** | ✅ Production | 104 test files (100% Design Doc compliance) |
 | CCEA Agent Zone | ✅ Production | packages/agent/ (53 files) |
 | CCEA Cloud Zone | ✅ Production | packages/cloud/ (95+ files) |
 | CCEA Guardrails | ✅ Production | tests/ccea/guardrails/ |
@@ -7479,7 +7485,7 @@ pytest tests/test_conformal_prediction.py -v
 
 Основная архитектура проекта: **CCEA** - строгое разделение Cloud и Agent.
 
-**Эталонный документ**: `Design Doc CCEA Cloud.txt` (корень проекта)
+**Эталонный документ**: [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
 
 #### Компоненты CCEA
 
@@ -7572,7 +7578,7 @@ Priority (highest wins):
 5. DEFAULTS            ← System defaults
 ```
 
-**Документация CCEA**: `docs/CCEA_OVERVIEW.md`, `Design Doc CCEA Cloud.txt`
+**Документация CCEA**: [docs/CCEA_OVERVIEW.md](docs/CCEA_OVERVIEW.md), [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
 
 ### Слои кода
 
@@ -7826,7 +7832,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 ### Изменения в 13.0:
 - **CCEA 100% Complete** -- Cloud-Controlled Execution Architecture полностью реализована
-  - 117 тестовых файлов в tests/ccea/
+  - 104 тестовых файла в tests/ccea/
   - packages/agent/: vault, policy, execution, daemon, approval (53 файла)
   - packages/cloud/: control_plane, builder, governance, research (95+ файлов)
   - Design Doc compliance: 100%
