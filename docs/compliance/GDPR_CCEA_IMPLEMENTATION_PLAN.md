@@ -582,7 +582,9 @@ DoD:
   - Legal hold blocking with exemption tracking
   - CCEA boundary in export packages
 
-### Phase 6 — Access control, access audit, and break-glass
+### Phase 6 — Access control, access audit, and break-glass [COMPLETED - 2025-12-17]
+
+**Status**: ✅ **COMPLETED**
 
 **Goal**: least privilege with provable accountability for access to sensitive data.
 
@@ -590,10 +592,10 @@ Key work:
 - RBAC inside workspace (read vs admin vs support scopes).
 - Access audit log: who accessed what/when, especially for sensitive datasets and DSAR exports.
 - Break-glass: **incident-only**, reason required, scope limited, time bounded, fully audited (and included in the evidence pack).
-- Change management (Design Doc “trading-impacting” protections):
+- Change management (Design Doc "trading-impacting" protections):
   - TRADING_IMPACTING changes always require local approval (no silent updates)
   - Approval records include diff/evidence hashes and are exportable
-  - Audit trail includes who requested, who approved, and what changed  
+  - Audit trail includes who requested, who approved, and what changed
   Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L960`.
 
 Deliverables:
@@ -605,6 +607,97 @@ Deliverables:
 
 DoD:
 - Every sensitive access is attributable to a principal and request_id; break-glass additionally has a reason, scope, and expiry time; all are exportable.
+
+**Implementation Summary (2025-12-17):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Access Control Phase 6 Specification | ✅ Done | `docs/compliance/ACCESS_CONTROL_PHASE6_SPEC.md` |
+| RBACService (Code) | ✅ Done | `packages/cloud/governance/rbac_service.py` |
+| AccessAuditService (Code) | ✅ Done | `packages/cloud/governance/access_audit.py` |
+| BreakGlassPhase6Service (Code) | ✅ Done | `packages/cloud/governance/break_glass_phase6.py` |
+| ChangeManagementService (Code) | ✅ Done | `packages/cloud/governance/change_management.py` |
+| Comprehensive Tests | ✅ Done | `packages/cloud/governance/tests/test_access_control_phase6.py` |
+
+**Key Components:**
+
+1. **RBACService** (`rbac_service.py`)
+   - Role-based access control with hierarchical permissions
+   - 8 default system roles: owner, admin, developer, viewer, support, auditor, break_glass_approver, dpo
+   - 10 scopes: READ, WRITE, DELETE, ADMIN, SUPPORT, AUDIT, BREAK_GLASS, APPROVE, EXPORT, EXECUTE
+   - 24 resource types with sensitivity classification (standard, sensitive, critical, restricted)
+   - Permission caching with configurable TTL
+   - MFA enforcement for critical/restricted resources
+   - Workspace isolation and organization defaults
+   - Audit integration for sensitive resource access
+   - RBAC snapshot export for evidence pack
+
+2. **AccessAuditService** (`access_audit.py`)
+   - Immutable audit entries with SHA-256 integrity hash
+   - Hash chain for tamper detection and integrity verification
+   - 30+ audit actions covering full access lifecycle
+   - Query API with filtering by workspace, principal, action, result, sensitivity, time range
+   - Statistics and metrics API
+   - Export with checksum for evidence pack
+   - Alert callbacks for suspicious activity (denied access to critical resources, break-glass usage, bulk operations)
+   - 7-year retention for compliance (exempt from DSAR erasure per Art. 17(3)(b))
+
+3. **BreakGlassPhase6Service** (`break_glass_phase6.py`)
+   - Incident-only access with mandatory reason (minimum 20 characters)
+   - 8 pre-defined reason categories: INCIDENT_RESPONSE, SECURITY_INVESTIGATION, COMPLIANCE_AUDIT, DATA_RECOVERY, SYSTEM_FAILURE, CUSTOMER_EMERGENCY, PRODUCTION_DEBUGGING, REGULATORY_REQUEST
+   - 12 scopes: TELEMETRY_READ, TELEMETRY_RAW_READ, AUDIT_READ, CONFIG_READ, CONFIG_WRITE, AGENT_READ, AGENT_ADMIN, DEPLOYMENT_READ, DEPLOYMENT_ADMIN, USER_READ, DATA_EXPORT, ADMIN_ACCESS
+   - Time-bounded access: default 4 hours, max 24 hours
+   - Approval workflow with self-approval prevention
+   - Elevated approvers required for admin-level scopes
+   - Access token generation with secure random token
+   - Cooldown between requests (5 minutes)
+   - Access count and resource tracking
+   - Full audit trail (request, approve/deny, access, revoke, expire)
+   - Evidence hash for each request
+   - Export for evidence pack
+
+4. **ChangeManagementService** (`change_management.py`)
+   - Change classification: OPERATIONAL, TRADING_IMPACTING, SECURITY_SENSITIVE, DATA_SENSITIVE
+   - TRADING_IMPACTING changes require:
+     - Local approval (ApprovalType.LOCAL)
+     - User acknowledgment
+     - Reason (minimum 10 characters)
+     - Evidence hashes (config_blob_digest, manifest_digest, previous_state_digest, new_state_digest)
+   - Change lifecycle: PENDING → AWAITING_APPROVAL → APPROVED → EXECUTING → COMPLETED/FAILED → ROLLED_BACK
+   - Approval expiry (24 hours)
+   - Rollback tracking with digest
+   - Change journal with immutable entries
+   - Full audit trail (create, approve, reject, execute, rollback)
+   - Journal export for evidence pack
+
+5. **Integration Points**
+   - RBACService ↔ AccessAuditService: Automatic audit logging for sensitive resource access
+   - BreakGlassService ↔ AccessAuditService: Full audit trail for break-glass lifecycle
+   - BreakGlassService ↔ RBACService: Break-glass scope mapped to RBAC resource:action
+   - ChangeManagementService ↔ AccessAuditService: Full audit trail for change lifecycle
+
+**Evidence Pack Exports:**
+- RBAC snapshot (roles, assignments, permissions)
+- Access audit logs with integrity hash
+- Break-glass requests with evidence hash
+- Change journal with integrity hash
+
+**Test Results:**
+- 74 tests passing for Phase 6 access control module
+- 427 tests passing for governance module (no regression)
+- Tests verify:
+  - Permission grant/deny scenarios
+  - Role hierarchy and workspace isolation
+  - Scope-based access control
+  - MFA enforcement for sensitive resources
+  - Audit entry creation with integrity hash
+  - Hash chain verification
+  - Break-glass workflow (request, approve, use, revoke, expire)
+  - Self-approval prevention
+  - Elevated scope approval requirements
+  - TRADING_IMPACTING approval enforcement
+  - Change journal immutability
+  - Export functionality for all components
 
 ### Phase 7 — Security controls (Art. 32) + breach workflow (Art. 33–34)
 

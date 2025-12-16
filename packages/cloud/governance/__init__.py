@@ -215,6 +215,82 @@ from .dsar_phase5 import (
     DSARPhase5Service,
 )
 
+# GDPR Phase 6: Access Control, Audit, Break-Glass
+from .rbac_service import (
+    # Constants
+    PERMISSION_CACHE_TTL_SECONDS,
+    MAX_ROLES_PER_USER,
+    MAX_PERMISSIONS_PER_ROLE,
+    RESOURCE_SENSITIVITY,
+    AUDIT_REQUIRED_RESOURCES,
+    # Enums
+    Scope,
+    ResourceType,
+    SensitivityLevel,
+    # Data classes
+    Permission,
+    Role,
+    Principal,
+    AccessContext,
+    AccessDecision,
+    # Service
+    RBACService,
+)
+
+from .access_audit import (
+    # Constants
+    AUDIT_LOG_RETENTION_DAYS,
+    MAX_QUERY_RESULTS,
+    # Enums
+    AuditAction as AccessAuditAction,
+    AuditResult,
+    # Data classes
+    AuditPrincipal,
+    AuditEntry as AccessAuditEntry,
+    AuditQuery,
+    AuditStats,
+    AuditExport,
+    # Service
+    AccessAuditService,
+)
+
+from .break_glass_phase6 import (
+    # Constants
+    MAX_BREAK_GLASS_DURATION_HOURS,
+    DEFAULT_BREAK_GLASS_DURATION_HOURS,
+    MIN_REASON_LENGTH as BG_MIN_REASON_LENGTH,
+    BREAK_GLASS_COOLDOWN_MINUTES,
+    # Enums
+    BreakGlassReasonType,
+    BreakGlassScope as BreakGlassScopeV2,
+    BreakGlassStatus,
+    # Data classes
+    BreakGlassRequest as BreakGlassRequestV2,
+    BreakGlassResult as BreakGlassResultV2,
+    BreakGlassStats,
+    # Service
+    BreakGlassPhase6Service,
+)
+
+from .change_management import (
+    # Constants
+    APPROVAL_EXPIRY_HOURS,
+    MIN_APPROVAL_REASON_LENGTH,
+    # Enums
+    ChangeClass,
+    ChangeType,
+    ChangeStatus,
+    ApprovalType,
+    # Data classes
+    ChangeEvidence,
+    ApprovalRecord,
+    ChangeRequest,
+    ChangeJournalEntry,
+    ChangeStats,
+    # Service
+    ChangeManagementService,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -361,4 +437,55 @@ __all__ = [
     "DataCategory",
     "DATA_CATEGORIES",
     "DSARPhase5Service",
+    # GDPR Phase 6: RBAC Service
+    "PERMISSION_CACHE_TTL_SECONDS",
+    "MAX_ROLES_PER_USER",
+    "MAX_PERMISSIONS_PER_ROLE",
+    "RESOURCE_SENSITIVITY",
+    "AUDIT_REQUIRED_RESOURCES",
+    "Scope",
+    "ResourceType",
+    "SensitivityLevel",
+    "Permission",
+    "Role",
+    "Principal",
+    "AccessContext",
+    "AccessDecision",
+    "RBACService",
+    # GDPR Phase 6: Access Audit Service
+    "AUDIT_LOG_RETENTION_DAYS",
+    "MAX_QUERY_RESULTS",
+    "AccessAuditAction",
+    "AuditResult",
+    "AuditPrincipal",
+    "AccessAuditEntry",
+    "AuditQuery",
+    "AuditStats",
+    "AuditExport",
+    "AccessAuditService",
+    # GDPR Phase 6: Break-Glass Phase 6 Service
+    "MAX_BREAK_GLASS_DURATION_HOURS",
+    "DEFAULT_BREAK_GLASS_DURATION_HOURS",
+    "BG_MIN_REASON_LENGTH",
+    "BREAK_GLASS_COOLDOWN_MINUTES",
+    "BreakGlassReasonType",
+    "BreakGlassScopeV2",
+    "BreakGlassStatus",
+    "BreakGlassRequestV2",
+    "BreakGlassResultV2",
+    "BreakGlassStats",
+    "BreakGlassPhase6Service",
+    # GDPR Phase 6: Change Management Service
+    "APPROVAL_EXPIRY_HOURS",
+    "MIN_APPROVAL_REASON_LENGTH",
+    "ChangeClass",
+    "ChangeType",
+    "ChangeStatus",
+    "ApprovalType",
+    "ChangeEvidence",
+    "ApprovalRecord",
+    "ChangeRequest",
+    "ChangeJournalEntry",
+    "ChangeStats",
+    "ChangeManagementService",
 ]
