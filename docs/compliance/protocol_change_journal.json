@@ -1,0 +1,36 @@
+[
+  {
+    "change_id": "PROT-2025-001",
+    "review_id": "REV-2025-001",
+    "timestamp": "2025-12-16T00:00:00Z",
+    "change_type": "SCHEMA_CHANGE",
+    "change_class": "NON_TRADING_IMPACTING",
+    "summary": "Initial protocol schema with GDPR Phase 2 compliance - defines allowed command types (REQUEST_*), telemetry levels (AGGREGATED, DETAILED_NON_SENSITIVE, RAW_ORDER_EVENTS), and prohibited order-like fields",
+    "author": {
+      "name": "CCEA Team",
+      "email": "team@ccea.io"
+    },
+    "reviewer": {
+      "name": "Security Team",
+      "email": "security@ccea.io",
+      "role": "SECURITY_LEAD"
+    },
+    "approval_status": "APPROVED",
+    "conditions": [],
+    "conditions_met": true,
+    "pr_number": 0,
+    "commit_hash": "0000000000000000000000000000000000000000",
+    "schema_version_before": "0.0.0",
+    "schema_version_after": "1.0.0",
+    "breaking_change": false,
+    "security_impact": "NONE",
+    "privacy_impact": "NONE",
+    "evidence_hashes": {
+      "checklist_hash": "sha256:initial",
+      "review_hash": "sha256:initial",
+      "diff_hash": "sha256:initial"
+    },
+    "design_doc_reference": "Design_Doc_CCEA_Cloud.txt Section 10-16",
+    "notes": "Initial baseline protocol schema established with full CCEA compliance"
+  }
+]

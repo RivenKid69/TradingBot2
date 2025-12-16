@@ -192,7 +192,9 @@ DoD:
 - 84 tests passing for Phase 2 governance (existing tests - no regression)
 - DSAR exports now include CCEA boundary notice
 
-### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts)
+### Phase 2 — Data minimization enforcement (schema/CI + telemetry contracts) [COMPLETED - 2025-12-16]
+
+**Status**: ✅ **COMPLETED**
 
 **Goal**: make violations mechanically hard (or impossible).
 
@@ -240,7 +242,37 @@ DoD:
   - any RAW attempt without explicit opt-in is rejected
   - any order-like fields in non-RAW telemetry are rejected
 - A PR that introduces a new command type without a recorded security review approval fails CI.
-- A PR that attempts to reference an artifact/config by anything other than digest (or uses “latest”) fails CI.
+- A PR that attempts to reference an artifact/config by anything other than digest (or uses "latest") fails CI.
+
+**Implementation Summary (2025-12-16):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| Telemetry Data Dictionary | ✅ Done | `docs/compliance/TELEMETRY_DATA_DICTIONARY.md` |
+| RAW_ORDER_EVENTS Handling Spec | ✅ Done | `docs/compliance/RAW_ORDER_EVENTS_HANDLING_SPEC.md` |
+| Protocol Change Review Checklist | ✅ Done | `docs/compliance/PROTOCOL_CHANGE_REVIEW.md` |
+| Protocol Change Journal | ✅ Done | `docs/compliance/protocol_change_journal.json` |
+| TelemetryLevelContract (Code) | ✅ Done | `packages/cloud/governance/telemetry_contract.py` |
+| RawOrderEventsGate (Code) | ✅ Done | `packages/cloud/governance/telemetry_contract.py` |
+| Protocol Review Check (CI) | ✅ Done | `ccea/guardrails/protocol_review_check.py` |
+| Artifact Digest Check (CI) | ✅ Done | `ccea/guardrails/artifact_digest_check.py` |
+| Redaction Enforcement Check (CI) | ✅ Done | `ccea/guardrails/redaction_enforcement_check.py` |
+| Telemetry Contract Tests | ✅ Done | `packages/cloud/governance/tests/test_telemetry_contract.py` |
+| Phase 2 Guardrails Tests | ✅ Done | `ccea/guardrails/tests/test_phase2_guardrails.py` |
+
+**Key Additions:**
+- Telemetry Level Contracts with field validation per level (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS)
+- RAW_ORDER_EVENTS enterprise gating with opt-in workflow
+- Protocol command security review enforcement with journal format
+- Artifact digest pinning and registry allowlist enforcement
+- Redaction non-bypassable enforcement (feature flag protection)
+- Comprehensive field sets: AGGREGATED_ALLOWED_FIELDS, DETAILED_ALLOWED_FIELDS, RAW_ORDER_ALLOWED_FIELDS, ALWAYS_FORBIDDEN_FIELDS, ORDER_LIKE_FIELDS, PII_FIELDS
+
+**Test Results:**
+- 48 tests passing for telemetry contract module
+- 47 tests passing for Phase 2 guardrails
+- 144 tests passing for governance module (no regression)
+- 40 tests passing for Phase 2 governance tests (no regression)
 
 ### Phase 3 — EU-only data residency enforcement (tenant/workspace)
 

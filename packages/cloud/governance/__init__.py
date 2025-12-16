@@ -115,6 +115,27 @@ from .consent import (
     get_consent_service,
 )
 
+# Telemetry Contract (GDPR Phase 2)
+from .telemetry_contract import (
+    TelemetryLevelContract,
+    TelemetryContractValidator,
+    RawOrderEventsGate,
+    EnterpriseRawOptIn,
+    ContractViolation,
+    ContractValidationResult,
+    ContractViolationType,
+    ViolationSeverity,
+    validate_telemetry_contract,
+    get_allowed_fields_for_level,
+    get_forbidden_fields_for_level,
+    AGGREGATED_ALLOWED_FIELDS,
+    DETAILED_ALLOWED_FIELDS,
+    RAW_ORDER_ALLOWED_FIELDS,
+    ALWAYS_FORBIDDEN_FIELDS,
+    PII_FIELDS,
+    ORDER_LIKE_FIELDS,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -182,4 +203,22 @@ __all__ = [
     "ConsentScope",
     "ConsentVerificationResult",
     "get_consent_service",
+    # Telemetry Contract (GDPR Phase 2)
+    "TelemetryLevelContract",
+    "TelemetryContractValidator",
+    "RawOrderEventsGate",
+    "EnterpriseRawOptIn",
+    "ContractViolation",
+    "ContractValidationResult",
+    "ContractViolationType",
+    "ViolationSeverity",
+    "validate_telemetry_contract",
+    "get_allowed_fields_for_level",
+    "get_forbidden_fields_for_level",
+    "AGGREGATED_ALLOWED_FIELDS",
+    "DETAILED_ALLOWED_FIELDS",
+    "RAW_ORDER_ALLOWED_FIELDS",
+    "ALWAYS_FORBIDDEN_FIELDS",
+    "PII_FIELDS",
+    "ORDER_LIKE_FIELDS",
 ]
