@@ -84,6 +84,17 @@ from packages.cloud.enterprise.tuf_repository import (
     TUFMetadata,
     SignedMetadata,
 )
+from packages.cloud.enterprise.multi_region import (
+    MultiRegionReplicator,
+    Region,
+    RegionStatus,
+    ReplicationConfig,
+    ReplicationMode,
+    ReplicationItem,
+    ReplicationStats,
+    ConflictResolution,
+    create_default_regions,
+)
 
 __all__ = [
     # Cryptographic Operations (Phase 10)
@@ -130,4 +141,14 @@ __all__ = [
     "TUFRole",
     "TUFMetadata",
     "SignedMetadata",
+    # Multi-Region Replication
+    "MultiRegionReplicator",
+    "Region",
+    "RegionStatus",
+    "ReplicationConfig",
+    "ReplicationMode",
+    "ReplicationItem",
+    "ReplicationStats",
+    "ConflictResolution",
+    "create_default_regions",
 ]

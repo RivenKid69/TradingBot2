@@ -86,6 +86,23 @@ except ImportError:
     KeyInfo = None
     EncryptionResult = None
 
+# Policy Engine
+from .policy_engine import (
+    PolicyEngine,
+    Policy,
+    PolicyRule,
+    PolicyCondition,
+    PolicyType,
+    PolicyEffect,
+    PolicyStatus,
+    PolicyEvaluationContext,
+    PolicyEvaluationReport,
+    EvaluationResult,
+    ComparisonOperator,
+    create_default_risk_policy,
+    create_default_deployment_policy,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -130,4 +147,18 @@ __all__ = [
     "CMKConfig",
     "KeyInfo",
     "EncryptionResult",
+    # Policy Engine
+    "PolicyEngine",
+    "Policy",
+    "PolicyRule",
+    "PolicyCondition",
+    "PolicyType",
+    "PolicyEffect",
+    "PolicyStatus",
+    "PolicyEvaluationContext",
+    "PolicyEvaluationReport",
+    "EvaluationResult",
+    "ComparisonOperator",
+    "create_default_risk_policy",
+    "create_default_deployment_policy",
 ]
