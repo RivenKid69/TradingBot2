@@ -184,6 +184,37 @@ from .retention_service import (
     AutoPurgeScheduler,
 )
 
+# DSAR Phase 5: Data Subject Access Requests
+from .dsar_phase5 import (
+    # Constants
+    DSAR_RESPONSE_DEADLINE_DAYS,
+    DSAR_EXTENSION_DAYS,
+    DSAR_MAX_TOTAL_DAYS,
+    DSAR_DATA_CATEGORIES as DSAR_DATA_CATEGORIES_V2,
+    DSAR_OUT_OF_SCOPE_CATEGORIES as DSAR_OUT_OF_SCOPE_CATEGORIES_V2,
+    CCEA_BOUNDARY_NOTICE as CCEA_BOUNDARY_NOTICE_V2,
+    ERASURE_EXEMPTIONS,
+    COMPLIANCE_DATA_CATEGORIES as DSAR_COMPLIANCE_CATEGORIES,
+    # Enums
+    DSARRequestType as DSARRequestTypeV2,
+    DSARStatus as DSARStatusV2,
+    VerificationMethod,
+    VerificationStatus,
+    ExportFormat,
+    AuditAction as DSARAuditAction,
+    # Data classes
+    VerificationToken,
+    DSARRequest as DSARRequestV2,
+    DSARResult as DSARResultV2,
+    DSARMetrics,
+    AuditEntry as DSARAuditEntry,
+    DataCategory,
+    # Registry
+    DATA_CATEGORIES,
+    # Service
+    DSARPhase5Service,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -307,4 +338,27 @@ __all__ = [
     "RetentionPolicyRegistry",
     "LegalHoldService",
     "AutoPurgeScheduler",
+    # DSAR Phase 5: Data Subject Access Requests
+    "DSAR_RESPONSE_DEADLINE_DAYS",
+    "DSAR_EXTENSION_DAYS",
+    "DSAR_MAX_TOTAL_DAYS",
+    "DSAR_DATA_CATEGORIES_V2",
+    "DSAR_OUT_OF_SCOPE_CATEGORIES_V2",
+    "CCEA_BOUNDARY_NOTICE_V2",
+    "ERASURE_EXEMPTIONS",
+    "DSAR_COMPLIANCE_CATEGORIES",
+    "DSARRequestTypeV2",
+    "DSARStatusV2",
+    "VerificationMethod",
+    "VerificationStatus",
+    "ExportFormat",
+    "DSARAuditAction",
+    "VerificationToken",
+    "DSARRequestV2",
+    "DSARResultV2",
+    "DSARMetrics",
+    "DSARAuditEntry",
+    "DataCategory",
+    "DATA_CATEGORIES",
+    "DSARPhase5Service",
 ]
