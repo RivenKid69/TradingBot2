@@ -1,6 +1,8 @@
 # CCEA Overview: Cloud-Controlled Execution Architecture
 
-> **Version**: 2.0.0 | **Last Updated**: 2025-12-16 | **Status**: APPROVED | **Implementation**: 100% Complete
+> **Version**: 2.1.0 | **Last Updated**: 2025-12-16 | **Status**: APPROVED | **Implementation**: 100% Complete
+>
+> **Reference**: This document aligns with `Design Doc CCEA Cloud.txt` (canonical source)
 
 ## Executive Summary
 
@@ -12,9 +14,57 @@ CCEA (Cloud-Controlled Execution Architecture) defines a strict security boundar
 
 ---
 
-## 1. Architecture Boundary
+## 1. Context and Goals (Design Doc §1)
 
-### 1.1 The Fundamental Principle (Non-Negotiable)
+### 1.1 Context
+
+We build a SaaS platform for:
+- Strategy development (including AI/RL)
+- Backtesting and realistic execution simulation
+- Strategy/model version management
+- Live run monitoring
+
+**Key Point**: Live order execution does NOT happen in Cloud. It happens in user's environment:
+- Local Agent on user's machine / user's VPS (BYO host)
+- Or on-prem / customer VPC (enterprise)
+
+### 1.2 Goals
+
+Architecture that:
+1. **Technically** provides good UX for "auto-trading" without Cloud becoming an execution service
+2. **Legally/commercially** positions as "software provider", reducing RTO/execution/advice qualification risks
+3. **Enterprise-ready**: auditability, change control, data governance, vendor pack
+
+### 1.3 Short Formula
+
+```
+Cloud: research, simulation, artifact build/sign, monitoring, lifecycle-requests
+Agent: keys, live decision loop, risk controls, order creation/sending, local approvals
+```
+
+---
+
+## 2. Terminology (Design Doc §2)
+
+| Term | Definition |
+|------|------------|
+| **Cloud** | Our SaaS services |
+| **Agent** | Client runtime (daemon) in user's environment |
+| **Strategy** | User code/model that produces Intent |
+| **Intent** | High-level intention (target exposure/position/action), NOT a "ready order" |
+| **Order** | Concrete broker instruction (created ONLY in Agent) |
+| **Deployment** | Link: strategy artifact + configuration + target agent |
+| **Run** | Specific strategy execution on an agent |
+| **Command** | Lifecycle request from Cloud to Agent |
+| **Approval** | Local confirmation of trading-significant change on Agent |
+| **TRADING_IMPACTING** | Change class affecting trading behavior |
+| **NON_IMPACTING** | Change NOT affecting trading behavior (logging, UI, telemetry verbosity) |
+
+---
+
+## 3. Architecture Boundary (Design Doc §0, §4)
+
+### 3.1 The Fundamental Principle (Non-Negotiable)
 
 ```
 Cloud = research / build / monitoring / control plane (lifecycle requests)
@@ -27,7 +77,7 @@ Cloud NEVER:
   - Sends order-like payloads (side/qty/price)
 ```
 
-### 1.2 Visual Architecture
+### 3.2 Visual Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -69,7 +119,7 @@ Cloud NEVER:
                               └───────────┘
 ```
 
-### 1.3 Zone Responsibilities
+### 3.3 Zone Responsibilities
 
 | Zone | What It Does | What It NEVER Does |
 |------|--------------|-------------------|
@@ -79,9 +129,9 @@ Cloud NEVER:
 
 ---
 
-## 2. Product Modes
+## 4. Product Modes (Design Doc §3.3)
 
-### 2.1 Retail Research SaaS (EU-friendly)
+### 4.1 Retail Research SaaS (EU-friendly)
 
 **Target**: Individual researchers, quants learning algo trading
 
@@ -111,7 +161,7 @@ Cloud NEVER:
 - EU data residency by default
 - GDPR compliant telemetry
 
-### 2.2 Retail Live via Local Agent
+### 4.2 Retail Live via Local Agent
 
 **Target**: Active traders who want automated execution
 
@@ -137,7 +187,7 @@ Cloud:                          Agent (User's Machine):
 - Local approval required for trading-impacting changes
 - User can disconnect from Cloud and keep trading
 
-### 2.3 Enterprise Engine (On-Prem/VPC/Self-Hosted)
+### 4.3 Enterprise Engine (On-Prem/VPC/Self-Hosted)
 
 **Target**: Hedge funds, prop trading firms, financial institutions
 
@@ -172,16 +222,48 @@ Cloud:                          Agent (User's Machine):
 
 ---
 
-## 3. Legal Posture
+## 5. Responsibility Layers (Design Doc §5)
 
-### 3.1 What We Are
+### 5.1 Where Trading Decision is Born
+
+- **Live Intent** is born ONLY on Agent (in strategy runtime)
+- Cloud may store research results, but does NOT transmit live targets
+
+### 5.2 Who Can "Start Trading"
+
+- Cloud sends only `REQUEST_START`
+- Agent by default requires local approval OR pre-configured local auto-approve policy
+
+### 5.3 Who Can Change Trading Behavior
+
+Any **TRADING_IMPACTING** changes:
+- Strategy/model/artifact version
+- Instrument universe
+- Execution parameters (order types, aggressiveness)
+- Risk limits
+- Live schedule
+- Paper→Live switch
+- Broker account/adapter
+
+→ Only through local confirmation (or local auto-approve policy)
+
+### 5.4 What Cloud Can Do Without Approval
+
+- **Stop/Pause** (safety, reduces risk)
+- **Non-impacting** changes (telemetry verbosity, log level)
+
+---
+
+## 6. Legal Posture (Design Doc §18)
+
+### 6.1 What We Are
 
 **Software Provider / ICT Provider** providing:
 - Algorithmic trading research tools
 - Strategy development and backtesting platform
 - Infrastructure for users to run their own trading systems
 
-### 3.2 What We Are NOT
+### 6.2 What We Are NOT
 
 | We Are NOT | Why |
 |------------|-----|
@@ -191,7 +273,7 @@ Cloud:                          Agent (User's Machine):
 | **Asset Manager** | We do not manage portfolios or make investment decisions |
 | **Execution Service** | Cloud NEVER sends orders; Agent runs locally under user control |
 
-### 3.3 Regulatory References
+### 6.3 Regulatory References
 
 | Regulation | Our Position |
 |------------|--------------|
@@ -200,7 +282,7 @@ Cloud:                          Agent (User's Machine):
 | **GDPR** | Data Controller with EU data residency |
 | **DORA** | ICT Service Provider (contractual compliance) |
 
-### 3.4 Key Legal Disclaimers
+### 6.4 Key Legal Disclaimers
 
 ```
 THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
@@ -215,9 +297,95 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 
 ---
 
-## 4. Threat Model
+## 7. Data Model (Design Doc §6)
 
-### 4.1 Threat Vectors and Mitigations
+### 7.1 Core Entities
+
+| Entity | Description |
+|--------|-------------|
+| `Organization` | Top-level tenant |
+| `Workspace` | Tenant boundary |
+| `User` | Platform user |
+| `Role / Permission` | Access control |
+| `Strategy` | Strategy definition |
+| `StrategyVersion` | Versioned strategy |
+| `Build` | Artifact digest, signature, sbom_ref, provenance |
+| `Artifact` | Registry ref + digest |
+| `Agent` | Registered agent instance |
+| `AgentEnrollmentToken` | TTL enrollment token |
+| `Deployment` | Strategy deployment to agent |
+| `Run` | Execution instance |
+| `Command` | Cloud→Agent command |
+| `ApprovalRecord` | Reference to local approval from Agent |
+| `TelemetryEvent` | Agent telemetry |
+| `Alert` | Monitoring alert |
+| `AccessAudit` | Who viewed sensitive data |
+| `DataRetentionPolicy` | Per tenant / per plan |
+
+### 7.2 Key Entity Fields
+
+**Agent:**
+- `agent_id` (UUID), `workspace_id`, `public_key` (device key)
+- `agent_version`, `last_seen_at`, `status`: ONLINE/OFFLINE
+- `capabilities` (cpu/gpu/os, sandbox types), `trust_state` (ENROLLED/REVOKED)
+
+**Build:**
+- `build_id`, `strategy_version_id`, `artifact_digest` (sha256:...)
+- `signature_ref`, `sbom_ref`, `created_by`, `created_at`
+- `change_class`: TRADING_IMPACTING/NON
+- `provenance`: {git_sha, dataset_refs, training_run_id, params_hash}
+
+**Deployment:**
+- `deployment_id`, `workspace_id`, `agent_id`, `build_id`
+- `mode`: PAPER/LIVE, `desired_state`: REQUEST_START / REQUEST_STOP / ...
+- `config_ref` (immutable config blob digest)
+- `trading_impacting`: bool, `approval_required`: bool (derived)
+- `current_state` (from agent reports)
+
+**Command:**
+- `command_id` (UUID), `deployment_id / agent_id`, `type` (enum)
+- `payload_ref` (immutable blob digest), `change_class`
+- `requires_approval` (bool), `issued_by` (user/system), `issued_at`
+- `status`: PENDING / ACKED / APPLIED / REJECTED / EXPIRED
+- `idempotency_key`
+
+---
+
+## 8. Change Classification (Design Doc §7)
+
+### 8.1 TRADING_IMPACTING (Requires Local Approval)
+
+| Category | Changes |
+|----------|---------|
+| **Strategy/Model** | New build/version of strategy or model |
+| **Mode** | PAPER↔LIVE switch |
+| **Universe** | Instrument universe change |
+| **Risk** | Risk limits change (any loosening; tightening may be allowed by local policy) |
+| **Broker** | Broker adapter/account change |
+| **Execution** | order_types, time-in-force, aggressiveness, max order rate |
+| **Schedule** | Live schedule (if affects trading sessions) |
+| **Parameters** | Strategy parameters affecting signals/entries/exits |
+
+### 8.2 NON_IMPACTING (May Apply Without Approval)
+
+- Logging level
+- Telemetry verbosity (if not adding sensitive fields)
+- UI/UX parameters
+- Runner non-functional configs (e.g., buffer size)
+- Agent update (retail: auto-update; enterprise: change window policy)
+
+### 8.3 Policy Firewall (Local Hard Caps)
+
+Agent stores local policy that:
+- Sets absolute upper risk limits
+- Prohibits some instruments/order types
+- Prohibits auto-approve for some changes
+
+**Cloud CANNOT raise risk above hard caps ever.**
+
+---
+
+## 9. Threat Model (Design Doc §15)
 
 | Threat | Attack Vector | Mitigation |
 |--------|---------------|------------|
@@ -231,7 +399,7 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 | **Privilege Escalation** | User accesses other tenant's data | RBAC, Postgres RLS, workspace isolation |
 | **Rollback Attack** | Attacker pins old vulnerable version | Signed update metadata (TUF-style), min/max schema versions |
 
-### 4.2 Safe Defaults (Cannot Be Disabled)
+### 9.1 Safe Defaults (Cannot Be Disabled)
 
 | Setting | Default | Can User Override? |
 |---------|---------|-------------------|
@@ -243,7 +411,7 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 | Auto-Approve | DISABLED | Local policy only |
 | Artifact Signature Verification | REQUIRED | NO |
 
-### 4.3 Secret Hygiene
+### 9.2 Secret Hygiene
 
 ```
 Secrets (broker API keys, master keys) are protected by:
@@ -268,9 +436,9 @@ Secrets (broker API keys, master keys) are protected by:
 
 ---
 
-## 5. Protocol Security
+## 10. Protocol Security (Design Doc §10)
 
-### 5.1 Allowed Commands (Allowlist)
+### 10.1 Allowed Commands (Allowlist)
 
 | Command | Direction | Purpose | Requires Local Approval |
 |---------|-----------|---------|------------------------|
@@ -282,7 +450,7 @@ Secrets (broker API keys, master keys) are protected by:
 | `REQUEST_ROTATE_AGENT_SESSION` | Cloud→Agent | Rotate session keys | YES |
 | `REQUEST_EXPORT_LOGS` | Cloud→Agent | Export logs with redaction | YES (data_sensitive) |
 
-### 5.2 Prohibited Payloads
+### 10.2 Prohibited Payloads
 
 JSON payloads in commands **MUST NOT** contain:
 
@@ -300,7 +468,7 @@ JSON payloads in commands **MUST NOT** contain:
 
 These fields are **blocked at schema level** and **validated by CI guardrails**.
 
-### 5.3 Authentication
+### 10.3 Authentication
 
 | Method | Use Case | Implementation |
 |--------|----------|----------------|
@@ -314,9 +482,142 @@ All messages include:
 
 ---
 
-## 6. Telemetry & Privacy
+## 11. State Machines (Design Doc §11)
 
-### 6.1 Telemetry Levels
+### 11.1 Deployment State Machine
+
+```
+                                ┌──────────────────┐
+                                │     CREATED      │
+                                └────────┬─────────┘
+                                         │ provision_agent
+                                         ▼
+                                ┌──────────────────┐
+                                │    ENROLLING     │
+                                └────────┬─────────┘
+                                         │ agent_enrolled
+                                         ▼
+┌─────────────────┐  upgrade    ┌──────────────────┐
+│    UPGRADING    │◀───────────▶│     ENROLLED     │
+└────────┬────────┘             └────────┬─────────┘
+         │                               │ request_start
+         ▼                               ▼
+┌─────────────────┐             ┌──────────────────┐
+│ UPGRADE_PENDING │             │  START_PENDING   │
+│   (approval)    │             │   (approval)     │
+└────────┬────────┘             └────────┬─────────┘
+         │ approved                      │ approved
+         ▼                               ▼
+         └───────────────┬───────────────┘
+                         ▼
+                ┌──────────────────┐
+                │     RUNNING      │◀──────────────┐
+                └────────┬─────────┘               │
+                         │                         │
+        ┌────────────────┼────────────────┐        │
+        │                │                │        │
+        ▼                ▼                ▼        │
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ │
+│   PAUSING    │ │   STOPPING   │ │    HALTED    │ │
+└──────┬───────┘ └──────┬───────┘ └──────┬───────┘ │
+       │                │                │         │
+       ▼                ▼                │         │
+┌──────────────┐ ┌──────────────┐        │         │
+│    PAUSED    │ │   STOPPED    │        │         │
+└──────┬───────┘ └──────────────┘        │         │
+       │                                 │         │
+       │ resume                          │ restart │
+       └─────────────────────────────────┴─────────┘
+```
+
+### 11.2 Run State Machine
+
+```
+                    ┌──────────────────┐
+                    │     CREATED      │
+                    └────────┬─────────┘
+                             │ init
+                             ▼
+                    ┌──────────────────┐
+                    │  INITIALIZING    │
+                    └────────┬─────────┘
+                             │ preflight_ok
+                             ▼
+                    ┌──────────────────┐
+                    │     RUNNING      │◀──────────┐
+                    └────────┬─────────┘           │
+                             │                     │
+            ┌────────────────┼────────────┐        │
+            │                │            │        │
+            ▼                ▼            ▼        │
+    ┌──────────────┐ ┌─────────────┐ ┌─────────┐   │
+    │   PAUSED     │ │   STOPPED   │ │ HALTED  │   │
+    └──────┬───────┘ └─────────────┘ │(KillSw) │   │
+           │                         └────┬────┘   │
+           │ resume                       │ ack    │
+           └──────────────────────────────┴────────┘
+```
+
+### 11.3 State Transitions
+
+| Current State | Event | Next State | Approval Required |
+|---------------|-------|------------|-------------------|
+| ENROLLED | REQUEST_START | START_PENDING | YES |
+| START_PENDING | APPROVED | RUNNING | - |
+| RUNNING | REQUEST_PAUSE | PAUSED | NO |
+| RUNNING | REQUEST_STOP | STOPPED | NO |
+| RUNNING | KILL_SWITCH | HALTED | NO |
+| PAUSED | REQUEST_RESUME | RUNNING | YES (if config changed) |
+| HALTED | ACKNOWLEDGE | STOPPED | YES |
+
+---
+
+## 12. Config Layering (Design Doc §12)
+
+### 12.1 Priority Order
+
+```
+Priority (highest wins):
+
+1. LOCAL_HARD_CAPS        ← Agent enforced, immutable
+2. LOCAL_POLICY           ← User's local policy
+3. ARTIFACT_RISK_PROFILE  ← Strategy's risk_profile_suggested
+4. CLOUD_CONFIG           ← Remote configuration
+5. DEFAULTS               ← System defaults
+```
+
+### 12.2 Merge Rules
+
+| Setting | Rule |
+|---------|------|
+| Risk limits | `min(all_layers)` - lowest limit wins |
+| Allowed symbols | `intersection(all_layers)` |
+| Denied symbols | `union(all_layers)` |
+| Boolean flags | Lower layer can only make stricter |
+
+### 12.3 Example
+
+```yaml
+# Cloud config suggests:
+max_position_pct: 20%
+
+# Artifact risk_profile_suggested:
+max_position_pct: 15%
+
+# Local policy:
+max_position_pct: 10%
+
+# Hard cap:
+max_position_pct: 10%
+
+# Result: 10% (hard cap enforced)
+```
+
+---
+
+## 13. Telemetry & Privacy (Design Doc §13-14)
+
+### 13.1 Telemetry Levels
 
 | Level | Data Collected | Default | Availability |
 |-------|----------------|---------|--------------|
@@ -324,7 +625,7 @@ All messages include:
 | `DETAILED_NON_SENSITIVE` | Trade counts, timing, latency | Opt-in | All users |
 | `RAW_ORDER_EVENTS` | Full order details | Opt-in | Enterprise only |
 
-### 6.2 Data Residency
+### 13.2 Data Residency
 
 | Tenant Type | Primary Region | Configurable |
 |-------------|----------------|--------------|
@@ -332,7 +633,7 @@ All messages include:
 | Enterprise | Customer-specified | YES |
 | On-Prem | Customer infrastructure | N/A |
 
-### 6.3 GDPR Rights
+### 13.3 GDPR Rights
 
 Users have full GDPR rights:
 - **Access** (Article 15): Export all personal data
@@ -343,9 +644,9 @@ Users have full GDPR rights:
 
 ---
 
-## 7. CI Guardrails
+## 14. CI Guardrails (Design Doc §19)
 
-### 7.1 Build-Time Checks
+### 14.1 Build-Time Checks
 
 | Check | What It Validates | Failure Action |
 |-------|-------------------|----------------|
@@ -355,7 +656,7 @@ Users have full GDPR rights:
 | `redaction-enabled` | Telemetry redaction cannot be disabled | Block deploy |
 | `import-boundary-check` | No agent imports in cloud packages | Block build |
 
-### 7.2 Runtime Checks
+### 14.2 Runtime Checks
 
 | Check | What It Validates | Failure Action |
 |-------|-------------------|----------------|
@@ -366,16 +667,52 @@ Users have full GDPR rights:
 
 ---
 
-## 8. Document References
+## 15. Rollout Plan (Design Doc §20)
 
-### 8.1 Zone-Specific Documentation
+### 15.1 Phase Summary
+
+| Phase | Scope | Focus |
+|-------|-------|-------|
+| **P0** | Foundations | Design doc, guardrails, protocol schemas, legal docs |
+| **P1** | Agent Core | Vault, approval, preflight, daemon, reconciliation |
+| **P2** | Cloud Integration | Control plane, builder, governance, enterprise |
+
+### 15.2 Milestones
+
+```
+P0 "Design + Guardrails"
+  ├── Protocol schema (manifest, commands)
+  ├── CI guardrails (import check, schema check)
+  ├── Legal documents (ToS, AUP)
+  └── Sequence diagrams + traceability matrix
+
+P1 "Agent Foundations"
+  ├── Local Vault (keychain/encrypted file)
+  ├── Approval system (CLI + evidence)
+  ├── Policy firewall (hard caps)
+  ├── Kill switch + preflight
+  └── Telemetry redaction
+
+P2 "Cloud + Enterprise"
+  ├── Control plane API
+  ├── Artifact builder + registry
+  ├── Governance (RBAC, residency, retention)
+  ├── Enterprise deployment (on-prem, air-gap)
+  └── Evidence pack export
+```
+
+---
+
+## 16. Document References
+
+### 16.1 Zone-Specific Documentation
 
 | Zone | Location | Contents |
 |------|----------|----------|
 | Cloud Zone | [docs/cloud/](cloud/) | Control Plane API, Artifact Builder, Governance, Research Job Isolation |
 | Agent Zone | [docs/agent/](agent/) | Installation, Local Vault, Approvals, Risk Controls, Degraded Modes |
 
-### 8.2 Design Documents
+### 16.2 Design Documents
 
 | Document | Location | Purpose |
 |----------|----------|---------|
@@ -386,7 +723,7 @@ Users have full GDPR rights:
 | CI Guardrails | `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md` | CI/CD validation rules |
 | Decision Log | `docs/design/CCEA_CLOUD/DECISION_LOG.md` | Architecture decisions |
 
-### 8.3 Operational Documentation
+### 16.3 Operational Documentation
 
 | Document | Location | Purpose |
 |----------|----------|---------|
@@ -394,7 +731,7 @@ Users have full GDPR rights:
 | JSON Schemas | [docs/schemas/](schemas/) | Protocol and manifest schemas |
 | UI Guardrails | [docs/ui/](ui/) | Onboarding disclaimers, UI requirements |
 
-### 8.4 Legal Documentation
+### 16.4 Legal Documentation
 
 | Document | Location | Purpose |
 |----------|----------|---------|
@@ -404,9 +741,9 @@ Users have full GDPR rights:
 
 ---
 
-## 9. Implementation Status
+## 17. Implementation Status
 
-### Completed Phases
+### 17.1 Completed Phases
 
 All phases of the CCEA implementation are complete:
 
@@ -416,7 +753,7 @@ All phases of the CCEA implementation are complete:
 | Phase 7-9 (P1) | Control plane, agent lifecycle, reconciliation | ✓ Complete |
 | Phase 10 (P2) | Enterprise, sandbox isolation, evidence pack | ✓ Complete |
 
-### Key Implementation Artifacts
+### 17.2 Key Implementation Artifacts
 
 - **117 test files** in `tests/ccea/` covering all requirements
 - **packages/agent/**: Local vault, approval, policy firewall, reconciliation

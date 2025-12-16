@@ -1,10 +1,20 @@
 # Cloud Zone Documentation
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-16
+> **Version**: 1.1.0 | **Last Updated**: 2025-12-16
+>
+> **Reference**: This document aligns with `Design Doc CCEA Cloud.txt` (canonical source)
 
 ## Overview
 
 The Cloud Zone provides research, backtesting, monitoring, and lifecycle management capabilities. It is designed with strict security boundaries that ensure it **NEVER** has access to trading credentials or order execution capabilities.
+
+### Design Doc Reference (§4.1)
+
+Cloud components per Design Doc:
+- **Control Plane** - Deployment/Run lifecycle, Command queue, Telemetry receiver
+- **Artifact Registry** - Immutable builds, signed, with SBOM
+- **Governance** - RBAC, multi-tenancy, data residency, retention policies
+- **Research Environment** - Backtest runner, sandbox isolation
 
 ## Security Guarantees
 
@@ -17,6 +27,24 @@ Cloud Zone GUARANTEES:
   - ALWAYS redacts sensitive data in telemetry
   - ALWAYS requires signature verification for artifacts
 ```
+
+## Protocol: Allowed Commands (Design Doc §10)
+
+Cloud can ONLY send these commands to Agent:
+
+| Command | Purpose | Requires Local Approval |
+|---------|---------|------------------------|
+| `REQUEST_START_RUN` | Start strategy execution | YES |
+| `REQUEST_STOP_RUN` | Stop execution | NO (safety) |
+| `REQUEST_PAUSE_RUN` | Pause execution | NO (safety) |
+| `REQUEST_UPGRADE_ARTIFACT` | Deploy new version | YES |
+| `REQUEST_UPDATE_CONFIG` | Update configuration | YES (if TRADING_IMPACTING) |
+| `REQUEST_ROTATE_AGENT_SESSION` | Rotate session keys | YES |
+| `REQUEST_EXPORT_LOGS` | Export logs | YES (data_sensitive) |
+
+**Cloud NEVER sends**: `side`, `qty`, `price`, `order_type`, `target_position` fields.
+
+---
 
 ## Components
 

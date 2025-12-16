@@ -7487,10 +7487,43 @@ pytest tests/test_conformal_prediction.py -v
 | Command | Description | TRADING_IMPACTING |
 |---------|-------------|-------------------|
 | REQUEST_START_RUN | Запустить стратегию | YES |
-| REQUEST_STOP_RUN | Остановить стратегию | NO |
-| REQUEST_PAUSE_RUN | Приостановить | NO |
+| REQUEST_STOP_RUN | Остановить стратегию | NO (safety) |
+| REQUEST_PAUSE_RUN | Приостановить | NO (safety) |
 | REQUEST_UPDATE_CONFIG | Изменить config | Depends on field |
-| REQUEST_DEPLOY_ARTIFACT | Развернуть новую версию | YES |
+| REQUEST_UPGRADE_ARTIFACT | Развернуть новую версию | YES |
+| REQUEST_ROTATE_AGENT_SESSION | Ротация ключей | YES |
+| REQUEST_EXPORT_LOGS | Экспорт логов | YES (data_sensitive) |
+
+#### Threat Model (Design Doc §15)
+
+| Угроза | Митигация |
+|--------|-----------|
+| RCE in Cloud | Cloud не имеет trading libs, broker APIs |
+| Key Exfiltration | Keys never leave Agent, mandatory redaction |
+| Artifact Tampering | Digest pinning, signature verification, SBOM |
+| Cloud Becomes Execution | Schema prohibits order-like payloads |
+| Compute Abuse | Sandbox, CPU/RAM/time quotas, egress allowlist |
+
+#### Safe Defaults (Design Doc §15)
+
+| Setting | Default | Override |
+|---------|---------|----------|
+| Telemetry Redaction | ON | **NO** |
+| Local Approval for Trading-Impacting | REQUIRED | Only stricter |
+| RAW Order Telemetry | OFF | Enterprise opt-in |
+| Artifact Signature Verification | REQUIRED | **NO** |
+| Auto-Approve | DISABLED | Local policy only |
+
+#### Config Layering (Design Doc §12)
+
+```
+Priority (highest wins):
+1. LOCAL_HARD_CAPS     ← Agent enforced, immutable
+2. LOCAL_POLICY        ← User's local policy
+3. ARTIFACT_RISK       ← Strategy's risk_profile_suggested
+4. CLOUD_CONFIG        ← Remote configuration
+5. DEFAULTS            ← System defaults
+```
 
 **Документация CCEA**: `docs/CCEA_OVERVIEW.md`, `Design Doc CCEA Cloud.txt`
 

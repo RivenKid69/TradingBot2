@@ -4,6 +4,8 @@ RL-first research and trading stack for crypto, equities, FX, and derivatives wi
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
+> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/CCEA_OVERVIEW.md)
+
 This platform implements **CCEA** - a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
 
 | Component | Responsibility | Secrets Access | Order Execution |

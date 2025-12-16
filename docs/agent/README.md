@@ -1,10 +1,23 @@
 # Agent Zone Documentation
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-16
+> **Version**: 1.1.0 | **Last Updated**: 2025-12-16
+>
+> **Reference**: This document aligns with `Design Doc CCEA Cloud.txt` (canonical source)
 
 ## Overview
 
 The Agent Zone handles all live trading operations locally on the user's infrastructure. It is designed with complete autonomy and security - secrets never leave the agent, and all orders are created and sent locally.
+
+### Design Doc Reference (§4.2)
+
+Agent components per Design Doc:
+- **Local Vault** - Keychain/encrypted file storage for broker API keys
+- **Approval UI** - CLI/GUI for local approval of TRADING_IMPACTING changes
+- **Policy Firewall** - Layered config + hard caps enforcement
+- **Runner** - Live loop: strategy→intent→risk→order
+- **Reconciliation** - Position sync with idempotent order IDs
+- **Kill Switch** - Local halt mechanism (17 halt reason types)
+- **Telemetry Buffer** - SQLite + redaction middleware
 
 ## Security Guarantees
 
