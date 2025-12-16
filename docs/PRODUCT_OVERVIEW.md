@@ -2,6 +2,37 @@
 
 *One-Pager for Startup Visa Applications & Investor Pitches*
 
+> **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Status**: MiFID II 100%, EU AI Act 100%, DORA 100%
+
+---
+
+## Architecture: Cloud-Controlled Execution Architecture (CCEA)
+
+**We are a SOFTWARE PROVIDER, not an Investment Adviser or Broker-Dealer.**
+
+Our platform implements **CCEA** - a strict security separation:
+
+| Zone | Responsibility | Secrets Access | Order Execution |
+|------|---------------|----------------|-----------------|
+| **Cloud** | Research, backtesting, monitoring, lifecycle | **NEVER** | **NEVER** |
+| **Agent** | Live execution, credential storage, risk enforcement | **LOCAL ONLY** | **LOCAL ONLY** |
+
+**Security Guarantees:**
+- Cloud **NEVER** stores broker API keys or credentials
+- Cloud **NEVER** generates, transmits, or executes trading orders
+- All trading happens **ONLY** in the user's local Agent
+- User retains **full control** over hard caps (Cloud cannot override)
+
+**What This Means for Customers:**
+- Your credentials stay on YOUR machine (or VPC)
+- You control all trading-impacting changes via local approval
+- Cloud provides research tools and observability - nothing more
+
+**Legal Positioning:**
+- **Software Tool Provider** under MiFID II (ESMA Q&A ESMA35-43-349)
+- **Transparency Provider** under EU AI Act Article 50
+- **ICT Provider** under DORA (contractual compliance)
+
 ---
 
 ## The Problem

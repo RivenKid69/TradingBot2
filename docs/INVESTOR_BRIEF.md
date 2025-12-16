@@ -26,6 +26,54 @@
 
 ---
 
+## Architecture: Cloud-Controlled Execution Architecture (CCEA)
+
+**Regulatory-First Design**: We are a **SOFTWARE PROVIDER**, not an Investment Adviser or Broker-Dealer.
+
+Our platform implements **CCEA** - a strict architectural separation that ensures regulatory clarity:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLOUD ZONE                                │
+│        (Our Infrastructure - Research & Monitoring)              │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────────┐ │
+│  │  Research │  │  Builder  │  │  Control  │  │  Monitoring  │ │
+│  │    IDE    │  │  Registry │  │   Plane   │  │  Telemetry   │ │
+│  └───────────┘  └───────────┘  └───────────┘  └──────────────┘ │
+│                                                                  │
+│  NEVER: stores secrets │ executes orders │ sends order payloads │
+└─────────────────────────────────────────────────────────────────┘
+                               │
+                               │ Lifecycle commands only
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        AGENT ZONE                                │
+│        (User Infrastructure - Execution & Secrets)               │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────────┐ │
+│  │   Local   │  │   Policy  │  │ Live Loop │  │    Broker    │ │
+│  │   Vault   │  │  Firewall │  │   Runner  │  │  Connector   │ │
+│  └───────────┘  └───────────┘  └───────────┘  └──────────────┘ │
+│                                                                  │
+│  All secrets local │ User controls hard caps │ Orders local only│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why This Matters for Investors:**
+
+| Benefit | Description |
+|---------|-------------|
+| **Regulatory Clarity** | Software provider positioning under MiFID II (no licensing requirement) |
+| **Enterprise Ready** | Satisfies institutional security requirements (secrets never leave user infra) |
+| **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
+| **Multiple Revenue Streams** | Research SaaS (retail) + Enterprise licenses (on-prem/VPC) |
+
+**Legal Positioning:**
+- **NOT** an Investment Adviser, Broker-Dealer, or Execution Service
+- **Software Tool Provider** under MiFID II (ESMA Q&A ESMA35-43-349)
+- **ICT Provider** under DORA with contractual compliance
+
+---
+
 ## Current Phase: Lean Validation
 
 ### Foundation Built — Now Testing with Customers
