@@ -4,55 +4,28 @@ CCEA Guardrails Module.
 
 Provides CI/CD guardrails for enforcing CCEA architectural boundaries:
 - Import boundary checking (Cloud/Agent/Shared zones)
-- Cloud dependency allowlist with transitive deps checking
 - Schema validation (no order-like payloads)
 - Protocol allowlist validation
 - Artifact signature verification
-- Redaction enforcement
 
 Phase 2 Implementation: Hard separation of Cloud/Agent/Shared zones.
 """
 
+from .artifact_check import (
+    ArtifactGuardrails,
+    CheckResult,
+    CheckSeverity,
+    GuardrailCheck,
+    GuardrailReport,
+    run_artifact_guardrails,
+)
 from .import_check import (
-    check_cloud_imports,
-    check_agent_imports,
-    get_zone_for_module,
     PROHIBITED_IN_CLOUD,
     PROHIBITED_PACKAGES,
     ZoneType,
-)
-from .cloud_allowlist import (
-    ALLOWED_THIRD_PARTY,
-    PROHIBITED_INTERNAL,
-    PROHIBITED_PATTERNS,
-    STDLIB_MODULES,
-    AllowlistCheckResult,
-    DependencyViolation,
-    TransitiveDependencyChecker,
-    is_cloud_allowed,
-    is_prohibited_internal,
-    is_prohibited_package,
-    validate_cloud_build,
-    validate_cloud_manifest,
-)
-from .build_artifact_check import (
-    PROHIBITED_CODE_PATTERNS,
-    PROHIBITED_IMPORTS,
-    PROHIBITED_MODULES,
-    ArtifactCheckResult,
-    ArtifactViolation,
-    scan_directory,
-    scan_wheel_artifact,
-    verify_cloud_artifact,
-    verify_cloud_manifest as verify_artifact_manifest,
-    verify_cloud_source,
-)
-from .schema_check import (
-    validate_manifest_schema,
-    validate_protocol_schema,
-    check_prohibited_fields,
-    PROHIBITED_FIELDS,
-    PROHIBITED_VALUES,
+    check_agent_imports,
+    check_cloud_imports,
+    get_zone_for_module,
 )
 from .protocol_check import (
     ALLOWED_COMMAND_TYPES,
@@ -60,28 +33,12 @@ from .protocol_check import (
     check_protocol_changes,
     validate_command_type,
 )
-from .artifact_check import (
-    ArtifactGuardrails,
-    GuardrailCheck,
-    GuardrailReport,
-    CheckSeverity,
-    CheckResult,
-    run_artifact_guardrails,
-)
-from .intent_prohibition import (
-    IntentProhibitionResult,
-    IntentProhibitionViolation,
-    check_cloud_package_for_intents,
-    check_python_source_for_intent_injection,
-)
-from .design_doc_check import (
-    compute_sha256,
-    verify_design_doc_sha,
-)
-from .traceability_check import (
-    TraceabilityCheckResult,
-    TraceabilityViolation,
-    validate_traceability_matrix,
+from .schema_check import (
+    PROHIBITED_FIELDS,
+    PROHIBITED_VALUES,
+    check_prohibited_fields,
+    validate_manifest_schema,
+    validate_protocol_schema,
 )
 
 __all__ = [
@@ -92,30 +49,6 @@ __all__ = [
     "PROHIBITED_IN_CLOUD",
     "PROHIBITED_PACKAGES",
     "ZoneType",
-    # Cloud allowlist (Phase 2)
-    "ALLOWED_THIRD_PARTY",
-    "PROHIBITED_INTERNAL",
-    "PROHIBITED_PATTERNS",
-    "STDLIB_MODULES",
-    "AllowlistCheckResult",
-    "DependencyViolation",
-    "TransitiveDependencyChecker",
-    "is_cloud_allowed",
-    "is_prohibited_internal",
-    "is_prohibited_package",
-    "validate_cloud_build",
-    "validate_cloud_manifest",
-    # Build artifact check (Phase 2)
-    "PROHIBITED_CODE_PATTERNS",
-    "PROHIBITED_IMPORTS",
-    "PROHIBITED_MODULES",
-    "ArtifactCheckResult",
-    "ArtifactViolation",
-    "scan_directory",
-    "scan_wheel_artifact",
-    "verify_cloud_artifact",
-    "verify_artifact_manifest",
-    "verify_cloud_source",
     # Schema validation
     "validate_manifest_schema",
     "validate_protocol_schema",
@@ -134,16 +67,112 @@ __all__ = [
     "CheckSeverity",
     "CheckResult",
     "run_artifact_guardrails",
-    # Intent prohibition (Phase 3)
-    "IntentProhibitionResult",
-    "IntentProhibitionViolation",
-    "check_cloud_package_for_intents",
-    "check_python_source_for_intent_injection",
-    # Design Doc SHA verification (Phase 3, WI-TRACE-01)
-    "compute_sha256",
-    "verify_design_doc_sha",
-    # Traceability matrix check (Phase 3, WI-TRACE-02)
-    "TraceabilityCheckResult",
-    "TraceabilityViolation",
-    "validate_traceability_matrix",
 ]
+
+# Optional, Cloud-/docs-specific guardrails (present in the monorepo / private repos).
+# Public SDK builds may intentionally omit these modules; importing ccea.guardrails should still work.
+try:
+    from .cloud_allowlist import (  # noqa: F401
+        ALLOWED_THIRD_PARTY,
+        PROHIBITED_INTERNAL,
+        PROHIBITED_PATTERNS,
+        STDLIB_MODULES,
+        AllowlistCheckResult,
+        DependencyViolation,
+        TransitiveDependencyChecker,
+        is_cloud_allowed,
+        is_prohibited_internal,
+        is_prohibited_package,
+        validate_cloud_build,
+        validate_cloud_manifest,
+    )
+
+    __all__.extend(
+        [
+            "ALLOWED_THIRD_PARTY",
+            "PROHIBITED_INTERNAL",
+            "PROHIBITED_PATTERNS",
+            "STDLIB_MODULES",
+            "AllowlistCheckResult",
+            "DependencyViolation",
+            "TransitiveDependencyChecker",
+            "is_cloud_allowed",
+            "is_prohibited_internal",
+            "is_prohibited_package",
+            "validate_cloud_build",
+            "validate_cloud_manifest",
+        ]
+    )
+except ImportError:
+    pass
+
+try:
+    from .build_artifact_check import (  # noqa: F401
+        PROHIBITED_CODE_PATTERNS,
+        PROHIBITED_IMPORTS,
+        PROHIBITED_MODULES,
+        ArtifactCheckResult,
+        ArtifactViolation,
+        scan_directory,
+        scan_wheel_artifact,
+        verify_cloud_artifact,
+        verify_cloud_manifest as verify_artifact_manifest,
+        verify_cloud_source,
+    )
+
+    __all__.extend(
+        [
+            "PROHIBITED_CODE_PATTERNS",
+            "PROHIBITED_IMPORTS",
+            "PROHIBITED_MODULES",
+            "ArtifactCheckResult",
+            "ArtifactViolation",
+            "scan_directory",
+            "scan_wheel_artifact",
+            "verify_cloud_artifact",
+            "verify_artifact_manifest",
+            "verify_cloud_source",
+        ]
+    )
+except ImportError:
+    pass
+
+try:
+    from .intent_prohibition import (  # noqa: F401
+        IntentProhibitionResult,
+        IntentProhibitionViolation,
+        check_cloud_package_for_intents,
+        check_python_source_for_intent_injection,
+    )
+
+    __all__.extend(
+        [
+            "IntentProhibitionResult",
+            "IntentProhibitionViolation",
+            "check_cloud_package_for_intents",
+            "check_python_source_for_intent_injection",
+        ]
+    )
+except ImportError:
+    pass
+
+try:
+    from .design_doc_check import (  # noqa: F401
+        compute_sha256,
+        verify_design_doc_sha,
+    )
+
+    __all__.extend(["compute_sha256", "verify_design_doc_sha"])
+except ImportError:
+    pass
+
+try:
+    from .traceability_check import (  # noqa: F401
+        TraceabilityCheckResult,
+        TraceabilityViolation,
+        validate_traceability_matrix,
+    )
+
+    __all__.extend(["TraceabilityCheckResult", "TraceabilityViolation", "validate_traceability_matrix"])
+except ImportError:
+    pass

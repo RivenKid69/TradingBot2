@@ -87,8 +87,14 @@ def extract_schema_enums(schema_path: Path) -> Dict[str, Set[str]]:
     Returns:
         Dict mapping enum name to set of values
     """
-    with open(schema_path, "r", encoding="utf-8") as f:
-        schema = json.load(f)
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+    except FileNotFoundError:
+        # When installed as a package (outside the repo), fall back to packaged schemas.
+        from ccea.schemas import load_schema_json
+
+        schema = load_schema_json(schema_path.name)
 
     enums: Dict[str, Set[str]] = {}
 

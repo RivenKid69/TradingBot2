@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Virtualenvs
+.venv/
+venv/
+
+# Runtime/state
+logs/
+state/
+data/
+artifacts/
+

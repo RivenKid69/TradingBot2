@@ -2,6 +2,10 @@
 
 RL-first research and trading stack for crypto, equities, FX, and derivatives with simulator-to-live parity.
 
+## Licensing
+
+This monorepo is **proprietary**. For the open-core split plan (public `ccea-sdk` + `ccea-agent`, private `ccea-cloud`), see `LICENSING.md`.
+
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
 > **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md)

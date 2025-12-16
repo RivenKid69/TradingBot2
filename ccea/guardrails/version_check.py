@@ -55,8 +55,14 @@ def load_schema_versions(schema_path: Path) -> Dict[str, str]:
     Returns:
         Dict with version metadata
     """
-    with open(schema_path, "r", encoding="utf-8") as f:
-        schema = json.load(f)
+    try:
+        with open(schema_path, "r", encoding="utf-8") as f:
+            schema = json.load(f)
+    except FileNotFoundError:
+        # When installed as a package (outside the repo), fall back to packaged schemas.
+        from ccea.schemas import load_schema_json
+
+        schema = load_schema_json(schema_path.name)
 
     return {
         "schema_version": schema.get("x-schema-version", ""),
