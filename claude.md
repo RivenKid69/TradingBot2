@@ -28,6 +28,7 @@ git add . && git commit -m "message" && git push origin main
 
 | Задача | Где искать | Команда |
 |--------|------------|---------|
+| **CCEA архитектура** | `packages/agent/`, `packages/cloud/`, `docs/CCEA_OVERVIEW.md` | `pytest tests/ccea/` |
 | Найти определение класса/функции | Используйте Glob | `*.py` pattern с именем |
 | Исправить ошибку в feature | `features/` + `feature_config.py` | `pytest tests/test_features*.py` |
 | Изменить логику исполнения | `execution_sim.py`, `execution_providers.py` | `pytest tests/test_execution*.py` |
@@ -303,6 +304,121 @@ python script_backtest.py --config configs/config_backtest_forex.yaml
 
 # Live Trading (Forex - OANDA)
 python script_live.py --config configs/config_live_forex.yaml --asset-class forex
+```
+
+---
+
+## 🏗️ CCEA: Cloud-Controlled Execution Architecture
+
+> **Status**: 100% Complete | **Tests**: 117 CCEA test files | **Version**: 2.0.0
+
+### Ключевой принцип (НЕ НАРУШАТЬ!)
+
+```
+Cloud = research / build / monitoring / control plane (lifecycle requests)
+Agent = secrets + live loop + risk enforce + order creation/sending
+```
+
+**Cloud НИКОГДА:**
+- Не хранит broker API keys
+- Не генерирует и не передаёт ордера
+- Не имеет доступа к trading endpoints бирж
+- Не отправляет order-like payload (side/qty/price)
+
+### Архитектура
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         CLOUD ZONE                               │
+│  packages/cloud/: control_plane, builder, governance, research  │
+│  - Research IDE, Backtesting, Artifact build/sign               │
+│  - Monitoring dashboards, Lifecycle management                  │
+│  - NO trading libs, NO broker APIs, NO order payloads           │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ REQUEST_START_RUN, REQUEST_STOP_RUN
+                              │ REQUEST_UPGRADE_ARTIFACT, REQUEST_UPDATE_CONFIG
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         AGENT ZONE                               │
+│  packages/agent/: daemon, vault, policy, execution, approval    │
+│  - Local Vault (secrets), Policy Firewall (hard caps)           │
+│  - Live Loop (Intent → Risk → Order), Broker Connector          │
+│  - Orders created & sent LOCALLY                                │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                         [ EXCHANGE ]
+```
+
+### Зоны модулей
+
+| Zone | Пакеты | Secrets | Orders |
+|------|--------|---------|--------|
+| **SHARED** | `packages/shared/`, `core_*`, `impl_*`, simulation, features | No | No |
+| **AGENT** | `packages/agent/*`: vault, policy, execution, daemon, approval | Yes | Yes |
+| **CLOUD** | `packages/cloud/*`: control_plane, builder, governance, research | No | No |
+
+### Продуктовые режимы
+
+| Режим | Описание | Cloud | Agent |
+|-------|----------|-------|-------|
+| **Retail Research SaaS** | EU-friendly research + optional BYO Agent | Research, Sim, Monitoring | Optional (для live) |
+| **Retail Live** | Auto-execution локально + cloud observability | Lifecycle, Telemetry | Local vault + execution |
+| **Enterprise** | On-prem/VPC, всё в инфраструктуре клиента | Self-hosted | HSM/KMS, air-gapped |
+
+### Протокол Cloud → Agent
+
+**Разрешённые команды:**
+
+| Command | Описание | Approval Required |
+|---------|----------|-------------------|
+| `REQUEST_START_RUN` | Запуск стратегии | Yes (trading_impacting) |
+| `REQUEST_STOP_RUN` | Остановка | No (safety) |
+| `REQUEST_PAUSE_RUN` | Пауза | No (safety) |
+| `REQUEST_UPGRADE_ARTIFACT` | Обновление артефакта | Yes (trading_impacting) |
+| `REQUEST_UPDATE_CONFIG` | Обновление config | Yes (если trading_impacting) |
+
+**Запрещённые поля в payload:**
+- `side` (BUY/SELL)
+- `quantity`, `price`, `order_type`
+- `target_position`, `intent`, `signal`
+
+### CI Guardrails
+
+| Check | Описание |
+|-------|----------|
+| `no-trading-libs-in-cloud` | Cloud build без order_execution |
+| `no-order-payloads-in-schema` | JSON schema без side/qty/price |
+| `artifact-signature-required` | Артефакт подписан |
+| `import-boundary-check` | No agent imports in cloud |
+
+### Safe Defaults (нельзя отключить)
+
+- **Redaction**: ON (mandatory)
+- **Local approval**: REQUIRED for trading_impacting
+- **Artifact signature verification**: REQUIRED
+- **Auto-approve**: DISABLED (local policy only)
+
+### Ключевые файлы
+
+| Файл | Описание |
+|------|----------|
+| `docs/CCEA_OVERVIEW.md` | Полный обзор архитектуры |
+| `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md` | Design Doc |
+| `docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md` | Матрица трассируемости |
+| `packages/agent/daemon/agentd.py` | Agent daemon |
+| `packages/cloud/control_plane/` | Control Plane API |
+| `tests/ccea/` | 117 тестовых файлов |
+
+### Запуск
+
+```bash
+# Agent daemon (live trading)
+python -m packages.agent.daemon.agentd --config configs/agent.yaml
+
+# Development/testing only (NOT production CCEA)
+python script_live.py --config configs/config_live.yaml --dry-run
 ```
 
 ---
@@ -6979,11 +7095,11 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ---
 
-## 📊 СТАТУС ПРОЕКТА (2025-12-08)
+## 📊 СТАТУС ПРОЕКТА (2025-12-16)
 
 ### ✅ Production Ready
 
-Все критические исправления применены и протестированы. **654+ test files, 14,000+ tests** с 97%+ pass rate. MiFID II 100%, EU AI Act 100%, DORA 100%.
+Все критические исправления применены и протестированы. **871 test files, 14,000+ tests** с 97%+ pass rate. MiFID II 100%, EU AI Act 100%, DORA 100%. **CCEA 100% Complete** (117 test files).
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7006,6 +7122,10 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 | **Forex Integration** | ✅ Production | 18 test files (Phase 11) |
 | Forex Parametric TCA | ✅ Production | In test_forex_parametric_tca.py |
 | OANDA Adapter | ✅ Production | In test_forex_foundation.py |
+| **CCEA Architecture** | ✅ Production | 117 test files (100% Design Doc compliance) |
+| CCEA Agent Zone | ✅ Production | packages/agent/ (53 files) |
+| CCEA Cloud Zone | ✅ Production | packages/cloud/ (95+ files) |
+| CCEA Guardrails | ✅ Production | tests/ccea/guardrails/ |
 
 ### ⚠️ Требуется действие
 
@@ -7281,7 +7401,18 @@ pytest tests/test_conformal_prediction.py -v
 
 ## Архитектура проекта
 
-Источник правды по архитектуре: `ARCHITECTURE.md` (обновляется вместе с кодом, а CLAUDE хранит только краткие напоминания).
+### CCEA (Cloud-Controlled Execution Architecture)
+
+Основная архитектура проекта: **CCEA** - строгое разделение Cloud и Agent:
+- **Cloud** (packages/cloud/): research, builder, control plane, governance - **БЕЗ** секретов и ордеров
+- **Agent** (packages/agent/): vault, execution, policy, daemon - **ТОЛЬКО** здесь секреты и ордера
+- **Shared** (packages/shared/, core_*, impl_*): безопасно для обоих рантаймов
+
+**Документация CCEA**: `docs/CCEA_OVERVIEW.md`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md`
+
+### Слои кода
+
+Источник правды по слоям: `ARCHITECTURE.md` (обновляется вместе с кодом).
 - Карта слоёв и допустимых зависимостей: см. `ARCHITECTURE.md#слои`.
 - Примеры ключевых файлов и конфигураций запусков: см. `ARCHITECTURE.md#конфигурации-запусков`.
 - Быстрый ориентир: слои `core_ → impl_ → service_ → strategies → script_`; зависимости строим только слева направо.
@@ -7525,9 +7656,17 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 ---
 
-**Последнее обновление**: 2025-12-08
-**Версия документации**: 12.0 (DORA Compliance Complete)
-**Статус**: ✅ Production Ready (654+ test files, 14,000+ tests | MiFID II 100%, EU AI Act 100%, DORA 100%)
+**Последнее обновление**: 2025-12-16
+**Версия документации**: 13.0 (CCEA 100% Complete)
+**Статус**: ✅ Production Ready (871 test files, 14,000+ tests | MiFID II 100%, EU AI Act 100%, DORA 100%, CCEA 100%)
+
+### Изменения в 13.0:
+- **CCEA 100% Complete** -- Cloud-Controlled Execution Architecture полностью реализована
+  - 117 тестовых файлов в tests/ccea/
+  - packages/agent/: vault, policy, execution, daemon, approval (53 файла)
+  - packages/cloud/: control_plane, builder, governance, research (95+ файлов)
+  - Design Doc compliance: 100%
+  - Все CI guardrails реализованы
 
 ### Изменения в 12.0:
 - **DORA Compliance** -- Добавлен полный Digital Operational Resilience Act (EU 2022/2554)
