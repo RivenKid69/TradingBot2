@@ -4,13 +4,21 @@
 
 ---
 
+## Architecture Foundation: CCEA
+
+> All validation activities operate on the **CCEA (Cloud-Controlled Execution Architecture)** model: Cloud for research/monitoring, Agent for execution. This enables clear legal positioning as **Software Provider** during market entry.
+
+For full CCEA details, see: [Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt)
+
+---
+
 ## Executive Summary
 
 We have built a robust technical foundation. **Now we validate.**
 
 This document outlines our customer-centric approach to market validation, following lean startup principles. Our strategy: deploy the minimum viable product to a focused customer segment, gather feedback rapidly, and iterate based on real-world usage — not assumptions.
 
-**Core Principle**: Technical excellence is an asset, not a destination. The next phase is about proving product-market fit through validated learning.
+**Core Principle**: Technical excellence is an asset, not a destination. The next phase is about proving product-market fit through validated learning — while maintaining strict Cloud/Agent separation for regulatory clarity.
 
 ---
 

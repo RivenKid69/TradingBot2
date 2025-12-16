@@ -4,6 +4,64 @@
 
 This document provides detailed technical specifications for enterprise deployments of the AI-Powered Quantitative Trading Platform. It covers infrastructure requirements, security configurations, integration patterns, and operational procedures.
 
+> **Architecture**: This platform follows the **CCEA (Cloud-Controlled Execution Architecture)** — Cloud handles research and monitoring, Agent handles execution. For enterprise clients, both components can be deployed on-prem or in customer VPC.
+
+---
+
+## CCEA Architecture for Enterprise
+
+### Deployment Modes
+
+| Mode | Cloud | Agent | Use Case |
+|------|-------|-------|----------|
+| **SaaS + Local Agent** | Our cloud | Customer VPS/machine | Standard enterprise |
+| **VPC Deployment** | Customer VPC | Customer VPC | Regulated entities |
+| **Full On-Prem** | Customer datacenter | Customer datacenter | Air-gapped environments |
+
+### Security Boundaries (CCEA)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     ENTERPRISE DEPLOYMENT (CCEA)                         │
+│                                                                          │
+│  ┌────────────────── CLOUD ZONE ──────────────────┐                     │
+│  │  • Research IDE, Backtesting, Simulation       │                     │
+│  │  • Artifact Builder (sign + publish)           │                     │
+│  │  • Control Plane (lifecycle commands ONLY)     │                     │
+│  │  • Telemetry Ingestion (redacted data only)    │                     │
+│  │                                                │                     │
+│  │  SECRETS: NEVER                                │                     │
+│  │  ORDERS: NEVER                                 │                     │
+│  └────────────────────────────────────────────────┘                     │
+│                              │                                           │
+│                              │ REQUEST_START, REQUEST_STOP, etc.         │
+│                              │ (Lifecycle commands, NOT order payloads)  │
+│                              ▼                                           │
+│  ┌────────────────── AGENT ZONE ──────────────────┐                     │
+│  │  • Local Vault (HSM/KMS integration)           │                     │
+│  │  • Strategy Runner (sandbox)                   │                     │
+│  │  • Risk Manager + Kill Switch (enforce)        │                     │
+│  │  • Broker Connectors (order creation/sending)  │                     │
+│  │  • Local Approval UI (TRADING_IMPACTING)       │                     │
+│  │                                                │                     │
+│  │  SECRETS: LOCAL ONLY (HSM/KMS)                 │                     │
+│  │  ORDERS: CREATED AND SENT HERE                 │                     │
+│  └────────────────────────────────────────────────┘                     │
+│                              │                                           │
+│                              ▼                                           │
+│                     [ BROKER / EXCHANGE ]                                │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Legal Posture for Enterprise Clients
+
+| We Provide | We Do NOT Provide |
+|------------|-------------------|
+| Software / ICT infrastructure | Investment advice |
+| Research and simulation tools | Order execution service |
+| Monitoring and lifecycle management | Custody of assets or credentials |
+| Strategy development platform | Trading recommendations |
+
 ---
 
 ## Table of Contents
@@ -1581,7 +1639,14 @@ cluster-node-timeout 15000
 
 ## Conclusion
 
-This technical implementation guide provides the foundation for enterprise-grade deployments. For specific customization or additional requirements, please contact our enterprise team.
+This technical implementation guide provides the foundation for enterprise-grade deployments following the CCEA architecture. For specific customization or additional requirements, please contact our enterprise team.
+
+**Key CCEA Guarantees for Enterprise**:
+- Cloud **NEVER** stores broker API keys or credentials
+- Cloud **NEVER** creates, transmits, or executes orders
+- Agent deployed in customer infrastructure is the **ONLY** execution point
+- All TRADING_IMPACTING changes require local approval
+- Full audit trail for compliance (MiFID II, DORA)
 
 **Support Contacts**:
 - Technical Support: support@[company].com
@@ -1590,6 +1655,7 @@ This technical implementation guide provides the foundation for enterprise-grade
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: December 2024*
+*Document Version: 2.0*
+*Last Updated: December 2025*
 *Classification: Technical - Confidential*
+*Aligned with: Design Doc CCEA Cloud v1.0*

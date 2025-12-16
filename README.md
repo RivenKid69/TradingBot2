@@ -23,6 +23,13 @@ This platform implements **CCEA** - a strict separation between Cloud (research/
 2. **Retail Live via Local Agent**: Local auto-execution, cloud observability
 3. **Enterprise Engine (on-prem/VPC)**: Full stack in customer infrastructure
 
+**CCEA Terminology:**
+- **Intent**: High-level trading intention (target exposure), produced by Strategy
+- **Order**: Concrete broker instruction, created ONLY in Agent from Intent
+- **Command**: Lifecycle request (REQUEST_START, REQUEST_STOP, etc.) - NOT an order
+- **TRADING_IMPACTING**: Changes requiring local approval (new version, risk limits)
+- **NON_IMPACTING**: Changes that auto-apply (log level, telemetry verbosity)
+
 ## Overview
 - Distributional PPO with twin critics, adaptive UPGD optimizer, and population-based tuning for robust policies.
 - Market-structure-aware execution: limit/market routing, TWAP/POV, slippage and fee modeling, and risk guards.

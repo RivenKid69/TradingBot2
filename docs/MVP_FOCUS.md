@@ -4,11 +4,24 @@
 
 ---
 
+## Architecture: CCEA (Cloud-Controlled Execution Architecture)
+
+> **Key Principle**: This MVP follows the **CCEA architecture** where Cloud handles research/simulation/monitoring, while Agent (running locally in customer environment) handles all live execution, secrets, and order creation.
+
+| Component | Responsibility | Secrets | Orders |
+|-----------|---------------|---------|--------|
+| **Cloud** | Research, backtesting, artifact build, monitoring, lifecycle commands | **NEVER** | **NEVER** |
+| **Agent** | Live execution, local vault, risk enforcement, order creation/sending | **LOCAL ONLY** | **YES** |
+
+**Legal Posture**: We are a **Software Provider / ICT Provider**, NOT an investment adviser, broker-dealer, or execution service.
+
+---
+
 ## The One Problem We Solve
 
 **Proprietary trading firms spend 6-12 months building infrastructure before deploying their first strategy.**
 
-This is our singular focus. Everything in MVP serves this problem.
+This is our singular focus. Everything in MVP serves this problem — while maintaining strict Cloud/Agent separation for regulatory safety.
 
 ---
 
@@ -43,18 +56,35 @@ This is our singular focus. Everything in MVP serves this problem.
 
 ---
 
+## Product Modes (CCEA Architecture)
+
+### Three Modes Aligned with CCEA
+
+| Mode | Description | Cloud Role | Agent Role |
+|------|-------------|------------|------------|
+| **Retail Research SaaS** | EU-friendly research + simulation | Full (IDE, backtest, sim) | Optional (for live) |
+| **Retail Live via Local Agent** | Auto-execution locally, cloud observability | Lifecycle, Telemetry | Local vault + execution |
+| **Enterprise Engine** | On-prem/VPC, all in customer infra | Self-hosted option | HSM/KMS, air-gapped |
+
+**MVP Focus**: **Retail Research SaaS** + **Retail Live via Local Agent** for crypto markets.
+
+---
+
 ## MVP Scope Definition
 
 ### In Scope (Must Have)
 
-| Feature | Why Essential | Customer Value |
-|---------|---------------|----------------|
-| **Crypto execution (Binance)** | Fastest market to deploy | Days, not months to go live |
-| **Risk-aware position sizing** | Regulatory requirement | MiFID II alignment |
-| **CVaR-constrained optimization** | Key differentiator | Better risk-adjusted returns |
-| **Basic backtesting** | Strategy validation | Confidence before capital |
-| **Real-time monitoring** | Operational necessity | Know what's happening |
-| **Configurable risk limits** | Compliance requirement | Max drawdown, position limits |
+| Feature | Why Essential | Customer Value | CCEA Zone |
+|---------|---------------|----------------|-----------|
+| **Cloud Research IDE** | Strategy development | Days, not months to research | Cloud |
+| **Backtest & Simulation** | Strategy validation | Confidence before capital | Cloud |
+| **Artifact Builder (signed)** | Immutable deployable strategies | Version control + audit | Cloud |
+| **Agent with Local Vault** | Secure key storage | Keys never leave user's machine | Agent |
+| **Risk-aware execution** | Regulatory requirement | MiFID II alignment | Agent |
+| **CVaR-constrained optimization** | Key differentiator | Better risk-adjusted returns | Cloud (training) |
+| **Real-time monitoring** | Operational necessity | Know what's happening | Cloud (telemetry) |
+| **Local approval for TRADING_IMPACTING** | Regulatory safety | User controls trading changes | Agent |
+| **Kill switch** | Safety requirement | Emergency halt | Agent |
 
 ### Out of Scope (Deferred)
 
@@ -65,29 +95,42 @@ This is our singular focus. Everything in MVP serves this problem.
 | Options pricing | Specialized user base | Customer requests (3+) |
 | L3 LOB simulation | Advanced research feature | Power user demand |
 | Multi-strategy orchestration | Complexity | Single-strategy validated |
-| White-label/API | Enterprise feature | Series A roadmap |
+| Managed Agent Hosting | Separate legal review required | Enterprise contracts |
+| Copy-trading / Social trading | Heavy advice/portfolio regulations | NOT planned |
 
-### The MVP Feature Boundary
+### The MVP Feature Boundary (CCEA Architecture)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      MVP BOUNDARY                            │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │                                                     │    │
-│  │   Crypto Execution ──► Risk Management ──► Backtest │    │
-│  │         │                    │                │     │    │
-│  │         ▼                    ▼                ▼     │    │
-│  │   Binance Spot         CVaR Limits      Historical  │    │
-│  │   Binance Futures      Position Sizing  Simulation  │    │
-│  │                        Max Drawdown                 │    │
-│  │                                                     │    │
-│  └─────────────────────────────────────────────────────┘    │
-│                                                              │
-│  ════════════════════ DEFERRED ═══════════════════════════  │
-│                                                              │
-│  [ Equities ] [ Options ] [ CME ] [ L3 LOB ] [ Multi-Strat ] │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           MVP BOUNDARY                                   │
+│                                                                          │
+│  ┌────────────────────── CLOUD ZONE ──────────────────────┐             │
+│  │  Research IDE ──► Backtest/Sim ──► Artifact Builder    │             │
+│  │       │                │                  │            │             │
+│  │       ▼                ▼                  ▼            │             │
+│  │  Strategy Dev     CVaR Training      Sign + Publish    │             │
+│  │  Notebooks        Historical Sim     Immutable Digest  │             │
+│  │                                                        │             │
+│  │  Control Plane: REQUEST_START, REQUEST_STOP, etc.      │             │
+│  │  Telemetry Ingestion: Aggregated metrics (redacted)    │             │
+│  └────────────────────────────────────────────────────────┘             │
+│                              │                                           │
+│                              │ Lifecycle Commands (NOT orders)           │
+│                              ▼                                           │
+│  ┌────────────────────── AGENT ZONE ──────────────────────┐             │
+│  │  Local Vault ──► Risk Manager ──► Broker Connector     │             │
+│  │       │                │                  │            │             │
+│  │       ▼                ▼                  ▼            │             │
+│  │  API Keys         CVaR Limits        Binance API       │             │
+│  │  (encrypted)      Kill Switch        Order Creation    │             │
+│  │                   Local Approval     Order Sending     │             │
+│  └────────────────────────────────────────────────────────┘             │
+│                                                                          │
+│  ════════════════════════ DEFERRED ════════════════════════════════════ │
+│                                                                          │
+│  [ Equities ] [ Options ] [ CME ] [ L3 LOB ] [ Managed Agent Hosting ]  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -101,16 +144,27 @@ This is our singular focus. Everything in MVP serves this problem.
 - €200K-500K in development costs
 - Risk management built as afterthought
 - Backtesting accuracy questionable
+- Regulatory uncertainty (who controls trading?)
 
 **After Our Product:**
-- Days to first live strategy
+- Days to first live strategy (via Cloud research + Agent deployment)
 - €2,000-5,000/month subscription
-- Risk management built-in (CVaR, limits)
+- Risk management built-in (CVaR, limits, kill switch)
 - Research-grade execution simulation
+- **Clear regulatory posture**: Cloud = research tools, Agent = YOUR execution
 
 ### The Pitch (30 Seconds)
 
-> "We help prop trading firms go from strategy idea to live trading in days, not months. Our platform handles execution, risk management, and backtesting — so you can focus on alpha generation. We're starting with crypto markets and European firms."
+> "We help prop trading firms go from strategy idea to live trading in days, not months. Our Cloud platform handles research and simulation — but **your Agent** running on **your infrastructure** handles all live execution. Your keys never leave your machine. We're starting with crypto markets and European firms."
+
+### CCEA Value Proposition
+
+| Stakeholder | Value |
+|-------------|-------|
+| **CTO** | Full-stack research infrastructure without building from scratch |
+| **Compliance** | Clear boundary: Cloud = software tools, Agent = client-controlled execution |
+| **Trader** | Fast iteration: research in Cloud, deploy signed artifacts to Agent |
+| **Risk Manager** | Local risk enforcement, kill switch, approval workflow for changes |
 
 ---
 
@@ -274,16 +328,35 @@ We will consider pivoting if:
 
 ---
 
+## CCEA Terminology (Reference)
+
+| Term | Definition |
+|------|------------|
+| **Cloud** | Our SaaS services (research, backtesting, monitoring, control plane) |
+| **Agent** | Client's runtime daemon in their environment (BYO host / VPS / on-prem) |
+| **Strategy** | User code/model that produces Intent |
+| **Intent** | High-level intention (target exposure/position), NOT a ready order |
+| **Order** | Concrete broker instruction (created ONLY in Agent) |
+| **Deployment** | Link between artifact + config + target Agent |
+| **Run** | Specific strategy execution on Agent |
+| **Command** | Lifecycle request from Cloud to Agent (REQUEST_START, REQUEST_STOP, etc.) |
+| **TRADING_IMPACTING** | Change class requiring local approval (new version, mode switch, risk changes) |
+| **NON_IMPACTING** | Change class that can auto-apply (log level, telemetry verbosity) |
+
+---
+
 ## Related Documents
 
 - [BEACHHEAD_MARKET_STRATEGY.md](BEACHHEAD_MARKET_STRATEGY.md) — Beachhead market selection analysis (Geoffrey Moore methodology)
 - [LEAN_VALIDATION_STRATEGY.md](LEAN_VALIDATION_STRATEGY.md) — Customer-centric validation approach
 - [PILOT_PROGRAM.md](PILOT_PROGRAM.md) — Structured pilot program design
 - [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) — One-pager for pitches
+- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
 
 ---
 
-*Document Version: 1.1*
-*Last Updated: December 2024*
+*Document Version: 2.0*
+*Last Updated: December 2025*
 *Owner: Product Team*
+*Aligned with: Design Doc CCEA Cloud v1.0*
 

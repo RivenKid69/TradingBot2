@@ -2,25 +2,43 @@
 
 ## AI-Powered Quantitative Research Platform
 
-*Version 1.0 | December 2025*
+*Version 2.0 | December 2025*
 
 > **Purpose**: This document articulates the novel technologies, intellectual property, and unique innovations that differentiate our platform from existing solutions in the algorithmic trading market. Prepared for startup visa applications, investor due diligence, and strategic positioning.
 
 ---
 
+## Architecture Innovation: CCEA (Cloud-Controlled Execution Architecture)
+
+> **Foundational Innovation**: Beyond algorithmic innovations, our platform implements a **novel architectural pattern** that separates research/monitoring (Cloud) from execution (Agent), enabling:
+> - **Regulatory clarity**: Clear "Software Provider" positioning (not execution service)
+> - **Security**: Secrets never leave customer environment
+> - **Compliance**: MiFID II, DORA, EU AI Act alignment through architectural design
+
+| Component | Responsibility | Secrets | Orders |
+|-----------|---------------|---------|--------|
+| **Cloud** | Research, backtesting, artifact builder, monitoring | **NEVER** | **NEVER** |
+| **Agent** | Local execution, vault, risk enforcement, order creation | **LOCAL** | **YES** |
+
+**Legal Posture**: Software Provider / ICT Provider — NOT investment adviser, broker-dealer, or execution service.
+
+---
+
 ## Executive Summary: Why This Is Not "Another Trading Platform"
 
-**The core innovation**: We have created one of the first production-grade integrations of **risk-aware reinforcement learning** with **research-grade market microstructure simulation**, enabling trading strategies that explicitly optimize for worst-case scenarios rather than average returns.
+**The core innovation**: We have created one of the first production-grade integrations of **risk-aware reinforcement learning** with **research-grade market microstructure simulation**, deployed via **CCEA architecture** for regulatory clarity — enabling trading strategies that explicitly optimize for worst-case scenarios rather than average returns.
 
 | Aspect | Traditional Platforms | Our Platform |
 |--------|----------------------|--------------|
+| **Architecture** | Monolithic cloud execution | Cloud/Agent separation (CCEA) |
+| **Secrets** | Cloud-stored | Never in Cloud (Agent local vault) |
 | **Objective** | Maximize expected return E[R] | Maximize risk-adjusted return with CVaR constraints |
 | **Execution Modeling** | Fixed slippage (2-5 bps) | Dynamic 6-9 factor models adapting to market conditions |
 | **Value Estimation** | Single point estimate | Distribution over 21-51 quantiles with uncertainty bounds |
 | **Learning Stability** | Prone to catastrophic forgetting | Utility-weighted continual learning (UPGD) |
 | **Uncertainty** | Assumed known | Distribution-free conformal prediction bounds |
 
-**Quantifiable differentiation**: 11,063 automated tests (vs ~1,000 typical), 5 asset classes unified (vs 1-2 typical), 7+ peer-reviewed papers implemented (vs 0-2 typical).
+**Quantifiable differentiation**: 11,063 automated tests (vs ~1,000 typical), 5 asset classes unified (vs 1-2 typical), 7+ peer-reviewed papers implemented (vs 0-2 typical), CCEA architecture (unique in market).
 
 ---
 
@@ -390,6 +408,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 | Innovation | Category | Status | Defensibility |
 |------------|----------|--------|---------------|
+| **CCEA Architecture** | System Design | Production | High (architectural) |
 | Twin Critics + Distributional + CVaR | ML Architecture | Production | High (novel combination) |
 | AdaptiveUPGD with VGS coupling | Optimizer | Production | High (first for finance) |
 | VGS v3.2 with anti-blocking | Gradient scaling | Production | Medium (engineering) |
@@ -397,7 +416,21 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 | Queue-reactive fill probability | Microstructure | Production | Medium (implementation) |
 | Conformal prediction integration | Risk management | Production | High (novel application) |
 
-### 4.2 Academic References Implemented
+### 4.2 CCEA Innovation Details
+
+**CCEA (Cloud-Controlled Execution Architecture)** is a novel architectural pattern:
+
+| Component | Innovation |
+|-----------|-----------|
+| **Intent vs Order separation** | Strategy outputs Intent (target exposure), Agent converts to Order |
+| **Lifecycle Commands** | Cloud sends REQUEST_* commands, not direct API calls |
+| **Local Approval Workflow** | TRADING_IMPACTING changes require user consent in Agent |
+| **Telemetry Redaction** | Agent redacts sensitive data before sending to Cloud |
+| **Signed Artifacts** | Immutable, versioned strategy deployments |
+
+**Why this is novel**: No competing platform implements this level of Cloud/Agent separation with explicit lifecycle command protocol and local approval workflows. Most competitors either run everything in cloud (QuantConnect) or require full self-hosting (in-house solutions).
+
+### 4.3 Academic References Implemented
 
 | Paper | Authors | Year | Application |
 |-------|---------|------|-------------|
@@ -413,7 +446,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 | Adaptive Conformal | Gibbs & Candes | 2021 | Distribution shift |
 | EWC/SI | Kirkpatrick/Zenke | 2017 | Continual learning |
 
-### 4.3 Trade Secrets
+### 4.4 Trade Secrets
 
 - Specific hyperparameter configurations validated through 2+ years of development
 - Feature engineering pipeline (63 features with validation)
@@ -492,6 +525,10 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 ## Conclusion: Innovation Summary
 
+### Tier 0: Architectural Innovation
+
+0. **CCEA (Cloud-Controlled Execution Architecture)**: Novel Cloud/Agent separation enabling regulatory clarity as Software Provider, with Intent/Order separation, lifecycle commands, and local approval workflows — unique in the market
+
 ### Tier 1: Novel Innovations
 
 1. **Risk-Aware Distributional RL for Trading**: CVaR-constrained PPO with Twin Critics — among the first production implementations
@@ -507,7 +544,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 ### Tier 3: Engineering Excellence
 
 7. **Unified Multi-Asset Architecture**: 5 asset classes, 6 exchanges, single codebase
-8. **Production-Grade Risk Management**: Atomic kill switch, session routing
+8. **Production-Grade Risk Management**: Atomic kill switch (in Agent), session routing
 9. **Comprehensive Testing**: 11,063 automated tests (97%+ pass rate)
 
 ---
@@ -542,6 +579,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 2.0*
 *Last Updated: December 2025*
 *Classification: Public*
+*Aligned with: Design Doc CCEA Cloud v1.0*

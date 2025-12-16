@@ -7430,12 +7430,69 @@ pytest tests/test_conformal_prediction.py -v
 
 ### CCEA (Cloud-Controlled Execution Architecture)
 
-Основная архитектура проекта: **CCEA** - строгое разделение Cloud и Agent:
-- **Cloud** (packages/cloud/): research, builder, control plane, governance - **БЕЗ** секретов и ордеров
-- **Agent** (packages/agent/): vault, execution, policy, daemon - **ТОЛЬКО** здесь секреты и ордера
-- **Shared** (packages/shared/, core_*, impl_*): безопасно для обоих рантаймов
+Основная архитектура проекта: **CCEA** - строгое разделение Cloud и Agent.
 
-**Документация CCEA**: `docs/CCEA_OVERVIEW.md`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.md`
+**Эталонный документ**: `Design Doc CCEA Cloud.txt` (корень проекта)
+
+#### Компоненты CCEA
+
+| Компонент | Путь | Ответственность | Secrets | Orders |
+|-----------|------|-----------------|---------|--------|
+| **Cloud** | `packages/cloud/` | Research, Builder, Control Plane, Governance | **NEVER** | **NEVER** |
+| **Agent** | `packages/agent/` | Vault, Execution, Policy, Daemon | **LOCAL** | **YES** |
+| **Shared** | `packages/shared/`, `core_*`, `impl_*` | Safe for both runtimes | N/A | N/A |
+
+#### Key Security Guarantees
+
+- Cloud **НИКОГДА** не хранит broker API keys
+- Cloud **НИКОГДА** не создает, не передает, не исполняет ордера
+- Cloud **НИКОГДА** не имеет доступа к trading endpoints
+- Agent - **ЕДИНСТВЕННАЯ** зона исполнения
+- Telemetry **ВСЕГДА** редактируется перед отправкой в Cloud
+
+#### Legal Posture
+
+| Мы являемся | Мы НЕ являемся |
+|-------------|----------------|
+| Software Provider / ICT Provider | Investment Adviser |
+| Algorithmic trading research tools | Broker-Dealer |
+| Strategy development platform | Custodian |
+| Infrastructure for client-controlled execution | Execution Service |
+
+#### Product Modes
+
+| Режим | Cloud | Agent | Use Case |
+|-------|-------|-------|----------|
+| **Retail Research SaaS** | Full (IDE, backtest, sim) | Optional | EU-friendly research |
+| **Retail Live via Local Agent** | Lifecycle, Telemetry | Local vault + execution | Auto-execution locally |
+| **Enterprise Engine** | Self-hosted option | HSM/KMS, air-gapped | On-prem/VPC |
+
+#### CCEA Terminology (Эталон)
+
+| Термин | Определение |
+|--------|------------|
+| **Cloud** | SaaS сервисы (research, backtesting, monitoring, control plane) |
+| **Agent** | Daemon клиента в его окружении (BYO host / VPS / on-prem) |
+| **Strategy** | User code/model, производит Intent |
+| **Intent** | High-level intention (target exposure/position), NOT a ready order |
+| **Order** | Concrete broker instruction (создается ТОЛЬКО в Agent) |
+| **Deployment** | Связь между artifact + config + target Agent |
+| **Run** | Конкретное исполнение стратегии на Agent |
+| **Command** | Lifecycle request от Cloud к Agent (REQUEST_START, REQUEST_STOP, etc.) |
+| **TRADING_IMPACTING** | Класс изменений, требующих local approval |
+| **NON_IMPACTING** | Класс изменений, применяемых автоматически |
+
+#### Lifecycle Commands (Cloud → Agent)
+
+| Command | Description | TRADING_IMPACTING |
+|---------|-------------|-------------------|
+| REQUEST_START_RUN | Запустить стратегию | YES |
+| REQUEST_STOP_RUN | Остановить стратегию | NO |
+| REQUEST_PAUSE_RUN | Приостановить | NO |
+| REQUEST_UPDATE_CONFIG | Изменить config | Depends on field |
+| REQUEST_DEPLOY_ARTIFACT | Развернуть новую версию | YES |
+
+**Документация CCEA**: `docs/CCEA_OVERVIEW.md`, `Design Doc CCEA Cloud.txt`
 
 ### Слои кода
 

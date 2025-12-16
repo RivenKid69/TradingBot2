@@ -4,15 +4,29 @@
 
 ---
 
+## Architecture Foundation: CCEA (Cloud-Controlled Execution Architecture)
+
+> **Key Principle**: All go-to-market strategy is built on the CCEA architecture — **Cloud for research and simulation, Agent for execution**. This architecture enables our legal positioning as a **Software Provider / ICT Provider**, not an execution service.
+
+| Component | Role | Secrets | Orders |
+|-----------|------|---------|--------|
+| **Cloud** | Research IDE, backtesting, artifact builder, monitoring | **NEVER** | **NEVER** |
+| **Agent** | Local execution, vault, risk enforcement, order creation | **LOCAL** | **YES** |
+
+**Legal Posture**: We provide **algorithmic trading research and infrastructure tools**. Users trade through **THEIR OWN broker accounts** via **their local Agent**. We do NOT hold client assets, credentials, or execute orders.
+
+---
+
 ## Executive Summary
 
-**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and regulatory-compliant algorithmic trading infrastructure.
+**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and regulatory-compliant algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
 
 **Why Equity, Not Crypto**:
 - **Institutional credibility**: Equities are the language of serious capital markets
 - **Regulatory alignment**: MiFID II, MAR, DORA compliance demonstrates maturity
 - **Market size**: €8.5T European asset management market vs €987B crypto
 - **Risk-first positioning**: Our CVaR-RL technology addresses the #1 institutional concern
+- **CCEA advantage**: Clear "Cloud = research tools, Agent = your execution" story resonates with compliance officers
 
 **Why This Focus Matters**: While our platform supports 5 asset classes (crypto, equities, futures, forex, options), we deliberately lead with **institutional equity trading** because:
 
@@ -60,6 +74,15 @@ The "chasm" is the gap between early adopters (who buy on vision) and the mainst
 | **Regulatory Status** | AIFM-licensed or FCA-regulated | Compliance-conscious buyers value our MiFID II alignment |
 | **Technology** | Upgrading from Excel/Python scripts to production infrastructure | Clear pain point we solve |
 | **Budget** | €3,000-10,000/month | Validated willingness to pay for institutional-grade tools |
+| **Deployment** | BYO host (VPS/on-prem) for Agent | CCEA requirement: execution in client environment |
+
+### CCEA Deployment Model for Beachhead
+
+| Product Mode | Description | Target Segment |
+|--------------|-------------|----------------|
+| **Retail Research SaaS** | Cloud research + optional Agent | Quants evaluating strategies |
+| **Retail Live via Local Agent** | Full deployment with local execution | Active trading firms |
+| **Enterprise Engine** | On-prem/VPC, all in client infra | Regulated funds (AIFM, UCITS) |
 
 ### Why Equity Focus Over Crypto?
 
@@ -163,14 +186,23 @@ The European systematic fund community is **tight-knit and networked**:
 
 #### 5. Regulatory Alignment (Key Differentiator)
 
-| Regulation | Requirement | Our Compliance |
-|------------|-------------|----------------|
-| **MiFID II Article 17** | Algo trading risk controls, kill switch, testing requirements | ✅ Built-in kill switch, pre-trade risk checks |
-| **MAR 596/2014** | Market abuse prevention | ✅ Unusual activity monitoring, audit trails |
-| **DORA** | ICT risk management, third-party oversight | ✅ SOC 2 roadmap, secure-by-design |
-| **ESMA Guidelines** | Algo trading testing, validation | ✅ Sim-to-live parity metrics, backtesting validation |
+| Regulation | Requirement | Our Compliance | CCEA Advantage |
+|------------|-------------|----------------|----------------|
+| **MiFID II Article 17** | Algo trading risk controls, kill switch, testing requirements | ✅ Built-in kill switch, pre-trade risk checks | Kill switch in Agent (local enforcement) |
+| **MAR 596/2014** | Market abuse prevention | ✅ Unusual activity monitoring, audit trails | Audit logs in both Cloud and Agent |
+| **DORA** | ICT risk management, third-party oversight | ✅ SOC 2 roadmap, secure-by-design | Clear Cloud/Agent boundary aids vendor assessment |
+| **ESMA Guidelines** | Algo trading testing, validation | ✅ Sim-to-live parity metrics, backtesting validation | Sim in Cloud, live in Agent (separation) |
 
-**Positioning Statement**: *"The only mid-market trading platform with MiFID II Article 17 compliance built-in, not bolted-on."*
+**CCEA Legal Posture for Regulated Clients**:
+
+| We Are | We Are NOT |
+|--------|-----------|
+| Software Provider / ICT Provider | Investment Adviser |
+| Algorithmic trading research tools | Broker-Dealer |
+| Strategy development platform | Custodian |
+| Infrastructure for client-controlled execution | Execution Service |
+
+**Positioning Statement**: *"The only mid-market trading platform with MiFID II Article 17 compliance built-in, not bolted-on — with clear Cloud/Agent separation for regulatory clarity."*
 
 ---
 
@@ -470,6 +502,7 @@ Copying requires recreating our research and testing infrastructure — an 18-24
 |---------|------|--------|---------|
 | 1.0 | December 2024 | Product/Strategy | Initial creation (crypto focus) |
 | 2.0 | December 2025 | Product/Strategy | **Complete rewrite**: Equity-first beachhead, risk management positioning, MiFID II compliance focus |
+| 2.1 | December 2025 | Product/Strategy | **CCEA alignment**: Added CCEA architecture foundation, legal posture, Cloud/Agent separation |
 
 ---
 
@@ -478,3 +511,6 @@ Copying requires recreating our research and testing infrastructure — an 18-24
 - [REGULATORY_COMPLIANCE_STRATEGY.md](REGULATORY_COMPLIANCE_STRATEGY.md) — Compliance approach
 - [IP_PROTECTION_STRATEGY.md](docs/business/IP_PROTECTION_STRATEGY.md) — IP protection framework
 - [COMPETITIVE_MOAT.md](docs/business/COMPETITIVE_MOAT.md) — Competitive analysis
+- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
+
+*Aligned with: Design Doc CCEA Cloud v1.0*

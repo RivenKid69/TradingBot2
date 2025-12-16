@@ -4,9 +4,26 @@
 
 ---
 
+## CCEA Architecture Overview
+
+> This pilot program follows the **CCEA (Cloud-Controlled Execution Architecture)**. Pilots will deploy:
+> - **Cloud**: Research IDE, backtesting, monitoring (SaaS)
+> - **Agent**: Local execution runtime on pilot firm's infrastructure (BYO host)
+
+| Component | Pilot Responsibility | Our Responsibility |
+|-----------|---------------------|-------------------|
+| **Cloud** | Use research/sim tools | Provide SaaS platform |
+| **Agent** | Host on their VPS/machine | Provide daemon + support |
+| **Secrets** | Store in local vault | **NEVER** access or store |
+| **Orders** | Created/sent by Agent | **NEVER** create or send |
+
+**Why CCEA matters for pilots**: Clear regulatory boundary — we provide software tools, pilots control their own execution.
+
+---
+
 ## Program Overview
 
-A 3-month structured pilot program designed to validate product-market fit with European proprietary trading firms before scaling.
+A 3-month structured pilot program designed to validate product-market fit with European proprietary trading firms before scaling — using the CCEA architecture for clean Cloud/Agent separation.
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -15,6 +32,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 | **Pricing** | €500/month (80% discount from target) |
 | **Commitment** | Weekly feedback, usage data sharing |
 | **Target Start** | Q1 2025 |
+| **Deployment Model** | Cloud SaaS + Local Agent (BYO host) |
 
 ---
 
@@ -108,38 +126,51 @@ Week 9-12: Evaluation
 
 ---
 
-## Onboarding Process
+## Onboarding Process (CCEA)
 
-### Day 1: Welcome
+### Day 1: Cloud Onboarding
 
-- [ ] Welcome email with credentials
+- [ ] Welcome email with Cloud credentials
 - [ ] Access to documentation portal
 - [ ] Slack channel invitation
 - [ ] Calendar invite for kickoff call
+- [ ] Cloud account activated
 
-### Day 2-3: Technical Setup
+### Day 2-3: Agent Setup (Local Infrastructure)
 
-- [ ] Exchange API connection (Binance)
-- [ ] Risk limits configuration
+- [ ] Agent installation on pilot's VPS/machine
+- [ ] Agent registration with Cloud (device key exchange)
+- [ ] Local vault initialization
+- [ ] Exchange API keys stored in **LOCAL VAULT** (never sent to Cloud)
+- [ ] Agent health check (heartbeat visible in Cloud)
+
+### Day 4-5: Research & Strategy Development (Cloud)
+
+- [ ] First backtest completed in Cloud
+- [ ] Strategy artifact built and signed
+- [ ] Risk parameter configuration reviewed
 - [ ] Paper trading environment test
-- [ ] First backtest completed
 
-### Day 4-5: Strategy Deployment
+### Day 6-7: Live Deployment via Agent
 
-- [ ] Strategy configuration review
-- [ ] Risk parameter validation
-- [ ] Live trading authorization
-- [ ] Monitoring dashboard setup
+- [ ] Cloud sends REQUEST_START_RUN to Agent
+- [ ] Local approval of TRADING_IMPACTING changes
+- [ ] Strategy running on Agent
+- [ ] Telemetry visible in Cloud monitoring dashboard
+- [ ] Kill switch tested
 
 ### Success Checkpoint (Day 7)
 
-| Metric | Target |
-|--------|--------|
-| Account activated | Yes |
-| Exchange connected | Yes |
-| First backtest run | Yes |
-| Risk limits set | Yes |
-| Ready for live | Yes |
+| Metric | Target | Zone |
+|--------|--------|------|
+| Cloud account activated | Yes | Cloud |
+| Agent installed and registered | Yes | Agent |
+| Local vault configured | Yes | Agent |
+| First backtest run | Yes | Cloud |
+| Risk limits set | Yes | Agent |
+| Strategy artifact deployed | Yes | Cloud → Agent |
+| Live run started (with local approval) | Yes | Agent |
+| Telemetry visible | Yes | Cloud |
 
 ---
 
@@ -420,14 +451,16 @@ Best,
 
 ## Related Documents
 
-- [BEACHHEAD_MARKET_STRATEGY.md](BEACHHEAD_MARKET_STRATEGY.md) — Why we focus on EU crypto prop firms
+- [BEACHHEAD_MARKET_STRATEGY.md](BEACHHEAD_MARKET_STRATEGY.md) — Beachhead market selection
 - [MVP_FOCUS.md](MVP_FOCUS.md) — MVP feature scope definition
 - [LEAN_VALIDATION_STRATEGY.md](LEAN_VALIDATION_STRATEGY.md) — Customer validation framework
 - [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) — One-pager for pitches
+- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
 
 ---
 
-*Document Version: 1.1*
-*Last Updated: December 2024*
+*Document Version: 2.0*
+*Last Updated: December 2025*
 *Owner: Founder / Head of Sales*
+*Aligned with: Design Doc CCEA Cloud v1.0*
 
