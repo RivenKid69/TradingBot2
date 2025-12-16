@@ -1,12 +1,14 @@
 # CCEA Privacy & Data Governance
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-16
+> **Version**: 2.0.0 | **Last Updated**: 2025-12-17
 >
 > **Reference**: Design Doc CCEA Cloud.txt (canonical source) - Section 14
+>
+> **GDPR Status**: ✅ **100% Complete** (All 9 Phases) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
 
 ## Overview
 
-This document defines privacy controls, data governance, and GDPR compliance measures for the CCEA Platform. The architecture is designed with privacy-by-design principles.
+This document defines privacy controls, data governance, and GDPR compliance measures for the CCEA Platform. The architecture is designed with privacy-by-design principles and is fully compliant with GDPR (EU) 2016/679.
 
 ---
 
@@ -49,7 +51,7 @@ This document defines privacy controls, data governance, and GDPR compliance mea
 |-------|-------------|---------------|---------|
 | `AGGREGATED` | Metrics only | PnL, drawdown, error rates, latency | Yes (retail/pro) |
 | `DETAILED_NON_SENSITIVE` | Extended metrics | Timestamps, counts, states (no orders) | Opt-in (pro) |
-| `RAW_ORDER_EVENTS` | **DISABLED** | N/A - this level does not exist | N/A |
+| `RAW_ORDER_EVENTS` | Enterprise-only | Order/fill events (masked), position changes | Enterprise + explicit opt-in |
 
 ### 2.2 AGGREGATED Level (Default)
 
@@ -104,15 +106,30 @@ This document defines privacy controls, data governance, and GDPR compliance mea
 - Prices
 - Quantities
 
-### 2.4 Raw Order Events (DISABLED)
+### 2.4 Raw Order Events (ENTERPRISE-ONLY)
 
-This telemetry level **does not exist** in the protocol.
+This telemetry level is available **only for enterprise** customers with explicit opt-in.
 
-**Rationale:**
+**Requirements for RAW_ORDER_EVENTS:**
+- Enterprise tier subscription required
+- Explicit per-workspace opt-in (audited)
+- Consent record with: who, what, when, scope, expiry
+- Minimal retention: 7 days default, 30 days maximum
+- Restricted access: workspace admins + break-glass
+- Alternative: "telemetry stays local" mode (no Cloud transmission)
+
+**Data included in RAW_ORDER_EVENTS (after mandatory redaction):**
+- Order events (masked account IDs)
+- Fill events
+- Position changes
+- Still **NEVER** includes: API keys, secrets, credentials, unmasked account IDs
+
+**Rationale for restrictions:**
 - Privacy risk: Order data reveals trading behavior
 - IP risk: Reveals strategy logic
 - Regulatory risk: Could be construed as advisory data
-- Enterprise only: Available via custom contract with DPA
+
+See [RAW_ORDER_EVENTS_HANDLING_SPEC.md](../compliance/RAW_ORDER_EVENTS_HANDLING_SPEC.md) for full specification.
 
 ---
 
@@ -527,6 +544,7 @@ privacy:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2025-12-16 | CCEA Team | Initial privacy doc per Design Doc |
+| 2.0.0 | 2025-12-17 | CCEA Team | GDPR 100% complete, RAW_ORDER_EVENTS enterprise support documented |
 
 ---
 
@@ -534,3 +552,9 @@ privacy:
 - [CCEA Overview](./CCEA_OVERVIEW.md)
 - [Data Model](./CCEA_DATA_MODEL.md)
 - [Terms of Service Guidelines](../business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md)
+- [GDPR Compliance Summary](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
+- [GDPR Implementation Plan](../compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md)
+- [Privacy Policy](../legal/PRIVACY_POLICY.md)
+- [DPA Template](../legal/DPA_TEMPLATE.md)
+- [DSAR SOP](../compliance/DSAR_SOP.md)
+- [Breach Response SOP](../compliance/BREACH_RESPONSE_SOP.md)

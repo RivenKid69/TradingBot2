@@ -338,14 +338,29 @@ All TRADING_IMPACTING commands require local approval:
 
 ### 8.3 GDPR Compliance
 
+**Status**: ✅ **100% Complete** (All 9 Phases) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
+
 | Requirement | Implementation |
 |-------------|----------------|
-| Data minimization | Only collect what's necessary for service |
-| Storage limitation | Retention policies enforced |
-| Purpose limitation | Data used only for stated purposes |
-| Right to erasure | Account deletion removes all data |
-| Data portability | Export functionality available |
-| EU residency option | EU-hosted Cloud available |
+| Data minimization (Art. 5) | Telemetry contracts, CI guardrails |
+| Storage limitation (Art. 5) | Auto-purge with legal hold |
+| Purpose limitation (Art. 5) | RoPA documented |
+| Right to access (Art. 15) | DSAR workflow (30-day SLA) |
+| Right to erasure (Art. 17) | DSAR with legal hold check |
+| Data portability (Art. 20) | JSON export |
+| Privacy by design (Art. 25) | CCEA architecture |
+| Processor obligations (Art. 28) | DPA template |
+| Security (Art. 32) | Encryption, RBAC, break-glass |
+| Breach notification (Art. 33-34) | 72-hour workflow |
+| EU-only residency | Enforced at runtime (drift check fails closed) |
+
+**CCEA Privacy Guarantees:**
+- Cloud **NEVER** receives broker credentials or API keys
+- Cloud **NEVER** receives order-like payloads in commands
+- Telemetry redaction is **mandatory** (cannot be disabled)
+- DSAR scope is Cloud-only; Agent data is customer-controlled
+
+See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) for full privacy architecture.
 
 ---
 
