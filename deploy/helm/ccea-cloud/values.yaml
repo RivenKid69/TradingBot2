@@ -208,6 +208,51 @@ governance:
   dsar:
     enabled: true
 
+  # EU-Only Residency Enforcement (GDPR Phase 3)
+  residency:
+    # Enable EU-only enforcement
+    enabled: true
+    enforceEuOnly: true
+
+    # Drift check configuration
+    driftCheck:
+      enabled: true
+      # Schedule for automatic drift checks (cron format)
+      schedule: "0 * * * *"  # Hourly
+      # Fail closed - any non-EU endpoint blocks operation
+      failClosed: true
+      # Runtime check (in addition to deployment check)
+      runtimeCheckEnabled: true
+      # Alert on drift detection
+      alertOnDrift: true
+
+    # Allowed EU regions
+    allowedRegions:
+      - "eu-west-1"      # Ireland
+      - "eu-west-2"      # London
+      - "eu-west-3"      # Paris
+      - "eu-central-1"   # Frankfurt
+      - "eu-central-2"   # Zurich
+      - "eu-north-1"     # Stockholm
+      - "eu-south-1"     # Milan
+      - "eu-south-2"     # Spain
+
+    # Evidence storage for audit
+    evidenceStorage:
+      enabled: true
+      bucket: ""  # Configure per environment
+      prefix: "residency-evidence"
+      region: "eu-central-1"
+      retentionDays: 365
+
+    # Subprocessor verification
+    subprocessorVerification:
+      enabled: true
+      # Check subprocessor DPA status
+      requireSignedDPA: true
+      # Review frequency check
+      reviewFrequencyDays: 90
+
 # Registry (on-prem artifact storage)
 registry:
   enabled: false

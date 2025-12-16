@@ -136,6 +136,29 @@ from .telemetry_contract import (
     ORDER_LIKE_FIELDS,
 )
 
+# EU-Only Residency Drift Check (GDPR Phase 3)
+from .residency_drift import (
+    EUOnlyDriftChecker,
+    DeploymentConfigValidator,
+    ResidencyEvidenceExporter,
+    ResidencyDriftReport,
+    ResidencyConfiguration,
+    EndpointCheck,
+    SubprocessorCheck,
+    DriftCheckViolation,
+    DriftCheckStatus,
+    ComponentType,
+    CheckSeverity,
+    check_eu_residency,
+    is_eu_region,
+    validate_endpoint_eu,
+    EU_AWS_REGIONS,
+    EU_GCP_REGIONS,
+    EU_AZURE_REGIONS,
+    ALL_EU_REGIONS,
+    NON_EU_REGIONS,
+)
+
 __all__ = [
     "ZONE",
     # DSAR
@@ -221,4 +244,24 @@ __all__ = [
     "ALWAYS_FORBIDDEN_FIELDS",
     "PII_FIELDS",
     "ORDER_LIKE_FIELDS",
+    # EU-Only Residency Drift Check (GDPR Phase 3)
+    "EUOnlyDriftChecker",
+    "DeploymentConfigValidator",
+    "ResidencyEvidenceExporter",
+    "ResidencyDriftReport",
+    "ResidencyConfiguration",
+    "EndpointCheck",
+    "SubprocessorCheck",
+    "DriftCheckViolation",
+    "DriftCheckStatus",
+    "ComponentType",
+    "CheckSeverity",
+    "check_eu_residency",
+    "is_eu_region",
+    "validate_endpoint_eu",
+    "EU_AWS_REGIONS",
+    "EU_GCP_REGIONS",
+    "EU_AZURE_REGIONS",
+    "ALL_EU_REGIONS",
+    "NON_EU_REGIONS",
 ]

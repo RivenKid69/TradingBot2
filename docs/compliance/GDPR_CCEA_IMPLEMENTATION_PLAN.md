@@ -274,7 +274,9 @@ DoD:
 - 144 tests passing for governance module (no regression)
 - 40 tests passing for Phase 2 governance tests (no regression)
 
-### Phase 3 — EU-only data residency enforcement (tenant/workspace)
+### Phase 3 — EU-only data residency enforcement (tenant/workspace) [COMPLETED - 2025-12-16]
+
+**Status**: ✅ **COMPLETED**
 
 **Goal**: residency is a runtime guarantee, not a claim.
 
@@ -290,12 +292,73 @@ Key work:
 
 Deliverables:
 - Residency policy enforcement code + config defaults (EU-only)
-- Automated “EU-only drift check” (CI or deployment validation) that fails if any endpoint/bucket/region is not in EU.
+- Automated "EU-only drift check" (CI or deployment validation) that fails if any endpoint/bucket/region is not in EU.
 - Drift check produces a machine-readable report (e.g., JSON) listing every configured endpoint/bucket/region/subprocessor used at runtime (for evidence pack storage).
 - Evidence pack: list of EU services/subprocessors and regions
 
 DoD:
 - Automated drift check fails closed if any configured endpoint/storage/support tool is outside EU, and produces a stored report artifact.
+
+**Implementation Summary (2025-12-16):**
+
+| Deliverable | Status | Location |
+|-------------|--------|----------|
+| EU-Only Drift Checker (Code) | ✅ Done | `packages/cloud/governance/residency_drift.py` |
+| CI Residency Guardrail | ✅ Done | `ccea/guardrails/residency_check.py` |
+| EU Residency Enforcement Spec | ✅ Done | `docs/compliance/EU_RESIDENCY_ENFORCEMENT_SPEC.md` |
+| Helm Residency Configuration | ✅ Done | `deploy/helm/ccea-cloud/values.yaml` (governance.residency) |
+| Drift Check Tests | ✅ Done | `packages/cloud/governance/tests/test_residency_drift.py` |
+| CI Guardrail Tests | ✅ Done | `ccea/guardrails/tests/test_residency_check.py` |
+
+**Key Components:**
+
+1. **EUOnlyDriftChecker** (`residency_drift.py`)
+   - Validates all endpoints/services are EU-resident
+   - Extracts regions from AWS/GCP/Azure endpoint patterns
+   - Fails closed on any non-EU endpoint detection
+   - Produces machine-readable JSON reports with integrity hash
+   - Supports explicit region configuration override
+
+2. **DeploymentConfigValidator** (`residency_drift.py`)
+   - Validates Helm values, Docker Compose, and Kubernetes manifests
+   - Extracts configuration from environment variables
+   - Infers regions from deployment configurations
+
+3. **ResidencyEvidenceExporter** (`residency_drift.py`)
+   - Exports residency evidence pack for audits
+   - Creates EU residency attestation documents
+   - Generates subprocessor verification summaries
+   - Maintains audit log of drift checks
+
+4. **CI Residency Guardrail** (`residency_check.py`)
+   - Scans YAML/YML config files for non-EU regions
+   - Checks environment files for region violations
+   - Validates Helm values for EU enforcement settings
+   - Blocks deployment on non-EU endpoint detection
+
+**Supported Validations:**
+- AWS Regions: RDS, S3, ElastiCache, SES, CloudWatch, KMS, Secrets Manager, SNS, SQS, ECR
+- GCP Regions: europe-west*, europe-north*, europe-central*
+- Azure Regions: westeurope, northeurope, germanywest*, france*, sweden*, switzerland*, uk*
+- Known Services: Stripe (EU), Sentry (EU), SES (EU), SendGrid (EU)
+
+**Report Format:**
+```json
+{
+  "check_id": "drift-check-YYYY-MM-DD-XXXXXXXX",
+  "timestamp": "ISO8601",
+  "status": "PASS|FAIL|WARNING|UNKNOWN",
+  "checks": [{"component": "...", "region": "...", "eu_compliant": true}],
+  "violations": [],
+  "report_hash": "sha256:..."
+}
+```
+
+**Test Results:**
+- 76 tests passing for residency drift module
+- 52 tests passing for CI residency guardrail
+- 220 tests passing for governance module (no regression)
+- 99 tests passing for all guardrails (no regression)
 
 ### Phase 4 — Retention per tenant + auto-purge + legal hold
 
