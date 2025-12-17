@@ -7810,7 +7810,7 @@ Class DPOConflictMitigationManager:
     "The DPO cannot hold a position within the organisation that leads him or her
     to determine the purposes and means of the processing of personal data."
 
-    This manager ensures ongoing compliance with conflict-of-interest requirements.
+    This manager supports ongoing alignment with conflict-of-interest requirements.
     """
 
     # Assessment

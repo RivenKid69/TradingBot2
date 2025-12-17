@@ -10,7 +10,7 @@
 
 ## Overview
 
-This checklist is used to perform the conformity self-assessment per Article 43 and Annex VI of the EU AI Act. The assessment verifies that the high-risk AI system meets all applicable requirements before being placed on the market.
+This checklist is used to perform the conformity self-assessment per Article 43 and Annex VI of the EU AI Act. The assessment is designed to verify alignment with applicable requirements before the AI system is placed on the market.
 
 ### Assessment Procedure (Annex VI - Internal Control)
 

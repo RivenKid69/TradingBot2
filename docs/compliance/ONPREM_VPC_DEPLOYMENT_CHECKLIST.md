@@ -7,7 +7,7 @@
 
 ## 1. Overview
 
-This checklist ensures that enterprise on-premises and VPC deployments meet all GDPR compliance requirements, maintain the EU-only data residency posture, and can produce auditable evidence packs.
+This checklist is designed to help enterprise on-premises and VPC deployments align with GDPR compliance requirements, maintain the EU-only data residency posture, and produce auditable evidence packs.
 
 ### 1.1 Design Doc Reference
 

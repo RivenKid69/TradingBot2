@@ -188,7 +188,7 @@ Run automated checks:
 
 ```bash
 # Run CCEA privacy design commitment tests
-pytest tests/compliance/test_ccea_privacy_guarantees.py -v
+pytest tests/compliance/test_ccea_privacy_design_commitments.py -v
 
 # Run schema validation tests
 pytest tests/compliance/test_protocol_schema.py -v
