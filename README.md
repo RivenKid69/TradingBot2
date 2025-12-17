@@ -96,9 +96,9 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**14,000+ automated tests** | **MiFID II Toolkit Implemented** | **EU AI Act Toolkit Implemented** | **DORA Toolkit Implemented** | **GDPR Controls Implemented** | **CCEA Implemented** | **Architected for Production Use**
+**14,000+ automated tests** | **MiFID II: Compliance-Ready Toolkit** | **EU AI Act: Compliance-Ready Toolkit** | **DORA: Compliance-Ready Toolkit** | **GDPR: Compliance-Ready Controls** | **CCEA Implemented** | **Built to Support Production Use**
 
-*Note: "Toolkit/controls implemented" means the technical features are available. Actual regulatory compliance requires independent assessment, proper configuration, and legal review specific to your jurisdiction and use case.*
+*Note: "Compliance-ready" means the technical features are implemented and designed to align with regulatory requirements. These are tools to support compliance efforts, not compliance certifications. Actual regulatory compliance requires independent third-party assessment, proper configuration, legal review, and validation specific to your jurisdiction and use case.*
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
@@ -167,7 +167,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 ## Regulatory Compliance
 
 ### MiFID II (Directive 2014/65/EU)
-All 7 phases implemented (designed to align with requirements):
+All 7 compliance toolkit phases implemented (designed to align with requirements, not independently certified):
 - Kill Switch & Pre-Trade Controls (RTS 6)
 - Transaction Reporting (RTS 22)
 - Record Keeping & Audit Trail (5-7 years retention)
@@ -177,7 +177,7 @@ All 7 phases implemented (designed to align with requirements):
 Details: `docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md`
 
 ### EU AI Act (Regulation 2024/1689)
-High-Risk AI System - all 4 phases implemented and designed to align with requirements (1,007 tests):
+High-Risk AI System - all 4 compliance toolkit phases implemented and designed to align with requirements (1,007 tests, not independently certified):
 - Risk Management System (Article 9)
 - Data Governance & Technical Documentation (Article 10, 11)
 - Human Oversight & Transparency (Article 13, 14)
@@ -187,7 +187,7 @@ High-Risk AI System - all 4 phases implemented and designed to align with requir
 Details: `docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md`
 
 ### DORA (Regulation 2022/2554)
-Digital Operational Resilience Act - all 5 phases implemented and designed to align with requirements (~1,015 tests):
+Digital Operational Resilience Act - all 5 compliance toolkit phases implemented and designed to align with requirements (~1,015 tests, not independently certified):
 - Phase 1: ICT Risk Management Framework (Articles 5-16)
 - Phase 2: ICT Incident Management & Reporting (Articles 17-23)
 - Phase 3: Digital Resilience Testing (Articles 24-27)
@@ -197,7 +197,7 @@ Digital Operational Resilience Act - all 5 phases implemented and designed to al
 Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
 
 ### GDPR (Regulation 2016/679)
-General Data Protection Regulation - all 9 phases implemented and designed to align with requirements (CCEA-aligned):
+General Data Protection Regulation - all 9 compliance toolkit phases implemented and designed to align with requirements (CCEA-aligned, not independently certified):
 - Phase 0: Data mapping, RoPA, Controller/Processor roles
 - Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
 - Phase 2: Data minimization, telemetry contracts, CI guardrails
