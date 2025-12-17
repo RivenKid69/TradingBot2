@@ -321,7 +321,7 @@ While we are not subject to MiFID II, our clients are. Our platform helps them m
 
 We provide clients with:
 
-1. **Platform Compliance Guide**: How to use our platform in MiFID II-compliant manner
+1. **Platform Compliance Guide**: How to use our platform in a MiFID II-aligned manner
 2. **Audit Trail Export**: Full historical logs in regulatory-acceptable format
 3. **Risk Control Documentation**: Technical specifications of our risk management features
 4. **Algorithm Documentation Template**: Helps clients meet Article 17 documentation requirements
@@ -332,7 +332,7 @@ We provide clients with:
 
 ### 4.1 Article 17 Overview
 
-**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. While our platform is a software vendor (not subject to authorization), our clients are. This section details how QuantBot AI's architecture **enables client compliance** with every requirement.
+**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. While our platform is a software vendor (not subject to authorization), our clients are. This section details how QuantBot AI's architecture is **designed to support client compliance** across the requirements.
 
 **Regulatory Text Reference**: Directive 2014/65/EU, Article 17
 **Supplementary**: RTS 6 (Commission Delegated Regulation 2017/589)
@@ -341,7 +341,7 @@ We provide clients with:
 
 **Requirement**: Investment firms engaged in algorithmic trading shall have in place effective systems and risk controls suitable to the business, to ensure trading systems are resilient and have sufficient capacity, are subject to appropriate trading thresholds and limits, and prevent erroneous orders or functioning in a way that may create or contribute to a disorderly market.
 
-#### How QuantBot AI Enables Compliance
+#### How QuantBot AI Supports Compliance
 
 | RTS 6 Requirement | Platform Capability | Implementation Detail |
 |-------------------|---------------------|----------------------|

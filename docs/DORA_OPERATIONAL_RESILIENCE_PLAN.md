@@ -2275,7 +2275,7 @@ subcontractor_management:
         - "ISO 27017"
         - "ISO 27018"
         - "C5 (Germany)"
-        - "GDPR compliant"
+        - "GDPR commitments (vendor-asserted)"
       contract_reference: "AWS Enterprise Agreement"
       is_material: true
       supports_critical_functions: true
@@ -2416,7 +2416,7 @@ subcontractor_management:
       certifications:
         - "SOC 2 Type II"
         - "ISO 27001"
-        - "GDPR compliant"
+        - "GDPR commitments (vendor-asserted)"
       contract_reference: "Datadog Enterprise Agreement"
       is_material: false
       supports_critical_functions: false
@@ -2437,7 +2437,7 @@ subcontractor_management:
       has_data_access: true  # Error context may contain data
       certifications:
         - "SOC 2 Type II"
-        - "GDPR compliant"
+        - "GDPR commitments (vendor-asserted)"
       is_material: false
       supports_critical_functions: false
       substitutability: "easy"  # Alternatives: Bugsnag, Rollbar
@@ -4824,7 +4824,7 @@ test_migration:
 
 ## 9. Phased Roadmap — REVISED v2.2
 
-### Phase 1: Contractual Compliance & Baseline ✅ COMPLETED
+### Phase 1: Contractual Alignment & Baseline ✅ COMPLETED
 
 **Status:** COMPLETED (2025-12-09)
 **Test Coverage:** 474 tests passing (100%)
@@ -5033,14 +5033,14 @@ services/
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Contract compliance | 100% EU contracts have Art. 30 clauses | Contract review |
+| Contract clause coverage (Art. 30) | Target: 100% of EU contracts include Art. 30 clauses | Contract review |
 | Audit readiness | Response within 5 business days | Audit log |
 | Uptime | 99.9% | Monitoring |
 | MTTD (Mean Time to Detect) | <15 min | Incident tracking |
 | MTTR (Mean Time to Resolve) | <1h critical, <4h high | Incident tracking |
 | Client notification | <30min critical | Incident tracking |
-| Backup success rate | 100% | Backup logs |
-| DR test pass rate | 100% quarterly | DR test reports |
+| Backup job success rate | Target: 100% | Backup logs |
+| DR test pass rate | Target: 100% per quarterly test | DR test reports |
 | Core test coverage | >80% | CI/CD |
 
 ---

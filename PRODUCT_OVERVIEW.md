@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-A production-grade algorithmic trading platform that combines cutting-edge reinforcement learning with institutional-grade execution simulation. The platform enables systematic trading across **5 major asset classes** with a unified architecture.
+A production-oriented algorithmic trading platform that combines cutting-edge reinforcement learning with institutional-grade execution simulation. The platform enables systematic trading across **5 major asset classes** with a unified architecture.
 
 **Key Metrics:**
 - **14,000+ automated tests** with 97%+ pass rate
@@ -280,7 +280,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 
 ### Proprietary Trading Firm
 - Rapid strategy prototyping
-- Production-grade backtesting
+- Production-oriented backtesting
 - Seamless live deployment
 - **ROI**: Faster time-to-market for new strategies
 

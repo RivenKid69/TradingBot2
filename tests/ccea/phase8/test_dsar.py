@@ -75,7 +75,7 @@ class TestDSARRequestCreation:
         assert request.reason == "User requested account deletion"
 
     def test_request_has_deadline(self, dsar_service):
-        """Test request has GDPR-compliant deadline."""
+        """Test request has GDPR-aligned deadline."""
         request = dsar_service.create_request(
             user_id="user-123",
             workspace_id="workspace-456",

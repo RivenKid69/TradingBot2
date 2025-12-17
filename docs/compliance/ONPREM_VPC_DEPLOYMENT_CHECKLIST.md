@@ -91,7 +91,7 @@ Reference: docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L968-L972
 
 #### 2.2.2 Subprocessor Verification
 
-Verify all subprocessors are EU-compliant:
+Verify all subprocessors are suitable for EU data processing (EU residency + GDPR-aligned DPA/SCCs where needed):
 
 | Subprocessor | Purpose | EU Region | DPA Status | Verified |
 |--------------|---------|-----------|------------|----------|
@@ -105,7 +105,7 @@ Verify all subprocessors are EU-compliant:
 - [ ] All compute resources in EU regions
 - [ ] All storage in EU regions
 - [ ] All backups in EU regions
-- [ ] All subprocessors verified EU-compliant
+- [ ] All subprocessors verified suitable for EU data processing
 - [ ] DPAs signed with all subprocessors
 - [ ] No cross-border data transfers configured
 - [ ] Residency drift check script tested

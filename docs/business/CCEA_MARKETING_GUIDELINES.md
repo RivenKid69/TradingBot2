@@ -297,6 +297,16 @@ When discussing performance or capabilities, use:
 - "Our tools enable..."
 - "Customers have reported..."
 
+### 7.4 Compliance & Readiness Language (Avoid Without Independent Validation)
+
+When communicating with committees, regulators, or immigration counsel, avoid absolute claims unless we have independent evidence (e.g., an external audit, a signed legal opinion, or a contractual attestation).
+
+| Trigger Phrase | Issue | Alternative |
+|----------------|-------|-------------|
+| "100% compliant" / "full compliance" / "certified compliant" | Absolute compliance claim without independent validation | "designed to align with requirements" / "compliance-ready toolkit" / "mapped to requirements" |
+| "GDPR/DORA/MiFID II compliant" | Regulatory compliance claim | "GDPR/DORA/MiFID II-aligned" / "supports client compliance workflows" |
+| "production ready" / "production-grade" | Implies deployment fitness guarantee | "designed for production use" / "ready for production review" / "pilot-ready" |
+
 ---
 
 ## 8. Visual Guidelines

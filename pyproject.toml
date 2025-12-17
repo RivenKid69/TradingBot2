@@ -1,7 +1,7 @@
 # ============================================================================
 # AI-Powered Quantitative Research Platform
 # ============================================================================
-# Production-grade dependency management with version pinning
+# Production-oriented dependency management with version pinning
 # Reference: https://packaging.python.org/en/latest/specifications/pyproject-toml/
 #
 # Installation variants:
@@ -163,7 +163,7 @@ ccea-cloud = [
     "PyJWT>=2.8.0,<3.0.0",
 
     # Password hashing (Argon2id - OWASP recommended)
-    # Required by: WI-AUTH-01 - Production-grade auth
+    # Required by: WI-AUTH-01 - Production-oriented auth
     # Security: Winner of Password Hashing Competition, OWASP recommended
     # Reference: NIST SP 800-63B
     "argon2-cffi>=23.1.0,<24.0.0",

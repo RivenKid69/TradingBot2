@@ -279,7 +279,7 @@ pytest tests/dora_integration/test_due_diligence.py -v
 """
 Incident Data Export for Client NCA Reporting.
 
-We generate DORA-compliant incident data packages.
+We generate DORA-aligned incident data packages.
 Clients use this data to fulfill their Art. 19 obligations.
 """
 
@@ -472,7 +472,7 @@ from services.core.subcontractor_monitoring import (
 
 class DORASubcontractorManagement:
     """
-    DORA-compliant subcontractor management.
+    DORA-aligned subcontractor management.
 
     Extends core monitoring with:
     - Art. 30(2)(b) prior consent workflows
@@ -750,7 +750,7 @@ git checkout <commit>^ -- services/dora/<module>.py
 DORA Integration Layer.
 
 This package provides interfaces for interacting with financial entity clients
-in a DORA-compliant manner. It implements ICT provider obligations under Art. 30.
+in a DORA-aligned manner. It implements ICT provider obligations under Art. 30.
 
 Subpackages:
 - due_diligence: Audit readiness, provider info packages

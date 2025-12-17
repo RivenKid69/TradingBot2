@@ -14,7 +14,7 @@ Tests cover:
 - 2.7-2.8 CI Guardrails
 
 References:
-- CCEA_100_PERCENT_ALIGNMENT_PLAN.md Phase 2
+- CCEA_ALIGNMENT_PLAN.md Phase 2
 """
 
 import sys

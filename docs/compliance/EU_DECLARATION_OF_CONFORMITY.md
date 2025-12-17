@@ -1,11 +1,13 @@
-# EU DECLARATION OF CONFORMITY
+# EU Declaration of Conformity (Template)
+
+**IMPORTANT (Template):** This document is a draft template for providers to complete as part of their own conformity assessment workflow. It does not constitute a legal declaration, certification, or independent audit result. Replace all placeholders and validate requirements with qualified counsel and (where applicable) a notified body before use.
 
 ## Regulation (EU) 2024/1689 (Artificial Intelligence Act)
 
 ---
 
-**Declaration Number**: DOC-AIACT-2025-001
-**Issue Date**: 2025-12-08
+**Declaration Number**: [DOC-AIACT-YYYY-NNN]
+**Issue Date**: [YYYY-MM-DD]
 
 ---
 
@@ -47,9 +49,9 @@ AI-powered algorithmic trading system using reinforcement learning (Distribution
 
 ---
 
-## 3. Declaration of Conformity
+## 3. Declaration of Conformity (Provider Statement)
 
-This declaration of conformity is issued under the sole responsibility of the provider.
+This declaration of conformity is issued under the sole responsibility of the provider (once completed and signed by the provider).
 
 **The AI system described above is in conformity with:**
 
@@ -57,31 +59,31 @@ This declaration of conformity is issued under the sole responsibility of the pr
 
 The AI system has been assessed against the following requirements for high-risk AI systems:
 
-| Article | Requirement | Compliance Status |
+| Article | Requirement | Provider Assessment Status |
 |---------|-------------|-------------------|
-| Article 9 | Risk Management System | COMPLIANT |
-| Article 10 | Data Governance | COMPLIANT |
-| Article 11 | Technical Documentation | COMPLIANT |
-| Article 12 | Record-Keeping | COMPLIANT |
-| Article 13 | Transparency and Information | COMPLIANT |
-| Article 14 | Human Oversight | COMPLIANT |
-| Article 15 | Accuracy, Robustness, Cybersecurity | COMPLIANT |
-| Article 17 | Quality Management System | COMPLIANT |
+| Article 9 | Risk Management System | TBD (provider assessment required) |
+| Article 10 | Data Governance | TBD (provider assessment required) |
+| Article 11 | Technical Documentation | TBD (provider assessment required) |
+| Article 12 | Record-Keeping | TBD (provider assessment required) |
+| Article 13 | Transparency and Information | TBD (provider assessment required) |
+| Article 14 | Human Oversight | TBD (provider assessment required) |
+| Article 15 | Accuracy, Robustness, Cybersecurity | TBD (provider assessment required) |
+| Article 17 | Quality Management System | TBD (provider assessment required) |
 
 ---
 
-## 4. Conformity Assessment Procedure
+## 4. Conformity Assessment Procedure (Select/Complete)
 
-The conformity assessment was performed using the **Internal Control** procedure based on **Annex VI** of the AI Act.
+The conformity assessment procedure used for this AI system: [Select/Describe, e.g., Internal Control (Annex VI) or Notified Body involvement if required].
 
 ### Assessment Details
 
 | Field | Value |
 |-------|-------|
-| **Procedure Type** | Internal Control (Annex VI) |
-| **Assessment Date** | 2025-12-08 |
-| **Assessment Reference** | AR-20251208XXXXXX |
-| **Compliance Score** | XX.X% |
+| **Procedure Type** | [e.g., Internal Control (Annex VI)] |
+| **Assessment Date** | [YYYY-MM-DD] |
+| **Assessment Reference** | [AR-YYYYMMDD-XXXXXX] |
+| **Assessment Score** | [Optional: internal scoring if used] |
 
 ### Notified Body (if applicable)
 
@@ -241,14 +243,14 @@ For inquiries regarding this declaration of conformity:
 
 ---
 
-## Document History
+## Document History (Template)
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2025-12-08 | Compliance Team | Initial declaration |
+| 0.1 | [YYYY-MM-DD] | [Author] | Initial template |
 
 ---
 
-## Legal Notice
+## Legal Notice (Template)
 
-This EU Declaration of Conformity is issued pursuant to Regulation (EU) 2024/1689 and represents the provider's commitment to compliance with the applicable requirements for high-risk AI systems. The provider is solely responsible for ensuring continued compliance throughout the AI system's lifecycle.
+This document is a template intended to support preparation of an EU Declaration of Conformity under Regulation (EU) 2024/1689. Any final declaration must be issued, signed, and maintained by the provider based on its own conformity assessment (and any required external assessments), and does not arise from this repository alone.

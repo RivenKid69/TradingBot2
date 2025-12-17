@@ -205,7 +205,7 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 **Certifications:**
 - SOC 2 Type II
 - ISO 27001
-- GDPR compliant
+- GDPR commitments (vendor-asserted)
 
 **Criticality Assessment:**
 | Factor | Assessment |

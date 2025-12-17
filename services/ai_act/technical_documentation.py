@@ -210,7 +210,7 @@ class TechnicalDocumentationConfig:
 
 class TechnicalDocumentationGenerator:
     """
-    Generator for EU AI Act Annex IV compliant technical documentation.
+    Generator for EU AI Act Annex IV-aligned technical documentation.
 
     This class automatically generates and maintains technical documentation
     required by Article 11 and Annex IV of the EU AI Act.

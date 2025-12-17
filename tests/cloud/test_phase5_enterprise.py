@@ -11,7 +11,7 @@ Tests cover:
 
 Design Doc Reference:
     - Phase 9: Enterprise/on-prem pack
-    - CCEA_100_PERCENT_ALIGNMENT_PLAN.md - Phase 5
+    - CCEA_ALIGNMENT_PLAN.md - Phase 5
 """
 
 import asyncio

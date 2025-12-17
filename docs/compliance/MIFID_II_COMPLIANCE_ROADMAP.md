@@ -101,38 +101,38 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 │                                                                  │
 │ 🟢 CORE (services.core.risk_controls) - For ALL users           │
 │ ─────────────────────────────────────────────────────           │
-│ Kill Switch (Art. 12)         [██████████] 100% ✅              │
-│ Pre-Trade Controls (RTS 6)    [██████████] 100% ✅              │
-│ Real-Time Monitoring (Art.17) [██████████] 100% ✅              │
-│ Clock Sync (RTS 25)           [██████████] 100% ✅              │
-│ Audit Trail                   [██████████] 100% ✅              │
-│ Retention Policy (5-7 years)  [██████████] 100% ✅              │
-│ Business Continuity Plan      [██████████] 100% ✅              │
+│ Kill Switch (Art. 12)         [██████████] Complete ✅          │
+│ Pre-Trade Controls (RTS 6)    [██████████] Complete ✅          │
+│ Real-Time Monitoring (Art.17) [██████████] Complete ✅          │
+│ Clock Sync (RTS 25)           [██████████] Complete ✅          │
+│ Audit Trail                   [██████████] Complete ✅          │
+│ Retention Policy (5-7 years)  [██████████] Complete ✅          │
+│ Business Continuity Plan      [██████████] Complete ✅          │
 │                                                                  │
 │ 🟡 INTEGRATION (services.algo_integration) - B2B Enterprise     │
 │ ─────────────────────────────────────────────────────           │
-│ Best Execution Policy         [██████████] 100% ✅              │
-│ TCA Compliance                [██████████] 100% ✅              │
-│ Venue Analysis & SOR          [██████████] 100% ✅              │
-│ Execution Quality Reports     [██████████] 100% ✅              │
-│ OTR Monitoring                [██████████] 100% ✅              │
-│ Algorithm Registration        [██████████] 100% ✅              │
-│ Conformance Testing           [██████████] 100% ✅              │
-│ Test Scenarios                [██████████] 100% ✅              │
-│ Certification                 [██████████] 100% ✅              │
+│ Best Execution Policy         [██████████] Complete ✅          │
+│ TCA Compliance                [██████████] Complete ✅          │
+│ Venue Analysis & SOR          [██████████] Complete ✅          │
+│ Execution Quality Reports     [██████████] Complete ✅          │
+│ OTR Monitoring                [██████████] Complete ✅          │
+│ Algorithm Registration        [██████████] Complete ✅          │
+│ Conformance Testing           [██████████] Complete ✅          │
+│ Test Scenarios                [██████████] Complete ✅          │
+│ Certification                 [██████████] Complete ✅          │
 │                                                                  │
 │ 🔴 ARCHIVE (services.archive.mifid_financial_entity) - FE ONLY  │
 │ ─────────────────────────────────────────────────────           │
 │ ⚠️  NOT FOR ICT PROVIDERS - Deprecated with warnings            │
-│ LEI Integration               [██████████] 100% ✅ (archived)   │
-│ Transaction Reporting         [██████████] 100% ✅ (archived)   │
-│ Annual Self-Assessment        [██████████] 100% ✅ (archived)   │
-│ Governance Framework          [██████████] 100% ✅ (archived)   │
-│ Policy Documents              [██████████] 100% ✅ (archived)   │
-│ NCA Notification              [██████████] 100% ✅ (archived)   │
+│ LEI Integration               [██████████] Complete ✅ (archived) │
+│ Transaction Reporting         [██████████] Complete ✅ (archived) │
+│ Annual Self-Assessment        [██████████] Complete ✅ (archived) │
+│ Governance Framework          [██████████] Complete ✅ (archived) │
+│ Policy Documents              [██████████] Complete ✅ (archived) │
+│ NCA Notification              [██████████] Complete ✅ (archived) │
 │                                                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│ TOOLKIT IMPLEMENTATION:      [██████████] 100% ✅               │
+│ TOOLKIT IMPLEMENTATION:      [██████████] Complete ✅           │
 │ (All tools implemented, not externally certified)               │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -400,7 +400,7 @@ class ClockSyncStatus:
         return self.sync_success and abs(self.offset_ms) <= max_offset_ms
 
 class ComplianceClock:
-    """RTS 25 compliant clock with NTP synchronisation."""
+    """RTS 25-aligned clock with NTP synchronisation."""
 
     NTP_SERVERS = [
         "time.google.com",
@@ -433,7 +433,7 @@ class ComplianceClock:
         return ClockSyncStatus(0, 0, "", time.time(), False)
 
     def now_utc_ns(self) -> int:
-        """Current UTC timestamp in nanoseconds (RTS 25 compliant)."""
+        """Current UTC timestamp in nanoseconds (RTS 25-aligned)."""
         return int((time.time() + self._offset_ms / 1000) * 1e9)
 
     def now_utc_ms(self) -> int:
@@ -826,7 +826,7 @@ class KillSwitchEvent:
     confirmation_id: str
 
 class EnhancedKillSwitch:
-    """MiFID II RTS 6 Article 12 compliant kill switch."""
+    """MiFID II RTS 6 Article 12-aligned kill switch."""
 
     def __init__(
         self,
@@ -1309,7 +1309,7 @@ class AuditRecord:
     record_id: str
     event_type: AuditEventType
 
-    # Timestamps (RTS 25 compliant)
+    # Timestamps (RTS 25-aligned)
     event_timestamp_ns: int          # Nanosecond precision
     record_timestamp_ns: int         # When record was created
 
@@ -2428,20 +2428,20 @@ Phase 2: Transaction Reporting ✅ COMPLETED (2025-12-07)
 
 Phase 3: Algo Controls ✅ COMPLETED (2025-12-07)
 [x] Enhanced Kill Switch готов (services/compliance/enhanced_kill_switch.py)
-    - RTS 6 Article 12 compliant kill switch
+    - RTS 6 Article 12-aligned kill switch
     - Scope-based cancellation (ALL, VENUE, ALGORITHM, INSTRUMENT)
     - Cooldown periods, rate limiting, audit trail
     - Emergency contacts per RTS 6 requirements
     - create_enhanced_kill_switch() factory function
 [x] Pre-trade controls работают (services/compliance/pre_trade_controls.py)
-    - RTS 6 Article 15 compliant controls
+    - RTS 6 Article 15-aligned controls
     - Price collars, fat finger protection
     - Max order value/volume limits
     - Message rate limiting with burst control
     - Trader authorization, daily loss limits
     - create_pre_trade_controls() factory function
 [x] Real-time monitoring активен (services/compliance/realtime_monitor.py)
-    - RTS 6 Article 17 compliant monitoring
+    - RTS 6 Article 17-aligned monitoring
     - Alerts generated within 5 seconds per regulation
     - OTR, P&L, position, latency, clock drift monitoring
     - Alert severity escalation to kill switch

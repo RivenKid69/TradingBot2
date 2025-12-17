@@ -261,7 +261,7 @@ class DecisionExplanation:
         return ". ".join(parts) + "."
 
     def _generate_regulatory_text(self) -> str:
-        """Generate EU AI Act compliant explanation text."""
+        """Generate EU AI Act-aligned explanation text."""
         lines = [
             "=== AI Trading Decision Explanation ===",
             f"Decision ID: {self.decision_id}",

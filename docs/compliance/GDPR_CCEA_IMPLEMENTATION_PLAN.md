@@ -886,7 +886,7 @@ DoD:
    - `docker-compose.yml`: Phase 9 environment variables (CCEA_DEPLOYMENT_MODE, CCEA_TELEMETRY_LOCAL_ONLY, CCEA_EVIDENCE_EXPORT_LOCAL_ONLY, CCEA_POSTURE_VALIDATION_ENABLED), evidence_exports volume
 
 **Marketing Claim Guardrails** (from ENTERPRISE_POSTURE_NOTE.md):
-- Permitted claims: "EU-only data residency", "Telemetry stays local option", "GDPR-compliant architecture"
+- Permitted claims: "EU-only data residency", "Telemetry stays local option", "GDPR-aligned architecture"
 - Prohibited claims: "No data leaves your network" (unless air-gapped), "Complete data sovereignty" (Cloud still receives some metadata), Compliance guarantees without contract
 
 **Test Results:**

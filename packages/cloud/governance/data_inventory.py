@@ -530,7 +530,7 @@ class DataInventoryRegistry:
             raise ValueError("Field not properly registered")
 
         # Approve for use
-        registry.approve(entry.id, approved_by="dpo", notes="GDPR compliant")
+        registry.approve(entry.id, approved_by="dpo", notes="GDPR-aligned")
     """
 
     def __init__(

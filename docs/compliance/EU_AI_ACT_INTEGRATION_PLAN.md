@@ -237,7 +237,7 @@ class AIActRiskConfig(RiskConfig):
 ```python
 class HumanOversightSystem:
     """
-    Article 14 compliant human oversight implementation.
+    Article 14-aligned human oversight implementation.
 
     Capabilities:
     1. Real-time system monitoring dashboard
@@ -513,7 +513,7 @@ pytest tests/test_ai_act_robustness.py -v
 ```python
 class TechnicalDocumentationGenerator:
     """
-    Automatically generates Annex IV compliant documentation.
+    Automatically generates Annex IV-aligned documentation.
 
     Sources:
     - Code introspection
@@ -537,7 +537,7 @@ class TechnicalDocumentationGenerator:
 
 **Цель**: Обеспечить automatic logging для traceability согласно [Article 12](https://artificialintelligenceact.eu/article/12/).
 
-#### 2.2.1 AI Act Compliant Logging System
+#### 2.2.1 AI Act-aligned Logging System
 
 **Файл**: `services/ai_act/logging_system.py`
 
@@ -549,7 +549,7 @@ class TechnicalDocumentationGenerator:
 ```python
 class AIActLogger:
     """
-    Article 12 compliant logging system.
+    Article 12-aligned logging system.
 
     Features:
     1. Automatic event recording
@@ -746,7 +746,7 @@ docs/compliance/qms/
 ```python
 class QualityManagementSystem:
     """
-    Article 17 compliant QMS implementation.
+    Article 17-aligned QMS implementation.
 
     Integrates with:
     - Existing testing framework (pytest)
@@ -784,7 +784,7 @@ class QualityManagementSystem:
 ```python
 class AIActTestingFramework:
     """
-    Article 9(6-7) compliant testing framework.
+    Article 9(6-7)-aligned testing framework.
 
     Test Categories:
     1. Functional testing - intended purpose
@@ -851,7 +851,7 @@ jobs:
 ```python
 class AIActCybersecurity:
     """
-    Article 15(5) compliant cybersecurity measures.
+    Article 15(5)-aligned cybersecurity measures.
 
     Components:
     1. Input validation and sanitization
@@ -896,7 +896,7 @@ class AIActSecurityEnhancements:
 ```python
 class PostMarketMonitoringSystem:
     """
-    Article 72 compliant post-market monitoring.
+    Article 72-aligned post-market monitoring.
 
     Components:
     1. Performance drift detection

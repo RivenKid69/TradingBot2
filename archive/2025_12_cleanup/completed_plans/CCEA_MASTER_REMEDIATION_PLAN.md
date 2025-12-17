@@ -503,7 +503,7 @@ work_items:
     goal: |-
       Separate cloud/agent distributions and verify cloud artifact contents in CI.
     touch:
-      - docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md:98
+      - docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md:98
       - Makefile
       - pyproject.toml
       - .github/workflows/build-and-test.yml
@@ -539,7 +539,7 @@ work_items:
     goal: |-
       On-prem pack (docker-compose/Helm) + docs.
     touch:
-      - docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md:316
+      - docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md:316
       - deploy/*
     steps:
       - Add compose/helm manifests
@@ -683,7 +683,7 @@ issues:
     depends_on:
 
     id: |-
-      [HIGH] AUP отсутствует, хотя план требует ToS/Privacy/AUP синхронизацию (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 358)) — Fix: добавить docs/legal/AUP.md и согласовать формулировки с CCEA.
+      [HIGH] AUP отсутствует, хотя план требует ToS/Privacy/AUP синхронизацию (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 358)) — Fix: добавить docs/legal/AUP.md и согласовать формулировки с CCEA.
   -
     src: Список проблем и несогсасованностей.txt:15
     severity: CRITICAL
@@ -693,7 +693,7 @@ issues:
     depends_on:
       - WI-LEGAL-01
     id: |-
-      [CRITICAL] Нет требуемого docs/CCEA_OVERVIEW.md (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 351)) — Fix: добавить overview (boundary, threat model, legal posture, product modes) и сделать ссылку из README.
+      [CRITICAL] Нет требуемого docs/CCEA_OVERVIEW.md (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 351)) — Fix: добавить overview (boundary, threat model, legal posture, product modes) и сделать ссылку из README.
   -
     src: Список проблем и несогсасованностей.txt:16
     severity: CRITICAL
@@ -703,7 +703,7 @@ issues:
     depends_on:
       - WI-LEGAL-01
     id: |-
-      [CRITICAL] Нет docs/cloud/* (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 352)) — Fix: завести раздел под Cloud control plane API, builder/registry, governance/privacy/residency, job isolation.
+      [CRITICAL] Нет docs/cloud/* (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 352)) — Fix: завести раздел под Cloud control plane API, builder/registry, governance/privacy/residency, job isolation.
   -
     src: Список проблем и несогсасованностей.txt:17
     severity: CRITICAL
@@ -713,7 +713,7 @@ issues:
     depends_on:
       - WI-LEGAL-01
     id: |-
-      [CRITICAL] Нет docs/agent/* (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 353)) — Fix: завести install/upgrade, local vault, approvals, policies/hard caps, degraded modes, recovery.
+      [CRITICAL] Нет docs/agent/* (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 353)) — Fix: завести install/upgrade, local vault, approvals, policies/hard caps, degraded modes, recovery.
   -
     src: Список проблем и несогсасованностей.txt:18
     severity: CRITICAL
@@ -723,7 +723,7 @@ issues:
     depends_on:
       - WI-LEGAL-01
     id: |-
-      [CRITICAL] Нет docs/runbooks/ (в плане “runbooks”) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 355)) — Fix: перенести/переписать runbooks под CCEA (incident/kill‑switch, revoke/rotation, safe‑degraded).
+      [CRITICAL] Нет docs/runbooks/ (в плане “runbooks”) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 355)) — Fix: перенести/переписать runbooks под CCEA (incident/kill‑switch, revoke/rotation, safe‑degraded).
   -
     src: Список проблем и несогсасованностей.txt:19
     severity: HIGH
@@ -883,7 +883,7 @@ issues:
     depends_on:
 
     id: |-
-      [HIGH] Требуемый снапшот Design Doc для CI отсутствует (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 9)) — Fix: добавить docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt (или ссылку+sha+дату) и синхронизировать.
+      [HIGH] Требуемый снапшот Design Doc для CI отсутствует (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 9)) — Fix: добавить docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt (или ссылку+sha+дату) и синхронизировать.
   -
     src: Список проблем и несогсасованностей.txt:37
     severity: HIGH
@@ -901,7 +901,7 @@ issues:
       - WI-CLOUD-RESEARCH-01
       - WI-LEGAL-01
     id: |-
-      [HIGH] Матрица трассируемости фиксирует PLANNED там, где план заявляет Done (то есть 100% соответствие не подтверждено): monitoring/alerts (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 20)), agent updates (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 22)), cloud job isolation (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 23)), data model org/workspace (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 25)), agent/deployment/run (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 27)), telemetry/access audit (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 29)), reconciliation (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 45)), retention/residency (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 61), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 62)), evidence/on‑prem (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 68), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 69)), AI Act/not advice (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 71), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 72)) — Fix: либо реализовать и сменить статус, либо откорректировать “Done” в плане.
+      [HIGH] Матрица трассируемости фиксирует PLANNED там, где план заявляет Done (то есть полное соответствие не подтверждено): monitoring/alerts (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 20)), agent updates (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 22)), cloud job isolation (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 23)), data model org/workspace (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 25)), agent/deployment/run (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 27)), telemetry/access audit (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 29)), reconciliation (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 45)), retention/residency (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 61), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 62)), evidence/on‑prem (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 68), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 69)), AI Act/not advice (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 71), docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 72)) — Fix: либо реализовать и сменить статус, либо откорректировать “Done” в плане.
   -
     src: Список проблем и несогсасованностей.txt:38
     severity: HIGH
@@ -951,7 +951,7 @@ issues:
     depends_on:
       - WI-DEDRIFT-01
     id: |-
-      [HIGH] План требует раздельных сборок cloud/agent и build‑time проверки состава cloud‑артефакта, но в репо нет артефактного разделения (только общий make build/test) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 98), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 101), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 102)) — Fix: разделить дистрибутивы (wheels/OCI) и запускать build_artifact_check на готовых артефактах в CI.
+      [HIGH] План требует раздельных сборок cloud/agent и build‑time проверки состава cloud‑артефакта, но в репо нет артефактного разделения (только общий make build/test) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 98), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 101), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 102)) — Fix: разделить дистрибутивы (wheels/OCI) и запускать build_artifact_check на готовых артефактах в CI.
   -
     src: Список проблем и несогсасованностей.txt:45
     severity: HIGH
@@ -1024,7 +1024,7 @@ issues:
       - WI-AUTH-01
       - WI-CLOUD-04
     id: |-
-      [HIGH] План требует long‑poll commands + ack/approval/result endpoints (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 56), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 246)), но в cloud реализациях этого нет (есть только user CRUD команд и заглушка heartbeat) — Fix: реализовать агент‑аутентифицированные poll/ack/result/approval endpoints и связать их с хранилищем команд.
+      [HIGH] План требует long‑poll commands + ack/approval/result endpoints (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 56), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 246)), но в cloud реализациях этого нет (есть только user CRUD команд и заглушка heartbeat) — Fix: реализовать агент‑аутентифицированные poll/ack/result/approval endpoints и связать их с хранилищем команд.
   -
     src: Список проблем и несогсасованностей.txt:56
     severity: HIGH
@@ -1157,7 +1157,7 @@ issues:
     depends_on:
       - WI-AGENT-03
     id: |-
-      [HIGH] Local approval для TRADING_IMPACTING не включён в рабочий путь (модуль есть, wiring нет; план требует) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 277)) — Fix: интегрировать packages/agent/approval/* в применение start/upgrade/update_config.
+      [HIGH] Local approval для TRADING_IMPACTING не включён в рабочий путь (модуль есть, wiring нет; план требует) (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 277)) — Fix: интегрировать packages/agent/approval/* в применение start/upgrade/update_config.
   -
     src: Список проблем и несогсасованностей.txt:71
     severity: HIGH
@@ -1229,7 +1229,7 @@ issues:
     depends_on:
       - WI-CLOUD-02
     id: |-
-      [HIGH] On‑prem pack (docker-compose/Helm) отсутствует, хотя заявлен (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 316), PLANNED: docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 69)) — Fix: добавить манифесты развёртывания + документацию.
+      [HIGH] On‑prem pack (docker-compose/Helm) отсутствует, хотя заявлен (docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 316), PLANNED: docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 69)) — Fix: добавить манифесты развёртывания + документацию.
   -
     src: Список проблем и несогсасованностей.txt:82
     severity: HIGH
@@ -1261,7 +1261,7 @@ issues:
     depends_on:
 
     id: |-
-      [HIGH] Cloud research job isolation/anti‑abuse отсутствует (PLANNED) (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 23), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN.md (line 337)) — Fix: sandbox runner (контейнер/VM), квоты, egress allowlist, abuse detection.
+      [HIGH] Cloud research job isolation/anti‑abuse отсутствует (PLANNED) (docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md (line 23), docs/plans/CCEA_CLOUD_ALIGNMENT_PLAN_RU.md (line 337)) — Fix: sandbox runner (контейнер/VM), квоты, egress allowlist, abuse detection.
   -
     src: Список проблем и несогсасованностей.txt:87
     severity: HIGH
@@ -1310,7 +1310,7 @@ issues:
 - Exit P2 ✓ COMPLETED
 
 ## Final Status (2025-12-16)
-**ALL PHASES COMPLETED - 100% Design Doc Compliance Achieved**
+**ALL PHASES COMPLETED - Design Doc alignment targets met (internal)**
 
 ### Implementation Summary
 | Phase | Work Items | Status | Evidence |

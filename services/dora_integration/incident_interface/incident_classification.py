@@ -516,7 +516,7 @@ class IncidentClassificationConfig:
 
 class DORAIncidentClassification:
     """
-    DORA Article 18 compliant incident classification engine.
+    DORA Article 18-aligned incident classification engine.
 
     Implements the classification criteria from CDR 2024/1772 to determine
     if an incident qualifies as a major ICT-related incident requiring

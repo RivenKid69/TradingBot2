@@ -12,7 +12,7 @@
 
 ### 1.1 Purpose
 
-This Standard Operating Procedure (SOP) defines the process for handling Data Subject Access Requests (DSARs) under GDPR Articles 12-23. It ensures consistent, compliant, and timely responses to data subject rights requests.
+This Standard Operating Procedure (SOP) defines the process for handling Data Subject Access Requests (DSARs) under GDPR Articles 12-23. It ensures consistent, GDPR-aligned, and timely responses to data subject rights requests.
 
 ### 1.2 Scope
 

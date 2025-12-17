@@ -456,8 +456,8 @@ Training completion tracked in HR system with:
 |--------|--------|-----------|
 | Consent request → grant time | < 24 hours | Weekly |
 | Access without consent attempts | 0 | Daily |
-| Consent expiry compliance | 100% | Weekly |
-| Audit log completeness | 100% | Daily |
+| Consent expiry on-time handling rate | Target: 100% | Weekly |
+| Audit log completeness | Target: 100% | Daily |
 
 ### 11.2 Reporting
 

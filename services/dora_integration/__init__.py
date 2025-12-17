@@ -3,7 +3,7 @@
 DORA Integration Layer.
 
 This package provides interfaces for interacting with financial entity clients
-in a DORA-compliant manner. It implements ICT provider obligations under Art. 30.
+in a DORA-aligned manner. It implements ICT provider obligations under Art. 30.
 
 Architecture Context:
     services/core/              - Operational resilience (14 modules) - NOT TOUCHED

@@ -3031,7 +3031,7 @@ class IBMarketDataAdapter(MarketDataAdapter):
         self._account = self._config.get("account")
 
     def _do_connect(self) -> None:
-        """Connect to TWS/Gateway with production-grade connection management."""
+        """Connect to TWS/Gateway with robust connection management."""
         self._conn_manager = IBConnectionManager(
             host=self._host,
             port=self._port,

@@ -927,14 +927,14 @@ class TestMainFunction:
 
         exit_code = main(mock_manager, [
             'approve', str(pending_request.request_id),
-            '-r', 'production ready',
+            '-r', 'ready for production review',
             '-u', 'admin_user'
         ])
 
         assert exit_code == 0
         mock_manager.approve.assert_called_once()
         call_kwargs = mock_manager.approve.call_args
-        assert call_kwargs[1]['reason'] == 'production ready'
+        assert call_kwargs[1]['reason'] == 'ready for production review'
         assert call_kwargs[1]['decided_by'] == 'admin_user'
 
 
@@ -986,7 +986,7 @@ class TestCLIIntegration:
         assert details is not None
 
         # Approve
-        success = cli.approve(str(request.request_id), reason="Production ready", user="admin")
+        success = cli.approve(str(request.request_id), reason="Ready for production review", user="admin")
         assert success is True
 
         # Verify in history

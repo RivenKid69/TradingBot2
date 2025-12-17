@@ -736,7 +736,7 @@ PLATFORM_DATA_CATEGORIES = {
 
 #### 0.2.2 ProcessorManagement (processor_management.py)
 
-Article 28 compliant processor management:
+Article 28-aligned processor management:
 
 ```
 Enum ProcessorStatus:
@@ -4787,7 +4787,7 @@ test_gdpr_phase2b_data_subject_rights.py:
 
 ### 3.1 Objectives
 
-Implement Article 30 compliant Records of Processing Activities:
+Implement Article 30-aligned Records of Processing Activities:
 - Complete processing inventory
 - Data mapping across systems
 - Processing purpose documentation

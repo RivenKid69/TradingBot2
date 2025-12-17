@@ -41,7 +41,7 @@ This audit was performed as part of Phase 11 of the CCEA Cloud Alignment Plan. T
 
 ### 3. Language Consistency
 
-**Finding:** Some documents are in Russian (CCEA_CLOUD_ALIGNMENT_PLAN.md) or mixed language.
+**Finding:** Some documents are in Russian (CCEA_CLOUD_ALIGNMENT_PLAN_RU.md) or mixed language.
 
 **Resolution:** Acceptable. The plan has been successfully implemented regardless of documentation language. English documentation is complete.
 

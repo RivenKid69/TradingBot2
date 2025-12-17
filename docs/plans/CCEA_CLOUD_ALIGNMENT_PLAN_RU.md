@@ -1,4 +1,6 @@
-План приведения проекта к 100% соответствию Design Doc CCEA Cloud
+План приведения проекта к соответствию Design Doc CCEA Cloud
+
+Примечание: формулировки про “полное соответствие” в этом плане описывают целевое состояние и критерии готовности; это не заявление о независимой сертификации, аудите или юридически подтверждённой комплаенс‑оценке.
 
 Ниже — фазы с конкретными задачами и “done‑критериями”. Логика опирается на best‑practice CCEA‑модель (cloud research + signed artifacts + outbound control plane + local live execution) и индустриальные стандарты supply‑chain/telemetry/privacy (OCI+digest, Sigstore/cosign, CycloneDX/SPDX SBOM, SLSA provenance, OpenTelemetry, GDPR/DORA).
 
@@ -117,5 +119,3 @@ docs/schemas/* (manifest + protocol JSON schemas).
 runbooks: incident/kill‑switch, recovery, safe‑degraded.
 Провести “doc audit” старых разделов (например про Decision) и либо обновить, либо унести в docs/archive.
 Done: документация полностью согласована с Design Doc и реальным кодом, CI‑проверки доков зелёные.
-
-

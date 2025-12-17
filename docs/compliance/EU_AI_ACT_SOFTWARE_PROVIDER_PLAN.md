@@ -99,7 +99,7 @@ class AIDisclosure:
     ai_purpose: str = "Trading signal generation"
 
     def generate_disclosure_text(self, language: str = "en") -> str:
-        """Generate Article 50 compliant disclosure text."""
+        """Generate Article 50-aligned disclosure text."""
         texts = {
             "en": {
                 "header": "AI SYSTEM DISCLOSURE",

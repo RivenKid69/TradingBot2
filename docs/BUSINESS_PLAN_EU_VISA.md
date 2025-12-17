@@ -669,7 +669,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 - Growing mid-tier segment (10-50 traders) underserved by enterprise vendors
 
 **Secondary European Hubs**:
-- **London**: Post-Brexit, EU-regulated entities seeking compliant infrastructure
+- **London**: Post-Brexit, EU-regulated entities seeking compliance-ready infrastructure
 - **Frankfurt**: Deutsche Börse ecosystem, growing crypto integration
 - **Paris**: Emerging fintech hub, strong quantitative finance talent
 
@@ -1944,7 +1944,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 **London (Post-Brexit Dynamics)**:
 - Many firms establishing EU entities
-- Need for EU-compliant infrastructure
+- Need for EU-aligned infrastructure
 - Traditional prop trading expertise
 - Target: EU-regulated subsidiaries seeking MiFID II compliance
 
@@ -2020,7 +2020,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 **Persona 2: London EU-Entity Quant Lead**
 - **Profile**: 10-30 traders, recently established EU entity
-- **Current Stack**: Legacy UK systems, need EU-compliant replacement
+- **Current Stack**: Legacy UK systems, need EU-aligned replacement
 - **Pain Points**: MiFID II compliance, multi-asset platform needs
 - **Our Value**: MiFID II native, 5 asset classes unified, EU entity-friendly pricing
 

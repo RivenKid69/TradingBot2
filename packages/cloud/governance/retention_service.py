@@ -415,7 +415,7 @@ class RetentionPolicyRegistry:
     """
     Registry for managing retention policies per workspace.
 
-    Provides GDPR-compliant retention policy management with:
+    Provides GDPR-aligned retention policy management with:
     - Minimum retention enforcement for compliance data
     - Maximum retention limits for sensitive data
     - Audit trail for all policy changes

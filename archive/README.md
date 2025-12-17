@@ -59,6 +59,7 @@ archive/
 
 - All files here were marked as COMPLETED, FINAL, or DEPRECATED
 - These files are kept for audit trail and historical reference
+- Terminology like "Production Ready", "compliant", or "100%" may appear as informal internal shorthand and should not be treated as an independently validated claim (audit/certification/legal opinion)
 - Active documentation remains in `docs/`
 - Active tests remain in `tests/`
 - Active services remain in `services/`

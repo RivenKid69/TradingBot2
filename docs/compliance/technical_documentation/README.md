@@ -60,7 +60,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
 
 ## Generating Technical Documentation
 
-To generate complete Annex IV compliant technical documentation:
+To generate complete Annex IV-aligned technical documentation:
 
 ```python
 from services.ai_act import create_technical_documentation_generator

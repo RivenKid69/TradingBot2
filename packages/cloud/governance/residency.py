@@ -136,7 +136,7 @@ class ResidencyPolicy:
 
     def __post_init__(self):
         """Validate and set compliance flags."""
-        # EU regions are GDPR compliant
+        # EU regions are used as a signal for EU/GDPR residency expectations
         if self.primary_region in EU_REGIONS:
             self.gdpr_compliant = True
 

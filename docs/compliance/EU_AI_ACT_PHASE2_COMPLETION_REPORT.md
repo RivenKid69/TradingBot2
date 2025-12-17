@@ -26,7 +26,7 @@ Phase 2 of the EU AI Act Integration Plan has been successfully completed. All f
 **Tests**: [tests/test_ai_act_technical_documentation.py](../../tests/test_ai_act_technical_documentation.py)
 
 #### Features:
-- Complete Annex IV compliant documentation generator
+- Complete Annex IV-aligned documentation generator
 - All six required section types per Annex IV
 - Change tracking with substantial modification detection
 - Compliance evidence management

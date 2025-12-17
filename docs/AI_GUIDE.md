@@ -7,7 +7,7 @@
 
 ## 🚀 Project Overview
 
-**TradingBot2** is a production-grade quantitative trading platform supporting **5 asset classes**: Crypto (Binance), US Equities (Alpaca), Forex (OANDA), CME Futures (IB), and Options (Deribit/IB). It features a sophisticated Reinforcement Learning (RL) engine based on **Distributional PPO** with several advanced modifications.
+**TradingBot2** is a production-oriented quantitative trading platform supporting **5 asset classes**: Crypto (Binance), US Equities (Alpaca), Forex (OANDA), CME Futures (IB), and Options (Deribit/IB). It features a sophisticated Reinforcement Learning (RL) engine based on **Distributional PPO** with several advanced modifications.
 
 **Key Metrics**: 14,000+ tests | MiFID II Compliance-Ready | EU AI Act Compliance-Ready | DORA Compliance-Ready | Designed for Production
 

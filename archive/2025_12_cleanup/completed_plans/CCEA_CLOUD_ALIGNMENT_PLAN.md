@@ -1,6 +1,6 @@
-План приведения проекта к 100% соответствию Design Doc CCEA Cloud.txt (v2)
+План приведения проекта к соответствию Design Doc CCEA Cloud.txt (v2)
 
-> **Status**: ✅ COMPLETED (2025-12-16) | **Implementation**: 100% Design Doc Compliance
+> **Status**: ✅ COMPLETED (2025-12-16) | **Implementation**: Design Doc alignment (internal)
 
 Цель: довести проект до полного соответствия Design Doc CCEA Cloud.txt, включая технические guardrails, протокол и безопасность, а также legal/marketing‑часть (ToS/AUP/позиционирование), потому что по Design Doc это часть архитектуры.
 
@@ -14,7 +14,7 @@
 
 Ниже — фазы с конкретными задачами и “done‑критериями”. План закрывает обязательные разделы Design Doc: требования (3–5), модель данных (6), change_class/policy firewall (7), артефакты (8), agent runtime (9), протокол (10), state machines (11), config layering (12), telemetry/privacy/residency (13–14), security (15), enterprise/evidence pack (16), AI Act posture и “не advice” (17–18), CI guardrails (19), rollout (20), open questions (21), а также приложение с sequence diagrams (22) и детализирующие приложения (0–13, D*/E*).
 
-Примечания по трассируемости (иначе “100% соответствие” не проверяемо):
+Примечания по трассируемости (иначе “полное соответствие” не проверяемо):
 - Design Doc должен быть доступен/версионирован для ревью и CI (например: снапшот в `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` или ссылка + `sha256` + дата версии).
 - Явно зафиксировать мэппинг на Rollout plan (Design Doc 20): Skeleton → Lifecycle+Approvals → Live+Risk → Telemetry+Privacy → Enterprise pack (мэппинг ниже в Done Фазы 0).
 

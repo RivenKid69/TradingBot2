@@ -104,7 +104,7 @@ Phase 1 of the EU AI Act integration has been successfully completed. All requir
 - Confidence and uncertainty reporting
 - Risk factor extraction
 - Human-readable explanation generation
-- Regulatory-compliant documentation
+- Regulatory-aligned documentation
 - Persistent storage with export capability
 
 ---
@@ -198,7 +198,7 @@ config/ai_act/
 - Decision explainability for all trading actions
 - Human-readable explanations
 - Feature contribution analysis
-- Regulatory-compliant documentation
+- Regulatory-aligned documentation
 
 ---
 

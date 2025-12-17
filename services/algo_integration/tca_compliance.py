@@ -383,10 +383,10 @@ class TCAAggregateMetrics:
 
 class TCAComplianceWrapper:
     """
-    MiFID II compliant TCA wrapper.
+    MiFID II-aligned TCA wrapper.
 
     Provides pre-trade and post-trade analysis with audit trail
-    integration for best execution compliance.
+    integration to support best execution evidence workflows.
 
     Usage:
         tca = TCAComplianceWrapper(config)

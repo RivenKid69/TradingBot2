@@ -494,7 +494,7 @@ class ThirdPartyRiskConfig:
 
 class DORAThirdPartyRiskManagement:
     """
-    DORA Article 28 compliant Third-Party ICT Risk Management.
+    DORA Article 28-aligned Third-Party ICT Risk Management.
 
     Implements comprehensive third-party risk management including:
     - Provider registration and classification

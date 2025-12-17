@@ -1,4 +1,4 @@
-# План доведения проекта до 100% соответствия Design Doc CCEA Cloud (5 фаз)
+# План доведения проекта до соответствия Design Doc CCEA Cloud (5 фаз)
 
 Дата: 2025-12-16
 Статус: ✅ **COMPLETED** - Все фазы реализованы
@@ -6,7 +6,7 @@
 
 ## ИТОГОВЫЙ СТАТУС
 
-**100% Design Doc Compliance достигнуто:**
+Design Doc alignment targets выполнены (внутренняя оценка):
 - Все 10 фаз Master Remediation Plan завершены
 - 117 тестовых файлов покрывают все требования
 - Полная документация: docs/cloud/, docs/agent/, docs/runbooks/
@@ -47,7 +47,7 @@
   - либо `ccea/agent/*` (тогда нужно перепривязать cloud control plane и guardrails).
 - **Где**: `ccea/agent/*`, `packages/agent/*`, `docs/agent/*`, `ARCHITECTURE.md`.
 - **Done**:
-  - Только один стек объявлен “production-grade” в документации и CLI entrypoints.
+  - Только один стек объявлен “designed for production use” в документации и CLI entrypoints.
   - Второй стек помечен как `legacy/experimental` и/или вынесен в `docs/archive` + удалён из сборочных путей.
   - В CI/Makefile нет “двойного” пути, который может случайно собрать/запустить неправильный агент.
 
@@ -335,7 +335,7 @@
   - Любой TRADING_IMPACTING request без решения оператора не применяется.
   - Evidence hash/attestation сохраняются локально и репортятся в cloud (без секретов).
 
-### 4.11 Local auto-approve policies (should-have, но для “100%” должны быть)
+### 4.11 Local auto-approve policies (should-have, но для полного соответствия должны быть)
 - **Сделать**:
   - Локальные правила auto-approve с allowlist (workspace/strategy/instruments/change types) — только на Agent и только stricter/explicit.
   - Cloud не может включить auto-approve удалённо и не может расширить allowlist.
@@ -406,9 +406,9 @@
 
 ---
 
-## Сквозные критерии “100% соответствие” (Definition of Done)
+## Сквозные критерии полного соответствия (Definition of Done)
 
-Чтобы считать проект “100% соответствующим Design Doc”, должны выполняться одновременно:
+Чтобы считать проект полностью соответствующим Design Doc, должны выполняться одновременно:
 
 1) **Граница Cloud/Agent не только описана, но и enforced**: схемами + CI + поставочным артефактом + runtime fail-closed.  
 2) **Live execution в реальности работает только через Agent**, Cloud не может отправить ни orders, ни intents, ни targets, и не может повысить риск сверх локальных hard caps.  

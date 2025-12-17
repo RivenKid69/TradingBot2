@@ -420,7 +420,7 @@ class ConcentrationRiskConfig:
 
 class DORAConcentrationRisk:
     """
-    DORA Article 29 compliant ICT Concentration Risk Management.
+    DORA Article 29-aligned ICT Concentration Risk Management.
 
     Implements comprehensive concentration risk assessment and monitoring:
     - Provider dependency analysis

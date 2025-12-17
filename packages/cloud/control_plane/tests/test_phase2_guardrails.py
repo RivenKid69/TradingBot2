@@ -10,7 +10,7 @@ Tests cover:
 - Protocol command allowlist
 
 References:
-- CCEA_100_PERCENT_ALIGNMENT_PLAN.md Phase 2.7-2.8
+- CCEA_ALIGNMENT_PLAN.md Phase 2.7-2.8
 """
 
 import sys

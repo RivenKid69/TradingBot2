@@ -59,7 +59,7 @@ class TestCountryBasedPolicies:
         assert policy.primary_region == expected_region
 
     def test_eu_country_gdpr_compliant(self):
-        """Test EU countries get GDPR-compliant policies."""
+        """Test EU countries get GDPR-aligned policies."""
         manager = DataResidencyManager()
         policy = manager.create_policy_for_country("ws-123", "DE")
 

@@ -145,7 +145,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ## [4.0.0] - 2025-12-08
 
-### DORA Compliance (Toolkit Implementation Complete)
+### DORA Alignment Toolkit (Implementation Complete)
 
 - **Phase 0: Proportionality Assessment** (2025-12-08)
   - DORA scope verification (Article 2)
@@ -218,7 +218,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ## [3.0.0] - 2025-12-07
 
-### MiFID II Compliance (Toolkit Implementation Complete)
+### MiFID II Alignment Toolkit (Implementation Complete)
 
 - **Phase 4: Record Keeping & Audit Trail** (2025-12-06)
   - Implemented audit trail writing & storage (63KB module)

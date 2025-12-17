@@ -17,7 +17,7 @@ DORA References:
     - CDR 2025/301: Incident reporting technical standards
 
 Report Templates:
-    - REGULATORY: Full DORA-compliant report for NCA submission
+    - REGULATORY: DORA-aligned report package to support NCA submission
     - EXECUTIVE: High-level summary for management
     - TECHNICAL: Detailed technical analysis for IT teams
     - CLIENT: Client-facing incident notification
@@ -52,7 +52,7 @@ class ReportFormat(Enum):
 class ReportTemplate(Enum):
     """Report template types per DORA requirements."""
 
-    REGULATORY = "regulatory"  # Full DORA-compliant for NCA
+    REGULATORY = "regulatory"  # DORA-aligned package to support NCA submission
     EXECUTIVE = "executive"  # Management summary
     TECHNICAL = "technical"  # IT team detailed analysis
     CLIENT = "client"  # Client-facing notification

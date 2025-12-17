@@ -240,12 +240,12 @@ for gap in result.gaps:
 
 | KPI | Target | Measurement | Frequency |
 |-----|--------|-------------|-----------|
-| Key rotation compliance | 100% within schedule | Keys rotated / Keys due | Monthly |
-| MFA enrollment | 100% for CONFIDENTIAL+ | Users enrolled / Total users | Weekly |
+| Key rotation on-time rate | Target: 100% | Keys rotated on time / Keys due | Monthly |
+| MFA enrollment | Target: 100% for CONFIDENTIAL+ | Users enrolled / Total users | Weekly |
 | Vulnerability remediation | < 30 days critical | Time to remediate | Per finding |
 | Tabletop completion | 4/year | Exercises completed | Quarterly |
 | Incident response time | < 24h notification draft | Time to draft | Per incident |
-| Access review completion | 100% quarterly | Reviews completed | Quarterly |
+| Access review completion | Target: 100% quarterly | Reviews completed | Quarterly |
 
 ### 8.2 Security Baseline Score
 

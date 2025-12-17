@@ -6,7 +6,7 @@ Implements structured logging for distributed tracing:
 - JSON-formatted log entries
 - Correlation ID propagation
 - Context-aware logging
-- DORA-compliant audit trail
+- DORA-aligned audit trail (evidence-friendly)
 
 DORA References:
     - Article 9: Protection and Prevention (logging requirements)

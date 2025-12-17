@@ -10,7 +10,7 @@
 
 ## Purpose
 
-This template provides DORA-compliant contract clauses for ICT service agreements with EU-regulated financial entities. All nine mandatory provisions of Article 30(2) are included.
+This template is designed to help parties include contract clauses aligned with DORA Article 30(2) for ICT service agreements with EU-regulated financial entities. It includes placeholders for all nine mandatory provisions of Article 30(2), but it is not legal advice and must be reviewed/approved by qualified counsel.
 
 ---
 
@@ -420,7 +420,7 @@ If Client objects to subcontracting change:
 [Detailed measurement methodology for each SLA metric]
 
 ### Annex E: Data Processing Agreement
-[GDPR-compliant DPA as required]
+[GDPR-aligned DPA as required (legal review)]
 
 ---
 

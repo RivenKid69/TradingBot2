@@ -21,7 +21,7 @@ This document provides pre-contractual security information per DORA Article 28(
 | **Encryption** | AES-256 / TLS 1.3 | At-rest and in-transit |
 | **Availability** | 99.9% SLA | Multi-AZ deployment |
 | **Incident Response** | 24/7 | 15-minute critical response |
-| **DORA Compliance** | Ready | Art. 30 contract templates available |
+| **DORA Alignment** | Ready | Art. 30 contract templates available |
 
 ---
 
@@ -33,7 +33,7 @@ This document provides pre-contractual security information per DORA Article 28(
 |---------------|-------|--------|----------|
 | SOC2 Type II | Platform operations | Active | Annual renewal |
 | ISO 27001 | Information security | In progress | Target Q3 2025 |
-| GDPR | Data protection | Compliant | Ongoing |
+| GDPR | Data protection | Designed to align | Ongoing |
 
 ### 2.2 Third-Party Audits
 

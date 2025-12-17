@@ -19,11 +19,11 @@
 
 ## Executive Summary
 
-**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and regulatory-compliant algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
+**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and compliance-ready algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
 
 **Why Equity, Not Crypto**:
 - **Institutional credibility**: Equities are the language of serious capital markets
-- **Regulatory alignment**: MiFID II, MAR, DORA compliance demonstrates maturity
+- **Regulatory alignment**: MiFID II, MAR, DORA alignment focus demonstrates maturity
 - **Market size**: €8.5T European asset management market vs €987B crypto
 - **Risk-first positioning**: Our CVaR-RL technology addresses the #1 institutional concern
 - **CCEA advantage**: Clear "Cloud = research tools, Agent = your execution" story resonates with compliance officers
@@ -31,7 +31,7 @@
 **Why This Focus Matters**: While our platform supports 5 asset classes (crypto, equities, futures, forex, options), we deliberately lead with **institutional equity trading** because:
 
 1. **Credibility with allocators**: Pension funds, family offices, and fund-of-funds evaluate technology partners based on equity track records
-2. **Regulatory proof**: MiFID II Article 17 compliance for algo trading is non-negotiable for EU institutional clients
+2. **Regulatory proof**: MiFID II Article 17 requirements for algo trading are non-negotiable for EU institutional clients
 3. **Risk management differentiation**: Our CVaR-RL engine is unique in the market — this advantage is most visible in equity drawdown control
 4. **Expansion pathway**: Once established in equities, we expand to CME futures, then crypto — NOT the reverse
 
@@ -142,7 +142,7 @@ The mid-market systematic fund has a specific, unsolved problem:
 | **Regulatory reporting** | Manual Excel | MiFID II Art.17 requires algo-level monitoring |
 | **Backtest-to-live gap** | "It worked in backtest" | No sim-to-live parity measurement |
 
-**Our Solution**: CVaR-aware position sizing with regulatory-compliant risk monitoring solves ALL of these.
+**Our Solution**: CVaR-aware position sizing with regulatory-alignment focused risk monitoring solves ALL of these.
 
 #### 2. Word-of-Mouth Network Exists
 
@@ -166,7 +166,7 @@ The European systematic fund community is **tight-knit and networked**:
 | **QuantConnect** | Retail algo trading, education | No institutional-grade risk management |
 | **Alpaca** | Broker/API, US equities | Not a full platform, no risk engine |
 | **Eze Software** | Enterprise OMS/EMS | €500K+ implementation, not for SMB |
-| **In-house** | Custom Python/R scripts | No production-grade risk controls |
+| **In-house** | Custom Python/R scripts | No institutional-grade risk controls |
 
 **No competitor has focused on the mid-market systematic fund with CVaR-based risk management.** This is our "unoccupied beachhead."
 
@@ -202,7 +202,7 @@ The European systematic fund community is **tight-knit and networked**:
 | Strategy development platform | Custodian |
 | Infrastructure for client-controlled execution | Execution Service |
 
-**Positioning Statement**: *"The only mid-market trading platform with MiFID II Article 17 compliance built-in, not bolted-on — with clear Cloud/Agent separation for regulatory clarity."*
+**Positioning Statement**: *"The only mid-market trading platform with MiFID II Article 17-aligned controls and evidence tooling built-in, not bolted-on — with clear Cloud/Agent separation for regulatory clarity."*
 
 ---
 
@@ -260,7 +260,7 @@ YEAR 1: EQUITY BEACHHEAD DOMINANCE
 │  • UK, Ireland, Luxembourg, Netherlands                          │
 │  • European/US equities via Alpaca, Interactive Brokers          │
 │  • Target: 15+ paying customers, €500K+ ARR                      │
-│  • Risk-first positioning, MiFID II compliance story             │
+│  • Risk-first positioning, MiFID II alignment story              │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -322,10 +322,10 @@ YEAR 3: MULTI-ASSET EXPANSION
 ### Positioning Statement
 
 **For** mid-market European systematic equity funds (€10M-200M AUM)
-**Who** need institutional-grade risk management with regulatory compliance
+**Who** need institutional-grade risk management with regulatory alignment
 **Our platform** is a risk-first quantitative trading infrastructure
-**That** provides CVaR-aware execution and MiFID II-compliant risk monitoring
-**Unlike** Bloomberg (too expensive, not risk-native) or QuantConnect (retail-focused, no compliance)
+**That** provides CVaR-aware execution and MiFID II-aligned risk monitoring
+**Unlike** Bloomberg (too expensive, not risk-native) or QuantConnect (retail-focused, no compliance tooling)
 **We** combine academic-grade risk research with deployment-ready infrastructure at SMB-accessible pricing
 
 ---
@@ -345,7 +345,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 1. **Cross-Sell Potential**: Equity fund adds macro overlay with CME futures → upsell
 2. **Technology Reuse**: Same CVaR engine, same risk dashboard, different asset class
 3. **Competitive Barrier**: 2+ years of development, 11,000+ tests, 5 exchange integrations = hard to replicate
-4. **Regulatory Ready**: Single compliance framework covers MiFID II, EMIR, and future MiCA
+4. **Regulatory Ready**: Single compliance mapping framework covers MiFID II, EMIR, and future MiCA
 
 ### How We Communicate This
 
@@ -353,7 +353,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 > "Our platform is built for multi-asset quantitative trading with institutional-grade risk management. Our **go-to-market starts with European systematic equity funds** — the most compliance-conscious, risk-aware segment of the market. This positions us as a serious infrastructure provider, not a speculative trading tool. As we establish credibility in equities, we expand to futures, forex, and eventually crypto — following the institutional trust ladder."
 
 **To Customers**:
-> "We specialize in helping systematic funds deploy equity strategies with CVaR-aware risk management and MiFID II-compliant monitoring. As you grow into other asset classes, our platform scales with you — same risk discipline, same dashboard, new markets."
+> "We specialize in helping systematic funds deploy equity strategies with CVaR-aware risk management and MiFID II-aligned monitoring. As you grow into other asset classes, our platform scales with you — same risk discipline, same dashboard, new markets."
 
 ---
 
@@ -437,7 +437,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 
 ### Q: Isn't the equity market saturated with competition?
 
-**A**: The *retail* equity market is saturated. The *mid-market institutional* segment with CVaR-native risk management is **underserved**. Bloomberg is too expensive (€24K/seat), QuantConnect is too retail, and in-house solutions lack production-grade risk controls.
+**A**: The *retail* equity market is saturated. The *mid-market institutional* segment with CVaR-native risk management is **underserved**. Bloomberg is too expensive (€24K/seat), QuantConnect is too retail, and in-house solutions lack institutional-grade risk controls.
 
 ### Q: What if customers want crypto, not equities?
 

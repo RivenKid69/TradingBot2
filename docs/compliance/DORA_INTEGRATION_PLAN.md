@@ -1239,7 +1239,7 @@ class DORAICTRiskCategory(Enum):
 
 class DORAICTRiskFramework:
     """
-    DORA Article 6 compliant ICT Risk Management Framework.
+    DORA Article 6-aligned ICT Risk Management Framework.
 
     Extends AIActRiskManager with ICT-specific requirements.
     """
@@ -1401,7 +1401,7 @@ DORAProtectionMeasures:
 ```python
 class DORAResponseRecovery:
     """
-    Article 11 compliant response and recovery system.
+    Article 11-aligned response and recovery system.
 
     Extends MiFID II BCP with DORA-specific requirements.
     """
@@ -1665,7 +1665,7 @@ class SimplifiedICTRiskManagement:
     }
 
     def generate_simplified_framework(self) -> SimplifiedFramework:
-        """Generate Article 16 compliant simplified framework."""
+        """Generate Article 16-aligned simplified framework."""
 
     def validate_eligibility(
         self,
@@ -1763,7 +1763,7 @@ tests/
 ```python
 class DORAIncidentManagement:
     """
-    Article 17 compliant ICT incident management.
+    Article 17-aligned ICT incident management.
 
     Extends AI Act IncidentTracker with DORA-specific requirements.
     """
@@ -1809,7 +1809,7 @@ class DORAIncidentManagement:
 ```python
 class DORAIncidentClassification:
     """
-    Article 18 compliant incident classification.
+    Article 18-aligned incident classification.
 
     Uses RTS criteria from Commission Delegated Regulation 2024/1772.
     """
@@ -1897,7 +1897,7 @@ incident_classification:
 ```python
 class DORAIncidentReporter:
     """
-    Article 19 compliant incident reporting to competent authorities.
+    Article 19-aligned incident reporting to competent authorities.
 
     Implements RTS/ITS reporting requirements.
     """
@@ -2180,7 +2180,7 @@ tests/dora/
 ```python
 class DORAResilienceTestingProgramme:
     """
-    Article 24 compliant digital operational resilience testing.
+    Article 24-aligned digital operational resilience testing.
 
     Testing programme includes:
     1. Vulnerability assessments and scans

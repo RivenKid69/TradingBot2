@@ -3,13 +3,13 @@
 Information Sharing Layer (Art. 45).
 
 Provides comprehensive cyber threat information sharing capabilities
-per DORA Article 45, enabling:
-    - Participation in trusted information sharing communities
-    - GDPR and competition law compliant intelligence exchange
-    - Traffic Light Protocol (TLP) enforcement
-    - Sanitization and anonymization of shared data
-    - NCA notification of community participation
-    - Full audit trails for compliance
+	per DORA Article 45, enabling:
+	    - Participation in trusted information sharing communities
+	    - GDPR- and competition-law-aligned intelligence exchange
+	    - Traffic Light Protocol (TLP) enforcement
+	    - Sanitization and anonymization of shared data
+	    - NCA notification of community participation
+	    - Audit trails to support compliance evidence
 
 DORA Context:
     Article 45(1) allows financial entities to exchange cyber threat

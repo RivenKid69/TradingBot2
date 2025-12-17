@@ -176,7 +176,7 @@ def get_termination_clause_templates() -> Dict[str, TerminationClause]:
     """
     Get standard termination clause templates per Art. 30(2)(h).
 
-    These templates provide DORA-compliant termination provisions
+    These templates are designed to provide DORA-aligned termination provisions
     for ICT service contracts with financial entities.
 
     Returns:

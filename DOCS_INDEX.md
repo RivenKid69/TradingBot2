@@ -71,23 +71,23 @@
 
 ## 📊 Статус проекта (2025-12-17)
 
-**Production-Grade** - Все критические исправления применены и протестированы. **14,000+ автоматизированных тестов.**
+**Designed for Production Use (Internal)** - Все критические исправления применены и протестированы. **14,000+ автоматизированных тестов.**
 
 | Компонент | Статус | Версия |
 |-----------|--------|--------|
-| AdaptiveUPGD Optimizer | ✅ Production | -- |
-| Twin Critics + VF Clipping | ✅ Production | -- |
-| VGS | ✅ Production | v3.2 |
-| PBT | ✅ Production | -- |
-| SA-PPO | ✅ Production | -- |
-| Data Leakage Prevention | ✅ Production | -- |
-| **Multi-Asset (Stocks)** | ✅ Production | Phase 3 |
-| **Execution Providers** | ✅ Production | Phase 4 (L2) |
-| **Live Trading Improvements** | ✅ Production | Phase 9 |
-| **MiFID II Compliance** | ✅ Toolkit Ready | 7/7 tools implemented |
-| **EU AI Act Compliance** | ✅ Toolkit Ready | 4/4 phases complete |
-| **DORA Compliance** | ✅ Toolkit Ready | 5/5 phases complete |
-| **GDPR Compliance** | ✅ Toolkit Ready | 9/9 phases complete |
+| AdaptiveUPGD Optimizer | ✅ Operational | -- |
+| Twin Critics + VF Clipping | ✅ Operational | -- |
+| VGS | ✅ Operational | v3.2 |
+| PBT | ✅ Operational | -- |
+| SA-PPO | ✅ Operational | -- |
+| Data Leakage Prevention | ✅ Operational | -- |
+| **Multi-Asset (Stocks)** | ✅ Operational | Phase 3 |
+| **Execution Providers** | ✅ Operational | Phase 4 (L2) |
+| **Live Trading Improvements** | ✅ Operational | Phase 9 |
+| **MiFID II Alignment Toolkit** | ✅ Toolkit Ready | 7/7 tools implemented |
+| **EU AI Act Alignment Toolkit** | ✅ Toolkit Ready | 4/4 phases complete |
+| **DORA Alignment Toolkit** | ✅ Toolkit Ready | 5/5 phases complete |
+| **GDPR Alignment Toolkit** | ✅ Toolkit Ready | 9/9 phases complete |
 
 > **Note on Compliance Status**: "Toolkit Ready" means we have implemented all necessary tools and controls designed to help clients align with regulatory requirements. These implementations have not undergone independent third-party audit or certification. Clients seeking regulatory compliance should conduct their own compliance assessment or engage qualified legal/compliance advisors.
 

@@ -546,7 +546,7 @@ class ExitStrategiesConfig:
 
 class DORAExitStrategies:
     """
-    DORA Article 28(8) compliant Exit Strategies Management.
+    DORA Article 28(8)-aligned Exit Strategies Management.
 
     Implements comprehensive exit strategy management including:
     - Exit plan creation and lifecycle management
