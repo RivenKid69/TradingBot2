@@ -1,4 +1,4 @@
-# MVP Focus: Core Use-Case Definition
+# CustodiaCloud MVP Focus: Core Use-Case Definition
 
 *What We're Building First — And Why*
 
@@ -32,7 +32,7 @@ This is our singular focus. Everything in MVP serves this problem — while main
 | Attribute | Profile |
 |-----------|---------|
 | **Title** | CTO, Head of Technology, Lead Developer |
-| **Company** | Prop trading firm (5-50 traders) |
+| **Company** | Systematic equities team (prop firm or small fund) |
 | **Location** | EU (Netherlands, Germany, Ireland, France) |
 | **Background** | Quantitative finance, software engineering |
 | **Experience** | Built trading systems at banks or hedge funds |
@@ -45,7 +45,7 @@ This is our singular focus. Everything in MVP serves this problem — while main
 | Building execution infrastructure from scratch | Every new firm | High |
 | Implementing risk management that satisfies compliance | Every system | High |
 | Backtesting with realistic execution simulation | Daily | Medium |
-| Managing multiple exchange integrations | Ongoing | Medium |
+| Managing broker + market data integrations | Ongoing | Medium |
 | Explaining technical architecture to non-technical partners | Weekly | Low |
 
 ### Jobs to Be Done
@@ -66,7 +66,7 @@ This is our singular focus. Everything in MVP serves this problem — while main
 | **Retail Live via Local Agent** | Auto-execution locally, cloud observability | Lifecycle, Telemetry | Local vault + execution |
 | **Enterprise Engine** | On-prem/VPC, all in customer infra | Self-hosted option | HSM/KMS, air-gapped |
 
-**MVP Focus**: **Retail Research SaaS** + **Retail Live via Local Agent** for crypto markets.
+**MVP Focus**: **Retail Research SaaS** + **Retail Live via Local Agent** for **systematic equities** (equities-first).
 
 ---
 
@@ -90,10 +90,11 @@ This is our singular focus. Everything in MVP serves this problem — while main
 
 | Feature | Why Deferred | Reintroduce When |
 |---------|--------------|------------------|
-| US Equities (Alpaca) | Different regulatory regime | EU validation complete |
+| Digital assets (spot/perpetuals) | Not in equities-first narrative | Only if enterprise demand exists |
 | CME Futures (IB) | Complex, institutional-only | After 10 paying customers |
 | Options pricing | Specialized user base | Customer requests (3+) |
 | L3 LOB simulation | Advanced research feature | Power user demand |
+| Additional brokers beyond IBKR | Integration + support burden | After repeatable onboarding |
 | Multi-strategy orchestration | Complexity | Single-strategy validated |
 | Managed Agent Hosting | Separate legal review required | Enterprise contracts |
 | Copy-trading / Social trading | Heavy advice/portfolio regulations | NOT planned |
@@ -121,14 +122,14 @@ This is our singular focus. Everything in MVP serves this problem — while main
 │  │  Local Vault ──► Risk Manager ──► Broker Connector     │             │
 │  │       │                │                  │            │             │
 │  │       ▼                ▼                  ▼            │             │
-│  │  API Keys         CVaR Limits        Binance API       │             │
+│  │  API Keys         CVaR Limits        Broker API        │             │
 │  │  (encrypted)      Kill Switch        Order Creation    │             │
 │  │                   Local Approval     Order Sending     │             │
 │  └────────────────────────────────────────────────────────┘             │
 │                                                                          │
 │  ════════════════════════ DEFERRED ════════════════════════════════════ │
 │                                                                          │
-│  [ Equities ] [ Options ] [ CME ] [ L3 LOB ] [ Managed Agent Hosting ]  │
+│  [ Digital assets ] [ Options ] [ CME ] [ L3 LOB ] [ Managed Agent Hosting ] │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -155,7 +156,7 @@ This is our singular focus. Everything in MVP serves this problem — while main
 
 ### The Pitch (30 Seconds)
 
-> "We help prop trading firms go from strategy idea to live trading in days, not months. Our Cloud platform handles research and simulation — but **your Agent** running on **your infrastructure** handles all live execution. Your keys never leave your machine. We're starting with crypto markets and European firms."
+> "CustodiaCloud helps systematic equity trading teams go from strategy idea to live trading in days, not months. Our Cloud platform handles research and simulation — but **your Agent** running on **your infrastructure** handles all live execution. Your keys never leave your machine. We start with **equities-first** validation in Europe."
 
 ### CCEA Value Proposition
 
@@ -272,7 +273,7 @@ We don't compete on features. We compete on time-to-market.
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Customers want equities, not crypto | Medium | High | Pivot to equity MVP if 5+ requests |
+| Customers need futures/options day 1 | Medium | High | Keep MVP equities-first; add only after clear demand |
 | Pricing too high | Medium | Medium | Test €500/month pilot pricing |
 | Regulatory concerns (MiFID II) | Low | High | Legal review before paid launch |
 | Technical reliability issues | Low | High | Extensive testing already done |
@@ -282,10 +283,10 @@ We don't compete on features. We compete on time-to-market.
 
 We will consider pivoting if:
 
-1. **Asset class mismatch**: 70%+ of prospects want equities/futures instead of crypto
+1. **Asset class mismatch**: 70%+ of prospects require futures/options/FX beyond equities
 2. **Price sensitivity**: Zero conversion at €2K/month after 10 prospects
 3. **Feature gap**: Consistent loss to competitors on specific capability
-4. **Market timing**: Crypto market conditions make prop trading unviable
+4. **Market timing**: Market structure constraints require different initial venue/broker
 
 ---
 
@@ -355,8 +356,7 @@ We will consider pivoting if:
 
 ---
 
-*Document Version: 2.0*
-*Last Updated: December 2025*
+*Document Version: 2.1*
+*Last Updated: 2025-12-17*
 *Owner: Product Team*
 *Aligned with: Design Doc CCEA Cloud v1.0*
-

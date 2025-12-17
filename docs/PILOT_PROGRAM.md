@@ -1,6 +1,8 @@
-# European Pilot Program
+# CustodiaCloud European Pilot Program
 
-*Structured Customer Validation for Prop Trading Firms*
+*Structured customer validation for systematic equities teams (equities-first).*
+
+**Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
 ---
 
@@ -23,7 +25,7 @@
 
 ## Program Overview
 
-A 3-month structured pilot program designed to validate product-market fit with European proprietary trading firms before scaling — using the CCEA architecture for clean Cloud/Agent separation.
+A 3-month structured pilot program designed to validate product-market fit with European systematic equities teams before scaling — using the CCEA architecture for clean Cloud/Agent separation.
 
 | Attribute | Specification |
 |-----------|---------------|
@@ -31,7 +33,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 | **Cohort Size** | 3-5 firms |
 | **Pricing** | €500/month (80% discount from target) |
 | **Commitment** | Weekly feedback, usage data sharing |
-| **Target Start** | Q1 2025 |
+| **Target Start** | Phase 1 (0–3 months) |
 | **Deployment Model** | Cloud SaaS + Local Agent (BYO host) |
 
 ---
@@ -44,13 +46,13 @@ A 3-month structured pilot program designed to validate product-market fit with 
 |------------|-------------------|------------------|
 | Firms need faster time-to-market | Time to first live trade | < 7 days |
 | Risk-aware execution is valued | Feature usage metrics | 80%+ use CVaR limits |
-| Crypto is viable starting point | Asset class preference | 60%+ satisfied with crypto-only |
+| Equities-first is the right wedge | Asset class preference | 60%+ satisfied with equities-first |
 | €2-5K/month is acceptable | Conversion interviews | 50%+ willing to pay |
 | Platform is reliable enough | Uptime, error rates | 99.5%+ uptime |
 
 ### What We're NOT Testing (Yet)
 
-- Multi-asset support (equities, futures)
+- Multi-asset expansion beyond equities (futures/options/FX)
 - Enterprise features (white-label, API)
 - High-frequency trading use cases
 - Retail trader market
@@ -72,7 +74,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 ### Qualification Questions
 
 1. Are you currently building or evaluating trading infrastructure?
-2. Do you trade or plan to trade crypto markets?
+2. Do you trade or plan to trade listed equities systematically?
 3. What is your timeline to deploy new strategies?
 4. Who makes technology decisions at your firm?
 5. What is your budget for trading infrastructure?
@@ -80,7 +82,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 ### Disqualification Criteria
 
 - Retail/individual traders (not our segment)
-- Firms requiring US equity-only support
+ - Firms requiring non-equities-only support as a condition
 - Firms with < 6 months runway
 - Firms unwilling to share feedback
 
@@ -141,7 +143,7 @@ Week 9-12: Evaluation
 - [ ] Agent installation on pilot's VPS/machine
 - [ ] Agent registration with Cloud (device key exchange)
 - [ ] Local vault initialization
-- [ ] Exchange API keys stored in **LOCAL VAULT** (never sent to Cloud)
+- [ ] Broker API keys stored in **LOCAL VAULT** (never sent to Cloud)
 - [ ] Agent health check (heartbeat visible in Cloud)
 
 ### Day 4-5: Research & Strategy Development (Cloud)
@@ -240,7 +242,7 @@ Tier 3: Founder involvement (critical issues)
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Account created | 100% | System log |
-| Exchange connected | 100% | API validation |
+| Broker connected | 100% | API validation |
 | First backtest | 90% | Usage log |
 | Risk limits configured | 90% | Configuration audit |
 
@@ -463,4 +465,3 @@ Best,
 *Last Updated: December 2025*
 *Owner: Founder / Head of Sales*
 *Aligned with: Design Doc CCEA Cloud v1.0*
-

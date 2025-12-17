@@ -1,6 +1,6 @@
 # Business Plan
 
-## AI-Powered Quantitative Trading Platform
+## CustodiaCloud — Risk-First Systematic Equities Platform
 
 **Prepared for European Startup Visa Applications**
 
@@ -10,12 +10,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Company** | [Company Name - To Be Established in EU] |
+| **Company** | CustodiaCloud (working name) |
 | **Document Type** | Comprehensive Business Plan |
 | **Version** | 1.0 |
-| **Date** | December 2025 |
+| **Date** | 2025-12-17 |
 | **Target Markets** | European Union (Primary: Netherlands, France, Germany) |
 | **Classification** | Confidential - For Visa/Investment Evaluation |
+
+**Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
 ---
 
@@ -69,7 +71,7 @@ A platform designed for production deployment that:
 1. **Reduces infrastructure development from months to days**
 2. **Provides research-grade execution simulation** (6-9 factor dynamic models vs. fixed 2-5 bps)
 3. **Implements risk-aware AI** that optimizes for worst-case scenarios (CVaR constraints)
-4. **Unifies 5 asset classes** (crypto, equities, forex, futures, options) in single codebase
+4. **Is multi-asset by design**, with an **equities-first** MVP and beachhead
 5. **Integrates 7+ peer-reviewed academic models** for execution and risk management
 
 ### 1.5 Investment Highlights
@@ -238,25 +240,23 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 | **Real-time Guards** | Position limits, P&L bounds, drawdown | Millisecond response |
 | **Kill Switch** | Atomic emergency halt | Crash-safe persistent state |
 | **Session Routing** | Extended hours, forex sessions | Automatic spread adjustment |
-| **Margin Monitoring** | SPAN (CME), tiered (crypto) | Real-time alerts |
+| **Margin Monitoring** | SPAN (CME), tiered (venue-specific) | Real-time alerts |
 
-#### 3.1.4 Multi-Asset Connectivity
+#### 3.1.4 Connectivity (Equities-First)
 
-| Asset Class | Exchanges | Data | Trading | Status |
-|-------------|-----------|------|---------|--------|
-| **Crypto Spot** | Binance | ✓ | ✓ | Production |
-| **Crypto Futures** | Binance USDT-M | ✓ | ✓ | Production |
-| **US Equities** | Alpaca, Polygon | ✓ | ✓ | Production |
-| **Forex** | OANDA | ✓ | ✓ | Production |
-| **CME Futures** | Interactive Brokers | ✓ | ✓ | Production |
-| **Crypto Options** | Deribit | ✓ | ✓ | Production |
+| Asset Class | Venues/Providers | Data | Trading | Status |
+|-------------|------------------|------|---------|--------|
+| **Equities (listed)** | Interactive Brokers (primary), optional providers | ✓ | ✓ | MVP |
+| **Futures (listed)** | Interactive Brokers (optional) | ✓ | ✓ | Post-MVP / demand-driven |
+| **Forex (optional)** | OANDA (optional) | ✓ | ✓ | Post-MVP / demand-driven |
+| **Options (optional)** | Venue-dependent | ✓ | ✓ | Post-MVP / demand-driven |
 
 ### 3.2 Service Offerings
 
 #### 3.2.1 Platform License (Core)
 
 - Full platform access
-- All asset class integrations
+- Equities-first core workflows and connectors
 - Standard ML models
 - Email support
 - **Price**: EUR 1,800-4,500/seat/month
@@ -460,7 +460,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 **Key Growth Drivers**:
 1. **AI/ML Integration**: Machine learning adoption in trading strategies
 2. **Institutional Adoption**: 61% of algo trading by institutional investors (2024)
-3. **Crypto Markets**: 24/7 trading requiring automation
+3. **Equities Market Structure**: fragmented venues and increasing automation requirements
 4. **Regulatory Push**: MiFID II best execution requirements
 5. **Multi-Asset Demand**: Cross-asset strategy development
 
@@ -536,7 +536,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | Trend | Impact | Our Position |
 |-------|--------|--------------|
 | **AI/ML Adoption** | 60% of buy-side using systematic strategies | Core competency |
-| **Crypto Institutionalization** | ETF approvals, institutional infrastructure needs | 2 crypto integrations |
+| **Equities Electronification** | More systematic execution and monitoring | Equities-first MVP + CCEA controls |
 | **Multi-Asset Strategies** | Diversification demand | 5 unified asset classes |
 | **Regulatory Technology** | MiFID II compliance automation | Built-in support |
 | **Cloud Migration** | Reduced infrastructure costs | Cloud-native architecture |
@@ -605,7 +605,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 |------------|--------|--------------|
 | **No Live Trading** | Paper-only backtesting | Full production deployment |
 | **Daily Trading Only** | No intraday strategies | Tick-level to multi-day |
-| **US Equities Only** | No crypto, forex, futures, options | 5 unified asset classes |
+| **US Equities Only** | Limited coverage outside US equities | 5 unified asset classes (equities-first) |
 | **No Active Development** | Security/compatibility risks | 11,063 tests, continuous CI/CD |
 | **No ML Integration** | Manual strategy coding | Native Distributional RL |
 
@@ -649,11 +649,11 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 **Evidence from Industry**: "Building and maintaining technology systems isn't cheap... Low-latency trading platforms, advanced algorithms, and secure IT infrastructure are essential but expensive" — [Brokeree Solutions](https://brokeree.com/articles/challenges-of-proprietary-trading-firms/)
 
-### 6.4 Beachhead Market: European Prop Trading Firms
+### 6.4 Beachhead Market: European Systematic Equities Teams
 
-#### 6.4.1 Why Prop Firms First (Not Hedge Funds)
+#### 6.4.1 Why This Segment First (Not Large Funds)
 
-| Factor | Prop Firms | Hedge Funds |
+| Factor | Systematic Equities Teams (Prop + Small Funds) | Large Funds / Hedge Funds |
 |--------|------------|-------------|
 | **Decision Speed** | 2-4 weeks | 3-6 months |
 | **Regulatory Friction** | Lower (own capital) | Higher (investor protection) |
@@ -670,7 +670,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 **Secondary European Hubs**:
 - **London**: Post-Brexit, EU-regulated entities seeking compliance-ready infrastructure
-- **Frankfurt**: Deutsche Börse ecosystem, growing crypto integration
+- **Frankfurt**: Deutsche Börse ecosystem, institutional market structure
 - **Paris**: Emerging fintech hub, strong quantitative finance talent
 
 **Target Firm Profile** (Our Beachhead):
@@ -679,7 +679,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 |----------------|--------------|-----------|
 | **Traders** | 10-50 | Too large for retail tools, too small for Bloomberg |
 | **Proprietary Capital** | EUR 5M-100M | Serious operations, cost-conscious |
-| **Asset Mix** | Multi-asset (crypto + equities minimum) | Platform strength |
+| **Asset Mix** | Equities-first (listed markets) | Clear narrative + validated expansion path |
 | **Current Stack** | Patchwork (Python + Excel + broker APIs) | Pain point we solve |
 | **Technical Team** | 1-5 developers | Want to focus on alpha, not infrastructure |
 
@@ -701,7 +701,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **Test Coverage** | 11,063 test functions, 97%+ pass rate | pytest reports | Exceptional rigor |
 | **Novel Algorithms** | 4 unique systems (CVaR-RL, UPGD, VGS, Twin Critics) | Academic citations | 12-18 months R&D each |
 | **Academic Integration** | 7+ peer-reviewed paper implementations | Code references to Almgren-Chriss, Moallemi, Kyle, Gatheral | PhD-level expertise |
-| **Multi-Asset Unity** | 6 asset classes in unified codebase | Single observation_space, single policy architecture | 18-24 months |
+| **Multi-Asset Unity** | Multi-asset architecture | Single observation_space, single policy architecture | 18-24 months |
 | **L3 LOB Simulation** | 28 files, 186 tests, 100K+ lines | lob/ directory, matching_engine.py | Bloomberg-competitive |
 | **European Focus** | OANDA forex, MiFID II features, EUR pricing | adapters/oanda/, circuit_breaker.py | Market-specific expertise |
 
@@ -750,7 +750,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 2. **Pricing Gap**: 80-90% cost reduction versus enterprise alternatives
 3. **European Focus**: MiFID II compliance, OANDA forex, European data sources
 4. **Technical Moat**: 11,063 tests, 4 novel algorithms, 2+ years development
-5. **Beachhead Clarity**: 10-50 trader European prop firms — underserved, fast-decision, referenceable
+5. **Beachhead Clarity**: European systematic equities teams — underserved, fast-decision, referenceable
 
 **The Bottom Line**: We don't compete with QuantConnect for retail hobbyists or Bloomberg for EUR 2B+ hedge funds. We serve the institutional middle market that both segments ignore — and Europe's prop trading hub (Amsterdam) represents the perfect beachhead.
 
@@ -760,7 +760,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 ### 7.1 Go-to-Market Strategy
 
-#### Phase 1: Prop Trading Firms (Months 1-12)
+#### Phase 1: Systematic Equities Teams (Months 1-12)
 
 **Why Start Here**:
 - Faster decision cycles (2-4 weeks vs. months)
@@ -770,7 +770,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 **Target Profile**:
 - 10-100 traders
-- Multi-asset focus (crypto + equities minimum)
+- Equities-first (listed markets)
 - Existing quant capability but infrastructure pain
 - Based in Amsterdam, London, Frankfurt, Paris
 
@@ -992,7 +992,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 **Downside Scenario Assumptions**:
 - Only 40% pilot conversion rate
-- 8-10 month average sales cycle (crypto winter / market downturn)
+- 8-10 month average sales cycle (market downturn)
 - Only 1 paying customer in Y1 (vs 3 base)
 - Minimal seat expansion (8 seats avg vs 10)
 
@@ -1005,7 +1005,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **Revenue miss >30%** | Y1 ARR < EUR 50K | Reduce burn to EUR 30K/month, extend runway |
 | **Conversion miss >40%** | Pilot→Paid < 40% | Pivot to different segment (hedge funds, family offices) |
 | **Churn spike** | >15% annual churn | Halt new sales, focus on customer success |
-| **Market downturn** | Crypto winter + equity bear | Emphasize multi-asset flexibility, cost savings narrative |
+| **Market downturn** | Prolonged equity bear market | Emphasize cost savings + risk-first compliance narrative |
 
 **Burn Rate Reduction Levers**:
 
@@ -1143,7 +1143,7 @@ Allowable Sales & Marketing spend per customer: EUR 10,000-12,000
 We acknowledge that achieving projections depends on multiple factors:
 - Successfully validating product-market fit with pilot customers
 - Hiring effective sales talent (critical post-Y1)
-- Favorable market conditions (not crypto winter)
+- Favorable market conditions (no prolonged downturn)
 - Execution quality on technical and sales fronts
 
 **Our commitment**: Focus on sustainable unit economics rather than growth-at-all-costs. We prefer profitable EUR 500K ARR to unprofitable EUR 2M ARR.
@@ -1326,7 +1326,7 @@ Series A Prep                                 ████████
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| **Crypto Regulation** | Medium | Medium | Multi-asset diversification (equities, FX, futures) |
+| **Regulatory expectations** | Medium | Medium | Clear software-provider posture; CCEA boundary; compliance documentation |
 | **Competition** | Medium | Medium | Technical depth moat, niche focus |
 | **Economic Downturn** | Medium | Medium | SaaS model less affected than AUM-based |
 | **Bear Market** | High | Low | Trading platforms used in all market conditions |
@@ -1353,7 +1353,7 @@ Series A Prep                                 ████████
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
 | **MiFID II Changes** | Low | Medium | Regulatory monitoring, adaptable platform |
-| **Crypto Regulation** | Medium | Medium | Multi-asset offering reduces dependency |
+| **DORA operational requirements** | Medium | Medium | ICT risk framework, vendor controls, documentation roadmap |
 | **Data Privacy (GDPR)** | Low | Medium | Privacy-by-design, minimal data collection |
 
 ### 11.6 Risk Matrix Summary
@@ -1366,8 +1366,8 @@ Series A Prep                                 ████████
         │      │ Market  │ Depend.│          │
         ├──────┼─────────┼────────┼──────────┤
 PROB Medium    │ API Chg │ Compet.│ Sales    │          │
-        │      │ Crypto  │ First  │          │
-        │      │ Reg     │ Cust.  │          │
+        │      │ Reg     │ First  │          │
+        │      │ Change  │ Cust.  │          │
         ├──────┼─────────┼────────┼──────────┤
    Low  │ FX   │ Model   │ Sec.   │ Runway   │
         │      │ Degrade │ Breach │          │
@@ -1843,16 +1843,14 @@ High-tech job creation generates significant indirect and induced employment. Ac
 | **Testing** | Pytest | 7.0+ | Test framework |
 | **CI/CD** | GitHub Actions | - | Automation |
 
-### Appendix B: Exchange Integration Details
+### Appendix B: Connectivity Integration Details (Equities-First)
 
 | Exchange | Asset Class | Market Data | Execution | Documentation |
 |----------|-------------|-------------|-----------|---------------|
-| **Binance** | Crypto Spot/Futures | WebSocket, REST | REST, WebSocket | adapters/binance/ |
 | **Alpaca** | US Equities | REST, WebSocket | REST | adapters/alpaca/ |
 | **Polygon** | US Equities (Data) | REST, WebSocket | N/A | adapters/polygon/ |
 | **OANDA** | Forex | REST | REST | adapters/oanda/ |
-| **Interactive Brokers** | CME Futures | TWS API | TWS API | adapters/ib/ |
-| **Deribit** | Crypto Options | WebSocket | REST | adapters/deribit/ |
+| **Interactive Brokers** | Equities / Futures | TWS API | TWS API | adapters/ib/ |
 
 ### Appendix C: Academic References
 
@@ -1974,7 +1972,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 | Audit trail | Full logging system | Basic logs |
 
 **ESMA Regulatory Trends (2024-2025)**:
-- Increased scrutiny on crypto trading integration
+- Increased scrutiny on algorithmic trading controls, governance, and auditability
 - Focus on AI/ML governance in trading
 - Transaction cost reporting requirements
 - Our position: Built-in TCA reporting ahead of regulatory requirements
@@ -2024,11 +2022,11 @@ High-tech job creation generates significant indirect and induced employment. Ac
 - **Pain Points**: MiFID II compliance, multi-asset platform needs
 - **Our Value**: MiFID II native, 5 asset classes unified, EU entity-friendly pricing
 
-**Persona 3: Frankfurt Crypto-Equity Crossover Trader**
-- **Profile**: 8-25 traders, crypto + equity strategies
+**Persona 3: Frankfurt Equities + Derivatives Crossover Team**
+- **Profile**: 8-25 traders, equities + listed derivatives strategies
 - **Current Stack**: Separate systems for each asset class
 - **Pain Points**: Unified risk view, correlation management, execution quality
-- **Our Value**: Single codebase for crypto + equities, unified risk management
+- **Our Value**: Single risk engine and governance model across listed markets (equities-first), unified monitoring
 
 #### G.7 Competitive Win Scenarios
 
@@ -2051,8 +2049,8 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | December 2025 | Founder | Initial version |
-| 1.1 | December 2025 | Founder | Enhanced competitive analysis (Section 6) with data-backed claims, beachhead market definition, quantified moats, and European ecosystem intelligence (Appendix G) |
+| 1.0 | 2025-12-17 | Founder | Initial version |
+| 1.1 | 2025-12-17 | Founder | Enhanced competitive analysis (Section 6) with data-backed claims, beachhead market definition, quantified moats, and European ecosystem intelligence (Appendix G) |
 
 ---
 

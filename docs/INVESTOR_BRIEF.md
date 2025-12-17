@@ -1,8 +1,10 @@
-# Investor Brief
+# CustodiaCloud Investor Brief
 
-## AI-Powered Quantitative Trading Platform
+## Risk-First Systematic Equities Research & Deployment Platform
 
-*December 2024 | Pre-Seed Stage*
+*Last Updated: 2025-12-17 | Pre-Seed Stage*
+
+**Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
 > **Document Status**: This brief describes an early-stage technology company. Financial projections are illustrative and forward-looking. The platform is technically mature but commercially pre-revenue. This document is for informational purposes only and does not constitute an offer to sell securities.
 
@@ -14,13 +16,13 @@
 |--------|--------|
 | **Stage** | Pre-seed, seeking seed funding |
 | **Phase** | **Customer validation** (technical foundation complete) |
-| **Revenue** | Pre-revenue; pilot program launching Q1 2025 |
+| **Revenue** | Pre-revenue; pilot program launching in **Phase 1 (0–3 months)** |
 | **Ask** | Seed funding for customer validation & go-to-market |
-| **Primary ICP** | European proprietary trading firms (5-50 traders) |
+| **Primary ICP** | European systematic equities teams (prop firms + small funds) |
 
 **What we've built**: A trading infrastructure platform with built-in risk management that reduces time-to-market from months to days.
 
-**Where we are now**: Foundation complete. We are entering the **customer validation phase** — pilot programs with European prop trading firms to validate product-market fit before scaling.
+**Where we are now**: Foundation complete. We are entering the **customer validation phase** — pilot programs with European systematic equities teams to validate product-market fit before scaling.
 
 **Why it matters**: Prop trading firms spend 6-12 months and €200K-500K building trading infrastructure. We reduce this to days at a fraction of the cost.
 
@@ -100,11 +102,11 @@ We have completed the technical foundation. Our focus now is **customer validati
 
 | Milestone | Timeline | Success Criteria |
 |-----------|----------|------------------|
-| Customer interviews (20+) | Q4 2024 | Pain points ranked |
-| Pilot launch (3-5 firms) | Q1 2025 | 80% complete onboarding |
-| Feature iteration | Q1-Q2 2025 | Top 3 requests addressed |
-| Conversion validation | Q2 2025 | 50%+ express payment intent |
-| First paying customers | Q2 2025 | 3+ firms at €2K+/month |
+| Customer interviews (20+) | Phase 1 (0–1 months) | Pain points ranked |
+| Pilot launch (3-5 teams) | Phase 1 (1–3 months) | 80% complete onboarding |
+| Feature iteration | Phase 2 (3–6 months) | Top 3 requests addressed |
+| Conversion validation | Phase 2 (3–9 months) | 50%+ express payment intent |
+| First paying customers | Phase 2 (6–9 months) | 3+ teams at €2K+/month |
 
 ### What We're NOT Doing (Until Validated)
 
@@ -122,14 +124,14 @@ We have completed the technical foundation. Our focus now is **customer validati
 
 The global algorithmic trading market is projected to reach **$31.49 billion by 2028** (CAGR 12.2%, Allied Market Research).
 
-**Our focus: Proprietary Trading Firms**
+**Our focus: Systematic Equities Teams (EU)**
 
 Per FIA/SIFMA data, there are 500+ active prop trading firms in the US alone, with similar density in EU (London, Amsterdam) and Asia (Singapore, Hong Kong). Key drivers:
 
 - Institutional adoption of ML-based strategies (Greenwich Associates: 60% of buy-side firms now use systematic strategies)
 - Regulatory push for systematic risk management (MiFID II best execution, SEC 15c3-5 market access rule)
-- Multi-asset diversification demand (crypto, equities, FX, futures)
-- 24/7 crypto markets requiring automation
+- Demand for systematic equities infrastructure with auditability (MiFID II best execution, governance, and monitoring expectations)
+- Execution automation and risk controls becoming mandatory as teams scale
 
 ### Our Position
 
@@ -163,7 +165,7 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 |--------|-------|------------------------------|
 | **Automated Tests** | 11,063 | Designed for production deployment — comprehensive quality assurance |
 | **Test Pass Rate** | 97%+ | Reliable platform for institutional use |
-| **Asset Classes** | 5 (MVP: Crypto) | Extensibility proven; MVP focused on crypto |
+| **Asset Classes** | 5 (MVP: Equities) | Extensibility proven; MVP focused on equities |
 | **Exchange Integrations** | 6 | Flexibility for customer requirements |
 
 ### Technology Differentiation
@@ -220,38 +222,26 @@ Our execution models implement 7+ peer-reviewed papers:
 
 We deliberately constrain our initial market scope following Geoffrey Moore's "Crossing the Chasm" methodology. While our platform supports 5 asset classes, we focus validation efforts on a single, well-defined beachhead segment.
 
-### Defined Beachhead: European Crypto Prop Trading Firms
+### Defined Beachhead: European Systematic Equities Teams
 
 | Attribute | Specification |
 |-----------|---------------|
-| **Geography** | Netherlands (Amsterdam), expanding to EU |
-| **Firm Size** | 5-20 traders |
-| **Asset Class** | Crypto (spot + perpetual futures) |
-| **Need** | Fast infrastructure for new strategies |
-| **Budget** | €2,000-5,000/month |
-
-### Why This Segment First
-
-| Factor | Advantage |
-|--------|-----------|
-| **Market Density** | Amsterdam: 22+ crypto prop firms in concentrated hub |
-| **Regulatory Clarity** | MiCA framework provides clear rules |
-| **Time-to-Value** | 24/7 crypto markets show results faster |
-| **Technical Fit** | Our L2+ parametric TCA optimized for crypto |
-| **Competition** | QuantConnect/Alpaca target retail, not institutional |
+| **Geography** | UK/EU (NL, DE, IE, FR, Luxembourg) |
+| **Team Size** | 5-50 (prop firms + small funds) |
+| **Asset Class** | Listed equities (equities-first) |
+| **Need** | Fast infrastructure + institutional-grade risk controls |
+| **Budget** | €2,000-10,000/month (segment-dependent) |
 
 ### Expansion Roadmap (Bowling Alley Strategy)
 
 ```
-Beachhead (Y1)              Adjacent Segments (Y2-3)
-├─ NL Crypto Prop ──────►   ├─ UK/DE Crypto Prop
-│   (5-20 traders)          ├─ EU Equity Prop
-│                           └─ Crypto Market Makers
-│
-└─ Success Metrics:         └─ Expansion Triggers:
-   • 5 paying customers        • 10+ customers
-   • NPS > 50                  • 3+ referrals
-   • €100K ARR                 • Repeatable sales
+Beachhead (Equities)         Adjacent Segments
+├─ EU systematic equities ─► ├─ Larger EU funds
+│                             ├─ Listed derivatives (futures)
+└─ Success Metrics:           └─ Geographic expansion via referrals
+   • Reference customers
+   • Repeatable onboarding
+   • Compliance sign-off
 ```
 
 *For complete beachhead analysis, see [BEACHHEAD_MARKET_STRATEGY.md](BEACHHEAD_MARKET_STRATEGY.md)*
@@ -260,13 +250,13 @@ Beachhead (Y1)              Adjacent Segments (Y2-3)
 
 ## Go-to-Market Strategy
 
-### Phase 1: European Pilot Program (Q1 2025)
+### Phase 1: European Pilot Program (0–3 months)
 
 **Structured customer validation** before scaling.
 
 | Element | Specification |
 |---------|---------------|
-| **Target** | 3-5 European prop trading firms |
+| **Target** | 3-5 European systematic equities teams |
 | **Duration** | 3 months |
 | **Pricing** | €500/month (80% discount) |
 | **Commitment** | Weekly feedback, usage data sharing |
@@ -280,11 +270,11 @@ Beachhead (Y1)              Adjacent Segments (Y2-3)
 
 **Target firm profile:**
 - 5-50 traders
-- Crypto-active (primary) or crypto-curious
+- Systematic equities focus (listed markets)
 - Building or evaluating new infrastructure
 - Budget: €2,000-5,000/month for validated solution
 
-### Phase 2: Early Adopter Revenue (Q2-Q3 2025)
+### Phase 2: Early Adopter Revenue (3–9 months)
 
 **Post-pilot conversion** to paying customers.
 
@@ -294,7 +284,7 @@ Beachhead (Y1)              Adjacent Segments (Y2-3)
 | Price point | €2,000-3,000/month |
 | ARR | €200K+ |
 
-### Phase 3: Scale (2026+)
+### Phase 3: Scale (9–18 months)
 
 - Feature expansion based on validated demand
 - Geographic expansion within EU
@@ -368,7 +358,7 @@ Beachhead (Y1)              Adjacent Segments (Y2-3)
                               │
 ┌─────────────────────────────▼───────────────────────────────────┐
 │                   Exchange Connectivity                          │
-│  Binance │ Alpaca │ OANDA │ Interactive Brokers │ Polygon       │
+│  Interactive Brokers │ Alpaca │ Polygon │ OANDA               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -395,7 +385,7 @@ We are transparent that this is an early-stage opportunity. The technical founda
 
 | Phase | Status | Evidence |
 |-------|--------|----------|
-| Core platform | ✅ Complete | Crypto spot/futures functional |
+| Core platform | ✅ Complete | Equities execution + simulation functional |
 | Multi-asset architecture | ✅ Complete | 5 asset classes supported |
 | Risk management | ✅ Complete | CVaR optimization, risk guards |
 | Testing infrastructure | ✅ Complete | 11,063 tests, 97%+ pass rate |
@@ -404,26 +394,26 @@ We are transparent that this is an early-stage opportunity. The technical founda
 
 | Activity | Status | Target |
 |----------|--------|--------|
-| Customer discovery interviews | 🔄 In progress | 20+ by end of Q4 2024 |
+| Customer discovery interviews | 🔄 In progress | 20+ (Phase 1) |
 | Pain point validation | 🔄 In progress | Ranked problem list |
 | Pilot program design | ✅ Complete | 3-month structured program |
-| MVP scope definition | ✅ Complete | Crypto execution + risk mgmt |
+| MVP scope definition | ✅ Complete | Equities execution + risk mgmt |
 
 ### What's Next (Revenue Validation)
 
 | Milestone | Timeline | Success Criteria |
 |-----------|----------|------------------|
-| Pilot launch | Q1 2025 | 3-5 firms onboarded |
-| Pilot completion | Q2 2025 | 50%+ conversion intent |
-| First paying customers | Q2 2025 | 3+ firms at €2K+/month |
-| €100K ARR | Q3-Q4 2025 | Repeatable sales process |
+| Pilot launch | Phase 1 (0–3 months) | 3-5 teams onboarded |
+| Pilot completion | Phase 2 (3–6 months) | 50%+ conversion intent |
+| First paying customers | Phase 2 (6–9 months) | 3+ teams at €2K+/month |
+| €100K ARR | Phase 3 (9–18 months) | Repeatable sales process |
 
 ### Technical Validation (Internal)
 
 | Metric | Result | Methodology |
 |--------|--------|-------------|
 | Backtesting vs Paper Trading | <3% deviation | 6-month parallel run |
-| Execution Cost Accuracy | ±2 bps vs fills | Binance paper trading |
+| Execution Cost Accuracy | ±2 bps vs fills | Equities paper trading / broker fills |
 | Risk Management | Zero margin calls | Historical crash stress tests |
 | Uptime | 99.9% | 3-month paper trading |
 
@@ -433,7 +423,7 @@ We are transparent that this is an early-stage opportunity. The technical founda
 
 **Build-Measure-Learn cycle:**
 
-1. **Build**: MVP deployed (crypto execution + risk management)
+1. **Build**: MVP deployed (equities execution + risk management)
 2. **Measure**: Activation, retention, NPS from pilot customers
 3. **Learn**: Iterate based on feedback, not assumptions
 
@@ -527,13 +517,13 @@ Our European expansion plan is designed to exceed EU startup visa requirements w
 
 ### Key Milestones (12 months post-funding)
 
-| Quarter | Milestone | Success Metric |
-|---------|-----------|----------------|
-| **Q1** | First pilot customers | 3 signed pilots |
-| **Q2** | Dashboard MVP, first revenue | $50K ARR |
-| **Q2** | Cloud deployment | Multi-tenant infrastructure |
-| **Q3** | Product-market fit signals | 2+ customers expanding |
-| **Q4** | Series A preparation | $200K+ ARR, 10+ customers |
+| Phase | Milestone | Success Metric |
+|-------|-----------|----------------|
+| **Phase 1 (0–3 months)** | First pilot customers | 3 signed pilots |
+| **Phase 2 (3–6 months)** | Dashboard MVP, first revenue | $50K ARR |
+| **Phase 2 (3–6 months)** | Cloud deployment | Multi-tenant infrastructure |
+| **Phase 3 (6–12 months)** | Product-market fit signals | 2+ customers expanding |
+| **Phase 3 (9–18 months)** | Series A preparation | $200K+ ARR, 10+ customers |
 
 ### Runway Consideration
 
@@ -556,7 +546,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| **Crypto regulation** | Medium | Multi-asset diversification (equities, FX, futures) |
+| **EU regulatory expectations** | Medium | Clear software-provider posture; CCEA boundary; compliance documentation |
 | **Competition** | Medium | Technical depth moat; niche focus on prop firms |
 | **Bear markets** | Medium | Subscription model less affected than AUM-based |
 
@@ -575,7 +565,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 1. **Pre-revenue**: No validated customer willingness to pay
 2. **Single founder**: Key person risk until team expansion
 3. **Competitive market**: Well-funded incumbents (QuantConnect, Alpaca)
-4. **Regulatory uncertainty**: Crypto regulations evolving globally
+4. **Regulatory expectations**: MiFID II/DORA-driven procurement and auditability expectations
 
 *Investors should expect a 10-year horizon with significant loss potential.*
 
@@ -587,7 +577,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 ### Bottom-Up Revenue Logic
 
-**Target Market**: ~200 European prop trading firms (Amsterdam 22+, London 100+, Frankfurt/Paris/Dublin 40+)
+**Target Market**: European systematic equities teams (prop firms + small funds) across major hubs (Amsterdam, London, Frankfurt, Paris, Dublin)
 **Serviceable Market**: ~60 firms (5-50 traders, tech-forward, budget available)
 
 **Funnel Assumptions** (industry-benchmarked):
@@ -624,7 +614,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 | Y2 | 4 | €100K | €40K | Delay sales hire |
 | Y3 | 10 | €280K | €45K | Break-even at €300K ARR |
 
-**Downside assumptions**: 40% pilot conversion, 8-10 month sales cycle, crypto winter conditions
+**Downside assumptions**: 40% pilot conversion, 8-10 month sales cycle, conservative market conditions
 
 ### Contingency Measures
 
@@ -675,7 +665,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 ### Market Timing
 
-1. **Institutional Crypto Adoption**: ETFs approved, institutional infrastructure needed
+1. **Regulatory and governance push**: stronger best-execution evidence and operational resilience expectations (MiFID II / DORA)
 2. **AI/ML Maturity**: ML frameworks designed for production now available
 3. **Market Complexity**: Multi-asset strategies require sophisticated tools
 4. **Talent Availability**: Quant talent seeking modern platforms
@@ -717,16 +707,14 @@ For more information or to schedule a demo, please contact:
 | Testing | Pytest, CI/CD | Quality assurance |
 | Config | YAML, Pydantic | Type-safe configuration |
 
-### B. Exchange Support Matrix
+### B. Connectivity Support Matrix (MVP: Equities)
 
-| Exchange | Asset Class | Data | Trading | Status |
+| Venue/Broker | Asset Class | Data | Trading | Status |
 |----------|-------------|------|---------|--------|
-| Binance | Crypto Spot/Futures | ✓ | ✓ | Production |
-| Alpaca | US Equities | ✓ | ✓ | Production |
-| Polygon | US Equities | ✓ | - | Production |
-| OANDA | Forex | ✓ | ✓ | Production |
-| Interactive Brokers | CME Futures | ✓ | ✓ | Production |
-| Deribit | Crypto Options | ✓ | ✓ | Production |
+| Interactive Brokers | Equities (MVP), Futures | ✓ | ✓ | Production |
+| Alpaca | Equities (optional) | ✓ | ✓ | Supported |
+| Polygon | Equities data (optional) | ✓ | - | Supported |
+| OANDA | FX (optional) | ✓ | ✓ | Supported |
 
 ### C. Regulatory Positioning
 
@@ -753,7 +741,7 @@ We provide technology tools to trading firms who are themselves regulated. We do
 - We do not recommend specific trades or strategies
 
 **Compliance roadmap (for enterprise clients):**
-- SOC 2 Type II certification (planned Q3 2025)
+- SOC 2 Type II certification (planned within Phase 3)
 - GDPR data handling documentation (available now)
 - MiFID II best execution audit trail support (available now)
 
@@ -785,4 +773,4 @@ The platform is a software tool for algorithmic trading. Trading in financial in
 
 *Confidential - For Investor Use Only*
 
-*Last Updated: December 2025*
+*Last Updated: 2025-12-17*

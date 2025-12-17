@@ -1,0 +1,54 @@
+# CustodiaCloud Positioning (Canonical)
+
+This document is the **single source of truth** for visa/investor-facing positioning, naming, and market focus.
+
+---
+
+## 1) What we are
+
+**CustodiaCloud** is a risk-first quantitative research and deployment platform for **systematic equities**.
+
+The platform is built on **CCEA (Cloud-Controlled Execution Architecture)**:
+- **Cloud**: research, simulation/backtesting, artifact building, monitoring/telemetry
+- **Agent**: runs on the customer’s infrastructure; holds secrets locally; enforces risk controls; performs any live execution via the customer’s own broker accounts
+
+**Regulatory posture** (core message): we are a **software / ICT provider**, not a broker, custodian, or investment adviser.
+
+---
+
+## 2) MVP and Beachhead (equities-first)
+
+**MVP focus**: enable a systematic equities team to go from strategy idea → tested → deployed with strong risk controls **in days, not months**, while preserving client control (CCEA).
+
+**Beachhead customer**: European systematic equities teams (prop firms and small funds) that:
+- need institutional-grade risk controls and auditability
+- must explain architecture and controls to partners/investors/compliance
+- prefer a vendor model where secrets and execution remain under their control
+
+**What we avoid in positioning**: “digital-assets-first” messaging. If digital assets are mentioned at all, they are framed as **future optional expansion**, not part of MVP, not the beachhead.
+
+---
+
+## 3) Naming and branding rules
+
+Use these names consistently in visa/investor documents:
+
+- **Company / Product brand**: CustodiaCloud
+- **Architecture / core technical concept**: CCEA (Cloud-Controlled Execution Architecture)
+- **Public OSS component**: CCEA SDK (protocol + schemas + verification/guardrails)
+- **Customer runtime**: CustodiaCloud Agent (client-controlled execution + secrets)
+- **Managed services** (if referenced): CustodiaCloud Cloud (research + monitoring only; no secrets; no orders)
+
+Avoid mixing in legacy/internal names in external narratives:
+- **TradingBot2** is an internal repository codename and may still appear in technical notes; it is **not** a customer-facing product name.
+
+---
+
+## 4) Timeline language (avoid conflicting “2024/2025/2026” stories)
+
+In narrative docs, prefer **phases** over hard calendar years:
+- **Phase 1 (0–3 months)**: pilot onboarding + validation
+- **Phase 2 (3–9 months)**: early adopters + repeatable sales
+- **Phase 3 (9–18 months)**: scale + enterprise hardening
+
+If dates are required, use a single “**Last updated**” field per document and keep it consistent.

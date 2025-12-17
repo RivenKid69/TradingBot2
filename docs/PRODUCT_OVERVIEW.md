@@ -1,6 +1,8 @@
-# Product Overview: AI-Powered Quantitative Research Platform
+# CustodiaCloud Product Overview
 
-*One-Pager for Startup Visa Applications & Investor Pitches*
+*One-pager for startup visa applications & investor pitches (equities-first).*
+
+**Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
 > **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Status**: Designed to align with MiFID II, EU AI Act, DORA
 
@@ -89,7 +91,7 @@ We have completed the technical foundation. Our focus now is **customer validati
 
 | Feature | Status | Customer Value |
 |---------|--------|----------------|
-| Crypto execution (Binance) | ✅ Ready | Days to go live |
+| Equities execution (Interactive Brokers) | ✅ Ready | Days to go live |
 | Risk-aware position sizing | ✅ Ready | Compliance-supporting risk controls |
 | CVaR optimization | ✅ Ready | Downside protection |
 | Backtesting | ✅ Ready | Strategy validation |
@@ -99,13 +101,14 @@ We have completed the technical foundation. Our focus now is **customer validati
 
 | Feature | When | Trigger |
 |---------|------|---------|
-| US Equities | After EU validation | Customer demand |
+| Additional brokers/venues | After repeatable onboarding | Customer demand |
 | CME Futures | After 10 paying customers | Enterprise requests |
 | Options | Based on pilot feedback | 3+ firm requests |
+| Digital assets | Only if demanded | Enterprise / expansion requests |
 
 ---
 
-## Target Market: European Prop Trading Firms
+## Target Market: European Systematic Equities Teams
 
 ### Why Europe First
 
@@ -120,10 +123,10 @@ We have completed the technical foundation. Our focus now is **customer validati
 
 | Attribute | Profile |
 |-----------|---------|
-| **Company** | Proprietary trading firm |
+| **Company** | Prop firm or small systematic fund |
 | **Size** | 5-50 traders |
 | **Location** | Netherlands, Germany, Ireland, France |
-| **Need** | Fast infrastructure for new strategies |
+| **Need** | Fast, compliance-ready infrastructure for equities strategies |
 | **Budget** | €2,000-5,000/month |
 
 ---
@@ -173,7 +176,7 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 
 **European algorithmic trading market**: Growing segment of €31B global market
 
-**Our focus**: 500+ prop trading firms in EU seeking:
+**Our focus**: European systematic equities teams seeking:
 - Faster time-to-market
 - Superior risk management
 - Regulatory compliance (MiFID II)
@@ -221,11 +224,11 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 | Question | Answer |
 |----------|--------|
 | **What is it?** | Trading infrastructure platform with built-in risk management |
-| **Who is it for?** | European prop trading firms (5-50 traders) |
+| **Who is it for?** | European systematic equities teams (prop firms + small funds) |
 | **What problem?** | 6-12 months to build infrastructure → days |
 | **What's different?** | Risk-aware ML, multi-factor execution modeling |
 | **What's next?** | Pilot program with 3-5 European firms |
-| **What's the ask?** | Introductions to prop trading CTOs in EU |
+| **What's the ask?** | Introductions to systematic equities CTOs/PMs in EU |
 
 ---
 
@@ -239,5 +242,4 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 
 ---
 
-*Last Updated: December 2024*
-
+*Last Updated: 2025-12-17*

@@ -1,6 +1,8 @@
-# Beachhead Market Strategy: Risk-First Quantitative Trading Platform
+# CustodiaCloud Beachhead Market Strategy: Equities-First
 
-*Strategic Market Focus Based on Geoffrey Moore's "Crossing the Chasm" Framework*
+*Strategic market focus based on Geoffrey Moore's "Crossing the Chasm" framework.*
+
+**Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
 ---
 
@@ -21,19 +23,18 @@
 
 **Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and compliance-ready algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
 
-**Why Equity, Not Crypto**:
+**Why Equities First**:
 - **Institutional credibility**: Equities are the language of serious capital markets
 - **Regulatory alignment**: MiFID II, MAR, DORA alignment focus demonstrates maturity
-- **Market size**: €8.5T European asset management market vs €987B crypto
 - **Risk-first positioning**: Our CVaR-RL technology addresses the #1 institutional concern
 - **CCEA advantage**: Clear "Cloud = research tools, Agent = your execution" story resonates with compliance officers
 
-**Why This Focus Matters**: While our platform supports 5 asset classes (crypto, equities, futures, forex, options), we deliberately lead with **institutional equity trading** because:
+**Why This Focus Matters**: While the architecture is multi-asset by design, we deliberately lead with **institutional equity trading** because:
 
 1. **Credibility with allocators**: Pension funds, family offices, and fund-of-funds evaluate technology partners based on equity track records
 2. **Regulatory proof**: MiFID II Article 17 requirements for algo trading are non-negotiable for EU institutional clients
 3. **Risk management differentiation**: Our CVaR-RL engine is unique in the market — this advantage is most visible in equity drawdown control
-4. **Expansion pathway**: Once established in equities, we expand to CME futures, then crypto — NOT the reverse
+4. **Expansion pathway**: Once established in equities, we expand to adjacent listed derivatives (e.g., futures) and other asset classes based on validated demand
 
 ---
 
@@ -69,7 +70,7 @@ The "chasm" is the gap between early adopters (who buy on vision) and the mainst
 |-----------|---------------|-----------|
 | **Firm Type** | Systematic/quantitative funds (own capital or third-party) | Sophisticated buyers who evaluate technology rigorously |
 | **Size** | €10M-200M AUM | Large enough to pay enterprise pricing, small enough for direct sales |
-| **Asset Class** | European/US equities (Alpaca, Interactive Brokers) | Institutional credibility, regulatory familiarity |
+| **Asset Class** | European/US equities (Interactive Brokers) | Institutional credibility, regulatory familiarity |
 | **Geography** | UK, Ireland, Luxembourg, Netherlands | MiFID II jurisdiction, English-speaking, strong fund ecosystem |
 | **Regulatory Status** | AIFM-licensed or FCA-regulated | Compliance-conscious buyers value our MiFID II alignment |
 | **Technology** | Upgrading from Excel/Python scripts to production infrastructure | Clear pain point we solve |
@@ -84,32 +85,25 @@ The "chasm" is the gap between early adopters (who buy on vision) and the mainst
 | **Retail Live via Local Agent** | Full deployment with local execution | Active trading firms |
 | **Enterprise Engine** | On-prem/VPC, all in client infra | Regulated funds (AIFM, UCITS) |
 
-### Why Equity Focus Over Crypto?
+### Why Equities First (Visa/Investor Narrative)
 
-#### Strategic Positioning Analysis
+Equities-first keeps the story **clean and credible**:
+- It matches how regulated European buyers evaluate risk controls and governance.
+- It reduces “regulatory ambiguity” questions in early evaluation (MiFID II/MAR/DORA are well-understood).
+- It produces reference customers that unlock adjacent segments faster than a fragmented multi-asset launch.
 
-| Factor | Crypto First | Equity First (Our Choice) |
-|--------|--------------|---------------------------|
-| **Investor Perception** | "Crypto casino", speculative | "Serious capital markets player" |
-| **Regulatory Pathway** | MiCA (new, uncertain) | MiFID II (established, understood) |
-| **Reference Value** | Limited for institutional expansion | Opens doors to pension funds, family offices |
-| **Risk Story** | "Volatile markets need risk management" | "Proven drawdown control in regulated markets" |
-| **Competition** | Crowded (Binance, FTX refugees, QuantConnect) | Underserved (no SMB-friendly CVaR solutions) |
-| **Expansion Logic** | Crypto → Equity is hard (credibility gap) | Equity → Crypto is natural (technology reuse) |
-
-#### The Credibility Ladder
+#### Expansion Ladder (Phased)
 
 ```
-YEAR 3+: CRYPTO & ALTERNATIVE ASSETS
+PHASE 3: OPTIONAL EXPANSION (DEMAND-DRIVEN)
 ┌─────────────────────────────────────────────────────────────────┐
-│  Crypto spot/futures, DeFi integration                          │
-│  • Leverage equity track record for credibility                 │
-│  • Cross-sell to existing equity clients expanding to crypto    │
-│  • "Same risk engine, different asset class"                    │
+│  Additional asset classes and venues (only after validated need) │
+│  • Expand from equities into futures/FX/options as requested     │
+│  • Maintain the same CCEA boundary and risk-first posture        │
 └─────────────────────────────────────────────────────────────────┘
                               ▲
                               │
-YEAR 2: CME FUTURES & COMMODITIES
+PHASE 2: ADJACENT SEGMENTS
 ┌─────────────────────────────────────────────────────────────────┐
 │  ES, NQ, GC, CL futures (via Interactive Brokers)               │
 │  • Adjacent to equity clients (macro overlay strategies)        │
@@ -117,9 +111,9 @@ YEAR 2: CME FUTURES & COMMODITIES
 └─────────────────────────────────────────────────────────────────┘
                               ▲
                               │
-YEAR 1: EQUITY BEACHHEAD (START HERE)
+PHASE 1: EQUITY BEACHHEAD (START HERE)
 ┌─────────────────────────────────────────────────────────────────┐
-│  European/US equities via Alpaca, Interactive Brokers           │
+│  European/US equities via Interactive Brokers                   │
 │  • MiFID II-aligned design, institutional credibility           │
 │  • Risk management is the story (not speculation)               │
 │  • Build case studies, testimonials, regulatory track record    │
@@ -249,22 +243,22 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 
 ---
 
-## Staged Expansion: From Equities to Multi-Asset
+## Staged Expansion: From Equities to Adjacent Markets
 
 ### Expansion Roadmap
 
 ```
-YEAR 1: EQUITY BEACHHEAD DOMINANCE
+PHASE 1: EQUITY BEACHHEAD
 ┌─────────────────────────────────────────────────────────────────┐
 │  Mid-Market Systematic Equity Funds (€10-200M AUM)               │
 │  • UK, Ireland, Luxembourg, Netherlands                          │
-│  • European/US equities via Alpaca, Interactive Brokers          │
+│  • European/US equities via Interactive Brokers                  │
 │  • Target: 15+ paying customers, €500K+ ARR                      │
 │  • Risk-first positioning, MiFID II alignment story              │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-YEAR 2: ADJACENT SEGMENTS (Bowling Pins)
+PHASE 2: ADJACENT SEGMENTS (Bowling Pins)
 ┌───────────────────┐  ┌───────────────────┐  ┌───────────────────┐
 │   Pin 1: Larger   │  │  Pin 2: Adjacent  │  │  Pin 3: Adjacent  │
 │   EU Equity Funds │  │  Asset Class      │  │  Geography        │
@@ -273,14 +267,12 @@ YEAR 2: ADJACENT SEGMENTS (Bowling Pins)
 └───────────────────┘  └───────────────────┘  └───────────────────┘
                               │
                               ▼
-YEAR 3: MULTI-ASSET EXPANSION
+PHASE 3: EXPANSION (DEMAND-DRIVEN)
 ┌─────────────────────────────────────────────────────────────────┐
 │  Full Multi-Asset Platform for Quantitative Trading Firms        │
-│  • Equities, Futures, Forex, Options, Crypto                     │
+│  • Equities, Futures, Forex, Options                             │
 │  • Global markets (EU, US, APAC)                                 │
 │  • SMB to Enterprise tiers                                       │
-│  • Crypto offered as "additional asset class" with equity        │
-│    credibility established                                       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -292,17 +284,6 @@ YEAR 3: MULTI-ASSET EXPANSION
 | **CME Futures** | 5+ customer requests | Validated demand signal, existing client expansion |
 | **Additional Geographies** | Referrals from EU customers | Word-of-mouth working |
 | **Forex** | 3+ specific requests | Feature demand validated |
-| **Crypto** | 5+ requests from equity clients | Cross-sell opportunity, credibility established |
-
-### Why Crypto is Year 3, Not Year 1
-
-| Reason | Explanation |
-|--------|-------------|
-| **Credibility sequence** | Equity → Futures → Crypto is the institutional trust ladder |
-| **Regulatory maturity** | MiCA still uncertain; MiFID II is established |
-| **Reference value** | "They manage €50M in equities" > "They trade Bitcoin" for institutional allocators |
-| **Cross-sell logic** | Equity client expands to crypto (natural) vs crypto client "upgrades" to equities (unnatural) |
-| **Competitive dynamics** | Crypto infrastructure is commoditized; equity risk management is not |
 
 ---
 
@@ -337,7 +318,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 | Perceived Concern | Our Reframe |
 |-------------------|-------------|
 | "Why build 5 asset classes?" | "Risk engine is asset-agnostic; equities are the entry point, not the limit" |
-| "Isn't crypto risky?" | "Crypto is a Year 3 expansion for clients who start with equities" |
+| "Will you expand beyond equities?" | "Yes, but only after beachhead validation (phased, demand-driven)" |
 | "Are you spreading too thin?" | "Equity focus for GTM; architecture enables rapid expansion once PMF achieved" |
 
 ### Why Multi-Asset is a Moat (Not a Distraction)
@@ -345,12 +326,12 @@ YEAR 3: MULTI-ASSET EXPANSION
 1. **Cross-Sell Potential**: Equity fund adds macro overlay with CME futures → upsell
 2. **Technology Reuse**: Same CVaR engine, same risk dashboard, different asset class
 3. **Competitive Barrier**: 2+ years of development, 11,000+ tests, 5 exchange integrations = hard to replicate
-4. **Regulatory Ready**: Single compliance mapping framework covers MiFID II, EMIR, and future MiCA
+4. **Regulatory Ready**: Single compliance mapping framework covers MiFID II and adjacent regulations as we expand scope
 
 ### How We Communicate This
 
 **To Accelerators/Investors**:
-> "Our platform is built for multi-asset quantitative trading with institutional-grade risk management. Our **go-to-market starts with European systematic equity funds** — the most compliance-conscious, risk-aware segment of the market. This positions us as a serious infrastructure provider, not a speculative trading tool. As we establish credibility in equities, we expand to futures, forex, and eventually crypto — following the institutional trust ladder."
+> "Our platform is built for multi-asset quantitative trading with institutional-grade risk management. Our **go-to-market starts with European systematic equity funds** — the most compliance-conscious, risk-aware segment of the market. This positions us as a serious infrastructure provider, not a speculative trading tool. After we establish equity references, we expand to adjacent asset classes based on validated customer demand."
 
 **To Customers**:
 > "We specialize in helping systematic funds deploy equity strategies with CVaR-aware risk management and MiFID II-aligned monitoring. As you grow into other asset classes, our platform scales with you — same risk discipline, same dashboard, new markets."
@@ -393,7 +374,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 | 15+ paying customers | Expand to larger EU funds (€200M-1B) |
 | 5+ CME futures requests | Add CME futures support |
 | Referral from EU to Switzerland | Expand geographic focus |
-| 5+ crypto requests from equity clients | Add crypto as expansion asset class |
+| 5+ requests for additional asset classes | Prioritize the next adjacent market based on customer pull |
 
 ---
 
@@ -428,20 +409,16 @@ YEAR 3: MULTI-ASSET EXPANSION
 
 ## Investor FAQ: Addressing Concerns
 
-### Q: Why lead with equities when crypto is growing faster?
-
-**A**: Three reasons:
-1. **Credibility sequence**: Institutional allocators evaluate technology partners based on equity track records. Crypto-first companies face an uphill battle for institutional credibility.
-2. **Risk story clarity**: "We help you control drawdowns in volatile equity markets" is more defensible than "We help you trade crypto."
-3. **Regulatory proof**: MiFID II compliance demonstrates maturity; MiCA is still evolving.
+### Q: Why lead with equities instead of launching multi-asset immediately?
+**A**: We lead with **equities-first** because it is the fastest path to credible reference customers and repeatable procurement in Europe (risk governance + established regulatory expectations).
 
 ### Q: Isn't the equity market saturated with competition?
 
 **A**: The *retail* equity market is saturated. The *mid-market institutional* segment with CVaR-native risk management is **underserved**. Bloomberg is too expensive (€24K/seat), QuantConnect is too retail, and in-house solutions lack institutional-grade risk controls.
 
-### Q: What if customers want crypto, not equities?
+### Q: What if customers want futures/options immediately?
 
-**A**: We track this as a **pivot signal**. If 70%+ of prospects want crypto, we reconsider. But initial research shows systematic funds care more about risk management and compliance than asset class novelty.
+**A**: We treat it as an expansion signal, not a reason to fragment MVP. We validate demand in the equity beachhead first, then expand to adjacent listed derivatives with existing customers.
 
 ### Q: How do you know this beachhead is big enough?
 
@@ -498,19 +475,19 @@ Copying requires recreating our research and testing infrastructure — an 18-24
 
 ## Document Control
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | December 2024 | Product/Strategy | Initial creation (crypto focus) |
-| 2.0 | December 2025 | Product/Strategy | **Complete rewrite**: Equity-first beachhead, risk management positioning, MiFID II compliance focus |
-| 2.1 | December 2025 | Product/Strategy | **CCEA alignment**: Added CCEA architecture foundation, legal posture, Cloud/Agent separation |
+| Field | Value |
+|-------|-------|
+| **Version** | 2.1 |
+| **Last Updated** | 2025-12-17 |
+| **Owner** | Product/Strategy |
 
 ---
 
 *Related Documents*:
 - [MVP_FOCUS.md](MVP_FOCUS.md) — Feature scope definition
 - [REGULATORY_COMPLIANCE_STRATEGY.md](REGULATORY_COMPLIANCE_STRATEGY.md) — Compliance approach
-- [IP_PROTECTION_STRATEGY.md](docs/business/IP_PROTECTION_STRATEGY.md) — IP protection framework
-- [COMPETITIVE_MOAT.md](docs/business/COMPETITIVE_MOAT.md) — Competitive analysis
+- [business/IP_PROTECTION_STRATEGY.md](business/IP_PROTECTION_STRATEGY.md) — IP protection framework
+- [business/COMPETITIVE_MOAT.md](business/COMPETITIVE_MOAT.md) — Competitive analysis
 - [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
 
 *Aligned with: Design Doc CCEA Cloud v1.0*
