@@ -4,7 +4,6 @@ CCEA Shared Package.
 
 Contains safe, zone-independent components:
 - Core models and contracts (OrderIntent, strategy interfaces)
-- Simulation engine (backtest, paper trading)
 - Common utilities (time, math, validation)
 - Data-only adapters (market data, fees, trading hours, exchange info)
 

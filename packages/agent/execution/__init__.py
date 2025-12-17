@@ -3,15 +3,16 @@
 CCEA Agent Execution Module.
 
 Live order execution - AGENT ZONE ONLY.
-Contains broker connectors and order routing.
+Contains execution engine primitives and (optionally) order routing.
 
 This module is PROHIBITED in Cloud zone.
 
 Key Components:
 - LiveExecutionEngine: Converts intents to orders
-- BrokerConnector: Broker API connections (uses vault for credentials)
-- OrderRouter: Routes orders to appropriate broker
+- OrderRouter: Routes orders to an execution backend (optional)
 """
+
+from __future__ import annotations
 
 from typing import Final, List
 
@@ -20,7 +21,6 @@ ZONE: Final[str] = "agent"
 # Components that are AGENT-ONLY
 AGENT_ONLY_COMPONENTS: Final[List[str]] = [
     "LiveExecutionEngine",
-    "BrokerConnector",
     "OrderRouter",
     "OrderManager",
 ]
@@ -31,17 +31,20 @@ from .engine import (
     OrderStatus,
 )
 
-from .router import (
-    OrderRouter,
-    RoutingRule,
-    RoutingResult,
-)
-
 __all__ = [
     "LiveExecutionEngine",
     "ExecutionResult",
     "OrderStatus",
-    "OrderRouter",
-    "RoutingRule",
-    "RoutingResult",
 ]
+
+# Order routing is optional in OSS splits (broker integrations/routing rules may be proprietary plugins).
+try:
+    from .router import (  # noqa: F401
+        OrderRouter,
+        RoutingRule,
+        RoutingResult,
+    )
+
+    __all__.extend(["OrderRouter", "RoutingRule", "RoutingResult"])
+except ImportError:
+    pass

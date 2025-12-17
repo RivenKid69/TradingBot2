@@ -42,7 +42,6 @@ repos:
 
       # --- Schemas / contracts (public spec) ---
       - "docs/schemas/**"
-      - "packages/__init__.py"
       - "packages/shared/__init__.py"
       - "packages/shared/contracts/**"
       - "packages/shared/utils/**"
@@ -78,9 +77,12 @@ repos:
     visibility: public
     license_recommendation: "Apache-2.0 or MIT"
     include_globs:
-      - "packages/__init__.py"
       - "packages/agent/**"
       - "configs/examples/agent.yaml"
+    exclude_globs:
+      # Keep OSS agent auditable; broker integrations/routing stay proprietary (plugins / private repos).
+      - "packages/agent/broker/adapters/**"
+      - "packages/agent/execution/router.py"
     notes:
       - "Agent will depend on ccea-sdk for contracts/schemas/crypto/guardrails after split."
       - "This monorepo currently references configs/agent.yaml in multiple docs, but the file is missing; fix in agent repo."
@@ -157,6 +159,9 @@ public_safety:
     - "lob/**"
     - "optimizers/**"
     - "execution/**"
+    # Agent-specific IP/integrations
+    - "packages/agent/broker/adapters/**"
+    - "packages/agent/execution/router.py"
   # Content-based checks (applied only to ccea-sdk and ccea-agent exports).
   # These are intentionally conservative: we forbid ML/training imports in OSS code.
   forbidden_content_regex:
