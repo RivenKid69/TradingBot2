@@ -64,10 +64,10 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 | Benefit | Description |
 |---------|-------------|
-| **Regulatory Clarity** | Software provider positioning under MiFID II (no licensing requirement) |
+| **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; we do not execute trades or hold credentials/assets) |
 | **Enterprise-Grade Design** | Designed to satisfy institutional security requirements (secrets never leave user infra) |
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
-| **Multiple Revenue Streams** | Research SaaS (retail) + Enterprise licenses (on-prem/VPC) |
+| **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 
 **Legal Positioning:**
 - **NOT** an Investment Adviser, Broker-Dealer, or Execution Service
@@ -504,7 +504,7 @@ Our European expansion plan is designed to exceed EU startup visa requirements w
 
 ### Funding Ask
 
-**Target raise**: Seed round (amount to be discussed based on investor interest)
+**Target raise**: **€500K–€750K** seed (customer validation + EU go-to-market runway; see `docs/BUSINESS_PLAN_EU_VISA.md:1105`)
 
 **Use of funds priority:**
 

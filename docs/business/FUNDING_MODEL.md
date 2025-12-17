@@ -1,7 +1,7 @@
-# CCEA Platform: Funding Model & Investment Framework
+# CustodiaCloud: Funding Model & Investment Framework
 
 **Version:** 2.0
-**Last Updated:** December 2025
+**Last Updated:** 2025-12-17
 **Status:** Seed Round Planning
 **Document Type:** Confidential - Investor Materials
 
@@ -9,15 +9,14 @@
 
 ## Executive Summary
 
-CCEA Platform (Cloud-Controlled Execution Architecture) is seeking **€750K-1.2M** in seed funding to accelerate go-to-market for our AI-powered quantitative research platform. The funding will enable us to achieve product-market fit with 10-15 paying enterprise customers within 18 months, positioning the company for Series A at €15-25M valuation.
+CustodiaCloud (built on Cloud-Controlled Execution Architecture, CCEA) is seeking **€500K–€750K** in seed funding to accelerate customer validation and go-to-market for our **equities-first** platform. The funding target is designed to support an 18-month runway (illustrative; execution-dependent).
 
 **Key Investment Highlights:**
-- Proven technology: 597 test files, 11,063 tests, platform designed for production deployment
-- Unique Cloud/Agent architecture: Open-source Agent, proprietary Cloud
-- Multi-asset coverage: Equities, Forex, Crypto, Futures (CME, Binance)
-- Risk-first architecture: CVaR-RL with MiFID II/MAR compliance toolkit built-in
-- Regulatory positioning: Software Provider, not Investment Advisor
-- Capital-efficient model: €750K runway to €1.5M ARR milestone
+- Technical foundation: large automated test suite and implemented CCEA Cloud/Agent separation
+- Unique Cloud/Agent architecture (CCEA): customer-controlled execution; Cloud does not store secrets or execute orders
+- Equities-first MVP and beachhead (Europe); additional asset classes are optional future expansion (non‑MVP)
+- Regulatory posture: software / ICT provider (not a broker, custodian, or investment adviser)
+- Capital efficiency: seed funding focused on customer validation and repeatable GTM (targets are illustrative; not guaranteed)
 
 ---
 
@@ -31,7 +30,7 @@ CCEA Platform (Cloud-Controlled Execution Architecture) is seeking **€750K-1.2
 | **Optimal** | €750K | 18-month runway, core team (6 FTE) | 15-18% |
 | **Maximum** | €1.2M | 24-month runway, full team (8 FTE) | 18-22% |
 
-**Recommended Target: €750K-1M** (18-month runway with buffer)
+**Recommended Target: €500K–€750K** (runway depends on burn and pace of validation)
 
 ### 1.2 Pre-Money Valuation Framework
 
@@ -44,7 +43,7 @@ Based on comparable seed rounds in quantitative finance software:
 | **QuantConnect** (2015) | Seed | $1.5M | $6M | 4.0x |
 | **Composer** (2021) | Seed | $3.2M | $14M | 4.4x |
 
-**CCEA Platform Target Valuation:**
+**CustodiaCloud Valuation (Illustrative Framework):**
 - Pre-money: €3.5M-5M (conservative for European seed)
 - Post-money: €4.5M-6M
 - Basis: Technology completeness, IP portfolio, regulatory readiness, unique Cloud/Agent architecture
@@ -53,10 +52,10 @@ Based on comparable seed rounds in quantitative finance software:
 
 | Asset | Estimated Value | Basis |
 |-------|-----------------|-------|
-| **Technology Platform** | €1.5-2M | 3 years development, 50K+ LoC, designed for production use |
-| **IP Portfolio** | €500K-1M | CVaR-RL architecture, patent-pending claims |
-| **Cloud/Agent Architecture** | €300-500K | Unique regulatory positioning, open-source Agent moat |
-| **Regulatory Readiness** | €300-500K | MiFID II Art.17 compliance, Software Provider positioning |
+| **Technology Platform** | €1.5-2M | Engineering investment and technical depth (illustrative) |
+| **IP Portfolio** | €0-1M | Trade secrets + potential patent strategy (if pursued; no public claim of “patent pending”) |
+| **Cloud/Agent Architecture** | €300-500K | Unique regulatory posture via customer-controlled execution (CCEA) |
+| **Regulatory Readiness** | €300-500K | Alignment toolkits and documentation (not a certification) |
 | **Market Opportunity** | €1-1.5M | €15B TAM, first-mover in CVaR-RL niche |
 | **Team** | €500K-1M | Deep quant finance + ML expertise |
 
@@ -124,9 +123,9 @@ Based on comparable seed rounds in quantitative finance software:
 
 | Category | Budget | Purpose |
 |----------|--------|---------|
-| **Patent Filing** | €20K | CVaR-RL architecture, simulation system |
-| **Trademark Registration** | €7.5K | CCEA AI brand protection |
-| **IP Strategy Consulting** | €10K | Freedom-to-operate analysis |
+| **Patent Evaluation / Filing (optional)** | €0-20K | If pursued, based on counsel advice and strategy |
+| **Trademark Registration** | €7.5K | CustodiaCloud brand protection |
+| **IP Strategy Consulting** | €10K | Freedom-to-operate analysis (if needed) |
 
 ---
 
@@ -144,7 +143,7 @@ Based on comparable seed rounds in quantitative finance software:
 
 **Key Activities:**
 - Hire Senior ML Engineer (M1)
-- Complete MiFID II pre-audit (M2-4)
+- Legal/compliance review (M2-4)
 - Attend QuantCon Europe (M3)
 - Close 3 design partner agreements (M1-3)
 - Deploy pilots with 3 firms (M4-6)
@@ -248,28 +247,28 @@ M14: US Market Entry ───────────────────�
 | **Q5** | €300K (rev) | €160K | +€140K | 18 mo |
 | **Q6** | €450K (rev) | €180K | +€270K | 20+ mo |
 
-**Break-even:** Month 14-16 (conservative) / Month 12 (optimistic)
+**Break-even (illustrative target):** Month 14-16 (conservative) / Month 12 (optimistic)
 
 ---
 
 ## 5. Investment Thesis
 
-### 5.1 Why CCEA Platform?
+### 5.1 Why CustodiaCloud?
 
 **1. Unique Technology Positioning**
 
-| Dimension | CCEA Platform | Competitors |
+| Dimension | CustodiaCloud | Competitors |
 |-----------|---------------|-------------|
 | **Risk Architecture** | CVaR-RL native (risk-first) | Bolt-on risk limits |
-| **Execution Model** | Customer-owned Agent (open-source) | Centralized SaaS |
-| **Regulatory Compliance** | MiFID II Art.17 built-in, Software Provider | Manual compliance, unclear legal status |
-| **Multi-Asset** | Equities, Forex, Crypto, Futures | Usually single-asset |
+| **Execution Model** | Customer-controlled Agent (CCEA) | Centralized SaaS |
+| **Regulatory Posture** | Alignment tooling + clear separation (not a certification) | Often unclear boundaries |
+| **Market Coverage** | Equities-first; optional future expansion | Varies |
 | **Simulation Fidelity** | L3 LOB with market impact | Basic backtesting |
 | **Credential Security** | Customer-controlled (never leaves their environment) | Vendor-managed (risk exposure) |
 
 **2. Market Timing**
 
-- Post-2022 crypto winter: Flight to regulated, risk-aware solutions
+- Europe-first equities: demand for vendors with clear control boundaries and auditability
 - MiFID II enforcement tightening: Algorithmic trading scrutiny increasing
 - AI adoption curve: Financial services entering "early majority" phase
 - Talent availability: 2023-24 layoffs created exceptional hiring market
@@ -277,12 +276,12 @@ M14: US Market Entry ───────────────────�
 
 **3. Capital Efficiency**
 
-| Metric | CCEA Platform | SaaS Median | Top Decile |
+| Metric | CustodiaCloud | SaaS Median | Top Decile |
 |--------|---------------|-------------|------------|
 | **Months to €1M ARR** | 18 | 36 | 18 |
 | **Capital to €1M ARR** | €750K | €3M | €1M |
 | **Team Size at €1M ARR** | 6-8 | 15-20 | 8-10 |
-| **Open-source Adoption Flywheel** | Yes | No | Rare |
+| **Adoption Flywheel** | Possible | Varies | Varies |
 
 ### 5.2 Risk Factors & Mitigations
 
@@ -431,11 +430,11 @@ M14: US Market Entry ───────────────────�
 ---
 
 **Document Control:**
-- Author: CCEA Platform Management Team
+- Author: CustodiaCloud Team
 - Classification: Confidential - Investor Materials
 - Distribution: Authorized investors and advisors only
-- Version: 2.0 (Updated for CCEA Cloud/Agent architecture)
-- Next Review: Q1 2025
+- Version: 2.0 (Updated for CustodiaCloud Cloud/Agent architecture (CCEA))
+- Next Review: Q1 2026
 
 ---
 
