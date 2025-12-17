@@ -243,9 +243,9 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 
 | Regulation | Status | Coverage |
 |------------|--------|----------|
-| MiFID II | Toolkit Implemented | All 7 phases implemented (designed to align) |
-| EU AI Act | Toolkit Implemented | All 4 phases + 1,007 tests (designed to align) |
-| DORA | Toolkit Implemented | All 5 phases + ~1,015 tests (designed to align) |
+| MiFID II | Compliance-Ready Toolkit | All 7 phases implemented (designed to align, not certified) |
+| EU AI Act | Compliance-Ready Toolkit | All 4 phases + 1,007 tests (designed to align, not certified) |
+| DORA | Compliance-Ready Toolkit | All 5 phases + ~1,015 tests (designed to align, not certified) |
 
 **MiFID II (Directive 2014/65/EU):**
 - Kill Switch & Pre-Trade Controls (RTS 6)
@@ -266,7 +266,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 - Third-Party ICT Risk Management (Articles 28-44)
 - Information Sharing & Unified Reporting (Article 45)
 
-**Business Impact**: Architected with EU regulatory requirements in mind, with toolkit features that may help reduce time-to-market for institutional deployment. Actual compliance requires independent assessment and legal review.
+**Business Impact**: Architected with EU regulatory requirements in mind, with compliance-ready toolkit features designed to help reduce time-to-market for institutional deployment. These are tools to support compliance efforts, not compliance certifications. Actual regulatory compliance requires independent third-party assessment, proper configuration, legal review, and validation specific to your jurisdiction and use case.
 
 ---
 
