@@ -29,7 +29,7 @@ The AI-Powered Quantitative Research Platform is designed to align with GDPR req
 
 ## CCEA Privacy Design Commitments
 
-The CCEA architecture provides inherent GDPR compliance through strict zone separation:
+The CCEA architecture is designed to support GDPR compliance efforts through strict zone separation:
 
 ### What Cloud NEVER Receives
 

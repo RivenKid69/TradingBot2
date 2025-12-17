@@ -421,9 +421,9 @@ Incidents must be reported if they:
 
 ## 13. Regulatory Compliance
 
-### 13.1 EU AI Act Compliance
+### 13.1 EU AI Act Alignment
 
-This system complies with:
+This system is designed to align with:
 - Article 9: Risk Management System
 - Article 10: Data Governance
 - Article 11: Technical Documentation
