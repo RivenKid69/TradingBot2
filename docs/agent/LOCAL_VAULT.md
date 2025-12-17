@@ -6,10 +6,10 @@
 
 The Local Vault securely stores broker API credentials on the agent's local system. **Credentials NEVER leave the agent** and are NEVER transmitted to Cloud.
 
-## Security Guarantees
+## Security Design Commitments
 
 ```
-Local Vault GUARANTEES:
+Local Vault DESIGN COMMITMENTS (enforced at architecture level):
   - Credentials stored ONLY locally (never in Cloud)
   - Encryption at rest (AES-256-GCM)
   - OS keychain integration when available

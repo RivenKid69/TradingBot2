@@ -1641,7 +1641,7 @@ cluster-node-timeout 15000
 
 This technical implementation guide provides the foundation for enterprise-grade deployments following the CCEA architecture. For specific customization or additional requirements, please contact our enterprise team.
 
-**Key CCEA Guarantees for Enterprise**:
+**Key CCEA Design Commitments for Enterprise** (enforced at architecture level):
 - Cloud **NEVER** stores broker API keys or credentials
 - Cloud **NEVER** creates, transmits, or executes orders
 - Agent deployed in customer infrastructure is the **ONLY** execution point

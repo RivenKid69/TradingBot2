@@ -126,7 +126,7 @@ EU-Only configuration is available at:
 - **Professional Tier**: Included (default)
 - **Enterprise Tier**: Included with dedicated region options
 
-### 5.2 What EU-Only Guarantees
+### 5.2 What EU-Only Provides
 
 When EU-Only is enabled:
 

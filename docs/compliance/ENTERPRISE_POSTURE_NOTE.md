@@ -92,7 +92,7 @@ This document applies to:
 | VPC Managed | Processor (if Cloud telemetry) | Controller | Conditional |
 | Air-Gapped | Licensor only | Controller + Processor | License Agreement |
 
-### 3.2 Data Residency Guarantees
+### 3.2 Data Residency Commitments
 
 **All deployment modes enforce EU-only data residency:**
 
@@ -187,7 +187,7 @@ The following claims are accurate and can be used in marketing:
 | "On-premises deployment available" | TRUE | Full on-prem supported |
 | "Air-gapped deployment available" | TRUE | Offline mode supported |
 | "Customer-managed keys" | TRUE | CMK supported in enterprise |
-| "GDPR compliant" | TRUE* | *With proper configuration |
+| "GDPR-aligned design" | TRUE* | *With proper configuration |
 | "Telemetry stays local option" | TRUE | Enterprise feature |
 
 ### 5.2 Prohibited Claims

@@ -344,11 +344,11 @@ The following roles must sign off quarterly:
 
 ## Appendix B: Quick Reference Card
 
-**CCEA Privacy Guarantees - Quick Reference**
+**CCEA Privacy Design Commitments - Quick Reference**
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                CCEA PRIVACY GUARANTEES                                   │
+│           CCEA PRIVACY DESIGN COMMITMENTS                                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  1. SECRETS: Cloud NEVER receives                                       │

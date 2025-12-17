@@ -140,7 +140,7 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 
 **What We Are NOT** (enforced by CCEA architecture):
 
-| We Are NOT | Why (CCEA Guarantee) |
+| We Are NOT | Why (CCEA Design Commitment) |
 |------------|---------------------|
 | **Investment Adviser** | We do not provide personalized investment advice |
 | **Broker-Dealer** | Cloud NEVER executes trades; users execute via their own brokers |
@@ -148,7 +148,7 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 | **Asset Manager** | We do not manage portfolios or make investment decisions |
 | **Execution Service** | Cloud NEVER sends orders; Agent runs locally under user control |
 
-**CCEA Security Guarantees** (enforced at architecture level):
+**CCEA Security Design Commitments** (enforced at architecture level):
 - Cloud NEVER stores broker API keys or trading credentials
 - Cloud NEVER generates, transmits, or executes trading orders
 - Cloud NEVER has access to exchange trading endpoints

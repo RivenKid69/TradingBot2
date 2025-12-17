@@ -6,10 +6,10 @@
 
 The Agent's Policy Firewall enforces risk controls locally. **Hard caps CANNOT be overridden by Cloud** - they are absolute local limits that protect the user.
 
-## Security Guarantees
+## Security Design Commitments
 
 ```
-Risk Controls GUARANTEE:
+Risk Controls DESIGN COMMITMENTS (enforced at architecture level):
   - Hard caps CANNOT be raised by Cloud (ever)
   - Cloud config cannot exceed local limits
   - All orders pass through policy firewall

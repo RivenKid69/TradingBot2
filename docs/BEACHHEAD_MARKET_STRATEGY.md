@@ -412,7 +412,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 | **Risk Dashboard Engagement** | >5x/week | CVaR/drawdown dashboard views |
 | **NPS Score** | >45 | Quarterly survey |
 | **Referral Rate** | >25% | Customers referring peers |
-| **Compliance Validation** | 100% | Pilot firms pass internal compliance review |
+| **Compliance Validation** | Target: All | Pilot firms pass their internal compliance review |
 
 ### Lagging Indicators (Year 1)
 

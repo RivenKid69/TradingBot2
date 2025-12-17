@@ -8,8 +8,8 @@ The answer is **yes**, and here's why:
 
 1. **Zero Data Exposure**: On-premises and VPC deployment options ensure client trading strategies and data never leave their infrastructure
 2. **Battle-Tested Foundation**: Built on proven frameworks (Nautilus Trader patterns, SB3) with 11,000+ automated tests
-3. **European Regulatory Compliance**: MiFID II, GDPR, and DORA-ready architecture
-4. **Enterprise-Grade Security**: Multi-layer security with audit trails, kill switches, and SOC 2 certification roadmap
+3. **European Regulatory Alignment**: Architecture designed to support MiFID II, GDPR, and DORA alignment
+4. **Enterprise-Grade Security**: Multi-layer security with audit trails, kill switches, and SOC 2 certification roadmap (not yet certified)
 5. **Modular Integration**: Pluggable architecture that extends existing workflows rather than replacing them
 
 ---
@@ -40,7 +40,7 @@ Prop trading firms have legitimate concerns about adopting external software:
 | **"Our strategies are our competitive edge"** | On-premises deployment - your data never leaves your servers |
 | **"Startups may disappear"** | Open architecture, no vendor lock-in, source code escrow options |
 | **"We need 99.99% uptime"** | Multi-region failover, comprehensive monitoring, 24/7 support tier |
-| **"Regulatory compliance is critical"** | MiFID II-aligned audit trails, GDPR-ready data handling |
+| **"Regulatory compliance is critical"** | MiFID II-aligned audit trails, GDPR-aligned data handling |
 | **"Integration with existing systems"** | REST/WebSocket APIs, FIX protocol support, modular adapters |
 | **"We need control over updates"** | Customer-controlled update cycles, staging environments |
 
@@ -57,7 +57,7 @@ Prop trading firms have legitimate concerns about adopting external software:
 │  │ • L3 LOB Sim    │    │ • On-Premises   │    │ • MiFID II      │         │
 │  │ • Multi-Asset   │    │ • Encrypted     │    │ • GDPR          │         │
 │  │ • Sub-ms Exec   │    │ • Audit Trails  │    │ • DORA          │         │
-│  │ • ML-Optimized  │    │ • Kill Switch   │    │ • SOC 2 Ready   │         │
+│  │ • ML-Optimized  │    │ • Kill Switch   │    │ • SOC 2 Path    │         │
 │  └─────────────────┘    └─────────────────┘    └─────────────────┘         │
 │                                                                              │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐         │
@@ -484,8 +484,8 @@ The new EU regulation for ICT risk management in financial services (effective J
 
 | Milestone | Timeline | Status |
 |-----------|----------|--------|
-| MiFID II audit trail implementation | Q1 2025 | ✅ Complete |
-| GDPR data handling procedures | Q1 2025 | ✅ Complete |
+| MiFID II audit trail toolkit | Q1 2025 | ✅ Implemented (not externally certified) |
+| GDPR data handling toolkit | Q1 2025 | ✅ Implemented (not externally certified) |
 | DORA ICT risk framework | Q2 2025 | 🔄 In Progress |
 | SOC 2 Type I certification | Q3 2025 | 📋 Planned |
 | SOC 2 Type II certification | Q1 2026 | 📋 Planned |
@@ -856,7 +856,7 @@ Our platform is built on proven, industry-standard technologies:
 |---------|----------|
 | **Will firms adopt?** | On-premises option removes primary blocker |
 | **Can they compete with incumbents?** | Superior ML/cost structure, EU focus |
-| **What about compliance?** | MiFID II ready, DORA roadmap, SOC 2 planned |
+| **What about compliance?** | MiFID II-aligned toolkit, DORA roadmap, SOC 2 planned (not yet certified) |
 | **Is the tech proven?** | 11,000+ tests, battle-tested frameworks |
 | **What's the support model?** | Enterprise tiers, custom development |
 
@@ -875,7 +875,7 @@ Our platform is built on proven, industry-standard technologies:
 │                                                                              │
 │  vs. IN-HOUSE DEVELOPMENT                                                   │
 │  ✓ 80% faster time to production                                            │
-│  ✓ Pre-built compliance-ready toolkit                                       │
+│  ✓ Pre-built compliance-supporting toolkit                                       │
 │  ✓ Ongoing maintenance included                                             │
 │  ✓ Access to continuous improvements                                        │
 │                                                                              │
@@ -924,7 +924,7 @@ Our platform is built on proven, industry-standard technologies:
 
 1. **Zero Data Exposure**: On-premises and VPC options mean trading strategies never leave client infrastructure
 
-2. **Regulatory Alignment**: Purpose-built for European markets with MiFID II, GDPR, and DORA compliance
+2. **Regulatory Alignment**: Purpose-built for European markets with architecture designed to support MiFID II, GDPR, and DORA alignment
 
 3. **Proven Foundation**: 11,000+ tests, battle-tested frameworks, and enterprise-grade security
 

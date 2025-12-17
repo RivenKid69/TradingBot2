@@ -17,7 +17,7 @@ Our platform implements **CCEA** - a strict security separation:
 | **Cloud** | Research, backtesting, monitoring, lifecycle | **NEVER** | **NEVER** |
 | **Agent** | Live execution, credential storage, risk enforcement | **LOCAL ONLY** | **LOCAL ONLY** |
 
-**Security Guarantees:**
+**Security Design Commitments** (enforced at architecture level):
 - Cloud **NEVER** stores broker API keys or credentials
 - Cloud **NEVER** generates, transmits, or executes trading orders
 - All trading happens **ONLY** in the user's local Agent

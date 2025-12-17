@@ -354,7 +354,7 @@ All TRADING_IMPACTING commands require local approval:
 | Breach notification (Art. 33-34) | 72-hour workflow |
 | EU-only residency | Enforced at runtime (drift check fails closed) |
 
-**CCEA Privacy Guarantees:**
+**CCEA Privacy Design Commitments:**
 - Cloud **NEVER** receives broker credentials or API keys
 - Cloud **NEVER** receives order-like payloads in commands
 - Telemetry redaction is **mandatory** (cannot be disabled)

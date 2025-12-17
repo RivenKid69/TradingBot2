@@ -517,13 +517,13 @@ You have the right to lodge a complaint with a supervisory authority:
 
 ---
 
-## 7A. CCEA PRIVACY GUARANTEES CHECKLIST
+## 7A. CCEA PRIVACY DESIGN COMMITMENTS CHECKLIST
 
-This section provides an explicit checklist of privacy guarantees enforced by the CCEA architecture. These are **architectural invariants** that cannot be overridden by configuration.
+This section provides an explicit checklist of privacy design commitments enforced by the CCEA architecture. These are **architectural invariants** that cannot be overridden by configuration.
 
 ### 7A.1 Cloud Never Receives Secrets
 
-| Guarantee | Enforcement | Verification |
+| Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
 | **No broker API keys in Cloud** | Schema validation, CI guardrails | Build-time + runtime |
 | **No API secrets in Cloud** | Redaction middleware (mandatory) | Cannot be disabled |
@@ -532,7 +532,7 @@ This section provides an explicit checklist of privacy guarantees enforced by th
 
 ### 7A.2 No Order-like Payloads in Protocol
 
-| Guarantee | Enforcement | Verification |
+| Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
 | **No side (buy/sell) in commands** | JSON Schema prohibition | Build-time CI |
 | **No quantity in commands** | JSON Schema prohibition | Build-time CI |
@@ -542,7 +542,7 @@ This section provides an explicit checklist of privacy guarantees enforced by th
 
 ### 7A.3 Telemetry Controls
 
-| Guarantee | Enforcement | Verification |
+| Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
 | **Default is AGGREGATED** | Config default | Runtime check |
 | **DETAILED_NON_SENSITIVE requires opt-in** | Explicit configuration | Audit event |
@@ -552,7 +552,7 @@ This section provides an explicit checklist of privacy guarantees enforced by th
 
 ### 7A.4 EU-only Data Residency
 
-| Guarantee | Enforcement | Verification |
+| Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
 | **All storage in EU** | Region configuration | Drift check (fail-closed) |
 | **All backups in EU** | Backup region policy | Automated verification |
@@ -561,7 +561,7 @@ This section provides an explicit checklist of privacy guarantees enforced by th
 
 ### 7A.5 DSAR Boundaries
 
-| Guarantee | Enforcement | Verification |
+| Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
 | **DSAR scope is Cloud-only** | Architecture | Process documentation |
 | **Agent data is customer-controlled** | No Cloud access | Cannot export what we don't have |
@@ -707,7 +707,7 @@ We will notify you of material changes to this Privacy Policy:
 |---------|------|--------------------|
 | 1.0.0 | December 2024 | Initial release |
 | 2.0.0 | December 2024 | Added CCEA architecture sections: data zones, credential handling, telemetry redaction |
-| 3.0.0 | December 2024 | GDPR Phase 1: Added CCEA telemetry levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS), CCEA Privacy Guarantees Checklist (Section 7A), Support-with-Consent policy (Section 7B), DSAR scope boundaries, EU-only sub-processor list with review timestamps |
+| 3.0.0 | December 2024 | GDPR Phase 1: Added CCEA telemetry levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS), CCEA Privacy Design Commitments Checklist (Section 7A), Support-with-Consent policy (Section 7B), DSAR scope boundaries, EU-only sub-processor list with review timestamps |
 
 ### 11.3 Review
 

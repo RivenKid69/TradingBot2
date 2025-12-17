@@ -171,16 +171,16 @@ DoD:
 | DSAR Response Templates | ✅ Done | Included in DSAR_SOP.md |
 | Subprocessors Register | ✅ Done | `docs/compliance/SUBPROCESSORS_REGISTER.md` |
 | Support Consent Policy | ✅ Done | `docs/compliance/SUPPORT_CONSENT_POLICY.md` |
-| CCEA Privacy Guarantees Checklist | ✅ Done | `docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md` |
+| CCEA Privacy Design Commitments Checklist | ✅ Done | `docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md` |
 | Support Consent Service (Code) | ✅ Done | `packages/cloud/governance/consent.py` |
 | DSAR CCEA Boundary Updates | ✅ Done | `packages/cloud/governance/dsar.py` |
 | Tests | ✅ Done | `packages/cloud/governance/tests/test_consent.py`, `test_dsar_phase1.py` |
 
 **Key Additions:**
-- Privacy Policy Section 7A: CCEA Privacy Guarantees Checklist
+- Privacy Policy Section 7A: CCEA Privacy Design Commitments Checklist
 - Privacy Policy Section 7B: Support-with-Consent Policy
 - Privacy Policy Section 5.4.3: Telemetry Sensitivity Levels (AGGREGATED/DETAILED_NON_SENSITIVE/RAW_ORDER_EVENTS)
-- Terms of Service Section 2.0.1: CCEA Privacy Guarantees (Binding Commitments)
+- Terms of Service Section 2.0.1: CCEA Privacy Design Commitments (Binding)
 - DPA Section 3.1: Telemetry Sensitivity Levels
 - DPA Section 5.9: Support Access with Consent
 - Full DSAR SOP with CCEA boundary notice

@@ -98,7 +98,7 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 │  │  Backtesting │  │  (signed)    │  │ (lifecycle)  │  │  Monitoring     │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
-│  CLOUD DESIGN COMMITMENTS (enforced at architecture level):                         │
+│  CLOUD DESIGN COMMITMENTS (enforced at architecture level):                  │
 │  - NEVER stores broker API keys or trading credentials                      │
 │  - NEVER generates, transmits, or executes trading orders                   │
 │  - NEVER has access to exchange trading endpoints                           │
@@ -188,7 +188,7 @@ As an **ICT Service Provider** to financial entities, we have specific obligatio
 | **Incident Reporting** | 72-hour notification | Telemetry provides evidence |
 | **Operational Resilience Testing** | Annual DR/BC testing | Agent runs independently |
 | **Third-Party Risk** | Sub-processor management | Signed artifacts, SBOM |
-| **Contractual Requirements** | DPA/Security addendum | CCEA guarantees in contract |
+| **Contractual Requirements** | DPA/Security addendum | CCEA design commitments in contract |
 
 #### 2.1.2 EU AI Act Compliance (Regulation 2024/1689)
 

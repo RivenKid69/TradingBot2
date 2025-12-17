@@ -52,7 +52,7 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 | **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
 | **Agent** | Live execution, credential storage, risk enforcement | **YES (Local Only)** | **YES (Local Only)** |
 
-**Security Guarantees:**
+**Security Design Commitments** (enforced at architecture level):
 
 1. **Cloud NEVER stores your broker API keys or credentials** - All credentials are stored locally in your Agent's encrypted vault
 2. **Cloud NEVER generates, transmits, or executes trading orders** - All trading operations occur exclusively in your local Agent
@@ -75,14 +75,14 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 - You approve all trading-impacting changes locally
 - You can disconnect from Cloud and continue trading
 
-### 2.0.1 CCEA Privacy Guarantees (Binding Commitments)
+### 2.0.1 CCEA Privacy Design Commitments (Binding)
 
-The following privacy guarantees are **architectural invariants** that are legally binding under these Terms:
+The following privacy design commitments are **architectural invariants** that are legally binding under these Terms:
 
 **A. Cloud Never Receives Secrets**
 - Cloud **NEVER** stores or processes your broker API keys, secrets, or credentials
 - Cloud **NEVER** receives environment variables or tokens
-- Violation of this guarantee constitutes a material breach of these Terms
+- Violation of this commitment constitutes a material breach of these Terms
 
 **B. No Order-like Payloads in Protocol**
 - Cloud→Agent commands **NEVER** contain order-like payloads (side, quantity, price, order_id, target_position)
@@ -605,4 +605,4 @@ For live trading features, you will be asked to explicitly acknowledge specific 
 |---------|------|---------|
 | 1.0.0 | December 2024 | Initial release |
 | 1.1.0 | December 2024 | Added Section 2A: AI Disclosure per EU AI Act Article 50 |
-| 3.0.0 | December 2024 | GDPR Phase 1: Added Section 2.0.1 CCEA Privacy Guarantees with binding commitments (secrets, order payloads, telemetry levels, EU-only residency, DSAR boundaries) |
+| 3.0.0 | December 2024 | GDPR Phase 1: Added Section 2.0.1 CCEA Privacy Design Commitments (secrets, order payloads, telemetry levels, EU-only residency, DSAR boundaries) |

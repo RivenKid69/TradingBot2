@@ -6,10 +6,10 @@
 
 The Local Approval System ensures that **trading-impacting changes require explicit local approval** before execution. Cloud cannot bypass this requirement.
 
-## Security Guarantees
+## Security Design Commitments
 
 ```
-Local Approval GUARANTEES:
+Local Approval DESIGN COMMITMENTS (enforced at architecture level):
   - Trading-impacting changes ALWAYS require local approval
   - Cloud CANNOT auto-approve on behalf of user
   - Approval evidence is cryptographically signed
