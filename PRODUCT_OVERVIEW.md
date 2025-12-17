@@ -2,14 +2,14 @@
 
 ## Executive Summary
 
-A production-ready algorithmic trading platform that combines cutting-edge reinforcement learning with institutional-grade execution simulation. The platform enables systematic trading across **5 major asset classes** with a unified architecture.
+A production-grade algorithmic trading platform that combines cutting-edge reinforcement learning with institutional-grade execution simulation. The platform enables systematic trading across **5 major asset classes** with a unified architecture.
 
 **Key Metrics:**
 - **14,000+ automated tests** with 97%+ pass rate
 - **5 asset classes**: Crypto, US Equities, Forex, CME Futures, Options
 - **7+ years** of academic research integrated (Almgren-Chriss, Kyle, Gatheral)
-- **Designed to align with MiFID II & EU AI Act** - compliance-ready for regulated markets
-- **Designed for production** with tested live trading on Binance, Alpaca, OANDA, Interactive Brokers
+- **Designed to align with MiFID II & EU AI Act** - toolkit features implemented for regulated markets
+- **Architected for production use** with tested live trading on Binance, Alpaca, OANDA, Interactive Brokers
 
 ---
 
@@ -243,9 +243,9 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 
 | Regulation | Status | Coverage |
 |------------|--------|----------|
-| MiFID II | Compliance-Ready | All 7 phases implemented |
-| EU AI Act | Compliance-Ready | All 4 phases + 1,007 tests |
-| DORA | Compliance-Ready | All 5 phases + ~1,015 tests |
+| MiFID II | Toolkit Implemented | All 7 phases implemented (designed to align) |
+| EU AI Act | Toolkit Implemented | All 4 phases + 1,007 tests (designed to align) |
+| DORA | Toolkit Implemented | All 5 phases + ~1,015 tests (designed to align) |
 
 **MiFID II (Directive 2014/65/EU):**
 - Kill Switch & Pre-Trade Controls (RTS 6)
@@ -266,7 +266,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 - Third-Party ICT Risk Management (Articles 28-44)
 - Information Sharing & Unified Reporting (Article 45)
 
-**Business Impact**: Designed for EU regulated markets, potentially reducing time-to-market for institutional deployment by 6-12 months.
+**Business Impact**: Architected with EU regulatory requirements in mind, with toolkit features that may help reduce time-to-market for institutional deployment. Actual compliance requires independent assessment and legal review.
 
 ---
 
@@ -385,7 +385,7 @@ Contact us for enterprise licensing options.
 This platform and documentation do not constitute investment advice, financial advice, trading advice, or any other sort of advice. You should not treat any of the platform's content as such. The platform does not recommend that any financial instrument should be bought, sold, or held by you.
 
 ### Regulatory Status
-This software is provided as a technology tool for quantitative research and automated trading. The platform is designed to comply with MiFID II (Directive 2014/65/EU) and EU AI Act (Regulation 2024/1689) requirements. The provider is a software vendor, not a regulated financial institution. Users are responsible for ensuring compliance with applicable regulations in their jurisdiction.
+This software is provided as a technology tool for quantitative research and automated trading. The platform implements toolkit features designed to align with MiFID II (Directive 2014/65/EU) and EU AI Act (Regulation 2024/1689) requirements. The provider is a software vendor, not a regulated financial institution. **"Toolkit implemented" does NOT equal regulatory compliance**. Users are responsible for conducting their own compliance assessment and ensuring adherence to applicable regulations in their jurisdiction.
 
 ### Performance Disclaimers
 All performance figures shown in documentation are **hypothetical and for illustration purposes only**. They do not represent actual trading results. Actual trading involves substantial risk of loss. Simulated performance results have inherent limitations and do not account for all market conditions.

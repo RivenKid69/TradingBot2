@@ -1,6 +1,6 @@
 # AI-Powered Quantitative Research Platform
 
-RL-first research and trading stack for crypto, equities, FX, and derivatives with simulator-to-live parity.
+RL-first research and trading stack for crypto, equities, FX, and derivatives designed to minimize simulator-to-live deviation.
 
 ## Licensing
 
@@ -96,7 +96,9 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**14,000+ automated tests** | **MiFID II Compliance-Ready** | **EU AI Act Compliance-Ready** | **DORA Compliance-Ready** | **GDPR Compliance-Ready** | **CCEA Implemented** | **Designed for Production**
+**14,000+ automated tests** | **MiFID II Toolkit Implemented** | **EU AI Act Toolkit Implemented** | **DORA Toolkit Implemented** | **GDPR Controls Implemented** | **CCEA Implemented** | **Architected for Production Use**
+
+*Note: "Toolkit/controls implemented" means the technical features are available. Actual regulatory compliance requires independent assessment, proper configuration, and legal review specific to your jurisdiction and use case.*
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
