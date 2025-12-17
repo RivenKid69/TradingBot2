@@ -2,7 +2,7 @@
 
 *One-Pager for Startup Visa Applications & Investor Pitches*
 
-> **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Status**: MiFID II 100%, EU AI Act 100%, DORA 100%
+> **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Status**: Designed to align with MiFID II, EU AI Act, DORA
 
 ---
 

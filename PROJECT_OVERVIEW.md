@@ -219,7 +219,7 @@ Core Contracts & Models (core_*.py)
 
 ## Regulatory Compliance
 
-### MiFID II (100% Complete - Phase 7/7)
+### MiFID II (Compliance-Ready - All Phases Implemented)
 
 | Модуль | Требование |
 |--------|------------|
@@ -238,7 +238,7 @@ Core Contracts & Models (core_*.py)
 | `bcp.py` | Business Continuity Plan |
 | `nca_notification.py` | NCA уведомления |
 
-### EU AI Act (100% Complete - 1,007 tests)
+### EU AI Act (Compliance-Ready - 1,007 tests)
 
 | Модуль | Описание |
 |--------|----------|
@@ -257,7 +257,7 @@ Core Contracts & Models (core_*.py)
 | `technical_documentation.py` | Техническая документация |
 | `post_market_monitoring.py` | Post-market мониторинг |
 
-### DORA (100% Complete - ~1,015 tests)
+### DORA (Compliance-Ready - ~1,015 tests)
 
 | Фаза | Описание |
 |------|----------|
@@ -589,7 +589,7 @@ state:
 
 ## Production статус
 
-**Готово к production**:
+**Разработано для production использования**:
 - Crypto spot/futures торговля (Binance)
 - US equities (Alpaca, Polygon)
 - Forex (OANDA)
@@ -597,8 +597,8 @@ state:
 - Options (Deribit, Theta Data)
 - Distributional PPO с safety features
 - Multi-asset risk management
-- MiFID II compliance (100%)
-- EU AI Act compliance (100%)
-- DORA compliance (100%)
+- MiFID II (designed to align with requirements)
+- EU AI Act (designed to align with requirements)
+- DORA (designed to align with requirements)
 
 **Simulator-to-live parity**: <3% backtest deviation

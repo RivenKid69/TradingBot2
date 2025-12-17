@@ -257,10 +257,10 @@ All critical subcontractors undergo:
 
 | Regulation | Status | Relevance |
 |------------|--------|-----------|
-| DORA (EU) 2022/2554 | ✅ Compliant (100%) | ICT provider obligations |
-| GDPR (EU) 2016/679 | ✅ Compliant (100%) | Data protection - all 9 phases |
-| EU AI Act 2024/1689 | ✅ Compliant (100%) | High-risk AI system requirements |
-| MiFID II | ✅ Compliant (100%) | Trading systems |
+| DORA (EU) 2022/2554 | ✅ Designed to align | ICT provider obligations |
+| GDPR (EU) 2016/679 | ✅ Designed to align | Data protection - all 9 phases |
+| EU AI Act 2024/1689 | ✅ Designed to align | High-risk AI system requirements |
+| MiFID II | ✅ Designed to align | Trading systems |
 | NIS2 Directive | Preparing | Cybersecurity |
 
 ### 9.2 GDPR Compliance Details
@@ -345,7 +345,7 @@ For contracted clients:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-01-17 | Initial public release |
-| 1.1 | 2025-12-17 | Updated regulatory alignment (GDPR, EU AI Act, MiFID II 100%), added GDPR compliance details |
+| 1.1 | 2025-12-17 | Updated regulatory alignment (GDPR, EU AI Act, MiFID II - designed to align), added GDPR compliance details |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team

@@ -513,7 +513,7 @@ class ComplianceAlert:
 
 @dataclass
 class ComplianceDashboard:
-    """Complete compliance dashboard."""
+    """Comprehensive compliance dashboard."""
     dashboard_id: str = field(default_factory=lambda: str(uuid4()))
     generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     workspace_id: Optional[str] = None
@@ -667,7 +667,7 @@ class ComplianceDashboardService:
         period_days: int = 30,
     ) -> ComplianceDashboard:
         """
-        Generate a complete compliance dashboard.
+        Generate a comprehensive compliance dashboard.
 
         Args:
             workspace_id: Optional workspace scope
@@ -984,7 +984,7 @@ class ComplianceDashboardService:
     def _calculate_dsar_score(self, metrics: Optional[DSARMetrics]) -> float:
         """Calculate DSAR compliance score (0-100)."""
         if not metrics or metrics.total_requests == 0:
-            return 100.0  # No requests = fully compliant
+            return 100.0  # No requests = no compliance gaps detected
 
         score = 100.0
 

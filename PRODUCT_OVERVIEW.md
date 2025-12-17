@@ -8,8 +8,8 @@ A production-ready algorithmic trading platform that combines cutting-edge reinf
 - **14,000+ automated tests** with 97%+ pass rate
 - **5 asset classes**: Crypto, US Equities, Forex, CME Futures, Options
 - **7+ years** of academic research integrated (Almgren-Chriss, Kyle, Gatheral)
-- **100% MiFID II & EU AI Act compliant** - ready for regulated markets
-- **Production-ready** with live trading on Binance, Alpaca, OANDA, Interactive Brokers
+- **Designed to align with MiFID II & EU AI Act** - compliance-ready for regulated markets
+- **Designed for production** with tested live trading on Binance, Alpaca, OANDA, Interactive Brokers
 
 ---
 
@@ -239,13 +239,13 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 
 ### 5. Regulatory Compliance
 
-**Full compliance with EU financial regulations:**
+**Designed to align with EU financial regulations:**
 
 | Regulation | Status | Coverage |
 |------------|--------|----------|
-| MiFID II | 100% Complete | All 7 phases implemented |
-| EU AI Act | 100% Complete | All 4 phases + 1,007 tests |
-| DORA | 100% Complete | All 5 phases + ~1,015 tests |
+| MiFID II | Compliance-Ready | All 7 phases implemented |
+| EU AI Act | Compliance-Ready | All 4 phases + 1,007 tests |
+| DORA | Compliance-Ready | All 5 phases + ~1,015 tests |
 
 **MiFID II (Directive 2014/65/EU):**
 - Kill Switch & Pre-Trade Controls (RTS 6)
@@ -266,7 +266,7 @@ cme_provider = create_execution_provider(AssetClass.CME_FUTURES)
 - Third-Party ICT Risk Management (Articles 28-44)
 - Information Sharing & Unified Reporting (Article 45)
 
-**Business Impact**: Pre-certified for EU regulated markets, reducing time-to-market for institutional deployment by 6-12 months.
+**Business Impact**: Designed for EU regulated markets, potentially reducing time-to-market for institutional deployment by 6-12 months.
 
 ---
 

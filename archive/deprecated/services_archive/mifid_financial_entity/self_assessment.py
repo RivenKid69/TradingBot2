@@ -94,7 +94,7 @@ class ComplianceStatus(Enum):
     """Compliance status for a self-assessment question."""
 
     COMPLIANT = "compliant"
-    """Fully compliant with requirements."""
+    """Meets requirements (no gaps detected)."""
 
     PARTIALLY_COMPLIANT = "partially_compliant"
     """Partially compliant - some gaps exist."""
@@ -308,7 +308,7 @@ class SelfAssessmentQuestion:
     notes: str = ""
 
     def is_compliant(self) -> bool:
-        """Check if fully compliant."""
+        """Check if requirements are met."""
         return self.compliance_status == ComplianceStatus.COMPLIANT
 
     def requires_remediation(self) -> bool:
