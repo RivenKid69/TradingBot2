@@ -3,7 +3,7 @@
 adapters/oanda/market_data.py
 OANDA market data adapter for forex trading.
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 OANDA v20 API provides:
 - REST API for historical candles (get_bars, get_latest_bar, get_tick)

@@ -10,7 +10,7 @@
 ## 1. Purpose and Scope
 
 ### 1.1 Purpose
-This policy establishes comprehensive measures to identify, protect, and manage trade secrets owned by CCEA Platform ("Company"). It ensures compliance with applicable trade secret laws and maintains the competitive advantage derived from proprietary technology.
+This policy establishes comprehensive measures to identify, protect, and manage trade secrets owned by CCEA Platform ("Company"). It is designed to support compliance with applicable trade secret laws and maintain the competitive advantage derived from proprietary technology.
 
 ### 1.2 Legal Basis
 - **European Union:** Directive (EU) 2016/943 on Trade Secrets

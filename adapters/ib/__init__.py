@@ -6,7 +6,7 @@ Interactive Brokers adapter implementations for CME/CBOT/NYMEX/COMEX futures.
 This package provides adapter implementations for Interactive Brokers TWS API,
 enabling futures trading with ES, NQ, GC, CL, 6E and other CME Group contracts.
 
-Status: Production Ready (Phase 3B Complete)
+Status: Tested and operational (Phase 3B Complete)
 
 Key Features:
 - Real-time market data via TWS/Gateway

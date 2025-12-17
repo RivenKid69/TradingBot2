@@ -2,7 +2,7 @@
 """
 OANDA Forex Adapter Package
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 This package provides adapter implementations for OANDA Markets,
 enabling forex trading with the same interface as crypto and stock trading.

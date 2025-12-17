@@ -4,7 +4,7 @@
 
 This document describes the integration of Deribit, the leading crypto options exchange, into the TradingBot2 platform. Deribit offers unique features compared to traditional equity options, primarily **inverse settlement** where P&L is denominated in the underlying cryptocurrency (BTC/ETH) rather than USD.
 
-**Status**: ✅ Production Ready | **Phase**: 2B | **Tests**: 120 (100% pass)
+**Status**: ✅ Tested and operational | **Phase**: 2B | **Tests**: 120 (100% pass)
 
 ## Table of Contents
 
@@ -939,4 +939,4 @@ pytest tests/test_deribit_options.py::TestIntegration -v
 
 **Last Updated**: 2025-12-03
 **Version**: 1.0.0
-**Status**: ✅ Production Ready
+**Status**: ✅ Tested and operational

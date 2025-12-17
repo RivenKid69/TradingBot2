@@ -612,7 +612,7 @@ class TestDocstringUpdates:
 
         docstring = market_data.__doc__
         assert "STUB" not in docstring
-        assert "Production Ready" in docstring
+        assert "Tested and operational" in docstring
 
     def test_alpaca_init_docstring(self):
         """Test that STUB is removed from __init__.py docstring."""
@@ -620,7 +620,7 @@ class TestDocstringUpdates:
 
         docstring = alpaca.__doc__
         assert "STUB" not in docstring
-        assert "Production Ready" in docstring
+        assert "Tested and operational" in docstring
 
 
 # =============================================================================

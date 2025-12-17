@@ -441,7 +441,7 @@ python script_live.py --config configs/config_live.yaml
 ---
 
 **Дата**: 2025-11-27
-**Статус**: ✅ Production Ready (Multi-Asset Support)
+**Статус**: ✅ Tested and operational (Multi-Asset Support)
 **Основной язык**: Python + Cython + C++
 **Поддерживаемые рынки**: Crypto (Binance), US Equities (Alpaca/Polygon)
 

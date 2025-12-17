@@ -6,7 +6,7 @@ Alpaca adapter implementations for US equity trading.
 This package provides adapter implementations for Alpaca Markets,
 enabling stock trading with the same interface as crypto trading.
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 Usage:
     from adapters.alpaca import (

@@ -1225,8 +1225,8 @@ class TestOandaAdapterImplementation:
 
         assert oanda.__doc__ is not None
         assert "OANDA" in oanda.__doc__
-        # Phase 2 complete - should say "Production Ready"
-        assert "Production Ready" in oanda.__doc__ or "Phase 2" in oanda.__doc__
+        # Phase 2 complete - should say "Tested and operational"
+        assert "Tested and operational" in oanda.__doc__ or "Phase 2" in oanda.__doc__
 
     def test_oanda_adapters_importable(self):
         """Test that all OANDA adapters can be imported."""

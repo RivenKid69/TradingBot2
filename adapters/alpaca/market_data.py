@@ -3,7 +3,7 @@
 adapters/alpaca/market_data.py
 Alpaca market data adapter for US equities.
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 Alpaca provides:
 - REST API for historical data (get_bars, get_latest_bar, get_tick)

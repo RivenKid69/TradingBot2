@@ -3,7 +3,7 @@
 adapters/oanda/exchange_info.py
 OANDA exchange info adapter for forex currency pairs.
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 Provides information about tradable currency pairs:
 - Available instruments

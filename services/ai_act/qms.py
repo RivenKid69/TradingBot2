@@ -3,7 +3,7 @@
 AI Act Quality Management System (Article 17).
 
 EU AI Act Article 17 requires providers of high-risk AI systems to put
-a quality management system in place that ensures compliance.
+a quality management system in place designed to support compliance.
 
 This module provides:
 1. QualityManagementSystem - Main QMS orchestrator

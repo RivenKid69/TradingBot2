@@ -10,12 +10,12 @@ The futures integration extends the platform to support crypto perpetual futures
 
 | Type | Exchange | Examples | Status |
 |------|----------|----------|--------|
-| **Crypto Perpetual** | Binance | BTCUSDT, ETHUSDT | Production Ready |
+| **Crypto Perpetual** | Binance | BTCUSDT, ETHUSDT | Tested and operational |
 | **Crypto Quarterly** | Binance | BTCUSDT_240329 | Planned |
-| **Equity Index** | CME (via IB) | ES, NQ, YM, RTY | Production Ready |
-| **Commodity** | CME (via IB) | GC, CL, SI, NG | Production Ready |
-| **Currency** | CME (via IB) | 6E, 6J, 6B | Production Ready |
-| **Bonds** | CME (via IB) | ZN, ZB, ZT | Production Ready |
+| **Equity Index** | CME (via IB) | ES, NQ, YM, RTY | Tested and operational |
+| **Commodity** | CME (via IB) | GC, CL, SI, NG | Tested and operational |
+| **Currency** | CME (via IB) | 6E, 6J, 6B | Tested and operational |
+| **Bonds** | CME (via IB) | ZN, ZB, ZT | Tested and operational |
 
 ## Architecture Overview
 

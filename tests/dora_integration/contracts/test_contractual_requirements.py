@@ -454,7 +454,7 @@ class TestProvisionManagement:
         assessed = manager.assess_provision(
             provision_id=provision.provision_id,
             compliance_status=ComplianceStatus.COMPLIANT,
-            compliance_notes="Fully compliant",
+            compliance_notes="Assessed as compliant",
             assessed_by="Test Assessor",
         )
         assert assessed.compliance_status == ComplianceStatus.COMPLIANT

@@ -152,7 +152,7 @@ Provides comprehensive compliance metrics and dashboards.
 | Purge | Success rate, consecutive failures, records processed | 100% success |
 | Break-Glass | Requests/day, duration, approval rate | Minimal usage |
 | Residency | Drift count, EU compliance rate | Drift = 0 |
-| Inventory | Compliance rate, pending reviews | 100% compliant |
+| Inventory | Compliance rate, pending reviews | Target: Full compliance |
 
 #### 2.3.2 Compliance Scores
 

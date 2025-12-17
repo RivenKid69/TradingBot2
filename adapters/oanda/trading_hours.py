@@ -3,7 +3,7 @@
 adapters/oanda/trading_hours.py
 Forex trading hours adapter with DST awareness.
 
-Status: Production Ready (Phase 2 Complete)
+Status: Tested and operational (Phase 2 Complete)
 
 Forex Market Hours:
 - Opens: Sunday 5:00 PM ET (21:00 UTC winter, 22:00 UTC summer)
