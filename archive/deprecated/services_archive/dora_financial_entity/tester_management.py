@@ -1219,7 +1219,7 @@ class DORATestermanagement:
 
         if all(all_checks):
             assessment.overall_result = QualificationStatus.APPROVED
-            assessment.summary = "Tester meets all Article 27 requirements"
+            assessment.summary = "Tester designed to meet Article 27 requirements (pending external validation)"
         else:
             assessment.overall_result = QualificationStatus.REJECTED
             failed = []

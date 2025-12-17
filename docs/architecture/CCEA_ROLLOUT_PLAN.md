@@ -125,7 +125,7 @@ This document defines the phased rollout plan for the CCEA Platform and tracks o
 
 ### Phase 5: Enterprise Pack
 
-**Goal:** Enterprise-ready features
+**Goal:** Features designed for enterprise adoption
 
 | Component | Deliverable | Status |
 |-----------|-------------|--------|

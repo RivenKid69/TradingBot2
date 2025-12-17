@@ -98,7 +98,7 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 │  │  Backtesting │  │  (signed)    │  │ (lifecycle)  │  │  Monitoring     │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
-│  CLOUD GUARANTEES (enforced at architecture level):                         │
+│  CLOUD DESIGN COMMITMENTS (enforced at architecture level):                         │
 │  - NEVER stores broker API keys or trading credentials                      │
 │  - NEVER generates, transmits, or executes trading orders                   │
 │  - NEVER has access to exchange trading endpoints                           │
@@ -133,7 +133,7 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 
 **CCEA Regulatory Significance**:
 
-| CCEA Guarantee | Regulatory Impact |
+| CCEA Design Commitment | Regulatory Impact |
 |----------------|-------------------|
 | Cloud never stores credentials | Not a custodian, no custody requirements |
 | Cloud never sends orders | Not an execution venue, no broker-dealer license |

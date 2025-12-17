@@ -1,17 +1,17 @@
-# CCEA Privacy Guarantees Checklist
+# CCEA Privacy Design Commitments Checklist
 
 **Document Type**: Compliance Verification Checklist
 **Version**: 1.0.0
 **Last Updated**: 2025-12-16
 **Owner**: Data Protection Officer
-**Purpose**: Explicit verification that CCEA privacy guarantees are enforced
+**Purpose**: Explicit verification that CCEA privacy design commitments are enforced by architecture
 **Scope**: EU-only CCEA Cloud platform
 
 ---
 
 ## 1. Overview
 
-This checklist provides explicit verification that the CCEA (Cloud-Controlled Execution Architecture) privacy guarantees are being enforced. These guarantees are:
+This checklist provides explicit verification that the CCEA (Cloud-Controlled Execution Architecture) privacy design commitments are being enforced. These design commitments are:
 
 1. **Architectural invariants** - Cannot be overridden by configuration
 2. **Legally binding** - Referenced in Privacy Policy, Terms of Service, and DPA
@@ -20,11 +20,11 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ---
 
-## 2. Privacy Guarantee Categories
+## 2. Privacy Design Commitment Categories
 
 ### 2.1 Cloud Never Receives Secrets
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | S-01 | No broker API keys in Cloud | Schema validation | Build-time CI test | [ ] |
 | S-02 | No broker API secrets in Cloud | Redaction middleware | Runtime + CI test | [ ] |
@@ -40,7 +40,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ### 2.2 No Order-like Payloads in Protocol
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | O-01 | No `side` (buy/sell) in commands | JSON Schema | Build-time CI | [ ] |
 | O-02 | No `quantity` in commands | JSON Schema | Build-time CI | [ ] |
@@ -65,7 +65,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ### 2.3 Telemetry Sensitivity Levels
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | T-01 | Default telemetry is AGGREGATED | Config default | Runtime check | [ ] |
 | T-02 | DETAILED_NON_SENSITIVE requires opt-in | Explicit configuration | Audit event | [ ] |
@@ -98,7 +98,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ### 2.4 EU-only Data Residency
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | R-01 | All storage in EU | Region config | Drift check | [ ] |
 | R-02 | All backups in EU | Backup region policy | Drift check | [ ] |
@@ -119,7 +119,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ### 2.5 DSAR Scope Boundaries
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | D-01 | DSAR scope is Cloud-only | Architecture | Process documentation | [ ] |
 | D-02 | Agent data is customer-controlled | No Cloud access | Cannot export | [ ] |
@@ -151,7 +151,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ### 2.6 Support-with-Consent
 
-| # | Guarantee | Enforcement | Verification Method | Status |
+| # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
 | C-01 | Support access requires consent | Access control | Runtime enforcement | [ ] |
 | C-02 | Consent record has required fields | Schema validation | CI test | [ ] |
@@ -187,7 +187,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 Run automated checks:
 
 ```bash
-# Run CCEA privacy guarantee tests
+# Run CCEA privacy design commitment tests
 pytest tests/compliance/test_ccea_privacy_guarantees.py -v
 
 # Run schema validation tests

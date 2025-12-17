@@ -33,7 +33,7 @@ We build a SaaS platform for:
 Architecture that:
 1. **Technically** provides good UX for "auto-trading" without Cloud becoming an execution service
 2. **Legally/commercially** positions as "software provider", reducing RTO/execution/advice qualification risks
-3. **Enterprise-ready**: auditability, change control, data governance, vendor pack
+3. **Designed for enterprise adoption**: auditability, change control, data governance, vendor pack
 
 ### 1.3 Short Formula
 

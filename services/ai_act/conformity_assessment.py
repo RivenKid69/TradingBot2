@@ -772,9 +772,9 @@ class ConformitySelfAssessment:
     ) -> str:
         """Generate assessment conclusions."""
         if status == ConformityStatus.PASSED:
-            return (f"The AI system has successfully passed the conformity assessment "
-                   f"with a compliance score of {score:.1f}%. The system meets all "
-                   f"requirements of the EU AI Act for high-risk AI systems.")
+            return (f"The AI system has passed the internal conformity self-assessment "
+                   f"with a compliance score of {score:.1f}%. The system is designed to meet "
+                   f"requirements of the EU AI Act for high-risk AI systems (pending external audit).")
         elif status == ConformityStatus.CONDITIONAL:
             return (f"The AI system has conditionally passed the conformity assessment "
                    f"with a compliance score of {score:.1f}%. Minor remediation is "

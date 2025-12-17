@@ -16,10 +16,10 @@ Cloud components per Design Doc:
 - **Governance** - RBAC, multi-tenancy, data residency, retention policies
 - **Research Environment** - Backtest runner, sandbox isolation
 
-## Security Guarantees
+## Security Design Commitments
 
 ```
-Cloud Zone GUARANTEES:
+Cloud Zone DESIGN COMMITMENTS (enforced by architecture):
   - NEVER stores broker API keys or trading credentials
   - NEVER generates, transmits, or executes trading orders
   - NEVER has access to exchange trading endpoints

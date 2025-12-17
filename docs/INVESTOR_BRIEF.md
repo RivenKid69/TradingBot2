@@ -63,7 +63,7 @@ Our platform implements **CCEA** - a strict architectural separation that ensure
 | Benefit | Description |
 |---------|-------------|
 | **Regulatory Clarity** | Software provider positioning under MiFID II (no licensing requirement) |
-| **Enterprise Ready** | Satisfies institutional security requirements (secrets never leave user infra) |
+| **Enterprise-Ready Design** | Designed to satisfy institutional security requirements (secrets never leave user infra) |
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
 | **Multiple Revenue Streams** | Research SaaS (retail) + Enterprise licenses (on-prem/VPC) |
 

@@ -260,7 +260,7 @@ This checklist is used to perform the conformity self-assessment per Article 43 
 
 ### Assessment Decision
 
-- [ ] **PASSED** - System meets all requirements
+- [ ] **PASSED** - System designed to meet all requirements (pending external audit)
 - [ ] **CONDITIONAL** - Minor remediation required
 - [ ] **REQUIRES REMEDIATION** - Major gaps must be addressed
 - [ ] **FAILED** - Critical gaps prevent conformity

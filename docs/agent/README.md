@@ -19,10 +19,10 @@ Agent components per Design Doc:
 - **Kill Switch** - Local halt mechanism (17 halt reason types)
 - **Telemetry Buffer** - SQLite + redaction middleware
 
-## Security Guarantees
+## Security Design Commitments
 
 ```
-Agent Zone GUARANTEES:
+Agent Zone DESIGN COMMITMENTS (enforced by architecture):
   - Secrets (API keys) NEVER leave the local environment
   - Orders are created and sent ONLY locally
   - Local hard caps CANNOT be overridden by Cloud

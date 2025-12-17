@@ -17,7 +17,7 @@ This platform implements **CCEA** - a strict separation between Cloud (research/
 | **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
 | **Agent** | Live execution, risk enforcement, local vault, order creation | **LOCAL ONLY** | **YES** |
 
-**Key Security Guarantees:**
+**Key Security Design Commitments:**
 - Cloud **NEVER** stores broker API keys or credentials
 - Cloud **NEVER** generates, transmits, or executes trading orders
 - Cloud **NEVER** has access to exchange trading endpoints
@@ -209,7 +209,7 @@ General Data Protection Regulation - all 9 compliance toolkit phases implemented
 - Phase 8: Continuous compliance, privacy-by-design CI checks
 - Phase 9: Enterprise/on-prem/VPC posture
 
-**CCEA Privacy Guarantees:**
+**CCEA Privacy Design Commitments:**
 - Cloud **NEVER** receives broker credentials or API keys
 - Cloud **NEVER** receives order-like payloads in commands
 - Telemetry **ALWAYS** redacted before transmission

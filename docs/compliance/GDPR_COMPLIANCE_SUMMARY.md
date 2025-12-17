@@ -27,7 +27,7 @@ The AI-Powered Quantitative Research Platform is designed to align with GDPR req
 
 ---
 
-## CCEA Privacy Guarantees
+## CCEA Privacy Design Commitments
 
 The CCEA architecture provides inherent GDPR compliance through strict zone separation:
 
@@ -91,7 +91,7 @@ RAW_ORDER_EVENTS (Enterprise-only + Explicit Opt-in)
 | DSAR SOP | [DSAR_SOP.md](DSAR_SOP.md) |
 | Subprocessors Register | [SUBPROCESSORS_REGISTER.md](SUBPROCESSORS_REGISTER.md) |
 | Support Consent Policy | [SUPPORT_CONSENT_POLICY.md](SUPPORT_CONSENT_POLICY.md) |
-| CCEA Privacy Guarantees | [CCEA_PRIVACY_GUARANTEES_CHECKLIST.md](CCEA_PRIVACY_GUARANTEES_CHECKLIST.md) |
+| CCEA Privacy Design Commitments | [CCEA_PRIVACY_GUARANTEES_CHECKLIST.md](CCEA_PRIVACY_GUARANTEES_CHECKLIST.md) |
 
 ### Phase 2: Data Minimization Enforcement
 
