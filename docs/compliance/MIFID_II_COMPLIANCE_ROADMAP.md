@@ -2,7 +2,7 @@
 
 **Версия**: 8.0
 **Дата**: 2025-12-11
-**Статус**: ВСЕ ФАЗЫ ЗАВЕРШЕНЫ ✅
+**Статус**: ALL TOOLKIT PHASES IMPLEMENTED ✅ (Implementation complete, not certified)
 
 ---
 
@@ -39,7 +39,7 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 **What this DOES mean:**
 - ✅ All planned compliance tools have been implemented
 - ✅ Tools are designed to align with MiFID II requirements
-- ✅ Clients receive a compliance-ready toolkit
+- ✅ Clients receive a toolkit designed to support compliance efforts
 - ✅ Comprehensive testing has been performed (1,500+ tests)
 
 **Client Responsibility:**
@@ -132,8 +132,8 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 │ NCA Notification              [██████████] 100% ✅ (archived)   │
 │                                                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│ TOOLKIT COMPLETENESS:        [██████████] 100% ✅               │
-│ (All tools implemented for B2B clients)                         │
+│ TOOLKIT IMPLEMENTATION:      [██████████] 100% ✅               │
+│ (All tools implemented, not externally certified)               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

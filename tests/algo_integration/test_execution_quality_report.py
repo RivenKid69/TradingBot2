@@ -16,7 +16,7 @@ Tests cover:
     - Export formats (JSON, CSV, HTML, TEXT)
     - Edge cases and concurrent operations
 
-Target: 100% code coverage per MiFID II compliance requirements.
+Target: Comprehensive code coverage designed to align with MiFID II requirements.
 """
 
 import json

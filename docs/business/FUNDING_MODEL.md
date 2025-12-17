@@ -12,10 +12,10 @@
 CCEA Platform (Cloud-Controlled Execution Architecture) is seeking **€750K-1.2M** in seed funding to accelerate go-to-market for our AI-powered quantitative research platform. The funding will enable us to achieve product-market fit with 10-15 paying enterprise customers within 18 months, positioning the company for Series A at €15-25M valuation.
 
 **Key Investment Highlights:**
-- Proven technology: 597 test files, 11,063 tests, production-ready platform
+- Proven technology: 597 test files, 11,063 tests, platform designed for production deployment
 - Unique Cloud/Agent architecture: Open-source Agent, proprietary Cloud
 - Multi-asset coverage: Equities, Forex, Crypto, Futures (CME, Binance)
-- Risk-first architecture: CVaR-RL with MiFID II/MAR compliance built-in
+- Risk-first architecture: CVaR-RL with MiFID II/MAR compliance toolkit built-in
 - Regulatory positioning: Software Provider, not Investment Advisor
 - Capital-efficient model: €750K runway to €1.5M ARR milestone
 
@@ -53,7 +53,7 @@ Based on comparable seed rounds in quantitative finance software:
 
 | Asset | Estimated Value | Basis |
 |-------|-----------------|-------|
-| **Technology Platform** | €1.5-2M | 3 years development, 50K+ LoC, production-ready |
+| **Technology Platform** | €1.5-2M | 3 years development, 50K+ LoC, designed for production use |
 | **IP Portfolio** | €500K-1M | CVaR-RL architecture, patent-pending claims |
 | **Cloud/Agent Architecture** | €300-500K | Unique regulatory positioning, open-source Agent moat |
 | **Regulatory Readiness** | €300-500K | MiFID II Art.17 compliance, Software Provider positioning |

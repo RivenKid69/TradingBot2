@@ -2,7 +2,7 @@
 
 ## Общая информация
 
-**Назначение**: Унифицированная production-ready платформа для алгоритмической торговли с использованием Reinforcement Learning
+**Назначение**: Унифицированная платформа для алгоритмической торговли с использованием Reinforcement Learning (designed for production use)
 
 **Статистика проекта**:
 - Python файлов: 1,366
@@ -219,7 +219,7 @@ Core Contracts & Models (core_*.py)
 
 ## Regulatory Compliance
 
-### MiFID II (Compliance-Ready - All Phases Implemented)
+### MiFID II (Designed to Align with Requirements - All Phases Implemented)
 
 | Модуль | Требование |
 |--------|------------|
@@ -238,7 +238,7 @@ Core Contracts & Models (core_*.py)
 | `bcp.py` | Business Continuity Plan |
 | `nca_notification.py` | NCA уведомления |
 
-### EU AI Act (Compliance-Ready - 1,007 tests)
+### EU AI Act (Designed to Align with Requirements - 1,007 tests)
 
 | Модуль | Описание |
 |--------|----------|
@@ -257,7 +257,7 @@ Core Contracts & Models (core_*.py)
 | `technical_documentation.py` | Техническая документация |
 | `post_market_monitoring.py` | Post-market мониторинг |
 
-### DORA (Compliance-Ready - ~1,015 tests)
+### DORA (Designed to Align with Requirements - ~1,015 tests)
 
 | Фаза | Описание |
 |------|----------|
@@ -589,7 +589,7 @@ state:
 
 ## Production статус
 
-**Разработано для production использования**:
+**Designed for production deployment**:
 - Crypto spot/futures торговля (Binance)
 - US equities (Alpaca, Polygon)
 - Forex (OANDA)
@@ -597,8 +597,10 @@ state:
 - Options (Deribit, Theta Data)
 - Distributional PPO с safety features
 - Multi-asset risk management
-- MiFID II (designed to align with requirements)
-- EU AI Act (designed to align with requirements)
-- DORA (designed to align with requirements)
+- MiFID II toolkit (designed to align with requirements)
+- EU AI Act toolkit (designed to align with requirements)
+- DORA toolkit (designed to align with requirements)
+
+> **Note**: Regulatory compliance status reflects implementation of compliance toolkits designed to align with regulatory requirements. This does not constitute certification or guarantee of compliance. Organizations must conduct their own compliance assessment with qualified legal and regulatory advisors.
 
 **Simulator-to-live parity**: <3% backtest deviation

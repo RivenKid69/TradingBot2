@@ -63,7 +63,7 @@ strategy:
     - id: "OBJ-005"
       name: "Client Support"
       description: "Support client DORA compliance requirements"
-      target_metric: "100% Art. 30 compliance"
+      target_metric: "Toolkit designed to align with Art. 30 requirements"
       dora_reference: "Art. 30"
 
 # =============================================================================

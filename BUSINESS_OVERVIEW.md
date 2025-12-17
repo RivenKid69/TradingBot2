@@ -293,7 +293,7 @@
    - Розничные трейдеры требуют институциональные инструменты
 
 3. **Технологическая зрелость**
-   - Production-ready продукт
+   - Designed for production deployment
    - Доказанная работоспособность на реальных рынках
    - Обширная база тестов
 
@@ -342,7 +342,7 @@
 ### Инновационность
 
 - **Собственные алгоритмы ML**: Distributional PPO + CVaR, AdaptiveUPGD, VGS v3.2
-- **Первый EU AI Act compliant** trading platform
+- **Designed to align with EU AI Act requirements**: trading platform with compliance toolkit
 - **Академическая база**: 7+ peer-reviewed sources
 
 ### Масштабируемость
@@ -353,7 +353,7 @@
 
 ### Жизнеспособность
 
-- **Production-ready**: Работающий продукт
+- **Designed for production use**: Работающий продукт
 - **Revenue potential**: Четкая бизнес-модель
 - **Competitive moat**: Регуляторная готовность + технология
 
