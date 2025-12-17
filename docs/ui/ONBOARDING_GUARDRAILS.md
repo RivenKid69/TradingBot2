@@ -4,7 +4,7 @@
 
 ## Overview
 
-This document defines the required disclaimers, warnings, and acknowledgment flows for the Platform's user interface. These guardrails ensure regulatory compliance and proper user expectations.
+This document defines the required disclaimers, warnings, and acknowledgment flows for the Platform's user interface. These guardrails are designed to support compliance efforts and set proper user expectations.
 
 ---
 

@@ -149,7 +149,7 @@ Deliverables:
 
 DoD:
 - Public/legal docs and engineering reality are consistent (no contradictions about credentials, order data, telemetry levels, EU-only residency, DSAR boundaries).
-- “CCEA privacy guarantees” checklist is explicitly stated:
+- "CCEA privacy design commitments" checklist is explicitly stated:
   - Cloud never receives secrets/credentials/env vars
   - No order-like payloads exist in Cloud→Agent protocol commands
   - Telemetry is redacted; defaults to `AGGREGATED`; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is enterprise-only + explicit opt-in (and may be “telemetry stays local” instead)
@@ -171,7 +171,7 @@ DoD:
 | DSAR Response Templates | ✅ Done | Included in DSAR_SOP.md |
 | Subprocessors Register | ✅ Done | `docs/compliance/SUBPROCESSORS_REGISTER.md` |
 | Support Consent Policy | ✅ Done | `docs/compliance/SUPPORT_CONSENT_POLICY.md` |
-| CCEA Privacy Design Commitments Checklist | ✅ Done | `docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md` |
+| CCEA Privacy Design Commitments Checklist | ✅ Done | `docs/compliance/CCEA_PRIVACY_DESIGN_COMMITMENTS_CHECKLIST.md` |
 | Support Consent Service (Code) | ✅ Done | `packages/cloud/governance/consent.py` |
 | DSAR CCEA Boundary Updates | ✅ Done | `packages/cloud/governance/dsar.py` |
 | Tests | ✅ Done | `packages/cloud/governance/tests/test_consent.py`, `test_dsar_phase1.py` |
@@ -278,7 +278,7 @@ DoD:
 
 **Status**: ✅ **COMPLETED**
 
-**Goal**: residency is a runtime guarantee, not a claim.
+**Goal**: residency is a runtime enforcement, not just a claim.
 
 Key work:
 - Enforce EU region selection and prevent cross-region storage/processing.

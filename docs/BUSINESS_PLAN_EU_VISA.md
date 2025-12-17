@@ -691,7 +691,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 - Algorithm performance monitoring (built-in logging)
 - Position limits and circuit breakers (impl_circuit_breaker.py)
 
-**Competitive Edge**: US-focused platforms (QuantConnect, Alpaca) do not prioritize MiFID II compliance features. Our European-first development ensures regulatory alignment.
+**Competitive Edge**: US-focused platforms (QuantConnect, Alpaca) do not prioritize MiFID II compliance features. Our European-first development is designed to align with regulatory requirements.
 
 ### 6.5 Quantified Competitive Moats
 

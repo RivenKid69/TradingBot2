@@ -30,7 +30,7 @@
 
 **Regulatory-First Design**: We are a **SOFTWARE PROVIDER**, not an Investment Adviser or Broker-Dealer.
 
-Our platform implements **CCEA** - a strict architectural separation that ensures regulatory clarity:
+Our platform implements **CCEA** - a strict architectural separation designed to support regulatory clarity:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

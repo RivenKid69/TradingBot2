@@ -248,7 +248,7 @@ All business documentation has been synchronized with Design Doc CCEA Cloud (202
 
 | Document | CCEA Section Added | Key Additions | Status |
 |----------|-------------------|---------------|--------|
-| docs/BUSINESS_PLAN_EU_VISA.md | §2.4, §3.4 | Legal Structure with CCEA guarantees, CCEA Architecture section | ✅ Aligned |
+| docs/BUSINESS_PLAN_EU_VISA.md | §2.4, §3.4 | Legal Structure with CCEA design commitments, CCEA Architecture section | ✅ Aligned |
 | docs/REGULATORY_COMPLIANCE_STRATEGY.md | §1.4, §1.5, §2.1.1-2.1.2 | CCEA Architecture diagram, CCEA Technical Enforcement, DORA/AI Act compliance | ✅ Aligned |
 | docs/ENTERPRISE_DEPLOYMENT_ARCHITECTURE.md | Executive Summary, CCEA Zone Overview | CCEA Zone Architecture, Enterprise Deployment Options | ✅ Aligned |
 | docs/CYBERSECURITY_FRAMEWORK.md | §1.1 | CCEA Security Model, Threat Model, CI/CD Guardrails | ✅ Aligned |

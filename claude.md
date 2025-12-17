@@ -7495,7 +7495,7 @@ pytest tests/test_conformal_prediction.py -v
 | **Agent** | `packages/agent/` | Vault, Execution, Policy, Daemon | **LOCAL** | **YES** |
 | **Shared** | `packages/shared/`, `core_*`, `impl_*` | Safe for both runtimes | N/A | N/A |
 
-#### Key Security Guarantees
+#### Key Security Design Commitments
 
 - Cloud **НИКОГДА** не хранит broker API keys
 - Cloud **НИКОГДА** не создает, не передает, не исполняет ордера

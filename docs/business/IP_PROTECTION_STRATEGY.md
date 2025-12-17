@@ -14,7 +14,7 @@ CCEA Platform employs a **multi-layered IP protection strategy** combining trade
 | **Contractual (NDA)** | All employees, contractors, beta clients | ✅ Active |
 
 **Key Statement for Investors:**
-> "Core RL training, backtest engine, and artifact management are protected in our Cloud as trade secrets and patent-pending innovations. The CCEA Agent (local execution) is open-source to drive adoption, while Cloud services remain proprietary—this split maximizes adoption without compromising competitive advantage and ensures regulatory compliance by keeping execution in customer environments."
+> "Core RL training, backtest engine, and artifact management are protected in our Cloud as trade secrets and patent-pending innovations. The CCEA Agent (local execution) is open-source to drive adoption, while Cloud services remain proprietary—this split maximizes adoption without compromising competitive advantage and supports regulatory alignment by keeping execution in customer environments."
 
 ---
 

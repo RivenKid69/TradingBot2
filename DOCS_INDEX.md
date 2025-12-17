@@ -248,7 +248,7 @@
 | [SUBPROCESSORS_REGISTER.md](docs/compliance/SUBPROCESSORS_REGISTER.md) | EU subprocessors list |
 | [BREACH_RESPONSE_SOP.md](docs/compliance/BREACH_RESPONSE_SOP.md) | Breach notification workflow |
 | [RETENTION_POLICY_SPEC.md](docs/compliance/RETENTION_POLICY_SPEC.md) | Retention policies |
-| [CCEA_PRIVACY_GUARANTEES_CHECKLIST.md](docs/compliance/CCEA_PRIVACY_GUARANTEES_CHECKLIST.md) | Privacy guarantees |
+| [CCEA_PRIVACY_DESIGN_COMMITMENTS_CHECKLIST.md](docs/compliance/CCEA_PRIVACY_DESIGN_COMMITMENTS_CHECKLIST.md) | Privacy design commitments |
 
 ---
 

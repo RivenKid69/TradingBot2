@@ -22,7 +22,7 @@ The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with 
 │  │  Backtesting │  │   (signed)   │  │  (lifecycle) │  │  (redacted)     │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
-│  SECURITY GUARANTEES:                                                        │
+│  SECURITY DESIGN COMMITMENTS:                                                │
 │  - NO trading credentials stored                                             │
 │  - NO order generation or transmission                                       │
 │  - NO access to exchange trading endpoints                                   │
@@ -44,7 +44,7 @@ The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with 
 │  │  (HSM/KMS)   │  │ (hard caps)  │  │ Intent→Order │  │  (execution)    │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
-│  SECURITY GUARANTEES:                                                        │
+│  SECURITY DESIGN COMMITMENTS:                                                │
 │  - Secrets NEVER leave this zone                                             │
 │  - All orders created and sent from this zone                                │
 │  - Hard caps enforced locally                                                │

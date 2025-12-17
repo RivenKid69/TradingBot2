@@ -114,7 +114,7 @@ See: [ENTERPRISE.md](./ENTERPRISE.md)
 
 ```
 packages/cloud/
-├── __init__.py              # Security guarantees documented
+├── __init__.py              # Security design commitments documented
 ├── control_plane/           # API and lifecycle management
 │   ├── routers/             # FastAPI routers
 │   │   ├── deployments.py

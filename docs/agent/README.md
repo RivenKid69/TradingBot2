@@ -107,7 +107,7 @@ State consistency:
 
 ```
 packages/agent/
-├── __init__.py              # Security guarantees documented
+├── __init__.py              # Security design commitments documented
 ├── daemon/                  # Agent daemon
 │   ├── agentd.py           # Main daemon
 │   ├── kill_switch.py      # Kill switch

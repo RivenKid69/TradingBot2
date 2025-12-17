@@ -8813,7 +8813,7 @@ Class InternationalCooperationManager:
     Article 50 implementation - International cooperation for data protection.
 
     CRITICAL for trading platforms: Financial regulators (SEC, CFTC, FCA)
-    frequently request cross-border data. This module ensures GDPR-compliant
+    frequently request cross-border data. This module is designed to support GDPR-aligned
     responses to such requests.
 
     Key principle: Direct compliance with non-EU court judgments or

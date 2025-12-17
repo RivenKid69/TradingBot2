@@ -24,7 +24,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         CLOUD ZONE (Research & Control)                      │
 │                                                                              │
-│  SECURITY GUARANTEES (enforced at architecture level):                       │
+│  SECURITY DESIGN COMMITMENTS (enforced at architecture level):               │
 │  ✗ NO trading credentials stored (secrets never enter Cloud)                │
 │  ✗ NO order generation or transmission (no trading libs in build)           │
 │  ✗ NO access to exchange trading endpoints (no broker APIs)                 │
@@ -40,7 +40,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         AGENT ZONE (Execution & Secrets)                     │
 │                                                                              │
-│  SECURITY GUARANTEES (enforced locally):                                     │
+│  SECURITY DESIGN COMMITMENTS (enforced locally):                             │
 │  ✓ Secrets stored in local vault (HSM/KMS/keychain)                         │
 │  ✓ All orders created and sent locally (never via Cloud)                    │
 │  ✓ Hard caps enforced by Policy Firewall (cannot be bypassed)               │

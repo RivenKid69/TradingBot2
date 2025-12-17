@@ -229,7 +229,7 @@ For customer due diligence and audits, export:
 
 | Evidence Type | Description | Format |
 |---------------|-------------|--------|
-| Privacy guarantees checklist | This document (completed) | PDF/MD |
+| Privacy design commitments checklist | This document (completed) | PDF/MD |
 | CI test results | Automated verification | JSON/HTML |
 | Schema definitions | Protocol schema | JSON Schema |
 | Drift check reports | EU residency verification | JSON |
@@ -242,7 +242,7 @@ For customer due diligence and audits, export:
 
 ## 5. Non-Compliance Escalation
 
-If any guarantee is found non-compliant:
+If any design commitment is found non-compliant:
 
 ### 5.1 Severity Levels
 
