@@ -27,9 +27,25 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 | 🟡 **INTEGRATION** | `services.algo_integration` | MiFID II compliance toolkit | B2B enterprise clients |
 | 🔴 **ARCHIVE** | `services.archive.mifid_financial_entity` | Investment Firm modules | **ARCHIVED** - not for ICT Providers |
 
-### Why "100% Complete"?
+### Important Disclaimer on Compliance Status
 
-"100% compliance" means we have **implemented all the tools** our B2B clients need to meet their MiFID II obligations — not that we as an ICT Provider are subject to these requirements.
+**"Toolkit Implementation Complete"** means we have **implemented all necessary tools and controls** designed to help B2B clients align with MiFID II requirements.
+
+**What this does NOT mean:**
+- ❌ We are NOT claiming to be "MiFID II compliant" or "MiFID II certified"
+- ❌ We have NOT undergone independent third-party audit or certification
+- ❌ We are NOT guaranteeing that use of our toolkit ensures regulatory compliance
+
+**What this DOES mean:**
+- ✅ All planned compliance tools have been implemented
+- ✅ Tools are designed to align with MiFID II requirements
+- ✅ Clients receive a compliance-ready toolkit
+- ✅ Comprehensive testing has been performed (1,500+ tests)
+
+**Client Responsibility:**
+- Clients must conduct their own compliance assessment
+- Clients should engage qualified legal/compliance advisors
+- Final compliance determination rests with clients and their regulators
 
 ---
 

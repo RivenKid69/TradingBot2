@@ -2,8 +2,10 @@
 
 **Version**: 2.4
 **Date**: 2025-12-11
-**Status**: Phase 1 Complete — Production Ready for EU Clients
-**Revision**: Phase 1 implementation complete with 100% test coverage
+**Status**: Phase 1 Complete — Toolkit Ready for Client Use
+**Revision**: Phase 1 implementation complete with comprehensive test coverage
+
+> **Important**: This document describes the DORA compliance toolkit provided to clients. The status "Toolkit Ready" means all planned tools and controls have been implemented and tested. This does NOT constitute certification or guarantee of regulatory compliance. Clients must conduct their own compliance assessment with qualified advisors.
 
 > **Note (v2.4)**: References to `services/compliance/` are historical. MiFID II compliance modules have been reorganized:
 > - `services/core/risk_controls/` (universal risk controls, audit_trail, bcp)
@@ -74,10 +76,10 @@
 
 **Phase 1 Completion Summary:**
 - All 15 work blocks completed
-- 474 DORA tests passing (100%)
+- 474 DORA tests passing (comprehensive coverage)
 - 2 new Python modules with 81 tests
 - 8 new documentation files
-- Production ready for EU financial entity clients
+- Toolkit ready for client use (not independently audited)
 
 ---
 

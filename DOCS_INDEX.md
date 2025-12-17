@@ -84,10 +84,12 @@
 | **Multi-Asset (Stocks)** | ✅ Production | Phase 3 |
 | **Execution Providers** | ✅ Production | Phase 4 (L2) |
 | **Live Trading Improvements** | ✅ Production | Phase 9 |
-| **MiFID II Compliance** | ✅ Production | 7/7 фаз (100%) |
-| **EU AI Act Compliance** | ✅ Production | Phase 4/4 (100%) |
-| **DORA Compliance** | ✅ Production | Phase 5/5 (100%) |
-| **GDPR Compliance** | ✅ Production | Phase 9/9 (100%) |
+| **MiFID II Compliance** | ✅ Toolkit Ready | 7/7 tools implemented |
+| **EU AI Act Compliance** | ✅ Toolkit Ready | 4/4 phases complete |
+| **DORA Compliance** | ✅ Toolkit Ready | 5/5 phases complete |
+| **GDPR Compliance** | ✅ Toolkit Ready | 9/9 phases complete |
+
+> **Note on Compliance Status**: "Toolkit Ready" means we have implemented all necessary tools and controls designed to help clients align with regulatory requirements. These implementations have not undergone independent third-party audit or certification. Clients seeking regulatory compliance should conduct their own compliance assessment or engage qualified legal/compliance advisors.
 
 **⚠️ Переобучите модели**, если они обучены до 2025-11-26.
 
@@ -161,7 +163,7 @@
 | [docs/seasonality_process.md](docs/seasonality_process.md) | Development process |
 | [docs/seasonality_signoff.md](docs/seasonality_signoff.md) | Sign-off procedure |
 
-### MiFID II Compliance (100% Complete)
+### MiFID II Compliance (Toolkit Implementation Complete)
 
 | Файл | Описание |
 |------|----------|
@@ -177,7 +179,7 @@
 - Phase 6: Governance, Self-Assessment, BCP
 - Phase 7: Conformance Testing, Certification, NCA Notification
 
-### EU AI Act Compliance (100% Complete)
+### EU AI Act Compliance (Toolkit Implementation Complete)
 
 | Файл | Описание |
 |------|----------|
@@ -196,7 +198,7 @@
 
 **Total AI Act Tests: 1,007 passed**
 
-### DORA Compliance (100% Complete)
+### DORA Compliance (Toolkit Implementation Complete)
 
 | Файл | Описание |
 |------|----------|
@@ -214,7 +216,7 @@
 
 **Total DORA Tests: ~1,015 passed**
 
-### GDPR Compliance (100% Complete)
+### GDPR Compliance (Toolkit Implementation Complete)
 
 | Файл | Описание |
 |------|----------|

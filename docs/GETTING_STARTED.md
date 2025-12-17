@@ -562,10 +562,12 @@ The platform implements comprehensive regulatory compliance:
 
 | Regulation | Status | Description |
 |------------|--------|-------------|
-| **MiFID II** | 100% | ICT Provider compliance (kill switch, audit, TCA) |
-| **EU AI Act** | 100% | High-Risk AI System compliance |
-| **DORA** | 100% | Digital Operational Resilience |
-| **GDPR** | 100% | Data protection and privacy |
+| **MiFID II** | Toolkit Ready | Compliance tools for ICT Providers (kill switch, audit, TCA) |
+| **EU AI Act** | Toolkit Ready | Tools designed to align with High-Risk AI System requirements |
+| **DORA** | Toolkit Ready | Digital Operational Resilience controls implemented |
+| **GDPR** | Toolkit Ready | Data protection and privacy controls implemented |
+
+> **Note**: "Toolkit Ready" means compliance tools have been implemented and designed to help align with regulatory requirements. Independent certification or audit has not been performed. Consult qualified legal/compliance advisors for compliance assessment.
 
 **Privacy by Design (CCEA Architecture):**
 - Your broker credentials **NEVER** leave your local Agent

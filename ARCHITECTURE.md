@@ -519,13 +519,15 @@ services/compliance/
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| Phase 1 | LEI, Clock Sync, Algorithm Registration | ✅ 100% |
-| Phase 2 | Transaction Reporting (RTS 22) | ✅ 100% |
-| Phase 3 | Kill Switch, Pre-Trade Controls, Monitoring | ✅ 100% |
-| Phase 4 | Record Keeping, Audit Trail (5-7 years) | ✅ 100% |
-| Phase 5 | Best Execution, TCA, Venue Analysis | ✅ 100% |
-| Phase 6 | Governance, Self-Assessment, BCP | ✅ 100% |
-| Phase 7 | Testing, Certification, NCA Notification | ✅ 100% |
+| Phase 1 | LEI, Clock Sync, Algorithm Registration | ✅ Implemented |
+| Phase 2 | Transaction Reporting (RTS 22) | ✅ Implemented |
+| Phase 3 | Kill Switch, Pre-Trade Controls, Monitoring | ✅ Implemented |
+| Phase 4 | Record Keeping, Audit Trail (5-7 years) | ✅ Implemented |
+| Phase 5 | Best Execution, TCA, Venue Analysis | ✅ Implemented |
+| Phase 6 | Governance, Self-Assessment, BCP | ✅ Implemented |
+| Phase 7 | Testing, Certification, NCA Notification | ✅ Implemented |
+
+> **Note**: Status "Implemented" means compliance toolkit is ready for client use. This has not been independently audited or certified. Clients must conduct their own compliance assessment.
 
 Детали: [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md)
 
