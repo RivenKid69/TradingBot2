@@ -120,7 +120,7 @@ YEAR 2: CME FUTURES & COMMODITIES
 YEAR 1: EQUITY BEACHHEAD (START HERE)
 ┌─────────────────────────────────────────────────────────────────┐
 │  European/US equities via Alpaca, Interactive Brokers           │
-│  • MiFID II compliant, institutional credibility                │
+│  • MiFID II-aligned design, institutional credibility           │
 │  • Risk management is the story (not speculation)               │
 │  • Build case studies, testimonials, regulatory track record    │
 └─────────────────────────────────────────────────────────────────┘

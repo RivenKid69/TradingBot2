@@ -481,7 +481,7 @@ python script_live.py --config configs/config_live_alpaca.yaml --extended-hours
 
 ## Regulatory Compliance Layer
 
-Проект полностью соответствует требованиям **MiFID II** (все 7 фаз завершены).
+Проект реализует **compliance-ready toolkit**, спроектированный в соответствии с требованиями **MiFID II** (все 7 фаз реализованы). Это инструменты для поддержки compliance-процессов клиентов, не сертифицированные независимым аудитором.
 
 ### Структура compliance модулей
 

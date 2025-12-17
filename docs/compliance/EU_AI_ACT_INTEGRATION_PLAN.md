@@ -631,7 +631,7 @@ class AIActEventBus(EventBus):
 ```python
 class DataGovernanceFramework:
     """
-    Article 10 compliant data governance.
+    Article 10-aligned data governance.
 
     Components:
     1. Data quality assessment

@@ -159,7 +159,7 @@ Cloud NEVER:
 - Agent is optional, only needed for live trading
 - All secrets stay with the user
 - EU data residency by default
-- GDPR compliant telemetry
+- GDPR-aligned telemetry (mandatory redaction)
 
 ### 4.2 Retail Live via Local Agent
 

@@ -130,7 +130,7 @@ INCIDENT OCCURS
 
 | Category | Description | Evidence |
 |----------|-------------|----------|
-| **Platform Security** | SOC2 Type II certified, encryption, access controls | Annual SOC2 report |
+| **Platform Security** | SOC2 Type II ready architecture, encryption, access controls | SOC2 report (when certified) |
 | **Availability** | 99.9% SLA, multi-AZ deployment | Monthly SLA reports |
 | **Incident Support** | 24/7 incident response, client notifications | Incident reports |
 | **Audit Support** | Client and NCA audit cooperation | Audit records |

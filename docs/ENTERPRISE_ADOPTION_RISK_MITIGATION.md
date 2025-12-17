@@ -40,7 +40,7 @@ Prop trading firms have legitimate concerns about adopting external software:
 | **"Our strategies are our competitive edge"** | On-premises deployment - your data never leaves your servers |
 | **"Startups may disappear"** | Open architecture, no vendor lock-in, source code escrow options |
 | **"We need 99.99% uptime"** | Multi-region failover, comprehensive monitoring, 24/7 support tier |
-| **"Regulatory compliance is critical"** | MiFID II compliant audit trails, GDPR-ready data handling |
+| **"Regulatory compliance is critical"** | MiFID II-aligned audit trails, GDPR-ready data handling |
 | **"Integration with existing systems"** | REST/WebSocket APIs, FIX protocol support, modular adapters |
 | **"We need control over updates"** | Customer-controlled update cycles, staging environments |
 
@@ -393,7 +393,7 @@ General Data Protection Regulation requirements for data handling:
 **Data Processing Architecture**:
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    GDPR-COMPLIANT DATA PROCESSING                            │
+│                    GDPR-ALIGNED DATA PROCESSING                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  DATA CATEGORIES                                                             │
@@ -846,7 +846,7 @@ Our platform is built on proven, industry-standard technologies:
 | **Strategy Leakage** | On-premises deployment, no data leaves your infrastructure |
 | **Vendor Lock-in** | Open APIs, standard formats, source escrow |
 | **Performance Risk** | Shadow mode testing before live deployment |
-| **Regulatory Risk** | MiFID II compliant, regular compliance updates |
+| **Regulatory Risk** | MiFID II-aligned design, regular compliance updates |
 | **Operational Risk** | Kill switches, circuit breakers, 24/7 monitoring |
 | **Counterparty Risk** | Direct exchange connections, no intermediary |
 
@@ -875,7 +875,7 @@ Our platform is built on proven, industry-standard technologies:
 │                                                                              │
 │  vs. IN-HOUSE DEVELOPMENT                                                   │
 │  ✓ 80% faster time to production                                            │
-│  ✓ Pre-built regulatory compliance                                          │
+│  ✓ Pre-built compliance-ready toolkit                                       │
 │  ✓ Ongoing maintenance included                                             │
 │  ✓ Access to continuous improvements                                        │
 │                                                                              │

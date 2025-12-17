@@ -26,7 +26,7 @@ Design Doc: CCEA — Cloud Research + Deploy-to-Agent + Local Live Execution + C
 
 Юридически/коммерчески позиционируется как “software provider”, снижая риски квалификации как RTO/execution/advice.
 
-Enterprise-ready: auditability, change control, data governance, vendor pack.
+Designed for enterprise use: auditability, change control, data governance, vendor pack.
 
 1.3 Короткая формула CCEA
 

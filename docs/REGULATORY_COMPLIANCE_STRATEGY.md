@@ -138,7 +138,7 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 | Cloud never stores credentials | Not a custodian, no custody requirements |
 | Cloud never sends orders | Not an execution venue, no broker-dealer license |
 | Agent runs locally | Client retains execution control, our liability limited |
-| Mandatory telemetry redaction | GDPR compliant, no accidental secret exposure |
+| Mandatory telemetry redaction | GDPR-aligned design, no accidental secret exposure |
 | Signed artifacts only | Supply chain security, audit trail |
 
 ### 1.5 What We Explicitly Do NOT Do

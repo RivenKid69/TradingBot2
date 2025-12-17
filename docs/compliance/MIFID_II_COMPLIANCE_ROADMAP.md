@@ -2631,7 +2631,7 @@ Phase 7: Testing & Certification ✅ COMPLETED (2025-12-07)
 | Phase 7: Testing & Certification | ✅ 100% | 183 |
 | **TOTAL** | **100%** | **~1500** |
 
-Система полностью соответствует требованиям:
+Система реализует compliance-ready toolkit, спроектированный в соответствии с требованиями (не сертифицировано независимым аудитором):
 - MiFID II (Directive 2014/65/EU)
 - MiFIR (Regulation 600/2014)
 - RTS 6 (Regulation 2017/589) - Algorithmic Trading

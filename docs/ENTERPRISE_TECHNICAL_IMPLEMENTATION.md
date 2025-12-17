@@ -374,7 +374,7 @@ class AuditEvent:
     event_hash: str
 
 class AuditLogger:
-    """MiFID II compliant audit logging."""
+    """MiFID II-aligned audit logging."""
 
     def __init__(self, storage_backend: str = "postgresql"):
         self._previous_hash = self._get_last_hash()

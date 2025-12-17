@@ -291,9 +291,9 @@ The following roles must sign off quarterly:
 | Security Lead | Security controls verified | __________ | ________ |
 | Legal | Documentation accuracy | __________ | ________ |
 
-### 6.2 Certification Statement
+### 6.2 Internal Verification Statement
 
-> We certify that the CCEA privacy guarantees documented in this checklist have been verified as of the date signed. All automated tests pass, manual verification has been completed, and evidence has been archived.
+> We verify that the CCEA privacy design commitments documented in this checklist have been internally reviewed as of the date signed. All automated tests pass, manual verification has been completed, and evidence has been archived. This is an internal verification, not an external certification.
 
 ---
 
