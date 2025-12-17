@@ -21,7 +21,7 @@ ICT Provider Context:
     - Provide threat intelligence feeds from our operational monitoring
     - Coordinate vulnerability disclosures affecting multiple clients
     - Maintain audit trails for all sharing activities
-    - Ensure GDPR and competition law compliance
+    - Support GDPR and competition law compliance
 
 References:
     - DORA Article 45: Cyber threat information sharing

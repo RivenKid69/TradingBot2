@@ -21,7 +21,7 @@ Cloud NEVER:
     - Has access to trading endpoints
     - Contains order-like payloads in protocol
 
-Security Guarantees:
+Security Design Commitments:
     - All messages authenticated/signed
     - Local approval for TRADING_IMPACTING
     - Mandatory telemetry redaction

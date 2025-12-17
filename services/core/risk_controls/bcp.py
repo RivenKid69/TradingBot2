@@ -878,7 +878,7 @@ algorithmic trading operations during disruptions, per MiFID II RTS 6 Article 3.
 --------------
 - Minimize trading disruption during incidents
 - Protect firm and market integrity
-- Ensure regulatory compliance
+- Support regulatory compliance requirements
 - Enable rapid recovery to normal operations
 
 1.3 Trading Halt Threshold

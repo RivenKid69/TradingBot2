@@ -137,7 +137,7 @@ class LiveRunner(BaseRunner):
     Executes strategies with full risk controls and real order submission.
     NEVER deployed in Cloud zone.
 
-    Security Guarantees:
+    Security Design Commitments:
     - All intents pass through PolicyFirewall
     - All intents validated against HardCaps
     - All intents pass pre-trade RiskChecker

@@ -12,7 +12,7 @@ Key Features:
 - Rotation support
 - No cloud backup (by design)
 
-Security Guarantees:
+Security Design Commitments:
 - Credentials encrypted at rest
 - Master key never in memory longer than needed
 - No logging of credential values

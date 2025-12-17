@@ -10,7 +10,7 @@ Key Components:
 - HardCapEnforcer: Absolute limits that cannot be exceeded
 - RiskChecker: Pre-trade risk validation
 
-Security Guarantees:
+Security Design Commitments:
 - Local hard caps cannot be raised by Cloud
 - All trades validated before submission
 - Kill switch triggers on policy violations

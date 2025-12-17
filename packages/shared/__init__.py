@@ -10,7 +10,7 @@ Contains safe, zone-independent components:
 This package can be imported by BOTH Cloud and Agent zones.
 It contains NO live execution code, NO order submission, NO private trading APIs.
 
-Security Guarantees:
+Security Design Commitments:
 - No broker API key handling
 - No order creation or submission
 - No private trading endpoints

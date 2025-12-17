@@ -21,7 +21,7 @@ Cloud NEVER:
     - Contains order-like payloads in protocol
     - Can raise Agent's risk limits
 
-Security Guarantees:
+Security Design Commitments:
     - No trading client libraries
     - No order execution code
     - No access to broker APIs
