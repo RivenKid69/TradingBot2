@@ -27,7 +27,7 @@ Design Principles:
     1. Protocol-compatible with L2ExecutionProvider
     2. Backward compatible - crypto paths unaffected
     3. Configurable fidelity (can disable subsystems)
-    4. Research-grade accuracy with production-ready performance
+    4. Research-grade accuracy with deployment-ready performance
 
 Stage 7 of L3 LOB Simulation (v7.0)
 

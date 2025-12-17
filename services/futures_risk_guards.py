@@ -26,7 +26,7 @@ Design Principles:
 - Backward compatible with existing RiskGuard
 - Supports pre-trade and post-trade validation
 - Thread-safe for multi-symbol trading
-- Production-ready with comprehensive logging
+- Designed for deployment with comprehensive logging
 
 References:
 - Binance Leverage Rules: https://www.binance.com/en/support/faq/360033162192

@@ -4,7 +4,7 @@ Tests for validating that PBT + Adversarial Training is enabled by default.
 This test suite ensures that:
 1. All configuration defaults have PBT and Adversarial enabled
 2. The system behaves correctly with default settings
-3. Default values are sane and production-ready
+3. Default values are sane and deployment-ready
 4. All scenarios work with defaults enabled
 
 Target: 100% confidence that PBT + Adversarial is enabled by default

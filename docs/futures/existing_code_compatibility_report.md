@@ -396,7 +396,7 @@ trading_patchnew.py (env integration)
 
 | Component | Risk | Reason |
 |-----------|------|--------|
-| Funding ingestion | Low | Already production-ready |
+| Funding ingestion | Low | Already tested and deployment-ready |
 | Market type enum | Low | Simple addition |
 | Config extension | Low | YAML changes only |
 

@@ -176,7 +176,7 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 | **DORA** (2022/2554) | ✅ ICT Provider | ICT risk management | Contractual compliance |
 | **EU AI Act** (2024/1689) | ✅ Transparency | Article 50 transparency | Not high-risk AI deployer |
 | **NIS2** (2022/2555) | ⚠️ Potential | Cybersecurity measures | NIST CSF 2.0 aligned |
-| **E-Commerce Directive** | ✅ Applicable | Information requirements | Privacy notices compliant |
+| **E-Commerce Directive** | ✅ Applicable | Information requirements | Privacy notices aligned |
 
 #### 2.1.1 DORA Compliance (Regulation 2022/2554)
 

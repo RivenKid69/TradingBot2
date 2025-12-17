@@ -11038,7 +11038,7 @@ class DistributionalPPO(RecurrentPPO):
                                 clip_delta = float(clip_range_vf_value)
 
                             # TWIN CRITICS VF CLIPPING FIX (2025-11-22)
-                            # ✅ VERIFIED CORRECT (2025-11-22): 100% test coverage, production ready
+                            # ✅ VERIFIED (2025-11-22): full test coverage, deployment-ready
                             # Use independent clipping for each critic when Twin Critics enabled
                             # This preserves Twin Critics independence while correctly implementing PPO VF clipping
                             # Tests: tests/test_twin_critics_vf_clipping_correctness.py (11/11 passed)

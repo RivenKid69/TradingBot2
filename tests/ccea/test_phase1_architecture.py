@@ -3,7 +3,7 @@
 Phase 1 Architecture Tests - Canonical Stack Verification.
 
 Tests verify that:
-1. Canonical stacks (packages/) are production-ready
+1. Canonical stacks (packages/) are deployment-ready
 2. Legacy stacks (ccea/agent, ccea/control_plane) emit deprecation warnings
 3. Build artifacts contain only appropriate modules
 4. Zone separation is enforced

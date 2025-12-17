@@ -4830,7 +4830,7 @@ test_migration:
 **Test Coverage:** 474 tests passing (100%)
 
 **Goals:**
-- ✅ Enable compliant contracts with EU clients NOW
+- ✅ Enable compliance-ready contracts with EU clients NOW
 - ✅ Establish audit readiness
 - ✅ Clean up non-applicable modules
 - ✅ Validate operational capacity for SLA commitments
@@ -4856,7 +4856,7 @@ test_migration:
 | 1.15 | Adapt pooled_testing.py → pooled_audit_support.py | MEDIUM | ✅ | `services/dora/pooled_audit_support.py` |
 
 **Deliverables (All Completed):**
-- ✅ DORA-compliant contract templates (incl. subcontracting approval)
+- ✅ DORA-aligned contract templates (incl. subcontracting approval)
 - ✅ Audit readiness package
 - ✅ Provider information package for client ROI
 - ✅ Subcontractor documentation with incident escalation procedures

@@ -23,7 +23,7 @@ Key Differences from Spot/Equity Position Sync:
 Design Principles:
 - Extends base position_sync.py patterns
 - Thread-safe for multi-symbol trading
-- Production-ready with comprehensive logging
+- Designed for deployment with comprehensive logging
 - Supports paper and live trading modes
 
 References:

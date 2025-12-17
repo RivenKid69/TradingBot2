@@ -46,7 +46,7 @@ Current solutions are inadequate:
 | **QuantConnect** | Basic execution models, no risk-aware ML |
 | **Alpaca** | Broker only, no intelligence |
 | **In-house development** | €200K-500K cost, 12+ months |
-| **Academic tools** | Not production-ready |
+| **Academic tools** | Not deployment-ready |
 
 ---
 
@@ -90,7 +90,7 @@ We have completed the technical foundation. Our focus now is **customer validati
 | Feature | Status | Customer Value |
 |---------|--------|----------------|
 | Crypto execution (Binance) | ✅ Ready | Days to go live |
-| Risk-aware position sizing | ✅ Ready | Built-in compliance |
+| Risk-aware position sizing | ✅ Ready | Compliance-supporting risk controls |
 | CVaR optimization | ✅ Ready | Downside protection |
 | Backtesting | ✅ Ready | Strategy validation |
 | Real-time monitoring | ✅ Ready | Operational visibility |

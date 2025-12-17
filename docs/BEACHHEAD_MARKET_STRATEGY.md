@@ -313,7 +313,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 | Capability | Our Platform | Bloomberg | QuantConnect | Alpaca | In-House |
 |------------|--------------|-----------|--------------|--------|----------|
 | **CVaR Risk Management** | ✅ Built-in | ❌ Separate tools | ❌ None | ❌ None | ❌ Build from scratch |
-| **MiFID II Compliant** | ✅ Native | ⚠️ Manual setup | ❌ US-centric | ❌ US-centric | ❓ Depends |
+| **MiFID II Alignment** | ✅ Designed-in | ⚠️ Manual setup | ❌ US-centric | ❌ US-centric | ❓ Depends |
 | **Execution Modeling** | Multi-factor TCA | Via EMSX | Fixed spread | Basic | Varies |
 | **Time to Live** | Days | Months | Weeks | Weeks | 6-12 months |
 | **Price Point** | €3-10K/month | €24K+/seat/year | Free-$250/month | Free-$99/month | €200K+ build cost |
@@ -326,7 +326,7 @@ YEAR 3: MULTI-ASSET EXPANSION
 **Our platform** is a risk-first quantitative trading infrastructure
 **That** provides CVaR-aware execution and MiFID II-compliant risk monitoring
 **Unlike** Bloomberg (too expensive, not risk-native) or QuantConnect (retail-focused, no compliance)
-**We** combine academic-grade risk research with production-ready infrastructure at SMB-accessible pricing
+**We** combine academic-grade risk research with deployment-ready infrastructure at SMB-accessible pricing
 
 ---
 
