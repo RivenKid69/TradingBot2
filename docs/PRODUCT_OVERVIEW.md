@@ -4,7 +4,7 @@
 
 **Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
-> **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Status**: Designed to align with MiFID II, EU AI Act, DORA
+> **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Posture**: software/ICT provider by design (MiFID II/DORA-aware; AI governance by design)
 
 ---
 
@@ -21,7 +21,7 @@ Our platform implements **CCEA** - a strict security separation:
 
 **Security Design Commitments** (enforced at architecture level):
 - Cloud **NEVER** stores broker API keys or credentials
-- Cloud **NEVER** generates, transmits, or executes trading orders
+- Cloud **NEVER** generates, transmits, or executes live trading instructions (orders/targets/signals)
 - All trading happens **ONLY** in the user's local Agent
 - User retains **full control** over hard caps (Cloud cannot override)
 
@@ -30,10 +30,10 @@ Our platform implements **CCEA** - a strict security separation:
 - You control all trading-impacting changes via local approval
 - Cloud provides research tools and observability - nothing more
 
-**Legal Positioning:**
-- **Software Tool Provider** under MiFID II (ESMA Q&A ESMA35-43-349)
-- **Transparency Provider** under EU AI Act Article 50
-- **ICT Provider** under DORA (contractual compliance)
+**Legal positioning (design intent):**
+- We provide software/tools; customers trade through **their own** broker accounts via **their own** Agent
+- Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
+- Regulatory classification depends on activities and jurisdiction; this is **not legal advice**
 
 ---
 
@@ -84,7 +84,7 @@ We have completed the technical foundation. Our focus now is **customer validati
 |-------|--------|-------|
 | ~~Technical Development~~ | ✅ Complete | Core platform built |
 | **Customer Discovery** | 🔄 Active | 20+ interviews planned |
-| **Pilot Program** | 🔜 Q1 2025 | 3-5 European firms |
+| **Pilot Program** | 🔜 Phase 1 (0–3 months) | 3-5 European firms |
 | Revenue Validation | Planned | Post-pilot |
 
 ### MVP Scope (What We're Launching)
@@ -98,6 +98,8 @@ We have completed the technical foundation. Our focus now is **customer validati
 | Real-time monitoring | ✅ Ready | Operational visibility |
 
 ### Deferred Features (Post-Validation)
+
+Note: the underlying engine is **multi-asset** (equities + adjacent listed derivatives + FX; digital assets optional). MVP commercial support and positioning remain **equities-first** until validated by customer demand.
 
 | Feature | When | Trigger |
 |---------|------|---------|
@@ -126,7 +128,7 @@ We have completed the technical foundation. Our focus now is **customer validati
 | **Company** | Prop firm or small systematic fund |
 | **Size** | 5-50 traders |
 | **Location** | Netherlands, Germany, Ireland, France |
-| **Need** | Fast, compliance-ready infrastructure for equities strategies |
+| **Need** | Fast, compliance-supporting infrastructure for equities strategies |
 | **Budget** | €2,000-5,000/month |
 
 ---
@@ -151,7 +153,7 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 | Robust architecture | Rapid feature changes without breaking production |
 | Extensive test coverage | Confidence to iterate quickly |
 | Research-backed algorithms | Credibility with technical buyers |
-| MiFID II alignment | Regulatory readiness for EU market |
+| MiFID II / DORA posture | Controls + evidence tooling to support regulated clients |
 
 *Technical depth enables customer focus, not delays it.*
 
@@ -179,13 +181,13 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 **Our focus**: European systematic equities teams seeking:
 - Faster time-to-market
 - Superior risk management
-- Regulatory compliance (MiFID II)
+- Compliance-supporting controls and evidence (MiFID II-style expectations)
 
 ---
 
 ## Go-to-Market Strategy
 
-### Phase 1: Pilot (Q1 2025)
+### Phase 1: Pilot (0–3 months)
 
 | Element | Specification |
 |---------|---------------|
@@ -194,7 +196,7 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 | Pricing | €500/month (discounted) |
 | Commitment | Weekly feedback |
 
-### Phase 2: Early Adopters (Q2-Q3 2025)
+### Phase 2: Early Adopters (3–9 months)
 
 | Element | Target |
 |---------|--------|
@@ -202,7 +204,7 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 | Price point | €2,000-3,000/month |
 | ARR target | €200K+ |
 
-### Phase 3: Scale (2026+)
+### Phase 3: Scale (9–18 months)
 
 - Expand feature set based on validated demand
 - Geographic expansion within EU
@@ -242,4 +244,4 @@ Our technical depth is an **asset for fast iteration**, not a goal in itself.
 
 ---
 
-*Last Updated: 2025-12-17*
+*Last Updated: 2025-12-18*

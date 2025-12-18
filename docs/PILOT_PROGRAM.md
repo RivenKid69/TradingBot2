@@ -52,7 +52,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 
 ### What We're NOT Testing (Yet)
 
-- Multi-asset expansion beyond equities (futures/options/FX)
+- Broadening default production support beyond equities (we will record demand signals for futures/options/FX during the pilot)
 - Enterprise features (white-label, API)
 - High-frequency trading use cases
 - Retail trader market
@@ -82,7 +82,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 ### Disqualification Criteria
 
 - Retail/individual traders (not our segment)
- - Firms requiring non-equities-only support as a condition
+- Firms requiring non-equities support as a hard gate for the pilot
 - Firms with < 6 months runway
 - Firms unwilling to share feedback
 
@@ -407,7 +407,7 @@ Tier 3: Founder involvement (critical issues)
 ### Welcome Email Template
 
 ```
-Subject: Welcome to the [Platform] Pilot Program
+Subject: Welcome to the CustodiaCloud Pilot Program
 
 Dear [Name],
 
@@ -457,11 +457,11 @@ Best,
 - [MVP_FOCUS.md](MVP_FOCUS.md) — MVP feature scope definition
 - [LEAN_VALIDATION_STRATEGY.md](LEAN_VALIDATION_STRATEGY.md) — Customer validation framework
 - [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) — One-pager for pitches
-- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
+- [design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt](design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) — Master CCEA architecture document
 
 ---
 
 *Document Version: 2.0*
-*Last Updated: December 2025*
+*Last Updated: 2025-12-18*
 *Owner: Founder / Head of Sales*
 *Aligned with: Design Doc CCEA Cloud v1.0*

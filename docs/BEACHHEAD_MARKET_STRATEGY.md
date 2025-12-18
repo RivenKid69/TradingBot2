@@ -21,7 +21,7 @@
 
 ## Executive Summary
 
-**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and compliance-ready algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
+**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and compliance-supporting algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
 
 **Why Equities First**:
 - **Institutional credibility**: Equities are the language of serious capital markets
@@ -180,12 +180,14 @@ The European systematic fund community is **tight-knit and networked**:
 
 #### 5. Regulatory Alignment (Key Differentiator)
 
-| Regulation | Requirement | Our Compliance | CCEA Advantage |
+| Regulation | Client Requirement | Our Controls & Evidence | CCEA Advantage |
 |------------|-------------|----------------|----------------|
-| **MiFID II Article 17** | Algo trading risk controls, kill switch, testing requirements | ✅ Built-in kill switch, pre-trade risk checks | Kill switch in Agent (local enforcement) |
-| **MAR 596/2014** | Market abuse prevention | ✅ Unusual activity monitoring, audit trails | Audit logs in both Cloud and Agent |
-| **DORA** | ICT risk management, third-party oversight | ✅ SOC 2 roadmap, secure-by-design | Clear Cloud/Agent boundary aids vendor assessment |
-| **ESMA Guidelines** | Algo trading testing, validation | ✅ Sim-to-live parity metrics, backtesting validation | Sim in Cloud, live in Agent (separation) |
+| **MiFID II Article 17** | Algo trading controls, kill switch, testing evidence | Kill switch + pre-trade risk checks + audit logs | Kill switch enforced in Agent (local enforcement) |
+| **MAR 596/2014** | Market abuse monitoring and controls | Audit trails + monitoring signals (where applicable) | Audit logs in both Cloud and Agent |
+| **DORA** | ICT risk management and third-party oversight | Evidence exports, change control posture, security roadmap | Clear Cloud/Agent boundary aids vendor assessment |
+| **ESMA Guidelines** | Testing/validation expectations for algo trading | Sim-to-live parity metrics + backtesting validation tooling | Sim in Cloud, live in Agent (separation) |
+
+Note: these are **design commitments** and documentation hooks that support a client’s compliance program; final regulatory classification depends on activities and jurisdiction (not legal advice).
 
 **CCEA Legal Posture for Regulated Clients**:
 
@@ -196,7 +198,7 @@ The European systematic fund community is **tight-knit and networked**:
 | Strategy development platform | Custodian |
 | Infrastructure for client-controlled execution | Execution Service |
 
-**Positioning Statement**: *"The only mid-market trading platform with MiFID II Article 17-aligned controls and evidence tooling built-in, not bolted-on — with clear Cloud/Agent separation for regulatory clarity."*
+**Positioning Statement**: *"A mid-market trading platform with MiFID II Article 17-oriented controls and evidence tooling built-in (not bolted-on) — with clear Cloud/Agent separation for regulatory clarity."*
 
 ---
 
@@ -228,8 +230,8 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 |---------------|------------|
 | "What if it blows up?" | CVaR-aware policy won't take tail-risk bets |
 | "How do I explain to my investors?" | Industry-standard risk metrics (CVaR, Sharpe, Max DD) |
-| "Is it tested?" | 11,063 test cases, sim-to-live parity monitoring |
-| "Is it compliant?" | MiFID II risk controls built-in, audit trails available |
+| "Is it tested?" | ~20k automated test functions + sim-to-live parity monitoring |
+| "Is it compliant?" | Controls + audit trails designed to support MiFID II-style expectations (client-run compliance review) |
 
 ### Risk Metrics Dashboard (MVP Feature)
 
@@ -237,8 +239,8 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 |--------|-------------|----------------------|
 | **Real-time CVaR** | 95% worst-case loss estimate | ESMA algo trading guidelines |
 | **Drawdown Monitor** | Rolling max drawdown with alerts | MiFID II Art.17 risk controls |
-| **Position Sizing** | Volatility-adjusted, CVaR-constrained | Best execution requirements |
-| **Kill Switch Status** | One-click halt all trading | MiFID II Art.17 mandatory |
+| **Position Sizing** | Volatility-adjusted, CVaR-constrained | Risk control evidence (MiFID II Art.17-style expectations) |
+| **Kill Switch Status** | One-click halt all trading | Kill switch expectation (MiFID II Art.17-style controls) |
 | **Sim-to-Live Parity** | Confidence bounds on backtest vs live | ESMA testing requirements |
 
 ---
@@ -325,7 +327,7 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 
 1. **Cross-Sell Potential**: Equity fund adds macro overlay with CME futures → upsell
 2. **Technology Reuse**: Same CVaR engine, same risk dashboard, different asset class
-3. **Competitive Barrier**: 2+ years of development, 11,000+ tests, 5 exchange integrations = hard to replicate
+3. **Competitive Barrier**: 2+ years of development, ~20k automated test functions, 5+ exchange integrations = hard to replicate
 4. **Regulatory Ready**: Single compliance mapping framework covers MiFID II and adjacent regulations as we expand scope
 
 ### How We Communicate This
@@ -334,7 +336,7 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 > "Our platform is built for multi-asset quantitative trading with institutional-grade risk management. Our **go-to-market starts with European systematic equity funds** — the most compliance-conscious, risk-aware segment of the market. This positions us as a serious infrastructure provider, not a speculative trading tool. After we establish equity references, we expand to adjacent asset classes based on validated customer demand."
 
 **To Customers**:
-> "We specialize in helping systematic funds deploy equity strategies with CVaR-aware risk management and MiFID II-aligned monitoring. As you grow into other asset classes, our platform scales with you — same risk discipline, same dashboard, new markets."
+> "We specialize in helping systematic funds deploy equity strategies with CVaR-aware risk management and MiFID II-oriented monitoring/evidence. As you grow into other asset classes, our platform scales with you — same risk discipline, same dashboard, new markets."
 
 ---
 
@@ -431,7 +433,7 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 
 **A**: CVaR is not new. Our moat is **integration**: CVaR embedded in the RL training loop, not bolted on as a post-hoc filter. This requires:
 - 2+ years of research (published academic references)
-- 11,000+ test cases validating behavior
+- ~20k automated test functions validating behavior
 - Sim-to-live parity measurement (unique to us)
 
 Copying requires recreating our research and testing infrastructure — an 18-24 month effort.
@@ -478,7 +480,7 @@ Copying requires recreating our research and testing infrastructure — an 18-24
 | Field | Value |
 |-------|-------|
 | **Version** | 2.1 |
-| **Last Updated** | 2025-12-17 |
+| **Last Updated** | 2025-12-18 |
 | **Owner** | Product/Strategy |
 
 ---
@@ -488,6 +490,6 @@ Copying requires recreating our research and testing infrastructure — an 18-24
 - [REGULATORY_COMPLIANCE_STRATEGY.md](REGULATORY_COMPLIANCE_STRATEGY.md) — Compliance approach
 - [business/IP_PROTECTION_STRATEGY.md](business/IP_PROTECTION_STRATEGY.md) — IP protection framework
 - [business/COMPETITIVE_MOAT.md](business/COMPETITIVE_MOAT.md) — Competitive analysis
-- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
+- [design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt](design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) — Master CCEA architecture document
 
 *Aligned with: Design Doc CCEA Cloud v1.0*

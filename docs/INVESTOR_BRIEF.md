@@ -2,7 +2,7 @@
 
 ## Risk-First Systematic Equities Research & Deployment Platform
 
-*Last Updated: 2025-12-17 | Pre-Seed Stage*
+*Last Updated: 2025-12-18 | Pre-Seed Stage*
 
 **Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
@@ -69,10 +69,10 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
 | **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 
-**Legal Positioning:**
-- **NOT** an Investment Adviser, Broker-Dealer, or Execution Service
-- **Software Tool Provider** under MiFID II (ESMA Q&A ESMA35-43-349)
-- **ICT Provider** under DORA with contractual compliance
+**Legal positioning (design intent):**
+- **NOT** an Investment Adviser, Broker-Dealer, Custodian, or Execution Service
+- Designed for a software/ICT provider posture: Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
+- Enterprise posture: auditability, change control, evidence exports (DORA-aware vendor requirements)
 
 ---
 
@@ -163,8 +163,8 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 
 | Metric | Value | Why It Matters for Customers |
 |--------|-------|------------------------------|
-| **Automated Tests** | 11,063 | Designed for production deployment — comprehensive quality assurance |
-| **Test Pass Rate** | 97%+ | Reliable platform for institutional use |
+| **Automated Tests** | 19,905 test functions | Designed for production deployment — comprehensive quality assurance |
+| **CI Validation** | Continuous | Unit/integration/regression suite with reports available under NDA |
 | **Asset Classes** | 5 (MVP: Equities) | Extensibility proven; MVP focused on equities |
 | **Exchange Integrations** | 6 | Flexibility for customer requirements |
 
@@ -172,7 +172,7 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 
 **Core Innovation: Risk-Aware Reinforcement Learning**
 
-Unlike traditional algorithmic trading platforms that optimize average returns, our platform is **among the first production implementations of CVaR-constrained reinforcement learning** for trading:
+Unlike traditional algorithmic trading platforms that optimize average returns, our platform provides a **production-oriented implementation of CVaR-constrained reinforcement learning** for trading:
 
 ```
 Traditional: maximize E[Return]
@@ -315,7 +315,7 @@ Beachhead (Equities)         Adjacent Segments
 | Competitor | What They Do | Our Differentiation |
 |------------|--------------|---------------------|
 | **QuantConnect** | Community backtesting platform | They use fixed 2bps slippage; we use 6-9 factor dynamic models. They have no risk-aware ML; we have CVaR-constrained RL. |
-| **Zipline** | Open-source backtester | Single asset class, no live trading, abandoned development. We support 5 asset classes in production. |
+| **Zipline** | Open-source backtester | Single asset class, no live trading, abandoned development. Our foundation supports 5 asset classes (MVP production support begins with equities). |
 | **Alpaca** | Commission-free broker API | They provide pipes; we provide intelligence. No ML, no execution modeling. |
 | **In-House Development** | Custom systems at prop firms | $500K-2M cost, 12+ months. We reduce to days at fraction of cost. |
 
@@ -336,7 +336,7 @@ Beachhead (Equities)         Adjacent Segments
 1. **Technical Depth**: 7+ peer-reviewed papers implemented (Almgren-Chriss, Kyle, Dabney, Chow, Romano, Gatheral, Moallemi)
 2. **Novel Algorithms**: Twin Critics + CVaR, AdaptiveUPGD, VGS — not available anywhere else
 3. **Multi-Asset Unity**: Single codebase for 5 asset classes (vs 1-2 typical)
-4. **Testing Rigor**: 11,063 automated tests (vs ~1,000 typical)
+4. **Testing Rigor**: ~20k automated test functions (vs ~1,000 typical)
 5. **Complexity Barrier**: 2+ years development, 100K+ lines — significant replication effort
 
 ---
@@ -388,7 +388,7 @@ We are transparent that this is an early-stage opportunity. The technical founda
 | Core platform | ✅ Complete | Equities execution + simulation functional |
 | Multi-asset architecture | ✅ Complete | 5 asset classes supported |
 | Risk management | ✅ Complete | CVaR optimization, risk guards |
-| Testing infrastructure | ✅ Complete | 11,063 tests, 97%+ pass rate |
+| Testing infrastructure | ✅ Complete | ~20k test functions; CI validation reports available |
 
 ### What We're Doing Now (Customer Validation)
 
@@ -440,10 +440,10 @@ We are transparent that this is an early-stage opportunity. The technical founda
 | **Founder/CTO** | Quantitative development, ML/RL research | Platform architecture, execution models |
 
 **Technical capabilities demonstrated:**
-- 11,000+ automated tests (enterprise-grade quality)
+- ~20k automated test functions (enterprise-grade quality)
 - 5 asset class integrations (designed for production use)
 - Academic research implementation (7+ peer-reviewed papers)
-- Exchange connectivity (6 production integrations)
+- Exchange connectivity (6 implemented integrations)
 
 ### Team Gaps (To Be Filled Post-Funding)
 
@@ -711,18 +711,18 @@ For more information or to schedule a demo, please contact:
 
 | Venue/Broker | Asset Class | Data | Trading | Status |
 |----------|-------------|------|---------|--------|
-| Interactive Brokers | Equities (MVP), Futures | ✓ | ✓ | Production |
-| Alpaca | Equities (optional) | ✓ | ✓ | Supported |
-| Polygon | Equities data (optional) | ✓ | - | Supported |
-| OANDA | FX (optional) | ✓ | ✓ | Supported |
+| Interactive Brokers | Equities (MVP), Futures (optional) | ✓ | ✓ | Ready (internal) |
+| Alpaca | Equities (optional) | ✓ | ✓ | Implemented |
+| Polygon | Equities data (optional) | ✓ | - | Implemented |
+| OANDA | FX (optional) | ✓ | ✓ | Implemented |
 
 ### C. Regulatory Positioning
 
 **Our position: Software vendor, not regulated financial entity**
 
 We provide technology tools to trading firms who are themselves regulated. We do not:
-- Execute trades on behalf of clients (no broker-dealer license needed)
-- Manage client assets (no investment adviser registration)
+- Execute trades on behalf of clients
+- Manage client assets
 - Provide investment advice or recommendations
 - Handle client funds
 
@@ -730,9 +730,9 @@ We provide technology tools to trading firms who are themselves regulated. We do
 
 | Jurisdiction | Our Position | Client's Responsibility |
 |--------------|--------------|------------------------|
-| **USA** | Software provider (no SEC/CFTC registration) | Client must be registered if required |
-| **EU** | Technology vendor (not MiFID II regulated) | Client handles MiFID II best execution |
-| **UK** | Software-as-a-Service (not FCA regulated) | Client handles FCA compliance |
+| **USA** | Software provider posture (classification depends on activities) | Client must be registered if required |
+| **EU** | Technology vendor posture (designed to avoid MiFID-regulated activities) | Client handles MiFID II obligations (incl. best execution where applicable) |
+| **UK** | Software-as-a-Service posture (classification depends on activities) | Client handles FCA obligations |
 | **Singapore** | Technology vendor | Client handles MAS requirements |
 
 **Key distinctions:**
@@ -743,7 +743,7 @@ We provide technology tools to trading firms who are themselves regulated. We do
 **Compliance roadmap (for enterprise clients):**
 - SOC 2 Type II certification (planned within Phase 3)
 - GDPR data handling documentation (available now)
-- MiFID II best execution audit trail support (available now)
+- Audit logs + export tooling to support client record-keeping and best-execution analysis (where applicable)
 
 *Legal review recommended for specific client engagements. This section describes our current understanding and is not legal advice.*
 
@@ -773,4 +773,4 @@ The platform is a software tool for algorithmic trading. Trading in financial in
 
 *Confidential - For Investor Use Only*
 
-*Last Updated: 2025-12-17*
+*Last Updated: 2025-12-18*

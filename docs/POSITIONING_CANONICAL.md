@@ -8,11 +8,15 @@ This document is the **single source of truth** for visa/investor-facing positio
 
 **CustodiaCloud** is a risk-first quantitative research and deployment platform for **systematic equities**.
 
+**Scope note**: the core engine is **multi-asset** by design (equities + adjacent listed derivatives + FX; digital assets optional), but our MVP and beachhead go-to-market are deliberately **equities-first** for institutional credibility.
+
 The platform is built on **CCEA (Cloud-Controlled Execution Architecture)**:
 - **Cloud**: research, simulation/backtesting, artifact building, monitoring/telemetry
 - **Agent**: runs on the customer’s infrastructure; holds secrets locally; enforces risk controls; performs any live execution via the customer’s own broker accounts
 
 **Regulatory posture** (core message): we are a **software / ICT provider**, not a broker, custodian, or investment adviser.
+
+Naming intent: **CustodiaCloud** refers to custody/control staying with the customer (via the Agent). It does **not** imply that we custody assets, keys, or credentials.
 
 ---
 
@@ -52,3 +56,7 @@ In narrative docs, prefer **phases** over hard calendar years:
 - **Phase 3 (9–18 months)**: scale + enterprise hardening
 
 If dates are required, use a single “**Last updated**” field per document and keep it consistent.
+
+---
+
+*Last Updated: 2025-12-18*

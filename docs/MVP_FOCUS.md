@@ -62,11 +62,11 @@ This is our singular focus. Everything in MVP serves this problem — while main
 
 | Mode | Description | Cloud Role | Agent Role |
 |------|-------------|------------|------------|
-| **Retail Research SaaS** | EU-friendly research + simulation | Full (IDE, backtest, sim) | Optional (for live) |
-| **Retail Live via Local Agent** | Auto-execution locally, cloud observability | Lifecycle, Telemetry | Local vault + execution |
+| **Research SaaS (Pro)** | EU-friendly research + simulation | Full (IDE, backtest, sim) | Optional (for live) |
+| **Pro Live via Customer Agent** | Auto-execution in customer environment, cloud observability | Lifecycle, Telemetry | Local vault + execution |
 | **Enterprise Engine** | On-prem/VPC, all in customer infra | Self-hosted option | HSM/KMS, air-gapped |
 
-**MVP Focus**: **Retail Research SaaS** + **Retail Live via Local Agent** for **systematic equities** (equities-first).
+**MVP Focus**: **Research SaaS (Pro)** + **Pro Live via Customer Agent** for **systematic equities** (equities-first).
 
 ---
 
@@ -80,13 +80,15 @@ This is our singular focus. Everything in MVP serves this problem — while main
 | **Backtest & Simulation** | Strategy validation | Confidence before capital | Cloud |
 | **Artifact Builder (signed)** | Immutable deployable strategies | Version control + audit | Cloud |
 | **Agent with Local Vault** | Secure key storage | Keys never leave user's machine | Agent |
-| **Risk-aware execution** | Regulatory requirement | MiFID II alignment | Agent |
-| **CVaR-constrained optimization** | Key differentiator | Better risk-adjusted returns | Cloud (training) |
+| **Risk-aware execution** | Regulatory expectation | MiFID II-oriented controls + evidence | Agent |
+| **CVaR-constrained optimization** | Key differentiator | Tail-risk constrained optimization | Cloud (training) |
 | **Real-time monitoring** | Operational necessity | Know what's happening | Cloud (telemetry) |
 | **Local approval for TRADING_IMPACTING** | Regulatory safety | User controls trading changes | Agent |
 | **Kill switch** | Safety requirement | Emergency halt | Agent |
 
 ### Out of Scope (Deferred)
+
+Note: the platform is **multi-asset by design**. MVP commercial support and positioning remain **equities-first**; additional asset classes are deferred as a default support commitment until validated customer pull.
 
 | Feature | Why Deferred | Reintroduce When |
 |---------|--------------|------------------|
@@ -352,11 +354,11 @@ We will consider pivoting if:
 - [LEAN_VALIDATION_STRATEGY.md](LEAN_VALIDATION_STRATEGY.md) — Customer-centric validation approach
 - [PILOT_PROGRAM.md](PILOT_PROGRAM.md) — Structured pilot program design
 - [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) — One-pager for pitches
-- [../Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt) — Master CCEA architecture document
+- [design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt](design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) — Master CCEA architecture document
 
 ---
 
 *Document Version: 2.1*
-*Last Updated: 2025-12-17*
+*Last Updated: 2025-12-18*
 *Owner: Product Team*
 *Aligned with: Design Doc CCEA Cloud v1.0*

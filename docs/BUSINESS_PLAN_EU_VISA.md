@@ -10,10 +10,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Company** | CustodiaCloud (working name) |
+| **Company** | CustodiaCloud |
 | **Document Type** | Comprehensive Business Plan |
 | **Version** | 1.0 |
-| **Date** | 2025-12-17 |
+| **Date** | 2025-12-18 |
 | **Target Markets** | European Union (Primary: Netherlands, France, Germany) |
 | **Classification** | Confidential - For Visa/Investment Evaluation |
 
@@ -78,8 +78,8 @@ A platform designed for production deployment that:
 
 | Criterion | Evidence |
 |-----------|----------|
-| **Technical Maturity** | 11,063 automated tests (97%+ pass rate) |
-| **Innovation** | Among first production CVaR-constrained RL for trading |
+| **Technical Maturity** | 19,905 automated test functions (CI validation reports available) |
+| **Innovation** | Production-oriented CVaR-constrained RL for trading |
 | **Academic Foundation** | 7+ peer-reviewed papers implemented (Almgren-Chriss, Kyle, Dabney, etc.) |
 | **Multi-Asset Coverage** | 5 asset classes, 6 exchange integrations |
 | **Development Investment** | 2+ years, 100,000+ lines of code |
@@ -131,7 +131,7 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 **Planned EU Entity**: B.V. (Netherlands) or SAS (France)
 
-**Regulatory Position**: Software Provider / ICT Provider (not regulated financial entity)
+**Regulatory posture (design intent)**: Software Provider / ICT Provider (classification depends on activities and jurisdiction)
 
 We provide technology tools to trading firms who are themselves regulated. Our **Cloud-Controlled Execution Architecture (CCEA)** ensures clear regulatory boundaries:
 
@@ -152,7 +152,7 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 
 **CCEA Security Design Commitments** (enforced at architecture level):
 - Cloud NEVER stores broker API keys or trading credentials
-- Cloud NEVER generates, transmits, or executes trading orders
+- Cloud NEVER generates, transmits, or executes live trading instructions (orders/targets/signals)
 - Cloud NEVER has access to exchange trading endpoints
 - All live trading occurs ONLY in user's local Agent environment
 - Mandatory telemetry redaction prevents secret leakage
@@ -168,6 +168,8 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 | **UK (FCA)** | Post-Brexit SaaS | Client handles FCA requirements |
 
 **Analogous Companies**: Bloomberg Terminal, Refinitiv Eikon, QuantConnect (all software vendors, not regulated entities)
+
+*Note: this section is informational and not legal advice. Regulatory classification and licensing obligations depend on concrete activities and client engagements; legal review is recommended for specific deployments.*
 
 ### 2.5 European Market Entry Strategy
 
@@ -285,7 +287,7 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 | **ML Framework** | PyTorch, Stable-Baselines3 | Reinforcement learning |
 | **Data Processing** | Pandas, NumPy, Parquet | High-speed data handling |
 | **Configuration** | YAML, Pydantic | Type-safe configuration |
-| **Testing** | Pytest, CI/CD | Quality assurance (11,063 tests) |
+| **Testing** | Pytest, CI/CD | Quality assurance (~20k automated test functions) |
 | **Deployment** | Docker, Kubernetes | Cloud-native scalability |
 
 ### 3.4 CCEA: Cloud-Controlled Execution Architecture
@@ -421,10 +423,10 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 | Metric | Our Platform | Industry Standard |
 |--------|--------------|-------------------|
-| **Automated Tests** | 11,063 | ~1,000-2,000 |
-| **Test Pass Rate** | 97%+ | ~90% |
+| **Automated Tests** | 19,905 test functions | ~1,000-2,000 |
+| **CI Validation** | Continuous (reports available) | Varies |
 | **Asset Classes** | 5 unified | 1-2 separate |
-| **Exchange Integrations** | 6 production | 1-3 |
+| **Exchange Integrations** | 6 implemented | 1-3 |
 | **Academic Papers Implemented** | 7+ | 0-2 |
 | **Lines of Code** | 100,000+ | Varies |
 
@@ -495,10 +497,10 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **Systems & Controls** | Resilient systems, appropriate thresholds | Built-in risk guards, kill switch |
 | **Pre-trade Controls** | Price, value, volume limits | Configurable per-strategy limits |
 | **Surveillance** | Automated market manipulation detection | Audit trail, anomaly detection |
-| **Record Keeping** | Detailed order records | Full execution logs, compliance exports |
-| **Testing** | Algorithm testing requirements | 11,063 automated tests, backtesting |
+| **Record Keeping** | Detailed order records | Full execution logs, export tooling |
+| **Testing** | Algorithm testing requirements | ~20k automated test functions, backtesting |
 
-**Our Advantage**: Platform natively supports MiFID II compliance requirements for client firms.
+**Our Advantage**: The platform provides controls and evidence exports that help client firms satisfy MiFID II-style governance and testing expectations (clients remain responsible for their compliance program).
 
 ### 5.3 Target Market Segments
 
@@ -538,7 +540,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **AI/ML Adoption** | 60% of buy-side using systematic strategies | Core competency |
 | **Equities Electronification** | More systematic execution and monitoring | Equities-first MVP + CCEA controls |
 | **Multi-Asset Strategies** | Diversification demand | 5 unified asset classes |
-| **Regulatory Technology** | MiFID II compliance automation | Built-in support |
+| **Regulatory Technology** | MiFID II-oriented governance and evidence tooling | Built-in support |
 | **Cloud Migration** | Reduced infrastructure costs | Cloud-native architecture |
 
 ---
@@ -606,7 +608,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **No Live Trading** | Paper-only backtesting | Full production deployment |
 | **Daily Trading Only** | No intraday strategies | Tick-level to multi-day |
 | **US Equities Only** | Limited coverage outside US equities | 5 unified asset classes (equities-first) |
-| **No Active Development** | Security/compatibility risks | 11,063 tests, continuous CI/CD |
+| **No Active Development** | Security/compatibility risks | ~20k automated test functions, continuous CI/CD |
 | **No ML Integration** | Manual strategy coding | Native Distributional RL |
 
 **Evidence**: Quantopian's $2B AUM fund (2011-2020) returned to investors after consistently underperforming, demonstrating that backtesting infrastructure alone does not generate sustainable alpha.
@@ -669,7 +671,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 - Growing mid-tier segment (10-50 traders) underserved by enterprise vendors
 
 **Secondary European Hubs**:
-- **London**: Post-Brexit, EU-regulated entities seeking compliance-ready infrastructure
+- **London**: Post-Brexit, EU-regulated entities seeking compliance-supporting infrastructure
 - **Frankfurt**: Deutsche Börse ecosystem, institutional market structure
 - **Paris**: Emerging fintech hub, strong quantitative finance talent
 
@@ -691,19 +693,19 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 - Algorithm performance monitoring (built-in logging)
 - Position limits and circuit breakers (impl_circuit_breaker.py)
 
-**Competitive Edge**: US-focused platforms (QuantConnect, Alpaca) do not prioritize MiFID II compliance features. Our European-first development is designed to align with regulatory requirements.
+**Competitive Edge**: US-focused platforms (QuantConnect, Alpaca) do not prioritize MiFID II-oriented governance, controls, and evidence exports. Our European-first development is designed around EU regulatory expectations.
 
 ### 6.5 Quantified Competitive Moats
 
 | Moat | Metric | Evidence | Replication Difficulty |
 |------|--------|----------|------------------------|
-| **Codebase Depth** | 100,000+ lines, 599 test files | Git history, CI/CD reports | 24-36 months |
-| **Test Coverage** | 11,063 test functions, 97%+ pass rate | pytest reports | Exceptional rigor |
+| **Codebase Depth** | 100,000+ lines, 800+ test files | Git history, CI/CD reports | 24-36 months |
+| **Test Coverage** | 19,905 automated test functions | CI/pytest reports | Exceptional rigor |
 | **Novel Algorithms** | 4 unique systems (CVaR-RL, UPGD, VGS, Twin Critics) | Academic citations | 12-18 months R&D each |
 | **Academic Integration** | 7+ peer-reviewed paper implementations | Code references to Almgren-Chriss, Moallemi, Kyle, Gatheral | PhD-level expertise |
 | **Multi-Asset Unity** | Multi-asset architecture | Single observation_space, single policy architecture | 18-24 months |
 | **L3 LOB Simulation** | 28 files, 186 tests, 100K+ lines | lob/ directory, matching_engine.py | Bloomberg-competitive |
-| **European Focus** | OANDA forex, MiFID II features, EUR pricing | adapters/oanda/, circuit_breaker.py | Market-specific expertise |
+| **European Focus** | OANDA FX, MiFID II-oriented controls/evidence, EUR pricing | adapters/oanda/, circuit_breaker.py | Market-specific expertise |
 
 **Switching Cost Analysis**:
 - Trained models are platform-specific (action space, observation dimensions)
@@ -722,9 +724,9 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **L3 LOB Simulation** | ✓ 28 files, 186 tests | ✗ | ✗ | ✗ | ✓ | 12+ months |
 | **Conformal Prediction** | ✓ 3 methods (CQR, EnbPI, ACI) | ✗ | ✗ | ✗ | ✗ | Research-level |
 | **5+ Asset Classes Unified** | ✓ Single codebase | ✗ (2-3 separate) | ✗ (US equities) | ✗ (1) | ✓ | 18+ months |
-| **European Data/Compliance** | ✓ OANDA, MiFID II | ⚠️ Limited | ✗ | ⚠️ US-focused | ✓ | Region-specific |
+| **European Data/Regulatory Posture** | ✓ OANDA, MiFID II-oriented | ⚠️ Limited | ✗ | ⚠️ US-focused | ✓ | Region-specific |
 | **Live Trading** | ✓ Full production | ✓ | ✗ | ✓ (broker) | ✓ | ✓ |
-| **Test Coverage** | 11,063 tests | ~1,000 | ~200 | N/A | Unknown | Varies |
+| **Test Coverage** | ~20k tests | ~1,000 | ~200 | N/A | Unknown | Varies |
 | **Annual Cost (10 seats)** | EUR 20K-55K | EUR 10K-50K | Free | Free + broker | EUR 150K-500K | EUR 450K-2M |
 
 ### 6.7 Competitive Response Strategy
@@ -740,7 +742,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 - Multi-year contracts with complex licensing deter smaller firms
 
 **If New Entrants Emerge**:
-- 11,063 tests represent 2+ years of edge case discovery
+- ~20k tests represent 2+ years of edge case discovery
 - Academic paper implementations (Almgren-Chriss, Moallemi, Kyle, Gatheral) require deep domain expertise
 - First-mover advantage in European prop firm relationships
 
@@ -748,8 +750,8 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 1. **Institutional Gap**: Research-grade capabilities (CVaR-RL, 8-9 factor TCA, L3 LOB) unavailable in retail platforms
 2. **Pricing Gap**: 80-90% cost reduction versus enterprise alternatives
-3. **European Focus**: MiFID II compliance, OANDA forex, European data sources
-4. **Technical Moat**: 11,063 tests, 4 novel algorithms, 2+ years development
+3. **European Focus**: MiFID II-oriented controls/evidence, OANDA FX, European data sources
+4. **Technical Moat**: ~20k tests, 4 novel algorithms, 2+ years development
 5. **Beachhead Clarity**: European systematic equities teams — underserved, fast-decision, referenceable
 
 **The Bottom Line**: We don't compete with QuantConnect for retail hobbyists or Bloomberg for EUR 2B+ hedge funds. We serve the institutional middle market that both segments ignore — and Europe's prop trading hub (Amsterdam) represents the perfect beachhead.
@@ -1174,7 +1176,7 @@ We acknowledge that achieving projections depends on multiple factors:
 | **Cloud Deployment** | AWS/GCP EU region setup | Infrastructure live |
 | **Dashboard MVP** | Web interface for clients | Basic UI functional |
 | **Documentation** | User guides, API docs | Complete and reviewed |
-| **MiFID II Compliance** | Audit trail, record keeping | Compliance checklist passed |
+| **MiFID II Posture** | Audit trail, record keeping | Internal control/evidence checklist completed; legal review scheduled |
 | **Security Audit** | External penetration testing | No critical findings |
 
 **Key Risks**: Technical delays, compliance gaps
@@ -1245,10 +1247,10 @@ Series A Prep                                 ████████
 | **Founder/CTO** | Quantitative development, ML/RL research | Architecture, execution models, ML |
 
 **Demonstrated Capabilities**:
-- 11,063 automated tests (enterprise-grade quality)
+- ~20k automated test functions (enterprise-grade quality)
 - 5 asset class integrations (designed for production use)
 - 7+ academic papers implemented
-- 6 exchange integrations
+- 6 implemented exchange integrations
 - 2+ years focused development
 
 ### 10.2 Hiring Plan
@@ -1750,9 +1752,9 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 | Criterion | Evidence |
 |-----------|----------|
-| **New Technology** | Among first production CVaR-constrained RL for trading |
+| **New Technology** | Production-oriented CVaR-constrained RL for trading |
 | **Academic Foundation** | 7+ peer-reviewed papers implemented |
-| **Technical Depth** | 11,063 automated tests, 100,000+ lines of code |
+| **Technical Depth** | ~20k automated test functions, 100,000+ lines of code |
 | **Not Copycat** | Features unavailable in QuantConnect, Alpaca, or Zipline |
 
 **Comparison to Existing Solutions**:
@@ -1893,7 +1895,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 | Pre-trade controls | RTS 6 | Price, volume, value limits |
 | Market making obligations | Art. 17(3) | Market making module |
 | Record keeping | Art. 17(2) | Full audit trail |
-| Testing requirements | RTS 6 | 11,063 automated tests |
+| Testing requirements | RTS 6 | ~20k automated test functions |
 | Surveillance | Art. 17(1) | Anomaly detection |
 
 ### Appendix F: Glossary
@@ -1965,7 +1967,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 | Requirement | How We Address | QuantConnect Gap |
 |-------------|----------------|------------------|
 | Pre-trade risk controls | risk_guard.py, configurable limits | Manual implementation |
-| Algorithm testing | 11,063 automated tests | User responsibility |
+| Algorithm testing | ~20k automated test functions | User responsibility |
 | Market manipulation detection | Anomaly detection built-in | Not provided |
 | Order-to-trade ratios | Built-in monitoring | Not provided |
 | Kill switch | ops_kill_switch.py | Basic support |
@@ -2038,7 +2040,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 **Scenario 2: In-House Build Decision Point**
 - **Trigger**: Firm considering 12-month platform build
 - **Our Message**: "Why spend EUR 500K-1.5M when you can deploy in 2-4 weeks for EUR 20K-55K/year?"
-- **Proof Point**: 11,063 tests, 2+ years development, maintained by vendor
+- **Proof Point**: ~20k tests, 2+ years development, maintained by vendor
 
 **Scenario 3: Bloomberg Budget Rejection**
 - **Trigger**: CFO rejects EUR 250K+ Bloomberg AIM proposal
