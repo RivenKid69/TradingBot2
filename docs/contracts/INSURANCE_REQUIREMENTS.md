@@ -3,30 +3,32 @@
 
 **Version**: 1.0
 **Date**: 2025-01-17
-**Status**: Active
+**Status**: Template / Target Requirements (Illustrative)
 **Legal Reference**: DORA Article 28, Industry Best Practice
+
+> **Note**: This document describes target coverage requirements and illustrative provisions. Actual coverage must be verified via certificates of insurance. This is not a claim of current coverage—actual policies are maintained separately and provided to contracted clients upon request.
 
 ---
 
 ## 1. Purpose
 
-This document outlines insurance coverage and indemnification provisions that support DORA contractual requirements and protect both Provider and Client interests in ICT service arrangements.
+This document outlines target insurance coverage requirements and indemnification provisions designed to support DORA contractual requirements and protect both Provider and Client interests in ICT service arrangements.
 
 ---
 
 ## 2. Insurance Coverage Summary
 
-### 2.1 Current Coverage
+### 2.1 Target Coverage Requirements (Illustrative)
 
-| Policy Type | Coverage Amount | Deductible | Insurer Rating |
-|-------------|-----------------|------------|----------------|
+| Policy Type | Target Coverage | Target Deductible | Insurer Rating Requirement |
+|-------------|-----------------|-------------------|----------------------------|
 | Cyber Liability (Primary) | €5,000,000 | €25,000 | A-rated or higher |
 | Cyber Liability (Excess) | €5,000,000 | Per primary | A-rated or higher |
 | Professional Liability (E&O) | €5,000,000 | €25,000 | A-rated or higher |
 | General Commercial Liability | €2,000,000 | €10,000 | A-rated or higher |
 | Technology E&O | €5,000,000 | €25,000 | A-rated or higher |
 
-**Total Cyber Coverage**: €10,000,000
+**Target Total Cyber Coverage**: €10,000,000 (actual coverage verified via certificate)
 
 ### 2.2 Cyber Liability Coverage Details
 

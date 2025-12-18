@@ -3,14 +3,16 @@
 
 **Version**: 1.0
 **Date**: 2025-01-17
-**Status**: Active
+**Status**: Configuration Specification (illustrative defaults)
 **Legal Reference**: DORA Article 30(2)(b), GDPR
+
+> **Note**: This document describes the target EU data residency configuration design. Infrastructure locations and providers shown are illustrative defaults; actual deployment configuration is verified in production infrastructure documentation and provided to contracted clients. This is not a claim that infrastructure is currently deployed.
 
 ---
 
 ## 1. Overview
 
-This document describes the EU data residency configuration options available to clients requiring data to remain within the European Union/European Economic Area.
+This document describes the EU data residency configuration design available to clients requiring data to remain within the European Union/European Economic Area.
 
 ### DORA Requirement
 
@@ -19,9 +21,9 @@ Article 30(2)(b) mandates contracts include:
 
 ---
 
-## 2. Default Configuration
+## 2. Default Configuration *(illustrative; actual deployment verified separately)*
 
-### 2.1 Primary Infrastructure
+### 2.1 Primary Infrastructure (Target Design)
 
 | Component | Location | Provider | EU-Only |
 |-----------|----------|----------|---------|

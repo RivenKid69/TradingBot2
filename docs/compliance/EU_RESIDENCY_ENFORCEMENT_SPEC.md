@@ -5,27 +5,29 @@
 **Last Updated**: 2025-12-16
 **Owner**: Compliance Team
 **GDPR Phase**: 3 - EU-Only Data Residency Enforcement
-**Status**: IMPLEMENTED
+**Status**: Specification (verify via tests and deployment evidence)
+
+> **Note**: This document specifies design requirements and implementation patterns for EU data residency enforcement. Actual enforcement status must be verified through test results, CI/CD logs, and deployment audits. This is not a claim of certified compliance.
 
 ---
 
 ## 1. Overview
 
-This specification defines the EU-only data residency enforcement mechanisms for the CCEA Cloud platform. All personal data processing must occur within the European Union, with automated verification and fail-closed enforcement.
+This specification defines the EU-only data residency enforcement mechanisms designed for the CCEA Cloud platform. The goal is that all personal data processing occurs within the European Union, with automated verification and fail-closed enforcement.
 
 ### 1.1 Design Doc Reference
 
 - `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892` (14.3: EU residency by default)
 - `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745` (6.2: EU-only drift checks mandatory)
 
-### 1.2 Key Principles
+### 1.2 Key Design Principles
 
 | Principle | Description |
 |-----------|-------------|
-| **EU-Only by Default** | All data storage and processing defaults to EU regions |
-| **Fail-Closed** | Any non-EU endpoint blocks deployment/operation |
-| **Continuous Verification** | Automated drift checks at deployment and runtime |
-| **Auditable Evidence** | Machine-readable reports for compliance audits |
+| **EU-Only by Default** | Data storage and processing designed to default to EU regions |
+| **Fail-Closed Design** | Non-EU endpoint detection designed to block deployment/operation |
+| **Continuous Verification** | Automated drift checks designed for deployment and runtime |
+| **Auditable Evidence** | Machine-readable reports designed for compliance audits |
 
 ---
 

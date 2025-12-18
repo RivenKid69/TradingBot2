@@ -54,11 +54,11 @@ This SOP applies to:
 | **Communications Lead** | External communications, press statements (if needed) |
 | **Executive Sponsor** | Escalation, resource allocation, strategic decisions |
 
-### 5.2 On-Call Rotation
+### 5.2 On-Call Rotation *(operational requirement; verify via monitoring/on-call configuration)*
 
-- 24/7 security monitoring active
-- Incident responders available via PagerDuty/on-call system
-- DPO reachable within 1 hour for breach classification
+- 24/7 security monitoring (target operational posture)
+- Incident responders available via PagerDuty/on-call system (design requirement)
+- DPO reachable within 1 hour for breach classification (target)
 
 ## 6. Breach Response Workflow
 

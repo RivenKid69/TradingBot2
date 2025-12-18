@@ -352,7 +352,7 @@ ORGANIZATION: ccea-platform
 
 **Mitigation:**
 1. Trade secrets protect core differentiation
-2. Patents (pending) provide legal recourse
+2. Patent strategy (optional, counsel-led; no public claim of "patent pending" without verified filing)
 3. Specialized domain expertise hard to replicate
 4. Existing customer relationships and trust
 

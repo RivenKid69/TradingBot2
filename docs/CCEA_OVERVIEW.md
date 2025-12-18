@@ -1,10 +1,12 @@
 # CCEA Overview: Cloud-Controlled Execution Architecture
 
-> **Version**: 2.1.0 | **Last Updated**: 2025-12-16 | **Status**: APPROVED | **Implementation**: All planned features complete
+> **Version**: 2.1.0 | **Last Updated**: 2025-12-16 | **Status**: Design Specification | **Implementation**: Verify via test suite
 >
 > **Canon (wording/positioning):** `docs/DOCUMENTATION_CANON_DESIGN.md`
 >
 > **CCEA technical reference:** `archive/root_files/Design Doc CCEA Cloud.txt` (design/architecture docs are read-only)
+>
+> **Note**: This document describes the CCEA design and architecture. Implementation status is verified via the test suite (`pytest tests/ccea/`). This is a design specification, not a claim of certified compliance.
 
 ## Executive Summary
 
@@ -747,21 +749,21 @@ P2 "Cloud + Enterprise"
 
 ### 17.1 Completed Phases
 
-All phases of the CCEA implementation are complete:
+CCEA implementation phases (verify status via test suite):
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| Phase 1-6 (P0) | Foundation, guardrails, legal, docs | ✓ Complete |
-| Phase 7-9 (P1) | Control plane, agent lifecycle, reconciliation | ✓ Complete |
-| Phase 10 (P2) | Enterprise, sandbox isolation, evidence pack | ✓ Complete |
+| Phase 1-6 (P0) | Foundation, guardrails, legal, docs | Verify via tests |
+| Phase 7-9 (P1) | Control plane, agent lifecycle, reconciliation | Verify via tests |
+| Phase 10 (P2) | Enterprise, sandbox isolation, evidence pack | Verify via tests |
 
 ### 17.2 Key Implementation Artifacts
 
-- **117 test files** in `tests/ccea/` covering all requirements
+- **Test suite** in `tests/ccea/` (verify count via `find tests/ccea -name "*.py" | wc -l`)
 - **packages/agent/**: Local vault, approval, policy firewall, reconciliation
 - **packages/cloud/**: Control plane, builder, governance, enterprise features
-- **deploy/helm/**: Enterprise Kubernetes deployment
-- **docs/**: Complete documentation for all zones
+- **deploy/helm/**: Enterprise Kubernetes deployment (design)
+- **docs/**: Documentation for all zones
 
 For detailed traceability, see [CCEA_TRACEABILITY_MATRIX.md](design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md).
 

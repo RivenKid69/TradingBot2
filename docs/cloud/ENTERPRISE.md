@@ -567,7 +567,7 @@ tracing:
 
 ## 10. Support & SLA
 
-### 10.1 Enterprise Support Tiers
+### 10.1 Enterprise Support Tiers *(illustrative; actual tiers per executed agreement)*
 
 | Tier | Response Time | Availability | Features |
 |------|---------------|--------------|----------|
@@ -575,14 +575,16 @@ tracing:
 | Premium | 4 hours | 24/7 | Phone + email |
 | Critical | 1 hour | 24/7 | Dedicated TAM |
 
-### 10.2 SLA Targets
+### 10.2 SLA Targets *(illustrative design targets; actual SLA per executed agreement)*
 
 | Metric | Target |
 |--------|--------|
 | Control plane uptime | 99.9% |
 | API latency (p99) | < 500ms |
-| Data durability | 99.999999999% |
+| Data durability | Per underlying cloud provider SLA |
 | Recovery time | < 4 hours |
+
+> **Note**: Durability and availability targets depend on deployment configuration and underlying infrastructure. Actual SLA commitments are defined in the executed service agreement.
 
 ---
 

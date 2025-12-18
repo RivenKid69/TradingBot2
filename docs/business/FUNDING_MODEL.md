@@ -163,8 +163,8 @@ Based on comparable seed rounds in quantitative finance software:
 **Key Activities:**
 - Hire Backend Engineer (M7)
 - Hire Head of Sales (M7-8)
-- Complete patent filing (M8)
-- Launch partner program with 1 prime broker (M9)
+- IP strategy evaluation with counsel (M8; patent filing optional, if pursued)
+- Launch partner program with 1 prime broker (M9; target)
 - SOC 2 readiness + optional Type I attestation (target; if pursued)
 
 **Cumulative Capital Deployed:** €500K (67% of total)
@@ -187,20 +187,20 @@ Based on comparable seed rounds in quantitative finance software:
 
 **Total Capital Deployed:** €750K (100%)
 
-### 3.4 Milestone Dependencies Visualization
+### 3.4 Milestone Dependencies Visualization *(illustrative targets)*
 
 ```
 M1-3: Design Partners ──────┐
                             ├──→ M4-6: Pilots + First Revenue
 M2-4: MiFID II alignment review ──┘       │
                                           │
-M7-8: Sales Hire + Patents ───────────────┼──→ M7-10: Customer Scale
+M7-8: Sales Hire + IP strategy (optional)─┼──→ M7-10: Customer Scale
                                           │              │
-M9: Prime Broker Partnership ─────────────┘              │
+M9: Prime Broker Partnership (target) ────┘              │
                                                          │
-M11: SOC 2 Type I ──────────────────────────────────────┼──→ M13-18: Series A Prep
+M11: SOC 2 readiness (if pursued) ─────────────────────┼──→ M13-18: Series A Prep
                                                          │
-M14: US Market Entry ────────────────────────────────────┘
+M14: US Market Entry (target) ─────────────────────────┘
 ```
 
 ---

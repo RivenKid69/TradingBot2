@@ -655,11 +655,11 @@ governance:
 
 ## Support
 
-### Enterprise Support Channels
+### Enterprise Support Channels *(placeholder; actual contact details per contract)*
 
 - **Email**: enterprise-support@ccea.io
-- **Phone**: +1-XXX-XXX-XXXX (24/7 for P1)
-- **Portal**: https://support.ccea.io
+- **Phone**: [per enterprise contract]
+- **Portal**: [per enterprise contract]
 
 ### Support Bundle
 

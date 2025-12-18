@@ -3,7 +3,7 @@
 
 **Version**: 1.0
 **Date**: 2025-01-17 (DORA Application Date)
-**Status**: Implementation complete
+**Status**: Template (illustrative provisions; negotiate per engagement)
 **Legal Reference**: Regulation (EU) 2022/2554 Article 30(2)(a-i)
 
 ---
@@ -11,6 +11,8 @@
 ## Purpose
 
 This template is designed to help parties include contract clauses aligned with DORA Article 30(2) for ICT service agreements with EU-regulated financial entities. It includes placeholders for all nine mandatory provisions of Article 30(2), but it is not legal advice and must be reviewed/approved by qualified counsel.
+
+> **Important**: All SLA targets, coverage amounts, response times, and data locations in this template are **illustrative defaults** subject to negotiation per engagement. Actual service levels are defined in the executed agreement.
 
 ---
 
@@ -53,7 +55,7 @@ The Provider SHALL NOT:
 
 ### 2. DATA LOCATION — Article 30(2)(b)
 
-**2.1 Processing Locations**
+**2.1 Processing Locations** *(illustrative defaults; actual locations per deployment)*
 
 | Data Type | Processing Location(s) | Storage Location(s) |
 |-----------|----------------------|---------------------|
@@ -87,7 +89,7 @@ Any data transfer outside the EU/EEA SHALL be subject to:
 
 ### 3. DATA SECURITY PROVISIONS — Article 30(2)(c)
 
-**3.1 Availability Commitments**
+**3.1 Availability Commitments** *(illustrative targets; actual SLA per executed agreement)*
 
 | Service | Target Availability | Measurement Period | Exclusions |
 |---------|-------------------|-------------------|------------|
@@ -188,7 +190,7 @@ Provider SHALL maintain:
 
 ### 5. SERVICE LEVEL DESCRIPTIONS — Article 30(2)(e)
 
-**5.1 Quantitative Performance Targets**
+**5.1 Quantitative Performance Targets** *(illustrative; actual targets per executed agreement)*
 
 | Metric | Target | Warning | Breach | Measurement |
 |--------|--------|---------|--------|-------------|
@@ -221,7 +223,7 @@ Provider SHALL provide:
 
 ### 6. INCIDENT ASSISTANCE — Article 30(2)(f)
 
-**6.1 Incident Categories**
+**6.1 Incident Categories** *(illustrative response targets; actual SLA per tier and executed agreement)*
 
 | Category | Definition | Provider Response | Client Notification |
 |----------|------------|-------------------|-------------------|
@@ -232,8 +234,8 @@ Provider SHALL provide:
 
 **6.2 Incident Assistance Obligations**
 
-Provider SHALL:
-- Provide 24/7 incident response for Critical/High severity
+Provider SHALL (per contracted tier):
+- Provide incident response for Critical/High severity (24/7 for applicable tiers)
 - Assist Client's incident investigation at no additional cost (Critical/High)
 - Provide incident reports within 24 hours of resolution
 - Participate in Client's post-incident review if requested
