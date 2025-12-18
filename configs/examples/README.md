@@ -1,25 +1,25 @@
 # Configuration Examples
 
-This directory contains well-documented example configurations for different trading modes.
+This directory contains well-documented example configurations for different research/simulation and deployment modes.
 Copy and customize these for your own use.
 
 ## Available Examples
 
 | File | Mode | Asset Class | Description |
 |------|------|-------------|-------------|
-| `example_train_crypto.yaml` | train | crypto | RL model training for crypto |
-| `example_backtest_crypto.yaml` | sim | crypto | Backtesting/simulation |
-| `example_live_crypto.yaml` | live | crypto | Live trading (Binance) |
 | `example_train_stocks.yaml` | train | equity | RL model training for stocks |
 | `example_live_stocks.yaml` | live | equity | Live trading (Alpaca) |
+| `example_train_crypto.yaml` | train | crypto | RL model training for digital assets (optional) |
+| `example_backtest_crypto.yaml` | sim | crypto | Backtesting/simulation (example config; adaptable) |
+| `example_live_crypto.yaml` | live | crypto | Live trading (Binance; optional) |
 
 ## Quick Start
 
-### 1. Training a Model (Crypto)
+### 1. Training a Model (Equities-first example)
 
 ```bash
 # Copy the example
-cp configs/examples/example_train_crypto.yaml configs/my_train.yaml
+cp configs/examples/example_train_stocks.yaml configs/my_train.yaml
 
 # Edit to customize (data paths, model params, etc.)
 # Then run:

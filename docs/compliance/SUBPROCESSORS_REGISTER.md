@@ -92,8 +92,8 @@ This commitment is:
 
 **EU Residency Evidence:**
 - Legal Entity: Stripe Payments Europe, Limited (Ireland)
-- Data Processing: EU servers only
-- PCI DSS Level 1: Certified
+- Data Processing: configured for EU-region processing where supported by the vendor (deployment-dependent; verify in vendor documentation and contract)
+- PCI DSS Level 1: vendor-reported certification (verify in current Stripe documentation)
 - GDPR DPA: [Stripe DPA](https://stripe.com/legal/dpa)
 - Last Review: 2025-01-15
 - Next Review: 2025-04-15

@@ -1,11 +1,10 @@
-# GDPR Compliance Summary
+# GDPR Alignment Summary (Controls & Evidence Exports)
 
 **CustodiaCloud**
 
 **Regulation**: General Data Protection Regulation (EU) 2016/679
 **Architecture**: Cloud-Controlled Execution Architecture (CCEA)
-**Status**: ✅ Designed to support GDPR alignment (controls/evidence exports; not audited or certified)
-**Completion Date**: 2025-12-17
+**Status**: ✅ Designed to support GDPR-aligned deployments (controls/evidence exports; not audited or certified)
 **Last Updated**: 2025-12-17
 
 ---
@@ -14,15 +13,15 @@
 
 CustodiaCloud is designed to support GDPR-aligned deployments with privacy-by-design controls aligned with the CCEA (Cloud-Controlled Execution Architecture) model.
 
-### Key Compliance Highlights
+### Key privacy-by-design controls (engineering; not a compliance claim)
 
 | Aspect | Status | Description |
 |--------|--------|-------------|
 | Data Minimization | **Enforced** | Cloud receives only necessary telemetry; secrets never leave Agent |
 | EU-Only Residency | **Enforced** | All data processing in EU; drift checks fail closed |
 | Telemetry Redaction | **Mandatory** | Cannot be disabled; secrets/PII always masked |
-| DSAR Support | **Full** | Access, portability, erasure workflows with 30-day SLA |
-| Breach Response | **Implemented** | 72-hour notification workflow per Art. 33-34 |
+| DSAR Support | **Supported** | Access, portability, erasure workflows (timeline is deployment- and contract-dependent; target is within GDPR time limits) |
+| Breach Response | **Supported** | Documented playbooks and tooling intended to support Art. 33-34 timelines (deployment-dependent) |
 | Retention Control | **Automated** | Per-tenant policies with auto-purge and legal holds |
 
 ---

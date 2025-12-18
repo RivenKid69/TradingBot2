@@ -82,7 +82,7 @@ CCEA — ключевой «procurement‑friendly» принцип: строг�
 
 ## Что важно не заявлять (guardrails)
 
-- Не использовать red-flag фрейминг (бот/«managed money»/советы/копирование/retail) — см. канон: `docs/DOCUMENTATION_CANON_DESIGN.md`.
+- Не использовать red-flag фрейминг (бот/«managed money»/советы/копирование/исполнение «за клиента») — см. канон: `docs/DOCUMENTATION_CANON_DESIGN.md`.
 - Не делать утверждений о “compliance/certification” по MiFID II / DORA / EU AI Act и не делать self‑classification по EU AI Act без юр. проверки.
 - Допустимые формулировки: “designed to support”, “evidence exports”, “privacy‑by‑design”, “customer‑controlled execution via Agent”.
 

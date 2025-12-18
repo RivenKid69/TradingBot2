@@ -169,7 +169,7 @@ investment advice. CustodiaCloud is a software provider, not a financial advisor
 - Clearly separate Research (Cloud) and Execution (Agent) capabilities
 - Emphasize customer control and ownership
 - Include technical specifications
-- Show compliance badges (if applicable)
+- Use evidence exports and privacy-by-design language; avoid “certification/compliance badge” framing unless independently verified and counsel-approved
 
 **Blog Posts:**
 - Educational focus, not promotional
@@ -238,13 +238,13 @@ about how firms like [Reference] are using our tools?"
 - Hiding drawdown data
 - Claiming results are replicable
 
-**Example (Compliant):**
+**Example (Committee-safe):**
 ```
-Backtest Results (BTC-USD, 2022-2024)
-Simulation using L2 market data, 10bps slippage model
-- Sharpe Ratio: 1.8
-- Max Drawdown: -22%
-- Annual Return: 45%
+Backtest Results (SYMBOL, YYYY–YYYY)
+Simulation assumptions: data source, slippage/fees/market impact model (illustrative placeholders)
+- Sharpe Ratio: [X]
+- Max Drawdown: [Y]
+- Annualized Return: [Z]
 
 DISCLAIMER: These are simulated historical results. Actual trading
 performance may differ significantly due to market conditions, execution
@@ -275,7 +275,7 @@ using CustodiaCloud's [feature]. Individual results may vary."
 | Trigger Phrase | Issue | Alternative |
 |----------------|-------|-------------|
 | "We recommend" | Investment advice | "Our tools suggest" / "Analysis shows" |
-| "You should buy/sell" | Direct advice | "Signal indicates" / "Model output" |
+| "You should buy/sell" | Direct advice | "Model output indicates" / "Simulation output" |
 | "Best investment" | Investment advice | "Top-performing backtest" |
 | "Portfolio management" | Advisory service | "Portfolio analysis tools" |
 | "Financial planning" | Advisory service | "Research and simulation" |
@@ -306,8 +306,7 @@ When communicating with committees, regulators, or immigration counsel, avoid ab
 
 | Trigger Phrase | Issue | Alternative |
 |----------------|-------|-------------|
-| "100% compliant" / "full compliance" / "certified compliant" | Absolute compliance claim without independent validation | "designed to support alignment" / "alignment/evidence toolkit" / "mapped to requirements" |
-| "GDPR/DORA/MiFID II compliant" | Regulatory compliance claim | "GDPR/DORA/MiFID II-aligned" / "supports client compliance workflows" |
+| Any statement asserting full regulatory compliance or external certification/approval | Absolute claim without independent validation | "designed to support alignment" / "alignment & evidence exports" / "mapped to requirements (scope- and deployment-dependent)" |
 | "production ready" / "production-grade" | Implies deployment fitness guarantee | "designed for production use" / "ready for production review" / "pilot-ready" |
 
 ---

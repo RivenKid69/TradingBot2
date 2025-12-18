@@ -11,7 +11,7 @@ Included:
 - Risk controls (policy firewall, hard caps, preflight)
 
 Explicitly **not included** (kept proprietary in the private Cloud/Core repos):
-- Trading strategies and signals
+- Trading strategies and trade-decision logic
 - Training pipelines / RL code
 - Cloud orchestration and enterprise features
 
@@ -24,4 +24,3 @@ Explicitly **not included** (kept proprietary in the private Cloud/Core repos):
 ## Dependency
 
 `ccea-agent` depends on `ccea-sdk` for protocol/contracts/crypto verification.
-

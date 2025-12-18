@@ -193,15 +193,15 @@ Instructions for use have been prepared in accordance with **Article 13(3)** and
 
 ## 11. Post-Market Monitoring
 
-A post-market monitoring system has been established in accordance with **Article 72** to:
+The provider should establish a post-market monitoring system in accordance with **Article 72** to:
 
 - Monitor performance throughout the AI system lifecycle
 - Collect feedback from deployers
 - Document and analyze incidents
 - Identify opportunities for improvement
-- Ensure continued compliance
+- Support ongoing conformity and continuous improvement
 
-**Post-Market Monitoring Plan**: docs/compliance/qms/07_post_market_monitoring.md
+**Post-Market Monitoring Plan**: [TBD by provider]
 
 ---
 

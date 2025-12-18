@@ -57,6 +57,6 @@ These ranges must remain consistent with `docs/DOCUMENTATION_CANON_DESIGN.md`:
 
 ## 5) What we must avoid in pricing narratives
 
-- Consumer pricing, “signals product”, copy-trading, portfolio management framing.
+- Consumer packaging and any execution-as-a-service or managed-money framing (see `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical banned language).
 - Performance guarantees or outcome promises.
-- Claims of being “compliant/certified” with MiFID II, DORA, EU AI Act.
+- Claims of external certification/approval or blanket regulatory compliance.

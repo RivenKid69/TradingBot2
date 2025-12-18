@@ -11,7 +11,7 @@ Included:
 - Guardrails for protocol/schema integrity
 
 Explicitly **not included** (kept proprietary in the private Cloud/Core repos):
-- Trading strategies and signals
+- Trading strategies and trade-decision logic
 - Backtesting/simulation engines
 - Reinforcement learning/training code
 - Broker/exchange execution logic
@@ -25,4 +25,3 @@ Explicitly **not included** (kept proprietary in the private Cloud/Core repos):
 ## Trademark
 
 See `TRADEMARK.md`.
-

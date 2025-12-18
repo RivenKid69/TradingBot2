@@ -317,8 +317,8 @@ Time Saved: 25 months
 |----------|-------------|-------|--------|
 | Bloomberg Terminal | €24-30K/user | Data + analytics | All |
 | Refinitiv Eikon | €22K/user | Data + analytics | All |
-| QuantConnect | €5-40K | Backtesting + live | Retail-small |
-| Alpaca | Free-€300 | Execution only | Retail |
+| QuantConnect | €5-40K | Backtesting + live | Self-serve / small teams |
+| Alpaca | Free-€300 | Execution only | Self-serve API users |
 | **CCEA** | €24-120K | End-to-end ML platform | Prop/Funds |
 
 ---

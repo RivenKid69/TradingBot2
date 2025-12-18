@@ -145,7 +145,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ## [4.0.0] - 2025-12-08
 
-### DORA Alignment Toolkit (Implementation Complete)
+### DORA Alignment Toolkit (Engineering Implementation; Not a Certification Claim)
 
 - **Phase 0: Proportionality Assessment** (2025-12-08)
   - DORA scope verification (Article 2)
@@ -172,7 +172,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Incident classification (major/minor)
   - Incident reporting to NCAs (4h/24h/72h timelines)
   - Third-party incident monitoring
-  - CDR 2025/301 compliance (reporting templates)
+  - CDR 2025/301 reporting-template support (tooling)
   - Weekend/holiday extension rules
   - Files: `services/dora/incident_classification.py`, `incident_reporting.py`, `third_party_incidents.py`
   - Reference: DORA Articles 17-23
@@ -201,9 +201,9 @@ from services.core.risk_controls import EnhancedKillSwitch
 - **Phase 5: Information Sharing, Dashboard & Unified Reporting** (2025-12-08)
   - Information sharing framework (Article 45)
   - Cross-regulation integration (MiFID II, EU AI Act)
-  - Compliance dashboard with real-time monitoring
+  - Evidence/dashboard tooling with real-time monitoring
   - Unified reporting (DPM 4.0 format, B_xx.xx templates)
-  - Country-specific deadline tracking (Germany 11 Apr, France 15 Apr)
+  - Country-specific deadline tracking (jurisdiction-dependent; verify for target deployment)
   - Files: `services/dora/information_sharing.py`, `cross_regulation.py`, `compliance_dashboard.py`, `unified_reporting.py`
   - Tests: `tests/dora/test_dora_information_sharing.py`, `test_dora_compliance_dashboard.py`, `test_dora_unified_reporting.py`
 
@@ -218,7 +218,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ## [3.0.0] - 2025-12-07
 
-### MiFID II Alignment Toolkit (Implementation Complete)
+### MiFID II Alignment Toolkit (Engineering Implementation; Not a Certification Claim)
 
 - **Phase 4: Record Keeping & Audit Trail** (2025-12-06)
   - Implemented audit trail writing & storage (63KB module)
@@ -256,7 +256,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 - **14,000+ Automated Tests** (2025-12-07)
   - 654+ test files, 14,000+ test functions
-  - MiFID II compliance tests: 200+
+  - MiFID II alignment-toolkit tests: 200+
   - Pass rate: 97%+
   - All 7 phases fully tested
 

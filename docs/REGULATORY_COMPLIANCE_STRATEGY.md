@@ -7,6 +7,10 @@
 **Status**: Pre-Seed Stage | EU Market Entry
 **Classification**: Internal Strategy Document
 
+**Canon (positioning / naming / legally safe wording / committee narrative):** `docs/DOCUMENTATION_CANON_DESIGN.md`
+
+**Non-legal notice**: This document is a working strategy memo and is **not** legal advice. Regulatory classification depends on concrete activities, contracts, jurisdictions, and deployment details; engage qualified counsel before making external claims.
+
 ---
 
 ## Executive Summary
@@ -56,17 +60,13 @@ This document establishes our comprehensive regulatory strategy for operating as
 
 ### 1.2 Legal Framework Classification
 
-Under EU law, our activities fall under:
+Working assumptions for design and messaging (subject to legal review and deployment facts):
 
 **Primary Classification**: Information Society Services Provider
 - Directive 2000/31/EC (E-Commerce Directive)
 - Regulation (EU) 2015/1535 (Technical Standards Notification)
 
-**NOT Subject To**:
-- MiFID II authorization requirements (Article 5)
-- AIFMD (Alternative Investment Fund Managers Directive)
-- UCITS Directive
-- CRD IV/CRR (Capital Requirements)
+We design and document CustodiaCloud to avoid activities that typically trigger financial-regulated roles (execution on behalf of clients, custody/fund handling, discretionary management, investment advice). Whether any specific regime applies still requires counsel review for the intended go-to-market and deployments.
 
 ### 1.3 Analogous Business Models (Precedent)
 
@@ -78,7 +78,7 @@ Under EU law, our activities fall under:
 | **Alpaca** | Trading API (broker component separate) | Hybrid model |
 | **Trading Technologies** | Execution management systems | Software vendor |
 
-**Key Legal Precedent**: ESMA has consistently held that providers of trading software and analytics tools are not subject to MiFID II authorization when they do not:
+**Practical framing (counsel-led, deployment-dependent)**: public guidance is commonly interpreted to treat providers of trading software/analytics as vendors when they do not:
 1. Execute orders on behalf of clients
 2. Provide investment advice
 3. Manage client portfolios on a discretionary basis
@@ -178,28 +178,28 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 | **NIS2** (2022/2555) | ⚠️ Potential | Cybersecurity measures | NIST CSF 2.0 aligned |
 | **E-Commerce Directive** | ✅ Applicable | Information requirements | Privacy notices aligned |
 
-#### 2.1.1 DORA Compliance (Regulation 2022/2554)
+#### 2.1.1 DORA Alignment (Regulation 2022/2554)
 
-As an **ICT Service Provider** to financial entities, we have specific obligations under DORA:
+As an ICT provider to financial entities, DORA obligations and contract requirements are context-dependent. CustodiaCloud is designed to support vendor due diligence and customer operational reviews via evidence exports and security controls (not a certification claim).
 
-| DORA Requirement | Our Compliance | CCEA Alignment |
+| DORA Requirement | Design posture (tooling/evidence; not audited/certified) | CCEA Alignment |
 |------------------|----------------|----------------|
 | **ICT Risk Management** | NIST CSF 2.0 framework | Zone separation limits blast radius |
-| **Incident Reporting** | 72-hour notification | Telemetry provides evidence |
-| **Operational Resilience Testing** | Annual DR/BC testing | Agent runs independently |
+| **Incident Reporting** | Playbooks and evidence exports designed to support incident workflows | Telemetry provides evidence |
+| **Operational Resilience Testing** | DR/BC testing plans and runbooks (deployment-dependent) | Agent runs independently |
 | **Third-Party Risk** | Sub-processor management | Signed artifacts, SBOM |
 | **Contractual Requirements** | DPA/Security addendum | CCEA design commitments in contract |
 
-#### 2.1.2 EU AI Act Compliance (Regulation 2024/1689)
+#### 2.1.2 EU AI Act Posture (Regulation 2024/1689)
 
-Our position under the EU AI Act:
+EU AI Act obligations depend on role (provider/deployer), features enabled, and deployment context. Do not self-classify risk level in external documents without counsel.
 
-| Aspect | Our Classification | Rationale |
+| Aspect | Design posture | Notes |
 |--------|-------------------|-----------|
-| **Role** | AI Provider | We develop and provide AI-enabled trading tools |
-| **Risk Level** | Not High-Risk | Trading tools, not credit scoring/HR/law enforcement |
-| **Obligations** | Article 50 Transparency | Users must know they're interacting with AI |
-| **Model Training** | User's responsibility | Users train on their data via our tools |
+| **Roles** | Provider/deployer roles are deployment-specific | Confirm per customer deployment model |
+| **Risk classification** | TBD by counsel and deployer | Avoid “high-risk/not high-risk” statements without review |
+| **Transparency** | Designed to support transparency where applicable (e.g., Article 50) | UI and documentation notices are product-scoped |
+| **Governance/evidence** | Evidence exports and change control | Supports procurement and operational reviews |
 
 **CCEA AI Act Alignment**:
 - Transparency notices in UI (Article 50)
@@ -297,9 +297,9 @@ The Markets in Financial Instruments Directive II (2014/65/EU) and its associate
 - Documentation that clients develop their own strategies
 - No "buy/sell" signals or recommendations
 
-### 3.4 Supporting Client MiFID II Compliance
+### 3.4 Supporting client operational reviews (MiFID II context)
 
-While we are not subject to MiFID II, our clients are. Our platform helps them meet:
+MiFID II obligations primarily apply to investment firms and related regulated entities. CustodiaCloud is designed to support a software/ICT provider posture (CCEA boundary; no advice; no execution by Cloud) and to provide evidence exports and controls that can help clients meet their own obligations (deployment- and contract-dependent; confirm with counsel).
 
 **Article 17 - Algorithmic Trading Requirements**:
 
@@ -317,14 +317,14 @@ While we are not subject to MiFID II, our clients are. Our platform helps them m
 **Article 27 - Best Execution**:
 - Transaction cost analysis (TCA) helps clients monitor execution quality
 
-### 3.5 MiFID II Compliance Documentation
+### 3.5 MiFID II alignment documentation (tooling)
 
 We provide clients with:
 
-1. **Platform Compliance Guide**: How to use our platform in a MiFID II-aligned manner
-2. **Audit Trail Export**: Full historical logs in regulatory-acceptable format
+1. **Platform alignment guide**: How to use our platform in a MiFID II-aligned manner (scope- and deployment-dependent)
+2. **Audit trail export**: Structured historical logs suitable for client review workflows
 3. **Risk Control Documentation**: Technical specifications of our risk management features
-4. **Algorithm Documentation Template**: Helps clients meet Article 17 documentation requirements
+4. **Algorithm documentation template**: Supports client documentation and change-control workflows
 
 ---
 
@@ -332,7 +332,7 @@ We provide clients with:
 
 ### 4.1 Article 17 Overview
 
-**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. While our platform is a software vendor (not subject to authorization), our clients are. This section details how CustodiaCloud's architecture is **designed to support client compliance** across the requirements.
+**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. This section describes how CustodiaCloud's architecture and evidence exports are **designed to support client compliance workflows** (classification and obligations are deployment-dependent; counsel review required for external assertions).
 
 **Regulatory Text Reference**: Directive 2014/65/EU, Article 17
 **Supplementary**: RTS 6 (Commission Delegated Regulation 2017/589)
@@ -1598,11 +1598,11 @@ Our privacy notices include:
 
 ## 11. Backtesting Compliance
 
-### 11.1 Why Backtesting is Compliant
+### 11.1 Backtesting posture (non-legal)
 
 **Core Question**: Does our backtesting service constitute regulated activity?
 
-**Answer**: No, for the following reasons:
+**Working position (subject to counsel and jurisdiction)**: CustodiaCloud backtesting/simulation is designed and marketed as a general-purpose research tool, not as investment advice or execution service. Regulatory analysis must be validated for the intended customer contracts, outputs, and marketing language.
 
 ### 11.2 Legal Analysis
 

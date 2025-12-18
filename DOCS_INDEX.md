@@ -131,9 +131,9 @@
 | [claude.md#live-execution-improvements](claude.md) | Live execution improvements (Phase 9) |
 
 **Supported Assets:**
-- **Crypto**: Binance Spot/Futures (24/7)
-- **Stocks**: Alpaca/Polygon US Equities (market hours + extended)
-- **ETFs**: SPY, QQQ, IWM, GLD, IAU, SGOL, SLV
+- **Equities (MVP/beachhead)**: example integrations via Alpaca/Polygon (listed equities; market hours + extended)
+- **Options / futures / FX (foundation by design)**: supported via integration plans and adapters (enabled per customer pull/support capacity)
+- **Digital assets (optional expansion)**: adapters exist (e.g., Binance); committee-facing positioning treats this as optional, post equities-first validation
 
 ### Seasonality Framework
 
@@ -156,7 +156,7 @@
 |------|----------|
 | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) | ⭐ **Master reference** - tooling + evidence exports to support client workflows |
 
-**Реализованные фазы:**
+**Tooling coverage (internal engineering; not a compliance/certification claim):**
 - Phase 1: LEI, Clock Sync (RTS 25), Algorithm Registration
 - Phase 2: Transaction Reporting (RTS 22)
 - Phase 3: Kill Switch, Pre-Trade Controls, Real-Time Monitoring
@@ -174,7 +174,7 @@
 | [docs/compliance/INSTRUCTIONS_FOR_USE.md](docs/compliance/INSTRUCTIONS_FOR_USE.md) | Instructions for Use (Article 13) |
 | [services/ai_act/](services/ai_act/) | AI Act-related tooling modules |
 
-**Completion Reports:**
+**Implementation reports (engineering; not a legal classification or conformity statement):**
 | Фаза | Отчёт | Тесты |
 |------|-------|-------|
 | Phase 1 | [EU_AI_ACT_PHASE1_COMPLETION_REPORT.md](docs/compliance/EU_AI_ACT_PHASE1_COMPLETION_REPORT.md) | 372 |
@@ -182,7 +182,7 @@
 | Phase 3 | [EU_AI_ACT_PHASE3_COMPLETION_REPORT.md](docs/compliance/EU_AI_ACT_PHASE3_COMPLETION_REPORT.md) | 318 |
 | Phase 4 | [EU_AI_ACT_PHASE4_COMPLETION_REPORT.md](docs/compliance/EU_AI_ACT_PHASE4_COMPLETION_REPORT.md) | 81 |
 
-**Total AI Act Tests: 1,007 passed**
+**Engineering metric**: total AI Act-related tests in repo: 1,007 (verify by running tests; not a compliance claim)
 
 ### DORA Alignment (Evidence Toolkit)
 
@@ -192,7 +192,7 @@
 | [docs/compliance/dora/proportionality_assessment.md](docs/compliance/dora/proportionality_assessment.md) | Proportionality assessment (Phase 0) |
 | [services/dora/](services/dora/) | DORA-related tooling modules |
 
-**Реализованные фазы:**
+**Tooling coverage (internal engineering; not a compliance/certification claim):**
 - Phase 0: Proportionality Assessment & Scope Verification
 - Phase 1: ICT Risk Management Framework (Articles 5-16)
 - Phase 2: ICT Incident Management & Reporting (Articles 17-23)
@@ -200,20 +200,20 @@
 - Phase 4: Third-Party ICT Risk Management (Articles 28-44)
 - Phase 5: Information Sharing, Compliance Dashboard & Unified Reporting
 
-**Total DORA Tests: ~1,015 passed**
+**Engineering metric**: total DORA-related tests in repo: ~1,015 (verify by running tests; not a compliance claim)
 
 ### GDPR Controls (CCEA-Aligned)
 
 | Файл | Описание |
 |------|----------|
-| [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) | ⭐ **GDPR Summary** - обзор статуса compliance |
+| [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) | ⭐ **GDPR Summary** - controls/evidence status (engineering; not audited/certified) |
 | [docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md](docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md) | ⭐ **Master GDPR reference** - все 9 фаз |
 | [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md) | Privacy Policy (v3.0.0) |
 | [docs/legal/TERMS_OF_SERVICE.md](docs/legal/TERMS_OF_SERVICE.md) | Terms of Service (v3.0.0) |
 | [docs/legal/DPA_TEMPLATE.md](docs/legal/DPA_TEMPLATE.md) | DPA Template (v2.0.0) |
 | [packages/cloud/governance/](packages/cloud/governance/) | 15+ модулей GDPR governance |
 
-**Реализованные фазы (CCEA-aligned):**
+**Tooling coverage (internal engineering; not a compliance/certification claim):**
 - Phase 0: Data Mapping, RoPA, Controller/Processor Roles
 - Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
 - Phase 2: Data Minimization, Telemetry Contracts, CI Guardrails
