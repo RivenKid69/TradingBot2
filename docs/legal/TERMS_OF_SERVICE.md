@@ -100,10 +100,10 @@ The Platform implements three telemetry levels with strict controls:
 - Telemetry redaction is mandatory for data transmitted to Cloud
 - `RAW_ORDER_EVENTS` is available only with explicit opt-in and enterprise controls, and must be masked/redacted per the Platform's telemetry controls
 
-**D. EU-only Data Residency**
-- All data storage, backups, logs, and processing are in EU (eu-central-1, eu-west-1)
-- All sub-processors are located in EU
-- EU-only residency is enforced by automated drift checks (fail-closed)
+**D. EU-Priority Data Residency**
+- Primary data storage, backups, logs, and core processing are in EU (eu-central-1, eu-west-1)
+- Sub-processors requiring non-EU processing (e.g., payment, email, error monitoring) operate under Standard Contractual Clauses (SCCs) and/or Data Privacy Framework (DPF)
+- EU residency for core platform data is a design goal, enforced by configuration and drift monitoring
 
 **E. DSAR Scope Boundaries**
 - DSAR requests apply to Cloud-controlled data only

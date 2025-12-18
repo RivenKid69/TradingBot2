@@ -181,12 +181,14 @@ This document provides pre-contractual security information per DORA Article 28(
 
 ### 6.1 Recovery Objectives
 
-| Scenario | RTO | RPO | Last Tested |
+> **Note**: These are design targets for a pre-seed company. DR testing will be conducted as infrastructure is established. Actual RTO/RPO commitments are contract-specific.
+
+| Scenario | RTO (Target) | RPO (Target) | Testing Plan |
 |----------|-----|-----|-------------|
-| Component Failure | 30 min | 0 (real-time) | Monthly |
-| Availability Zone Failure | 1 hour | 15 min | Quarterly |
-| Region Failure | 4 hours | 1 hour | Annually |
-| Complete Disaster | 24 hours | 4 hours | Annually |
+| Component Failure | 30 min | 0 (real-time) | Monthly (planned) |
+| Availability Zone Failure | 1 hour | 15 min | Quarterly (planned) |
+| Region Failure | 4 hours | 1 hour | Annually (planned) |
+| Complete Disaster | 24 hours | 4 hours | Annually (planned) |
 
 ### 6.2 Backup Strategy
 
@@ -262,45 +264,51 @@ All critical subcontractors undergo:
 
 ### 9.1 Regulatory Alignment
 
-| Regulation | Status | Relevance |
+> **Note**: CustodiaCloud is designed to support vendor due diligence and client operational reviews. We do not claim certification or compliance with these regulations. Clients must conduct their own compliance assessment with qualified advisors.
+
+| Regulation | Design Posture | Relevance |
 |------------|--------|-----------|
-| DORA (EU) 2022/2554 | ✅ Designed to align | ICT provider obligations |
-| GDPR (EU) 2016/679 | ✅ Designed to align | Data protection - all 9 phases |
-| EU AI Act 2024/1689 | ✅ Designed to support alignment | Transparency/documentation (deployment-dependent; no self-classification) |
-| MiFID II | ✅ Designed to support alignment | Client workflows (deployment-dependent) |
-| NIS2 Directive | Preparing | Cybersecurity |
+| DORA (EU) 2022/2554 | Designed to support | ICT provider obligations |
+| GDPR (EU) 2016/679 | Designed to support | Data protection - privacy-by-design |
+| EU AI Act 2024/1689 | Designed to support | Transparency/documentation (deployment-dependent; no self-classification) |
+| MiFID II | Designed to support client workflows | Client workflows (deployment-dependent) |
+| NIS2 Directive | Monitoring | Cybersecurity |
 
-### 9.2 GDPR Compliance Details
+### 9.2 GDPR Alignment Details
+
+> **Note**: This section describes design alignment, not certified compliance. Clients should review with their own legal counsel.
+
+| Article | Requirement | Design Status |
+|---------|-------------|--------|
+| Art. 5 | Data minimization, purpose limitation | Designed to support |
+| Art. 12-14 | Transparency (Privacy Policy, DPA) | Templates available |
+| Art. 15-22 | Data subject rights (DSAR) | Workflow documented |
+| Art. 25 | Privacy by design | CCEA architecture |
+| Art. 28 | Processor obligations | DPA template available |
+| Art. 30 | Records of Processing (RoPA) | Template maintained |
+| Art. 32 | Security controls | Designed to support |
+| Art. 33-34 | Breach notification (72h) | Workflow documented |
+
+**GDPR Key Features (Design Goals):**
+- **EU-priority data residency**: Core platform data in EU (Frankfurt, Ireland); sub-processors with non-EU processing operate under SCCs/DPF
+- **Telemetry redaction** (mandatory by design)
+- **DSAR response** within 30 days (workflow documented)
+- **Auto-purge** with configurable retention (planned)
+- **Break-glass access** for incident-only, audited (planned)
+- **Enterprise posture** (on-prem/VPC with "telemetry stays local" option, planned)
+
+### 9.3 DORA Alignment
+
+> **Note**: DORA obligations apply to financial entities (our clients), not to software vendors. We provide contract templates and documentation designed to support client compliance workflows.
 
 | Article | Requirement | Status |
 |---------|-------------|--------|
-| Art. 5 | Data minimization, purpose limitation | ✓ Enforced |
-| Art. 12-14 | Transparency (Privacy Policy, DPA) | ✓ Published |
-| Art. 15-22 | Data subject rights (DSAR) | ✓ Full workflow |
-| Art. 25 | Privacy by design | ✓ CCEA architecture |
-| Art. 28 | Processor obligations | ✓ DPA template available |
-| Art. 30 | Records of Processing (RoPA) | ✓ Maintained |
-| Art. 32 | Security controls | ✓ Implemented |
-| Art. 33-34 | Breach notification (72h) | ✓ Workflow ready |
-
-**GDPR Key Features:**
-- **EU-only data residency** (Frankfurt, Ireland)
-- **Telemetry redaction** (mandatory, cannot be disabled)
-- **DSAR response** within 30 days
-- **Auto-purge** with configurable retention
-- **Break-glass access** for incident-only, audited
-- **Enterprise posture** (on-prem/VPC with "telemetry stays local" option)
-
-### 9.3 DORA Readiness
-
-| Article | Requirement | Status |
-|---------|-------------|--------|
-| Art. 28 | ICT third-party risk management | ✓ Ready |
-| Art. 30 | Key contractual provisions | ✓ Templates available |
-| Art. 30(2) | Basic contract terms | ✓ Included |
-| Art. 30(3) | Critical function addendum | ✓ Available |
-| Art. 30(3)(e) | Audit rights | ✓ Supported |
-| Art. 30(3)(f) | Exit strategies | ✓ Documented |
+| Art. 28 | ICT third-party risk management | Templates available |
+| Art. 30 | Key contractual provisions | Templates available |
+| Art. 30(2) | Basic contract terms | Templates available |
+| Art. 30(3) | Critical function addendum | Templates available |
+| Art. 30(3)(e) | Audit rights | Designed to support |
+| Art. 30(3)(f) | Exit strategies | Documented |
 
 ---
 

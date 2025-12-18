@@ -76,10 +76,10 @@
 
 **Phase 1 Completion Summary:**
 - All 15 work blocks completed
-- 474 DORA tests passing (comprehensive coverage)
-- 2 new Python modules with 81 tests
+- Automated tests for DORA-related modules implemented
+- 2 new Python modules with associated tests
 - 8 new documentation files
-- Toolkit ready for client use (not independently audited)
+- Toolkit ready for client use (not independently audited; test coverage claims refer to internal automated tests, not regulatory certification)
 
 ---
 
@@ -426,23 +426,25 @@ additional_requirements_critical:
 art_30_3_detailed_implementation:
 
   # Art. 30(3)(a) - Full Service Level Descriptions
-  sla_targets:
+  # NOTE: These are DESIGN TARGETS for a pre-seed company. Actual SLA commitments
+  # are contract-specific and will be validated as operational history is established.
+  sla_design_targets:
     availability:
-      trading_services: "99.9% monthly (43.8 min downtime max)"
-      backtest_services: "99.5% monthly"
-      api_services: "99.9% monthly"
-      measurement: "External monitoring (UptimeRobot/Datadog)"
+      trading_services: "Target 99.9% monthly (design goal; actual SLA contract-specific)"
+      backtest_services: "Target 99.5% monthly (design goal)"
+      api_services: "Target 99.9% monthly (design goal)"
+      measurement: "External monitoring planned (UptimeRobot/Datadog)"
     performance:
-      order_latency_p95: "<500ms"
-      market_data_latency_p95: "<200ms"
-      api_response_p95: "<1000ms"
+      order_latency_p95: "Target <500ms (design goal)"
+      market_data_latency_p95: "Target <200ms (design goal)"
+      api_response_p95: "Target <1000ms (design goal)"
     incident_response:
-      critical: "15 min acknowledgment, 1h update"
-      high: "30 min acknowledgment, 4h update"
-      medium: "4h acknowledgment, 24h update"
+      critical: "Target 15 min acknowledgment, 1h update (design goal)"
+      high: "Target 30 min acknowledgment, 4h update (design goal)"
+      medium: "Target 4h acknowledgment, 24h update (design goal)"
     reporting:
-      frequency: "Monthly SLA report"
-      format: "PDF + JSON via client portal"
+      frequency: "Monthly SLA report (planned)"
+      format: "PDF + JSON via client portal (planned)"
 
   # Art. 30(3)(b) - Notice Periods
   notice_periods:
@@ -477,10 +479,10 @@ art_30_3_detailed_implementation:
   # Art. 30(3)(d) - ICT Security Measures
   security_measures_participation:
     provider_obligations:
-      - maintain_security_certifications: "SOC2, ISO27001"
-      - vulnerability_management: "Weekly scans, critical <24h remediation"
-      - penetration_testing: "Annual third-party test"
-      - security_awareness: "Quarterly training for all staff"
+      - security_certification_roadmap: "SOC2 Type I planned 2026, Type II planned 2027; ISO27001 planned 2027+"
+      - vulnerability_management: "Weekly scans, critical <24h remediation (design target)"
+      - penetration_testing: "Annual third-party test (planned 2026)"
+      - security_awareness: "Quarterly training for all staff (planned upon establishment)"
     client_cooperation:
       - joint_security_reviews: "Annual or upon request"
       - threat_intelligence_sharing: "As relevant"

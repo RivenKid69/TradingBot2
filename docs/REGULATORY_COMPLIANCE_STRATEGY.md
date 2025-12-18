@@ -510,20 +510,22 @@ KILL_SWITCH_THRESHOLDS = {
 # No automatic reset for L2+ without manual override
 ```
 
-### 4.8 RTS 6 Compliance Matrix (Summary)
+### 4.8 RTS 6 Alignment Matrix (Summary)
 
-| RTS 6 Article | Requirement | CustodiaCloud Feature | Status |
+> **Note**: This matrix describes how CustodiaCloud features are **designed to support** client compliance workflows. RTS 6 obligations apply to investment firms (our clients), not to software vendors. Clients must conduct their own compliance assessment with qualified advisors.
+
+| RTS 6 Article | Requirement | CustodiaCloud Feature | Design Status |
 |---------------|-------------|---------------------|--------|
-| Art. 1-4 | General requirements | Governance framework | ✅ |
-| Art. 5 | Conformance testing | Backtesting with L2/L3 simulation | ✅ |
-| Art. 6 | Annual validation | Version-controlled audit trails | ✅ |
-| Art. 7 | Stress testing | Adversarial training (SA-PPO) | ✅ |
-| Art. 8-11 | Development & deployment | CI/CD with testing requirements | ✅ |
-| Art. 12-14 | Business continuity | Multi-region DR | ✅ |
-| Art. 15-17 | Pre-trade controls | Risk guards, position limits | ✅ |
-| Art. 18-21 | Real-time monitoring | Live dashboards, alerts | ✅ |
-| Art. 22-26 | Post-trade controls | TCA, reconciliation | ✅ |
-| Art. 27-29 | Record keeping | 7-year retention, immutable logs | ✅ |
+| Art. 1-4 | General requirements | Governance framework | Designed to support |
+| Art. 5 | Conformance testing | Backtesting with L2/L3 simulation | Designed to support |
+| Art. 6 | Annual validation | Version-controlled audit trails | Designed to support |
+| Art. 7 | Stress testing | Adversarial training (SA-PPO) | Designed to support |
+| Art. 8-11 | Development & deployment | CI/CD with testing requirements | Designed to support |
+| Art. 12-14 | Business continuity | Multi-region DR | Designed to support |
+| Art. 15-17 | Pre-trade controls | Risk guards, position limits | Designed to support |
+| Art. 18-21 | Real-time monitoring | Live dashboards, alerts | Designed to support |
+| Art. 22-26 | Post-trade controls | TCA, reconciliation | Designed to support |
+| Art. 27-29 | Record keeping | 7-year retention, immutable logs | Designed to support |
 
 ---
 
@@ -1062,18 +1064,20 @@ We provide a comprehensive DPA to all clients covering:
 | **Visibility** | Clear privacy notices, audit trails |
 | **User-centric** | Easy-to-use privacy controls |
 
-### 7.10 GDPR Compliance Checklist
+### 7.10 GDPR Alignment Checklist
 
-- [x] Appointed Data Protection Officer (DPO) - Q2 2025
-- [x] Created Record of Processing Activities (ROPA)
-- [x] Conducted DPIA for high-risk processing
-- [x] Implemented technical/organizational measures
-- [x] Prepared Data Processing Agreements
-- [x] Established data breach response procedure
-- [x] Created privacy notices (website, app)
-- [x] Implemented data subject rights workflows
-- [x] Trained staff on GDPR requirements
-- [ ] Registered with supervisory authority (upon establishment)
+> **Note**: This checklist tracks design alignment and planning status, not certification or audit completion. Items marked with checkmarks indicate design/documentation work completed; actual implementation and audit verification are ongoing.
+
+- [ ] Appoint Data Protection Officer (DPO) — planned Q2 2025
+- [x] Created Record of Processing Activities (ROPA) template
+- [x] DPIA framework documented for high-risk processing
+- [x] Technical/organizational measures designed
+- [x] Data Processing Agreement template prepared
+- [x] Data breach response procedure documented
+- [x] Privacy notice templates created
+- [x] Data subject rights workflow documented
+- [ ] Staff GDPR training — planned upon establishment
+- [ ] Register with supervisory authority — upon establishment
 
 ---
 
@@ -1155,13 +1159,13 @@ We provide a comprehensive DPA to all clients covering:
 | Penetration testing | None | Annual external |
 | Security training | Basic | Comprehensive + phishing tests |
 
-**Availability Controls**:
-| Control | Current State | Target State |
+**Availability Controls** (SOC 2 roadmap targets, not current commitments):
+| Control | Current State | Target State (Design Goal) |
 |---------|---------------|--------------|
-| SLA documentation | Informal | Formal SLA (99.5%) |
+| SLA documentation | Informal | Formal SLA (target 99.5%) |
 | Monitoring | Basic | Comprehensive (Datadog/similar) |
 | Incident response | Informal | Documented playbooks |
-| Disaster recovery | Basic | RTO <4h, RPO <1h |
+| Disaster recovery | Basic | RTO <4h, RPO <1h (target) |
 | Capacity planning | Ad-hoc | Quarterly reviews |
 
 **Processing Integrity Controls**:
@@ -1298,58 +1302,60 @@ We provide a comprehensive DPA to all clients covering:
 
 #### 9.3.1 Access Control
 
+> **Note**: Status indicates design/implementation progress, not independently audited controls. Audit verification planned as part of SOC 2 roadmap.
+
 | Control | Implementation | Status |
 |---------|----------------|--------|
-| Multi-factor authentication | TOTP/WebAuthn for all accounts | ✅ Implemented |
-| Role-based access control | Principle of least privilege | ✅ Implemented |
-| Password policy | Min 12 chars, complexity, 90-day rotation | ✅ Implemented |
-| Session management | 8-hour timeout, concurrent session limits | ✅ Implemented |
-| Privileged access management | Separate admin accounts, just-in-time access | 🔄 In Progress |
-| Access reviews | Quarterly automated reviews | 📋 Planned Q2 2025 |
+| Multi-factor authentication | TOTP/WebAuthn for all accounts | Designed |
+| Role-based access control | Principle of least privilege | Designed |
+| Password policy | Min 12 chars, complexity, 90-day rotation | Designed |
+| Session management | 8-hour timeout, concurrent session limits | Designed |
+| Privileged access management | Separate admin accounts, just-in-time access | In progress |
+| Access reviews | Quarterly automated reviews | Planned Q2 2025 |
 
 #### 9.3.2 Data Protection
 
 | Control | Implementation | Status |
 |---------|----------------|--------|
-| Encryption at rest | AES-256 (AWS KMS) | ✅ Implemented |
-| Encryption in transit | TLS 1.3 minimum | ✅ Implemented |
-| Key management | AWS KMS with rotation | ✅ Implemented |
-| Data classification | 4-tier classification scheme | ✅ Implemented |
-| Data masking | PII masking in logs | ✅ Implemented |
-| Secure deletion | Cryptographic erasure | ✅ Implemented |
+| Encryption at rest | AES-256 (AWS KMS) | Designed |
+| Encryption in transit | TLS 1.3 minimum | Designed |
+| Key management | AWS KMS with rotation | Designed |
+| Data classification | 4-tier classification scheme | Designed |
+| Data masking | PII masking in logs | Designed |
+| Secure deletion | Cryptographic erasure | Designed |
 
 #### 9.3.3 Network Security
 
 | Control | Implementation | Status |
 |---------|----------------|--------|
-| Firewall | AWS Security Groups, NACLs | ✅ Implemented |
-| Network segmentation | VPC with private subnets | ✅ Implemented |
-| DDoS protection | AWS Shield Standard | ✅ Implemented |
-| WAF | AWS WAF with OWASP rules | ✅ Implemented |
-| VPN | WireGuard for admin access | ✅ Implemented |
-| Intrusion detection | AWS GuardDuty | ✅ Implemented |
+| Firewall | AWS Security Groups, NACLs | Designed |
+| Network segmentation | VPC with private subnets | Designed |
+| DDoS protection | AWS Shield Standard | Designed |
+| WAF | AWS WAF with OWASP rules | Designed |
+| VPN | WireGuard for admin access | Designed |
+| Intrusion detection | AWS GuardDuty | Designed |
 
 #### 9.3.4 Application Security
 
 | Control | Implementation | Status |
 |---------|----------------|--------|
-| Secure SDLC | Security requirements in design | ✅ Implemented |
-| Code review | Mandatory PR reviews | ✅ Implemented |
-| Static analysis | SonarQube, Bandit | ✅ Implemented |
-| Dependency scanning | Dependabot, Snyk | ✅ Implemented |
-| DAST | OWASP ZAP in CI/CD | 🔄 In Progress |
-| Penetration testing | Annual external testing | 📋 Planned Q3 2025 |
+| Secure SDLC | Security requirements in design | Designed |
+| Code review | Mandatory PR reviews | Designed |
+| Static analysis | SonarQube, Bandit | Designed |
+| Dependency scanning | Dependabot, Snyk | Designed |
+| DAST | OWASP ZAP in CI/CD | In progress |
+| Penetration testing | Annual external testing | Planned Q3 2025 |
 
 #### 9.3.5 Monitoring & Logging
 
 | Control | Implementation | Status |
 |---------|----------------|--------|
-| Centralized logging | AWS CloudWatch Logs | ✅ Implemented |
-| SIEM | AWS Security Hub + custom alerts | 🔄 In Progress |
-| Log retention | 1 year production, 7 years audit | ✅ Implemented |
-| Anomaly detection | CloudWatch Anomaly Detection | ✅ Implemented |
-| User activity monitoring | Comprehensive audit logs | ✅ Implemented |
-| Real-time alerting | PagerDuty integration | ✅ Implemented |
+| Centralized logging | AWS CloudWatch Logs | Designed |
+| SIEM | AWS Security Hub + custom alerts | In progress |
+| Log retention | 1 year production, 7 years audit | Designed |
+| Anomaly detection | CloudWatch Anomaly Detection | Designed |
+| User activity monitoring | Comprehensive audit logs | Designed |
+| Real-time alerting | PagerDuty integration | Designed |
 
 ### 9.4 Incident Response Plan
 

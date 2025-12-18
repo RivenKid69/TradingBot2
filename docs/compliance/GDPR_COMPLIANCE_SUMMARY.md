@@ -13,16 +13,16 @@
 
 CustodiaCloud is designed to support GDPR-aligned deployments with privacy-by-design controls aligned with the CCEA (Cloud-Controlled Execution Architecture) model.
 
-### Key privacy-by-design controls (engineering; not a compliance claim)
+### Key privacy-by-design controls (engineering design goals; not a compliance claim)
 
-| Aspect | Status | Description |
+| Aspect | Design Status | Description |
 |--------|--------|-------------|
-| Data Minimization | **Enforced** | Cloud receives only necessary telemetry; secrets never leave Agent |
-| EU-Only Residency | **Enforced** | All data processing in EU; drift checks fail closed |
-| Telemetry Redaction | **Mandatory** | Cannot be disabled; secrets/PII always masked |
-| DSAR Support | **Supported** | Access, portability, erasure workflows (timeline is deployment- and contract-dependent; target is within GDPR time limits) |
-| Breach Response | **Supported** | Documented playbooks and tooling intended to support Art. 33-34 timelines (deployment-dependent) |
-| Retention Control | **Automated** | Per-tenant policies with auto-purge and legal holds |
+| Data Minimization | Designed to support | Cloud receives only necessary telemetry; secrets never leave Agent |
+| EU-Priority Residency | Designed to support | Core platform data in EU; sub-processors with non-EU processing operate under SCCs/DPF |
+| Telemetry Redaction | Designed as mandatory | Secrets/PII always masked (by design) |
+| DSAR Support | Workflow documented | Access, portability, erasure workflows (timeline is deployment- and contract-dependent; target is within GDPR time limits) |
+| Breach Response | Workflow documented | Documented playbooks and tooling intended to support Art. 33-34 timelines (deployment-dependent) |
+| Retention Control | Designed | Per-tenant policies with auto-purge and legal holds (planned) |
 
 ---
 
@@ -170,29 +170,33 @@ RAW_ORDER_EVENTS (Enterprise-only + Explicit Opt-in)
 
 ## GDPR Articles Coverage
 
-### Fully Implemented (Key Articles)
+### Design Alignment (Key Articles)
 
-| Article | Topic | Implementation |
+> **Note**: This table describes how CustodiaCloud features are designed to support client GDPR workflows. This is not a certification claim. Clients must conduct their own compliance assessment.
+
+| Article | Topic | Design Status |
 |---------|-------|----------------|
-| Art. 5 | Principles | Data minimization, purpose limitation |
+| Art. 5 | Principles | Designed to support data minimization, purpose limitation |
 | Art. 6 | Lawful Basis | Documented per data category |
-| Art. 12-14 | Transparency | Privacy Policy, CCEA disclosure |
-| Art. 15 | Right of Access | DSAR access workflow |
-| Art. 17 | Right to Erasure | DSAR erasure with legal hold check |
-| Art. 20 | Portability | DSAR export in JSON format |
-| Art. 25 | Privacy by Design | CCEA architecture, CI guardrails |
+| Art. 12-14 | Transparency | Privacy Policy template, CCEA disclosure |
+| Art. 15 | Right of Access | DSAR access workflow documented |
+| Art. 17 | Right to Erasure | DSAR erasure workflow documented |
+| Art. 20 | Portability | DSAR export in JSON format documented |
+| Art. 25 | Privacy by Design | CCEA architecture, CI guardrails designed |
 | Art. 28 | Processor | DPA template, subprocessor register |
-| Art. 30 | RoPA | Records of Processing Activities |
-| Art. 32 | Security | Encryption, access controls, audit |
-| Art. 33-34 | Breach Notification | 72-hour workflow, decision tree |
+| Art. 30 | RoPA | Records of Processing Activities template |
+| Art. 32 | Security | Encryption, access controls, audit designed |
+| Art. 33-34 | Breach Notification | 72-hour workflow documented |
 
 ---
 
-## Compliance Dashboards & Metrics
+## Compliance Dashboards & Metrics (Planned)
 
-### Key Metrics Tracked
+### Key Metrics to Track
 
-| Metric | Target | Dashboard |
+> **Note**: These dashboards and metrics are planned features. Actual operational metrics will be established as infrastructure is deployed.
+
+| Metric | Design Target | Dashboard (Planned) |
 |--------|--------|-----------|
 | DSAR Response Time | < 30 days | Compliance Dashboard |
 | Residency Drift | 0 violations | EU Drift Check |
@@ -200,9 +204,9 @@ RAW_ORDER_EVENTS (Enterprise-only + Explicit Opt-in)
 | Break-Glass Usage | Audit-only | Access Audit |
 | Breach Response Time | < 72 hours | Breach Workflow |
 
-### Quarterly Reviews
+### Quarterly Reviews (Planned)
 
-The platform implements automated quarterly compliance reviews covering:
+The platform is designed to support automated quarterly compliance reviews covering:
 - Retention schedule validation
 - Subprocessors list updates
 - DSAR metrics analysis
