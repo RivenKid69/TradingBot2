@@ -426,7 +426,7 @@ See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) for full privacy architecture.
 
 | Component | Protection | Purpose |
 |-----------|------------|---------|
-| Training Service | Trade Secret + Patent (pending) | CVaR-RL training |
+| Training Service | Trade Secret | CVaR-RL training |
 | Backtest Engine | Trade Secret | L3 LOB simulation |
 | Artifact Builder | Trade Secret | Strategy packaging |
 | Control Plane | Trade Secret | Agent orchestration |
