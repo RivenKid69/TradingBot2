@@ -46,6 +46,17 @@ Use these rules to avoid regulatory, legal, and credibility issues in external n
 - **No performance promises**: avoid language implying guaranteed returns, risk elimination, or “will prevent losses”.
 - **Data licensing**: customers remain responsible for market data licenses/terms; CustodiaCloud is designed to work with bring-your-own data providers.
 
+## Startup Visa Committee Summary (Canonical)
+
+This is the short narrative we optimize for in startup visa applications:
+
+- **Innovation**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML (CVaR constraints) + governance/evidence exports by design.
+- **Business viability**: equities-first beachhead, B2B subscription model, and a structured pilot program with measurable onboarding and conversion criteria.
+- **EU establishment**: establish an EU entity and operate primarily in the EU market, with a compliance-friendly Cloud/Agent model and EU data/telemetry minimization posture.
+- **EU establishment**: primary establishment path is a Netherlands B.V. (alternative: France SAS if needed), operating primarily in the EU market with a compliance-friendly Cloud/Agent model and EU data/telemetry minimization posture.
+- **Economic contribution**: create high-skilled engineering, operations, and go-to-market roles locally as the company scales.
+- **Clear scope**: we are an ICT/software provider; we do not provide investment advice, custody, or execution services.
+
 ---
 
 ## 2) MVP and Beachhead (equities-first)

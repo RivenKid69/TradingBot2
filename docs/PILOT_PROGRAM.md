@@ -55,6 +55,12 @@ A 3-month structured pilot program designed to validate product-market fit with 
 | **Target Start** | Phase 1 (0–3 months) |
 | **Deployment Model** | Cloud SaaS + Local Agent (BYO host) |
 
+## Why This Pilot Matters for Startup Visa Committees
+
+- Demonstrates **validated demand** through a structured cohort with clear acceptance criteria and measurable success metrics.
+- Produces **reference customers and case studies** (where consented), enabling repeatable sales and sustainable growth.
+- Reinforces the **software-provider posture** (client-controlled execution; no custody; no advice), supporting regulated/professional procurement narratives.
+
 ---
 
 ## Pilot Objectives

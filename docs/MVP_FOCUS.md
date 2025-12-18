@@ -38,6 +38,12 @@
 
 This is our singular focus. Everything in MVP serves this problem — while maintaining strict Cloud/Agent separation for regulatory safety.
 
+## Why This Matters for Startup Visa Committees
+
+- This is an **ICT/software product** with a defined MVP boundary and a repeatable go-to-market wedge (equities-first).
+- The **Cloud/Agent separation** is designed to keep execution and secrets client-controlled, improving procurement and compliance narratives for EU buyers.
+- Success is measurable via the pilot program KPIs (onboarding time, activation, payment intent), not trading performance claims.
+
 ---
 
 ## Target Customer Profile

@@ -53,6 +53,12 @@
 
 ---
 
+## Startup Visa Committee Fit (Why This Is a “Real Startup”)
+
+- **We sell software to professional firms** (B2B subscription), not trading performance or “signals”.
+- **Innovation is architectural and operational** (CCEA separation + governance/evidence exports), not just a model claim.
+- **Market entry is concrete**: an equities-first wedge plus a structured pilot program to produce reference customers and repeatable onboarding.
+
 ## Theoretical Foundation: Why Beachhead Strategy Works
 
 ### Geoffrey Moore's "Crossing the Chasm"

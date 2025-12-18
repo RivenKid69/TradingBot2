@@ -15,14 +15,14 @@
 | Aspect | Status |
 |--------|--------|
 | **Stage** | Pre-seed, seeking seed funding |
-| **Phase** | **Customer validation** (technical foundation complete) |
+| **Phase** | **Customer validation** (core foundation implemented) |
 | **Revenue** | Pre-revenue; pilot program launching in **Phase 1 (0–3 months)** |
 | **Ask** | Seed funding for customer validation & go-to-market |
 | **Primary ICP** | European systematic equities teams (prop firms + small funds) |
 
 **What we've built**: A trading infrastructure platform with built-in risk management that reduces time-to-market from months to days.
 
-**Where we are now**: Foundation complete. We are entering the **customer validation phase** — pilot programs with European systematic equities teams to validate product-market fit before scaling.
+**Where we are now**: Core foundation implemented. We are entering the **customer validation phase** — pilot programs with European systematic equities teams to validate product-market fit before scaling.
 
 **Why it matters**: Prop trading firms often spend 6-12 months and €200K-1.8M+ building trading infrastructure (team- and scope-dependent). We reduce this to days at a fraction of the cost.
 
@@ -96,7 +96,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 ### Foundation Built — Now Testing with Customers
 
-We have completed the technical foundation. Our focus now is **customer validation**, not feature expansion.
+We have implemented the core technical foundation. Our focus now is **customer validation**, not feature expansion.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

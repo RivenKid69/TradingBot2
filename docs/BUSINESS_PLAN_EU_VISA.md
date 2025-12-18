@@ -14,7 +14,7 @@
 | **Document Type** | Comprehensive Business Plan |
 | **Version** | 1.0 |
 | **Date** | 2025-12-18 |
-| **Target Markets** | European Union (Primary: Netherlands, France, Germany) |
+| **Target Markets** | European Union (Primary: Netherlands; Secondary: France, Germany) |
 | **Classification** | Confidential - For Visa/Investment Evaluation |
 
 **Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
@@ -25,6 +25,16 @@
 - Any financial projections are illustrative scenarios, not forecasts.
 
 ---
+
+## Committee Highlights (Read First)
+
+This plan is designed to match how startup visa committees typically evaluate applications:
+
+- **Innovation**: CCEA architecture enforces a strict Cloud/Agent boundary (Cloud does not hold secrets and does not send orders; execution remains client-controlled), plus risk-first ML (CVaR constraints) and governance/evidence exports by design.
+- **Business viability**: equities-first beachhead, B2B subscription model, and a structured 3‑month pilot program (3–5 firms) with measurable onboarding and conversion criteria.
+- **EU establishment plan**: establish an EU legal entity, operate primarily in the EU market, and engage an approved facilitator/incubator where required (see Section 12.3/12.4).
+- **Economic contribution**: high-skilled job creation plan with explicit roles and a realistic 12‑month roadmap (see Sections 9 and 12.1).
+- **Funding**: seed funding to support customer validation, EU go-to-market, and hiring (see Sections 1.6–1.7 and Section 8).
 
 ## Table of Contents
 
@@ -49,6 +59,8 @@
 ### 1.1 Business Overview
 
 We are developing an **institutional-grade algorithmic trading platform** that fundamentally transforms how quantitative trading firms develop, test, and deploy trading strategies. Our platform uniquely combines **risk-aware artificial intelligence** with **research-grade market microstructure simulation**, enabling trading operations that explicitly optimize for worst-case scenarios rather than average returns.
+
+CustodiaCloud is designed as an **ICT/software provider**: customers trade through their own broker accounts via their own customer-controlled Agent, while our Cloud provides research/simulation/monitoring (design intent; not legal advice).
 
 ### 1.2 The Opportunity
 
@@ -133,7 +145,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 
 ### 2.1 Mission Statement
 
-To democratize institutional-grade quantitative trading technology by providing proprietary trading firms and hedge funds with infrastructure that was previously only available to top-tier firms like Two Sigma or Citadel.
+To make institutional-grade quantitative trading infrastructure accessible to small professional teams by providing an ICT/software platform that reduces time-to-production while preserving customer-controlled execution.
 
 ### 2.2 Vision Statement
 
@@ -151,7 +163,7 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 ### 2.4 Legal Structure and EU Establishment
 
-**Planned EU Entity**: B.V. (Netherlands) or SAS (France)
+**Planned EU Entity**: B.V. (Netherlands) as the primary establishment path; SAS (France) as an alternative path if needed.
 
 **Regulatory posture (design intent)**: Software Provider / ICT Provider (classification depends on activities and jurisdiction)
 
@@ -1641,16 +1653,16 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 
 | Metric | Y1 | Y3 | Y5 (Target) |
 |--------|----|----|-------------|
-| **Revenue** | EUR 180K | EUR 1.6M | EUR 5M+ |
-| **Customers** | 8 | 60 | 200+ |
+| **ARR (illustrative)** | EUR 80K | EUR 850K | EUR 5M+ |
+| **Customers (illustrative)** | 3 | 25 | 150+ |
 | **Employees** | 5 | 22 | 50+ |
 | **Markets** | EU | EU + UK | EU + UK + APAC |
 
-*See Section 12.1.1 for detailed role breakdown and hiring plan aligned with EU visa requirements.*
+*See Section 12.1.1 for detailed role breakdown and the hiring plan aligned with startup visa committee criteria.*
 
-### 12.3 Facilitator/Incubator Alignment (Netherlands)
+### 12.3 Facilitator/Incubator Alignment (Primary Host: Netherlands)
 
-**Planned Facilitator Engagement**:
+**Facilitator/incubator shortlist (subject to eligibility and availability)**:
 - Startupbootcamp FinTech (Amsterdam)
 - B. Amsterdam
 - High Tech Campus Eindhoven
@@ -1669,11 +1681,11 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 - Le Swave (Paris) - Fintech focus
 - Fintech House (Paris)
 
-**Requirements Met**:
-- ✓ Innovative technology (not standard service)
-- ✓ Scalable business model
-- ✓ High-growth potential
-- ✓ Job creation commitment
+**Alignment rationale (to be validated per program guidance)**:
+- Innovative technology (not a standard consulting service)
+- Scalable business model
+- High-growth potential
+- Job creation commitment
 
 ---
 
