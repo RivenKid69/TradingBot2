@@ -74,7 +74,7 @@ uksouth             # London
 
 ### 2.4 Explicitly Denied Regions
 
-The following regions are **NEVER** permitted:
+The following regions are **NOT** permitted (by design and policy):
 
 - **US Regions**: us-east-1, us-east-2, us-west-1, us-west-2, us-gov-*
 - **Asia Pacific**: ap-northeast-*, ap-southeast-*, ap-south-*, ap-east-*

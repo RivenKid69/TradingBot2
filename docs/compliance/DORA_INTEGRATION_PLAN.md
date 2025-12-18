@@ -3090,7 +3090,7 @@ DORA alignment tooling module for CustodiaCloud (software/ICT provider posture).
 
 Digital Operational Resilience Act (EU Regulation 2022/2554)
 
-This package provides comprehensive DORA compliance:
+This package provides tooling designed to support DORA compliance (Regulation 2022/2554):
 
 Phase 1 - ICT Risk Management Framework (Articles 5-16):
     - governance: Management body oversight, roles

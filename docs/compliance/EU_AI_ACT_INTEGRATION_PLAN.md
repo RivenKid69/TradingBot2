@@ -13,9 +13,9 @@
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
-| **Phase 1: Foundation & Risk Management** | **IMPLEMENTED (tooling)** | 2025-12-08 | 372/372 passed |
-| **Phase 2: Technical Documentation & Logging** | **IMPLEMENTED (tooling)** | 2025-12-08 | 236/236 passed |
-| **Phase 3: QMS & Testing** | **IMPLEMENTED (tooling)** | 2025-12-08 | 318/318 passed |
+| **Phase 1: Foundation & Risk Management** | **IMPLEMENTED (tooling)** | 2025-12-08 | 372/372 passed (internal CI) |
+| **Phase 2: Technical Documentation & Logging** | **IMPLEMENTED (tooling)** | 2025-12-08 | 236/236 passed (internal CI) |
+| **Phase 3: QMS & Testing** | **IMPLEMENTED (tooling)** | 2025-12-08 | 318/318 passed (internal CI) |
 | **Phase 4: Conformity Assessment (templates/tooling)** | **IMPLEMENTED (tooling)** | 2025-12-08 | 81/81 passed |
 | Phase 5: Ongoing monitoring | Planned | - | - |
 

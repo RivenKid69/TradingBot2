@@ -169,7 +169,9 @@ When EU-Only is enabled:
 | Paris, France | eu-west-3 | Enterprise option |
 | Stockholm, Sweden | eu-north-1 | Enterprise option |
 
-### 6.2 Blocked Regions (Data never processed/stored)
+### 6.2 Blocked Regions (Data processing/storage prohibited by design)
+
+The following regions are excluded from the EU-only configuration by design and policy:
 
 - All US regions (us-*)
 - All Asia Pacific regions (ap-*)

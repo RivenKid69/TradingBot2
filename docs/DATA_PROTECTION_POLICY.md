@@ -11,7 +11,7 @@
 
 ## 1. Purpose
 
-This policy establishes the principles, responsibilities, and procedures for protecting personal data processed by our organization in compliance with the General Data Protection Regulation (EU) 2016/679 (GDPR) and applicable national data protection laws.
+This policy establishes the principles, responsibilities, and procedures for protecting personal data processed by our organization. It is designed to support the General Data Protection Regulation (EU) 2016/679 (GDPR) requirements and applicable national data protection laws.
 
 **Architecture Foundation**: Our data protection measures are built on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict zone separation and mandatory data protection controls.
 

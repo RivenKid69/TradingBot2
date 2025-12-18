@@ -20,7 +20,7 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 | **Agent** | Live execution, risk enforcement, local vault, order creation | **Local only** | **Yes** (customer-controlled) |
 
 **Key Security Design Commitments:**
-- Cloud **does not** store customer broker API keys or credentials (secrets stay in the customer-controlled Agent)
+- Cloud is designed to **not** store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
 - Cloud **does not** generate, transmit, or execute **live trading instructions** (orders/targets/signals)
 - Cloud may send **lifecycle commands** and **signed artifacts** to the Agent; the Agent performs any live execution via customer accounts
 - Telemetry is **redacted by default**; raw order events require explicit opt-in (deployment- and customer-dependent)
@@ -77,7 +77,7 @@ python script_backtest.py --config configs/my_backtest.yaml --offline-config con
 
 - Live execution via local Agent (CCEA architecture):
 ```bash
-# 1. Deploy Agent locally (credentials stay on YOUR machine, never sent to cloud)
+# 1. Deploy Agent locally (credentials stay on YOUR machine; designed to never be sent to cloud)
 #    See docs/agent/INSTALLATION.md for full setup
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
 
@@ -155,7 +155,7 @@ CustodiaCloud includes documentation, controls, and evidence export patterns int
 - Cloud **does not** store or receive broker credentials or API keys (secrets stay in the customer-controlled Agent)
 - Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
 - Telemetry **designed to be redacted** before transmission; raw order events require explicit opt-in
-- EU data residency **by default** for EU customers (enterprise: on-prem/customer-managed options available)
+- EU data residency **by design** for EU customers (enterprise: on-prem/customer-managed options available)
 - DSAR scope is Cloud-only; Agent data is customer-controlled
 
 Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`

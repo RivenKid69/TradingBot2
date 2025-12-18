@@ -99,10 +99,10 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
 │  CLOUD DESIGN COMMITMENTS (enforced at architecture level):                  │
-│  - NEVER stores broker API keys or trading credentials                      │
-│  - NEVER generates, transmits, or executes trading orders                   │
-│  - NEVER has access to exchange trading endpoints                           │
-│  - NEVER sends order-like payloads (side/qty/price)                         │
+│  - Designed to NOT store broker API keys or trading credentials             │
+│  - Designed to NOT generate, transmit, or execute trading orders            │
+│  - Designed to NOT have access to exchange trading endpoints                │
+│  - Designed to NOT send order-like payloads (side/qty/price)                │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ Lifecycle Commands Only:

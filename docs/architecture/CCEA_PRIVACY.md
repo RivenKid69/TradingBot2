@@ -8,7 +8,7 @@
 
 ## Overview
 
-This document defines privacy controls, data governance, and GDPR compliance measures for the CCEA Platform. The architecture is designed with privacy-by-design principles and aligned to meet GDPR (EU) 2016/679 requirements.
+This document defines privacy controls, data governance, and GDPR-aligned design measures for the CCEA Platform. The architecture is designed with privacy-by-design principles and intended to support GDPR (EU) 2016/679 requirements.
 
 ---
 

@@ -130,9 +130,9 @@ This document applies to:
 
 ### 4.2 "Telemetry Stays Local" Mode
 
-For enterprise deployments, "Telemetry Stays Local" mode ensures:
+For enterprise deployments, "Telemetry Stays Local" mode is designed to provide:
 
-1. **No Cloud Transmission**: Telemetry is never sent to vendor Cloud infrastructure
+1. **No Cloud Transmission**: Telemetry is configured to remain local and not be sent to vendor Cloud infrastructure
 2. **Local Storage**: All telemetry stored in customer-controlled storage
 3. **Customer Export**: Customer can export telemetry for their own analysis
 4. **Audit Trail**: Local audit trail of all telemetry operations

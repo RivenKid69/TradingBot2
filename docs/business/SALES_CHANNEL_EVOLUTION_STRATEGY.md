@@ -219,7 +219,7 @@ Per [Bessemer Venture Partners](https://www.bvp.com/atlas/a-b2b-founders-guide-t
 │  └──────┬───────┘                                           │
 │         │ 10% convert                                        │
 │  ┌──────▼───────┐                                           │
-│  │ Paid Starter │  ────▶ 60 paying customers                │
+│  │ Paid Starter │  ────▶ 60 paying customers (target)       │
 │  │   ($49/mo)   │                                           │
 │  └──────┬───────┘                                           │
 │         │ 20% upgrade                                        │
@@ -949,7 +949,7 @@ Per [Arise GTM](https://arisegtm.com/blog/go-to-market-challenges-for-scale-up-a
 | Win rate | 25%+ |
 | Sales cycle | <90 days (mid-market) |
 
-### 12.3 Year 2 Success
+### 12.3 Year 2 Success (Targets)
 
 | Metric | Target |
 |--------|--------|

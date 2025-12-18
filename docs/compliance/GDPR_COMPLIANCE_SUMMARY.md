@@ -17,9 +17,9 @@ CustodiaCloud is designed to support GDPR-aligned deployments with privacy-by-de
 
 | Aspect | Design Status | Description |
 |--------|--------|-------------|
-| Data Minimization | Designed to support | Cloud receives only necessary telemetry; secrets never leave Agent |
+| Data Minimization | Designed to support | Cloud receives only necessary telemetry; secrets are designed to remain in Agent |
 | EU-Priority Residency | Designed to support | Core platform data in EU; sub-processors with non-EU processing operate under SCCs/DPF |
-| Telemetry Redaction | Designed as mandatory | Secrets/PII always masked (by design) |
+| Telemetry Redaction | Designed as mandatory | Secrets/PII masked by design (redaction middleware) |
 | DSAR Support | Workflow documented | Access, portability, erasure workflows (timeline is deployment- and contract-dependent; target is within GDPR time limits) |
 | Breach Response | Workflow documented | Documented playbooks and tooling intended to support Art. 33-34 timelines (deployment-dependent) |
 | Retention Control | Designed | Per-tenant policies with auto-purge and legal holds (planned) |

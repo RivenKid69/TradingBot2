@@ -46,7 +46,7 @@ This document provides pre-contractual security information per DORA Article 28(
 | Audit Type | Planned Frequency | Status | Availability |
 |------------|-------------------|--------|--------------|
 | Penetration Testing | Annual | Planned 2026 | Summary on request (when available) |
-| Vulnerability Assessment | Quarterly | Internal scans active | Summary on request |
+| Vulnerability Assessment | Quarterly | Internal scans (ongoing) | Summary on request |
 | SOC2 Audit (Type I) | Annual | Planned 2026 | Report under NDA (when available) |
 | SOC2 Audit (Type II) | Annual | Planned 2027 | Report under NDA (when available) |
 | Code Security Review | Per major release | Internal review active | Summary on request |

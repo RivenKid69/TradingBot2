@@ -9,7 +9,7 @@
 
 ### 1.1 Purpose
 
-Phase 8 implements the "Continuous compliance (prevent regressions)" requirement from the GDPR Implementation Plan. The goal is to ensure compliance remains true as features evolve, preventing privacy regressions through automated CI gates, dashboards, and periodic reviews.
+Phase 8 implements the "Continuous compliance (prevent regressions)" requirement from the GDPR Implementation Plan. The goal is to support ongoing compliance through automated CI gates, dashboards, and periodic reviews, helping to prevent privacy regressions as features evolve.
 
 ### 1.2 GDPR References
 

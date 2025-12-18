@@ -171,9 +171,12 @@ docker-compose \
 #### Standard Kubernetes Deployment
 
 ```bash
-# 1. Add Helm repository (or use local chart)
-helm repo add ccea https://charts.ccea.io
-helm repo update
+# 1. Add Helm repository (placeholder - actual registry TBD)
+# helm repo add ccea https://charts.ccea.io  # Future registry
+# helm repo update
+
+# For now, use local chart or private registry:
+# helm install ccea ./charts/ccea-cloud
 
 # 2. Create namespace
 kubectl create namespace ccea-cloud

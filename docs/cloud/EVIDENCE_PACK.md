@@ -67,7 +67,7 @@ This document describes the Evidence Pack export capability for enterprise custo
 
 ## 2. Export API
 
-### 2.1 Create Export Request
+### 2.1 Create Export Request (Illustrative Example)
 
 ```http
 POST /api/v1/enterprise/evidence-pack
@@ -101,7 +101,7 @@ Content-Type: application/json
 }
 ```
 
-### 2.2 Export Response
+### 2.2 Export Response (Example - sample data only)
 
 ```json
 {

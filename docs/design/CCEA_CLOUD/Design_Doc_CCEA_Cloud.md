@@ -2,13 +2,13 @@
 
 > **Version**: 2.0.0
 > **Date**: 2025-12-16
-> **Status**: APPROVED | **Implementation**: 100% Complete
+> **Status**: APPROVED | **Implementation**: Specification complete (verify via tests/deployment)
 > **SHA256**: 97ed47324b56658b2d1b9dc40a4553e8676ed1a17de4ab54de0555fd29393eae
 > **Snapshot**: [Design_Doc_CCEA_Cloud.txt](./Design_Doc_CCEA_Cloud.txt)
 
 ## 0. Executive Summary
 
-CCEA (Cloud-Controlled Execution Architecture) определяет строгое разделение между Cloud (исследование/мониторинг/управление жизненным циклом) и Agent (исполнение/секреты/риск-контроль). Ключевой принцип: **Cloud никогда не хранит ключи, не имеет кода/доступа к торговым API от имени пользователя и не передаёт live-торговые инструкции/ордера/targets.**
+CCEA (Cloud-Controlled Execution Architecture) определяет строгое разделение между Cloud (исследование/мониторинг/управление жизненным циклом) и Agent (исполнение/секреты/риск-контроль). Ключевой принцип: **Cloud спроектирован так, чтобы не хранить ключи, не иметь кода/доступа к торговым API от имени пользователя и не передавать live-торговые инструкции/ордера/targets.**
 
 ### 0.1 Ключевой принцип (не обсуждается)
 

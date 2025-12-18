@@ -330,8 +330,8 @@ ccea-admin break-glass approve \
 
 | Role | MFA Required | Methods |
 |------|--------------|---------|
-| org_admin | Yes (always) | TOTP, WebAuthn |
-| workspace_admin | Yes (always) | TOTP, WebAuthn |
+| org_admin | Yes (by default) | TOTP, WebAuthn |
+| workspace_admin | Yes (by default) | TOTP, WebAuthn |
 | developer | Configurable | TOTP, WebAuthn |
 | operator | Configurable | TOTP, WebAuthn |
 | viewer | Configurable | TOTP |

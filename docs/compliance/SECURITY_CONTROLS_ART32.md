@@ -8,7 +8,7 @@
 
 ## 1. Purpose
 
-This document provides a comprehensive checklist mapping GDPR Article 32 ("Security of Processing") requirements to the specific technical and organizational security controls implemented within the CCEA (Cloud-Controlled Execution Architecture) platform.
+This document provides a comprehensive checklist mapping GDPR Article 32 ("Security of Processing") requirements to the specific technical and organizational security controls designed for the CCEA (Cloud-Controlled Execution Architecture) platform.
 
 ## 2. Article 32 Full Text Reference
 
@@ -290,9 +290,9 @@ Review Date: [Next quarterly review]
 | Control Area | Cloud Responsibility | Agent Responsibility |
 |--------------|----------------------|----------------------|
 | User data encryption | ✅ Full | N/A (no user data) |
-| Broker credentials | ❌ Never processed | ✅ Full |
-| API keys/secrets | ❌ Never processed | ✅ Full |
-| Trade execution data | ❌ Never processed | ✅ Full |
+| Broker credentials | ❌ Not processed (by design) | ✅ Full |
+| API keys/secrets | ❌ Not processed (by design) | ✅ Full |
+| Trade execution data | ❌ Not processed (by design) | ✅ Full |
 | Research job isolation | ✅ Full | N/A |
 | Update distribution | ✅ Signing, delivery | ✅ Verification, install |
 

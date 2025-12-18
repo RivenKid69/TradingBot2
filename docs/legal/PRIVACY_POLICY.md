@@ -79,9 +79,9 @@ Data processed by the optional local Agent (if you deploy one):
 | Position details | Your hardware | **NONE** |
 | Local approval records | Your hardware | **NONE** |
 
-**We cannot access Agent-zone data because:**
-1. It never leaves your hardware
-2. It is encrypted with keys we do not possess
+**Agent-zone data is designed to remain under your control:**
+1. By design, it does not leave your hardware
+2. It is encrypted with keys derived locally, which we do not possess by design
 3. The Agent operates autonomously on your infrastructure
 
 ### 1A.4 Telemetry Redaction
@@ -353,10 +353,10 @@ The Platform implements three distinct telemetry sensitivity levels as defined i
 - Access restricted to workspace admins with audit trail
 - Alternative: "telemetry stays local" mode (no Cloud transmission)
 
-**What RAW_ORDER_EVENTS NEVER contains** (even at enterprise level):
-- API keys, secrets, or credentials
-- Unmasked account identifiers
-- Environment variables
+**What RAW_ORDER_EVENTS is designed to exclude** (even at enterprise level):
+- API keys, secrets, or credentials (blocked by mandatory redaction)
+- Unmasked account identifiers (masked by design)
+- Environment variables (forbidden in telemetry schema)
 
 #### 5.4.4 Telemetry Retention
 
