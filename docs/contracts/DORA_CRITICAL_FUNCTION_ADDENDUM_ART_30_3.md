@@ -117,14 +117,16 @@ Provider SHALL maintain and make available for Client review:
 - Full plans available for audit under NDA (10 business days)
 - Test results (sanitized) provided annually
 
-**C.3 Recovery Objectives (Critical Functions)**
+**C.3 Recovery Objectives (Critical Functions) — Illustrative Design Targets**
 
-| Scenario | RTO | RPO | Validation |
+> **Note**: RTO/RPO targets below are **illustrative planning goals** subject to DR testing validation. CustodiaCloud is a pre-seed company; actual recovery capabilities are subject to infrastructure maturity and testing validation. Contractual RTO/RPO commitments require documented test results and engineering sign-off.
+
+| Scenario | RTO (Untested Design Target) | RPO (Untested Design Target) | Testing Status |
 |----------|-----|-----|------------|
-| Single Component Failure | 30 minutes | 0 (real-time replication) | Monthly |
-| Data Center Failure | 4 hours | 15 minutes | Semi-annually |
-| Region Failure | 8 hours | 1 hour | Annually |
-| Complete Infrastructure Loss | 24 hours | 4 hours | Annually |
+| Single Component Failure | 30 minutes (pending automation testing) | 0 (real-time replication pending implementation) | Planned (monthly when operational) |
+| Data Center Failure | 4 hours (pending multi-AZ validation) | 15 minutes (pending replication validation) | Planned (semi-annual when operational) |
+| Region Failure | 8 hours (pending multi-region deployment) | 1 hour (pending async replication validation) | Planned (annual when operational) |
+| Complete Infrastructure Loss | 24 hours (pending full DR program) | 4 hours (pending backup validation) | Planned (annual when operational) |
 
 ---
 
@@ -195,14 +197,14 @@ Provider SHALL NOT:
 **E.4 Pooled Audit Option**
 
 Per Article 30(4), Client may rely on:
-- Third-party certifications (SOC2 Type II, ISO 27001)
-- Pooled audit reports arranged by Provider
+- Third-party certifications (SOC2 Type II, ISO 27001) **if and when obtained** (CustodiaCloud SOC2 roadmap target: 2027; not currently certified)
+- Pooled audit reports arranged by Provider (subject to provider obtaining such audits)
 - Joint audits with other financial entity clients
 
-Provider SHALL support pooled audits by:
-- Organizing annual third-party audit
-- Making audit reports available to participating clients
-- Coordinating joint audit requests
+Provider intends to support pooled audits (subject to operational maturity and audit engagement):
+- Organizing annual third-party audit (planned; timeline subject to resources and client demand)
+- Making audit reports available to participating clients (when obtained and per NDA)
+- Coordinating joint audit requests (subject to minimum participating client threshold)
 
 **E.5 Audit Logistics**
 
@@ -424,5 +426,6 @@ Signature: ____________________________
 
 *Document Version Control:*
 - v1.0 (2025-01-17): Initial release aligned with DORA application date
+- v1.1 (2025-12-19): **Due diligence audit corrections**: Added critical disclaimer to Section A.1 clarifying all targets are "illustrative design targets; not current operational capabilities"; updated RTO/RPO table (C.3) with "Untested Design Target" column headers and "pending validation" notes; updated pooled audit section (E.4) to clarify SOC2 "if and when obtained" (roadmap target 2027; not currently certified)
 - Based on Regulation (EU) 2022/2554 Article 30(3)(a-j)
 - Reviewed by: Legal, Compliance, Security, Operations

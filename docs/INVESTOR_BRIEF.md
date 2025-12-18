@@ -2,7 +2,11 @@
 
 ## Risk-First Systematic Equities Research & Deployment Platform
 
-*Last Updated: 2025-12-18 | Pre-Seed Stage*
+*Last Updated: 2025-12-19 | Pre-Seed Stage*
+
+**Changelog:**
+- 2025-12-19: **Due diligence audit corrections**: Changed "Now Testing with Customers" to "Entering Customer Validation Phase" to avoid implying active pilots; added explicit disclaimer to validation milestones clarifying targets are planned/aspirational and no customers/pilots/LOIs currently signed
+- 2025-12-18: Updated regulatory posture, asset coverage
 
 **Canonical positioning / safe wording**: see `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
@@ -95,9 +99,9 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 ## Current Phase: Lean Validation
 
-### Foundation Built — Now Testing with Customers
+### Foundation Built — Entering Customer Validation Phase
 
-We have implemented the core technical foundation. Our focus now is **customer validation**, not feature expansion.
+We have implemented the core technical foundation. Our focus now is entering the **customer validation phase** (structured pilot program planned for Phase 1), not feature expansion.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -117,13 +121,15 @@ We have implemented the core technical foundation. Our focus now is **customer v
 
 ### Validation Milestones
 
-| Milestone | Timeline | Success Criteria |
+| Milestone | Timeline | Success Criteria (Illustrative Target) |
 |-----------|----------|------------------|
-| Customer interviews (20+) | Phase 1 (0–1 months) | Pain points ranked |
-| Pilot launch (3-5 teams) | Phase 1 (1–3 months) | 80% complete onboarding |
-| Feature iteration | Phase 2 (3–6 months) | Top 3 requests addressed |
-| Conversion validation | Phase 2 (3–6 months) | willingness to pay at target range (illustrative) |
-| First paying customers | Phase 2 (3–6 months) | first pilot conversions (illustrative) |
+| Customer interviews (20+) | Phase 1 (0–1 months) (planned) | Target: Pain points validated and ranked |
+| Pilot launch (3-5 teams) | Phase 1 (1–3 months) (planned) | Target: 80% complete pilot onboarding |
+| Feature iteration | Phase 2 (3–6 months) (planned) | Target: Top 3 pilot requests addressed |
+| Conversion validation | Phase 2 (3–6 months) (planned) | Target: Willingness-to-pay validated at target pricing range |
+| First paying customers | Phase 2 (3–6 months) (planned) | Target: First pilot conversions (aspirational) |
+
+> **Note**: These are **planned milestones** for a pre-revenue company. Customer validation has not yet commenced. Actual pilot acquisition, conversion rates, and revenue timing will depend on market response, execution, and factors beyond our control. No customers, pilots, or LOIs currently signed.
 
 ### What We're NOT Doing (Until Validated)
 

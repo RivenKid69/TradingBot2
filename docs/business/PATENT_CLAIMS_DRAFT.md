@@ -42,10 +42,21 @@ This invention relates to machine learning systems for automated trading, specif
    - RL for execution but uses standard value functions
    - **Limitation:** No CVaR integration, single-point value estimates
 
-**Patent Prior Art Search:**
-- US10,614,520 (Goldman Sachs) - "Reinforcement learning for trading" - General RL, no CVaR
-- US11,048,741 (Two Sigma) - "Execution optimization" - Not RL-based
-- No patents found combining: Distributional RL + CVaR + Twin Critics + Conformal bounds
+**Patent Prior Art Search (Preliminary Internal Review):**
+
+> **IMPORTANT**: This is a **preliminary internal search** using Google Patents and USPTO public search (conducted December 2024). This is **NOT** a professional Freedom-to-Operate (FTO) analysis. A comprehensive FTO search by qualified patent counsel is required before any filing or public "patent pending" claims.
+
+Sample patents reviewed (non-exhaustive):
+- US10,614,520 (Goldman Sachs) - "Reinforcement learning for trading" - General RL, no CVaR integration identified
+- US11,048,741 (Two Sigma) - "Execution optimization" - Not RL-based per patent abstract
+
+**Preliminary observation** (subject to professional FTO validation): Initial search did not identify patents explicitly combining all of: Distributional RL + CVaR integration + Twin Critics + Conformal prediction bounds for financial execution.
+
+**Required before filing**: Professional FTO report from patent counsel covering:
+- Comprehensive USPTO/EPO/WIPO database search
+- Non-patent literature review (academic publications, conference papers)
+- Industry-specific patent landscape analysis (fintech/algorithmic trading)
+- Freedom-to-operate opinion for key claims
 
 ### Summary of the Invention
 
@@ -318,13 +329,27 @@ A computer-implemented simulation environment for algorithmic trading developmen
 
 ## Next Steps for Patent Counsel
 
-1. **Prior Art Search:** Conduct formal USPTO/EPO search with claims language
-2. **Claim Refinement:** Narrow/broaden based on search results
-3. **Provisional Filing:** Target Q1 2025 for priority date
-4. **International Strategy:** PCT filing for EU, UK, Singapore, Japan
+1. **Professional Prior Art Search & FTO (REQUIRED FIRST):**
+   - Comprehensive USPTO/EPO/WIPO database search with claims language
+   - Non-patent literature review (academic publications, NeurIPS/ICML/AAAI proceedings, quant finance journals)
+   - Industry-specific patent landscape analysis (fintech, algorithmic trading, HFT patents)
+   - Freedom-to-operate opinion addressing potential blocking patents
+   - **Estimated cost:** €15K-30K per professional FTO report
+
+2. **Claim Refinement:** Narrow/broaden based on FTO search results (subject to FTO clearing key claims)
+
+3. **Commercial Assessment:** Assess patent value vs. filing costs (€20K-50K multi-jurisdiction) vs. trade secret protection
+
+4. **Provisional Filing:** Target Q1 2025 for priority date (only if FTO clears key claims and commercial assessment positive)
+
+5. **International Strategy:** PCT filing for EU, UK, Singapore, Japan (subject to FTO, budget, and disclosure risk analysis)
 
 ---
 
 **Document Classification:** CONFIDENTIAL - Attorney-Client Privileged
 **Prepared for:** Patent Counsel Review
 **Contact:** [Legal Department]
+
+**Document History:**
+- v1.0 (2025-12-05): Initial draft for patent counsel review
+- v1.1 (2025-12-19): **Due diligence audit corrections**: Replaced "No patents found" absolute claim with "Preliminary observation (subject to professional FTO validation)"; added critical disclaimer that internal search is NOT a professional FTO analysis; documented required professional FTO report deliverables and estimated costs; strengthened Next Steps to require FTO completion before filing decisions

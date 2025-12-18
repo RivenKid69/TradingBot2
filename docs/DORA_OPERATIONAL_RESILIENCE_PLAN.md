@@ -1,9 +1,9 @@
 # DORA Operational Resilience Plan
 
-**Version**: 2.4
-**Date**: 2025-12-11
+**Version**: 2.5
+**Date**: 2025-12-19
 **Status**: Phase 1 Complete — Toolkit Ready for Client Use
-**Revision**: Phase 1 implementation complete with comprehensive test coverage
+**Revision**: Due diligence audit corrections (SLA disclaimers, infrastructure validation requirements)
 
 > **Important**: This document describes the DORA compliance toolkit provided to clients. The status "Toolkit Ready" means all planned tools and controls have been implemented and tested. This does NOT constitute certification or guarantee of regulatory compliance. Clients must conduct their own compliance assessment with qualified advisors.
 
@@ -57,6 +57,14 @@
 | 27 | Insurance requirements missing | Industry practice | Added Section 6.11 Insurance & Indemnification |
 | 28 | Subcontractor incident flow missing | Art. 30(2)(f) | Added Section 5.8.2 Subcontractor Incident Escalation |
 | 29 | Pooled audit support undefined | Art. 30(4) | Added Section 6.12 Pooled Audit Framework |
+
+## Changelog v2.4 (Due Diligence Audit — Dec 2025)
+
+| # | Issue | Reference | Fix |
+|---|-------|-----------|-----|
+| 78 | SLA tier targets could be read as commitments | Art. 30(3)(a) | Added "Design target" prefix + "pending validation" + "actual SLA per executed agreement" to all Professional/Enterprise tier metrics (Section 5.4.2) |
+| 79 | Infrastructure capabilities presented as current | Reality check | Changed infrastructure descriptions to "Target:" prefix + "(pending implementation)" for all non-validated capabilities |
+| 80 | 24/7 support hours without capacity validation | Operations | Added "(pending 4+ FTE on-call team; actual coverage per executed agreement)" disclaimer to enterprise tier support_hours |
 
 ## Changelog v2.3 (Phase 1 Implementation Complete)
 
@@ -1467,47 +1475,49 @@ client_sla_tiers:
 
   # =========================================================================
   # PROFESSIONAL TIER (For regulated clients with important functions)
+  # TARGET: Infrastructure validation required before offering
   # =========================================================================
   professional:
-    availability: "99.9%"
-    rto: "1 hour"
-    rpo: "15 minutes"
-    incident_notification: "30 minutes"
-    support_hours: "Extended (06:00-22:00 CET)"
+    availability: "Design target: 99.9% (pending infrastructure validation; actual SLA per executed agreement)"
+    rto: "Design target: 1 hour (pending DR testing; actual commitment per executed agreement)"
+    rpo: "Design target: 15 minutes (pending replication validation; actual commitment per executed agreement)"
+    incident_notification: "Design target: 30 minutes (pending on-call establishment; actual SLA per executed agreement)"
+    support_hours: "Design target: Extended hours (06:00-22:00 CET) (pending staffing; actual coverage per executed agreement)"
 
     infrastructure:
-      deployment: "Multi-AZ (EU-WEST-1 a/b/c)"
-      database: "Primary + sync replica + async DR"
-      backups: "Every 15 minutes (continuous for critical)"
-      monitoring: "1-minute intervals with auto-alerting"
+      deployment: "Target: Multi-AZ (EU-WEST-1 a/b/c) (infrastructure build-out required)"
+      database: "Target: Primary + sync replica + async DR (pending implementation)"
+      backups: "Target: Every 15 minutes (pending automation implementation)"
+      monitoring: "Target: 1-minute intervals with auto-alerting (pending tooling)"
 
     cost_multiplier: 2.0x
-    suitable_for: "Important functions, asset managers, hedge funds"
+    suitable_for: "Important functions, asset managers, hedge funds (offer pending infrastructure readiness per Section 5.4.4)"
 
   # =========================================================================
   # ENTERPRISE TIER (For clients with critical functions)
+  # TARGET: Significant infrastructure investment required before offering
   # =========================================================================
   enterprise:
-    availability: "99.95%"
-    rto: "15 minutes"
-    rpo: "5 minutes"
-    incident_notification: "15 minutes"
-    support_hours: "24/7/365"
+    availability: "Design target: 99.95% (pending multi-region deployment; actual SLA per executed agreement)"
+    rto: "Design target: 15 minutes (pending DR automation; actual commitment per executed agreement)"
+    rpo: "Design target: 5 minutes (pending sync replication; actual commitment per executed agreement)"
+    incident_notification: "Design target: 15 minutes (pending 24/7 on-call team; actual SLA per executed agreement)"
+    support_hours: "Design target: 24/7/365 (pending 4+ FTE on-call team; actual coverage per executed agreement)"
 
     infrastructure:
-      deployment: "Multi-region (EU-WEST-1 + EU-CENTRAL-1)"
-      database: "Multi-region sync replication"
-      backups: "Continuous with point-in-time recovery"
-      monitoring: "Real-time with predictive alerting"
+      deployment: "Target: Multi-region (EU-WEST-1 + EU-CENTRAL-1) (significant infrastructure investment required)"
+      database: "Target: Multi-region sync replication (pending implementation)"
+      backups: "Target: Continuous with point-in-time recovery (pending automation)"
+      monitoring: "Target: Real-time with predictive alerting (pending tooling implementation)"
 
     additional:
-      - dedicated_instance_option
-      - custom_integrations
-      - quarterly_resilience_reviews
-      - annual_joint_dr_testing
+      - dedicated_instance_option (subject to infrastructure availability)
+      - custom_integrations (subject to engineering capacity)
+      - quarterly_resilience_reviews (subject to operational maturity)
+      - annual_joint_dr_testing (subject to DR program establishment)
 
     cost_multiplier: 4.0x
-    suitable_for: "Critical functions, banks, CASPs with significant AUM"
+    suitable_for: "Critical functions, banks, CASPs with significant AUM (offer pending infrastructure build-out and operational validation per Section 5.4.4)"
 ```
 
 ### 5.4.2 Infrastructure Requirements by Tier

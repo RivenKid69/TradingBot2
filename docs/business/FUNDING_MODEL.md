@@ -1,9 +1,13 @@
 # CustodiaCloud: Funding Model & Investment Framework
 
-**Version:** 2.0
-**Last Updated:** 2025-12-17
+**Version:** 2.1
+**Last Updated:** 2025-12-19
 **Status:** Seed Round Planning
 **Document Type:** Confidential - Investor Materials
+
+**Changelog:**
+- v2.1 (2025-12-19): **Due diligence audit corrections**: Added explicit disclaimers to all milestone tables (Sections 3.1-3.3) clarifying targets are "illustrative" and "aspirational", not forecasts; added note that no customers/pilots/LOIs currently signed; clarified revenue projections are scenarios for planning, not guarantees
+- v2.0 (2025-12-17): Updated funding allocation, milestone structure
 
 ---
 
@@ -135,11 +139,13 @@ Based on comparable seed rounds in quantitative finance software:
 
 **Objective:** Product-market fit validation with 3-5 design partners
 
-| Milestone | Target Date | Success Criteria | Go/No-Go |
+> **Note**: All milestones below are **illustrative targets** for planning purposes. They are not forecasts or commitments. Actual customer acquisition, pilot deployment timeline, and revenue depend on market conditions, execution, and factors beyond our control.
+
+| Milestone | Target Date | Success Criteria (Illustrative Target) | Go/No-Go Decision |
 |-----------|-------------|------------------|----------|
-| **M1: Design Partner Acquisition** | M3 | 3 LOIs signed | Proceed if ≥2 LOIs |
-| **M2: Pilot Deployments** | M5 | 3 pilots running | Proceed if ≥2 active |
-| **M3: First Revenue** | M6 | €10K MRR | Proceed if ≥€5K MRR |
+| **M1: Design Partner Acquisition** | M3 (target) | Target: 3 LOIs signed (aspirational) | Proceed if ≥2 LOIs (minimum threshold) |
+| **M2: Pilot Deployments** | M5 (target) | Target: 3 pilots running (aspirational) | Proceed if ≥2 active pilots (minimum threshold) |
+| **M3: First Revenue** | M6 (target) | Target: €10K MRR (aspirational) | Proceed if ≥€5K MRR (minimum threshold) |
 
 **Key Activities:**
 - Hire Senior ML Engineer (M1)
@@ -152,13 +158,15 @@ Based on comparable seed rounds in quantitative finance software:
 
 ### 3.2 Phase 2: Traction (M7-12) - €300K Deployment
 
-**Objective:** Scale to 10 paying customers, €50K MRR
+**Objective:** Scale to 10 paying customers, €50K MRR (illustrative target)
 
-| Milestone | Target Date | Success Criteria | Go/No-Go |
+> **Note**: Revenue projections are **illustrative scenarios** for planning purposes, not forecasts. As a pre-revenue company, actual results will depend on execution, market conditions, product-market fit validation, and many factors beyond our control.
+
+| Milestone | Target Date | Success Criteria (Illustrative Target) | Go/No-Go Decision |
 |-----------|-------------|------------------|----------|
-| **M4: Design Partner Conversion** | M8 | 3/3 pilots → paid | Proceed if ≥2/3 |
-| **M5: New Customer Acquisition** | M10 | 7 new customers | Proceed if ≥5 |
-| **M6: ARR Milestone** | M12 | €600K ARR run-rate | Series A trigger |
+| **M4: Design Partner Conversion** | M8 (target) | Target: 3/3 pilots → paid (aspirational) | Proceed if ≥2/3 convert (minimum threshold) |
+| **M5: New Customer Acquisition** | M10 (target) | Target: 7 new customers (aspirational) | Proceed if ≥5 new customers (minimum threshold) |
+| **M6: ARR Milestone** | M12 (target) | Target: €600K ARR run-rate (aspirational) | Series A consideration trigger |
 
 **Key Activities:**
 - Hire Backend Engineer (M7)
@@ -171,13 +179,15 @@ Based on comparable seed rounds in quantitative finance software:
 
 ### 3.3 Phase 3: Scale (M13-18) - €250K Deployment
 
-**Objective:** Series A readiness with €1.5M ARR trajectory
+**Objective:** Series A readiness with €1.5M ARR trajectory (illustrative scenario)
 
-| Milestone | Target Date | Success Criteria | Series A Trigger |
+> **Note**: ARR projections and customer count targets are **illustrative scenarios** for planning infrastructure and hiring needs. They are not revenue forecasts or guarantees. Actual revenue and customer acquisition will depend on product-market fit validation, sales execution, market conditions, and many unpredictable factors.
+
+| Milestone | Target Date | Success Criteria (Illustrative Target) | Series A Consideration Trigger |
 |-----------|-------------|------------------|------------------|
-| **M7: Customer Expansion** | M15 | 15 total customers | ≥12 customers |
-| **M8: ARR Target** | M18 | €1.2-1.5M ARR | ≥€1M ARR |
-| **M9: Unit Economics** | M18 | LTV:CAC > 3:1 | ≥2.5:1 |
+| **M7: Customer Expansion** | M15 (target) | Target: 15 total customers (aspirational) | ≥12 customers (minimum for consideration) |
+| **M8: ARR Target** | M18 (target) | Target: €1.2-1.5M ARR (aspirational scenario) | ≥€1M ARR (minimum for consideration) |
+| **M9: Unit Economics** | M18 (target) | Target: LTV:CAC > 3:1 (aspirational) | ≥2.5:1 (minimum for consideration) |
 
 **Key Activities:**
 - Hire DevOps/SRE (M13)

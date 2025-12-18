@@ -28,7 +28,7 @@ This document outlines target insurance coverage requirements and indemnificatio
 | General Commercial Liability | €2,000,000 | €10,000 | A-rated or higher |
 | Technology E&O | €5,000,000 | €25,000 | A-rated or higher |
 
-**Target Total Cyber Coverage**: €10,000,000 (actual coverage verified via certificate)
+**Target Total Cyber Coverage**: €10,000,000 (target for operational readiness; actual coverage to be verified via certificate of insurance when policies are obtained and provided to contracted clients)
 
 ### 2.2 Cyber Liability Coverage Details
 
