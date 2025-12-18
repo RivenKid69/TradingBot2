@@ -25,7 +25,7 @@
 
 **Why Equities First**:
 - **Institutional credibility**: Equities are the language of serious capital markets
-- **Regulatory alignment**: MiFID II, MAR, DORA alignment focus demonstrates maturity
+- **Regulatory alignment**: MiFID II, MAR, DORA, GDPR alignment focus demonstrates maturity
 - **Risk-first positioning**: Our CVaR-RL technology addresses the #1 institutional concern
 - **CCEA advantage**: Clear "Cloud = research tools, Agent = your execution" story resonates with compliance officers
 
