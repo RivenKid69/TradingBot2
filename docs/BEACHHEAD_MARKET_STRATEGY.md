@@ -92,7 +92,7 @@ The "chasm" is the gap between early adopters (who buy on vision) and the mainst
 | **Firm Type** | Professional systematic equities teams (prop firms + small funds) | Sophisticated buyers who evaluate technology rigorously |
 | **Size** | 5-50 person teams (capital/AUM varies) | Large enough to pay, small enough for direct sales |
 | **Asset Class** | European/US equities (Interactive Brokers) | Institutional credibility, regulatory familiarity |
-| **Geography** | UK, Ireland, Luxembourg, Netherlands | MiFID II jurisdiction, English-speaking, strong fund ecosystem |
+| **Geography** | UK, Ireland, Luxembourg, Netherlands, Estonia | EU/UK access and strong professional trading ecosystem |
 | **Regulatory Status** | Regulated or compliance-conscious buyers | Governance/evidence exports reduce procurement friction |
 | **Technology** | Upgrading from Excel/Python scripts to production infrastructure | Clear pain point we solve |
 | **Budget** | €2,000-5,000/month (initial) | Budget scales with adoption and support level |

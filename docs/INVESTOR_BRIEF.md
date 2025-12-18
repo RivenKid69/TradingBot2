@@ -489,7 +489,7 @@ Our European expansion plan targets meaningful economic contribution while build
 
 ### EU Visa / Relocation Readiness (Non-Legal Summary)
 
-- We will pursue an EU base via an applicable startup/entrepreneur pathway (jurisdiction-dependent) and will engage local immigration counsel and an approved facilitator/incubator where required.
+- We will pursue an EU base via an applicable startup/entrepreneur pathway (jurisdiction-dependent). Primary establishment path is Estonia; Netherlands is a secondary path if needed. We will engage local immigration counsel and an approved facilitator/incubator where required.
 - Our case rests on **innovation** (risk-first ML + CCEA), **scalability** (B2B SaaS + enterprise), and **local job creation** (technical roles + go-to-market).
 - We avoid making claims about specific statutory thresholds in investor materials; requirements differ by country and case specifics.
 

@@ -91,7 +91,7 @@ A 3-month structured pilot program designed to validate product-market fit with 
 | Criterion | Specification | Why |
 |-----------|---------------|-----|
 | **Size** | 5-20 traders | Large enough to validate, small enough to engage |
-| **Location** | EU (NL, DE, IE, FR) | Regulatory alignment, timezone |
+| **Location** | EU (EE, NL, DE, IE, FR) | Regulatory alignment, timezone |
 | **Stage** | New or expanding | Need for new infrastructure |
 | **Capital** | €1-10M AUM | Serious but not institutional |
 | **Technology** | In-house quant team | Can evaluate technical quality |

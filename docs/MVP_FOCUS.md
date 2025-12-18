@@ -54,7 +54,7 @@ This is our singular focus. Everything in MVP serves this problem — while main
 |-----------|---------|
 | **Title** | CTO, Head of Technology, Lead Developer |
 | **Company** | Systematic equities team (prop firm or small fund) |
-| **Location** | EU (Netherlands, Germany, Ireland, France) |
+| **Location** | EU (Estonia, Netherlands, Germany, Ireland, France) |
 | **Background** | Quantitative finance, software engineering |
 | **Experience** | Built trading systems at banks or hedge funds |
 | **Current State** | Evaluating build vs. buy for new firm/strategy |

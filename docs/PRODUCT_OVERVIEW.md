@@ -16,7 +16,7 @@
 - **Problem and customers**: professional systematic equities teams need faster, safer deployment with clear control boundaries and auditability.
 - **12-month plan**: Phase 1 pilot (3–5 firms) → repeatable onboarding → first paying customers (details in `docs/PILOT_PROGRAM.md` and `docs/MVP_FOCUS.md`).
 - **EU contribution**: establish EU operations and hire locally as the business scales (see `docs/BUSINESS_PLAN_EU_VISA.md`).
-- **EU contribution**: primary establishment path is a Netherlands B.V., with local hiring as the business scales (see `docs/BUSINESS_PLAN_EU_VISA.md`).
+- **EU contribution**: primary establishment path is an Estonia OÜ (alternative: Netherlands B.V.), with local hiring as the business scales (see `docs/BUSINESS_PLAN_EU_VISA.md`).
 - **Funding need**: seed capital to run validation and EU go-to-market (see `docs/INVESTOR_BRIEF.md` and `docs/BUSINESS_PLAN_EU_VISA.md`).
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)

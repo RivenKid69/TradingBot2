@@ -14,7 +14,7 @@
 | **Document Type** | Comprehensive Business Plan |
 | **Version** | 1.0 |
 | **Date** | 2025-12-18 |
-| **Target Markets** | European Union (Primary: Netherlands; Secondary: France, Germany) |
+| **Target Markets** | European Union (Primary: Estonia; Secondary: Netherlands, France, Germany) |
 | **Classification** | Confidential - For Visa/Investment Evaluation |
 
 **Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
@@ -163,7 +163,7 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 ### 2.4 Legal Structure and EU Establishment
 
-**Planned EU Entity**: B.V. (Netherlands) as the primary establishment path; SAS (France) as an alternative path if needed.
+**Planned EU Entity**: OÜ (Estonia) as the primary establishment path; B.V. (Netherlands) as a secondary establishment path if needed.
 
 **Regulatory posture (design intent)**: Software Provider / ICT Provider (classification depends on activities and jurisdiction)
 
@@ -1660,19 +1660,24 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 
 *See Section 12.1.1 for detailed role breakdown and the hiring plan aligned with startup visa committee criteria.*
 
-### 12.3 Facilitator/Incubator Alignment (Primary Host: Netherlands)
+### 12.3 Facilitator/Incubator Alignment (Primary Host: Estonia)
 
-**Facilitator/incubator shortlist (subject to eligibility and availability)**:
-- Startupbootcamp FinTech (Amsterdam)
-- B. Amsterdam
-- High Tech Campus Eindhoven
-- TechLeap.nl network
+**Estonia shortlist (subject to eligibility and availability)**:
+- Startup Estonia network (startup ecosystem coordination)
+- Local incubators/accelerators and co-working hubs in Tallinn (to be finalized during application)
+- University-linked entrepreneurship programs (to be finalized based on fit)
 
 **Support Required**:
 - Market introduction
 - Regulatory guidance
 - Network access
 - Investor connections
+
+**Alternative host (Netherlands) shortlist (subject to eligibility and availability)**:
+- Startupbootcamp FinTech (Amsterdam)
+- B. Amsterdam
+- High Tech Campus Eindhoven
+- TechLeap.nl network
 
 ### 12.4 French Tech Visa Alignment (Alternative)
 
