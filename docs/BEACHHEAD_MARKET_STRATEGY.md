@@ -273,7 +273,7 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 PHASE 1: EQUITY BEACHHEAD
 ┌─────────────────────────────────────────────────────────────────┐
 │  Mid-Market Systematic Equity Funds (€10-200M AUM)               │
-│  • UK, Ireland, Luxembourg, Netherlands                          │
+│  • UK, Ireland, Luxembourg, Netherlands, Estonia                  │
 │  • European/US equities via Interactive Brokers                  │
 │  • Target: 15+ paying customers, €500K+ ARR                      │
 │  • Risk-first positioning, MiFID II alignment story              │

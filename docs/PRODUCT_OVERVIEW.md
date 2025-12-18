@@ -154,7 +154,7 @@ Note: the underlying engine is **multi-asset** (equities + adjacent listed deriv
 |-----------|---------|
 | **Company** | Prop firm or small systematic fund |
 | **Size** | 5-50 traders |
-| **Location** | Netherlands, Germany, Ireland, France |
+| **Location** | Estonia, Netherlands, Germany, Ireland, France |
 | **Need** | Fast, compliance-supporting infrastructure for equities strategies |
 | **Budget** | €2,000-5,000/month |
 

@@ -132,7 +132,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 
 | Quarter | Milestone | Success Metric |
 |---------|-----------|----------------|
-| **Q1** | EU Entity Establishment | Legal entity in Netherlands/France |
+| **Q1** | EU Entity Establishment | Legal entity in Estonia (OÜ) (primary) |
 | **Q1** | First Pilot Customers | 3 signed pilot agreements |
 | **Q2** | Dashboard MVP Launch | Web-based client interface |
 | **Q2** | First Revenue | EUR 40,000+ ARR |
@@ -219,6 +219,7 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 
 | Country | Hub | Why |
 |---------|-----|-----|
+| **Estonia** | Tallinn | Startup-friendly ecosystem and Estonia-first establishment plan |
 | **Netherlands** | Amsterdam | Optiver, IMC, Flow Traders headquarters; strong prop trading culture |
 | **France** | Paris | French Tech ecosystem; BNP, SocGen, Natixis nearby |
 | **Germany** | Frankfurt | Deutsche Börse; strong institutional market |
@@ -1159,10 +1160,10 @@ We acknowledge that achieving projections depends on multiple factors:
 
 | Milestone | Description | Success Criteria |
 |-----------|-------------|------------------|
-| **Legal Entity** | B.V. (NL) or SAS (FR) registration | Registration complete |
+| **Legal Entity** | OÜ (Estonia) registration (primary); B.V. (Netherlands) if needed (secondary) | Registration complete |
 | **Bank Account** | EU business banking | Account operational |
-| **Office Setup** | Co-working space in Amsterdam/Paris | Address established |
-| **Visa Processing** | Startup visa application | Residence permit |
+| **Office Setup** | Co-working space in Tallinn (primary); Amsterdam (secondary) | Address established |
+| **Visa Processing** | Estonia startup visa / residence permit application (or equivalent) | Residence permit |
 | **Local Counsel** | Legal advisor engagement | Retained |
 
 **Key Risks**: Visa processing delays, banking requirements
@@ -1480,7 +1481,7 @@ Most European startup/entrepreneur evaluation frameworks emphasize:
 - **Founder capability**: technical platform already built; focus now on customer validation and repeatable onboarding.
 - **Economic contribution**: direct hiring plan above plus planned partnerships and local ecosystem contribution (see Section 12.1.6+).
 
-We will select a primary host country (e.g., Netherlands/France/Germany) based on the availability of an approved facilitator/incubator (where applicable), customer proximity, and counsel guidance.
+We will select a primary host country (e.g., Estonia/Netherlands/France/Germany) based on the availability of an approved facilitator/incubator (where applicable), customer proximity, and counsel guidance.
 
 ---
 
@@ -1937,4 +1938,4 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 
 *This document is confidential and intended for startup visa evaluation and investor due diligence purposes only. Financial projections are illustrative and not forecasts. Past technical performance does not guarantee commercial success.*
 
-*Prepared in accordance with Netherlands RVO and French Tech Visa business plan requirements.*
+*Prepared to align with typical European startup visa business plan requirements, with Estonia (Startup Estonia process) as the primary target and the Netherlands (RVO) / France (French Tech Visa) as secondary references.*
