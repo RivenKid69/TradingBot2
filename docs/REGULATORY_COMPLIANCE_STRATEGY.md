@@ -332,7 +332,7 @@ We provide clients with:
 
 ### 4.1 Article 17 Overview
 
-**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. While our platform is a software vendor (not subject to authorization), our clients are. This section details how QuantBot AI's architecture is **designed to support client compliance** across the requirements.
+**MiFID II Article 17** establishes specific requirements for investment firms engaged in algorithmic trading. While our platform is a software vendor (not subject to authorization), our clients are. This section details how CustodiaCloud's architecture is **designed to support client compliance** across the requirements.
 
 **Regulatory Text Reference**: Directive 2014/65/EU, Article 17
 **Supplementary**: RTS 6 (Commission Delegated Regulation 2017/589)
@@ -341,7 +341,7 @@ We provide clients with:
 
 **Requirement**: Investment firms engaged in algorithmic trading shall have in place effective systems and risk controls suitable to the business, to ensure trading systems are resilient and have sufficient capacity, are subject to appropriate trading thresholds and limits, and prevent erroneous orders or functioning in a way that may create or contribute to a disorderly market.
 
-#### How QuantBot AI Supports Compliance
+#### How CustodiaCloud Supports Compliance
 
 | RTS 6 Requirement | Platform Capability | Implementation Detail |
 |-------------------|---------------------|----------------------|
@@ -512,7 +512,7 @@ KILL_SWITCH_THRESHOLDS = {
 
 ### 4.8 RTS 6 Compliance Matrix (Summary)
 
-| RTS 6 Article | Requirement | QuantBot AI Feature | Status |
+| RTS 6 Article | Requirement | CustodiaCloud Feature | Status |
 |---------------|-------------|---------------------|--------|
 | Art. 1-4 | General requirements | Governance framework | ✅ |
 | Art. 5 | Conformance testing | Backtesting with L2/L3 simulation | ✅ |
@@ -539,7 +539,7 @@ The **Market Abuse Regulation** (Regulation (EU) No 596/2014) establishes a comp
 
 ### 5.2 Why MAR Applies (Indirectly) to Our Platform
 
-While QuantBot AI is a software vendor, our platform:
+While CustodiaCloud is a software vendor, our platform:
 1. **Could theoretically be misused** for manipulative strategies
 2. **Provides execution capabilities** that touch regulated markets
 3. **Generates audit trails** that regulators may request
@@ -636,7 +636,7 @@ Under MAR Article 16, investment firms must report suspicious transactions. Our 
 
 ### 5.6 Insider Dealing Prevention (MAR Articles 7-11)
 
-While QuantBot AI doesn't handle inside information, we implement safeguards:
+While CustodiaCloud doesn't handle inside information, we implement safeguards:
 
 | Safeguard | Implementation | Purpose |
 |-----------|----------------|---------|
@@ -666,7 +666,7 @@ While QuantBot AI doesn't handle inside information, we implement safeguards:
 
 ### 6.1 Philosophy: Prevention by Design
 
-QuantBot AI is architected with the principle that **manipulation should be structurally impossible**, not just detectable. Our platform makes it harder to abuse markets than to trade legitimately.
+CustodiaCloud is architected with the principle that **manipulation should be structurally impossible**, not just detectable. Our platform makes it harder to abuse markets than to trade legitimately.
 
 ### 6.2 Self-Trade Prevention (STP) Engine
 
