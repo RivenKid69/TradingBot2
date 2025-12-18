@@ -10,7 +10,7 @@ This monorepo is **proprietary**. For the open-core split plan (public `ccea-sdk
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
-> **Technical reference**: `archive/root_files/Design Doc CCEA Cloud.txt` | Additional overview: `docs/architecture/CCEA_OVERVIEW.md`
+> **Technical reference**: `archive/root_files/Design Doc CCEA Cloud.txt` | Additional overview: `docs/CCEA_OVERVIEW.md`
 
 CustodiaCloud implements **CCEA** — a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
 
@@ -39,7 +39,7 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 ## Overview
 - Distributional PPO with twin critics, adaptive UPGD optimizer, and population-based tuning for robust policies.
 - Market-structure-aware execution: limit/market routing, TWAP/POV, slippage and fee modeling, and risk guards.
-- Multi-asset adapters (crypto, equities, FX, options) behind a unified YAML configuration and dependency injection registry.
+- Multi-asset adapters (equities/options/futures/FX; optional digital assets) behind a unified YAML configuration and dependency injection registry.
 - Shared pipeline for training, backtesting, paper trading, and live execution with reproducible artifacts.
 - Observability and safety: structured logs, KPI benchmarks, sanity checks, and doctor tooling.
 - **Strict zone separation**: Cloud/Agent/Shared packages with CI-enforced import boundaries.
@@ -63,9 +63,9 @@ python setup.py build_ext --inplace
 ## Quick Start
 Configuration examples live in `configs/examples/README.md`.
 
-- Train (example config; digital assets adapters are optional and not the MVP beachhead):
+- Train (example config; equities-first beachhead):
 ```bash
-cp configs/examples/example_train_crypto.yaml configs/my_train.yaml
+cp configs/examples/example_train_stocks.yaml configs/my_train.yaml
 python train_model_multi_patch.py --config configs/my_train.yaml
 ```
 
@@ -84,7 +84,7 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 # 2. (Optional) Use Cloud control plane to manage runs
 #    Cloud sends lifecycle commands only - NEVER trades or stores keys
 ```
-**Important**: Live execution runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md).
+**Important**: Live execution runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
 
 For legacy/development dry-run testing:
 ```bash
@@ -163,17 +163,16 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 ## Supported Exchanges
 | Asset class | Vendor(s) | Path | Modes | Status |
 | --- | --- | --- | --- | --- |
-| Digital assets (optional) | Binance | adapters/binance/ | sim, live | Implemented |
-| Options/futures (optional) | Deribit | adapters/deribit/ | sim, live | Implemented (beta) |
 | Equities execution (MVP/beachhead) | Alpaca | adapters/alpaca/ | sim, paper, live | Implemented |
 | Equities data | Polygon, Yahoo | adapters/polygon/, adapters/yahoo/ | data, sim | Implemented |
 | FX | OANDA, Dukascopy | adapters/oanda/, adapters/dukascopy/ | sim, live (OANDA), historical (Dukascopy) | Implemented (beta) |
-| Traditional futures/options | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
+| Listed options / futures (optional) | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
+| Digital assets (optional) | Binance, Deribit | adapters/binance/, adapters/deribit/ | sim, live | Implemented (beta) |
 
 ## Guides
 
 ### CCEA Architecture Documentation
-- `docs/architecture/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
+- `docs/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
 - `docs/cloud/README.md` — Control plane API, builder, governance
 - `docs/agent/README.md` — Installation, vault, approvals, risk controls
 - `docs/schemas/README.md` — JSON schemas with versioning guide
@@ -222,7 +221,7 @@ See `docs/runbooks/` for full operational procedures.
 ### Adapter debugging
 1. Validate configuration: `python -m pytest tests/test_adapters_config_validation.py -k <vendor>` and align YAML with `configs/examples`.
 2. Run vendor smoke tests: e.g., `python -m pytest tests/test_alpaca_adapters.py` or `python -m pytest tests/test_deribit_options.py`.
-3. Reproduce with the live runner in dry-run mode: `python script_live.py --config <cfg> --dry-run --asset-class <crypto|equity|forex>` and watch `logs/` for adapter traces.
+3. Reproduce with the live runner in dry-run mode: `python script_live.py --config <cfg> --dry-run --asset-class <equity|forex|crypto>` and watch `logs/` for adapter traces.
 4. Refresh exchange metadata when applicable (for Binance: `python scripts/fetch_binance_filters.py`) and re-run doctor to confirm connectivity.
 
 ### Pre-release checklist
