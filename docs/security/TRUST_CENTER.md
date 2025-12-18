@@ -1,10 +1,11 @@
 # Security Trust Center
 ## Pre-Contractual Security Overview
 
-**Version**: 1.1
-**Date**: 2025-12-17
+**Version**: 1.2
+**Date**: 2025-12-18
 **Status**: Public
 **Legal Reference**: DORA Article 28(7)
+**Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
 
 ---
 
@@ -16,33 +17,39 @@ This document provides pre-contractual security information per DORA Article 28(
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Certifications** | SOC2 Type II | Annual audit |
+| **Certifications** | SOC2 Type II Roadmap | Target 2027 (see Section 2) |
 | **Infrastructure** | AWS (Frankfurt) | EU-only data residency |
 | **Encryption** | AES-256 / TLS 1.3 | At-rest and in-transit |
-| **Availability** | 99.9% SLA | Multi-AZ deployment |
-| **Incident Response** | 24/7 | 15-minute critical response |
-| **DORA Alignment** | Ready | Art. 30 contract templates available |
+| **Availability** | Target 99.9% | Multi-AZ deployment (design target) |
+| **Incident Response** | Designed for 24/7 | Target 15-minute critical response |
+| **DORA Alignment** | Designed to support | Art. 30 contract templates available |
 
 ---
 
 ## 2. Security Certifications & Attestations
 
-### 2.1 Current Certifications
+### 2.1 Certification Roadmap
 
-| Certification | Scope | Status | Validity |
-|---------------|-------|--------|----------|
-| SOC2 Type II | Platform operations | Active | Annual renewal |
-| ISO 27001 | Information security | In progress | Target Q3 2025 |
+**Note**: CustodiaCloud is a pre-seed stage company. We do not claim certifications we have not yet achieved. This section describes our roadmap and current posture.
+
+| Certification | Scope | Status | Target |
+|---------------|-------|--------|--------|
+| SOC2 Type I | Platform operations | Planned | 2026 |
+| SOC2 Type II | Platform operations | Planned | 2027 |
+| ISO 27001 | Information security | Planned | 2027+ |
 | GDPR | Data protection | Designed to align | Ongoing |
 
-### 2.2 Third-Party Audits
+### 2.2 Third-Party Audits (Planned)
 
-| Audit Type | Frequency | Last Completed | Available |
-|------------|-----------|----------------|-----------|
-| Penetration Testing | Annual | Q4 2024 | Summary on request |
-| Vulnerability Assessment | Quarterly | Q4 2024 | Summary on request |
-| SOC2 Audit | Annual | 2024 | Full report under NDA |
-| Code Security Review | Annual | 2024 | Summary on request |
+**Current state**: As a pre-seed company, formal third-party audits are planned but not yet completed. We maintain internal security practices and will engage external auditors as part of our SOC2 roadmap.
+
+| Audit Type | Planned Frequency | Status | Availability |
+|------------|-------------------|--------|--------------|
+| Penetration Testing | Annual | Planned 2026 | Summary on request (when available) |
+| Vulnerability Assessment | Quarterly | Internal scans active | Summary on request |
+| SOC2 Audit (Type I) | Annual | Planned 2026 | Report under NDA (when available) |
+| SOC2 Audit (Type II) | Annual | Planned 2027 | Report under NDA (when available) |
+| Code Security Review | Per major release | Internal review active | Summary on request |
 
 ---
 
@@ -309,13 +316,14 @@ For contracted clients:
 
 ### 10.2 Available Documentation
 
-| Document | Audience | Access |
-|----------|----------|--------|
-| SOC2 Type II Report | Contracted clients | Under NDA |
-| Penetration Test Summary | Contracted clients | Under NDA |
-| Security Policies | Contracted clients | On request |
-| BCP/DR Summary | Contracted clients | On request |
-| Incident Reports | Affected clients | Per incident |
+| Document | Audience | Access | Status |
+|----------|----------|--------|--------|
+| Security Policies | Contracted clients | On request | Available |
+| BCP/DR Summary | Contracted clients | On request | Available |
+| Architecture Overview | Contracted clients | Under NDA | Available |
+| Incident Reports | Affected clients | Per incident | As applicable |
+| SOC2 Type II Report | Contracted clients | Under NDA | Planned 2027 |
+| Penetration Test Summary | Contracted clients | Under NDA | Planned 2026 |
 
 ---
 
@@ -346,10 +354,13 @@ For contracted clients:
 |---------|------|---------|
 | 1.0 | 2025-01-17 | Initial public release |
 | 1.1 | 2025-12-17 | Updated regulatory alignment (GDPR, EU AI Act, MiFID II - designed to align), added GDPR compliance details |
+| 1.2 | 2025-12-18 | **Critical correction**: Removed false certification claims. SOC2/pentest/audit status now accurately reflects roadmap (planned) vs current state. Added "Certification Roadmap" section with honest timelines. |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team
 **Classification**: Public
+
+**Important Note**: This document has been corrected to remove inaccurate claims about certifications and audits that had not yet been completed. CustodiaCloud is committed to transparency in our security posture and will not claim certifications or audits we have not achieved.
 
 ---
 
