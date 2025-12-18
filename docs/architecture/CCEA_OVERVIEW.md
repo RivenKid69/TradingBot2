@@ -121,7 +121,7 @@ CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative 
 
 ## 4. Security Boundaries
 
-### 4.1 What Cloud NEVER Does
+### 4.1 What Cloud Does Not Do (by design)
 
 | Prohibited Action | Why |
 |-------------------|-----|
@@ -131,7 +131,7 @@ CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative 
 | Access customer's live positions directly | Privacy + regulatory |
 | Execute trades on behalf of customer | Broker/dealer license required |
 
-### 4.2 What Agent ALWAYS Controls
+### 4.2 What Agent Controls (by design)
 
 | Exclusive Agent Responsibility | Rationale |
 |-------------------------------|-----------|
@@ -159,7 +159,7 @@ CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative 
 | `REQUEST_STATUS` | Request current agent status | NON_IMPACTING |
 | `REQUEST_LOGS` | Request log excerpt | NON_IMPACTING |
 
-### 5.2 Prohibited Commands (NEVER Sent by Cloud)
+### 5.2 Prohibited Commands (Not Sent by Cloud)
 
 | Prohibited Command | Why Prohibited |
 |-------------------|----------------|
@@ -277,7 +277,7 @@ All TRADING_IMPACTING commands require local approval:
 │   • Intent is high-level ("target 10% BTC")                              │
 │   • Risk Manager validates against local limits                          │
 │   • Order is created ONLY in Agent, by Broker Connector                  │
-│   • Cloud NEVER sees or creates live Orders                              │
+│   • Cloud does NOT see or create live Orders                             │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -323,9 +323,9 @@ All TRADING_IMPACTING commands require local approval:
 |-------|-------------------|---------|
 | `AGGREGATED` | Metrics only (latency, error rate, uptime) | Service health monitoring |
 | `DETAILED_NON_SENSITIVE` | Strategy performance (anonymized P&L curves, Sharpe) | Platform improvement |
-| `RAW_ORDER_EVENTS` | NEVER sent | N/A - this level does not exist |
+| `RAW_ORDER_EVENTS` | Not sent (by default) | Enterprise opt-in only |
 
-### 8.2 Data That NEVER Leaves Agent
+### 8.2 Data That Stays in Agent (by design)
 
 | Data Type | Reason |
 |-----------|--------|
@@ -352,12 +352,12 @@ All TRADING_IMPACTING commands require local approval:
 | Processor obligations (Art. 28) | DPA template |
 | Security (Art. 32) | Encryption, RBAC, break-glass |
 | Breach notification (Art. 33-34) | 72-hour workflow |
-| EU-only residency | Enforced at runtime (drift check fails closed) |
+| EU data residency | By default; drift checks designed to fail closed |
 
 **CCEA Privacy Design Commitments:**
-- Cloud **NEVER** receives broker credentials or API keys
-- Cloud **NEVER** receives order-like payloads in commands
-- Telemetry redaction is **mandatory** (cannot be disabled)
+- Cloud **does not** store or receive broker credentials or API keys (secrets stay in customer-controlled Agent)
+- Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
+- Telemetry redaction is **on by default**; raw order events require explicit opt-in
 - DSAR scope is Cloud-only; Agent data is customer-controlled
 
 See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) for full privacy architecture.

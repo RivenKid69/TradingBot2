@@ -22,7 +22,7 @@ This checklist provides explicit verification that the CCEA (Cloud-Controlled Ex
 
 ## 2. Privacy Design Commitment Categories
 
-### 2.1 Cloud Never Receives Secrets
+### 2.1 Cloud Does Not Receive Secrets (by design)
 
 | # | Design Commitment | Enforcement | Verification Method | Status |
 |---|-----------|-------------|---------------------|--------|
@@ -351,10 +351,10 @@ The following roles must sign off quarterly:
 │           CCEA PRIVACY DESIGN COMMITMENTS                                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  1. SECRETS: Cloud NEVER receives                                       │
+│  1. SECRETS: Cloud does NOT receive (by design)                         │
 │     ❌ API keys  ❌ Secrets  ❌ Tokens  ❌ Env vars  ❌ Passwords        │
 │                                                                          │
-│  2. ORDERS: Cloud→Agent commands NEVER contain                          │
+│  2. ORDERS: Cloud→Agent commands do NOT contain                         │
 │     ❌ side  ❌ quantity  ❌ price  ❌ order_id  ❌ target_position       │
 │                                                                          │
 │  3. TELEMETRY LEVELS:                                                   │
@@ -362,7 +362,7 @@ The following roles must sign off quarterly:
 │     DETAILED (opt-in) → No order data, no account IDs                  │
 │     RAW (enterprise+opt-in) → Order data (masked), minimal retention   │
 │                                                                          │
-│  4. RESIDENCY: EU-only                                                  │
+│  4. RESIDENCY: EU by default                                            │
 │     ✓ eu-central-1 (Frankfurt)  ✓ eu-west-1 (Dublin)                   │
 │     ❌ All other regions                                                │
 │                                                                          │

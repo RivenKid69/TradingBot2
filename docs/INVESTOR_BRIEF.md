@@ -43,7 +43,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 │  │    IDE    │  │  Registry │  │   Plane   │  │  Telemetry   │ │
 │  └───────────┘  └───────────┘  └───────────┘  └──────────────┘ │
 │                                                                  │
-│  NEVER: stores secrets │ executes orders │ sends live instructions │
+│  Does NOT: store secrets │ execute orders │ send live instructions │
 └─────────────────────────────────────────────────────────────────┘
                                │
                                │ Lifecycle commands only

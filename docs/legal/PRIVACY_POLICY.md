@@ -62,8 +62,8 @@ Data processed in our Cloud infrastructure:
 | Aggregated telemetry | Cloud (EU) | 90 days |
 | Audit logs | Cloud (EU) | 5 years |
 
-**Cloud NEVER receives or processes:**
-- Broker API keys or secrets
+**Cloud does not receive or process:**
+- Broker API keys or secrets (secrets stay in customer-controlled Agent)
 - Trading credentials of any kind
 - Order details (side, quantity, price)
 - Real-time position data (only aggregated metrics)
@@ -514,7 +514,7 @@ You have the right to lodge a complaint with your local data protection supervis
 
 This section provides an explicit checklist of privacy design commitments for the CCEA architecture. These commitments describe the intended Cloud/Agent boundary and telemetry controls.
 
-### 7A.1 Cloud Never Receives Secrets
+### 7A.1 Cloud Does Not Receive Secrets
 
 | Commitment | Enforcement | Verification |
 |-----------|-------------|--------------|
@@ -662,7 +662,7 @@ We implement comprehensive security controls:
 
 ### 9.3 Audit and Monitoring
 
-- Regular security assessments and penetration testing
+- Security assessments (internal) and penetration testing (planned; see Trust Center for roadmap)
 - Continuous monitoring for suspicious activities
 - Audit logging of all sensitive data access
 

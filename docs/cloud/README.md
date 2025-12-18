@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Cloud Zone provides research, backtesting, monitoring, and lifecycle management capabilities. It is designed with strict security boundaries that ensure it **NEVER** has access to trading credentials or order execution capabilities.
+The Cloud Zone provides research, backtesting, monitoring, and lifecycle management capabilities. It is designed with strict security boundaries: Cloud **does not** have access to trading credentials or order execution capabilities.
 
 ### Design Doc Reference (§4.1)
 
@@ -19,13 +19,13 @@ Cloud components per Design Doc:
 ## Security Design Commitments
 
 ```
-Cloud Zone DESIGN COMMITMENTS (enforced by architecture):
-  - NEVER stores broker API keys or trading credentials
-  - NEVER generates, transmits, or executes trading orders
-  - NEVER has access to exchange trading endpoints
-  - NEVER sends order-like payloads (side/qty/price)
-  - ALWAYS redacts sensitive data in telemetry
-  - ALWAYS requires signature verification for artifacts
+Cloud Zone DESIGN COMMITMENTS (by architecture):
+  - Does NOT store broker API keys or trading credentials
+  - Does NOT generate, transmit, or execute trading orders
+  - Does NOT have access to exchange trading endpoints
+  - Does NOT send order-like payloads (side/qty/price)
+  - Telemetry redaction on by default; raw order events require opt-in
+  - Signature verification required for artifacts (by default)
 ```
 
 ## Protocol: Allowed Commands (Design Doc §10)
@@ -42,7 +42,7 @@ Cloud can ONLY send these commands to Agent:
 | `REQUEST_ROTATE_AGENT_SESSION` | Rotate session keys | YES |
 | `REQUEST_EXPORT_LOGS` | Export logs | YES (data_sensitive) |
 
-**Cloud NEVER sends**: `side`, `qty`, `price`, `order_type`, `target_position` fields.
+**Cloud does NOT send**: `side`, `qty`, `price`, `order_type`, `target_position` fields (protocol prohibition).
 
 ---
 

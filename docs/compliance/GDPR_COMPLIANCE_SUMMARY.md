@@ -30,7 +30,7 @@ CustodiaCloud is designed to support GDPR-aligned deployments with privacy-by-de
 
 The CCEA architecture is designed to support GDPR compliance efforts through strict zone separation:
 
-### What Cloud NEVER Receives
+### What Cloud Does Not Receive (by design)
 
 | Data Category | Enforcement |
 |---------------|-------------|

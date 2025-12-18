@@ -19,7 +19,7 @@
 
 | Component | Responsibility | Secrets | Orders |
 |-----------|---------------|---------|--------|
-| **Cloud** | Research, backtesting, artifact builder, monitoring | **NEVER** | **NEVER** |
+| **Cloud** | Research, backtesting, artifact builder, monitoring | **None** (by design) | **None** (by design) |
 | **Agent** | Local execution, vault, risk enforcement, order creation | **LOCAL** | **YES** |
 
 **Legal Posture**: Software Provider / ICT Provider — not investment advice/portfolio management; not an execution service (Cloud does not execute orders or hold credentials/assets).

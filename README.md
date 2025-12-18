@@ -16,8 +16,8 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 
 | Component | Responsibility | Secrets Access | Order Execution |
 |-----------|---------------|----------------|-----------------|
-| **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
-| **Agent** | Live execution, risk enforcement, local vault, order creation | **LOCAL ONLY** | **YES** |
+| **Cloud** | Research, backtesting, monitoring, lifecycle management | **None** (by design) | **None** (by design) |
+| **Agent** | Live execution, risk enforcement, local vault, order creation | **Local only** | **Yes** (customer-controlled) |
 
 **Key Security Design Commitments:**
 - Cloud **does not** store customer broker API keys or credentials (secrets stay in the customer-controlled Agent)
@@ -152,10 +152,10 @@ from services.core.risk_controls import EnhancedKillSwitch
 CustodiaCloud includes documentation, controls, and evidence export patterns intended to **support** customer procurement and operational reviews (jurisdiction- and customer-dependent; not a certification claim).
 
 **CCEA Privacy Design Commitments:**
-- Cloud **NEVER** receives broker credentials or API keys
-- Cloud **NEVER** receives order-like payloads in commands
-- Telemetry **ALWAYS** redacted before transmission
-- **EU-only** data residency enforced at runtime
+- Cloud **does not** store or receive broker credentials or API keys (secrets stay in the customer-controlled Agent)
+- Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
+- Telemetry **designed to be redacted** before transmission; raw order events require explicit opt-in
+- EU data residency **by default** for EU customers (enterprise: on-prem/customer-managed options available)
 - DSAR scope is Cloud-only; Agent data is customer-controlled
 
 Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`

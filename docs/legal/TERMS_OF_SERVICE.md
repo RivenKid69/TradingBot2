@@ -79,12 +79,12 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 
 The following commitments describe the intended CCEA boundary and default privacy posture of the Platform:
 
-**A. Cloud Never Receives Secrets**
-- Cloud **NEVER** stores or processes your broker API keys, secrets, or credentials
-- Cloud **NEVER** receives environment variables or tokens
+**A. Cloud Does Not Receive Secrets**
+- Cloud **does not** store or process your broker API keys, secrets, or credentials (secrets stay in customer-controlled Agent)
+- Cloud **does not** receive environment variables or tokens
 
 **B. No Order-like Payloads in Protocol**
-- Cloud→Agent commands **NEVER** contain order-like payloads (side, quantity, price, order_id, target_position)
+- Cloud→Agent commands **do not** contain order-like payloads (side, quantity, price, order_id, target_position)
 - This is enforced at the protocol schema level and verified by CI guardrails
 - New command types require security review and auditable approval
 

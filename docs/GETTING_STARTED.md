@@ -331,7 +331,7 @@ OANDA_ACCOUNT_ID=your_account_id
 
 **Always test with paper trading before using real money.**
 
-**CCEA Architecture Note**: In production, live trading runs through the local Agent daemon which manages your credentials securely. The Cloud platform manages research, backtesting, and lifecycle - it **NEVER** stores your API keys or executes orders.
+**CCEA Architecture Note**: In production, live trading runs through the local Agent daemon which manages your credentials securely. The Cloud platform manages research, backtesting, and lifecycle - it **does not** store your API keys or execute orders.
 
 **Development/Testing (via script_live.py):**
 ```bash
@@ -570,10 +570,10 @@ The platform includes alignment/evidence tooling designed to support customer pr
 > **Note**: "Toolkit Ready" means compliance tools have been implemented and designed to help align with regulatory requirements. Independent certification or audit has not been performed. Consult qualified legal/compliance advisors for compliance assessment.
 
 **Privacy by Design (CCEA Architecture):**
-- Your broker credentials **NEVER** leave your local Agent
-- Cloud **NEVER** executes trades or stores API keys
-- Telemetry is **ALWAYS** redacted before transmission
-- EU-only data residency enforced
+- Your broker credentials stay in your local Agent (Cloud does not store or receive them)
+- Cloud does not execute trades or store API keys
+- Telemetry designed to be redacted before transmission; raw order events require explicit opt-in
+- EU data residency by default (enterprise: customer-managed options available)
 
 For details, see:
 - [Privacy Policy](legal/PRIVACY_POLICY.md)

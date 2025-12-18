@@ -25,11 +25,11 @@ Our platform implements strict data separation between Cloud Zone and Agent Zone
 
 | Data Category | Cloud Zone | Agent Zone | Protection Mechanism |
 |---------------|------------|------------|---------------------|
-| **Trading Credentials** | ❌ NEVER stored | ✅ Local Vault only | Architecture enforcement |
-| **Broker API Keys** | ❌ NEVER accessed | ✅ HSM/KMS/Keychain | Secrets never leave Agent |
+| **Trading Credentials** | ❌ Not stored | ✅ Local Vault only | Architecture enforcement |
+| **Broker API Keys** | ❌ Not accessed | ✅ HSM/KMS/Keychain | Secrets stay in Agent |
 | **User Strategies** | ✅ Research/backtest | ✅ Execution | Encryption + access control |
-| **Telemetry Data** | ✅ Redacted only | Raw at source | Mandatory redaction middleware |
-| **Order Data** | ❌ NEVER generated | ✅ Created locally | No order payloads in Cloud |
+| **Telemetry Data** | ✅ Redacted by default | Raw at source | Redaction middleware (on by default) |
+| **Order Data** | ❌ Not generated | ✅ Created locally | No order payloads in Cloud |
 
 ### Mandatory Telemetry Redaction
 
@@ -80,7 +80,7 @@ All telemetry sent from Agent to Cloud passes through mandatory redaction:
 
 | GDPR Principle | CCEA Implementation |
 |----------------|---------------------|
-| **Data Minimization** | Cloud never receives trading credentials |
+| **Data Minimization** | Cloud does not receive trading credentials |
 | **Storage Limitation** | Secrets stored only in local Agent vault |
 | **Integrity & Confidentiality** | Mandatory redaction prevents secret exposure |
 | **Privacy by Design** | Architecture enforces data separation |

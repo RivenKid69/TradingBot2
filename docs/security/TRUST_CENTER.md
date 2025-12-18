@@ -18,7 +18,7 @@ This document provides pre-contractual security information per DORA Article 28(
 | Aspect | Status | Details |
 |--------|--------|---------|
 | **Certifications** | SOC2 Type II Roadmap | Target 2027 (see Section 2) |
-| **Infrastructure** | AWS (Frankfurt) | EU-only data residency |
+| **Infrastructure** | AWS (Frankfurt) | EU data residency (by default) |
 | **Encryption** | AES-256 / TLS 1.3 | At-rest and in-transit |
 | **Availability** | Target 99.9% | Multi-AZ deployment (design target) |
 | **Incident Response** | Designed for 24/7 | Target 15-minute critical response |

@@ -79,13 +79,13 @@ Under the Cloud-Controlled Execution Architecture (CCEA), credential handling oc
 
 | Data Type | Cloud Zone | Agent Zone (Customer-Managed) |
 |-----------|-----------|------------------------------|
-| Broker API credentials | **NEVER stored or processed** | Encrypted local vault |
-| Order execution data | **NEVER accessed** | Local processing only |
+| Broker API credentials | **Not stored or processed** | Encrypted local vault |
+| Order execution data | **Not accessed** | Local processing only |
 | Trading positions | **Aggregated/redacted only** | Full data locally |
 
 The Processor's Cloud infrastructure:
-- **NEVER** stores, processes, or has access to broker API keys
-- **NEVER** executes orders or connects to broker/exchange APIs
+- **Does not** store, process, or have access to broker API keys
+- **Does not** execute orders or connect to broker/exchange APIs
 - Only receives redacted telemetry from customer-operated Agents (if deployed)
 
 ### 3.1 Telemetry Sensitivity Levels
@@ -443,13 +443,13 @@ Signature: _______________________
 | Backup frequency | Daily full, hourly incremental |
 | Backup encryption | AES-256 |
 | Recovery testing | Quarterly restoration tests |
-| RTO/RPO | 4 hours / 1 hour |
+| RTO/RPO | 4 hours / 1 hour (design target; actual per executed agreement) |
 
 ---
 
-## Annex B: Sub-processor List (EU-only)
+## Annex B: Sub-processor List (EU-based, current configuration)
 
-**All sub-processors are located within the European Union.** The Processor does not engage sub-processors outside the EU.
+**All current sub-processors are located within the European Union.** Sub-processor changes are subject to the notification process below (Section "Sub-processor Change Notification").
 
 | Sub-processor | Purpose | Region (EU-only) | DPA Status | Last Review |
 |--------------|---------|------------------|------------|-------------|
