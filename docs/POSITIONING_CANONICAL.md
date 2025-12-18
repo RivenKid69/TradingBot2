@@ -52,7 +52,6 @@ This is the short narrative we optimize for in startup visa applications:
 
 - **Innovation**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML (CVaR constraints) + governance/evidence exports by design.
 - **Business viability**: equities-first beachhead, B2B subscription model, and a structured pilot program with measurable onboarding and conversion criteria.
-- **EU establishment**: establish an EU entity and operate primarily in the EU market, with a compliance-friendly Cloud/Agent model and EU data/telemetry minimization posture.
 - **EU establishment**: primary establishment path is an Estonia OÜ (alternative: Netherlands B.V. if needed), operating primarily in the EU market with a compliance-friendly Cloud/Agent model and EU data/telemetry minimization posture.
 - **Economic contribution**: create high-skilled engineering, operations, and go-to-market roles locally as the company scales.
 - **Clear scope**: we are an ICT/software provider; we do not provide investment advice, custody, or execution services.
@@ -83,7 +82,7 @@ Use these names consistently in visa/investor documents:
 - **Managed services** (if referenced): CustodiaCloud Cloud (research + monitoring only; no secrets; no orders)
 
 Avoid mixing in legacy/internal names in external narratives:
-- **TradingBot2** is an internal repository codename and may still appear in technical notes; it is **not** a customer-facing product name.
+- Legacy/internal codenames may still appear in technical notes; they are **not** customer-facing product names and should not be used in visa/investor documents.
 
 ---
 

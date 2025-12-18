@@ -242,7 +242,7 @@ We deliberately constrain our initial market scope following Geoffrey Moore's "C
 
 | Attribute | Specification |
 |-----------|---------------|
-| **Geography** | UK/EU (NL, DE, IE, FR, Luxembourg) |
+| **Geography** | UK/EU (Estonia, Netherlands, Germany, Ireland, France, Luxembourg) |
 | **Team Size** | 5-50 (prop firms + small funds) |
 | **Asset Class** | Listed equities (equities-first) |
 | **Need** | Fast infrastructure + institutional-grade risk controls |
