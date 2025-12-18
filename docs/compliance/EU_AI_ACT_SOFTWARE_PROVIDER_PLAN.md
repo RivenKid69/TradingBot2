@@ -1,11 +1,13 @@
-# EU AI Act: Software Provider Compliance Plan
+# EU AI Act: Software Provider Alignment Plan
 
 **Version**: 2.0
 **Created**: 2025-12-10
 **Last Updated**: 2025-12-16
 **Target**: GPAI Provider + Article 50 Transparency
 **Deadline**: 2 August 2026
-**Phase 2 Status**: ✅ COMPLETED
+**Phase 2 Status**: Implementation complete (internal engineering milestone; not independently audited)
+
+> **Important**: This document describes tooling and design alignment with EU AI Act requirements. CustodiaCloud does not self-classify as a specific AI Act category without legal review. Clients must conduct their own compliance assessment with qualified advisors. "Implementation complete" refers to internal engineering work, not regulatory certification.
 
 ---
 
@@ -25,9 +27,9 @@
 
 ---
 
-## Phase 1: Core GPAI Compliance (Articles 50 & 53) - COMPLETED
+## Phase 1: Core GPAI Compliance (Articles 50 & 53) - Implementation Complete
 
-**Status**: COMPLETED (2025-12-10)
+**Status**: Implementation complete (2025-12-10; internal engineering milestone; not independently audited)
 **Completion Report**: [EU_AI_ACT_PHASE1_COMPLETION_REPORT.md](EU_AI_ACT_PHASE1_COMPLETION_REPORT.md)
 
 **Scope**: Обязательные требования EU AI Act

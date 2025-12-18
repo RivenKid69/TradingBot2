@@ -27,7 +27,7 @@
 | **Article 64 ENHANCED** | Complete opinion tracking system with triggers, workflow, timeline monitoring, and lead SA response tracking | EDPB opinion tracking incomplete |
 | **Article 72 ENHANCED** | Full EDPB procedure tracking with voting rules, meeting records, written procedures, and decision tracking | EDPB procedure not fully addressed |
 
-**Coverage Update**: ~97 of 99 GDPR articles now covered (98%)
+**Coverage Update**: ~97 of 99 GDPR articles now addressed in code scaffolding (illustrative; not audited compliance validation)
 - Previous v2.2: 95 articles (96%)
 - Added v2.3: Complete Art. 19, Art. 63, Art. 37(1) assessment + enhanced Art. 12(3), 64, 72
 
@@ -75,7 +75,7 @@
 | **Protocol Definitions** | Base protocols for all GDPR modules | Architecture improvement |
 | **Performance Benchmarks** | API/concurrency/throughput tests | Missing performance validation |
 
-**Coverage Update (v2.2)**: ~95 of 99 GDPR articles now covered (96%)
+**Coverage Update (v2.2)**: ~95 of 99 GDPR articles addressed in code scaffolding (illustrative)
 - Previous v2.1: 87 articles (88%)
 - Previous v2.0: 72 articles (73%)
 - Previous v1.x: 62 articles (63%)

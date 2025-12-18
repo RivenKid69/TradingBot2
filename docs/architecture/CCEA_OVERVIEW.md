@@ -336,9 +336,9 @@ All TRADING_IMPACTING commands require local approval:
 | Account balances | Privacy |
 | Individual trade details | Privacy |
 
-### 8.3 GDPR Compliance
+### 8.3 GDPR Alignment
 
-**Status**: ✅ **Compliance-Ready** (All 9 Phases Implemented) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
+**Status**: Designed to support GDPR requirements (privacy-by-design; not independently audited) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
 
 | Requirement | Implementation |
 |-------------|----------------|

@@ -4,7 +4,7 @@
 >
 > **Reference**: Design Doc CCEA Cloud.txt (canonical source) - Section 14
 >
-> **GDPR Status**: ✅ **Compliance-Ready** (All 9 Phases Implemented) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
+> **GDPR Status**: Designed to support GDPR requirements (privacy-by-design; not independently audited) - See [GDPR_COMPLIANCE_SUMMARY.md](../compliance/GDPR_COMPLIANCE_SUMMARY.md)
 
 ## Overview
 
