@@ -21,6 +21,21 @@
 
 **Why CCEA matters for pilots**: Clear regulatory boundary — we provide software tools, pilots control their own execution.
 
+## Asset Coverage (Foundation vs MVP)
+
+**Foundation (multi-asset by design)**: listed **equities**, listed **futures**, listed **options**, **FX**, and **digital assets** (spot/perpetuals) as an optional expansion path.
+
+**Pilot scope (equities-first)**: this pilot validates the equities workflow end-to-end. We will capture demand signals for additional asset classes (futures/options/FX/digital assets) without committing to expand MVP scope during the pilot.
+
+## Regulatory Posture (Design Intent)
+
+| Framework | What pilots need | How CustodiaCloud supports | What we do not do |
+|----------|-------------------|----------------------------|-------------------|
+| **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No custody, no client secrets in Cloud, no Cloud live trading instructions, no execution on behalf of clients |
+| **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
+| **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming “DORA certified”; pilot is not a certification |
+| **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
+
 ---
 
 ## Program Overview
