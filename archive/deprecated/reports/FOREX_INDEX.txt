@@ -14,7 +14,7 @@ KEY DOCUMENT: FOREX_INTEGRATION.md (264 lines)
 QUICK SUMMARY:
 ==============
 
-The TradingBot2 codebase is EXCEPTIONALLY WELL-DESIGNED for Forex integration:
+The CustodiaCloud codebase is EXCEPTIONALLY WELL-DESIGNED for Forex integration:
 
 1. PLUGIN ADAPTER SYSTEM (adapters/registry.py)
    - 2-level registry (Vendor + AdapterType)

@@ -347,5 +347,5 @@ from libc.math cimport isfinite  # Add this import
 
 ---
 
-**Maintainer**: TradingBot2 Team
+**Maintainer**: CustodiaCloud Team
 **Last Updated**: 2025-12-03

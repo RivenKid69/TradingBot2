@@ -289,9 +289,9 @@ All TRADING_IMPACTING commands require local approval:
 
 | Mode | Description | Target User | Regulatory Position |
 |------|-------------|-------------|---------------------|
-| **Retail Research SaaS** | Cloud-only access to backtest, simulation, training. No live execution. | Individual researchers, students | Software Provider (no broker license needed) |
-| **Retail Live via Local Agent** | Cloud services + customer-deployed Agent for live trading | Individual traders, small prop firms | Software Provider (customer executes) |
-| **Enterprise Engine** | On-premise or VPC deployment of full stack | Hedge funds, banks, large prop firms | Software License (customer owns entire stack) |
+| **Pro Research SaaS (B2B)** | Cloud-only access to backtest, simulation, training. No live execution. | Professional systematic teams (research workflows only) | Software Provider (no broker license needed) |
+| **Pro Live via Customer Agent (B2B)** | Cloud services + customer-deployed Agent for live trading | Professional systematic teams, prop firms | Software Provider (customer executes) |
+| **Enterprise Engine (B2B)** | On-premise or VPC deployment of full stack | Hedge funds, banks, large prop firms | Software License (customer owns entire stack) |
 
 ### 7.2 Mode Comparison
 
@@ -299,7 +299,7 @@ All TRADING_IMPACTING commands require local approval:
 ┌────────────────────────────────────────────────────────────────────────────┐
 │                         PRODUCT MODE COMPARISON                             │
 ├──────────────────────┬──────────────────┬───────────────┬─────────────────┤
-│       Feature        │ Retail Research  │ Retail Live   │ Enterprise      │
+│       Feature        │ Pro Research     │ Pro Live      │ Enterprise      │
 ├──────────────────────┼──────────────────┼───────────────┼─────────────────┤
 │ Backtest/Simulation  │        ✅        │      ✅       │       ✅        │
 │ Training Service     │        ✅        │      ✅       │       ✅        │

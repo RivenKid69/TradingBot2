@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-The TradingBot2 Futures Integration project successfully extends the platform to support comprehensive futures trading across multiple asset classes:
+The CustodiaCloud Futures Integration project successfully extends the platform to support comprehensive futures trading across multiple asset classes:
 
 - **Crypto Perpetual Futures** (Binance USDT-M)
 - **CME Equity Index Futures** (ES, NQ, YM, RTY)

@@ -1,7 +1,7 @@
 # AI-Powered Quantitative Research Platform Codebase Comprehensive Structure Analysis
 
 ## Project Overview
-AI-Powered Quantitative Research Platform is a complex trading bot system written in Python with Rust/C++ integrations. It's a medium-frequency algorithmic trading system with components for simulation, backtesting, live trading, and machine learning model training. The codebase uses a layered architecture with dependency injection patterns.
+AI-Powered Quantitative Research Platform is a complex quantitative trading platform written in Python with Rust/C++ integrations. It's a systematic trading research and deployment system with components for simulation, backtesting, and machine learning model training (CCEA architecture). The codebase uses a layered architecture with dependency injection patterns.
 
 **Total Python Files**: 292 in root + 119 in subdirectories = ~411 total
 **Total Lines of Code**: ~116,894 lines (root level alone)

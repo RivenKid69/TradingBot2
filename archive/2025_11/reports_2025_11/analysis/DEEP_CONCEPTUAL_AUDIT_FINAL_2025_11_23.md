@@ -104,7 +104,7 @@ Var[mean(g)] = Var[g] / 10000
    - **Original problem (gradient instability) not solved!**
 
 4. **Production Risk**:
-   - Trading bot uses VGS for stability
+   - The platform uses VGS for stability
    - If VGS doesn't work, risk of gradient explosions in production
    - **Real money at risk from training failures!**
 

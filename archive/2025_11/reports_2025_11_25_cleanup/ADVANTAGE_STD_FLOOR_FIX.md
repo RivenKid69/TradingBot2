@@ -154,7 +154,7 @@ Experimental validation in `test_advantage_std_floor_experiment.py` demonstrates
 
 - **Standard practice**: `1e-8` floor, always normalize
 - **Our approach**: `1e-4` floor + adaptive skipping
-- **Rationale**: Trading bot operates in low-signal environments where numerical stability is paramount
+- **Rationale**: The platform operates in low-signal environments where numerical stability is paramount
 
 ### Why More Conservative?
 
