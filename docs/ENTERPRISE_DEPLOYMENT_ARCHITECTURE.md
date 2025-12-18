@@ -99,7 +99,7 @@ The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with 
 │  │   SECURITY     │  │  RELIABILITY   │  │  SCALABILITY   │                 │
 │  │   FIRST        │  │                │  │                │                 │
 │  │                │  │                │  │                │                 │
-│  │ • Zero Trust   │  │ • 99.9% SLA    │  │ • Horizontal   │                 │
+│  │ • Zero Trust   │  │ • SLA targets  │  │ • Horizontal   │                 │
 │  │ • Defense in   │  │ • Multi-AZ     │  │ • Auto-scaling │                 │
 │  │   Depth        │  │ • Failover     │  │ • Stateless    │                 │
 │  │ • Encryption   │  │ • Redundancy   │  │ • Containers   │                 │
@@ -809,13 +809,13 @@ cache_security_group:
 │  └─────────────────────────────┘  └─────────────────────────────┘          │
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                     FAILOVER METRICS                                 │    │
+│  │                     FAILOVER TARGETS (Design Goals)                  │    │
 │  │                                                                      │    │
-│  │   RTO (Recovery Time Objective):     < 30 seconds                   │    │
-│  │   RPO (Recovery Point Objective):    < 1 second (sync replication)  │    │
-│  │   Failover Detection:                 5-10 seconds                  │    │
-│  │   Automatic Failover:                 Yes (Kubernetes + Patroni)    │    │
-│  │                                                                      │    │
+│  │   RTO (Recovery Time Objective):     Target < 30 seconds            │    │
+│  │   RPO (Recovery Point Objective):    Target < 1 second (sync repl.) │    │
+│  │   Failover Detection:                 Target 5-10 seconds           │    │
+│  │   Automatic Failover:                 Kubernetes + Patroni (design) │    │
+│  │   Note: Actual metrics depend on deployment and testing validation  │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -892,13 +892,13 @@ cache_security_group:
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                     DR METRICS                                       │    │
+│  │                     DR TARGETS (Design Goals)                        │    │
 │  │                                                                      │    │
-│  │   RTO (Recovery Time Objective):        < 15 minutes                │    │
-│  │   RPO (Recovery Point Objective):       < 15 minutes                │    │
-│  │   DR Test Frequency:                    Quarterly                   │    │
-│  │   Last Successful DR Test:              [Date]                      │    │
-│  │                                                                      │    │
+│  │   RTO (Recovery Time Objective):        Target < 15 minutes         │    │
+│  │   RPO (Recovery Point Objective):       Target < 15 minutes         │    │
+│  │   DR Test Frequency:                    Target: Quarterly           │    │
+│  │   Last Successful DR Test:              [Date - if performed]       │    │
+│  │   Note: Actual metrics depend on deployment and testing validation  │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -1497,12 +1497,12 @@ panels:
 
 ### Support Tiers
 
-| Tier | Response Time | Availability | Contact |
-|------|--------------|--------------|---------|
-| P1 Critical | 15 minutes | 24/7 | emergency@company.com |
-| P2 High | 1 hour | 24/7 | support@company.com |
-| P3 Medium | 4 hours | Business hours | support@company.com |
-| P4 Low | 1 business day | Business hours | support@company.com |
+| Tier | Target Response Time | Availability | Contact |
+|------|---------------------|--------------|---------|
+| P1 Critical | Target: 15 minutes (enterprise SLA-dependent) | Per contract | emergency@company.com |
+| P2 High | Target: 1 hour (enterprise SLA-dependent) | Per contract | support@company.com |
+| P3 Medium | Target: 4 hours | Business hours | support@company.com |
+| P4 Low | Target: 1 business day | Business hours | support@company.com |
 
 ### Escalation Path
 

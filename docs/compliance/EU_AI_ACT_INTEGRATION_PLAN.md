@@ -23,11 +23,11 @@
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
-| **GPAI Phase 1: Transparency & Copyright** | **COMPLETED** | 2025-12-10 | 189/189 passed |
-| **GPAI Phase 2: Model Card & Acknowledgment** | **COMPLETED** | 2025-12-10 | TBD |
+| **GPAI Phase 1: Transparency & Copyright** | **IMPLEMENTED (tooling)** | 2025-12-10 | 189/189 passed |
+| **GPAI Phase 2: Model Card & Acknowledgment** | **IMPLEMENTED (tooling)** | 2025-12-10 | TBD |
 | GPAI Phase 3: Documentation & Monitoring | Planned | - | - |
 
-**Total AI Act Tests: 1196+ passed**
+**Total AI Act Tooling Tests: 1196+ passed (not a compliance claim)**
 
 ### Module Version
 

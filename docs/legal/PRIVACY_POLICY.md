@@ -543,14 +543,16 @@ This section provides an explicit checklist of privacy design commitments for th
 | **Redaction is always on** | Cannot be disabled by flag | CI test + runtime |
 | **Order data forbidden in non-RAW** | Schema validation | Runtime rejection |
 
-### 7A.4 EU-only Data Residency
+### 7A.4 EU-Priority Data Residency
 
-| Commitment | Enforcement | Verification |
-|-----------|-------------|--------------|
-| **All storage in EU** | Region configuration | Drift check (fail-closed) |
-| **All backups in EU** | Backup region policy | Automated verification |
-| **All logs in EU** | CloudWatch region lock | Infrastructure audit |
-| **All sub-processors in EU** | Contractual + DPA | Quarterly review |
+| Design Goal | Enforcement | Verification |
+|-------------|-------------|--------------|
+| **Core storage in EU** | Region configuration | Drift check (fail-closed) |
+| **Core backups in EU** | Backup region policy | Automated verification |
+| **Core logs in EU** | CloudWatch region lock | Infrastructure audit |
+| **Sub-processors: EU where possible** | Contractual + DPA; SCCs/DPF for non-EU | Quarterly review |
+
+**Note:** Some sub-processors (e.g., payment, email, error monitoring) may process data outside the EU under Standard Contractual Clauses (SCCs) and/or Data Privacy Framework (DPF). See SUBPROCESSORS_REGISTER.md for details.
 
 ### 7A.5 DSAR Boundaries
 

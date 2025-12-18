@@ -181,7 +181,7 @@ The following claims are accurate and can be used in marketing:
 
 | Claim | Accuracy | Notes |
 |-------|----------|-------|
-| "EU-only data residency" | TRUE | All modes enforce EU-only |
+| "EU-priority data residency" | TRUE | Core platform data in EU; sub-processors with non-EU processing operate under SCCs/DPF |
 | "No credentials leave the Agent" | TRUE | Enforced by redaction + CI |
 | "No order commands from Cloud" | TRUE | Protocol constraint |
 | "On-premises deployment available" | TRUE | Full on-prem supported |
@@ -329,9 +329,9 @@ encryption:
 
 | Artifact | SaaS | Enterprise | On-Prem | VPC | Air-Gapped |
 |----------|------|------------|---------|-----|------------|
-| SOC 2 Report | Available | Available | N/A | N/A | N/A |
-| Penetration Test | Annual | Annual | Customer | Customer | Customer |
-| Vulnerability Scan | Continuous | Continuous | Customer | Customer | Customer |
+| SOC 2 Report | Roadmap (on request under NDA if obtained) | Roadmap (on request under NDA if obtained) | N/A | N/A | N/A |
+| Penetration Test | Planned (annual target) | Planned (annual target) | Customer | Customer | Customer |
+| Vulnerability Scan | Planned (continuous target) | Planned (continuous target) | Customer | Customer | Customer |
 | Compliance Dashboard | Cloud | Cloud | Local | Local | Local |
 | Audit Log Export | API | API | Local | Both | Local |
 

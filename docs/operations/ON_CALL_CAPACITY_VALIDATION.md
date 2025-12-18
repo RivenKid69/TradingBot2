@@ -18,12 +18,12 @@ This document validates our current on-call capacity and sets achievable notific
 
 ### 2.1 Team Size
 
-| Role | Headcount | On-Call Trained | Notes |
-|------|-----------|-----------------|-------|
-| Platform Engineers | 3 | 3 | Full stack capability |
-| Security Engineer | 1 | 1 | Security focus |
-| DevOps/SRE | 1 | 1 | Infrastructure focus |
-| **Total On-Call Pool** | **5** | **5** | |
+| Role | Target Headcount | On-Call Trained | Notes |
+|------|------------------|-----------------|-------|
+| Platform Engineers | 3 (planned) | TBD | Full stack capability |
+| Security Engineer | 1 (planned) | TBD | Security focus |
+| DevOps/SRE | 1 (planned) | TBD | Infrastructure focus |
+| **Total On-Call Pool** | **5 (target)** | **TBD** | Hiring/training in progress |
 
 ### 2.2 Coverage Model
 
@@ -54,13 +54,13 @@ Based on capacity assessment, the following notification SLAs are validated:
 
 ### 3.1 Standard Tier (Available Now)
 
-| Metric | Commitment | Validation |
-|--------|------------|------------|
-| Initial Notification (Critical) | 60 minutes | ✓ Business hours coverage |
-| Initial Notification (High) | 120 minutes | ✓ Business hours coverage |
-| Initial Notification (Medium) | 4 hours | ✓ Business hours coverage |
-| Coverage Hours | 9am-6pm CET Mon-Fri | ✓ Current model |
-| After-hours for Critical | Best effort (next morning) | ✓ Pager for escalation |
+| Metric | Target | Notes |
+|--------|--------|-------|
+| Initial Notification (Critical) | 60 minutes | Target for business hours coverage |
+| Initial Notification (High) | 120 minutes | Target for business hours coverage |
+| Initial Notification (Medium) | 4 hours | Target for business hours coverage |
+| Coverage Hours | 9am-6pm CET Mon-Fri | Target model (scaling in progress) |
+| After-hours for Critical | Best effort (next morning) | Pager for escalation (when available) |
 
 **Capacity Validation**:
 - [x] 2+ engineers during business hours

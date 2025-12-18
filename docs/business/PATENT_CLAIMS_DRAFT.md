@@ -2,9 +2,9 @@
 
 ## CONFIDENTIAL - ATTORNEY-CLIENT PRIVILEGED
 
-**Document Status:** DRAFT for Patent Counsel Review
+**Document Status:** INTERNAL DRAFT for Patent Counsel Review (NOT FILED)
 **Last Updated:** 2025-12-05
-**Target Filing:** Q1 2025 (Provisional)
+**Target Filing (if pursued):** Q1 2025 (Provisional) - Subject to counsel review and FTO clearance
 
 ---
 

@@ -49,16 +49,16 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 
 | Component | Responsibility | Handles Credentials | Executes Orders |
 |-----------|---------------|---------------------|-----------------|
-| **Cloud** | Research, backtesting, monitoring, lifecycle management | **NEVER** | **NEVER** |
+| **Cloud** | Research, backtesting, monitoring, lifecycle management | **No (by design)** | **No (by design)** |
 | **Agent** | Live execution, credential storage, risk enforcement | **YES (Local Only)** | **YES (Local Only)** |
 
-**Security Design Commitments** (enforced at architecture level):
+**Security Design Commitments** (architectural design goals, enforced via CI guardrails and protocol schema):
 
-1. **Cloud NEVER stores your broker API keys or credentials** - All credentials are stored locally in your Agent's encrypted vault
-2. **Cloud NEVER generates, transmits, or executes trading orders** - All trading operations occur exclusively in your local Agent
-3. **Cloud NEVER has access to exchange trading endpoints** - Cloud cannot connect to brokers on your behalf
-4. **Cloud cannot send order-like payloads** - The protocol schema prohibits side/quantity/price fields
-5. **Telemetry is redacted by design** - Sensitive data is removed/bucketed before transmission; higher-sensitivity telemetry requires explicit opt-in
+1. **Cloud does not store your broker API keys or credentials** - All credentials are designed to be stored locally in your Agent's encrypted vault
+2. **Cloud does not generate, transmit, or execute trading orders** - All trading operations are designed to occur exclusively in your local Agent
+3. **Cloud does not have access to exchange trading endpoints** - Cloud is not designed to connect to brokers on your behalf
+4. **Cloud does not send order-like payloads** - The protocol schema is designed to prohibit side/quantity/price fields
+5. **Telemetry is redacted by design** - Sensitive data is intended to be removed/bucketed before transmission; higher-sensitivity telemetry requires explicit opt-in
 
 **Product Modes:**
 
@@ -267,22 +267,22 @@ You must be at least **18 years of age** (or the legal age of majority in your j
 
 ### 4.1 Authorization
 
-By submitting your Broker API Keys to the Platform, you:
+By configuring your Broker API Keys in the local Agent, you:
 
-- Grant the Platform permission to connect to your broker account
-- Authorize the Platform to submit, modify, and cancel orders on your behalf
-- Acknowledge that orders will be executed according to your Strategy's logic
+- Grant the Agent (running in your environment) permission to connect to your broker account
+- Authorize the Agent to submit, modify, and cancel orders on your behalf (execution occurs locally, not via Cloud)
+- Acknowledge that orders will be executed by the Agent according to your Strategy's logic
 
 ### 4.2 Security Measures
 
-Your Broker API Keys are protected by:
+Your Broker API Keys are protected by security measures designed to include:
 
-- **Encryption at rest**: AES-256-GCM encryption with unique keys per user
-- **Encryption in transit**: TLS 1.3 for all data transmission
-- **Access controls**: Keys are decrypted only when required for order execution
-- **Audit logging**: All credential access is logged for security monitoring
+- **Encryption at rest**: Encryption designed to use AES-256-GCM (or equivalent) with unique keys per user (implementation may vary by deployment)
+- **Encryption in transit**: TLS 1.2 or higher (TLS 1.3 where supported) for data transmission
+- **Access controls**: Keys are designed to be decrypted only when required for order execution in the Agent
+- **Audit logging**: Credential access is designed to be logged for security monitoring
 
-**Reference:** NIST SP 800-57 (Key Management), OWASP Cryptographic Storage Cheat Sheet
+**Design Reference:** NIST SP 800-57 (Key Management), OWASP Cryptographic Storage Cheat Sheet
 
 ### 4.3 Your Rights
 
@@ -294,11 +294,11 @@ You retain full control over your credentials:
 
 ### 4.4 Limitations
 
-**CRITICAL**: The Platform is configured to NEVER have:
+**IMPORTANT**: The Platform is designed so that:
 
-- Withdrawal rights from your broker account
-- Ability to transfer funds out of your account
-- Access to your personal banking information
+- The Platform does not request or require withdrawal rights from your broker account
+- The Platform is not designed to transfer funds out of your account
+- The Platform is not designed to access your personal banking information
 
 You should configure your API keys with **trade-only permissions** (no withdrawal capability) for maximum security.
 

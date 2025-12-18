@@ -61,14 +61,14 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Encryption | AES-256 at rest, TLS 1.3 in transit |
 | Backup Locations | eu-central-1 (Frankfurt, DE) |
 
-**Contractual Provisions:**
-| Requirement | Status | Evidence |
+**Contractual Provisions (per vendor terms; verify current status):**
+| Requirement | Target | Evidence |
 |-------------|--------|----------|
-| DORA Art. 30 equivalent terms | ✓ Included | AWS DORA Addendum |
-| Audit rights | ✓ Via SOC2/ISO27001 | AWS Artifact |
-| Data location restrictions | ✓ EU-only configured | AWS Config |
-| Subcontracting notification | ✓ Via AWS notifications | AWS compliance updates |
-| Exit support | ✓ S3 data export | AWS documentation |
+| DORA Art. 30 equivalent terms | Included (verify with AWS) | AWS DORA Addendum (if available) |
+| Audit rights | Via SOC2/ISO27001 (vendor-reported) | AWS Artifact |
+| Data location restrictions | EU-only configured (verify in AWS Config) | AWS Config |
+| Subcontracting notification | Via AWS notifications | AWS compliance updates |
+| Exit support | S3 data export | AWS documentation |
 
 **Certifications** *(vendor-reported; verify via vendor trust centers)*:
 - SOC 1, 2, 3 Type II (vendor-reported; verify via [AWS Artifact](https://aws.amazon.com/artifact/))
@@ -113,12 +113,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Storage Locations | Minimal (edge caching only) |
 | Data Retention | Real-time processing, logs 72 hours |
 
-**Contractual Provisions:**
-| Requirement | Status | Evidence |
+**Contractual Provisions (per vendor terms; verify current status):**
+| Requirement | Target | Evidence |
 |-------------|--------|----------|
-| DPA with SCCs | ✓ Signed | Cloudflare DPA |
-| Audit rights | ✓ Via SOC2 | Cloudflare Trust Hub |
-| EU data processing | ✓ Configurable | Regional services |
+| DPA with SCCs | Executed (verify with vendor) | Cloudflare DPA |
+| Audit rights | Via SOC2 (vendor-reported) | Cloudflare Trust Hub |
+| EU data processing | Configurable (verify in vendor settings) | Regional services |
 
 **Certifications** *(vendor-reported; verify via vendor trust centers)*:
 - SOC 2 Type II (vendor-reported; verify via [Cloudflare Trust Hub](https://www.cloudflare.com/trust-hub/compliance-resources/))

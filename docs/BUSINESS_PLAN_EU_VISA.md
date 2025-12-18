@@ -1177,13 +1177,13 @@ We acknowledge that achieving projections depends on multiple factors:
 
 ### 9.3 Phase 3: Market Entry (Months 4-9)
 
-| Milestone | Description | Success Criteria |
-|-----------|-------------|------------------|
-| **Pilot Customers** | 3-5 signed pilot agreements | Contracts executed |
-| **Pilot Execution** | 3-month pilot programs | >70% satisfaction score |
-| **First Revenue** | Convert pilots to paid | EUR 40,000+ ARR |
-| **Case Studies** | Document success stories | 2+ published |
-| **Conference Presence** | TradeTech or equivalent | 10+ qualified leads |
+| Milestone | Description | Target Success Criteria |
+|-----------|-------------|-------------------------|
+| **Pilot Customers** | Target: 3-5 pilot agreements | Contracts executed (target) |
+| **Pilot Execution** | 3-month pilot programs | >70% satisfaction score (target) |
+| **First Revenue** | Convert pilots to paid | EUR 40,000+ ARR (illustrative target) |
+| **Case Studies** | Document success stories | 2+ published (target) |
+| **Conference Presence** | TradeTech or equivalent | 10+ qualified leads (target) |
 
 **Key Risks**: Slow customer acquisition, pilot failures
 **Mitigation**: Extended pilots, hands-on support

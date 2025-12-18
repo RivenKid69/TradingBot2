@@ -88,7 +88,7 @@ The system is capable of:
 4. **Adaptive Learning**
    - Continual model updates with new market data
    - Regime-aware adaptation
-   - Online learning with stability guarantees
+   - Online learning with stability controls (design goal; performance is deployment-dependent)
 
 5. **Human Oversight Integration**
    - Real-time monitoring dashboard

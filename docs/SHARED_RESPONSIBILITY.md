@@ -157,40 +157,40 @@ INCIDENT OCCURS
 
 ### 4.1 Required Contract Provisions
 
-All contracts with EU financial entity clients include:
+Standard contract templates for EU financial entity clients are designed to include:
 
-**Article 30(2) - All Contracts:**
-- [x] Clear service description
-- [x] Data processing/storage locations
-- [x] Availability, authenticity, integrity, confidentiality provisions
-- [x] Data access, recovery, return procedures
-- [x] Service level descriptions
-- [x] Incident assistance obligations
-- [x] Authority cooperation commitment
-- [x] Termination rights and notice periods
-- [x] Training participation commitment
+**Article 30(2) - All Contracts (template provisions):**
+- [ ] Clear service description
+- [ ] Data processing/storage locations
+- [ ] Availability, authenticity, integrity, confidentiality provisions
+- [ ] Data access, recovery, return procedures
+- [ ] Service level descriptions
+- [ ] Incident assistance obligations
+- [ ] Authority cooperation commitment
+- [ ] Termination rights and notice periods
+- [ ] Training participation commitment
 
-**Article 30(3) - Critical Functions (Addendum):**
-- [x] Full SLA with quantitative targets
-- [x] Extended notice periods
-- [x] Enhanced reporting obligations
-- [x] Business contingency plan requirements
-- [x] Resilience testing participation
-- [x] Unrestricted audit rights
-- [x] Exit strategy requirements
-- [x] Supervisory cooperation
-- [x] Business continuity implementation
-- [x] Security arrangements
-- [x] Subcontracting approval conditions
+**Article 30(3) - Critical Functions (Addendum, if applicable):**
+- [ ] Full SLA with quantitative targets
+- [ ] Extended notice periods
+- [ ] Enhanced reporting obligations
+- [ ] Business contingency plan requirements
+- [ ] Resilience testing participation
+- [ ] Unrestricted audit rights
+- [ ] Exit strategy requirements
+- [ ] Supervisory cooperation
+- [ ] Business continuity implementation
+- [ ] Security arrangements
+- [ ] Subcontracting approval conditions
 
 ### 4.2 Subcontractor Requirements
 
-Our subcontractors are contractually bound to:
-- Meet equivalent security standards
-- Allow audit rights flow-through
-- Comply with data location restrictions
-- Support incident response procedures
-- Maintain required certifications
+Our subcontractor contracts are designed to require:
+- Meeting equivalent security standards
+- Allowing audit rights flow-through
+- Complying with data location restrictions
+- Supporting incident response procedures
+- Maintaining required certifications (vendor-reported; verify via vendor trust centers)
 
 ---
 
@@ -214,8 +214,8 @@ Our subcontractors are contractually bound to:
 |-------------|---------|----------|
 | Provider Information Package | Client's ROI submission | On request / portal |
 | Subcontractor Register | Third-party risk assessment | On request / portal |
-| SOC2 Report | Due diligence | On request under NDA |
-| SLA Reports | Ongoing monitoring | Monthly |
+| SOC2 Report | Due diligence | On request under NDA (if/when obtained; roadmap) |
+| SLA Reports | Ongoing monitoring | Periodic (cadence defined per contract) |
 | Incident Reports | Regulatory compliance | Per incident |
 | Exit Plan Summary | Exit planning | On request |
 

@@ -40,10 +40,10 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         AGENT ZONE (Execution & Secrets)                     │
 │                                                                              │
-│  SECURITY DESIGN COMMITMENTS (enforced locally):                             │
-│  ✓ Secrets stored in local vault (HSM/KMS/keychain)                         │
-│  ✓ All orders created and sent locally (never via Cloud)                    │
-│  ✓ Hard caps enforced by Policy Firewall (cannot be bypassed)               │
+│  SECURITY DESIGN COMMITMENTS (designed and enforced locally):                │
+│  ✓ Secrets designed to be stored in local vault (HSM/KMS/keychain)          │
+│  ✓ All orders designed to be created and sent locally (not via Cloud)       │
+│  ✓ Hard caps designed to be enforced by Policy Firewall                     │
 │  ✓ Artifact signature verification required (tamper detection)              │
 │  ✓ Local approval required for trading-impacting commands                   │
 │                                                                              │
@@ -208,10 +208,10 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 
 ### 4.2 Risk Assessment (ID.RA)
 
-**ID.RA-01: Vulnerabilities Identified**
-- Weekly automated vulnerability scans
-- Annual penetration testing
-- Continuous security monitoring
+**ID.RA-01: Vulnerabilities Identified (Design Goals)**
+- Automated vulnerability scans (target: weekly cadence)
+- Penetration testing (target: annual cadence)
+- Security monitoring (target: continuous)
 
 **ID.RA-02: Threat Intelligence**
 - Subscribe to CVE feeds

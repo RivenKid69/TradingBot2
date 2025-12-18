@@ -100,9 +100,9 @@ This design commitment:
 - Last Review: 2025-01-15
 - Next Review: 2025-04-15
 
-**Data Minimization:**
-- Payment card numbers never stored by Platform
-- Only tokenized references stored
+**Data Minimization (design goal):**
+- Payment card numbers not stored by Platform (tokenization via Stripe)
+- Only tokenized references designed to be stored
 - Billing email stored for invoicing
 
 ---

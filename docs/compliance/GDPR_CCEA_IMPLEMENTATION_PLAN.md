@@ -777,11 +777,11 @@ Key work:
 - ZIP and JSON export formats with integrity hashes
 - Audit-ready artifact aggregation
 
-DoD:
-- ✅ A simulated breach produces a complete notification decision package and evidence trail within defined targets (72h external deadline; internal tabletop produces draft package + timeline within 24h).
-- ✅ Evidence pack can export: signed artifact inventory + SBOM + change journal + staged rollout/rollback records + research sandbox policy/violations.
-- ✅ 146 tests passing with 100% Phase 7 coverage.
-- ✅ All 573 governance tests passing (no regressions).
+DoD (internal tooling validation; not a compliance claim):
+- ✅ Simulated breach workflow produces notification decision package and evidence trail (target: 72h external deadline; internal tabletop target: draft package + timeline within 24h).
+- ✅ Evidence pack exports: signed artifact inventory + SBOM + change journal + staged rollout/rollback records + research sandbox policy/violations.
+- ✅ 146 tests passing (Phase 7 tooling coverage).
+- ✅ 573 governance tests passing (internal tooling validation).
 
 ### Phase 8 — Continuous compliance (prevent regressions) ✅ COMPLETED
 

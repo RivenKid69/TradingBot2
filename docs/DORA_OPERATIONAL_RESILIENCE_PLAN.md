@@ -4492,15 +4492,16 @@ pooled_audit_framework:
   options:
 
     option_1_soc2_reliance:
-      name: "SOC2 Type II Report Reliance"
-      description: "Clients rely on our annual SOC2 Type II report"
-      legal_basis: "Art. 30(4) - third-party certifications"
+      name: "SOC2 Type II Report Reliance (Roadmap)"
+      description: "SOC2 Type II certification is on the roadmap; upon achievement, clients may rely on periodic reports"
+      legal_basis: "Art. 30(4) - third-party certifications (if applicable)"
+      status: "PLANNED - SOC2 roadmap in progress"
 
-      what_we_provide:
-        - "SOC2 Type II report (annually)"
-        - "Bridge letter between reports"
+      what_we_provide_upon_certification:
+        - "SOC2 Type II report (if/when obtained)"
+        - "Bridge letter between reports (if applicable)"
         - "Management letter (if applicable)"
-        - "Auditor contact for verification"
+        - "Auditor contact for verification (if applicable)"
 
       client_benefits:
         - "No need for individual audit"

@@ -2,7 +2,7 @@
 
 **Версия**: 8.0
 **Дата**: 2025-12-11
-**Статус**: ALL TOOLKIT PHASES IMPLEMENTED ✅ (Implementation complete, not certified)
+**Статус**: ALL TOOLKIT PHASES IMPLEMENTED (Internal tooling; not certified; not a compliance claim)
 
 ---
 
@@ -37,10 +37,10 @@ This roadmap documents the **compliance toolkit** we provide to our B2B clients 
 - ❌ We are NOT guaranteeing that use of our toolkit ensures regulatory compliance
 
 **What this DOES mean:**
-- ✅ All planned compliance tools have been implemented
-- ✅ Tools are designed to align with MiFID II requirements
-- ✅ Clients receive a toolkit designed to support compliance efforts
-- ✅ Comprehensive testing has been performed (1,500+ tests)
+- ✅ All planned internal tooling has been implemented
+- ✅ Tools are designed to support alignment with MiFID II requirements (not a compliance guarantee)
+- ✅ Clients receive a toolkit designed to support their own compliance efforts
+- ✅ Internal testing has been performed (1,500+ tests; not third-party validated)
 
 **Client Responsibility:**
 - Clients must conduct their own compliance assessment
