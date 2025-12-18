@@ -12,7 +12,7 @@
 
 > **TRANSPARENCY NOTICE:** The case studies in this document are **projections based on industry benchmarks and academic research**, not confirmed customer results. They represent realistic scenarios that prospective customers can expect based on comparable implementations.
 >
-> As we complete our pilot program (see [PILOT_PROGRAM.md](../PILOT_PROGRAM.md)), we will update this document with confirmed results and customer testimonials.
+> As we complete our pilot program (see `docs/DOCUMENTATION_CANON_DESIGN.md` for the canonical pilot structure and boundaries), we will update this document with confirmed results and customer testimonials.
 
 ---
 
@@ -468,7 +468,7 @@ As pilot customers complete the program, we will:
 - [CUSTOMER_VALUE_FRAMEWORK.md](CUSTOMER_VALUE_FRAMEWORK.md) — ROI calculator methodology
 - [BUILD_VS_BUY_ANALYSIS.md](BUILD_VS_BUY_ANALYSIS.md) — Detailed cost comparison
 - [TESTIMONIAL_ACQUISITION_STRATEGY.md](TESTIMONIAL_ACQUISITION_STRATEGY.md) — Path to real testimonials
-- [PILOT_PROGRAM.md](../PILOT_PROGRAM.md) — Validation program structure
+- `docs/DOCUMENTATION_CANON_DESIGN.md` — Validation program structure (canonical)
 - [COMPETITIVE_MOAT.md](COMPETITIVE_MOAT.md) — Technical differentiation
 
 ---

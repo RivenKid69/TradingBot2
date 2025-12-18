@@ -1,6 +1,6 @@
 # CustodiaCloud Documentation Canon (Design Doc)
 
-This document defines the **documentation standard** for CustodiaCloud: naming, legally safe language, positioning, and committee-friendly narratives. It is intended to be the **source of truth** used to correct and align the rest of the repository documentation (excluding architecture/design docs).
+This document defines the **documentation standard** for CustodiaCloud: naming, legally safe language, positioning, and committee-friendly narratives. It is intended to be the **single source of truth** used to correct and align the rest of the repository documentation (excluding architecture/design docs).
 
 **Audience priority**: European startup visa committees (primary), investors (secondary).
 
@@ -13,18 +13,8 @@ This document defines the **documentation standard** for CustodiaCloud: naming, 
 Use this document when editing any document that describes the product externally or semi-externally (visa, incubators, partners, pilots, investors, public docs).
 
 **Precedence rules** (when documents disagree):
-1. `docs/POSITIONING_CANONICAL.md` for positioning, market scope, and naming.
-2. This document for **legal-safe wording, banned phrases, and “how to write” rules**.
-3. The other canonical docs for details (pilot, MVP, beachhead, investor brief, business plan).
-
-Canonical source set (the “7 docs”):
-- `docs/POSITIONING_CANONICAL.md`
-- `docs/PRODUCT_OVERVIEW.md`
-- `docs/MVP_FOCUS.md`
-- `docs/BEACHHEAD_MARKET_STRATEGY.md`
-- `docs/PILOT_PROGRAM.md`
-- `docs/INVESTOR_BRIEF.md`
-- `docs/BUSINESS_PLAN_EU_VISA.md`
+1. This document for **facts, naming, legally safe wording, banned phrases, and “how to write” rules**.
+2. Supporting technical/compliance documents for deeper implementation detail (they must not contradict the guardrails here).
 
 ---
 
@@ -61,16 +51,19 @@ We measure success via onboarding and operational KPIs (time-to-first-backtest, 
 ### 3.3 Architecture summary (CCEA)
 
 CCEA is the core posture that makes the product procurement-friendly:
-- **Cloud**: research/simulation/monitoring only
+- **Cloud**: research/simulation/monitoring + artifact building/registry + lifecycle control plane (non-orders)
 - **Agent**: customer-controlled execution and secrets
 
-**Hard rule** (must appear consistently): Cloud **does not** store customer broker credentials and **does not** transmit live order payloads (orders/targets/signals). Execution remains under the customer’s control.
+**Hard rule** (must appear consistently): Cloud **does not** store customer broker credentials and **does not** generate, transmit, or execute **live trading instructions** (orders/targets/signals). Execution remains under the customer’s control.
+
+**Allowed phrasing for lifecycle control** (to avoid ambiguity):
+> “Cloud may send lifecycle commands and signed artifacts to the Agent; Cloud never sends live trading instructions (orders/targets/signals).”
 
 ### 3.4 Asset coverage (5 asset types, correctly framed)
 
 We can truthfully state **two layers** of scope:
 
-- **Foundation (multi-asset by design)**: listed **equities**, listed **options**, listed **futures**, **FX**, and **digital assets** (spot/perpetuals) as an optional expansion path.
+- **Foundation (multi-asset by design)**: listed **equities**, listed **options**, listed **futures**, **FX**, and **digital assets** (spot/perpetuals) as an optional expansion path (jurisdiction- and customer-dependent).
 - **MVP / default commercial scope (equities-first)**: we lead with listed equities for institutional credibility and repeatable onboarding; additional asset classes are enabled based on validated customer pull, support capacity, and deployment risk review.
 
 Approved phrasing (use verbatim if needed):
@@ -86,7 +79,10 @@ These rules prevent red flags in EU startup visa reviews and reduce regulatory r
 
 Use this as a standard disclaimer block in external-facing docs:
 
-> CustodiaCloud is a B2B software/ICT product for professional trading organizations. CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations. Live execution occurs only via the customer-controlled Agent and the customer’s own broker accounts; the Cloud does not store credentials and does not send order payloads.
+> CustodiaCloud is a B2B software/ICT product for professional trading organizations. CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations. Live execution occurs only via the customer-controlled Agent and the customer’s own broker accounts; the Cloud does not store credentials and does not send live trading instructions (orders/targets/signals).
+
+Add this sentence in committee-facing docs when space allows:
+> “Clients remain responsible for their own regulatory obligations and for broker/market-data relationships and licensing.”
 
 ### 4.2 Avoid certification / compliance claims
 
@@ -114,6 +110,14 @@ Be explicit:
 - Customers remain responsible for market data licensing/terms and broker relationships.
 - CustodiaCloud supports bring-your-own data providers and does not resell data unless explicitly covered by a future agreement.
 
+### 4.5 Avoid absolute / unprovable claims
+
+Do not claim:
+- “best”, “unique”, “first/only”, “no competitors”, “guaranteed”, “proven to”
+
+Use instead:
+- “designed to”, “intended to”, “differentiates by”, “in our experience”, “based on customer feedback”, “evidence available under NDA”
+
 ---
 
 ## 5) Canonical positioning (what to say, not just what to avoid)
@@ -134,19 +138,55 @@ Use differentiators as “design facts” rather than hype:
 - **Execution realism**: multi-factor transaction cost / execution modeling; sim-to-live parity instrumentation.
 - **Governance and evidence exports**: logs, change control posture, evidence packages designed to support client procurement and operational reviews.
 
+### 5.4 Canonical go-to-market facts (use consistently)
+
+These are the concrete “what we do / for whom / how we validate” facts that should stay consistent across all committee and investor docs.
+
+**Beachhead / ICP (equities-first)**:
+- Professional systematic equities teams (prop firms + small funds), typically 5–50 people.
+- Geography: EU/UK-focused; cross-border customers are expected even if the company is established in a single host country.
+- Budget: ~€2,000–€5,000/month (initial, illustrative), with an enterprise tier for larger firms.
+- Deployment: BYO host (VPS/on-prem/VPC) for the Agent; Cloud is research/monitoring + lifecycle control (non-orders).
+
+**MVP scope (equities-first)**:
+- Cloud: research IDE/workflows, backtesting & simulation, signed artifact builder/registry, monitoring/telemetry, lifecycle control plane.
+- Agent: local vault for secrets, local risk enforcement (limits/kill switch), local approvals for trading-impacting changes, broker connectors under customer control.
+- Out of scope (default): retail workflows, “signals product”, copy-trading, HFT promises, broad multi-asset support as a default commitment.
+
+**Pilot program (customer validation)**:
+- Format: 3-month structured pilot cohort (3–5 firms).
+- Pricing: ~€500/month during pilot (discounted; illustrative), in exchange for weekly feedback and structured onboarding participation.
+- Success metrics (examples): <7 days to first live run (via customer Agent), high adoption of risk controls, conversion willingness at target price range.
+
+**Funding ask (investor-facing, but must not contradict committee docs)**:
+- Target raise: €500K–€750K (illustrative).
+- Use of proceeds (illustrative): 40% GTM, 35% engineering, 15% operations (legal/compliance/SOC 2 roadmap), 10% reserve.
+- Runway target: 18–24 months to reach “Series A readiness” milestones (burn and revenue traction dependent; milestone-based spending).
+
+**12-month milestones (illustrative, not forecasts)**:
+- Phase 1 (0–3 months): 3 signed pilot agreements; repeatable onboarding.
+- Phase 2 (3–6 months): dashboard MVP; first revenue (illustrative €40K–€50K ARR).
+- Phase 3 (6–12 months): product-market fit signals (2+ customers expanding usage); readiness for a larger raise.
+
+**EU establishment (multi-country, Estonia first)**:
+- Establish an EU entity via an applicable startup/entrepreneur pathway (jurisdiction-dependent).
+- Estonia is the first application/primary path; other EU countries remain viable options depending on program fit, facilitator/incubator availability, and counsel guidance.
+
 ---
 
 ## 6) Startup visa committee narrative (Estonia-first)
 
 Committees typically look for credible innovation, a realistic plan, and contribution to the local economy. Keep the story concrete and implementation-oriented.
 
+Important: we plan to apply to **multiple European countries**. Estonia is the first application, but this narrative should be reusable: swap the “host country” details (incubator/facilitator, local partners, hiring plan timing) while keeping the core facts identical.
+
 ### 6.1 Committee-friendly “read first” bullets (canonical)
 
 - **Innovation**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML (CVaR constraints) + governance/evidence exports by design.
-- **Implementation plan (Estonia)**: primary establishment path is an **Estonia OÜ**, with an Estonia-based pilot and EU go-to-market execution (Netherlands is a secondary path if needed).
+- **Implementation plan (EU, Estonia-first)**: primary establishment path is an **Estonia OÜ** (first application). We will tailor the same plan for other EU countries if needed. Customer validation (pilot cohort) is EU/UK-wide and can be executed cross-border while operations are established in the host country.
 - **Economic contribution**: high-skilled job creation roadmap (engineering, DevOps, product, sales/BD, security/compliance operations) as revenue scales.
 - **Partners / ecosystem**: engage the relevant local startup ecosystem and (where required) an approved facilitator/incubator; collaborate with local universities/meetups for talent and knowledge transfer.
-- **Realistic budget**: seed funding supports 12–18 months runway: pilot execution, EU go-to-market, and initial hiring (no reliance on unrealistic “multiplier” claims).
+- **Realistic budget**: seed funding targets an **18–24 month runway** to cover pilot execution, EU go-to-market, and initial hiring (no reliance on “multiplier” claims).
 
 ### 6.2 What committees must *not* hear
 
@@ -155,6 +195,9 @@ Avoid phrasing that triggers red flags:
 - “we are regulated / licensed” (unless verified and specific)
 - “we are compliant with X law” (unless counsel-reviewed and scoped)
 - “we are a high-risk AI system under the EU AI Act” (do not self-classify in docs without legal review)
+
+Crypto/digital-assets guidance for committees:
+- If mentioned, frame digital assets only as **optional expansion** after the equities-first validation, and always as jurisdiction- and customer-dependent (with legal review for concrete deployments).
 
 ---
 
@@ -203,12 +246,13 @@ Before sending a doc to a committee, incubator, partner, or investor, confirm:
 
 ## 10) Where details live (do not duplicate inconsistently)
 
-When a document needs detail, link to the canonical doc instead of re-deriving it:
-- MVP boundaries and first use-case: `docs/MVP_FOCUS.md`
-- Pilot structure and KPIs: `docs/PILOT_PROGRAM.md`
-- Beachhead/ICP and expansion logic: `docs/BEACHHEAD_MARKET_STRATEGY.md`
-- Investor ask and narrative: `docs/INVESTOR_BRIEF.md`
-- Budget, hiring, and EU contribution plan: `docs/BUSINESS_PLAN_EU_VISA.md`
+When a document needs detail, link to this document instead of re-deriving:
+- Positioning, naming, legal-safe language, and committee narrative: `docs/DOCUMENTATION_CANON_DESIGN.md`
+
+For deeper technical/compliance detail (supporting documents; not canonical for messaging):
+- Architecture overview: `docs/CCEA_OVERVIEW.md`
+- Innovation narrative: `docs/INNOVATION_STATEMENT.md`
+- Regulatory posture (non-legal): `docs/REGULATORY_COMPLIANCE_STRATEGY.md`
+- Data protection posture: `docs/DATA_PROTECTION_POLICY.md`
 
 *Last Updated: 2025-12-18*
-

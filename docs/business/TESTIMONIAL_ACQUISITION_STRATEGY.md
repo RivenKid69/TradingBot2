@@ -68,7 +68,7 @@ Per **Nielsen** and **Demand Gen** research:
 
 ### 2.1 Pilot Program Integration
 
-The [European Pilot Program](../PILOT_PROGRAM.md) is designed to convert participants to advocates:
+The pilot program described in `docs/DOCUMENTATION_CANON_DESIGN.md` is designed to convert participants to advocates:
 
 ```
 Week 0-4: Onboarding & Setup

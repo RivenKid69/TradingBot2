@@ -12,7 +12,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
 - **Source**: Configuration files and metadata
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
-  - [PRODUCT_OVERVIEW.md](../../../PRODUCT_OVERVIEW.md)
+  - [DOCUMENTATION_CANON_DESIGN.md](../../../DOCUMENTATION_CANON_DESIGN.md)
   - [ARCHITECTURE.md](../../../ARCHITECTURE.md)
   - [README.md](../../../README.md)
 

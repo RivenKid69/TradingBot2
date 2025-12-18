@@ -110,7 +110,7 @@ Done: можно развернуть execution‑контур on‑prem/VPC к�
 Переписать пользовательские и продуктовые доки под CCEA:
 README.md — чёткая формула “cloud research, agent execution, keys local, no cloud orders”.
 ARCHITECTURE.md — новая диаграмма Cloud/Agent/Shared, протокол, state machines.
-PRODUCT_OVERVIEW.md/PROJECT_OVERVIEW.md/BUSINESS_OVERVIEW.md — позиционирование software provider, без “we trade for you”.
+`docs/DOCUMENTATION_CANON_DESIGN.md` — каноничное позиционирование software/ICT provider, без “we trade for you”, с едиными терминами CustodiaCloud/CCEA.
 Добавить новые разделы:
 docs/CCEA_OVERVIEW.md (boundary, threat model, legal posture).
 docs/cloud/* (control plane API, builder, registry, privacy).

@@ -11,16 +11,16 @@
 ### For New Users
 | Document | Description |
 |----------|-------------|
-| [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md) | ⭐ **High-level product overview** - capabilities, architecture, competitive advantages |
+| [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | ⭐ **Canonical product & documentation standard** - positioning, naming, legal-safe language, committee/investor narrative |
 | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) | ⭐ **Step-by-step guide** - from zero to first backtest in 30 minutes |
 | [QUICK_START.md](QUICK_START.md) | Quick reference for common commands |
 
 ### For Investors & Startup Visa Applications
 | Document | Description |
 |----------|-------------|
-| [docs/PRODUCT_OVERVIEW.md](docs/PRODUCT_OVERVIEW.md) | ⭐ **One-pager** - key innovations, competitive differentiation |
+| [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | ⭐ **Canonical narrative** - product, GTM, pilot, funding ask, and safe wording |
 | [docs/INNOVATION_STATEMENT.md](docs/INNOVATION_STATEMENT.md) | ⭐ **Full innovation documentation** - technical depth, IP, academic references |
-| [docs/INVESTOR_BRIEF.md](docs/INVESTOR_BRIEF.md) | **Investment highlights** - market opportunity, metrics, roadmap |
+| [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | **Investment highlights (canonical)** - market opportunity, metrics, roadmap |
 
 ### For Developers
 | Document | Description |

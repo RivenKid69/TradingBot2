@@ -194,27 +194,29 @@ class TestNoBrokerageClaimsInDocs:
 
     def test_software_vendor_positioning(self, project_root):
         """Test documents position as software vendor."""
-        # Check investor brief
-        investor = project_root / "docs" / "INVESTOR_BRIEF.md"
-        if investor.exists():
-            content = investor.read_text(encoding='utf-8').lower()
-            has_vendor_position = any([
-                "software" in content and "vendor" in content,
-                "technology" in content and "provider" in content,
-                "ict provider" in content,
-            ])
-            assert has_vendor_position, "INVESTOR_BRIEF should position as software vendor"
+        canon = project_root / "docs" / "DOCUMENTATION_CANON_DESIGN.md"
+        if not canon.exists():
+            pytest.skip("DOCUMENTATION_CANON_DESIGN.md not found")
 
-        # Check business plan
-        bp = project_root / "docs" / "BUSINESS_PLAN_EU_VISA.md"
-        if bp.exists():
-            content = bp.read_text(encoding='utf-8').lower()
-            has_vendor_position = any([
-                "software" in content and "vendor" in content,
+        content = canon.read_text(encoding="utf-8").lower()
+        has_vendor_position = any(
+            [
+                "software/ict" in content,
+                "software" in content and "ict" in content,
+                "software" in content and "provider" in content,
                 "technology" in content and "provider" in content,
-                "not" in content and "broker" in content,
-            ])
-            assert has_vendor_position, "BUSINESS_PLAN should clarify not a broker"
+            ]
+        )
+        assert has_vendor_position, "Documentation canon should position as software/ICT provider"
+
+        # Also ensure we explicitly avoid advice/execution positioning in canon narratives.
+        must_include = [
+            "does not provide investment advice",
+            "does not store credentials",
+            "does not send live trading instructions",
+        ]
+        for phrase in must_include:
+            assert phrase in content, f"Documentation canon should include: {phrase}"
 
 
 class TestDORACompliance:
