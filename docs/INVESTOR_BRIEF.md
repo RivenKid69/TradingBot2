@@ -24,7 +24,7 @@
 
 **Where we are now**: Foundation complete. We are entering the **customer validation phase** — pilot programs with European systematic equities teams to validate product-market fit before scaling.
 
-**Why it matters**: Prop trading firms spend 6-12 months and €200K-500K building trading infrastructure. We reduce this to days at a fraction of the cost.
+**Why it matters**: Prop trading firms often spend 6-12 months and €200K-1.8M+ building trading infrastructure (team- and scope-dependent). We reduce this to days at a fraction of the cost.
 
 ---
 
@@ -73,6 +73,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 - **NOT** an Investment Adviser, Broker-Dealer, Custodian, or Execution Service
 - Designed for a software/ICT provider posture: Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
 - Enterprise posture: auditability, change control, evidence exports (DORA-aware vendor requirements)
+- Customers remain responsible for market data licensing/terms (bring-your-own data providers)
 
 ### Asset Coverage (Foundation vs MVP)
 
@@ -178,10 +179,10 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 
 | Metric | Value | Why It Matters for Customers |
 |--------|-------|------------------------------|
-| **Automated Tests** | 19,905 test functions | Designed for production deployment — comprehensive quality assurance |
+| **Automated Tests** | Extensive automated test suite | Designed for production deployment — comprehensive quality assurance |
 | **CI Validation** | Continuous | Unit/integration/regression suite with reports available under NDA |
 | **Asset Classes** | 5 (MVP: Equities) | Extensibility proven; MVP focused on equities |
-| **Exchange Integrations** | 6 | Flexibility for customer requirements |
+| **Connectivity** | Multi-provider architecture | Flexibility for customer requirements |
 
 ### Technology Differentiation
 
@@ -196,7 +197,7 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 
 This means strategies explicitly avoid catastrophic tail losses, not just maximize gains.
 
-**Three Breakthrough Technologies**
+**Three Technical Differentiators**
 
 | Innovation | What It Does | Why It Matters |
 |------------|--------------|----------------|
@@ -329,8 +330,8 @@ Beachhead (Equities)         Adjacent Segments
 
 | Competitor | What They Do | Our Differentiation |
 |------------|--------------|---------------------|
-| **QuantConnect** | Community backtesting platform | They use fixed 2bps slippage; we use 6-9 factor dynamic models. They have no risk-aware ML; we have CVaR-constrained RL. |
-| **Zipline** | Open-source backtester | Single asset class, no live trading, abandoned development. Our foundation supports 5 asset classes (MVP production support begins with equities). |
+| **QuantConnect** | Developer platform + community | Strong platform, but governance/evidence exports and client-controlled execution boundaries are typically engineered in-house for institutional use. |
+| **Zipline / OSS backtesting** | Open-source backtesting libraries | Useful building blocks, but productionization (data, execution realism, monitoring, governance) is typically on the customer. |
 | **Alpaca** | Commission-free broker API | They provide pipes; we provide intelligence. No ML, no execution modeling. |
 | **In-House Development** | Custom systems at prop firms | $500K-2M cost, 12+ months. We reduce to days at fraction of cost. |
 
@@ -351,8 +352,8 @@ Beachhead (Equities)         Adjacent Segments
 1. **Technical Depth**: 7+ peer-reviewed papers implemented (Almgren-Chriss, Kyle, Dabney, Chow, Romano, Gatheral, Moallemi)
 2. **Novel Algorithms**: Twin Critics + CVaR, AdaptiveUPGD, VGS — not available anywhere else
 3. **Multi-Asset Unity**: Single codebase for 5 asset classes (vs 1-2 typical)
-4. **Testing Rigor**: ~20k automated test functions (vs ~1,000 typical)
-5. **Complexity Barrier**: 2+ years development, 100K+ lines — significant replication effort
+4. **Testing Rigor**: Extensive automated tests + CI validation
+5. **Complexity Barrier**: Multi-year development and deep systems integration effort
 
 ---
 
@@ -379,12 +380,12 @@ Beachhead (Equities)         Adjacent Segments
 
 ### Scalability
 
-| Dimension | Current | Scalable To |
+| Dimension | Current (internal) | Design Target |
 |-----------|---------|-------------|
-| Concurrent strategies | 10+ | 100+ |
-| Assets monitored | 50+ | 1,000+ |
-| Trades per day | 1,000+ | 100,000+ |
-| Historical data | 5 years | 20+ years |
+| Concurrent strategies | Tens | Hundreds (workload-dependent) |
+| Assets monitored | Tens to hundreds | Thousands (workload-dependent) |
+| Trades per day | Varies by venue/strategy | High-volume (venue/strategy dependent) |
+| Historical data | Multi-year | Multi-decade (data provider dependent) |
 
 ---
 
@@ -394,7 +395,7 @@ Beachhead (Equities)         Adjacent Segments
 
 **Current stage: Pre-revenue, entering customer validation**
 
-We are transparent that this is an early-stage opportunity. The technical foundation is complete; we are now focused on customer validation following lean startup principles.
+We are transparent that this is an early-stage opportunity. The core technical foundation is implemented; we are now focused on customer validation following lean startup principles.
 
 ### What We've Completed (Technical Foundation)
 
@@ -403,7 +404,7 @@ We are transparent that this is an early-stage opportunity. The technical founda
 | Core platform | ✅ Complete | Equities execution + simulation functional |
 | Multi-asset architecture | ✅ Complete | 5 asset classes supported |
 | Risk management | ✅ Complete | CVaR optimization, risk guards |
-| Testing infrastructure | ✅ Complete | ~20k test functions; CI validation reports available |
+| Testing infrastructure | ✅ Complete | Extensive automated tests; CI validation reports available |
 
 ### What We're Doing Now (Customer Validation)
 
@@ -425,14 +426,7 @@ We are transparent that this is an early-stage opportunity. The technical founda
 
 ### Technical Validation (Internal)
 
-| Metric | Result | Methodology |
-|--------|--------|-------------|
-| Backtesting vs Paper Trading | <3% deviation | 6-month parallel run |
-| Execution Cost Accuracy | ±2 bps vs fills | Equities paper trading / broker fills |
-| Risk Management | Zero margin calls | Historical crash stress tests |
-| Uptime | 99.9% | 3-month paper trading |
-
-*Note: Internal metrics. Customer validation is the current priority.*
+Internal QA includes paper-trading, parity instrumentation (backtest vs. live), and reliability monitoring. Detailed results can be shared under NDA; customer validation is the current priority.
 
 ### Lean Validation Approach
 
@@ -455,10 +449,10 @@ We are transparent that this is an early-stage opportunity. The technical founda
 | **Founder/CTO** | Quantitative development, ML/RL research | Platform architecture, execution models |
 
 **Technical capabilities demonstrated:**
-- ~20k automated test functions (enterprise-grade quality)
+- Extensive automated testing and CI validation
 - 5 asset class integrations (designed for production use)
 - Academic research implementation (7+ peer-reviewed papers)
-- Exchange connectivity (6 implemented integrations)
+- Multiple broker/data connectivity adapters (see Appendix B)
 
 ### Team Gaps (To Be Filled Post-Funding)
 
@@ -484,34 +478,22 @@ Actively seeking advisors with:
 
 ### Employment Commitment
 
-Our European expansion plan is designed to exceed EU startup visa requirements while building a world-class fintech team:
+Our European expansion plan targets meaningful economic contribution while building a world-class fintech team:
 
-| Year | Direct FTEs | Cumulative Salary Investment | Tax Contribution |
+| Year | Direct FTEs | Cumulative Salary Investment | Notes |
 |------|-------------|------------------------------|------------------|
-| **Year 1** | 5 | €375,000 | €239,000 |
-| **Year 2** | 12 | €930,000 | €621,000 |
-| **Year 3** | 22 | €1,760,000 | €1,246,000 |
-| **Year 5** | 50 | €4,250,000 | €3,058,000 |
+| **Year 1** | 5 | €375,000 | Initial EU entity + first hires |
+| **Year 2** | 12 | €930,000 | GTM + engineering growth |
+| **Year 3** | 22 | €1,760,000 | Scaling customer success + security |
+| **Year 5** | 50 | €4,250,000 | Multi-team EU growth (scenario) |
 
-### EU Visa Compliance
+### EU Visa / Relocation Readiness (Non-Legal Summary)
 
-| Program | Requirement | Our Commitment | Status |
-|---------|-------------|----------------|--------|
-| **Germany §21 AufenthG** | 5 jobs, €500K investment | 22 jobs, €1.6M by Y3 | **440% of target** |
-| **Ireland STEP** | 10 jobs, €1M revenue | 22 jobs, €1.6M by Y3 | **220% / 160%** |
-| **Netherlands Startup Visa** | Economic contribution | High-skilled tech jobs | **Strong fit** |
+- We will pursue an EU base via an applicable startup/entrepreneur pathway (jurisdiction-dependent) and will engage local immigration counsel and an approved facilitator/incubator where required.
+- Our case rests on **innovation** (risk-first ML + CCEA), **scalability** (B2B SaaS + enterprise), and **local job creation** (technical roles + go-to-market).
+- We avoid making claims about specific statutory thresholds in investor materials; requirements differ by country and case specifics.
 
-### Total Economic Impact (5-Year)
-
-| Metric | Value | Methodology |
-|--------|-------|-------------|
-| **Direct Jobs Created** | 50 | Full-time employees |
-| **Indirect Jobs (4.5x multiplier)** | 225 | Goos et al. (2015) research |
-| **Total Tax Revenue** | €7.2M+ | Payroll, income, VAT, corporate |
-| **Total Economic Impact** | €11.4M+ | Direct + indirect GVA |
-| **Local Supply Chain Spend** | €375K/year | 84% local sourcing |
-
-*See full details in EU Business Plan Section 12.1*
+*See `docs/BUSINESS_PLAN_EU_VISA.md` for the detailed hiring plan and assumptions.*
 
 ---
 
@@ -519,7 +501,7 @@ Our European expansion plan is designed to exceed EU startup visa requirements w
 
 ### Funding Ask
 
-**Target raise**: **€500K–€750K** seed (customer validation + EU go-to-market runway; see `docs/BUSINESS_PLAN_EU_VISA.md:1105`)
+**Target raise**: **€500K–€750K** (customer validation + EU go-to-market runway; see `docs/BUSINESS_PLAN_EU_VISA.md`)
 
 **Use of funds priority:**
 
@@ -535,10 +517,10 @@ Our European expansion plan is designed to exceed EU startup visa requirements w
 | Phase | Milestone | Success Metric |
 |-------|-----------|----------------|
 | **Phase 1 (0–3 months)** | First pilot customers | 3 signed pilots |
-| **Phase 2 (3–6 months)** | Dashboard MVP, first revenue | $50K ARR |
+| **Phase 2 (3–6 months)** | Dashboard MVP, first revenue | €50K ARR (illustrative) |
 | **Phase 2 (3–6 months)** | Cloud deployment | Multi-tenant infrastructure |
 | **Phase 3 (6–12 months)** | Product-market fit signals | 2+ customers expanding |
-| **Phase 3 (9–18 months)** | Series A preparation | $200K+ ARR, 10+ customers |
+| **Phase 3 (9–18 months)** | Series A preparation | €200K+ ARR, 10+ customers |
 
 ### Runway Consideration
 
@@ -569,7 +551,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| **Exchange API changes** | Low | Adapter abstraction layer; 6 exchange support |
+| **Exchange API changes** | Low | Adapter abstraction layer; connector monitoring |
 | **Model degradation** | Low | Continuous retraining pipelines built-in |
 | **Security breach** | Medium | SOC 2 roadmap; no client funds handled |
 
@@ -609,7 +591,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 | Year | Customers | ARR (EUR) | Key Assumptions |
 |------|-----------|-----------|-----------------|
-| Y1 | 2 | €48K | 2 customers × 8 seats × €2K/seat |
+| Y1 | 2 | €48K | 2 customers × €2K/month × 12 |
 | Y2 | 8 | €200K | +6 net new, slower expansion |
 | Y3 | 18 | €500K | Founder-led sales, 50% pilot conversion |
 
@@ -617,7 +599,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 | Year | Customers | ARR (EUR) | Key Assumptions |
 |------|-----------|-----------|-----------------|
-| Y1 | 3 | €80K | 3 customers × 10 seats × €2K/seat |
+| Y1 | 3 | €80K | 3 customers × ~€2.2K/month × 12 (blended) |
 | Y2 | 12 | €360K | +9 net new, sales hire |
 | Y3 | 25 | €850K | 60% pilot conversion, 110% NRR |
 

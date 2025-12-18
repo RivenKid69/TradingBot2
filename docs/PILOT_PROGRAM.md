@@ -21,6 +21,10 @@
 
 **Why CCEA matters for pilots**: Clear regulatory boundary — we provide software tools, pilots control their own execution.
 
+**Pilot boundary (important)**:
+- CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations.
+- Pilot firms remain responsible for their own regulatory obligations, broker relationships, and market data licensing/terms.
+
 ## Asset Coverage (Foundation vs MVP)
 
 **Foundation (multi-asset by design)**: listed **equities**, listed **futures**, listed **options**, **FX**, and **digital assets** (spot/perpetuals) as an optional expansion path.

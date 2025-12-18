@@ -19,6 +19,11 @@
 
 **Canonical positioning**: see [POSITIONING_CANONICAL.md](POSITIONING_CANONICAL.md).
 
+**Important notes (non-legal)**:
+- This document is for planning and evaluation; it is **not** legal, tax, or investment advice.
+- Startup visa/entrepreneur program criteria differ by country and case specifics; we will engage local counsel and approved facilitators/incubators where required.
+- Any financial projections are illustrative scenarios, not forecasts.
+
 ---
 
 ## Table of Contents
@@ -61,7 +66,7 @@ Proprietary trading firms and hedge funds face a critical infrastructure challen
 - **Time-to-Market**: 6-12 months to build trading infrastructure before deploying first strategy
 - **Development Cost**: EUR 450,000 - 1,800,000 for custom in-house systems
 - **Technical Complexity**: Multiple disconnected systems for different asset classes
-- **Execution Accuracy**: Basic slippage models cause 30-50% backtest-to-live deviation
+- **Execution Accuracy**: Simplified slippage models can create material backtest-to-live deviation
 - **Risk Management**: Lack of automated, real-time tail-risk monitoring
 
 ### 1.4 Our Solution
@@ -69,7 +74,7 @@ Proprietary trading firms and hedge funds face a critical infrastructure challen
 A platform designed for production deployment that:
 
 1. **Reduces infrastructure development from months to days**
-2. **Provides research-grade execution simulation** (6-9 factor dynamic models vs. fixed 2-5 bps)
+2. **Provides research-grade execution simulation** (6-9 factor dynamic models vs. simplified fixed-cost models)
 3. **Implements risk-aware AI** that optimizes for worst-case scenarios (CVaR constraints)
 4. **Is multi-asset by design**, with an **equities-first** MVP and beachhead
 5. **Integrates 7+ peer-reviewed academic models** for execution and risk management
@@ -95,11 +100,11 @@ This section describes the product’s design intent for EU-facing deployments. 
 
 | Criterion | Evidence |
 |-----------|----------|
-| **Technical Maturity** | 19,905 automated test functions (CI validation reports available) |
+| **Technical Maturity** | Extensive automated tests and CI validation (reports available under NDA) |
 | **Innovation** | Production-oriented CVaR-constrained RL for trading |
 | **Academic Foundation** | 7+ peer-reviewed papers implemented (Almgren-Chriss, Kyle, Dabney, etc.) |
-| **Multi-Asset Coverage** | 5 asset classes, 6 exchange integrations |
-| **Development Investment** | 2+ years, 100,000+ lines of code |
+| **Multi-Asset Coverage** | Multi-asset architecture (MVP support: equities-first) |
+| **Development Investment** | Multi-year R&D and engineering effort (details available under NDA) |
 | **Scalability** | Cloud-native architecture, multi-tenant ready |
 
 ### 1.6 Funding and Use of Proceeds
@@ -140,7 +145,7 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 | Segment | Model | Price Range |
 |---------|-------|-------------|
-| **Proprietary Trading Firms** | Per-seat license | EUR 1,800 - 4,500/seat/month |
+| **Proprietary Trading Firms** | Subscription per firm (tiered) | EUR 2,000 - 5,000/month (illustrative) |
 | **Quantitative Hedge Funds** | Platform license + support | EUR 45,000 - 180,000/year |
 | **Enterprise** | Custom deployment + SLA | Negotiated |
 
@@ -278,7 +283,7 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 - Equities-first core workflows and connectors
 - Standard ML models
 - Email support
-- **Price**: EUR 1,800-4,500/seat/month
+- **Illustrative price range**: EUR 2,000-5,000/month per firm (size-based), plus optional add-ons
 
 #### 3.2.2 Enterprise License
 
@@ -292,9 +297,10 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 
 | Service | Description | Pricing Model |
 |---------|-------------|---------------|
-| **Strategy Consulting** | Custom strategy development | Project-based |
-| **Integration Services** | Custom exchange/data integrations | Time & materials |
-| **Training Programs** | Platform and ML training | Per-session |
+| **Implementation & Integration** | Broker/data integrations, deployment support, observability setup | Time & materials |
+| **Enablement & Training** | Platform training, ML enablement, best-practice workshops | Per-session or retainer |
+
+*Note: Professional services are limited to technical implementation and enablement and do not include investment advice or discretionary portfolio management.*
 
 ### 3.3 Technology Stack
 
@@ -304,7 +310,7 @@ Our Approach: maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 | **ML Framework** | PyTorch, Stable-Baselines3 | Reinforcement learning |
 | **Data Processing** | Pandas, NumPy, Parquet | High-speed data handling |
 | **Configuration** | YAML, Pydantic | Type-safe configuration |
-| **Testing** | Pytest, CI/CD | Quality assurance (~20k automated test functions) |
+| **Testing** | Pytest, CI/CD | Quality assurance (extensive automated tests) |
 | **Deployment** | Docker, Kubernetes | Cloud-native scalability |
 
 ### 3.4 CCEA: Cloud-Controlled Execution Architecture
@@ -422,7 +428,7 @@ This architecture provides clear regulatory benefits:
 
 #### 4.2.1 Multi-Factor Parametric TCA
 
-**6-9 factors** adapting to real-time market conditions (vs. fixed 2-5 bps industry standard)
+**6-9 factors** adapting to real-time market conditions (vs. simplified fixed-cost models commonly used in early-stage tooling)
 
 #### 4.2.2 L3 LOB with Academic Models
 
@@ -440,19 +446,19 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 | Metric | Our Platform | Industry Standard |
 |--------|--------------|-------------------|
-| **Automated Tests** | 19,905 test functions | ~1,000-2,000 |
+| **Automated Tests** | Extensive automated tests (counts available under NDA) | Varies widely |
 | **CI Validation** | Continuous (reports available) | Varies |
 | **Asset Classes** | 5 unified | 1-2 separate |
-| **Exchange Integrations** | 6 implemented | 1-3 |
-| **Academic Papers Implemented** | 7+ | 0-2 |
-| **Lines of Code** | 100,000+ | Varies |
+| **Connectivity** | Multiple broker/data adapters | Varies |
+| **Academic Papers Implemented** | 7+ | Varies |
+| **Codebase Size** | Large production codebase | Varies |
 
 ### 4.4 Intellectual Property
 
 | Innovation | Type | Defensibility |
 |------------|------|---------------|
 | Twin Critics + Distributional + CVaR | Algorithm | High (novel combination) |
-| AdaptiveUPGD with VGS | Optimizer | High (first for finance) |
+| AdaptiveUPGD with VGS | Optimizer | High (novel combination + trade secrets) |
 | 9-Factor Equity TCA | Model | Medium (parameters) |
 | Queue-Reactive Fill Probability | Implementation | Medium |
 | Conformal Prediction Integration | Application | High (novel domain) |
@@ -507,15 +513,15 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 #### 5.2.3 Regulatory Environment
 
-**MiFID II Requirements for Algorithmic Trading** (Article 17):
+**MiFID II algo-trading expectations** (Article 17, high-level):
 
 | Requirement | Description | Our Solution |
 |-------------|-------------|--------------|
 | **Systems & Controls** | Resilient systems, appropriate thresholds | Built-in risk guards, kill switch |
 | **Pre-trade Controls** | Price, value, volume limits | Configurable per-strategy limits |
-| **Surveillance** | Automated market manipulation detection | Audit trail, anomaly detection |
+| **Surveillance** | Monitoring and governance processes | Audit trails and monitoring hooks (where applicable); customers run their surveillance program |
 | **Record Keeping** | Detailed order records | Full execution logs, export tooling |
-| **Testing** | Algorithm testing requirements | ~20k automated test functions, backtesting |
+| **Testing** | Algorithm testing requirements | Automated testing support + backtesting/simulation tooling |
 
 **Our Advantage**: The platform provides controls and evidence exports that help client firms satisfy MiFID II-style governance and testing expectations (clients remain responsible for their compliance program).
 
@@ -587,48 +593,33 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 ### 6.3 Detailed Competitor Analysis
 
-#### 6.3.1 QuantConnect — The Dominant Retail Platform
+#### 6.3.1 QuantConnect — Widely Used Developer Platform
 
 **Strengths We Acknowledge**:
-- ~500,000 community members (strong network effect)
-- 1,500+ paying enterprise customers
-- $40M+ funding, strong technical foundation
-- Broad asset class coverage through partnerships
+- Large developer community and strong documentation
+- Cloud backtesting and deployment tooling
+- Broad asset class coverage via integrations
 
 **Critical Weaknesses for Institutional Use**:
 
-| Limitation | Evidence | Our Solution |
-|------------|----------|--------------|
-| **Fixed Slippage Model** | 2-5 bps constant ([QC docs](https://www.quantconnect.com/docs/v2/writing-algorithms/reality-modeling/trade-fills/supported-models)) | 8-9 factor dynamic TCA (documented in codebase) |
-| **No CVaR Optimization** | Rules-based risk only | Native CVaR-constrained RL (see impl_conformal.py) |
-| **European Data Gaps** | No UCITS ETF backtest data ([QC forum](https://www.quantconnect.com/forum/discussion/10643/developing-and-backtesting-algorithms-for-european-markets/)) | Multi-vendor data architecture |
-| **No European Futures** | US-focused ([QC forum](https://www.quantconnect.com/forum/discussion/16149/operate-with-future-european-markets/)) | CME + European exchange support roadmap |
-| **Retail-Optimized Pricing** | $8-400/month per user | EUR 1,800-4,500/seat for unlimited compute |
+| Limitation (for our ICP) | What it implies | Our approach |
+|---|---|---|
+| **Execution cost realism** | Default models can be simplified; realistic modeling often requires custom work | Built-in multi-factor TCA + parity instrumentation |
+| **Governance & evidence** | Regulated/professional teams often need auditability and change control | CCEA boundary + audit trails + evidence exports |
+| **Client-controlled execution** | Many firms prefer secrets/execution to remain in their infrastructure | Customer-run Agent; Cloud holds no secrets and sends no orders |
+| **Positioning** | Broad platform serving many segments | Focused equities-first, risk-first mid-market narrative |
 
-**European User Friction** (from QuantConnect community forums):
-- "It is a pain for us European investors to fight against so many windmills" — QC Forum User
-- PRIIPS/KID regulations prevent EU retail from accessing US ETFs
-- Interactive Brokers restrictions for European citizens on US tickers
+**Bottom Line**: QuantConnect is a strong platform, but our positioning targets teams that need a strict Cloud/Agent boundary, risk-first tooling, and governance/evidence exports aligned with institutional procurement.
 
-**Bottom Line**: QuantConnect optimizes for retail volume, not institutional depth. Their fixed-cost execution models systematically underestimate true trading costs by 40-200% for institutional order sizes.
+#### 6.3.2 Zipline / Open-Source Backtesting (Category)
 
-#### 6.3.2 Zipline — The Abandoned Open-Source Standard
+Open-source backtesting libraries are valuable building blocks, but they typically require significant in-house engineering to reach production readiness (data licensing, execution modeling, monitoring, change control, and operational runbooks).
 
-**Market Status**:
-- **Original Quantopian**: Shut down October 2020 after failing to generate alpha from 2M+ submitted strategies
-- **zipline-reloaded**: Community-maintained fork with limited development resources
-
-**Critical Limitations**:
-
-| Limitation | Impact | Our Platform |
+| Typical limitation | Impact | Our platform focus |
 |------------|--------|--------------|
-| **No Live Trading** | Paper-only backtesting | Full production deployment |
-| **Daily Trading Only** | No intraday strategies | Tick-level to multi-day |
-| **US Equities Only** | Limited coverage outside US equities | 5 unified asset classes (equities-first) |
-| **No Active Development** | Security/compatibility risks | ~20k automated test functions, continuous CI/CD |
-| **No ML Integration** | Manual strategy coding | Native Distributional RL |
-
-**Evidence**: Quantopian's $2B AUM fund (2011-2020) returned to investors after consistently underperforming, demonstrating that backtesting infrastructure alone does not generate sustainable alpha.
+| **No managed deployment** | Teams must build/operate infrastructure | Cloud + Agent deployment model |
+| **Limited governance tooling** | Harder to produce evidence for audits | Audit trails and export tooling |
+| **Production integration effort** | Brokers/data/monitoring require engineering | Integrated adapters + workflows (equities-first) |
 
 #### 6.3.3 Alpaca — The Commission-Free Broker
 
@@ -650,7 +641,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 |--------|---------------------|-------------------|-----------------|
 | Bloomberg AIM | EUR 150K-500K | EUR 500M+ AUM | EUR 20K-55K |
 | BlackRock Aladdin | EUR 500K-2M+ | EUR 2B+ AUM | EUR 20K-200K |
-| Refinitiv Eikon | EUR 22K-48K/user | Enterprise only | EUR 1.8K-4.5K/seat |
+| Refinitiv Eikon | EUR 22K-48K/user | Enterprise only | Mid-market subscription (size-based) |
 
 **Our Value Proposition**: 80-90% cost reduction for equivalent institutional-grade capabilities, accessible to firms with EUR 5M-100M in proprietary capital.
 
@@ -704,74 +695,53 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 #### 6.4.3 European Regulatory Advantage
 
-**MiFID II Alignment**:
-- Pre-trade risk controls (built-in via risk_guard.py)
-- Best execution evidence (TCA reporting)
-- Algorithm performance monitoring (built-in logging)
-- Position limits and circuit breakers (impl_circuit_breaker.py)
+CustodiaCloud is designed to support professional firms operating under EU/UK governance expectations by providing:
+- Pre-trade risk controls and kill-switch enforcement in the client-controlled Agent
+- Audit trails and evidence exports for review (including best-execution analysis tooling where applicable)
+- Change-control posture for trading-impacting changes (local approvals)
+- Data minimization and redaction defaults for GDPR-friendly telemetry
 
-**Competitive Edge**: US-focused platforms (QuantConnect, Alpaca) do not prioritize MiFID II-oriented governance, controls, and evidence exports. Our European-first development is designed around EU regulatory expectations.
+**Competitive Edge**: Many general-purpose platforms are not built primarily around EU procurement narratives and governance-by-design. Our EU-first posture is a practical wedge for beachhead adoption.
 
-### 6.5 Quantified Competitive Moats
+### 6.5 Competitive Moats (Qualitative)
 
-| Moat | Metric | Evidence | Replication Difficulty |
-|------|--------|----------|------------------------|
-| **Codebase Depth** | 100,000+ lines, 800+ test files | Git history, CI/CD reports | 24-36 months |
-| **Test Coverage** | 19,905 automated test functions | CI/pytest reports | Exceptional rigor |
-| **Novel Algorithms** | 4 unique systems (CVaR-RL, UPGD, VGS, Twin Critics) | Academic citations | 12-18 months R&D each |
-| **Academic Integration** | 7+ peer-reviewed paper implementations | Code references to Almgren-Chriss, Moallemi, Kyle, Gatheral | PhD-level expertise |
-| **Multi-Asset Unity** | Multi-asset architecture | Single observation_space, single policy architecture | 18-24 months |
-| **L3 LOB Simulation** | 28 files, 186 tests, 100K+ lines | lob/ directory, matching_engine.py | Bloomberg-competitive |
-| **European Focus** | OANDA FX, MiFID II-oriented controls/evidence, EUR pricing | adapters/oanda/, circuit_breaker.py | Market-specific expertise |
+| Moat | Evidence | Replication Difficulty |
+|------|----------|------------------------|
+| **CCEA architecture boundary** | Cloud holds no secrets and sends no orders; Agent enforces hard caps | Requires deep redesign |
+| **Risk-first ML stack** | CVaR-constrained training + uncertainty bounds as first-class inputs | Requires research + productionization |
+| **Execution realism tooling** | Multi-factor TCA + parity instrumentation | Requires data + modeling effort |
+| **Governance/evidence exports** | Audit trails, config/version provenance, exportable logs | Requires governance-by-design |
+| **Multi-asset foundation** | Single architecture across assets; GTM remains equities-first | Requires unified abstractions |
 
 **Switching Cost Analysis**:
 - Trained models are platform-specific (action space, observation dimensions)
 - Feature engineering pipelines cannot be migrated to competitors
 - Integration with existing workflows (data feeds, brokers, risk systems)
 
-### 6.6 Competitive Positioning Matrix
+### 6.6 Competitive Positioning (Practical)
 
-| Capability | Our Platform | QuantConnect | Zipline | Alpaca | Bloomberg AIM | In-House (Est.) |
-|------------|--------------|--------------|---------|--------|---------------|-----------------|
-| **CVaR Risk Optimization** | ✓ Native | ✗ | ✗ | ✗ | ✓ | 12+ months |
-| **Distributional RL** | ✓ 21-51 quantiles | ✗ | ✗ | ✗ | ✗ | 18+ months |
-| **Twin Value Critics** | ✓ | ✗ | ✗ | ✗ | ✗ | Research-level |
-| **Continual Learning (UPGD)** | ✓ | ✗ | ✗ | ✗ | ✗ | Novel |
-| **8-9 Factor TCA** | ✓ Per asset class | ✗ (2-5 bps fixed) | ✗ | N/A | ✓ | 6+ months |
-| **L3 LOB Simulation** | ✓ 28 files, 186 tests | ✗ | ✗ | ✗ | ✓ | 12+ months |
-| **Conformal Prediction** | ✓ 3 methods (CQR, EnbPI, ACI) | ✗ | ✗ | ✗ | ✗ | Research-level |
-| **5+ Asset Classes Unified** | ✓ Single codebase | ✗ (2-3 separate) | ✗ (US equities) | ✗ (1) | ✓ | 18+ months |
-| **European Data/Regulatory Posture** | ✓ OANDA, MiFID II-oriented | ⚠️ Limited | ✗ | ⚠️ US-focused | ✓ | Region-specific |
-| **Live Trading** | ✓ Full production | ✓ | ✗ | ✓ (broker) | ✓ | ✓ |
-| **Test Coverage** | ~20k tests | ~1,000 | ~200 | N/A | Unknown | Varies |
-| **Annual Cost (10 seats)** | EUR 20K-55K | EUR 10K-50K | Free | Free + broker | EUR 150K-500K | EUR 450K-2M |
+We primarily compete against:
+1. **In-house builds** (high time and engineering cost)
+2. **Retail/prosumer platforms adapted for professional use** (governance/evidence often missing)
+3. **High-cost enterprise OMS/EMS stacks** (pricing and implementation heavy for mid-market firms)
+
+We win by providing a clear Cloud/Agent boundary, risk-first tooling, and governance/evidence exports at mid-market pricing.
 
 ### 6.7 Competitive Response Strategy
 
-**If QuantConnect Adds Institutional Features**:
-- Their community/retail model creates misaligned incentives (broker referrals vs. client alpha)
-- Execution modeling depth (6-9 factor TCA) requires fundamental architecture changes
-- Our 2+ year head start in CVaR-RL, UPGD, L3 LOB maintains technical moat
-
-**If Bloomberg Reduces Pricing**:
-- Their enterprise sales model doesn't scale to EUR 20M AUM firms
-- Support and onboarding processes assume dedicated IT teams
-- Multi-year contracts with complex licensing deter smaller firms
-
-**If New Entrants Emerge**:
-- ~20k tests represent 2+ years of edge case discovery
-- Academic paper implementations (Almgren-Chriss, Moallemi, Kyle, Gatheral) require deep domain expertise
-- First-mover advantage in European prop firm relationships
+We stay ahead by:
+- Maintaining strict positioning (equities-first, EU-first, risk-first)
+- Converting pilot learnings into repeatable onboarding
+- Shipping governance/evidence features that become procurement blockers
+- Keeping Cloud/Agent separation non-negotiable (secrets + execution stay client-controlled)
 
 ### 6.8 Summary: Why We Win
 
-1. **Institutional Gap**: Research-grade capabilities (CVaR-RL, 8-9 factor TCA, L3 LOB) unavailable in retail platforms
-2. **Pricing Gap**: 80-90% cost reduction versus enterprise alternatives
-3. **European Focus**: MiFID II-oriented controls/evidence, OANDA FX, European data sources
-4. **Technical Moat**: ~20k tests, 4 novel algorithms, 2+ years development
-5. **Beachhead Clarity**: European systematic equities teams — underserved, fast-decision, referenceable
-
-**The Bottom Line**: We don't compete with QuantConnect for retail hobbyists or Bloomberg for EUR 2B+ hedge funds. We serve the institutional middle market that both segments ignore — and Europe's prop trading hub (Amsterdam) represents the perfect beachhead.
+1. **Clear Cloud/Agent boundary** that supports regulated/professional procurement narratives
+2. **Risk-first tooling** integrated into training and deployment workflows (not bolt-on)
+3. **Faster time-to-production** than in-house builds for small teams
+4. **EU-first posture** (privacy-by-design, evidence exports, vendor due diligence readiness)
+5. **Beachhead clarity**: equities-first, repeatable onboarding, reference customers
 
 ---
 
@@ -864,12 +834,12 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 #### 8.1.1 Pricing Structure
 
-| Tier | Target | Seats | Monthly Price | Annual Value |
-|------|--------|-------|---------------|--------------|
-| **Starter** | Small prop firms | 1-5 | EUR 2,000/seat | EUR 120,000 |
-| **Professional** | Mid-size prop firms | 6-20 | EUR 3,000/seat | EUR 720,000 |
-| **Enterprise** | Large prop/hedge funds | 21-50 | EUR 4,000/seat | EUR 2,400,000 |
-| **Custom** | Major institutions | 50+ | Negotiated | EUR 500K+ |
+| Tier | Target | Monthly Price (per firm) | Annual Value (illustrative) |
+|------|--------|---------------------------|----------------------------|
+| **Starter** | Small prop firms | EUR 2,000 | EUR 24,000 |
+| **Professional** | Mid-size prop firms | EUR 3,000–5,000 | EUR 36,000–60,000 |
+| **Enterprise** | Larger funds/institutions | EUR 8,000+ | EUR 100,000+ |
+| **Custom** | Major institutions | Negotiated | Negotiated |
 
 #### 8.1.2 Additional Revenue Streams
 
@@ -878,7 +848,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **Implementation Services** | EUR 200-300/hour | 60% |
 | **Custom Integrations** | Project-based (EUR 20K-100K) | 50% |
 | **Training Programs** | EUR 5,000/session | 80% |
-| **Priority Support** | 15% of license fee | 90% |
+| **Priority Support** | 10-20% of subscription | 90% |
 
 ### 8.2 Bottom-Up Market Sizing & Revenue Logic
 
@@ -929,8 +899,8 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 | **Cumulative paying customers** | 0 | 0 | 1 | 2-3 | **2-3** |
 
 **Year 1 Revenue Range**:
-- **Conservative**: 2 customers × 8 seats avg × EUR 2,000/seat × 6 months = **EUR 48,000 ARR**
-- **Base**: 3 customers × 10 seats avg × EUR 2,000/seat × 8 months = **EUR 80,000 ARR**
+- **Conservative**: 2 customers × EUR 2,500/month × 6 months ≈ **EUR 30,000 revenue** (≈ EUR 60,000 ARR run-rate at year-end)
+- **Base**: 3 customers × EUR 3,000/month × 8 months ≈ **EUR 72,000 revenue** (≈ EUR 108,000 ARR run-rate at year-end)
 
 *Note: First revenue expected H2 Y1 due to 4-6 month sales cycles.*
 
@@ -940,8 +910,8 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 |--------|--------|--------|--------|---------------|
 | **Customers (Conservative)** | 2-3 | 8-10 | 18-22 | +5-6 net new/year |
 | **Customers (Base)** | 3-4 | 12-15 | 25-30 | +8-10 net new/year |
-| **Avg Seats/Customer** | 8 | 10 | 12 | Expansion within accounts |
-| **Net Revenue Retention** | N/A | 105% | 110% | Seat expansion, upsells |
+| **ARPA (avg monthly subscription)** | €2.5K | €3.0K | €3.5K | Expansion within accounts + tier upgrades |
+| **Net Revenue Retention** | N/A | 105% | 110% | Expansion and upsells |
 
 **Why These Numbers Are Achievable**:
 1. **Founder-led sales in Y1**: ~40 qualified conversations achievable by single founder
@@ -957,11 +927,11 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 *Assumes: slower sales cycles, lower conversion rates, extended pilot periods*
 
-| Year | Customers | Seats | ARR (EUR) | MRR (EUR) | Growth |
-|------|-----------|-------|-----------|-----------|--------|
-| **Y1** | 2 | 16 | 48,000 | 4,000 | — |
-| **Y2** | 8 | 80 | 200,000 | 16,667 | 317% |
-| **Y3** | 18 | 200 | 500,000 | 41,667 | 150% |
+| Year | Customers | ARR (EUR) | MRR (EUR) | Growth |
+|------|-----------|-----------|-----------|--------|
+| **Y1** | 2 | 48,000 | 4,000 | — |
+| **Y2** | 8 | 200,000 | 16,667 | 317% |
+| **Y3** | 18 | 500,000 | 41,667 | 150% |
 
 **Key Assumptions**:
 - Pilot→Paid conversion: 50% (vs 60% base)
@@ -970,11 +940,11 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 #### 8.3.2 Base Scenario
 
-| Year | Customers | Seats | ARR (EUR) | MRR (EUR) | Growth |
-|------|-----------|-------|-----------|-----------|--------|
-| **Y1** | 3 | 30 | 80,000 | 6,667 | — |
-| **Y2** | 12 | 130 | 360,000 | 30,000 | 350% |
-| **Y3** | 25 | 300 | 850,000 | 70,833 | 136% |
+| Year | Customers | ARR (EUR) | MRR (EUR) | Growth |
+|------|-----------|-----------|-----------|--------|
+| **Y1** | 3 | 80,000 | 6,667 | — |
+| **Y2** | 12 | 360,000 | 30,000 | 350% |
+| **Y3** | 25 | 850,000 | 70,833 | 136% |
 
 **Key Assumptions**:
 - Pilot→Paid conversion: 60%
@@ -984,11 +954,11 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 #### 8.3.3 Optimistic Scenario
 
-| Year | Customers | Seats | ARR (EUR) | MRR (EUR) | Growth |
-|------|-----------|-------|-----------|-----------|--------|
-| **Y1** | 5 | 50 | 130,000 | 10,833 | — |
-| **Y2** | 20 | 220 | 600,000 | 50,000 | 362% |
-| **Y3** | 45 | 500 | 1,400,000 | 116,667 | 133% |
+| Year | Customers | ARR (EUR) | MRR (EUR) | Growth |
+|------|-----------|-----------|-----------|--------|
+| **Y1** | 5 | 130,000 | 10,833 | — |
+| **Y2** | 20 | 600,000 | 50,000 | 362% |
+| **Y3** | 45 | 1,400,000 | 116,667 | 133% |
 
 **Key Assumptions**:
 - Strong product-market fit signals
@@ -1003,17 +973,17 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 *Assumes: significant headwinds, extended sales cycles, market downturn*
 
-| Year | Customers | Seats | ARR (EUR) | MRR (EUR) | Monthly Burn |
-|------|-----------|-------|-----------|-----------|--------------|
-| **Y1** | 1 | 8 | 24,000 | 2,000 | 35,000 |
-| **Y2** | 4 | 40 | 100,000 | 8,333 | 40,000 |
-| **Y3** | 10 | 110 | 280,000 | 23,333 | 45,000 |
+| Year | Customers | ARR (EUR) | MRR (EUR) | Monthly Burn |
+|------|-----------|-----------|-----------|--------------|
+| **Y1** | 1 | 24,000 | 2,000 | 35,000 |
+| **Y2** | 4 | 100,000 | 8,333 | 40,000 |
+| **Y3** | 10 | 280,000 | 23,333 | 45,000 |
 
 **Downside Scenario Assumptions**:
 - Only 40% pilot conversion rate
 - 8-10 month average sales cycle (market downturn)
 - Only 1 paying customer in Y1 (vs 3 base)
-- Minimal seat expansion (8 seats avg vs 10)
+- Minimal expansion within accounts in downside case
 
 #### 8.4.2 Contingency Measures
 
@@ -1264,11 +1234,11 @@ Series A Prep                                 ████████
 | **Founder/CTO** | Quantitative development, ML/RL research | Architecture, execution models, ML |
 
 **Demonstrated Capabilities**:
-- ~20k automated test functions (enterprise-grade quality)
-- 5 asset class integrations (designed for production use)
-- 7+ academic papers implemented
-- 6 implemented exchange integrations
-- 2+ years focused development
+- Extensive automated testing and CI validation
+- Multi-asset architecture (MVP support begins equities-first)
+- Research-backed models implemented from peer-reviewed literature
+- Multiple broker/data connectivity adapters
+- Multi-year focused development
 
 ### 10.2 Hiring Plan
 
@@ -1354,7 +1324,7 @@ Series A Prep                                 ████████
 
 | Risk | Probability | Impact | Mitigation |
 |------|-------------|--------|------------|
-| **Exchange API Changes** | Medium | Low | Adapter abstraction layer; 6 exchange support |
+| **Exchange API Changes** | Medium | Low | Adapter abstraction layer; monitored connectors and fast patch cadence |
 | **Model Degradation** | Low | Medium | Continuous retraining pipelines |
 | **Security Breach** | Low | High | SOC 2 roadmap; no client funds handled |
 | **System Downtime** | Low | High | Multi-region deployment, failover |
@@ -1484,166 +1454,32 @@ Our hiring plan is designed to meet and exceed EU startup visa job creation requ
 
 #### 12.1.2 EU Startup Visa Compliance Mapping
 
-Our job creation plan is specifically designed to meet and exceed the requirements of major EU startup visa programs.
+This section describes *how* we frame our eligibility in a visa/committee context. It is intentionally **non-legal**: visa/entrepreneur pathways differ by jurisdiction and case specifics.
 
-**Country-Specific Requirements Alignment**
+Most European startup/entrepreneur evaluation frameworks emphasize:
+1. **Innovation** (novelty and technical defensibility)
+2. **Business viability** (realistic market entry + revenue model)
+3. **Founder capability** (relevant experience and execution plan)
+4. **Economic contribution** (high-skilled job creation + ecosystem participation)
 
-| Country | Program | Job Requirement | Revenue Target | Our Y3 Status | Compliance |
-|---------|---------|-----------------|----------------|---------------|------------|
-| **Germany** | Self-Employment Visa | 5 jobs + €500K investment | Regional benefit | 22 jobs, €1.6M rev | ✓ **440% of target** |
-| **Ireland** | STEP (revised) | Demonstrated growth potential | Scalable model | 22 jobs, €1.6M rev | ✓ **Exceeds** |
-| **Netherlands** | Startup Visa | Economic contribution | Innovation focus | 22 jobs, €1.6M rev | ✓ **Strong fit** |
-| **France** | French Tech Visa | Job creation within 4 years | Via incubator | 22 jobs, €1.6M rev | ✓ **Exceeds** |
-| **Spain** | Startup Law (2023) | Job creation commitment | €1M+ operation | 22 jobs, €1.6M rev | ✓ **Exceeds** |
-| **Portugal** | Tech Visa | High-skilled employment | Tech focus | 22 jobs, €1.6M rev | ✓ **Strong fit** |
-| **Estonia** | Startup Visa | Growth potential | Scalable tech | 22 jobs, €1.6M rev | ✓ **Exceeds** |
+**How CustodiaCloud aligns**:
+- **Innovation**: risk-first ML (CVaR constraints) + CCEA separation (Cloud research/monitoring vs client-controlled execution).
+- **Viability**: equities-first beachhead + structured pilot program + B2B subscription model.
+- **Founder capability**: technical platform already built; focus now on customer validation and repeatable onboarding.
+- **Economic contribution**: direct hiring plan above plus planned partnerships and local ecosystem contribution (see Section 12.1.6+).
 
-**Germany Self-Employment Visa (§21 AufenthG) - Detailed Compliance**
-
-| Criterion | Requirement | Our Offer | Evidence |
-|-----------|-------------|-----------|----------|
-| **Economic Interest** | Regional/national benefit | AI/ML fintech innovation | Novel technology, EU-first |
-| **Local Need** | Product/service demand | Quantitative trading tools | €15B+ TAM in EU |
-| **Financing Secured** | Proof of capital | €300K+ runway | Bank statements, investor LOIs |
-| **Job Creation** | 5+ jobs typical | 12 by Y2, 22 by Y3 | Hiring plan above |
-| **Investment** | €500K reference | €1.6M by Y3 | Salary + infrastructure |
-| **Experience** | Relevant background | 10+ years fintech | Founder CV |
-
-**Ireland STEP Program - Detailed Compliance**
-
-| Criterion | Typical Expectation | Our Offer | Status |
-|-----------|---------------------|-----------|--------|
-| **Jobs in 3-4 years** | 10 jobs | 22 jobs by Y3 | ✓ **220% of target** |
-| **Revenue** | €1M in 3-4 years | €1.6M by Y3 | ✓ **160% of target** |
-| **Funding** | €75K+ available | €300K+ runway | ✓ **400% of minimum** |
-| **Scalable** | High-growth potential | SaaS, B2B, multi-market | ✓ |
-| **Innovation** | Novel technology | First CVaR-RL trading platform | ✓ |
-| **EU Market** | European focus | Primary market | ✓ |
-
-**Netherlands Startup Visa - Detailed Compliance**
-
-| Criterion | Requirement | Our Offer | Evidence |
-|-----------|-------------|-----------|----------|
-| **Innovation** | New to NL market | AI trading platform | No comparable Dutch solution |
-| **Facilitator** | Endorsed sponsor | Planned: Startupbootcamp | Partner discussions |
-| **Step-by-Step Plan** | Business plan | This document | Comprehensive plan |
-| **Financial Resources** | €13,000+ per person | €300K+ runway | Bank proof |
-| **Founder Commitment** | Full-time engagement | 100% dedicated | Founder statement |
+We will select a primary host country (e.g., Netherlands/France/Germany) based on the availability of an approved facilitator/incubator (where applicable), customer proximity, and counsel guidance.
 
 ---
 
-#### 12.1.3 Job Multiplier Effect Analysis
+#### 12.1.3 Broader Economic Contribution (Qualitative)
 
-High-tech job creation generates significant indirect and induced employment. Academic research validates a strong multiplier effect for technology sector jobs in Europe.
+Beyond direct hiring, CustodiaCloud’s EU presence is expected to contribute through:
+- **Local supply chain spend**: legal/accounting, cloud and security vendors, recruiting, events, and workspace (country-dependent).
+- **Skills development**: training, mentorship, and knowledge transfer through internships and university collaboration (see Section 12.1.6).
+- **Ecosystem participation**: conferences, meetups, and partnerships that strengthen the host country’s fintech/AI community (see Section 12.1.7).
 
-**Research-Based Multiplier Effects**
-
-| Source | Multiplier | Geography | Methodology |
-|--------|------------|-----------|-------------|
-| **Goos, Konings, Vandeweyer (2015)** | 5.0x | EU-wide | Econometric analysis |
-| **Moretti (2010)** | 4.3x | US (comparable) | Local labor markets |
-| **European Commission (2021)** | 3.5-5.5x | EU tech sector | Input-output analysis |
-| **McKinsey Global Institute** | 4.0-5.0x | Advanced economies | Case studies |
-
-*Primary Reference: Goos, Maarten, Jozef Konings, and Marieke Vandeweyer. "High-technology employment in the European Union." VoxEU.org, October 2015.*
-
-**Our Projected Indirect Job Creation (Conservative 4.5x Multiplier)**
-
-| Year | Direct Jobs | Indirect/Induced Jobs | Total Employment Impact |
-|------|-------------|----------------------|------------------------|
-| **Year 1** | 5 | 23 | **28 jobs** |
-| **Year 2** | 12 | 54 | **66 jobs** |
-| **Year 3** | 22 | 99 | **121 jobs** |
-| **Year 4** | 35 | 158 | **193 jobs** |
-| **Year 5** | 50 | 225 | **275 jobs** |
-
-**Categories of Indirect Job Creation**
-
-| Category | Description | Estimated Share |
-|----------|-------------|-----------------|
-| **Professional Services** | Lawyers, accountants, consultants | 20% |
-| **Technology Services** | Cloud providers, software vendors | 25% |
-| **Facilities & Real Estate** | Office space, utilities, maintenance | 15% |
-| **Hospitality & Retail** | Restaurants, shops, services near office | 20% |
-| **Transportation** | Commuting services, logistics | 10% |
-| **Education & Training** | Universities, bootcamps, certification | 10% |
-
-**Local Supply Chain Impact**
-
-| Expense Category | Annual Spend (Y3) | Local Sourcing % | Local Impact |
-|------------------|-------------------|------------------|--------------|
-| **Office Rent** | €150,000 | 100% | €150,000 |
-| **Professional Services** | €100,000 | 80% | €80,000 |
-| **IT Infrastructure** | €75,000 | 60% | €45,000 |
-| **Marketing/Events** | €50,000 | 70% | €35,000 |
-| **Travel/Hospitality** | €40,000 | 90% | €36,000 |
-| **Other Operations** | €35,000 | 85% | €29,750 |
-| **Total** | **€450,000** | **84%** | **€375,750** |
-
----
-
-#### 12.1.4 Comprehensive Tax Revenue Contribution
-
-**Direct Tax Contributions (5-Year Projection)**
-
-| Tax Category | Y1 | Y2 | Y3 | Y4 | Y5 | 5-Year Total |
-|--------------|----|----|----|----|----|--------------|
-| **Payroll Taxes (Employer)** | €75,000 | €186,000 | €352,000 | €577,500 | €850,000 | **€2,040,500** |
-| **Income Tax (Employee)** | €90,000 | €223,200 | €422,400 | €693,000 | €1,020,000 | **€2,448,600** |
-| **Social Security** | €56,250 | €139,500 | €264,000 | €433,125 | €637,500 | **€1,530,375** |
-| **VAT on Services** | €18,000 | €72,000 | €160,000 | €280,000 | €400,000 | **€930,000** |
-| **Corporate Tax** | €0 | €0 | €48,000 | €96,000 | €150,000 | **€294,000** |
-| **Total Direct Taxes** | **€239,250** | **€620,700** | **€1,246,400** | **€2,079,625** | **€3,057,500** | **€7,243,475** |
-
-*Assumptions: Netherlands tax rates - 32.9% employer contributions, 37.35% avg income tax, VAT 21%, corporate tax 25.8%*
-
-**Tax Revenue Methodology**
-
-| Component | Calculation Basis | Rate Applied |
-|-----------|-------------------|--------------|
-| **Employer Payroll Tax** | Gross salaries × social contribution rate | 20% of gross |
-| **Employee Income Tax** | Gross salaries × effective rate | 24% average |
-| **Social Security** | Gross salaries × combined rate | 15% combined |
-| **VAT** | Services revenue × standard rate | 21% (Netherlands) |
-| **Corporate Tax** | Taxable profit × rate | 25.8% (>€395K) |
-
-**Comparison to Public Investment**
-
-| Metric | Value | Comparison |
-|--------|-------|------------|
-| **5-Year Tax Contribution** | €7.2M+ | = Funding 144 teachers* |
-| **Tax per Employee (Y5)** | €61,150 | = 2x average worker |
-| **Tax Efficiency Ratio** | 1.7x | Tax revenue vs. salary cost |
-
-*Based on average EU teacher salary of €50,000/year*
-
----
-
-#### 12.1.5 GDP and Economic Output Contribution
-
-**Direct Gross Value Added (GVA)**
-
-| Year | Revenue | Operating Costs | GVA | As % of Startup Sector** |
-|------|---------|-----------------|-----|-------------------------|
-| **Y1** | €180,000 | €420,000 | €180,000 | 0.001% |
-| **Y2** | €720,000 | €1,050,000 | €350,000 | 0.002% |
-| **Y3** | €1,600,000 | €2,000,000 | €750,000 | 0.004% |
-| **Y4** | €2,800,000 | €3,200,000 | €1,300,000 | 0.006% |
-| **Y5** | €4,000,000 | €4,500,000 | €2,000,000 | 0.010% |
-
-*GVA = Revenue + Value of services produced - Intermediate consumption*
-**Based on EU startup sector valued at €20B annually*
-
-**Total Economic Impact (Direct + Indirect + Induced)**
-
-| Year | Direct GVA | Multiplier | Total Economic Impact |
-|------|------------|------------|----------------------|
-| **Y1** | €180,000 | 2.5x | €450,000 |
-| **Y2** | €350,000 | 2.5x | €875,000 |
-| **Y3** | €750,000 | 2.5x | €1,875,000 |
-| **Y4** | €1,300,000 | 2.5x | €3,250,000 |
-| **Y5** | €2,000,000 | 2.5x | €5,000,000 |
-| **5-Year Cumulative** | **€4,580,000** | | **€11,450,000** |
+We intentionally avoid presenting “multiplier” and tax-revenue calculations as fixed facts; these depend on jurisdiction, profitability, and realized growth.
 
 ---
 
@@ -1756,10 +1592,7 @@ High-tech job creation generates significant indirect and induced employment. Ac
 4. McKinsey Global Institute (2019). "The Future of Work in Europe."
 5. Eurostat (2023). "ICT Specialists in Employment."
 6. PayScale/Ravio (2024). "European Tech Salary Report."
-7. Enterprise Ireland STEP Program Guidelines.
-8. Netherlands Enterprise Agency Startup Visa Requirements.
-9. German Federal Employment Agency §21 AufenthG Guidelines.
-10. French Tech Visa Program Requirements (Business France).
+7. Official startup/entrepreneur program pages for the chosen host country (jurisdiction-dependent).
 
 ### 12.2 Innovation Criteria Compliance
 
@@ -1771,15 +1604,15 @@ High-tech job creation generates significant indirect and induced employment. Ac
 |-----------|----------|
 | **New Technology** | Production-oriented CVaR-constrained RL for trading |
 | **Academic Foundation** | 7+ peer-reviewed papers implemented |
-| **Technical Depth** | ~20k automated test functions, 100,000+ lines of code |
-| **Not Copycat** | Features unavailable in QuantConnect, Alpaca, or Zipline |
+| **Technical Depth** | Large production codebase with extensive automated tests and CI validation |
+| **Differentiation** | Risk-first ML + CCEA boundary + governance/evidence exports (not a direct clone of retail/prosumer platforms) |
 
 **Comparison to Existing Solutions**:
 
 | Aspect | Existing Solutions | Our Platform |
 |--------|-------------------|--------------|
 | **Risk Optimization** | Maximize average return | Maximize return with CVaR constraint |
-| **Execution Modeling** | Fixed 2-5 bps | Dynamic 6-9 factors |
+| **Execution Modeling** | Simplified fixed-cost models | Dynamic 6-9 factor model (where applicable) |
 | **Uncertainty** | Assumed known | Conformal prediction bounds |
 | **Learning Stability** | Catastrophic forgetting | Continual learning (UPGD) |
 
@@ -1904,16 +1737,18 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 ### Appendix E: MiFID II Compliance Checklist
 
-| Requirement | Article | Our Support |
+*Note: This checklist is informational and describes design intent. CustodiaCloud is a software/ICT provider; clients remain responsible for their compliance program and legal interpretation.*
+
+| Requirement | Reference | How CustodiaCloud can support |
 |-------------|---------|-------------|
 | Systems and risk controls | Art. 17(1) | Built-in risk guards, kill switch |
 | Appropriate trading thresholds | Art. 17(1) | Configurable limits |
 | Business continuity | Art. 17(1) | Multi-region deployment |
 | Pre-trade controls | RTS 6 | Price, volume, value limits |
-| Market making obligations | Art. 17(3) | Market making module |
+| Market making obligations | Art. 17(3) | Customer strategy responsibility (not a product commitment) |
 | Record keeping | Art. 17(2) | Full audit trail |
-| Testing requirements | RTS 6 | ~20k automated test functions |
-| Surveillance | Art. 17(1) | Anomaly detection |
+| Testing requirements | RTS 6 | Automated tests + backtesting/simulation + evidence exports |
+| Surveillance | Art. 17(1) | Audit logs and monitoring hooks; clients run surveillance where applicable |
 
 ### Appendix F: Glossary
 
@@ -1954,8 +1789,8 @@ High-tech job creation generates significant indirect and induced employment. Ac
 **Addressable Market Calculation (Amsterdam)**:
 - Tier 2-3 firms: ~15-20 firms
 - Average target size: 25 traders
-- Platform license: EUR 2,500/seat/month = EUR 62,500/month/firm
-- **Amsterdam TAM**: EUR 937K-1.25M/month = EUR 11.25-15M/year
+- Platform subscription (illustrative): EUR 3,000–5,000/month per firm
+- **Amsterdam TAM (illustrative)**: EUR 45K–100K/month = EUR 0.54M–1.2M/year
 
 #### G.2 Secondary European Hubs
 
@@ -1981,20 +1816,20 @@ High-tech job creation generates significant indirect and induced employment. Ac
 
 **MiFID II Competitive Advantage**:
 
-| Requirement | How We Address | QuantConnect Gap |
-|-------------|----------------|------------------|
-| Pre-trade risk controls | risk_guard.py, configurable limits | Manual implementation |
-| Algorithm testing | ~20k automated test functions | User responsibility |
-| Market manipulation detection | Anomaly detection built-in | Not provided |
-| Order-to-trade ratios | Built-in monitoring | Not provided |
-| Kill switch | ops_kill_switch.py | Basic support |
-| Audit trail | Full logging system | Basic logs |
+| Requirement | How CustodiaCloud can support | Notes |
+|-------------|------------------------------|-------|
+| Pre-trade risk controls | Configurable limits + hard caps enforced in the client-controlled Agent | Client defines thresholds |
+| Algorithm testing | Automated testing support + backtesting/simulation tooling | Counts vary; evidence exportable |
+| Surveillance / monitoring | Audit trails and monitoring hooks (where applicable) | Clients run surveillance programs |
+| Order-to-trade style monitoring | Exportable telemetry and logs | Scope depends on strategy/venue |
+| Kill switch | Kill-switch capability enforced locally | Operational process remains client responsibility |
+| Audit trail | Full audit trail with export tooling | Supports record-keeping needs |
 
 **ESMA Regulatory Trends (2024-2025)**:
 - Increased scrutiny on algorithmic trading controls, governance, and auditability
 - Focus on AI/ML governance in trading
 - Transaction cost reporting requirements
-- Our position: Built-in TCA reporting ahead of regulatory requirements
+- Our position: Evidence exports and TCA tooling to support client governance where applicable
 
 #### G.4 European vs. US Platform Comparison
 
@@ -2050,19 +1885,19 @@ High-tech job creation generates significant indirect and induced employment. Ac
 #### G.7 Competitive Win Scenarios
 
 **Scenario 1: QuantConnect User Outgrowing Platform**
-- **Trigger**: User strategies hit execution limitations (fixed slippage overestimates fill quality)
+- **Trigger**: Team needs more realistic execution-cost modeling and stronger governance/evidence exports
 - **Our Message**: "Graduate to institutional-grade execution modeling"
-- **Proof Point**: 8-9 factor dynamic TCA vs. 2-5 bps fixed
+- **Proof Point**: Multi-factor TCA + sim-to-live parity instrumentation and monitoring hooks
 
 **Scenario 2: In-House Build Decision Point**
 - **Trigger**: Firm considering 12-month platform build
-- **Our Message**: "Why spend EUR 500K-1.5M when you can deploy in 2-4 weeks for EUR 20K-55K/year?"
-- **Proof Point**: ~20k tests, 2+ years development, maintained by vendor
+- **Our Message**: "Why spend EUR 500K-1.5M building core infrastructure when you can deploy in weeks on a predictable subscription?"
+- **Proof Point**: Production architecture + governance boundary + extensive automated tests and documentation (available under NDA)
 
 **Scenario 3: Bloomberg Budget Rejection**
 - **Trigger**: CFO rejects EUR 250K+ Bloomberg AIM proposal
 - **Our Message**: "Same institutional capabilities, 80-90% less cost"
-- **Proof Point**: L3 LOB simulation, CVaR optimization, multi-asset
+- **Proof Point**: Client-controlled execution boundary + risk-first ML + deployment and evidence workflows
 
 ---
 

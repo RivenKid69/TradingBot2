@@ -35,6 +35,17 @@ This is how CustodiaCloud is designed to support EU-facing deployments. Regulato
 
 Naming intent: **CustodiaCloud** refers to custody/control staying with the customer (via the Agent). It does **not** imply that we custody assets, keys, or credentials.
 
+## Messaging Guardrails (Visa/Investor-Facing)
+
+Use these rules to avoid regulatory, legal, and credibility issues in external narratives:
+
+- **B2B only**: we target professional trading organizations (prop firms/funds). We do **not** target retail consumers.
+- **No investment advice**: do not describe CustodiaCloud as “giving recommendations”, “managing portfolios”, or “making trades” for customers.
+- **No execution service**: Cloud does not send orders (or order payloads). Execution occurs only via the customer-controlled Agent and the customer’s own broker accounts.
+- **No certification claims**: avoid “MiFID compliant”, “DORA compliant”, “GDPR certified”, “EU AI Act compliant”. Use “designed to support”, “evidence exports”, “privacy-by-design”, and “vendor due diligence friendly”.
+- **No performance promises**: avoid language implying guaranteed returns, risk elimination, or “will prevent losses”.
+- **Data licensing**: customers remain responsible for market data licenses/terms; CustodiaCloud is designed to work with bring-your-own data providers.
+
 ---
 
 ## 2) MVP and Beachhead (equities-first)

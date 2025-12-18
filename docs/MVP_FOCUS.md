@@ -34,7 +34,7 @@
 
 ## The One Problem We Solve
 
-**Proprietary trading firms spend 6-12 months building infrastructure before deploying their first strategy.**
+**Proprietary trading firms often spend 6-12 months building infrastructure before deploying their first strategy.**
 
 This is our singular focus. Everything in MVP serves this problem — while maintaining strict Cloud/Agent separation for regulatory safety.
 
@@ -159,7 +159,7 @@ Note: the platform is **multi-asset by design**. MVP commercial support and posi
 
 **Before Our Product:**
 - 6-12 months to build execution infrastructure
-- €200K-500K in development costs
+- €200K-1.8M+ in development costs (team- and scope-dependent)
 - Risk management built as afterthought
 - Backtesting accuracy questionable
 - Regulatory uncertainty (who controls trading?)

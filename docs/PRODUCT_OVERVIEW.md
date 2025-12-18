@@ -6,6 +6,8 @@
 
 > **Architecture**: CCEA (Cloud-Controlled Execution Architecture) | **Regulatory Posture**: software/ICT provider by design (MiFID II/DORA-aware; AI governance by design)
 
+**Audience**: B2B only (professional trading organizations). CustodiaCloud does not provide investment advice and does not execute trades on behalf of customers.
+
 ---
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
@@ -34,6 +36,7 @@ Our platform implements **CCEA** - a strict security separation:
 - We provide software/tools; customers trade through **their own** broker accounts via **their own** Agent
 - Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
 - Regulatory classification depends on activities and jurisdiction; this is **not legal advice**
+- Customers remain responsible for market data licensing/terms (CustodiaCloud supports bring-your-own data providers)
 
 ## Asset Coverage (Foundation vs MVP)
 
@@ -54,22 +57,22 @@ Our platform implements **CCEA** - a strict security separation:
 
 ## The Problem
 
-**Algorithmic trading firms spend 6-12 months building infrastructure before deploying their first strategy.**
+**Algorithmic trading firms often spend 6-12 months building infrastructure before deploying their first strategy.**
 
 Current solutions are inadequate:
 
 | Solution | Limitation |
 |----------|------------|
-| **QuantConnect** | Basic execution models, no risk-aware ML |
-| **Alpaca** | Broker only, no intelligence |
-| **In-house development** | €200K-500K cost, 12+ months |
+| **QuantConnect** | Strong developer platform; governance/evidence exports and client-controlled execution boundaries are typically engineered in-house for institutional use |
+| **Alpaca** | Broker/API connectivity (not a full research + deployment + governance platform) |
+| **In-house development** | €200K-1.8M+ cost, 12+ months (team- and scope-dependent) |
 | **Academic tools** | Not deployment-ready |
 
 ---
 
 ## Our Solution
 
-**A platform that reduces trading infrastructure development from months to days, with built-in risk management unavailable elsewhere.**
+**A platform that reduces trading infrastructure development from months to days, with risk-first tooling built in.**
 
 ### Core Innovation: Risk-Aware Execution
 
@@ -83,7 +86,7 @@ Instead of: maximize E[Return]
 We solve:   maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 ```
 
-**Result**: Strategies that avoid large drawdowns, not just maximize gains.
+**Result (intent)**: strategies that penalize tail-risk outcomes, not just maximize average returns.
 
 **Academic basis**: Chow et al. (2015, JMLR), Dabney et al. (2018, AAAI)
 
@@ -93,7 +96,7 @@ We solve:   maximize E[Return] subject to CVaR₅%[Return] ≥ threshold
 
 ### Foundation Built — Now Testing with Customers
 
-We have completed the technical foundation. Our focus now is **customer validation**, not feature expansion.
+We have implemented the core technical foundation. Our focus now is **customer validation**, not feature expansion.
 
 | Phase | Status | Focus |
 |-------|--------|-------|

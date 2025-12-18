@@ -36,19 +36,19 @@
 
 ## Executive Summary
 
-**Our Beachhead**: Mid-size European systematic equity funds (€10M-200M AUM) in the UK/EU who need institutional-grade risk management and compliance-supporting algorithmic trading infrastructure — deployed via **CCEA architecture** for clear regulatory boundaries.
+**Our Beachhead**: Professional EU/UK systematic equities teams (prop firms and small funds) that need institutional-grade risk management and governance/evidence tooling — deployed via **CCEA architecture** for clear Cloud/Agent boundaries.
 
 **Why Equities First**:
 - **Institutional credibility**: Equities are the language of serious capital markets
 - **Regulatory alignment**: MiFID II, MAR, DORA, GDPR alignment focus demonstrates maturity
-- **Risk-first positioning**: Our CVaR-RL technology addresses the #1 institutional concern
+- **Risk-first positioning**: Our CVaR-RL approach addresses a core institutional concern: drawdown and tail risk
 - **CCEA advantage**: Clear "Cloud = research tools, Agent = your execution" story resonates with compliance officers
 
 **Why This Focus Matters**: While the architecture is multi-asset by design, we deliberately lead with **institutional equity trading** because:
 
 1. **Credibility with allocators**: Pension funds, family offices, and fund-of-funds evaluate technology partners based on equity track records
-2. **Regulatory proof**: MiFID II Article 17 requirements for algo trading are non-negotiable for EU institutional clients
-3. **Risk management differentiation**: Our CVaR-RL engine is unique in the market — this advantage is most visible in equity drawdown control
+2. **Regulatory proof**: MiFID II Article 17-style expectations make governance, controls, and evidence exports non-negotiable for many professional clients
+3. **Risk management differentiation**: CVaR-constrained training is a differentiated approach when integrated into deployment workflows; the value is most visible in drawdown control
 4. **Expansion pathway**: Once established in equities, we expand to adjacent listed derivatives (e.g., futures) and other asset classes based on validated demand
 
 ---
@@ -83,22 +83,22 @@ The "chasm" is the gap between early adopters (who buy on vision) and the mainst
 
 | Attribute | Specification | Rationale |
 |-----------|---------------|-----------|
-| **Firm Type** | Systematic/quantitative funds (own capital or third-party) | Sophisticated buyers who evaluate technology rigorously |
-| **Size** | €10M-200M AUM | Large enough to pay enterprise pricing, small enough for direct sales |
+| **Firm Type** | Professional systematic equities teams (prop firms + small funds) | Sophisticated buyers who evaluate technology rigorously |
+| **Size** | 5-50 person teams (capital/AUM varies) | Large enough to pay, small enough for direct sales |
 | **Asset Class** | European/US equities (Interactive Brokers) | Institutional credibility, regulatory familiarity |
 | **Geography** | UK, Ireland, Luxembourg, Netherlands | MiFID II jurisdiction, English-speaking, strong fund ecosystem |
-| **Regulatory Status** | AIFM-licensed or FCA-regulated | Compliance-conscious buyers value our MiFID II alignment |
+| **Regulatory Status** | Regulated or compliance-conscious buyers | Governance/evidence exports reduce procurement friction |
 | **Technology** | Upgrading from Excel/Python scripts to production infrastructure | Clear pain point we solve |
-| **Budget** | €3,000-10,000/month | Validated willingness to pay for institutional-grade tools |
+| **Budget** | €2,000-5,000/month (initial) | Budget scales with adoption and support level |
 | **Deployment** | BYO host (VPS/on-prem) for Agent | CCEA requirement: execution in client environment |
 
 ### CCEA Deployment Model for Beachhead
 
 | Product Mode | Description | Target Segment |
 |--------------|-------------|----------------|
-| **Retail Research SaaS** | Cloud research + optional Agent | Quants evaluating strategies |
-| **Retail Live via Local Agent** | Full deployment with local execution | Active trading firms |
-| **Enterprise Engine** | On-prem/VPC, all in client infra | Regulated funds (AIFM, UCITS) |
+| **Pro Research SaaS** | Cloud research + optional Agent | Systematic teams evaluating strategies |
+| **Pro Live via Customer Agent** | Full deployment with local execution | Active trading firms |
+| **Enterprise Engine** | On-prem/VPC, all in client infra | Regulated funds and larger institutions |
 
 ### Why Equities First (Visa/Investor Narrative)
 
@@ -148,10 +148,10 @@ The mid-market systematic fund has a specific, unsolved problem:
 |------|------------------|--------------|
 | **Drawdown control** | Simple stop-losses | No tail risk awareness |
 | **Position sizing** | Fixed percentages | Ignores volatility regime |
-| **Regulatory reporting** | Manual Excel | MiFID II Art.17 requires algo-level monitoring |
+| **Regulatory reporting** | Manual Excel | Regulated firms typically need governance, monitoring, and evidence exports |
 | **Backtest-to-live gap** | "It worked in backtest" | No sim-to-live parity measurement |
 
-**Our Solution**: CVaR-aware position sizing with regulatory-alignment focused risk monitoring solves ALL of these.
+**Our Solution**: CVaR-aware position sizing with governance-oriented monitoring and evidence exports addresses these failure modes.
 
 #### 2. Word-of-Mouth Network Exists
 
@@ -172,12 +172,12 @@ The European systematic fund community is **tight-knit and networked**:
 | Competitor | Focus | Gap We Fill |
 |------------|-------|-------------|
 | **Bloomberg Terminal** | Data + analytics | Not a trading platform, €24K/year per seat |
-| **QuantConnect** | Retail algo trading, education | No institutional-grade risk management |
+| **QuantConnect** | Developer platform + community | Institutional controls/evidence typically built in-house |
 | **Alpaca** | Broker/API, US equities | Not a full platform, no risk engine |
 | **Eze Software** | Enterprise OMS/EMS | €500K+ implementation, not for SMB |
 | **In-house** | Custom Python/R scripts | No institutional-grade risk controls |
 
-**No competitor has focused on the mid-market systematic fund with CVaR-based risk management.** This is our "unoccupied beachhead."
+**Observation**: Few solutions combine (1) risk-first ML, (2) deployment tooling, and (3) a clear Cloud/Agent boundary for compliance narratives at mid-market price points.
 
 #### 4. Market Size Validation
 
@@ -185,19 +185,18 @@ The European systematic fund community is **tight-knit and networked**:
 |--------|------|--------|
 | **European AUM (alternative assets)** | €2.5T (2024) | EFAMA |
 | **Systematic/quant funds (EU)** | €350B AUM | HFR Global Hedge Fund Report |
-| **Mid-market funds (€10M-200M AUM)** | 2,500-4,000 funds | Preqin |
+| **Mid-market systematic funds** | Meaningful EU presence | Multiple industry sources (definition varies) |
 | **Technology budget (% of AUM)** | 0.5-1.5% | Deloitte "Cost of Running a Hedge Fund" |
 
-**Market Size Estimate (Beachhead)**:
-- 2,500-4,000 mid-market systematic funds in EU
-- 20% addressable with quantitative equity focus = 500-800 funds
-- At €5,000/month average: **€30-48M ARR** opportunity in beachhead alone
+**Market Size (Beachhead, illustrative)**:
+- Addressable customers are plausibly in the **hundreds** across EU/UK, depending on how “systematic” and “mid-market” are defined.
+- Pricing and adoption vary by segment; early focus is on reference customers and repeatable onboarding rather than top-down ARR claims.
 
 #### 5. Regulatory Alignment (Key Differentiator)
 
 | Regulation | Client Requirement | Our Controls & Evidence | CCEA Advantage |
 |------------|-------------|----------------|----------------|
-| **MiFID II Article 17** | Algo trading controls, kill switch, testing evidence | Kill switch + pre-trade risk checks + audit logs | Kill switch enforced in Agent (local enforcement) |
+| **MiFID II (algo-trading controls)** | Controls, governance, testing, and record-keeping | Pre-trade risk checks, kill switch, audit logs, evidence exports | Enforcement in Agent (local enforcement) |
 | **MAR 596/2014** | Market abuse monitoring and controls | Audit trails + monitoring signals (where applicable) | Audit logs in both Cloud and Agent |
 | **DORA** | ICT risk management and third-party oversight | Evidence exports, change control posture, security roadmap | Clear Cloud/Agent boundary aids vendor assessment |
 | **ESMA Guidelines** | Testing/validation expectations for algo trading | Sim-to-live parity metrics + backtesting validation tooling | Sim in Cloud, live in Agent (separation) |
@@ -230,7 +229,7 @@ Note: these are **design commitments** and documentation hooks that support a cl
 
 ### CVaR-RL: The Technical Moat
 
-**Conditional Value-at-Risk (CVaR)** is the gold standard for institutional risk measurement — it captures tail risk that VaR misses.
+**Conditional Value-at-Risk (CVaR)** is a widely used institutional tail-risk metric — it captures tail risk that VaR can miss.
 
 **Our Innovation**: We embedded CVaR directly into the reinforcement learning reward function, so the AI **learns to avoid tail risk**, not just maximize returns.
 
@@ -243,9 +242,9 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 
 | Buyer Concern | Our Answer |
 |---------------|------------|
-| "What if it blows up?" | CVaR-aware policy won't take tail-risk bets |
+| "What if it blows up?" | Policy is trained to penalize tail-risk outcomes and respect hard caps |
 | "How do I explain to my investors?" | Industry-standard risk metrics (CVaR, Sharpe, Max DD) |
-| "Is it tested?" | ~20k automated test functions + sim-to-live parity monitoring |
+| "Is it tested?" | Extensive automated tests + sim-to-live parity instrumentation |
 | "Is it compliant?" | Controls + audit trails designed to support MiFID II-style expectations (client-run compliance review) |
 
 ### Risk Metrics Dashboard (MVP Feature)
@@ -253,9 +252,9 @@ Our CVaR-RL:       Maximize E[returns] - λ×CVaR  → Risk-aware by constructio
 | Metric | Description | Regulatory Relevance |
 |--------|-------------|----------------------|
 | **Real-time CVaR** | 95% worst-case loss estimate | ESMA algo trading guidelines |
-| **Drawdown Monitor** | Rolling max drawdown with alerts | MiFID II Art.17 risk controls |
-| **Position Sizing** | Volatility-adjusted, CVaR-constrained | Risk control evidence (MiFID II Art.17-style expectations) |
-| **Kill Switch Status** | One-click halt all trading | Kill switch expectation (MiFID II Art.17-style controls) |
+| **Drawdown Monitor** | Rolling max drawdown with alerts | Risk control evidence (MiFID II-style expectations) |
+| **Position Sizing** | Volatility-adjusted, CVaR-constrained | Risk control evidence (MiFID II-style expectations) |
+| **Kill Switch Status** | One-click halt all trading | Kill-switch control (MiFID II-style expectations) |
 | **Sim-to-Live Parity** | Confidence bounds on backtest vs live | ESMA testing requirements |
 
 ---
@@ -312,9 +311,9 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 |------------|--------------|-----------|--------------|--------|----------|
 | **CVaR Risk Management** | ✅ Built-in | ❌ Separate tools | ❌ None | ❌ None | ❌ Build from scratch |
 | **MiFID II Alignment** | ✅ Designed-in | ⚠️ Manual setup | ❌ US-centric | ❌ US-centric | ❓ Depends |
-| **Execution Modeling** | Multi-factor TCA | Via EMSX | Fixed spread | Basic | Varies |
+| **Execution Modeling** | Multi-factor TCA | Via EMSX | Varies (often requires custom work) | N/A (broker API) | Varies |
 | **Time to Live** | Days | Months | Weeks | Weeks | 6-12 months |
-| **Price Point** | €3-10K/month | €24K+/seat/year | Free-$250/month | Free-$99/month | €200K+ build cost |
+| **Price Point** | €2-5K/month (typical) | €24K+/seat/year | Low-cost tiers | Low-cost tiers | €200K+ build cost |
 | **Target Customer** | SMB Institutional | Enterprise | Retail/prosumer | Retail/SMB | Enterprise |
 
 ### Positioning Statement
@@ -342,7 +341,7 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 
 1. **Cross-Sell Potential**: Equity fund adds macro overlay with CME futures → upsell
 2. **Technology Reuse**: Same CVaR engine, same risk dashboard, different asset class
-3. **Competitive Barrier**: 2+ years of development, ~20k automated test functions, 5+ exchange integrations = hard to replicate
+3. **Competitive Barrier**: Deep systems engineering + risk research + evidence tooling is time-consuming to replicate
 4. **Regulatory Ready**: Single compliance mapping framework covers MiFID II and adjacent regulations as we expand scope
 
 ### How We Communicate This
@@ -440,16 +439,16 @@ PHASE 3: EXPANSION (DEMAND-DRIVEN)
 ### Q: How do you know this beachhead is big enough?
 
 **A**:
-- **2,500-4,000 mid-market systematic funds** in EU
-- **€30-48M ARR** opportunity in beachhead segment alone
-- **Big enough to matter, small enough to lead** (Moore's criterion)
+- We see a plausible **hundreds-scale** target set across EU/UK depending on the definition of “systematic” and “mid-market”.
+- The goal in Phase 1–2 is **reference customers + repeatable onboarding**, not maximizing top-down TAM figures.
+- **Big enough to matter, small enough to lead** (Moore's criterion).
 
 ### Q: Won't larger competitors just copy your CVaR approach?
 
 **A**: CVaR is not new. Our moat is **integration**: CVaR embedded in the RL training loop, not bolted on as a post-hoc filter. This requires:
 - 2+ years of research (published academic references)
-- ~20k automated test functions validating behavior
-- Sim-to-live parity measurement (unique to us)
+- Extensive automated testing and QA instrumentation
+- Sim-to-live parity instrumentation and monitoring hooks
 
 Copying requires recreating our research and testing infrastructure — an 18-24 month effort.
 
