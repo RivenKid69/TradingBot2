@@ -6,11 +6,11 @@ This document addresses the primary concern of enterprise adoption risk: **Will 
 
 The answer is **yes**, and here's why:
 
-1. **Zero Data Exposure**: On-premises and VPC deployment options ensure client trading strategies and data never leave their infrastructure
-2. **Battle-Tested Foundation**: Built on proven frameworks (Nautilus Trader patterns, SB3) with 11,000+ automated tests
-3. **European Regulatory Alignment**: Architecture designed to support MiFID II, GDPR, and DORA alignment
-4. **Enterprise-Grade Security**: Multi-layer security with audit trails, kill switches, and SOC 2 certification roadmap (not yet certified)
-5. **Modular Integration**: Pluggable architecture that extends existing workflows rather than replacing them
+1. **Zero Data Exposure**: On-premises and VPC deployment options designed to ensure client trading strategies and data never leave their infrastructure
+2. **Test-Mature Foundation**: Built on proven frameworks (Nautilus Trader patterns, SB3) with automated test suite (verify via `pytest`; no customer production usage yet)
+3. **European Regulatory Alignment**: Architecture designed to support MiFID II, GDPR, and DORA alignment (not certified; clients run their own compliance assessment)
+4. **Designed for Enterprise Security**: Multi-layer security design with audit trails, kill switches, and SOC 2 certification roadmap (not yet certified; target 2027)
+5. **Modular Integration**: Pluggable architecture designed to extend existing workflows rather than replacing them
 
 ---
 
@@ -23,7 +23,7 @@ The answer is **yes**, and here's why:
 5. [Integration Capabilities](#integration-capabilities)
 6. [Enterprise Support & Custom Development](#enterprise-support--custom-development)
 7. [External Validation & Certifications](#external-validation--certifications)
-8. [Battle-Tested Foundation](#battle-tested-foundation)
+8. [Test-Mature Foundation](#test-mature-foundation)
 9. [Risk Mitigation Strategies](#risk-mitigation-strategies)
 10. [Implementation Roadmap](#implementation-roadmap)
 
@@ -39,7 +39,7 @@ Prop trading firms have legitimate concerns about adopting external software:
 |---------|--------------|
 | **"Our strategies are our competitive edge"** | On-premises deployment - your data never leaves your servers |
 | **"Startups may disappear"** | Open architecture, no vendor lock-in, source code escrow options |
-| **"We need 99.99% uptime"** | Multi-region failover, comprehensive monitoring, 24/7 support tier |
+| **"We need 99.99% uptime"** | Multi-region failover design, comprehensive monitoring (planned), 24/7 support tier (planned; pending 4+ FTE on-call team; actual coverage per executed agreement) |
 | **"Regulatory compliance is critical"** | MiFID II-aligned audit trails, GDPR-aligned data handling |
 | **"Integration with existing systems"** | REST/WebSocket APIs, FIX protocol support, modular adapters |
 | **"We need control over updates"** | Customer-controlled update cycles, staging environments |
@@ -697,38 +697,44 @@ For our first 5 enterprise customers, we offer:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      CERTIFICATION TIMELINE                                  │
+│                 CERTIFICATION ROADMAP (ASPIRATIONAL, NOT COMMITTED)          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  DISCLAIMER: CustodiaCloud is pre-revenue with no certifications obtained.  │
+│  Timeline below is aspirational and subject to funding, customer demand,    │
+│  and operational capacity validation. No external audits conducted yet.     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  2025                                                                        │
-│  ├─ Q1: GDPR compliance audit (external)                                    │
-│  ├─ Q2: DORA readiness assessment                                           │
-│  ├─ Q3: SOC 2 Type I certification                                          │
-│  └─ Q4: Penetration testing (annual)                                        │
+│  2025 (TARGETS, NOT COMMITMENTS)                                            │
+│  ├─ Q1: GDPR compliance audit (external) — PLANNED (not scheduled)          │
+│  ├─ Q2: DORA readiness assessment — PLANNED (not scheduled)                 │
+│  ├─ Q3: SOC 2 Type I certification — PLANNED (not scheduled)                │
+│  └─ Q4: Penetration testing (annual) — PLANNED (not scheduled)              │
 │                                                                              │
-│  2026                                                                        │
-│  ├─ Q1: SOC 2 Type II certification                                         │
-│  ├─ Q2: ISO 27001 certification                                             │
-│  ├─ Q3: ISO 27017 (cloud security)                                          │
-│  └─ Q4: ISO 27018 (cloud privacy)                                           │
+│  2026 (TARGETS, NOT COMMITMENTS)                                            │
+│  ├─ Q1: SOC 2 Type II certification — PLANNED (not scheduled)               │
+│  ├─ Q2: ISO 27001 certification — PLANNED (not scheduled)                   │
+│  ├─ Q3: ISO 27017 (cloud security) — PLANNED (not scheduled)                │
+│  └─ Q4: ISO 27018 (cloud privacy) — PLANNED (not scheduled)                 │
 │                                                                              │
-│  ONGOING                                                                     │
-│  ├─ Quarterly vulnerability assessments                                     │
-│  ├─ Annual penetration testing                                              │
-│  ├─ Continuous compliance monitoring                                        │
-│  └─ Third-party code audits (major releases)                                │
+│  ONGOING (SUBJECT TO OPERATIONAL DEPLOYMENT)                                │
+│  ├─ Quarterly vulnerability assessments — PLANNED (pending deployment)      │
+│  ├─ Annual penetration testing — PLANNED (pending 2026 engagement)          │
+│  ├─ Continuous compliance monitoring — PLANNED (pending infrastructure)     │
+│  └─ Third-party code audits (major releases) — PLANNED (pending customers)  │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Third-Party Assessments
+### Third-Party Assessments (Planned Roadmap)
 
-| Assessment | Provider | Scope | Frequency |
-|------------|----------|-------|-----------|
-| **Penetration Testing** | [TBD - Big 4 or specialized] | Full infrastructure | Annual |
-| **Code Audit** | [TBD - Security firm] | Core trading logic | Major releases |
-| **Compliance Review** | [TBD - Legal/compliance firm] | MiFID II, GDPR, DORA | Bi-annual |
-| **Infrastructure Audit** | Cloud provider + external | Security controls | Quarterly |
+> **Note**: CustodiaCloud is pre-revenue with no current customers. All assessments below are **planned activities** subject to funding, customer demand, and operational capacity. No third-party security assessments have been conducted yet.
+
+| Assessment | Provider | Scope | Frequency | Status |
+|------------|----------|-------|-----------|--------|
+| **Penetration Testing** | [TBD - Big 4 or specialized] | Full infrastructure | Annual (planned) | Planned 2026 |
+| **Code Audit** | [TBD - Security firm] | Core trading logic | Major releases (planned) | Not yet conducted |
+| **Compliance Review** | [TBD - Legal/compliance firm] | MiFID II, GDPR, DORA | Bi-annual (planned) | Not yet conducted |
+| **Infrastructure Audit** | Cloud provider + external | Security controls | Quarterly (planned) | Not yet conducted |
 
 ### Source Code Escrow
 
@@ -761,28 +767,28 @@ For maximum client protection, we offer source code escrow arrangements:
 
 ---
 
-## Battle-Tested Foundation
+## Test-Mature Foundation
 
-### Technology Stack Validation
+### Technology Stack Foundations
 
-Our platform is built on proven, industry-standard technologies:
+Our platform is built on proven frameworks and industry-standard technologies (no customer production usage yet):
 
-| Component | Technology | Validation |
+| Component | Technology | Foundation |
 |-----------|------------|------------|
-| **ML Framework** | PyTorch + Stable-Baselines3 | 100M+ downloads, Meta backing |
-| **Execution Patterns** | Inspired by Nautilus Trader | Production-proven in hedge funds |
-| **Time Series** | pandas + NumPy | Industry standard |
-| **Cython Extensions** | Critical path optimization | Battle-tested in finance |
-| **Message Queue** | Redis/RabbitMQ compatible | Enterprise-proven |
-| **Database** | PostgreSQL/SQLite | ACID compliance |
+| **ML Framework** | PyTorch + Stable-Baselines3 | Widely-adopted open-source frameworks |
+| **Execution Patterns** | Inspired by Nautilus Trader | Pattern references from production systems |
+| **Time Series** | pandas + NumPy | Industry standard libraries |
+| **Cython Extensions** | Critical path optimization | Common practice in quantitative finance |
+| **Message Queue** | Redis/RabbitMQ compatible | Industry-standard messaging |
+| **Database** | PostgreSQL/SQLite | Industry-standard storage |
 
-### Testing & validation (engineering)
+### Testing & validation (internal engineering)
 
-CustodiaCloud maintains an extensive automated test suite and documentation guardrails. Exact counts and pass rates change over time; validate current status by running tests in the repository (e.g., `pytest`) and reviewing CI results.
+CustodiaCloud maintains an automated test suite and documentation guardrails. Exact counts and pass rates change over time; validate current status by running tests in the repository (e.g., `pytest`) and reviewing CI results. No customer production usage or validation yet.
 
-### Operational metrics (deployment-dependent)
+### Operational metrics (pending customer deployment)
 
-Latency, fill rates, and uptime depend on the customer environment, venue connectivity, and configuration. CustodiaCloud does not make performance promises; customer teams should validate with paper/sandbox runs and phased rollout before enabling live execution.
+Latency, fill rates, and uptime metrics depend on customer environment, venue connectivity, and configuration. CustodiaCloud does not make performance promises; customer teams should validate with paper/sandbox runs and phased rollout before enabling live execution. No operational track record yet.
 
 ---
 

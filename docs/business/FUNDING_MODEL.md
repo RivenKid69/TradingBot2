@@ -6,6 +6,7 @@
 **Document Type:** Confidential - Investor Materials
 
 **Changelog:**
+- v2.2 (2025-12-19): **Due diligence audit - current state visibility**: Added explicit "Current State (as of Dec 2025): Pre-revenue with no signed customers, pilots, or LOIs" note directly above all milestone tables (Sections 3.1, 3.2, 3.3) to ensure current status is visible alongside targets
 - v2.1 (2025-12-19): **Due diligence audit corrections**: Added explicit disclaimers to all milestone tables (Sections 3.1-3.3) clarifying targets are "illustrative" and "aspirational", not forecasts; added note that no customers/pilots/LOIs currently signed; clarified revenue projections are scenarios for planning, not guarantees
 - v2.0 (2025-12-17): Updated funding allocation, milestone structure
 
@@ -141,6 +142,8 @@ Based on comparable seed rounds in quantitative finance software:
 
 > **Note**: All milestones below are **illustrative targets** for planning purposes. They are not forecasts or commitments. Actual customer acquisition, pilot deployment timeline, and revenue depend on market conditions, execution, and factors beyond our control.
 
+> **Current State (as of Dec 2025)**: Pre-revenue with no signed customers, pilots, or LOIs. Timeline below represents Phase 1 customer validation plan pending execution.
+
 | Milestone | Target Date | Success Criteria (Illustrative Target) | Go/No-Go Decision |
 |-----------|-------------|------------------|----------|
 | **M1: Design Partner Acquisition** | M3 (target) | Target: 3 LOIs signed (aspirational) | Proceed if ≥2 LOIs (minimum threshold) |
@@ -162,6 +165,8 @@ Based on comparable seed rounds in quantitative finance software:
 
 > **Note**: Revenue projections are **illustrative scenarios** for planning purposes, not forecasts. As a pre-revenue company, actual results will depend on execution, market conditions, product-market fit validation, and many factors beyond our control.
 
+> **Current State (as of Dec 2025)**: Pre-revenue with no signed customers, pilots, or LOIs. Phase 2 targets below are contingent on successful Phase 1 execution.
+
 | Milestone | Target Date | Success Criteria (Illustrative Target) | Go/No-Go Decision |
 |-----------|-------------|------------------|----------|
 | **M4: Design Partner Conversion** | M8 (target) | Target: 3/3 pilots → paid (aspirational) | Proceed if ≥2/3 convert (minimum threshold) |
@@ -182,6 +187,8 @@ Based on comparable seed rounds in quantitative finance software:
 **Objective:** Series A readiness with €1.5M ARR trajectory (illustrative scenario)
 
 > **Note**: ARR projections and customer count targets are **illustrative scenarios** for planning infrastructure and hiring needs. They are not revenue forecasts or guarantees. Actual revenue and customer acquisition will depend on product-market fit validation, sales execution, market conditions, and many unpredictable factors.
+
+> **Current State (as of Dec 2025)**: Pre-revenue with no signed customers, pilots, or LOIs. Phase 3 targets below are contingent on successful Phase 1 and Phase 2 execution.
 
 | Milestone | Target Date | Success Criteria (Illustrative Target) | Series A Consideration Trigger |
 |-----------|-------------|------------------|------------------|

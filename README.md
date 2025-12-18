@@ -96,7 +96,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**Extensive automated tests** | **CCEA implemented** | **Evidence exports & alignment tooling** (designed to support customer procurement/operational reviews; not audited or certified)
+**Automated test suite** (verify via `pytest`) | **CCEA implemented** | **Evidence exports & alignment tooling** (designed to support customer procurement/operational reviews; not audited or certified)
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)

@@ -1,12 +1,12 @@
 # DORA Critical/Important Function Addendum
 ## Article 30(3) Additional Provisions
 
-**Version**: 1.0
-**Date**: 2025-01-17 (DORA Application Date)
+**Version**: 1.2
+**Date**: 2025-12-19
 **Status**: Template available
 **Legal Reference**: Regulation (EU) 2022/2554 Article 30(3)(a-j)
 
-> **⚠️ TEMPLATE ONLY — NOT AN EXECUTED AGREEMENT**: This document is a contract template with illustrative SLA targets and design goals. CustodiaCloud is a pre-seed company. Actual contractual terms, SLA commitments, and operational capabilities will be negotiated and validated per engagement. Do not treat this template as a binding commitment.
+> **⚠️ TEMPLATE ONLY — NOT AN EXECUTED AGREEMENT**: This document is a contract template with illustrative SLA targets and design goals. **CustodiaCloud is a pre-revenue startup with no current customers, no operational track record, and no validated infrastructure capacity.** All SLA targets, response times, RTO/RPO values, and performance metrics in this template are **aspirational design goals subject to infrastructure validation and engineering sign-off**. Actual contractual terms and operational capabilities will be negotiated per engagement after validation. Do not treat this template as a representation of current capabilities or binding commitments.
 
 ---
 
@@ -27,20 +27,22 @@ This Addendum supplements the base DORA ICT Service Provisions (Art. 30(2)) with
 
 ### Article 30(3)(a) — FULL SERVICE LEVEL AGREEMENTS
 
-**A.1 Quantitative Performance Targets** *(illustrative; actual SLA per executed agreement)*
+**A.1 Quantitative Performance Targets**
 
-| Service | Metric | Target (Illustrative) | Measurement | Breach Consequence |
+> **CRITICAL DISCLAIMER**: All values below are **unvalidated aspirational targets for planning purposes only**. CustodiaCloud has no operational track record and no current customers. These targets require infrastructure implementation, capacity validation, and DR testing before they can be committed. Actual SLA must be defined in executed agreement after engineering sign-off and operational validation. See `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` for validation framework.
+
+| Service | Metric | Aspirational Target (Unvalidated) | Measurement | Breach Consequence |
 |---------|--------|--------|-------------|-------------------|
-| Trading Platform | Availability | 99.95% (target) | Monthly | Service credits |
-| Trading Platform | Order Latency P95 | <100ms (target) | Per transaction | Incident escalation |
-| Trading Platform | Order Latency P99 | <250ms (target) | Per transaction | Breach notification |
-| API Gateway | Availability | 99.95% (target) | Monthly | Service credits |
-| API Gateway | Response Time P95 | <200ms (target) | Hourly | Performance review |
-| Market Data | Data Freshness | <50ms (target) | Per tick | Alert & investigation |
-| Market Data | Completeness | 99.99% (target) | Daily | Gap analysis |
-| Risk Engine | Calculation Time | <5s (target) | Per request | Capacity review |
-| Backup Systems | RPO | 15 minutes (target) | Per backup | Immediate escalation |
-| Backup Systems | RTO | 4 hours (target) | Per DR test | BCP review |
+| Trading Platform | Availability | 99.95% (unvalidated target) | Monthly | Service credits |
+| Trading Platform | Order Latency P95 | <100ms (unvalidated target) | Per transaction | Incident escalation |
+| Trading Platform | Order Latency P99 | <250ms (unvalidated target) | Per transaction | Breach notification |
+| API Gateway | Availability | 99.95% (unvalidated target) | Monthly | Service credits |
+| API Gateway | Response Time P95 | <200ms (unvalidated target) | Hourly | Performance review |
+| Market Data | Data Freshness | <50ms (unvalidated target) | Per tick | Alert & investigation |
+| Market Data | Completeness | 99.99% (unvalidated target) | Daily | Gap analysis |
+| Risk Engine | Calculation Time | <5s (unvalidated target) | Per request | Capacity review |
+| Backup Systems | RPO | 15 minutes (unvalidated target) | Per backup | Immediate escalation |
+| Backup Systems | RTO | 4 hours (unvalidated target) | Per DR test | BCP review |
 
 **A.2 Service Credits**
 
@@ -427,5 +429,6 @@ Signature: ____________________________
 *Document Version Control:*
 - v1.0 (2025-01-17): Initial release aligned with DORA application date
 - v1.1 (2025-12-19): **Due diligence audit corrections**: Added critical disclaimer to Section A.1 clarifying all targets are "illustrative design targets; not current operational capabilities"; updated RTO/RPO table (C.3) with "Untested Design Target" column headers and "pending validation" notes; updated pooled audit section (E.4) to clarify SOC2 "if and when obtained" (roadmap target 2027; not currently certified)
+- v1.2 (2025-12-19): **Due diligence audit - pre-revenue status**: Strengthened top-level template disclaimer to explicitly state "pre-revenue startup with no current customers, no operational track record, and no validated infrastructure capacity"; changed A.1 section header and table column from "Target (Illustrative)" to "Aspirational Target (Unvalidated)"; added CRITICAL DISCLAIMER block before A.1 table stating targets are "unvalidated aspirational targets for planning purposes only" and require infrastructure implementation/validation before commitment.
 - Based on Regulation (EU) 2022/2554 Article 30(3)(a-j)
 - Reviewed by: Legal, Compliance, Security, Operations

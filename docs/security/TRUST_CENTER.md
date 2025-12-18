@@ -1,8 +1,8 @@
 # Security Trust Center
 ## Pre-Contractual Security Overview
 
-**Version**: 1.2
-**Date**: 2025-12-18
+**Version**: 1.4
+**Date**: 2025-12-19
 **Status**: Public
 **Legal Reference**: DORA Article 28(7)
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -17,12 +17,12 @@ This document provides pre-contractual security information per DORA Article 28(
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Certifications** | SOC2 Type II Roadmap | Target 2027 (see Section 2) |
-| **Infrastructure** | AWS (Frankfurt) | EU data residency (by default) |
-| **Encryption** | AES-256 / TLS 1.3 | At-rest and in-transit |
-| **Availability** | Design target: 99.9% | Multi-AZ deployment (design target; actual SLA contract-specific) |
-| **Incident Response** | Planned: 24/7 on-call | Design target: 15-minute critical response (operational validation pending) |
-| **DORA Alignment** | Designed to support | Art. 30 contract templates available |
+| **Certifications** | SOC2 Type II Roadmap | Target 2027 (not currently certified; see Section 2) |
+| **Infrastructure** | AWS (Frankfurt) planned | EU data residency design goal (infrastructure deployment pending) |
+| **Encryption** | AES-256 / TLS 1.3 design | At-rest and in-transit (implementation subject to deployment) |
+| **Availability** | Aspirational target: 99.9% | Multi-AZ deployment (unvalidated design goal; actual SLA contract-specific and pending infrastructure) |
+| **Incident Response** | Planned: 24/7 on-call | Aspirational target: 15-minute critical response (pending 4+ FTE hiring and operational validation) |
+| **DORA Alignment** | Designed to support | Art. 30 contract templates available (not operational commitments) |
 
 ---
 
@@ -181,14 +181,14 @@ This document provides pre-contractual security information per DORA Article 28(
 
 ### 6.1 Recovery Objectives
 
-> **Note**: These are design targets for a pre-seed company. DR testing will be conducted as infrastructure is established. Actual RTO/RPO commitments are contract-specific.
+> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational track record and no current customers. These are **aspirational design targets** that require multi-AZ infrastructure deployment, DR automation implementation, and testing validation before they can be committed. DR testing has not yet been conducted. Actual RTO/RPO commitments are contract-specific and require infrastructure capacity validation and successful DR test execution.
 
-| Scenario | RTO (Untested Design Target) | RPO (Untested Design Target) | Testing Plan |
+| Scenario | RTO (Aspirational, Unvalidated) | RPO (Aspirational, Unvalidated) | Testing Plan (Not Yet Conducted) |
 |----------|-----|-----|-------------|
-| Component Failure | 30 min | 0 (real-time) | Monthly (planned) |
-| Availability Zone Failure | 1 hour | 15 min | Quarterly (planned) |
-| Region Failure | 4 hours | 1 hour | Annually (planned) |
-| Complete Disaster | 24 hours | 4 hours | Annually (planned) |
+| Component Failure | 30 min (unvalidated target) | 0 (real-time) (unvalidated target) | Monthly (planned upon operational deployment) |
+| Availability Zone Failure | 1 hour (unvalidated target) | 15 min (unvalidated target) | Quarterly (planned upon operational deployment) |
+| Region Failure | 4 hours (unvalidated target) | 1 hour (unvalidated target) | Annually (planned upon operational deployment) |
+| Complete Disaster | 24 hours (unvalidated target) | 4 hours (unvalidated target) | Annually (planned upon operational deployment) |
 
 ### 6.2 Backup Strategy
 
@@ -211,16 +211,16 @@ This document provides pre-contractual security information per DORA Article 28(
 
 ## 7. Incident Response
 
-### 7.1 Response Time Design Targets (Pre-Operational)
+### 7.1 Response Time Aspirational Targets (Pre-Operational, Unvalidated)
 
-> **Note**: These are design targets for planning infrastructure. Actual response times will be validated during operations and defined in executed service agreements. For operational capacity validation, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
+> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational on-call team, no current customers, and no incident response track record. These are **aspirational targets** that require 4+ FTE on-call hiring, PagerDuty/monitoring implementation, and operational validation before they can be committed. Actual response times will be defined in executed service agreements after hiring and operational validation. For capacity assessment framework, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
 
-| Severity | Detection (Target) | Response (Target) | Client Notification (Target) |
+| Severity | Detection (Aspirational, Unvalidated) | Response (Aspirational, Unvalidated) | Client Notification (Aspirational, Unvalidated) |
 |----------|-----------|----------|-------------------|
-| Critical | 5 min | 15 min | 30 min |
-| High | 15 min | 30 min | 1 hour |
-| Medium | 1 hour | 4 hours | 4 hours |
-| Low | 24 hours | Next business day | Weekly summary |
+| Critical | 5 min (pending monitoring deployment) | 15 min (pending 24/7 on-call hiring) | 30 min (pending operational validation) |
+| High | 15 min (pending monitoring deployment) | 30 min (pending on-call hiring) | 1 hour (pending operational validation) |
+| Medium | 1 hour (pending monitoring deployment) | 4 hours (pending on-call hiring) | 4 hours (pending operational validation) |
+| Low | 24 hours (pending monitoring deployment) | Next business day (pending on-call hiring) | Weekly summary (pending operational validation) |
 
 ### 7.2 Incident Categories
 
@@ -368,6 +368,7 @@ For contracted clients:
 | 1.1 | 2025-12-17 | Updated regulatory alignment (GDPR, EU AI Act, MiFID II - designed to align), added GDPR compliance details |
 | 1.2 | 2025-12-18 | **Critical correction**: Removed false certification claims. SOC2/pentest/audit status now accurately reflects roadmap (planned) vs current state. Added "Certification Roadmap" section with honest timelines. |
 | 1.3 | 2025-12-19 | **Due diligence audit corrections**: Replaced SLA/RTO/incident response absolute claims with Canon-compliant design targets. "Target 99.9%" → "Design target: 99.9% (actual SLA contract-specific)"; "Response Times" → "Response Time Design Targets (Pre-Operational)"; RTO/RPO column headers → "Untested Design Target"; Added vendor-reported note to certifications table; "Designed for 24/7" → "Planned: 24/7 on-call (operational validation pending)". |
+| 1.4 | 2025-12-19 | **Due diligence audit - operational capability claims**: Further strengthened disclaimers per Canon. "Design target: 99.9%" → "Aspirational target: 99.9% (unvalidated design goal; pending infrastructure)"; RTO/RPO → "Aspirational, Unvalidated"; Response times → "pending 4+ FTE hiring and operational validation"; Infrastructure → "planned (deployment pending)"; All columns now explicitly state "(unvalidated target)" or "(pending X)". |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team

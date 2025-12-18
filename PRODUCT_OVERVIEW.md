@@ -51,9 +51,11 @@ Approved phrasing (canonical):
 
 ## Legal-safe notes (non-legal)
 
-CustodiaCloud is positioned as a **software/ICT provider**. It does **not** provide investment advice, portfolio management, or trade recommendations, and it does **not** provide execution-as-a-service; live execution occurs only via the customer-controlled Agent and the customer’s own broker accounts (Cloud never sends live trading instructions).
+CustodiaCloud is a B2B software/ICT product for professional trading organizations. CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations. Live execution occurs only via the customer-controlled Agent and the customer's own broker accounts; the Cloud does not store credentials and does not send live trading instructions (orders/targets/signals).
 
-This document does not assert regulatory compliance or certification; CustodiaCloud is designed to **support** customer assessments via controls and evidence exports.
+Clients remain responsible for their own regulatory obligations and for broker/market-data relationships and licensing.
+
+This document does not assert regulatory compliance or certification; CustodiaCloud is designed to support customer assessments via controls and evidence exports (not audited or certified).
 
 ---
 
