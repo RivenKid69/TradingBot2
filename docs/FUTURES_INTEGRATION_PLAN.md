@@ -70,7 +70,7 @@
 | Компонент | Файл | Применимость | Статус |
 |-----------|------|--------------|--------|
 | MarketType.CRYPTO_FUTURES | adapters/models.py | Crypto | ✅ Определён |
-| crypto_futures defaults | configs/asset_class_defaults.yaml | Crypto | ✅ Базовый |
+| crypto_futures defaults | ../configs/asset_class_defaults.yaml | Crypto | ✅ Базовый |
 | Funding rate ingestion | ingest_funding_mark.py | Crypto | ✅ Готов |
 | Forex leverage guards | services/forex_risk_guards.py | **Все типы** | ✅ Референс |
 | Binance futures URL | adapters/binance/market_data.py | Crypto | ✅ Поддержка |
@@ -9703,10 +9703,10 @@ Month 5-6: Phase 8-10 (Training + Live + Validation) ─────────
 11. [IB Futures Trading](https://www.interactivebrokers.com/en/trading/futures.php)
 
 ### Internal Documentation
-1. [L3 LOB Simulation](docs/l3_simulator/)
-2. [Forex Integration](docs/forex/)
-3. [Execution Providers](docs/execution_providers.md)
-4. [Asset Class Defaults](configs/asset_class_defaults.yaml)
+1. [L3 LOB Simulation](l3_simulator/)
+2. [Forex Integration](FOREX_INTEGRATION_PLAN.md)
+3. [Execution Providers](futures/overview.md)
+4. [Asset Class Defaults](../configs/asset_class_defaults.yaml)
 
 ---
 

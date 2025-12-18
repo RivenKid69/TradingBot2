@@ -420,7 +420,7 @@ Signature: _______________________
 
 | Measure | Implementation |
 |---------|----------------|
-| Data centers | AWS certified facilities (ISO 27001, SOC 2) |
+| Data centers | AWS facilities (certifications may include ISO 27001 and SOC 2, depending on region/service) |
 | Access control | Biometric and badge access |
 | Surveillance | 24/7 CCTV monitoring |
 | Environmental | Fire suppression, climate control |

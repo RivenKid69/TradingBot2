@@ -459,7 +459,7 @@ See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) for full privacy architecture.
 | Never Say | Why |
 |-----------|-----|
 | "We trade for you" | Implies broker/advisor relationship |
-| "Cloud auto-execution" | Incorrect - Agent executes, not Cloud |
+| "Cloud-side execution" | Incorrect - Agent executes, not Cloud |
 | "Guaranteed profit" | Financial advice, illegal |
 | "No risk" | Misleading |
 | "We manage your portfolio" | Investment advisor language |

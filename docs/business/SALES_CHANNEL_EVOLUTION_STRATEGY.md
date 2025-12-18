@@ -1,6 +1,6 @@
 # Sales Channel Evolution Strategy
 
-## CCEA Platform - From Founder-Led to Multi-Channel GTM
+## CustodiaCloud - From Founder-Led to Multi-Channel GTM
 
 **Document Version:** 2.0
 **Date:** December 2025
@@ -574,7 +574,7 @@ Per [CFA Institute](https://www.cfainstitute.org/en/membership/society):
 > Would you be open to making an introduction? I'd be happy to share a brief intro blurb you can forward:
 >
 > ---
-> '[Target Name], I wanted to introduce you to [Your Name] from CCEA Platform. They're helping systematic funds automate execution optimization with ML — [Reference Customer] has seen [X% improvement]. Given your focus on [their specific area], I thought it might be worth a conversation.'
+> '[Target Name], I wanted to introduce you to [Your Name] from CustodiaCloud. They provide a risk-first research & deployment platform with a customer-controlled execution boundary (CCEA). Given your focus on [their specific area], I thought it might be worth a conversation.'
 > ---
 >
 > Happy to reciprocate if there's anyone in my network who could be helpful to you."

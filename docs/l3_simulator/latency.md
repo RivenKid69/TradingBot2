@@ -396,4 +396,4 @@ lat3 = model.sample_feed_latency()  # 234.5 μs (same as lat1)
 
 - [Overview](overview.md) - Architecture overview
 - [Configuration](configuration.md) - Config reference
-- [Event Scheduler](../lob/event_scheduler.py) - Event ordering
+- [Event Scheduler](../../lob/event_scheduler.py) - Event ordering

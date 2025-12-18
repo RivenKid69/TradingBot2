@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-This document provides detailed deployment architectures, security specifications, and infrastructure diagrams for enterprise deployment of the AI-Powered Quantitative Research Platform. Designed for European prop trading firms with strict regulatory requirements (MiFID II, GDPR, DORA).
+This document provides detailed deployment architectures, security specifications, and infrastructure diagrams for enterprise deployment of **CustodiaCloud** (CCEA architecture). Designed for professional systematic trading organizations with procurement and operational-review requirements (MiFID II/GDPR/DORA context; not certified).
 
-**Architecture Foundation**: All deployments are based on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict security boundaries between research/monitoring (Cloud Zone) and live trading execution (Agent Zone).
+**Architecture Foundation**: All deployments are based on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict security boundaries between research/monitoring (Cloud Zone) and customer-controlled live execution (Agent Zone).
 
 ---
 
@@ -62,7 +62,7 @@ The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with 
 
 | Option | Cloud Zone Location | Agent Zone Location | Use Case |
 |--------|---------------------|---------------------|----------|
-| **Shared SaaS + Local Agent** | Our EU Infrastructure | Customer machine/VPC | Quick start, retail-friendly |
+| **Shared SaaS + Local Agent** | Our EU Infrastructure | Customer machine/VPC | Quick start, procurement-friendly |
 | **Private VPC + VPC Agent** | Customer AWS/GCP/Azure VPC | Same VPC (segregated) | Enterprise, data sovereignty |
 | **On-Premises (Full)** | Customer data center | Same data center (segregated) | High-security, air-gapped capable |
 | **Hybrid** | Our EU Infrastructure | Customer on-premises | Research SaaS + local execution |
@@ -1415,7 +1415,7 @@ panels:
 │  │   ├── /orders         Order updates (submit, fill, cancel)         │    │
 │  │   ├── /positions      Position updates (real-time)                 │    │
 │  │   ├── /risk           Risk alerts and status                       │    │
-│  │   ├── /signals        Trading signals (if subscribed)              │    │
+│  │   ├── /signals        Strategy/model outputs (if subscribed)       │    │
 │  │   └── /market-data    Market data (ticks, bars)                    │    │
 │  │                                                                      │    │
 │  │   Message Format: JSON                                              │    │

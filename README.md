@@ -1,6 +1,8 @@
-# AI-Powered Quantitative Research Platform
+# CustodiaCloud — Quantitative Research & Deployment Platform
 
-RL-first research and trading stack for crypto, equities, FX, and derivatives designed to minimize simulator-to-live deviation.
+CustodiaCloud is a **B2B** risk-first quantitative **research and deployment platform** with an **equities-first** go-to-market. This repository contains its research/simulation stack and the Cloud/Agent boundary (CCEA) used for customer-controlled execution.
+
+**Canonical positioning / naming / legally safe wording**: `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
 ## Licensing
 
@@ -8,9 +10,9 @@ This monorepo is **proprietary**. For the open-core split plan (public `ccea-sdk
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
-> **Reference**: `Design Doc CCEA Cloud.txt` (canonical source) | [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md)
+> **Technical reference**: `archive/root_files/Design Doc CCEA Cloud.txt` | Additional overview: `docs/architecture/CCEA_OVERVIEW.md`
 
-This platform implements **CCEA** - a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
+CustodiaCloud implements **CCEA** — a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
 
 | Component | Responsibility | Secrets Access | Order Execution |
 |-----------|---------------|----------------|-----------------|
@@ -18,16 +20,14 @@ This platform implements **CCEA** - a strict separation between Cloud (research/
 | **Agent** | Live execution, risk enforcement, local vault, order creation | **LOCAL ONLY** | **YES** |
 
 **Key Security Design Commitments:**
-- Cloud **NEVER** stores broker API keys or credentials
-- Cloud **NEVER** generates, transmits, or executes trading orders
-- Cloud **NEVER** has access to exchange trading endpoints
-- All trading operations occur **ONLY** in the Agent running locally or in user's VPC
-- Telemetry is **ALWAYS** redacted before transmission to Cloud
+- Cloud **does not** store customer broker API keys or credentials (secrets stay in the customer-controlled Agent)
+- Cloud **does not** generate, transmit, or execute **live trading instructions** (orders/targets/signals)
+- Cloud may send **lifecycle commands** and **signed artifacts** to the Agent; the Agent performs any live execution via customer accounts
+- Telemetry is **redacted by default**; raw order events require explicit opt-in (deployment- and customer-dependent)
 
-**Product Modes:**
-1. **Retail Research SaaS (EU-friendly)**: Cloud research/simulation + optional BYO Agent
-2. **Retail Live via Local Agent**: Local auto-execution, cloud observability
-3. **Enterprise Engine (on-prem/VPC)**: Full stack in customer infrastructure
+**Deployment Modes (B2B):**
+1. **Cloud + BYO Agent**: Cloud research/simulation/monitoring + customer-controlled Agent execution
+2. **Enterprise on‑prem/VPC**: customer-hosted deployments (where required by procurement/security)
 
 **CCEA Terminology:**
 - **Intent**: High-level trading intention (target exposure), produced by Strategy
@@ -63,7 +63,7 @@ python setup.py build_ext --inplace
 ## Quick Start
 Configuration examples live in `configs/examples/README.md`.
 
-- Train (crypto demo):
+- Train (example config; digital assets adapters are optional and not the MVP beachhead):
 ```bash
 cp configs/examples/example_train_crypto.yaml configs/my_train.yaml
 python train_model_multi_patch.py --config configs/my_train.yaml
@@ -75,7 +75,7 @@ cp configs/examples/example_backtest_crypto.yaml configs/my_backtest.yaml
 python script_backtest.py --config configs/my_backtest.yaml --offline-config configs/offline.yaml --dataset-split val
 ```
 
-- Live trading via local Agent (CCEA architecture):
+- Live execution via local Agent (CCEA architecture):
 ```bash
 # 1. Deploy Agent locally (credentials stay on YOUR machine, never sent to cloud)
 #    See docs/agent/INSTALLATION.md for full setup
@@ -96,9 +96,7 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ## Status
 
-**14,000+ automated tests** | **MiFID II: Compliance-Ready Toolkit** | **EU AI Act: Compliance-Ready Toolkit** | **DORA: Compliance-Ready Toolkit** | **GDPR: Compliance-Ready Controls** | **CCEA Implemented** | **Built to Support Production Use**
-
-*Note: "Compliance-ready" means the technical features are implemented and designed to align with regulatory requirements. These are tools to support compliance efforts, not compliance certifications. Actual regulatory compliance requires independent third-party assessment, proper configuration, legal review, and validation specific to your jurisdiction and use case.*
+**Extensive automated tests** | **CCEA implemented** | **Evidence exports & alignment tooling** (designed to support customer procurement/operational reviews; not audited or certified)
 
 ## CI Status
 [![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
@@ -111,27 +109,24 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 
 ### ICT Provider Positioning (CCEA Architecture)
 
-This platform is designed for **ICT Providers / Software Providers** under MiFID II scope:
-- We provide algorithmic trading **research and infrastructure tools**
-- Users trade through **THEIR OWN broker accounts** via **local Agent**
-- Platform does NOT hold client assets or credentials in Cloud
-- Cloud **NEVER** executes orders - only lifecycle management
-- MiFID II does NOT apply directly to us
+CustodiaCloud is designed to support a **software / ICT provider** posture (classification depends on activities and jurisdiction):
+- We provide quantitative research, simulation, deployment, and governance tooling
+- Customers execute via **their own broker accounts** through the customer-controlled **Agent**
+- Cloud does not hold customer broker credentials and does not execute orders
 
 **Legal Position:**
-- **NOT** an investment adviser or broker-dealer
-- **NOT** providing investment recommendations
-- **NOT** custodian of assets or credentials
-- Software vendor providing tools for independent traders
+- **NOT** investment advice / portfolio management / trade recommendations
+- **NOT** a broker-dealer or custodian
+- B2B software platform for professional trading organizations
 
-See: `docs/architecture/CCEA_OVERVIEW.md` for full architecture and legal posture
+See: `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical wording.
 
 ### Module Structure (Post-Migration v2.0)
 
 | Package | Purpose | Load |
 |---------|---------|------|
 | `services.core.risk_controls` | Universal risk controls (kill switch, pre-trade, audit) | Always |
-| `services.algo_integration` | MiFID II B2B compliance toolkit | Enterprise clients |
+| `services.algo_integration` | Alignment/evidence tooling for regulated clients | Enterprise clients |
 | `services.archive.mifid_financial_entity` | Investment Firm modules | Archived (not loaded) |
 
 #### For ICT Providers (Default)
@@ -139,18 +134,6 @@ See: `docs/architecture/CCEA_OVERVIEW.md` for full architecture and legal postur
 from services.core.risk_controls import (
     EnhancedKillSwitch, PreTradeControls, AuditTrailWriter,
     RealTimeMonitor, BusinessContinuityPlan
-)
-```
-
-#### For B2B Clients (Financial Institutions)
-Enable `services.algo_integration` for MiFID II compliance tools:
-```python
-from services.algo_integration import (
-    BestExecutionAnalyzer,      # Article 27
-    TCAComplianceWrapper,       # Transaction Cost Analysis
-    ConformanceTestRunner,      # RTS 6 Article 5
-    AlgorithmRegistry,          # Article 17(2)
-    CertificateManager          # Deployment certification
 )
 ```
 
@@ -166,48 +149,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ## Regulatory Compliance
 
-### MiFID II (Directive 2014/65/EU)
-All 7 compliance toolkit phases implemented (designed to align with requirements, not independently certified):
-- Kill Switch & Pre-Trade Controls (RTS 6)
-- Transaction Reporting (RTS 22)
-- Record Keeping & Audit Trail (5-7 years retention)
-- Best Execution & TCA (Article 27)
-- Governance & Self-Assessment
-
-Details: `docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md`
-
-### EU AI Act (Regulation 2024/1689)
-High-Risk AI System - all 4 compliance toolkit phases implemented and designed to align with requirements (1,007 tests, not independently certified):
-- Risk Management System (Article 9)
-- Data Governance & Technical Documentation (Article 10, 11)
-- Human Oversight & Transparency (Article 13, 14)
-- Quality Management System (Article 17)
-- Conformity Assessment & EU Declaration (Article 43, 47)
-
-Details: `docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md`
-
-### DORA (Regulation 2022/2554)
-Digital Operational Resilience Act - all 5 compliance toolkit phases implemented and designed to align with requirements (~1,015 tests, not independently certified):
-- Phase 1: ICT Risk Management Framework (Articles 5-16)
-- Phase 2: ICT Incident Management & Reporting (Articles 17-23)
-- Phase 3: Digital Resilience Testing (Articles 24-27)
-- Phase 4: Third-Party ICT Risk Management (Articles 28-44)
-- Phase 5: Information Sharing, Dashboard & Unified Reporting
-
-Details: `docs/compliance/DORA_INTEGRATION_PLAN.md`
-
-### GDPR (Regulation 2016/679)
-General Data Protection Regulation - all 9 compliance toolkit phases implemented and designed to align with requirements (CCEA-aligned, not independently certified):
-- Phase 0: Data mapping, RoPA, Controller/Processor roles
-- Phase 1: Transparency, Privacy Policy, DPA, DSAR SOP
-- Phase 2: Data minimization, telemetry contracts, CI guardrails
-- Phase 3: EU-only data residency enforcement
-- Phase 4: Retention policies, auto-purge, legal holds
-- Phase 5: DSAR workflows (access, portability, erasure)
-- Phase 6: RBAC, access audit, break-glass procedures
-- Phase 7: Security controls (Art. 32), breach workflow (Art. 33-34)
-- Phase 8: Continuous compliance, privacy-by-design CI checks
-- Phase 9: Enterprise/on-prem/VPC posture
+CustodiaCloud includes documentation, controls, and evidence export patterns intended to **support** customer procurement and operational reviews (jurisdiction- and customer-dependent; not a certification claim).
 
 **CCEA Privacy Design Commitments:**
 - Cloud **NEVER** receives broker credentials or API keys
@@ -221,11 +163,11 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 ## Supported Exchanges
 | Asset class | Vendor(s) | Path | Modes | Status |
 | --- | --- | --- | --- | --- |
-| Crypto spot/futures | Binance | adapters/binance/ | sim, live | Production |
-| Options/futures (crypto) | Deribit | adapters/deribit/ | sim, live | Beta |
-| US equities execution | Alpaca | adapters/alpaca/ | sim, paper, live | Production |
-| US equities data | Polygon, Yahoo | adapters/polygon/, adapters/yahoo/ | data, sim | Production |
-| Forex | OANDA, Dukascopy | adapters/oanda/, adapters/dukascopy/ | sim, live (OANDA), historical (Dukascopy) | Beta |
+| Digital assets (optional) | Binance | adapters/binance/ | sim, live | Implemented |
+| Options/futures (optional) | Deribit | adapters/deribit/ | sim, live | Implemented (beta) |
+| Equities execution (MVP/beachhead) | Alpaca | adapters/alpaca/ | sim, paper, live | Implemented |
+| Equities data | Polygon, Yahoo | adapters/polygon/, adapters/yahoo/ | data, sim | Implemented |
+| FX | OANDA, Dukascopy | adapters/oanda/, adapters/dukascopy/ | sim, live (OANDA), historical (Dukascopy) | Implemented (beta) |
 | Traditional futures/options | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
 
 ## Guides
@@ -238,18 +180,17 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 - `docs/runbooks/` — Incident response, kill-switch, recovery procedures
 
 ### Business & Legal Documentation
-- `docs/business/CCEA_MARKETING_GUIDELINES.md` — Approved language, disclaimers, compliance
+- `docs/business/CCEA_MARKETING_GUIDELINES.md` — Approved language and disclaimers (CustodiaCloud/CCEA-safe)
 - `docs/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md` — ToS requirements, liability
 - `docs/business/PRICING_DIFFERENTIATION_STRATEGY.md` — Product modes, pricing tiers
 - `docs/business/OPEN_CORE_BUSINESS_MODEL.md` — Open-source strategy, licensing
 - `docs/business/COMPETITIVE_MOAT.md` — Competitive advantage analysis
-- `docs/business/IP_PROTECTION_STRATEGY.md` — IP protection, patents, trade secrets
 
 ### General Documentation
 - `claude.md` — complete project guide (RU).
 - `ARCHITECTURE.md` — system architecture and module map.
 - `DOCS_INDEX.md` — documentation hub.
-- `QUICK_START_REFERENCE.md` — command cheat sheet.
+- `QUICK_START.md` — command cheat sheet.
 - `configs/examples/README.md` — ready-to-copy configs for train/backtest/live.
 - `BUILD_INSTRUCTIONS.md` — native build notes.
 - `docs/AI_GUIDE.md` — AI-assistant instructions.

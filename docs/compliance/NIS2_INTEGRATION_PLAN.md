@@ -1,6 +1,6 @@
 # NIS2 Integration Plan
 # Directive (EU) 2022/2555 on measures for a high common level of cybersecurity
-# План интеграции NIS2 в AI-Powered Quantitative Research Platform
+# План интеграции NIS2 в CustodiaCloud
 
 **Версия документа**: 1.0.0  
 **Дата создания**: 2025-12-08  

@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document provides a detailed analysis of the TradingBot2 codebase architecture and a comprehensive integration plan for adding Forex as a new asset class. The platform is built on a layered, adapter-based architecture that supports multiple asset classes (Crypto, Equities) at both L2 (statistical models) and L3 (full LOB simulation) levels.
+This document provides a detailed analysis of the CustodiaCloud codebase architecture and a comprehensive integration plan for adding Forex as a new asset class. The platform is built on a layered, adapter-based architecture that supports multiple asset classes (equities-first, with optional digital assets) at both L2 (statistical models) and L3 (full LOB simulation) levels.
 
 **Key Findings:**
 1. **Plugin Architecture**: Adapters use registry-based system making new exchanges/asset classes easy to integrate
@@ -261,4 +261,3 @@ The codebase is **exceptionally well-designed** for Forex integration:
 ✓ Config-driven design (YAML-based)
 
 Estimated effort: **6-7 weeks** with 1-2 engineers
-

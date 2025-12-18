@@ -43,7 +43,7 @@ Effort (person-months) = 2.94 × (KLOC)^1.0997 × Π(Effort Multipliers)
 - **Risk Management:** ~8 KLOC
 - **Data Pipeline:** ~5 KLOC
 - **Exchange Adapters:** ~10 KLOC
-- **Testing & Validation:** ~12 KLOC (597 test files, 11,063 tests)
+- **Testing & Validation:** ~12 KLOC (extensive automated tests; verify in repo)
 - **Total:** ~62 KLOC
 
 **COCOMO II Calculation:**

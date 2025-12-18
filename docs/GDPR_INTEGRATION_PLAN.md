@@ -1,13 +1,14 @@
 # GDPR Integration Plan
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Regulation**: GDPR (EU) 2016/679 - General Data Protection Regulation
 **Version**: 2.4
 **Date**: December 2025
-**Status**: Implementation Ready (Critical Audit v2.3 Complete - 97% Coverage)
+**Status**: Draft engineering plan (deployment-dependent; not a compliance claim)
 
 > **Note (v2.4)**: Module paths referencing `services/compliance/` in this document are historical.
+> Any completeness/coverage labels in this document are illustrative scaffolding until validated; this repository does not claim audited compliance status in documentation.
 > Compliance modules have been reorganized to a three-tier architecture. See [MIFID_II_COMPLIANCE_ROADMAP.md](compliance/MIFID_II_COMPLIANCE_ROADMAP.md#31-module-location-mapping) for current paths:
 > - `services/core/risk_controls/` (audit_trail, retention_policy, etc.)
 > - `services/algo_integration/` (B2B compliance toolkit)
@@ -88,14 +89,14 @@
 
 ## Executive Summary
 
-This document provides a phased implementation plan for full GDPR compliance integration into the AI-Powered Quantitative Research Platform. The plan leverages existing compliance infrastructure (MiFID II, DORA, EU AI Act) and follows established architectural patterns.
+This document provides a phased implementation plan for GDPR controls aligned to CustodiaCloud's software/ICT provider posture and CCEA boundary. The plan leverages governance tooling (evidence exports, logging, change control) and follows established architectural patterns.
 
 ### Scope of Application
 
-The platform processes:
+CustodiaCloud processes (deployment-dependent):
 - **Financial Market Data**: OHLCV, order books, trades (non-personal)
-- **User Credentials**: API keys, exchange credentials (sensitive)
-- **Audit Logs**: Trading activity, compliance records (may contain personal data)
+- **User Credentials**: stored only in the customer-controlled Agent (not in Cloud by design)
+- **Audit Logs**: governance/audit events and (optional) redacted telemetry (may contain personal data)
 - **Configuration Data**: User preferences, settings
 
 ### Key GDPR Articles to Implement
@@ -4635,7 +4636,7 @@ Score Provision to Third Party:
 
 **CRITICAL Implementation Notes:**
 
-1. **Real-time Intervention**: For trading decisions, "human intervention" must be practically available (e.g., ability to override/cancel within execution window)
+1. **Real-time Intervention**: For execution-relevant decisions, "human intervention" must be practically available (e.g., ability to override/cancel within the execution window)
 
 2. **Meaningful Information**: Per EDPB guidelines, must explain:
    - Categories of data used
@@ -4648,7 +4649,7 @@ Score Provision to Third Party:
    - Potentially reverse/compensate
    - Document reasoning
 
-4. **Integration with EU AI Act**: High-risk AI systems (which algorithmic trading may be) have additional requirements per AI Act Article 14 (human oversight)
+4. **Integration with EU AI Act**: If an AI system is classified as high-risk under the EU AI Act (Annex III) in the relevant deployment context, additional requirements may apply (including Article 14 human oversight). We do not self-classify in documentation without legal review.
 
 ### 2b.3 Implementation Requirements
 
@@ -4667,10 +4668,10 @@ Score Provision to Third Party:
    - Audit log collection
    - Third-party data handling
 
-4. **Conflict resolution with MiFID II**
-   - Document retention requirements (5-7 years) take precedence
-   - Partial erasure with anonymization
-   - Clear documentation of exceptions
+4. **Potential conflict with financial-record retention (e.g., MiFID II)**
+   - Some deployers may be subject to multi-year record retention requirements
+   - Erasure requests may require partial redaction/anonymization rather than deletion
+   - Document and review exceptions with counsel/compliance
 
 ### 2b.4 Test Specifications
 
@@ -7029,7 +7030,7 @@ Class DPIAManager:
     - generate_dpia_report(dpia_id: str, format: str) -> bytes
 ```
 
-**Trading Platform DPIA Triggers (with Blacklist):**
+**Financial Services Platform DPIA Triggers (with Blacklist):**
 
 | Processing Activity | Art. 35(3) Trigger | DPA Blacklist Match | DPIA Required |
 |--------------------|-------------------|---------------------|---------------|
@@ -7041,18 +7042,15 @@ Class DPIAManager:
 
 #### 6.2.1a AI/ML Fundamental Rights Impact Assessment (fria.py) - NEW v2.0
 
-**FRIA for High-Risk AI Systems (EU AI Act + GDPR Integration)**
+**FRIA for potential High-Risk AI deployments (EU AI Act + GDPR Integration)**
 
-Per [EU AI Act Article 27](https://artificialintelligenceact.eu/article/27/) and GDPR Article 35, deployers of high-risk AI systems must conduct a Fundamental Rights Impact Assessment. This module integrates FRIA with GDPR DPIA for comprehensive AI compliance.
+Per [EU AI Act Article 27](https://artificialintelligenceact.eu/article/27/) and GDPR Article 35, deployers of AI systems that are classified as high-risk may need to conduct a Fundamental Rights Impact Assessment (FRIA). This module integrates FRIA with GDPR DPIA for comprehensive governance when applicable.
 
-> **⚠️ MANDATORY FOR TRADING PLATFORMS**
+> **⚠️ DEPLOYMENT-DEPENDENT**
 >
-> AI systems in financial services may be classified as high-risk under EU AI Act Annex III:
-> - **5(b)**: AI for creditworthiness assessment
-> - **5(c)**: AI for risk assessment and pricing
-> - **8**: AI affecting access to essential services
+> Some deployments in financial services may be classified as high-risk under EU AI Act Annex III (examples include creditworthiness assessment and certain risk assessment/pricing uses).
 >
-> Combined DPIA + FRIA is REQUIRED for such systems.
+> Combined DPIA + FRIA may be required for such systems. Do not self-classify without legal review.
 
 ```
 # ═══════════════════════════════════════════════════════════════════
@@ -7233,7 +7231,7 @@ Class FundamentalRightsImpactAssessmentManager:
     - FRIA covers broader fundamental rights (Arts. 1-50 Charter)
     - Combined assessment = comprehensive AI compliance
 
-    MANDATORY for deployers of high-risk AI in:
+    MANDATORY for deployers where a system is classified as high-risk AI in:
     - Financial services (Annex III 5(b), 5(c))
     - Essential services access (Annex III 8)
     """
@@ -7317,7 +7315,7 @@ AI System Development:
 
 | AI System | High-Risk | FRIA Required | Key Rights | Bias Risks |
 |-----------|-----------|---------------|------------|------------|
-| Algo trading bot | POSSIBLE | YES | Property, Remedy | Wealth, Geography |
+| Systematic trading tool | POSSIBLE | YES | Property, Remedy | Wealth, Geography |
 | Client risk scorer | YES (5(c)) | **YES** | Non-discrimination | Age, Gender, Race |
 | KYC/AML screening | YES (5(c)) | **YES** | Non-discrimination, Privacy | Name, Nationality |
 | Fraud detection | YES (5(c)) | **YES** | Non-discrimination, Liberty | Profiling bias |
@@ -15776,8 +15774,8 @@ Class CEF2025ComplianceManager:
 - [SCCs Implementation Guide - European Commission](https://commission.europa.eu/law/law-topic/data-protection/international-dimension-data-protection/standard-contractual-clauses-scc_en)
 
 ### Related Regulations
-- [DORA Integration Plan](./DORA_INTEGRATION_PLAN.md)
-- [NIS2 Integration Plan](./NIS2_INTEGRATION_PLAN.md)
+- [DORA Integration Plan](./compliance/DORA_INTEGRATION_PLAN.md)
+- [NIS2 Integration Plan](./compliance/NIS2_INTEGRATION_PLAN.md)
 - [EU AI Act Integration](../services/ai_act/)
 
 ---

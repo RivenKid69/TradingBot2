@@ -87,7 +87,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 |----------|----------------------|----------------------------|-------------------|
 | **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No custody, no client secrets in Cloud, no Cloud live trading instructions, no execution on behalf of clients |
 | **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
-| **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming “DORA certified”; clients run their vendor due diligence |
+| **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming certification; clients run their vendor due diligence |
 | **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
 
 ---
@@ -121,8 +121,8 @@ We have implemented the core technical foundation. Our focus now is **customer v
 | Customer interviews (20+) | Phase 1 (0–1 months) | Pain points ranked |
 | Pilot launch (3-5 teams) | Phase 1 (1–3 months) | 80% complete onboarding |
 | Feature iteration | Phase 2 (3–6 months) | Top 3 requests addressed |
-| Conversion validation | Phase 2 (3–9 months) | 50%+ express payment intent |
-| First paying customers | Phase 2 (6–9 months) | 3+ teams at €2K+/month |
+| Conversion validation | Phase 2 (3–6 months) | willingness to pay at target range (illustrative) |
+| First paying customers | Phase 2 (3–6 months) | first pilot conversions (illustrative) |
 
 ### What We're NOT Doing (Until Validated)
 
@@ -246,7 +246,7 @@ We deliberately constrain our initial market scope following Geoffrey Moore's "C
 | **Team Size** | 5-50 (prop firms + small funds) |
 | **Asset Class** | Listed equities (equities-first) |
 | **Need** | Fast infrastructure + institutional-grade risk controls |
-| **Budget** | €2,000-10,000/month (segment-dependent) |
+| **Budget** | ~€2,000–€5,000/month (initial, illustrative) + enterprise tier for larger firms |
 
 ### Expansion Roadmap (Bowling Alley Strategy)
 
@@ -257,7 +257,7 @@ Beachhead (Equities)         Adjacent Segments
 └─ Success Metrics:           └─ Geographic expansion via referrals
    • Reference customers
    • Repeatable onboarding
-   • Compliance sign-off
+   • Procurement / risk review sign-off
 ```
 
 *For canonical positioning, GTM facts, and legally safe language, see `docs/DOCUMENTATION_CANON_DESIGN.md`.*
@@ -276,7 +276,7 @@ Beachhead (Equities)         Adjacent Segments
 | **Duration** | 3 months |
 | **Pricing** | €500/month (80% discount) |
 | **Commitment** | Weekly feedback, usage data sharing |
-| **Success criteria** | 50%+ conversion intent, NPS > 40 |
+| **Success criteria** | conversion willingness at target price range; repeatable onboarding (illustrative) |
 
 **Why Europe first:**
 - MiFID II regulatory clarity
@@ -290,15 +290,15 @@ Beachhead (Equities)         Adjacent Segments
 - Building or evaluating new infrastructure
 - Budget: €2,000-5,000/month for validated solution
 
-### Phase 2: Early Adopter Revenue (3–9 months)
+### Phase 2: Early Adopter Revenue (3–6 months)
 
 **Post-pilot conversion** to paying customers.
 
 | Milestone | Target |
 |-----------|--------|
-| Paying customers | 10+ firms |
-| Price point | €2,000-3,000/month |
-| ARR | €200K+ |
+| Paying customers | first conversions from pilots (illustrative) |
+| Price point | €2,000–€5,000/month (illustrative) |
+| ARR | €40K–€50K ARR (illustrative) |
 
 ### Phase 3: Scale (9–18 months)
 
@@ -420,9 +420,9 @@ We are transparent that this is an early-stage opportunity. The core technical f
 | Milestone | Timeline | Success Criteria |
 |-----------|----------|------------------|
 | Pilot launch | Phase 1 (0–3 months) | 3-5 teams onboarded |
-| Pilot completion | Phase 2 (3–6 months) | 50%+ conversion intent |
-| First paying customers | Phase 2 (6–9 months) | 3+ teams at €2K+/month |
-| €100K ARR | Phase 3 (9–18 months) | Repeatable sales process |
+| Pilot completion | Phase 2 (3–6 months) | willingness to pay at target range (illustrative) |
+| First paying customers | Phase 2 (3–6 months) | first pilot conversions (illustrative) |
+| Product-market fit indicators | Phase 3 (6–12 months) | 2+ customers expanding usage |
 
 ### Technical Validation (Internal)
 
@@ -509,8 +509,8 @@ Our European expansion plan targets meaningful economic contribution while build
 |----------|----------|------------|---------|
 | 1 | **Sales/GTM** | 40% | Sales lead hire, pilot customer acquisition |
 | 2 | **Engineering** | 35% | DevOps, frontend, infrastructure |
-| 3 | **Operations** | 15% | Legal, compliance, SOC 2 |
-| 4 | **Reserve** | 10% | Contingency (12-month runway target) |
+| 3 | **Operations** | 15% | Legal/compliance operations, SOC 2 readiness roadmap |
+| 4 | **Reserve** | 10% | Contingency buffer (runway target 18–24 months) |
 
 ### Key Milestones (12 months post-funding)
 
@@ -519,12 +519,12 @@ Our European expansion plan targets meaningful economic contribution while build
 | **Phase 1 (0–3 months)** | First pilot customers | 3 signed pilots |
 | **Phase 2 (3–6 months)** | Dashboard MVP, first revenue | €50K ARR (illustrative) |
 | **Phase 2 (3–6 months)** | Cloud deployment | Multi-tenant infrastructure |
-| **Phase 3 (6–12 months)** | Product-market fit signals | 2+ customers expanding |
-| **Phase 3 (9–18 months)** | Series A preparation | €200K+ ARR, 10+ customers |
+| **Phase 3 (6–12 months)** | Product-market fit indicators | 2+ customers expanding |
+| **Phase 3 (9–18 months)** | Series A readiness milestones | milestone-based; revenue/retention dependent (illustrative) |
 
 ### Runway Consideration
 
-Targeting 18-24 month runway to reach Series A milestones. Conservative burn assumed until product-market fit signals.
+Targeting 18-24 month runway to reach Series A milestones. Conservative burn assumed until product-market fit indicators.
 
 ---
 
@@ -738,7 +738,7 @@ We provide technology tools to trading firms who are themselves regulated. We do
 - We do not recommend specific trades or strategies
 
 **Compliance roadmap (for enterprise clients):**
-- SOC 2 Type II certification (planned within Phase 3)
+- SOC 2 readiness roadmap (planned within Phase 3; no certification claim)
 - GDPR data handling documentation (available now)
 - Audit logs + export tooling to support client record-keeping and best-execution analysis (where applicable)
 

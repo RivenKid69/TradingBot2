@@ -374,5 +374,5 @@ config.apply_calibration(results)
 ## Related Documentation
 
 - [Market Impact](market_impact.md) - Impact models
-- [Fill Probability](../lob/fill_probability.py) - Probability models
+- [Fill Probability](../../lob/fill_probability.py) - Probability models
 - [Configuration](configuration.md) - Config reference

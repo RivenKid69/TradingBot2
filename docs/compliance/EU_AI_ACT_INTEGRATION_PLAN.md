@@ -1,25 +1,25 @@
 # EU AI Act Integration Plan
-# План интеграции EU AI Act в AI-Powered Quantitative Research Platform
+# План интеграции EU AI Act tooling в CustodiaCloud
 
 **Версия документа**: 1.5
 **Дата создания**: 2025-12-06
 **Последнее обновление**: 2025-12-10
-**Целевое соответствие**: Regulation (EU) 2024/1689 (AI Act)
-**Крайний срок полного compliance**: 2 августа 2026 (high-risk AI systems)
+**Reference**: Regulation (EU) 2024/1689 (AI Act)
+**Note**: Regulatory timelines and applicability depend on deployment context; validate with qualified counsel.
 
 ### Progress Status
 
-#### HIGH-RISK Overcompliance (Voluntary)
+#### Optional modules (Articles 9–17)
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
-| **Phase 1: Foundation & Risk Management** | **COMPLETED** | 2025-12-08 | 372/372 passed |
-| **Phase 2: Technical Documentation & Logging** | **COMPLETED** | 2025-12-08 | 236/236 passed |
-| **Phase 3: QMS & Testing** | **COMPLETED** | 2025-12-08 | 318/318 passed |
-| **Phase 4: Conformity Assessment** | **COMPLETED** | 2025-12-08 | 81/81 passed |
-| Phase 5: Ongoing Compliance Monitoring | Planned | - | - |
+| **Phase 1: Foundation & Risk Management** | **IMPLEMENTED (tooling)** | 2025-12-08 | 372/372 passed |
+| **Phase 2: Technical Documentation & Logging** | **IMPLEMENTED (tooling)** | 2025-12-08 | 236/236 passed |
+| **Phase 3: QMS & Testing** | **IMPLEMENTED (tooling)** | 2025-12-08 | 318/318 passed |
+| **Phase 4: Conformity Assessment (templates/tooling)** | **IMPLEMENTED (tooling)** | 2025-12-08 | 81/81 passed |
+| Phase 5: Ongoing monitoring | Planned | - | - |
 
-#### GPAI Compliance (Mandatory)
+#### Transparency & documentation modules (deployment-dependent)
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
@@ -39,55 +39,15 @@
 
 ## 📋 Executive Summary
 
-Данный план описывает поэтапную интеграцию требований EU AI Act в платформу TradingBot2 -- AI-систему для количественных исследований и алгоритмической торговли, использующую reinforcement learning (Distributional PPO).
+Данный план описывает поэтапную реализацию **tooling и документационных артефактов**, которые могут поддерживать EU AI Act‑ориентированные проверки и procurement‑процессы у клиентов CustodiaCloud.
 
-### Классификация риска системы (ОБНОВЛЕНО 2025-12-10)
+### Risk classification (no self‑classification)
 
-#### Официальная классификация: GPAI (General-Purpose AI Model)
+CustodiaCloud **не** делает self‑classification (например, “high‑risk AI” или “GPAI”) в документах. Применимость статей и процедур зависит от конкретного deployment‑контекста, ролей сторон и юрисдикции и должна подтверждаться квалифицированным counsel.
 
-На основе детального анализа [Annex III](https://artificialintelligenceact.eu/annex/3/) и [Article 6](https://artificialintelligenceact.eu/article/6/):
-
-| Фактор | Annex III | Применимо? | Комментарий |
-|--------|-----------|------------|-------------|
-| **Creditworthiness (5b)** | AI для оценки кредитоспособности | ❌ НЕТ | Система не оценивает кредитоспособность |
-| **Insurance pricing (5c)** | AI для страхования жизни/здоровья | ❌ НЕТ | Не связана со страхованием |
-| **Algorithmic trading** | **НЕ В ANNEX III** | ❌ НЕТ | Algorithmic trading НЕ включён в HIGH-RISK |
-| **Profiling natural persons** | AI для профилирования | ❌ НЕТ | Система не профилирует физических лиц |
-
-**ВЫВОД**: Algorithmic trading **НЕ включён** в перечень HIGH-RISK систем Annex III EU AI Act.
-
-#### Применимые требования
-
-| Категория | Статьи | Статус |
-|-----------|--------|--------|
-| **GPAI Obligations** | Article 53 | ✅ **Обязательно** |
-| **Transparency (Limited Risk)** | Article 50 | ✅ **Обязательно** |
-| **HIGH-RISK** | Articles 9-17 | ⚠️ Добровольный overcompliance |
-
-#### Консервативный подход (сохранён)
-
-Несмотря на классификацию как GPAI, мы **сохраняем** реализацию HIGH-RISK требований:
-- Дополнительная защита для пользователей
-- Готовность к возможным изменениям регулирования
-- Соответствие ожиданиям enterprise-клиентов
-- Best practices для AI в финансовых сервисах
-
-#### GPAI Compliance Status
-
-| Phase | Requirement | Article | Status |
-|-------|-------------|---------|--------|
-| GPAI Phase 1 | AI System Disclosure | 50(1) | ✅ COMPLETED |
-| GPAI Phase 1 | Copyright Policy | 53(1)(c) | ✅ COMPLETED |
-| GPAI Phase 1 | Training Data Summary | 53(1)(d) | ✅ COMPLETED |
-| GPAI Phase 2 | GPAI Model Card | 53(1)(b) | ✅ COMPLETED |
-| GPAI Phase 2 | User Acknowledgment | 50 | ✅ COMPLETED |
-
-**Источники**:
-- [EU AI Act Annex III](https://artificialintelligenceact.eu/annex/3/)
-- [Article 6 - Classification](https://artificialintelligenceact.eu/article/6/)
-- [Article 50 - Transparency](https://artificialintelligenceact.eu/article/50/)
-- [Article 53 - GPAI Obligations](https://artificialintelligenceact.eu/article/53/)
-- [GPAI Q&A - European Commission](https://digital-strategy.ec.europa.eu/en/faqs/general-purpose-ai-models-ai-act-questions-answers)
+Этот документ описывает:
+- модули прозрачности/документации (Article 50/53 — deployment‑dependent)
+- опциональный набор модулей, покрывающих Articles 9–17 как “risk‑first over‑engineering” (не юридическое утверждение)
 
 ### Связь с существующим регулированием
 
@@ -98,7 +58,7 @@
 
 ---
 
-## 🎯 Ключевые требования EU AI Act для High-Risk AI Systems
+## 🎯 Selected EU AI Act Requirements (Tooling Coverage)
 
 | Статья | Требование | Текущее состояние проекта | Приоритет |
 |--------|------------|---------------------------|-----------|
@@ -396,14 +356,14 @@ pytest tests/test_ai_act_robustness.py -v
 # docs/compliance/technical_documentation/01_general_description.md
 
 ## 1.1 System Identification
-- System name: TradingBot2 AI-Powered Quantitative Research Platform
+- System name: CustodiaCloud
 - Version: [current version]
 - Provider: [company name]
-- Intended purpose: Algorithmic trading using reinforcement learning
+- Intended purpose: risk-first research/simulation and deployment tooling (CCEA; customer-controlled execution)
 
 ## 1.2 Intended Purpose
-- Primary use: Generate trading signals for crypto/equity/forex/futures
-- Target users: Professional traders, quantitative researchers
+- Primary use: produce research outputs (simulation metrics, risk analytics) to support strategy development
+- Target users: Professional systematic trading organizations (B2B)
 - Deployment contexts: Regulated financial markets (EU, US)
 
 ## 1.3 Interaction with Other Systems
@@ -1015,7 +975,7 @@ class ConformitySelfAssessment:
 Regulation (EU) 2024/1689
 
 ## 1. AI System Identification
-Name: TradingBot2 AI-Powered Quantitative Research Platform
+Name: CustodiaCloud
 Version: [version]
 Unique identification: [serial number or unique ID]
 
@@ -1057,7 +1017,7 @@ Place: [place]
 
 ```markdown
 # Instructions for Use
-## TradingBot2 AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 ### 1. Provider Information
 [Contact details per Article 13(3)(a)]
@@ -1107,9 +1067,9 @@ Place: [place]
 ## 📂 Directory Structure for AI Act Compliance
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── services/
-│   └── ai_act/                          # NEW: AI Act compliance modules
+│   └── ai_act/                          # NEW: AI Act alignment tooling modules
 │       ├── __init__.py
 │       ├── risk_management.py           # Article 9
 │       ├── risk_registry.py             # Risk tracking
@@ -1186,7 +1146,7 @@ TradingBot2/
 | Phase 2 | 8-10 weeks | ~15 | ~150 | Technical Docs, Logging, Data Governance |
 | Phase 3 | 6-8 weeks | ~10 | ~200 | QMS, Testing Framework, Security |
 | Phase 4 | 4-6 weeks | ~5 | ~50 | Conformity Assessment, Declaration |
-| **Total** | **26-34 weeks** | **~40** | **~600** | Full EU AI Act Compliance |
+| **Total** | **26-34 weeks** | **~40** | **~600** | EU AI Act alignment support (tooling; not certified) |
 
 ---
 

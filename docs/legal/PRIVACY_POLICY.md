@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**AI-Powered Quantitative Research Platform**
+**CustodiaCloud**
 
 **Effective Date:** December 2024
 **Version:** 3.0.0
@@ -86,17 +86,17 @@ Data processed by the optional local Agent (if you deploy one):
 
 ### 1A.4 Telemetry Redaction
 
-All telemetry from Agent to Cloud is **automatically redacted**:
+Telemetry transmitted from Agent to Cloud is redacted/bucketed according to the Platform's telemetry controls:
 
 | Original Data | Transmitted Data | Redaction |
 |--------------|-----------------|-----------|
-| `symbol: "BTC-USD"` | `symbol: "[REDACTED]"` | Mandatory |
+| `symbol: "AAPL"` | `symbol: "[REDACTED]"` | Mandatory |
 | `quantity: 1.5` | Not transmitted | Blocked |
 | `price: 50000` | Not transmitted | Blocked |
 | `equity: 100500.25` | `equity_bucket: "100K-500K"` | Bucketed |
 | `pnl: 5.23%` | `pnl_percent: 5.2` | Rounded |
 
-**Redaction cannot be disabled** - it is enforced at the protocol level.
+Redaction is enforced by schema/controls for data transmitted to Cloud.
 
 ---
 
@@ -113,16 +113,15 @@ When you create an account, we collect:
 | Password (hashed) | Authentication | Contract (Art. 6(1)(b)) |
 | Account creation date | Record keeping | Contract (Art. 6(1)(b)) |
 
-### 2.2 Trading Data
+### 2.2 Strategy and Research Data
 
-When you use trading features, we process:
+When you use research/backtesting features, we process:
 
 | Data Type | Purpose | Legal Basis |
 |-----------|---------|-------------|
-| Strategies | Service provision, backtesting | Contract (Art. 6(1)(b)) |
-| Backtest results | Performance analysis | Contract (Art. 6(1)(b)) |
-| Execution logs | Order tracking, audit trail | Contract + Legal obligation |
-| Position data | Risk management | Contract (Art. 6(1)(b)) |
+| Strategies (code/config) | Service provision, backtesting | Contract (Art. 6(1)(b)) |
+| Backtest/simulation results | Research workflows | Contract (Art. 6(1)(b)) |
+| Aggregated telemetry (if enabled) | Monitoring and reliability | Contract (Art. 6(1)(b)) |
 
 ### 2.3 Broker Credentials (CCEA Architecture)
 
@@ -196,8 +195,7 @@ We process data necessary to provide our services:
 - Account management
 - Strategy storage and execution
 - Backtest computation
-- Order execution via broker APIs
-- Customer support
+- Monitoring (where enabled) and customer support
 
 ### 3.2 Legitimate Interest (Article 6(1)(f))
 
@@ -224,7 +222,7 @@ You can withdraw consent at any time through account settings.
 
 We may process data to comply with legal requirements:
 
-- Financial regulations (audit trails)
+- Operational/security record-keeping (e.g., access logs)
 - Tax reporting obligations
 - Law enforcement requests (with valid legal process)
 - Regulatory inquiries
@@ -240,8 +238,7 @@ We may process data to comply with legal requirements:
 | Account data | Until deletion request + 30 days | Account recovery grace period |
 | Strategies | Until user deletes or account closure | Service provision |
 | Backtest results | 2 years or until user deletes | Historical reference |
-| Execution logs | 5 years | Financial audit trail (MiFID II Art. 25) |
-| Broker credentials | Until user revokes | Service provision |
+| Telemetry (redacted/aggregated) | 90 days (default) | Monitoring and reliability |
 | Security logs | 2 years | Security investigation |
 | Audit logs | 5 years (anonymized after deletion) | Legal compliance |
 
@@ -407,11 +404,11 @@ If data transfer outside the EU is necessary, we ensure adequate protection thro
 
 ### 6.3 Broker Connections
 
-When you connect to non-EU brokers, order data may be transmitted to broker servers outside the EU. This is:
+When you connect to non-EU brokers/exchanges, order data may be transmitted to broker/exchange servers outside the EU by the broker relationship you operate. This is:
 
 - Necessary for contract performance
 - Initiated and controlled by you
-- Limited to order execution data
+- Processed by your broker/exchange counterparties (CustodiaCloud Cloud does not receive broker order payloads under CCEA)
 
 ---
 
@@ -519,7 +516,7 @@ You have the right to lodge a complaint with a supervisory authority:
 
 ## 7A. CCEA PRIVACY DESIGN COMMITMENTS CHECKLIST
 
-This section provides an explicit checklist of privacy design commitments enforced by the CCEA architecture. These are **architectural invariants** that cannot be overridden by configuration.
+This section provides an explicit checklist of privacy design commitments for the CCEA architecture. These commitments describe the intended Cloud/Agent boundary and telemetry controls.
 
 ### 7A.1 Cloud Never Receives Secrets
 

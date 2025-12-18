@@ -1,10 +1,12 @@
 # Open-Core Business Model Strategy
 
-## CCEA Platform - Strategic Framework
+## CustodiaCloud - Strategic Framework
 
 **Document Version:** 2.0
 **Date:** December 2025
 **Classification:** Internal Strategy Document
+
+**Note:** The current monorepo is proprietary (see `LICENSE`). Any open-source/open-core distribution is an optional future strategy and must be implemented via separate repositories with explicit licensing and trademark terms. License references below are illustrative until such repositories are actually published.
 
 ---
 
@@ -141,8 +143,8 @@ Per the CCEA (Cloud-Controlled Execution Architecture) design:
 
 | Component | Location | Open/Proprietary |
 |-----------|----------|------------------|
-| **CCEA Agent** | Customer Premises | Open (MIT) |
-| **SDK/Client Libraries** | Developer Workstation | Open (MIT) |
+| **CCEA Agent** | Customer Premises | Proposed public component (license TBD) |
+| **SDK/Client Libraries** | Developer Workstation | Proposed public component (license TBD) |
 | **Cloud Platform** | Our Infrastructure | Proprietary |
 
 **Key Design Principle:** Live order execution happens in the customer's environment (Agent), NOT in cloud. This positions us as a **Software Provider / ICT Provider**, not an Investment Advisor.
@@ -152,7 +154,7 @@ Per the CCEA (Cloud-Controlled Execution Architecture) design:
 ```
 ORGANIZATION: ccea-platform
 
-├── ccea-agent (PUBLIC - MIT License)
+├── ccea-agent (CANDIDATE PUBLIC - license TBD)
 │   │
 │   ├── agent/
 │   │   ├── daemon.py          # Agent Daemon service
@@ -173,11 +175,11 @@ ORGANIZATION: ccea-platform
 │   │   ├── broker_config.md
 │   │   └── risk_limits.md
 │   │
-│   ├── LICENSE (MIT)
+│   ├── LICENSE (TBD)
 │   ├── README.md
 │   └── pyproject.toml
 
-├── ccea-sdk (PUBLIC - MIT License)
+├── ccea-sdk (CANDIDATE PUBLIC - license TBD)
 │   │
 │   ├── ccea/
 │   │   ├── client.py          # Cloud API client
@@ -193,7 +195,7 @@ ORGANIZATION: ccea-platform
 │   │   ├── api_reference.md
 │   │   └── tutorials/
 │   │
-│   ├── LICENSE (MIT)
+│   ├── LICENSE (TBD)
 │   └── pyproject.toml
 
 └── ccea-cloud (PRIVATE - Proprietary)
@@ -213,7 +215,7 @@ ORGANIZATION: ccea-platform
     │   ├── distributional_ppo.py
     │   ├── execution_sim.py
     │   ├── risk_guard.py
-    │   └── [11,000+ proprietary components]
+│   └── [proprietary components]
     │
     └── lob/                   # L3 LOB simulation
 ```
@@ -248,17 +250,15 @@ ORGANIZATION: ccea-platform
 | Dedicated CSM | ❌ | ❌ | ❌ | ✅ |
 | SLA | ❌ | 99.5% | 99.9% | 99.95% |
 
-**Note:** Live execution always runs on the customer's Agent, ensuring regulatory compliance and customer ownership of trading decisions.
+**Note:** Live execution (if used) runs on the customer's Agent. This supports a software/ICT provider posture; regulatory obligations are deployment-dependent and must be validated by customer teams with qualified counsel.
 
 ### 3.4 Pricing Model
 
-| Tier | Price | Target Customer |
+| Tier | Price (illustrative) | Target Customer |
 |------|-------|-----------------|
-| **Agent Only (Free)** | $0 | Developers, students, researchers |
-| **Cloud Solo** | $99/month | Individual quants, indie traders |
-| **Cloud Pro** | $500/month | Small quant teams, family offices |
-| **Cloud Team** | $2,000/month | Small funds, trading desks |
-| **Enterprise** | Custom ($50K+/year) | Institutional clients, prop firms |
+| **Pilot** | ~€500/month | Pilot cohort firms (3–5), weekly feedback |
+| **Standard** | ~€2,000–€5,000/month | Beachhead professional teams (equities-first) |
+| **Enterprise** | Custom | Larger firms; scope-dependent controls/support |
 
 **Revenue Drivers:**
 - Cloud compute usage (backtest hours, training GPU)
@@ -269,93 +269,11 @@ ORGANIZATION: ccea-platform
 
 ---
 
-## 4. License Strategy
+## 4. License strategy (internal note; not a legal statement)
 
-### 4.1 Open Component License: MIT
-
-```
-MIT License
-
-Copyright (c) 2025 CCEA Platform
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-```
-
-**Why MIT for Agent and SDK:**
-- Maximum permissiveness for adoption
-- No copyleft concerns for enterprise
-- Compatible with proprietary internal systems
-- Industry standard for developer tools
-- **Supports legal positioning:** Customer runs open-source code, making decisions locally
-
-### 4.2 Proprietary License (Cloud Platform)
-
-```
-CCEA CLOUD PROPRIETARY LICENSE
-
-Copyright (c) 2025 CCEA Platform. All Rights Reserved.
-
-This software and associated documentation files (the "Software") are
-proprietary and confidential.
-
-RESTRICTIONS:
-1. No part of the Software may be copied, modified, distributed, sold,
-   sublicensed, or transferred without prior written consent.
-2. Reverse engineering, decompilation, or disassembly is prohibited.
-3. The Software may only be used under a valid license agreement.
-
-ACCESS:
-- SaaS access via CCEA Cloud platform (terms of service)
-- Enterprise access via signed Enterprise License Agreement
-- Evaluation access via time-limited trial agreement
-
-SCOPE:
-The proprietary license covers Cloud services only:
-- Training Service, Backtest Engine, Artifact Builder/Registry
-- Control Plane, Telemetry, Agent Registry
-- Strategy Workspace and all Cloud-hosted components
-
-For licensing inquiries: enterprise@ccea.ai
-```
-
-### 4.3 Contributor License Agreement (CLA)
-
-For open Agent and SDK contributions:
-
-```
-CONTRIBUTOR LICENSE AGREEMENT
-
-By submitting a Contribution, you agree that:
-
-1. GRANT OF COPYRIGHT LICENSE
-   You grant CCEA Platform a perpetual, worldwide, non-exclusive, royalty-free
-   license to use, copy, modify, and distribute your Contribution.
-
-2. GRANT OF PATENT LICENSE
-   You grant CCEA Platform a perpetual, worldwide, non-exclusive, royalty-free
-   patent license for any patents you own that cover your Contribution.
-
-3. AUTHORITY
-   You represent that you have the legal authority to enter this Agreement.
-
-4. ORIGINAL WORK
-   You represent that your Contribution is your original creation.
-
-5. NO WARRANTY
-   You provide your Contribution "AS IS" without warranty.
-```
+- Current monorepo is proprietary (see `LICENSE`).
+- If an open-core split is pursued, Agent/SDK licensing is **TBD** and must be defined explicitly in the published repositories (counsel-led).
+- Any contributor agreements (CLA) and trademark terms must be reviewed and finalized before accepting external contributions.
 
 ---
 
@@ -449,7 +367,7 @@ By submitting a Contribution, you agree that:
 1. 18-24 month head start
 2. Established customer base
 3. Trained models and calibrations
-4. 11,063 test cases as quality moat
+4. Extensive automated tests as quality moat (verify in repo)
 
 ---
 

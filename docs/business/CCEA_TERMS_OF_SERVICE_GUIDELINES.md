@@ -1,6 +1,6 @@
-# CCEA Terms of Service Guidelines
+# CustodiaCloud Terms of Service Guidelines (CCEA‑Safe)
 
-## Legal Framework for CCEA Platform Services
+## Legal Framework for CustodiaCloud Services
 
 **Document Version:** 1.0
 **Date:** December 2025
@@ -11,14 +11,16 @@
 
 ## Purpose
 
-This document establishes the **required provisions and language** for CCEA Platform Terms of Service. These guidelines ensure:
+This document establishes the **required provisions and language** for CustodiaCloud Terms of Service. These guidelines ensure:
 
-1. **Regulatory Compliance** - Clear positioning as software provider
+1. **Regulatory‑safe posture** - Clear positioning as software / ICT provider
 2. **Liability Protection** - Appropriate limitation of liability
 3. **Customer Clarity** - Clear understanding of responsibilities
 4. **Architectural Alignment** - ToS reflects Cloud/Agent separation
 
-**Reference:** See [CCEA_OVERVIEW.md](../architecture/CCEA_OVERVIEW.md) for complete architectural documentation.
+**Canon (single source of truth for safe wording):** `docs/DOCUMENTATION_CANON_DESIGN.md`
+
+**CCEA technical reference:** `archive/root_files/Design Doc CCEA Cloud.txt`
 
 ---
 
@@ -31,7 +33,7 @@ The following statements MUST appear prominently in the Terms of Service:
 #### Not Investment Advice
 
 ```legal
-CCEA Platform does not provide investment advice, recommendations, or
+CustodiaCloud does not provide investment advice, recommendations, or
 suggestions regarding securities, investments, or trading strategies.
 All content, including but not limited to simulation results, backtest
 data, model outputs, and educational materials, is provided for
@@ -39,15 +41,15 @@ informational and educational purposes only and should not be construed
 as investment advice.
 
 Users acknowledge that any trading or investment decisions are made
-solely at their own discretion and risk, without reliance on CCEA
-Platform or its affiliates for guidance on the suitability, profitability,
+solely at their own discretion and risk, without reliance on CustodiaCloud
+or its affiliates for guidance on the suitability, profitability,
 or appropriateness of any particular trade or investment strategy.
 ```
 
 #### Not a Broker or Custodian
 
 ```legal
-CCEA Platform is not a broker, dealer, exchange, custodian, or any other
+CustodiaCloud is not a broker, dealer, exchange, custodian, or any other
 type of regulated financial intermediary. We do not:
 
 - Execute trades or place orders on behalf of users
@@ -56,7 +58,7 @@ type of regulated financial intermediary. We do not:
 - Provide access to financial markets
 - Act as an intermediary between users and any financial institution
 
-Users acknowledge that CCEA Platform is a software provider only. Any
+Users acknowledge that CustodiaCloud is a software provider only. Any
 trading activities occur through the user's own brokerage accounts and
 relationships, using software tools (the "Agent") deployed and controlled
 entirely within the user's own computing environment.
@@ -76,10 +78,10 @@ API credentials. The user is solely responsible for:
 - Monitoring active strategies
 - Complying with applicable regulations
 
-CCEA Platform's Cloud services provide research tools, simulation
+CustodiaCloud's Cloud services provide research tools, simulation
 environments, training services, and strategy artifacts only. The Cloud
 does NOT have access to user brokerage credentials and does NOT transmit
-trading orders.
+live trading instructions (orders/targets/signals).
 ```
 
 #### Risk Acknowledgment
@@ -111,7 +113,7 @@ consult with qualified financial advisors before making investment decisions.
 ### 2.1 Cloud Services Description
 
 ```legal
-CCEA Platform Cloud Services ("Cloud Services") include:
+CustodiaCloud Cloud Services ("Cloud Services") include:
 
 1. **Strategy Workspace** - Browser-based environment for strategy
    development and code editing
@@ -136,8 +138,8 @@ Cloud Services explicitly do NOT include:
 ### 2.2 Agent Software Description
 
 ```legal
-CCEA Platform Agent Software ("Agent") is open-source software (MIT License)
-that users download, deploy, and operate in their own computing environment.
+CustodiaCloud Agent Software ("Agent") is customer-deployed software that users
+download, deploy, and operate in their own computing environment.
 The Agent provides:
 
 1. **Strategy Runner** - Execution runtime for strategy artifacts
@@ -150,9 +152,8 @@ The Agent:
 - Stores all credentials locally in the user's environment
 - Creates and transmits orders only upon user approval
 - Provides local control including manual kill switch
-- Is open-source and auditable by the user
 
-CCEA Platform does not operate, control, or monitor user Agents except
+CustodiaCloud does not operate, control, or monitor user Agents except
 as explicitly requested by the user through the Control Plane interface.
 ```
 
@@ -163,7 +164,7 @@ as explicitly requested by the user through the Control Plane interface.
 ### 3.1 Disclaimer of Warranties
 
 ```legal
-CCEA PLATFORM SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT
+CUSTODIACLOUD SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT
 WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT
 LIMITED TO:
 
@@ -173,7 +174,7 @@ LIMITED TO:
 - ACCURACY, COMPLETENESS, OR RELIABILITY OF ANY CONTENT
 - UNINTERRUPTED OR ERROR-FREE OPERATION
 
-CCEA Platform does not warrant that:
+CustodiaCloud does not warrant that:
 - The services will meet user requirements
 - Results obtained will be accurate or reliable
 - Any errors will be corrected
@@ -183,7 +184,7 @@ CCEA Platform does not warrant that:
 ### 3.2 Limitation of Liability
 
 ```legal
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, CCEA PLATFORM AND ITS AFFILIATES,
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, CUSTODIACLOUD AND ITS AFFILIATES,
 OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR:
 
 1. Any indirect, incidental, special, consequential, or punitive damages
@@ -198,7 +199,7 @@ OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR:
    - Agent software operation in user environment
    - User configuration or misconfiguration
 
-MAXIMUM LIABILITY: In no event shall CCEA Platform's total aggregate
+MAXIMUM LIABILITY: In no event shall CustodiaCloud's total aggregate
 liability exceed the fees actually paid by user in the twelve (12)
 months preceding the claim.
 ```
@@ -206,7 +207,7 @@ months preceding the claim.
 ### 3.3 Indemnification
 
 ```legal
-User agrees to indemnify, defend, and hold harmless CCEA Platform and
+User agrees to indemnify, defend, and hold harmless CustodiaCloud and
 its affiliates from any claims, damages, losses, or expenses arising from:
 
 1. User's use of the services
@@ -225,7 +226,7 @@ its affiliates from any claims, damages, losses, or expenses arising from:
 ### 4.1 Eligibility Requirements
 
 ```legal
-By using CCEA Platform services, user represents and warrants that:
+By using CustodiaCloud services, user represents and warrants that:
 
 1. User is at least 18 years of age (or age of majority in their
    jurisdiction)
@@ -257,7 +258,7 @@ User is solely responsible for:
 
 5. Complying with exchange, broker, and market rules
 
-CCEA Platform does not provide legal, tax, or regulatory advice.
+CustodiaCloud does not provide legal, tax, or regulatory advice.
 Users should consult qualified professionals for such guidance.
 ```
 
@@ -266,7 +267,7 @@ Users should consult qualified professionals for such guidance.
 ```legal
 User is solely responsible for:
 
-1. Security of their CCEA Platform account credentials
+1. Security of their CustodiaCloud account credentials
 2. Security of their brokerage API credentials
 3. Security of the computing environment running the Agent
 4. Proper configuration of risk management parameters
@@ -287,14 +288,14 @@ User agrees to:
 ### 5.1 Data Collection
 
 ```legal
-CCEA Platform collects and processes the following data:
+CustodiaCloud collects and processes the following data:
 
 1. **Account Data** - Registration information, contact details
 2. **Usage Data** - Service usage patterns, feature utilization
 3. **Strategy Metadata** - Strategy configurations, backtest parameters
 4. **Telemetry Data** - Aggregated performance metrics (not raw order data)
 
-CCEA Platform does NOT collect:
+CustodiaCloud does NOT collect:
 - Brokerage API credentials (stored locally in Agent)
 - Raw order or trade data
 - Actual portfolio positions or balances
@@ -306,7 +307,7 @@ See our Privacy Policy for complete data handling details.
 ### 5.2 Data Processing
 
 ```legal
-User grants CCEA Platform a limited license to process user data for:
+User grants CustodiaCloud a limited license to process user data for:
 
 1. Providing the services
 2. Improving platform functionality
@@ -328,7 +329,7 @@ Users retain ownership of their strategy code and configurations.
 ### 6.1 Platform IP
 
 ```legal
-CCEA Platform retains all rights to:
+CustodiaCloud retains all rights to:
 
 1. Cloud service software and algorithms
 2. Training service methods and models
@@ -349,20 +350,16 @@ Users retain all rights to:
 2. Custom configurations and parameters
 3. Data and content uploaded by user
 
-Users grant CCEA Platform a limited license to process such content
+Users grant CustodiaCloud a limited license to process such content
 solely for providing the services.
 ```
 
-### 6.3 Agent Software (Open Source)
+### 6.3 Agent Software (Customer‑Deployed)
 
 ```legal
-The CCEA Agent software is provided under the MIT License. Users may:
-
-1. Use, copy, modify, and distribute the Agent software
-2. Use the Agent for commercial purposes
-3. Create derivative works based on the Agent
-
-The MIT License text is included in the Agent repository.
+The Agent is customer-deployed software that runs in the customer's own
+computing environment. Licensing terms depend on the specific distribution
+and applicable license documents provided with the Agent release.
 ```
 
 ---
@@ -406,14 +403,14 @@ Users may terminate their account at any time by:
 Upon termination:
 - Access to Cloud services ends immediately
 - Downloaded strategy artifacts remain available
-- Agent software continues to function (open source)
+- Agent software continues to function (customer-deployed)
 - Data retained per our data retention policy
 ```
 
 ### 8.2 Platform Termination
 
 ```legal
-CCEA Platform may terminate or suspend user accounts for:
+CustodiaCloud may terminate or suspend user accounts for:
 1. Violation of these Terms of Service
 2. Suspected fraudulent activity
 3. Non-payment of fees
@@ -455,7 +452,7 @@ and waive any right to participate in class actions.
 
 ```legal
 These Terms, together with the Privacy Policy and any order forms,
-constitute the entire agreement between user and CCEA Platform.
+constitute the entire agreement between user and CustodiaCloud.
 ```
 
 ### 10.2 Severability
@@ -467,15 +464,15 @@ If any provision is held invalid, remaining provisions continue in effect.
 ### 10.3 Modifications
 
 ```legal
-CCEA Platform may modify these Terms with 30 days notice. Continued
+CustodiaCloud may modify these Terms with 30 days notice. Continued
 use after modification constitutes acceptance.
 ```
 
 ### 10.4 Assignment
 
 ```legal
-Users may not assign their rights without CCEA Platform consent.
-CCEA Platform may assign these Terms in connection with merger,
+Users may not assign their rights without CustodiaCloud consent.
+CustodiaCloud may assign these Terms in connection with merger,
 acquisition, or sale of assets.
 ```
 

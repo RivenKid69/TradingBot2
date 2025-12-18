@@ -1,5 +1,5 @@
 # Instructions for Use
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Document ID**: IFU-2025-001
 **Version**: 1.0
@@ -10,7 +10,9 @@
 
 ## Important Notice
 
-This AI system is classified as a **HIGH-RISK AI SYSTEM** under Regulation (EU) 2024/1689 (EU AI Act) due to its application in algorithmic trading within financial services.
+This document is an **Article 13 template** intended to support transparency/instructions requirements under Regulation (EU) 2024/1689 (EU AI Act).
+
+CustodiaCloud does **not** self-classify as a “high-risk AI system” in documentation. Classification and applicable obligations depend on deployment context, roles, and jurisdiction and should be validated with qualified counsel.
 
 **This system is intended for professional use only by qualified operators with appropriate financial market knowledge and regulatory understanding.**
 
@@ -42,12 +44,14 @@ This AI system is classified as a **HIGH-RISK AI SYSTEM** under Regulation (EU) 
 
 ### 2.1 Intended Purpose (Article 13(3)(b))
 
-The AI-Powered Quantitative Research Platform is designed for:
+CustodiaCloud is designed for:
 
-- **Primary Function**: Generation of algorithmic trading signals using reinforcement learning
-- **Asset Classes**: Cryptocurrency, equity, forex, and futures markets
-- **Target Users**: Professional traders, quantitative researchers, financial institutions
-- **Deployment Context**: Regulated financial markets (EU, US, and other jurisdictions)
+- **Primary Function**: Quantitative research workflows (simulation/backtesting/monitoring) and packaging signed artifacts for deployment via the customer-controlled Agent (CCEA)
+- **Asset Classes**: Equities-first (MVP); foundation multi-asset (options/futures/FX/digital assets as optional expansion)
+- **Target Users**: Professional trading organizations and other qualified operators (B2B)
+- **Deployment Context**: Client-controlled deployments in regulated financial markets (deployment context determines applicable obligations)
+
+**CCEA boundary reminder:** Cloud does not store broker credentials and does not send live trading instructions (orders/targets/signals). Live execution (if any) occurs only via the customer-controlled Agent and the customer's own broker accounts.
 
 ### 2.2 System Architecture
 
@@ -66,10 +70,10 @@ The AI-Powered Quantitative Research Platform is designed for:
 
 The system is capable of:
 
-1. **Multi-Asset Signal Generation**
-   - Real-time analysis across crypto, equity, forex, futures
-   - Adaptive position sizing based on risk parameters
-   - Portfolio-level optimization
+1. **Research Output Generation (equities-first)**
+   - Quantitative analysis across equities for the MVP, with optional expansion to options/futures/FX/digital assets
+   - Scenario analysis for strategy parameters and risk settings (operator-controlled)
+   - Portfolio-level analytics (client-side, if applicable)
 
 2. **Market Data Processing**
    - Real-time price data ingestion
@@ -95,22 +99,14 @@ The system is capable of:
 
 | Metric | Specification |
 |--------|--------------|
-| **Signal Generation Latency** | < 100ms |
-| **Throughput** | > 1,000 signals/second |
-| **System Availability** | 99.9% SLA |
-| **Recovery Time** | < 5 minutes |
+| **Latency** | Deployment-dependent; measured and agreed during pilot/SLA |
+| **Throughput** | Deployment-dependent |
+| **System Availability** | Deployment/SLA-dependent |
+| **Recovery Time** | Deployment/runbook-dependent |
 
 ### 3.3 Accuracy Metrics (Article 13(3)(b)(ii))
 
-| Metric | Expected Range | Description |
-|--------|----------------|-------------|
-| **Sharpe Ratio** | 0.5 - 2.0 | Risk-adjusted return |
-| **Sortino Ratio** | 0.7 - 2.5 | Downside risk-adjusted return |
-| **Maximum Drawdown** | < 20% | Peak-to-trough decline limit |
-| **Win Rate** | 45% - 65% | Percentage of profitable trades |
-| **Profit Factor** | 1.2 - 2.0 | Gross profit / Gross loss |
-
-**Note**: Actual performance may vary based on market conditions. Past performance does not guarantee future results.
+CustodiaCloud does not publish performance or accuracy targets in documentation. Accuracy/suitability must be evaluated by the customer in their own environment. Evidence exports and audit trails are designed to support review, governance, and validation.
 
 ---
 
@@ -127,13 +123,13 @@ The following limitations apply to this AI system:
 
 2. **Data Dependency**
    - Requires stable, low-latency data feed connectivity
-   - Data quality directly impacts signal quality
+   - Data quality directly impacts output quality
    - Historical data biases may affect predictions
 
 3. **Operational Constraints**
    - Designed for professional/institutional use only
    - Requires human oversight for production deployment
-   - Not suitable for retail investors without guidance
+   - Not intended for retail investors
 
 4. **Model Uncertainty**
    - Predictions have inherent uncertainty
@@ -174,7 +170,7 @@ The following limitations apply to this AI system:
 
 3. **Position Limits**
    - Maximum position size per asset
-   - Portfolio-level risk limits
+   - Account-level risk limits (operator-configured)
    - Dynamic adjustment based on volatility
 
 4. **Data Validation**
@@ -207,7 +203,7 @@ The system includes a kill switch per Article 14(4)(f):
 
 | Action | Method | Effect |
 |--------|--------|--------|
-| **Emergency Stop** | Button / API / CLI | Immediate halt of all trading |
+| **Emergency Stop** | Button / API / CLI | Immediate halt of Agent-controlled live execution |
 | **Pause** | Dashboard control | Temporary suspension |
 | **Position Close** | Emergency command | Close all open positions |
 | **System Shutdown** | Full stop | Complete system shutdown |
@@ -312,22 +308,22 @@ Operators must:
 1. Start monitoring dashboard
 2. Initialize data connections
 3. Load model and configuration
-4. Begin in paper-trading mode
-5. Validate signals before live trading
-6. Enable live trading with reduced size
+4. Begin in paper mode (simulation)
+5. Validate model outputs before live execution
+6. Enable live execution (via Agent) with reduced size
 7. Gradually increase position limits
 
 ### 9.3 During Operation
 
 - Monitor performance metrics continuously
 - Review alerts and anomalies
-- Validate significant trading decisions
+- Validate significant strategy and configuration changes
 - Document any interventions
 - Maintain oversight presence
 
 ### 9.4 Shutdown Procedure
 
-1. Pause new signal generation
+1. Pause new runs / disable deployment
 2. Review open positions
 3. Close positions if required
 4. Save system state
@@ -344,12 +340,12 @@ The system automatically logs:
 
 | Event Type | Data Captured | Retention |
 |------------|---------------|-----------|
-| **Trading Decisions** | Input, output, confidence, rationale | 6+ months |
-| **Predictions** | Market predictions, uncertainty bounds | 6+ months |
-| **Orders** | Order details, execution, fills | 6+ months |
-| **Risk Events** | Threshold breaches, alerts | 6+ months |
-| **Human Overrides** | Override actions, operator ID | 6+ months |
-| **System Events** | Start, stop, errors, health | 6+ months |
+| **Strategy Outputs** | Output type, timestamps, confidence/metadata | Deployment-defined |
+| **Predictions** | Predictions (if enabled), uncertainty metadata | Deployment-defined |
+| **Orders** | Order events (local Agent); optional redacted/aggregated telemetry to Cloud | Deployment-defined |
+| **Risk Events** | Threshold breaches, alerts | Deployment-defined |
+| **Human Overrides** | Override actions, operator ID | Deployment-defined |
+| **System Events** | Start, stop, errors, health | Deployment-defined |
 
 ### 10.2 Log Access
 
@@ -465,14 +461,14 @@ Users must also comply with:
 
 ## 16. Legal Disclaimer
 
-This AI system is provided for professional use in algorithmic trading. While the system incorporates advanced risk management features, trading in financial markets involves substantial risk of loss.
+CustodiaCloud is provided as a B2B software/ICT system for quantitative research and customer-controlled deployment via the Agent (CCEA). While markets involve substantial risk of loss, CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations.
 
 - This system does not constitute financial advice
 - Past performance does not guarantee future results
 - Users are responsible for their own trading decisions
 - Compliance with local regulations is the user's responsibility
 
-The provider makes no warranties regarding trading profits or losses. Users should only trade with capital they can afford to lose.
+The provider makes no warranties regarding trading outcomes. Users should only trade with capital they can afford to lose.
 
 ---
 

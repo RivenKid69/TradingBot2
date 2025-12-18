@@ -123,7 +123,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 | **TST-004** | Vulnerability scanning | SBOM-based vulnerability detection | ✅ Implemented | `supply_chain.py:185-210` |
 | **TST-005** | Compliance reporting | `ComplianceCheckResult` with gap analysis | ✅ Implemented | `security_baseline.py:280-320` |
 | **TST-006** | Audit trail verification | Hash chain integrity checks | ✅ Implemented | All governance modules |
-| **TST-007** | Access review | Periodic access certification | ✅ Implemented | `rbac.py` |
+| **TST-007** | Access review | Periodic access attestation | ✅ Implemented | `rbac.py` |
 | **TST-008** | Incident response testing | Tabletop with 24h notification target | ✅ Implemented | `breach_workflow.py` |
 
 ### 4.8 Risk Management (Art. 32(2))

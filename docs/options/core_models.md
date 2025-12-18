@@ -31,7 +31,7 @@ Phase 1 of the Options Integration implements the foundational pricing models, G
 ### File Structure
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── core_options.py              # Data structures, enums, contracts
 ├── core_errors.py               # Options-specific error classes (OptionsError)
 ├── impl_greeks.py               # Scalar Greek calculations (12 Greeks)

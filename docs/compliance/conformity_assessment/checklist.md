@@ -1,5 +1,5 @@
 # EU AI Act Conformity Assessment Checklist
-## TradingBot2 AI-Powered Quantitative Research Platform
+## CustodiaCloud (Template)
 
 **Document ID**: CHK-001
 **Version**: 1.0
@@ -10,16 +10,16 @@
 
 ## Overview
 
-This checklist is used to perform the conformity self-assessment per Article 43 and Annex VI of the EU AI Act. The assessment is designed to verify alignment with applicable requirements before the AI system is placed on the market.
+This checklist is a template to support an assessment workflow per Article 43 and Annex VI of the EU AI Act. Classification and applicable requirements depend on deployment context and should be validated with qualified counsel before external use.
 
 ### Assessment Procedure (Annex VI - Internal Control)
 
 1. Verify quality management system (Article 17)
 2. Examine technical documentation (Article 11)
 3. Verify conformity with requirements (Articles 8-15)
-4. Affix CE marking (Article 48)
-5. Draw up EU declaration of conformity (Article 47)
-6. Register in EU database (Article 49)
+4. If applicable, prepare CE marking and related documentation (Article 48)
+5. If applicable, draw up EU declaration of conformity (Article 47)
+6. If applicable, register in EU database (Article 49)
 
 ---
 

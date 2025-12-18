@@ -15,16 +15,16 @@
 
 | Field | Value |
 |-------|-------|
-| **System Name** | AI-Powered Quantitative Research Platform |
-| **Trade Name** | TradingBot2 |
+| **System Name** | CustodiaCloud |
+| **Trade Name** | CustodiaCloud |
 | **Version** | 2.0.0 |
 | **Unique Identification** | SYS-QRPT-2025-001 |
-| **Risk Classification** | High-Risk AI System |
-| **Annex III Category** | Financial Services - Algorithmic Trading |
+| **Risk Classification** | [TBD by provider; jurisdiction- and deployment-dependent] |
+| **Annex III Category** | [TBD by provider; legal review required] |
 
 ### System Description
 
-AI-powered algorithmic trading system using reinforcement learning (Distributional PPO with Twin Critics) for generating trading signals across multiple asset classes including cryptocurrency, equity, forex, and futures markets.
+Software/ML-enabled research and deployment platform (CCEA architecture) that supports simulation outputs and analytics for professional systematic trading organizations. Live execution (if any) occurs only in the customer-controlled Agent and customer broker accounts; the Cloud does not store credentials and does not send live trading instructions (orders/targets/signals).
 
 ---
 
@@ -57,7 +57,7 @@ This declaration of conformity is issued under the sole responsibility of the pr
 
 - **Regulation (EU) 2024/1689** of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)
 
-The AI system has been assessed against the following requirements for high-risk AI systems:
+If the provider determines that the AI system falls under a high-risk classification (deployment-dependent), it may be assessed against requirements such as:
 
 | Article | Requirement | Provider Assessment Status |
 |---------|-------------|-------------------|
@@ -94,7 +94,7 @@ The conformity assessment procedure used for this AI system: [Select/Describe, e
 
 ## 5. Applied Standards
 
-The following harmonized standards and technical specifications were applied:
+The following harmonized standards and technical specifications may be considered (deployment-dependent; validate applicability with counsel and relevant standards bodies):
 
 ### International Standards
 
@@ -118,55 +118,55 @@ The following harmonized standards and technical specifications were applied:
 
 ## 6. Technical Documentation
 
-Technical documentation has been prepared in accordance with **Annex IV** of the AI Act and includes:
+Technical documentation should be prepared in accordance with **Annex IV** of the AI Act and may include:
 
-- [x] General description of the AI system
-- [x] Detailed description of elements and development process
-- [x] Monitoring, functioning, and control description
-- [x] Description of performance metrics
-- [x] Detailed description of risk management system
-- [x] Description of changes made to the system
+- [ ] General description of the AI system
+- [ ] Detailed description of elements and development process
+- [ ] Monitoring, functioning, and control description
+- [ ] Description of performance characteristics (deployment-defined)
+- [ ] Detailed description of risk management system
+- [ ] Description of changes made to the system
 
-**Documentation Reference**: docs/compliance/technical_documentation/
+**Documentation Reference**: [TBD by provider]
 
 ---
 
 ## 7. Quality Management System
 
-A quality management system has been established in accordance with **Article 17** and includes:
+A quality management system should be established in accordance with **Article 17** and may include:
 
-- [x] Strategy for regulatory compliance (Article 17(1)(a))
-- [x] Design and development control (Article 17(1)(b))
-- [x] Development quality assurance (Article 17(1)(c))
-- [x] Testing and validation procedures (Article 17(1)(d))
-- [x] Data management procedures (Article 17(1)(e))
-- [x] Risk management integration (Article 17(1)(f))
-- [x] Post-market monitoring system (Article 17(1)(g))
-- [x] Incident reporting procedures (Article 17(1)(h))
-- [x] Authority communication procedures (Article 17(1)(i))
-- [x] Record keeping procedures (Article 17(1)(j))
-- [x] Resource management (Article 17(1)(k))
-- [x] Accountability framework (Article 17(1)(l))
+- [ ] Strategy for regulatory compliance (Article 17(1)(a))
+- [ ] Design and development control (Article 17(1)(b))
+- [ ] Development quality assurance (Article 17(1)(c))
+- [ ] Testing and validation procedures (Article 17(1)(d))
+- [ ] Data management procedures (Article 17(1)(e))
+- [ ] Risk management integration (Article 17(1)(f))
+- [ ] Post-market monitoring system (Article 17(1)(g))
+- [ ] Incident reporting procedures (Article 17(1)(h))
+- [ ] Authority communication procedures (Article 17(1)(i))
+- [ ] Record keeping procedures (Article 17(1)(j))
+- [ ] Resource management (Article 17(1)(k))
+- [ ] Accountability framework (Article 17(1)(l))
 
-**QMS Reference**: docs/compliance/qms/
+**QMS Reference**: [TBD by provider]
 
 ---
 
 ## 8. CE Marking
 
-The AI system bears the CE marking in accordance with **Article 48** of the AI Act.
+If applicable, the provider may affix CE marking in accordance with **Article 48** of the AI Act after completing the required procedure(s). This template does not assert CE marking.
 
 | Field | Value |
 |-------|-------|
-| **CE Marking Affixed** | Yes |
-| **Affixation Date** | 2025-12-08 |
-| **Location** | Product documentation, user interface |
+| **CE Marking Affixed** | [TBD] |
+| **Affixation Date** | [YYYY-MM-DD] |
+| **Location** | [TBD] |
 
 ---
 
 ## 9. EU Database Registration
 
-The AI system has been registered in the EU database in accordance with **Article 49**.
+If applicable, the provider may register the AI system in the EU database in accordance with **Article 49**. This template does not assert registration status.
 
 | Field | Value |
 |-------|-------|

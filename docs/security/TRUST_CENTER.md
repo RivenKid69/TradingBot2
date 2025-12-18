@@ -259,8 +259,8 @@ All critical subcontractors undergo:
 |------------|--------|-----------|
 | DORA (EU) 2022/2554 | ✅ Designed to align | ICT provider obligations |
 | GDPR (EU) 2016/679 | ✅ Designed to align | Data protection - all 9 phases |
-| EU AI Act 2024/1689 | ✅ Designed to align | High-risk AI system requirements |
-| MiFID II | ✅ Designed to align | Trading systems |
+| EU AI Act 2024/1689 | ✅ Designed to support alignment | Transparency/documentation (deployment-dependent; no self-classification) |
+| MiFID II | ✅ Designed to support alignment | Client workflows (deployment-dependent) |
 | NIS2 Directive | Preparing | Cybersecurity |
 
 ### 9.2 GDPR Compliance Details

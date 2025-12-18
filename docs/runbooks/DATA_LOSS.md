@@ -391,9 +391,9 @@ ccea-agent vault test-recovery --backup /secure/vault_backup.enc
 
 For data recovery assistance:
 
-- **Standard**: support@ccea.io
-- **Enterprise**: enterprise-support@ccea.io (24/7)
-- **Security incident**: security@ccea.io
+- **Standard**: [support email]
+- **Enterprise**: [enterprise support email] (if applicable)
+- **Security incident**: [security contact email]
 
 ### Information to Provide
 
@@ -410,5 +410,5 @@ For data recovery assistance:
 
 - [Kill Switch Runbook](./KILL_SWITCH.md)
 - [Recovery Procedures](./RECOVERY.md)
-- [Backup Configuration](../agent/BACKUP.md)
+- [Agent Docs](../agent/README.md)
 - [Degraded Mode](./DEGRADED_MODE.md)

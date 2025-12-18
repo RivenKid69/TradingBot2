@@ -340,7 +340,7 @@ DELETE /fapi/v1/listenKey # Close
 - `ACCOUNT_UPDATE` - Balance/position changes
 - `ORDER_TRADE_UPDATE` - Order/trade updates
 - `ACCOUNT_CONFIG_UPDATE` - Leverage/margin mode changes
-- `STRATEGY_UPDATE` - Grid/copy trading updates
+- `STRATEGY_UPDATE` - Grid/strategy automation updates
 
 ---
 

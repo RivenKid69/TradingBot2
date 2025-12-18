@@ -1,6 +1,6 @@
 # Regulatory Compliance Strategy
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Document Version**: 2.0
 **Last Updated**: December 2024
@@ -11,7 +11,7 @@
 
 ## Executive Summary
 
-This document establishes our comprehensive regulatory compliance strategy for operating as a B2B SaaS technology provider in the European Union. Our platform provides algorithmic trading research tools to regulated financial institutions—we are a **software vendor**, not a regulated financial entity.
+This document establishes our comprehensive regulatory strategy for operating as a B2B software/ICT provider in the European Union. CustodiaCloud provides quantitative research and deploy-to-Agent tooling to professional trading organizations—we are a **software vendor**, not a regulated financial entity.
 
 **Key Regulatory Position**: We operate analogously to Bloomberg Terminal, QuantConnect, or Refinitiv—providing technology infrastructure that enables our clients (regulated trading firms) to conduct their business more efficiently.
 
@@ -170,11 +170,11 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 
 | Regulation | Applicability | Our Obligations | CCEA Alignment |
 |------------|---------------|-----------------|----------------|
-| **GDPR** (2016/679) | ✅ Directly applicable | Full compliance required | Mandatory redaction, EU residency |
+| **GDPR** (2016/679) | ✅ Directly applicable | Privacy-by-design controls; counsel-reviewed obligations | Mandatory redaction, EU residency |
 | **MiFID II** (2014/65/EU) | ⚠️ Indirect (via clients) | Support client compliance | Software tool exclusion (ESMA Q&A) |
 | **MAR** (596/2014) | ⚠️ Indirect | No market manipulation | Cloud cannot send orders |
-| **DORA** (2022/2554) | ✅ ICT Provider | ICT risk management | Contractual compliance |
-| **EU AI Act** (2024/1689) | ✅ Transparency | Article 50 transparency | Not high-risk AI deployer |
+| **DORA** (2022/2554) | ✅ ICT Provider (context-dependent) | Vendor risk posture + evidence exports | Operational documentation and controls |
+| **EU AI Act** (2024/1689) | ✅ Transparency (context-dependent) | Article 50 transparency (where applicable) | No self-classification; deployment-dependent |
 | **NIS2** (2022/2555) | ⚠️ Potential | Cybersecurity measures | NIST CSF 2.0 aligned |
 | **E-Commerce Directive** | ✅ Applicable | Information requirements | Privacy notices aligned |
 
@@ -620,7 +620,7 @@ Under MAR Article 16, investment firms must report suspicious transactions. Our 
 | Feature | Description | Availability |
 |---------|-------------|--------------|
 | **Suspicion Flag API** | Mark transactions for review | Real-time |
-| **Report Generator** | ESMA-compliant STOR format | On-demand |
+| **Report Generator** | ESMA-aligned STOR format (template) | On-demand |
 | **Evidence Package** | Order flow, timing, market data | Automated |
 | **Audit Trail Export** | Complete transaction history | 24-hour delivery |
 | **NCA Submission** | Direct submission (client action) | Client responsibility |
@@ -1219,7 +1219,7 @@ We provide a comprehensive DPA to all clients covering:
 | Monitoring | Alert logs, response documentation |
 | Training | Completion records, quiz scores |
 
-### 8.8 Phase 5: Type II Audit (Q1 2026)
+### 8.8 Phase 5: Type II Audit (timeline TBD)
 
 **Duration**: 4-6 weeks
 **Budget**: €30,000-50,000 (auditor fees)
@@ -1232,7 +1232,7 @@ We provide a comprehensive DPA to all clients covering:
 4. Trust service criteria and controls
 5. Test results over the observation period
 
-### 8.9 Ongoing Compliance (Post-Certification)
+### 8.9 Ongoing Alignment (Post-Readiness)
 
 **Annual Activities**:
 - Annual SOC 2 Type II audit
@@ -1854,7 +1854,7 @@ To maintain clear regulatory boundaries:
 | Security control remediation plan | Feb 2025 | 📋 Planned |
 | Incident response testing | Mar 2025 | 📋 Planned |
 
-### 14.2 Phase 2: Certification Preparation (Q2 2025)
+### 14.2 Phase 2: Audit Readiness Preparation (timeline TBD)
 
 | Task | Timeline | Status |
 |------|----------|--------|
@@ -1864,7 +1864,7 @@ To maintain clear regulatory boundaries:
 | Privacy notice deployment | Apr 2025 | 📋 Planned |
 | DPO appointment (formal) | Apr 2025 | 📋 Planned |
 
-### 14.3 Phase 3: Initial Certification (Q3 2025)
+### 14.3 Phase 3: Initial Audit (Type I) (timeline TBD)
 
 | Task | Timeline | Status |
 |------|----------|--------|
@@ -1872,7 +1872,7 @@ To maintain clear regulatory boundaries:
 | Client compliance documentation | Jul 2025 | 📋 Planned |
 | Regulatory opinion letter | Aug 2025 | 📋 Planned |
 
-### 14.4 Phase 4: Full Compliance (Q4 2025 - Q1 2026)
+### 14.4 Phase 4: Ongoing Readiness (Type II) (timeline TBD)
 
 | Task | Timeline | Status |
 |------|----------|--------|

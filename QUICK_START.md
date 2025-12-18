@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-> **5-минутный старт** для 4 основных asset classes: Crypto, US Equities, Forex, Futures
+> **5-минутный старт** для foundation multi-asset workflows (equities-first; FX/futures/digital assets — optional expansion)
 >
 > **CCEA Architecture**: Этот проект использует [Cloud-Controlled Execution Architecture](docs/CCEA_OVERVIEW.md) — Cloud (research/simulation) и Agent (live execution) строго разделены.
 
@@ -29,7 +29,7 @@
 3. [US Equities (акции на Alpaca)](#2-us-equities-акции-на-alpaca)
 4. [Forex (валюты на OANDA)](#3-forex-валюты-на-oanda)
 5. [Futures (фьючерсы)](#4-futures-фьючерсы)
-6. [Live Trading (CCEA)](#live-trading-ccea-architecture)
+6. [Live Execution (CCEA)](#live-execution-ccea-architecture)
 7. [Что дальше?](#что-дальше)
 
 ---
@@ -40,8 +40,8 @@
 
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/your-org/TradingBot2.git
-cd TradingBot2
+git clone <repo-url>
+cd AI-Powered-Quantitative-Research-Platform
 
 # Создать виртуальное окружение
 python -m venv .venv
@@ -67,7 +67,7 @@ python scripts/doctor.py
 
 ---
 
-## 1. Crypto (BTC/ETH на Binance)
+## 1. Crypto (BTC/ETH на Binance) — optional
 
 > **Стратегия**: Momentum на 4H таймфрейме
 > **Особенности**: 24/7 торговля, maker/taker комиссии, Long-only
@@ -87,18 +87,7 @@ python train_model_multi_patch.py --config configs/quickstart/crypto_momentum.ya
 
 ### Результаты бэктеста
 
-После команды 2 вы увидите:
-```
-═══════════════════════════════════════════════
-BACKTEST RESULTS: crypto_momentum
-═══════════════════════════════════════════════
-Period:          2024-01-01 to 2024-12-01
-Total Return:    +42.3%
-Sharpe Ratio:    1.85
-Max Drawdown:    -12.4%
-Win Rate:        58.2%
-═══════════════════════════════════════════════
-```
+После команды 2 вы увидите сводку метрик симуляции/бэктеста (пример: период, волатильность, max drawdown, transaction costs, slippage assumptions). Эти результаты не являются обещанием будущих результатов.
 
 ### Файлы результатов
 
@@ -354,17 +343,16 @@ SPAN Margin Avg: $12,400
 
 ---
 
-## Live Trading (CCEA Architecture)
+## Live Execution (CCEA Architecture)
 
-> **Ключевой принцип**: Live trading происходит **ТОЛЬКО** через локальный Agent. Cloud управляет lifecycle (start/stop/deploy), но **НИКОГДА** не выполняет ордера и не хранит ваши credentials.
+> **Ключевой принцип**: Live execution происходит **ТОЛЬКО** через customer-controlled Agent. Cloud управляет lifecycle (start/stop/deploy), но не выполняет ордера и не хранит broker credentials.
 
 ### Продуктовые режимы
 
 | Режим | Описание | Cloud | Agent |
 |-------|----------|-------|-------|
-| **Retail Research SaaS** | Research + optional live | Research, Sim, Monitoring | Опционально (для live) |
-| **Retail Live** | Auto-execution локально | Lifecycle, Telemetry | Local vault + execution |
-| **Enterprise** | On-prem/VPC | Self-hosted | HSM/KMS, air-gapped |
+| **Cloud + BYO Agent (B2B)** | Research/sim/monitoring + customer-controlled execution via Agent | Research, Sim, Monitoring | Опционально (для live execution) |
+| **Enterprise on‑prem/VPC** | Размещение в инфраструктуре клиента | Self-hosted | HSM/KMS, air-gapped |
 
 ### Шаг 1: Установка Agent
 
@@ -462,10 +450,10 @@ python script_live.py --config configs/config_live.yaml --dry-run
 
 | Pipeline | Asset Class | Стратегия | Документация |
 |----------|-------------|-----------|--------------|
-| `crypto_intraday_momentum` | Crypto | Trend-following на 4H | [docs/pipelines/crypto.md](docs/pipelines/crypto.md) |
-| `equity_swing_reversion` | US Equity | Mean-reversion на дневках | [docs/pipelines/equity.md](docs/pipelines/equity.md) |
-| `forex_carry_momentum` | Forex | Carry + Momentum | [docs/pipelines/forex.md](docs/pipelines/forex.md) |
-| `futures_basis_trading` | Futures | Basis + Funding arb | [docs/pipelines/futures.md](docs/pipelines/futures.md) |
+| `crypto_intraday_momentum` | Digital assets (optional) | Trend-following на 4H | [Futures overview](docs/futures/overview.md) |
+| `equity_swing_reversion` | Equities (MVP) | Mean-reversion на дневках | [Stock trading guide](docs/STOCK_TRADING_GUIDE.md) |
+| `forex_carry_momentum` | FX (optional) | Carry + Momentum | [FX integration plan](docs/FOREX_INTEGRATION_PLAN.md) |
+| `futures_basis_trading` | Futures (optional) | Basis + funding | [Futures integration plan](docs/FUTURES_INTEGRATION_PLAN.md) |
 
 ### 2. Настройте Risk Management
 
@@ -474,7 +462,7 @@ python script_live.py --config configs/config_live.yaml --dry-run
 python tools/check_risk_config.py --config your_config.yaml
 ```
 
-### 3. Запустите Live Trading (CCEA Architecture)
+### 3. Запустите Live Execution (CCEA Architecture)
 
 **Production (через Agent):**
 ```bash

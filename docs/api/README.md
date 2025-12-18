@@ -19,16 +19,16 @@ Universal risk management for **all platform users**. These modules implement es
 
 | Module | Description | Key Classes |
 |--------|-------------|-------------|
-| [audit_models](core/audit_models.md) | Audit record data models | `AuditRecord`, `AuditRecordBuilder` |
-| [audit_storage](core/audit_storage.md) | Storage backends (SQLite, File, Memory) | `AuditStorageBackend`, `create_audit_storage` |
-| [audit_trail_writer](core/audit_trail_writer.md) | Write-once audit trail | `AuditTrailWriter`, `create_audit_trail_writer` |
-| [retention_policy](core/retention_policy.md) | Data retention management (5-7 years) | `RetentionManager`, `create_retention_manager` |
-| [time_sync](core/time_sync.md) | Clock synchronization (RTS 25 compatible) | `ComplianceClock`, `create_compliance_clock` |
-| [kill_switch](core/kill_switch.md) | Emergency stop functionality | `EnhancedKillSwitch`, `create_enhanced_kill_switch` |
-| [pre_trade_controls](core/pre_trade_controls.md) | Order validation, fat finger protection | `PreTradeControls`, `create_pre_trade_controls` |
-| [realtime_monitor](core/realtime_monitor.md) | P&L and risk monitoring | `RealTimeMonitor`, `create_realtime_monitor` |
-| [bcp](core/bcp.md) | Business continuity planning | `BusinessContinuityPlan`, `create_business_continuity_plan` |
-| [config](core/config.md) | Configuration models | `RiskControlsConfig`, `TimeSyncConfig` |
+| [audit_models](core/README.md#audit_models) | Audit record data models | `AuditRecord`, `AuditRecordBuilder` |
+| [audit_storage](core/README.md#audit_storage) | Storage backends (SQLite, File, Memory) | `AuditStorageBackend`, `create_audit_storage` |
+| [audit_trail_writer](core/README.md#audit_trail_writer) | Write-once audit trail | `AuditTrailWriter`, `create_audit_trail_writer` |
+| [retention_policy](core/README.md#retention_policy) | Data retention management | `RetentionManager`, `create_retention_manager` |
+| [time_sync](core/README.md#time_sync) | Clock synchronization | `ComplianceClock`, `create_compliance_clock` |
+| [kill_switch](core/README.md#kill_switch) | Emergency stop functionality | `EnhancedKillSwitch`, `create_enhanced_kill_switch` |
+| [pre_trade_controls](core/README.md#pre_trade_controls) | Order validation, fat finger protection | `PreTradeControls`, `create_pre_trade_controls` |
+| [realtime_monitor](core/README.md#realtime_monitor) | P&L and risk monitoring | `RealTimeMonitor`, `create_realtime_monitor` |
+| [bcp](core/README.md#bcp) | Business continuity planning | `BusinessContinuityPlan`, `create_business_continuity_plan` |
+| [config](core/README.md#config) | Configuration models | `RiskControlsConfig`, `TimeSyncConfig` |
 
 ### Quick Start
 
@@ -60,24 +60,24 @@ kill_switch.start()
 
 ---
 
-## Algo Integration (B2B Compliance Toolkit)
+## Algo Integration (B2B Alignment/Evidence Toolkit)
 
 `from services.algo_integration import ...`
 
-MiFID II compliance toolkit for **enterprise financial institution clients**. These modules help B2B clients meet their regulatory obligations.
+MiFID II-related alignment/evidence tooling for **enterprise financial institution clients**. These modules are designed to support client assessments and internal workflows; they are not a certification claim and do not replace legal/compliance review.
 
 | Module | MiFID II Reference | Description | Key Classes |
 |--------|-------------------|-------------|-------------|
-| [best_execution](integration/best_execution.md) | Article 27 | Best execution analysis | `BestExecutionAnalyzer`, `BestExecutionPolicy` |
-| [tca_compliance](integration/tca_compliance.md) | Article 27 | Transaction cost analysis | `TCAComplianceWrapper`, `create_tca_wrapper` |
-| [venue_analysis](integration/venue_analysis.md) | Article 27 | Venue performance & SOR | `VenueAnalyzer`, `SmartOrderRouter` |
-| [execution_quality_report](integration/execution_quality_report.md) | Article 27 | Execution quality reports | `ExecutionQualityReportGenerator` |
-| [otr_monitor](integration/otr_monitor.md) | RTS 6 | Order-to-trade ratio monitoring | `OTRMonitor`, `create_otr_monitor` |
-| [algorithm_registry](integration/algorithm_registry.md) | Article 17(2) | Algorithm registration | `AlgorithmRegistry`, `create_algorithm_registry` |
-| [conformance_testing](integration/conformance_testing.md) | RTS 6 Article 5 | Testing framework | `ConformanceTestRunner`, `create_test_runner` |
-| [test_scenarios](integration/test_scenarios.md) | RTS 6 Article 5 | Standard test scenarios | `ScenarioExecutor`, `TestScenario` |
-| [certification](integration/certification.md) | RTS 6 Article 7 | Deployment certification | `CertificateManager`, `ConformanceCertificate` |
-| [config](integration/config.md) | - | Configuration | `AlgoIntegrationConfig` |
+| [best_execution](integration/README.md#best_execution) | Article 27 | Best execution analysis | `BestExecutionAnalyzer`, `BestExecutionPolicy` |
+| [tca_compliance](integration/README.md#tca_compliance) | Article 27 | Transaction cost analysis | `TCAComplianceWrapper`, `create_tca_wrapper` |
+| [venue_analysis](integration/README.md#venue_analysis) | Article 27 | Venue performance & SOR | `VenueAnalyzer`, `SmartOrderRouter` |
+| [execution_quality_report](integration/README.md#execution_quality_report) | Article 27 | Execution quality reports | `ExecutionQualityReportGenerator` |
+| [otr_monitor](integration/README.md#otr_monitor) | RTS 6 | Order-to-trade ratio monitoring | `OTRMonitor`, `create_otr_monitor` |
+| [algorithm_registry](integration/README.md#algorithm_registry) | Article 17(2) | Algorithm registration | `AlgorithmRegistry`, `create_algorithm_registry` |
+| [conformance_testing](integration/README.md#conformance_testing) | RTS 6 Article 5 | Testing framework | `ConformanceTestRunner`, `create_test_runner` |
+| [test_scenarios](integration/README.md#test_scenarios) | RTS 6 Article 5 | Standard test scenarios | `ScenarioExecutor`, `TestScenario` |
+| [certification](integration/README.md#certification) | RTS 6 Article 7 | Deployment attestation (internal evidence artifact) | `CertificateManager`, `ConformanceCertificate` |
+| [config](integration/README.md#config) | - | Configuration | `AlgoIntegrationConfig` |
 
 ### Quick Start
 
@@ -117,16 +117,16 @@ registry.register_algorithm(
 
 | Module | Description | Key Classes |
 |--------|-------------|-------------|
-| [lei_manager](archive/lei_manager.md) | LEI validation (ISO 17442) | `LEIManager`, `create_lei_manager` |
-| [gleif_client](archive/gleif_client.md) | GLEIF API integration | `GLEIFClient`, `create_gleif_client` |
-| [transaction_report](archive/transaction_report.md) | RTS 22 transaction reporting | `TransactionReport`, `TransactionReportBuilder` |
-| [arm_client](archive/arm_client.md) | ARM submission | `ARMClient`, `create_arm_client` |
-| [reporting_pipeline](archive/reporting_pipeline.md) | T+1 reporting pipeline | `TransactionReportingPipeline` |
-| [self_assessment](archive/self_assessment.md) | Annual self-assessment | `AnnualSelfAssessment` |
-| [governance](archive/governance.md) | Policy document management | `GovernanceFramework` |
-| [compliance_policies](archive/compliance_policies.md) | Policy templates | `create_all_standard_policies` |
-| [nca_notification](archive/nca_notification.md) | NCA notification | `NCANotificationManager` |
-| [config](archive/config.md) | Configuration | `MiFIDIIComplianceConfig`, `LEIConfig` |
+| [lei_manager](archive/README.md#lei_manager) | LEI validation (ISO 17442) | `LEIManager`, `create_lei_manager` |
+| [gleif_client](archive/README.md#gleif_client) | GLEIF API integration | `GLEIFClient`, `create_gleif_client` |
+| [transaction_report](archive/README.md#transaction_report) | RTS 22 transaction reporting | `TransactionReport`, `TransactionReportBuilder` |
+| [arm_client](archive/README.md#arm_client) | ARM submission | `ARMClient`, `create_arm_client` |
+| [reporting_pipeline](archive/README.md#reporting_pipeline) | T+1 reporting pipeline | `TransactionReportingPipeline` |
+| [self_assessment](archive/README.md#self_assessment) | Annual self-assessment | `AnnualSelfAssessment` |
+| [governance](archive/README.md#governance) | Policy document management | `GovernanceFramework` |
+| [compliance_policies](archive/README.md#compliance_policies) | Policy templates | `create_all_standard_policies` |
+| [nca_notification](archive/README.md#nca_notification) | NCA notification | `NCANotificationManager` |
+| [config](archive/README.md#config) | Configuration | `MiFIDIIComplianceConfig`, `LEIConfig` |
 
 ### Usage Warning
 

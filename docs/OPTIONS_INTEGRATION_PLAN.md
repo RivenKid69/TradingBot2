@@ -1,6 +1,6 @@
 # OPTIONS_INTEGRATION_PLAN.md
 
-## AI-Powered Quantitative Research Platform -- Options Integration
+## CustodiaCloud -- Options Integration (Optional Expansion)
 
 **Version**: 5.1
 **Status**: IN PROGRESS (Phase 2B ✅ Complete)
@@ -4694,7 +4694,7 @@ class LeggingRiskManager:
         Continuous monitoring of legging exposure.
 
         Yields risk assessments as market updates arrive.
-        Caller should act on HEDGE/UNWIND recommendations.
+        Caller should review `recommended_action` and decide on HEDGE/UNWIND actions.
         """
         for market_update in market_stream:
             # Update state with new market
@@ -5265,9 +5265,9 @@ class OptionsFeatureExtractor:
 
     Features designed for:
     - Vol regime detection
-    - Dealer positioning signals
+    - Dealer positioning indicators
     - Term structure opportunities
-    - Skew trading signals
+    - Skew indicators
     """
 
     def extract_features(

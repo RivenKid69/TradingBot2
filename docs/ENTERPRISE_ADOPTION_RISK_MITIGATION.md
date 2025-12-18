@@ -530,15 +530,15 @@ Our platform is designed to **extend** existing infrastructure, not replace it:
 │  │                           │                                         │    │
 │  │  OUR PLATFORM                                                       │    │
 │  │  ┌──────────────┐  ┌──────┴───────┐  ┌──────────────┐              │    │
-│  │  │   ML        │  │   Signal     │  │   Execution  │              │    │
-│  │  │   Engine     │◄─┤  Generation  ├─►│   Engine     │              │    │
+│  │  │  Research    │  │  Artifact    │  │   Agent      │              │    │
+│  │  │  Workloads   │◄─┤  Packaging   ├─►│  Execution   │              │    │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘              │    │
 │  │                                                                      │    │
 │  └──────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 │  INTEGRATION MODES:                                                         │
-│  1. Signal Provider: We generate signals, you execute                       │
-│  2. Full Integration: Complete trading pipeline                             │
+│  1. Research Provider: We provide research outputs, you execute (via Agent) │
+│  2. Deploy-to-Agent: End-to-end workflow; execution remains client-controlled│
 │  3. Analytics Only: Risk/performance analytics layer                        │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -550,12 +550,12 @@ Pre-built integrations with major exchanges:
 
 | Exchange | Asset Classes | Features |
 |----------|---------------|----------|
-| **Binance** | Crypto Spot, Futures, Options | Full API, WebSocket streaming |
-| **Alpaca** | US Equities | Commission-free, fractional shares |
+| **Binance** | Digital assets (optional) | Full API, WebSocket streaming |
+| **Alpaca** | US Equities | Brokerage API integration (customer accounts) |
 | **Interactive Brokers** | Global multi-asset | FIX protocol, comprehensive |
 | **OANDA** | Forex | Low latency, streaming prices |
 | **Polygon.io** | US Equities (data) | Historical + real-time |
-| **Deribit** | Crypto Options | BTC/ETH options, DVOL |
+| **Deribit** | Digital assets (optional) | Options, volatility indices |
 | **CME Group** | Futures | Via IB, SPAN margin |
 | **Custom** | Any | Adapter development available |
 
@@ -565,13 +565,13 @@ Pre-built integrations with major exchanges:
 # REST API Example
 openapi: "3.0.3"
 info:
-  title: "Trading Platform API"
+  title: "CustodiaCloud Control Plane API (Illustrative)"
   version: "2.0.0"
 
 paths:
-  /api/v2/signals:
+  /api/v2/research/outputs:
     get:
-      summary: "Get trading signals"
+      summary: "Get research outputs (indicators/forecasts)"
       parameters:
         - name: symbols
           in: query
@@ -582,31 +582,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SignalResponse"
+                $ref: "#/components/schemas/ResearchOutputResponse"
 
-  /api/v2/orders:
+  /api/v2/agent/commands:
     post:
-      summary: "Submit order"
+      summary: "Submit lifecycle command (Agent executes locally)"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OrderRequest"
+              $ref: "#/components/schemas/CommandRequest"
 
-  /api/v2/positions:
+  /api/v2/telemetry/summary:
     get:
-      summary: "Get current positions"
+      summary: "Get aggregated telemetry (redacted by design)"
 
   /api/v2/risk/limits:
     get:
-      summary: "Get risk limits"
+      summary: "Get local hard caps / risk limits (as reported by Agent)"
     put:
-      summary: "Update risk limits"
+      summary: "Request a risk limit change (requires local approval)"
 
 # WebSocket Events
 websocket:
   events:
-    - signal.new
+    - research_output.new
+    # Order/position events are opt-in telemetry from the Agent (CCEA)
     - order.filled
     - order.cancelled
     - position.updated
@@ -616,27 +617,13 @@ websocket:
 
 ### FIX Protocol Support
 
-For firms using industry-standard FIX connectivity:
+For firms using industry-standard FIX/OMS/EMS connectivity:
 
 ```
-FIX 4.4 Support:
-├── Session Layer
-│   ├── Logon/Logout
-│   ├── Heartbeat
-│   ├── Sequence management
-│   └── Session recovery
-│
-├── Application Layer
-│   ├── New Order Single (D)
-│   ├── Order Cancel Request (F)
-│   ├── Order Cancel/Replace (G)
-│   ├── Execution Report (8)
-│   └── Order Status Request (H)
-│
-└── Custom Extensions
-    ├── Signal messages
-    ├── Risk limit updates
-    └── Position reconciliation
+Client-side execution integrations (via Agent):
+├── Publish monitoring/audit events into the firm's message bus
+├── Consume firm-approved lifecycle requests (start/stop/deploy), subject to local approvals
+└── No CustodiaCloud-operated broker/execution venue; Cloud never routes orders
 ```
 
 ---
@@ -789,51 +776,13 @@ Our platform is built on proven, industry-standard technologies:
 | **Message Queue** | Redis/RabbitMQ compatible | Enterprise-proven |
 | **Database** | PostgreSQL/SQLite | ACID compliance |
 
-### Testing Coverage
+### Testing & validation (engineering)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        TESTING STATISTICS                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  TEST COVERAGE SUMMARY                                                       │
-│  ───────────────────────────────────────────────────────────────────────    │
-│                                                                              │
-│  Total Test Files:        597                                               │
-│  Total Test Functions:    11,063                                            │
-│  Pass Rate:               97%+                                              │
-│                                                                              │
-│  BY CATEGORY:                                                                │
-│  ├── Unit Tests:          ~7,000 (core logic)                               │
-│  ├── Integration Tests:   ~2,500 (system integration)                       │
-│  ├── Regression Tests:    ~1,000 (bug prevention)                           │
-│  └── Performance Tests:   ~500 (latency, throughput)                        │
-│                                                                              │
-│  CRITICAL AREAS:                                                             │
-│  ├── Execution Engine:    1,800+ tests                                      │
-│  ├── Risk Management:     500+ tests                                        │
-│  ├── Exchange Adapters:   400+ tests                                        │
-│  ├── ML Pipeline:         2,000+ tests                                      │
-│  └── Data Processing:     1,500+ tests                                      │
-│                                                                              │
-│  CI/CD PIPELINE:                                                             │
-│  ├── All tests run on every commit                                          │
-│  ├── Security scanning on every PR                                          │
-│  ├── Performance benchmarks weekly                                          │
-│  └── Full regression suite nightly                                          │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+CustodiaCloud maintains an extensive automated test suite and documentation guardrails. Exact counts and pass rates change over time; validate current status by running tests in the repository (e.g., `pytest`) and reviewing CI results.
 
-### Production Metrics (Based on Internal Testing)
+### Operational metrics (deployment-dependent)
 
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| **Order Latency** | < 100ms | ~45ms (L2), ~180μs (L3) |
-| **Fill Rate** | > 95% | 98.5% |
-| **Slippage Accuracy** | < 3 bps error | 1.8 bps |
-| **System Uptime** | 99.9% | 99.95% (testing) |
-| **Recovery Time** | < 5 min | ~2 min |
+Latency, fill rates, and uptime depend on the customer environment, venue connectivity, and configuration. CustodiaCloud does not make performance promises; customer teams should validate with paper/sandbox runs and phased rollout before enabling live execution.
 
 ---
 
@@ -844,11 +793,11 @@ Our platform is built on proven, industry-standard technologies:
 | Risk | Mitigation |
 |------|------------|
 | **Strategy Leakage** | On-premises deployment, no data leaves your infrastructure |
-| **Vendor Lock-in** | Open APIs, standard formats, source escrow |
-| **Performance Risk** | Shadow mode testing before live deployment |
-| **Regulatory Risk** | MiFID II-aligned design, regular compliance updates |
+| **Vendor Lock-in** | Open APIs and standard formats; export patterns for artifacts/configs |
+| **Performance Risk** | Shadow mode and paper/sandbox validation before enabling live execution |
+| **Regulatory Risk** | Designed to support client alignment workflows (controls + evidence exports); deployment-dependent |
 | **Operational Risk** | Kill switches, circuit breakers, 24/7 monitoring |
-| **Counterparty Risk** | Direct exchange connections, no intermediary |
+| **Counterparty Risk** | Customer controls broker/venue relationships; CustodiaCloud is not an intermediary |
 
 ### For Investors/Accelerators
 

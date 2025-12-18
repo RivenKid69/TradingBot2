@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This document outlines a **systematic approach** to acquiring customer testimonials, case studies, and social proof for CCEA Platform. The strategy addresses the critical gap of lacking confirmed customer references by establishing:
+This document outlines a **systematic approach** to acquiring customer testimonials, case studies, and social proof for CustodiaCloud. The strategy addresses the critical gap of lacking confirmed customer references by establishing:
 
 1. **Pilot-to-Testimonial Pipeline** — Converting pilot participants to advocates
 2. **Tiered Evidence Program** — From quotes to full case studies
@@ -40,7 +40,7 @@ This document outlines a **systematic approach** to acquiring customer testimoni
 
 **Missing Evidence:**
 - Named customer testimonials
-- Quantified results ("saved X months," "improved Sharpe by Y")
+- Quantified operational outcomes ("saved X weeks on onboarding," "reduced deployment friction," "improved evidence-pack readiness")
 - Public logo references
 - Third-party reviews
 - Video testimonials

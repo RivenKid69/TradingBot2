@@ -70,7 +70,7 @@ class KeyManagementPolicy(str, Enum):
 ```
 
 **Key Management Requirements**:
-- Master keys stored in HSM or cloud KMS
+- Master keys managed in HSM or cloud KMS
 - Data encryption keys (DEK) wrapped by master keys
 - Key rotation audit trail
 - Emergency key revocation procedure

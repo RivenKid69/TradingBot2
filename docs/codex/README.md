@@ -1,12 +1,11 @@
 # Codex Project Handbook
 
 Эта папка предназначена для быстрой ориентации модели Codex в репозитории
-`AI-Powered Quantitative Research Platform`. Здесь собраны основные сведения о структуре проекта, ключевых
+`CustodiaCloud` (репозиторий: `AI-Powered-Quantitative-Research-Platform`). Здесь собраны основные сведения о структуре проекта, ключевых
 скриптах, конфигурации и типичных рабочих командах.
 
 ## 1. Обзор проекта
-- **Домен**: алгоритмическая торговля, симуляция и исполнение стратегий для
-  Binance (spot/futures) с поддержкой барового режима.
+- **Домен**: количественные исследования, симуляция/бэктест и customer-controlled live execution через Agent (CCEA). Digital assets — опциональное расширение; MVP/beachhead — equities-first.
 - **Языки**: Python (основная логика и CLI), C++/Cython (симулятор, LOB и
   высокопроизводительные компоненты).
 - **Архитектура**: CLI-скрипты `script_*.py` и `train_model_multi_patch.py`

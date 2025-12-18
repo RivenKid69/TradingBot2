@@ -1,6 +1,6 @@
 # Acceptable Use Policy (AUP)
 
-**AI-Powered Quantitative Research Platform**
+**CustodiaCloud**
 
 **Effective Date:** December 2024
 **Version:** 1.0.0
@@ -11,7 +11,7 @@
 
 ## 1. PURPOSE
 
-This Acceptable Use Policy ("AUP") defines the acceptable and prohibited uses of the AI-Powered Quantitative Research Platform ("Platform"). By using the Platform, you agree to comply with this AUP.
+This Acceptable Use Policy ("AUP") defines the acceptable and prohibited uses of CustodiaCloud ("Platform"). By using the Platform, you agree to comply with this AUP.
 
 This AUP is incorporated by reference into the Terms of Service.
 
@@ -87,7 +87,7 @@ You **MUST NOT** use the Platform for:
 - Attempting to trigger order execution from Cloud
 - Circumventing telemetry redaction mechanisms
 - Injecting order-like payloads (side/quantity/price) into Cloud communications
-- Attempting to use Cloud for real-time trading signals intended to circumvent the Agent
+- Attempting to use Cloud for real-time trading instructions or order-like payloads intended to circumvent the Agent
 
 **Data Integrity:**
 - Manipulating or falsifying backtest results
@@ -105,7 +105,7 @@ You **MUST NOT** use the Platform for:
 **Misrepresentation:**
 - Claiming the Platform provides investment advice
 - Representing Platform outputs as professional financial recommendations
-- Misleading others about the nature of AI-generated trading signals
+- Misleading others about the nature of AI-generated outputs
 
 ### 4.4 Legal and Ethical Violations
 

@@ -1,6 +1,6 @@
 # Terms of Service
 
-**AI-Powered Quantitative Research Platform**
+**CustodiaCloud**
 
 **Effective Date:** December 2024
 **Version:** 3.0.0
@@ -15,7 +15,7 @@
 
 For the purposes of these Terms of Service, the following definitions apply:
 
-- **"Platform"**: The AI-Powered Quantitative Research Platform software service, including all web interfaces, APIs, and related tools provided by the Company.
+- **"Platform"**: The CustodiaCloud software service, including all web interfaces, APIs, and related tools provided by the Company.
 
 - **"User"**, **"You"**, **"Your"**: Any individual or entity that accesses or uses the Platform.
 
@@ -23,7 +23,7 @@ For the purposes of these Terms of Service, the following definitions apply:
 
 - **"Strategy"**: Any trading algorithm, rule set, or automated decision-making logic created, uploaded, or executed by a User on the Platform.
 
-- **"Broker API Keys"**: Authentication credentials (API keys, secrets, tokens) provided by third-party brokerage services that enable the Platform to execute trades on behalf of the User.
+- **"Broker API Keys"**: Authentication credentials (API keys, secrets, tokens) provided by third-party brokers/exchanges that enable the User (via the user-operated Agent) to execute trades under the User’s control.
 
 - **"Backtest"**: A simulation of a Strategy's historical performance using past market data.
 
@@ -33,7 +33,7 @@ For the purposes of these Terms of Service, the following definitions apply:
 
 - **"Cloud"**: The Company-operated infrastructure providing research, backtesting, monitoring, and lifecycle management services.
 
-- **"Agent"**: Optional user-operated software running locally on User's hardware that handles live trading execution, credential storage, and risk enforcement.
+- **"Agent"**: Optional user-operated software running in the User's environment that handles live execution, credential storage, and risk enforcement.
 
 - **"CCEA"**: Cloud-Controlled Execution Architecture, the strict separation between Cloud (research/monitoring) and Agent (execution/secrets).
 
@@ -58,7 +58,7 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 2. **Cloud NEVER generates, transmits, or executes trading orders** - All trading operations occur exclusively in your local Agent
 3. **Cloud NEVER has access to exchange trading endpoints** - Cloud cannot connect to brokers on your behalf
 4. **Cloud cannot send order-like payloads** - The protocol schema prohibits side/quantity/price fields
-5. **Telemetry is ALWAYS redacted** - Sensitive data is automatically removed before transmission
+5. **Telemetry is redacted by design** - Sensitive data is removed/bucketed before transmission; higher-sensitivity telemetry requires explicit opt-in
 
 **Product Modes:**
 
@@ -75,14 +75,13 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 - You approve all trading-impacting changes locally
 - You can disconnect from Cloud and continue trading
 
-### 2.0.1 CCEA Privacy Design Commitments (Binding)
+### 2.0.1 CCEA Privacy Design Commitments (Design Commitments)
 
-The following privacy design commitments are **architectural invariants** that are legally binding under these Terms:
+The following commitments describe the intended CCEA boundary and default privacy posture of the Platform:
 
 **A. Cloud Never Receives Secrets**
 - Cloud **NEVER** stores or processes your broker API keys, secrets, or credentials
 - Cloud **NEVER** receives environment variables or tokens
-- Violation of this commitment constitutes a material breach of these Terms
 
 **B. No Order-like Payloads in Protocol**
 - Cloud→Agent commands **NEVER** contain order-like payloads (side, quantity, price, order_id, target_position)
@@ -98,8 +97,8 @@ The Platform implements three telemetry levels with strict controls:
 | **DETAILED_NON_SENSITIVE** | Technical debugging | Yes | Forbidden |
 | **RAW_ORDER_EVENTS** | Enterprise-only | Enterprise + Explicit | Allowed (masked) |
 
-- Telemetry redaction is **always mandatory** and cannot be disabled
-- `RAW_ORDER_EVENTS` is available **only** to enterprise customers with explicit per-workspace opt-in
+- Telemetry redaction is mandatory for data transmitted to Cloud
+- `RAW_ORDER_EVENTS` is available only with explicit opt-in and enterprise controls, and must be masked/redacted per the Platform's telemetry controls
 
 **D. EU-only Data Residency**
 - All data storage, backups, logs, and processing are in EU (eu-central-1, eu-west-1)
@@ -118,7 +117,7 @@ The Platform is a **software tool** that provides:
 - Strategy development and coding environment
 - Backtesting engine for historical simulation
 - Paper trading (simulated) capabilities
-- Live trading execution via User-provided broker API credentials
+- Live execution via the customer-controlled Agent using User-provided broker API credentials
 - Analytics, reporting, and visualization tools
 - Risk management and monitoring features
 
@@ -135,7 +134,7 @@ The Platform is **NOT**:
 - A provider of financial, legal, or tax advice
 - **An order execution service** - Cloud NEVER executes orders; this is done locally by your Agent
 - **A custodian** - We do not hold your assets or credentials in Cloud
-- **A trading signal provider** - We do not transmit trading intents or signals to execute
+- **A provider of execution instructions** - We do not transmit live trading instructions to execute
 
 We are a **software vendor** providing:
 - Research and backtesting tools (Cloud)
@@ -165,9 +164,9 @@ All trading decisions are made solely by the User. The Platform:
 
 In accordance with Article 50 of Regulation (EU) 2024/1689 (EU AI Act), we inform you that:
 
-1. **AI Technology**: The Platform incorporates a machine learning system based on Reinforcement Learning (Distributional PPO algorithm) for generating trading signals and portfolio recommendations.
+1. **AI Technology**: The Platform incorporates machine learning components (including reinforcement learning methods) to support research workflows such as simulation outputs and risk metrics.
 
-2. **AI-Generated Outputs**: Trading signals, predictions, risk assessments, strategy recommendations, and analytical reports are generated by the AI system, not by human analysts.
+2. **AI-Generated Outputs**: Certain outputs (e.g., predictions, risk assessments, simulation analytics, and reports) may be generated by software/ML components rather than human analysts.
 
 3. **Limitations**: The AI system:
    - May produce inaccurate or suboptimal predictions
@@ -177,7 +176,7 @@ In accordance with Article 50 of Regulation (EU) 2024/1689 (EU AI Act), we infor
    - Has performance that varies across different asset classes and market regimes
 
 4. **Human Responsibility**: You retain full responsibility for:
-   - Deciding whether to follow AI-generated signals
+   - Deciding whether and how to use model outputs
    - All trading decisions and their financial consequences
    - Monitoring and overriding AI outputs when appropriate
    - Setting appropriate risk limits and position sizes
@@ -189,7 +188,7 @@ In accordance with Article 50 of Regulation (EU) 2024/1689 (EU AI Act), we infor
 | Model Name | Distributional PPO Trading Model |
 | Model Type | Reinforcement Learning |
 | Architecture | LSTM + Distributional Value Network |
-| Primary Use | Trading signal generation |
+| Primary Use | Research/simulation outputs to support strategy development |
 
 For detailed technical information, see our [GPAI Model Card](../compliance/GPAI_MODEL_CARD.md).
 
@@ -212,7 +211,7 @@ Before using live trading features, you must explicitly acknowledge that:
 3. You retain full responsibility for all trading decisions
 4. You will maintain appropriate oversight of AI outputs
 
-This acknowledgment is recorded for compliance purposes.
+This acknowledgment may be recorded for governance and audit purposes.
 
 ### 2A.5 AI Content Marking
 

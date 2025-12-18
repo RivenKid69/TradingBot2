@@ -1,6 +1,6 @@
 # Cybersecurity Framework
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Version**: 1.0
 **Last Updated**: December 2024
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-This document defines our cybersecurity framework aligned with NIST CSF 2.0, providing comprehensive security controls for our B2B SaaS trading platform. Our security program is designed to protect client trading strategies, support platform availability, and align with regulatory requirements.
+This document defines our cybersecurity framework aligned with NIST CSF 2.0, providing comprehensive security controls for our B2B software/ICT platform serving professional trading organizations. Our security program is designed to protect client research artifacts, support platform availability, and align with relevant regulatory expectations.
 
 **Security Architecture Foundation**: All security controls are built on the **Cloud-Controlled Execution Architecture (CCEA)**, which provides strict zone separation between research/monitoring (Cloud Zone) and live trading execution (Agent Zone).
 

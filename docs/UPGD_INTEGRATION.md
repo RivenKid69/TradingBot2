@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the integration of UPGD (Utility-based Perturbed Gradient Descent) optimizers into the AI-Powered Quantitative Research Platform. UPGD is a continual learning optimizer designed to mitigate catastrophic forgetting and maintain plasticity in deep neural networks.
+This document describes the integration of UPGD (Utility-based Perturbed Gradient Descent) optimizers into CustodiaCloud. UPGD is a continual learning optimizer designed to mitigate catastrophic forgetting and maintain plasticity in deep neural networks.
 
 **IMPORTANT**: As of the latest version, **AdaptiveUPGD is now the default optimizer** for all DistributionalPPO models. This provides improved continual learning performance out of the box.
 

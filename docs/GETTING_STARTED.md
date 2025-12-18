@@ -2,7 +2,7 @@
 
 Welcome! This guide will take you from zero to running your first backtest in under 30 minutes.
 
-> **Important**: This platform is a software tool for quantitative research and automated trading. It does not provide investment advice or guarantee any specific results. Trading involves substantial risk of loss. See [Risk Disclaimers](#risk-disclaimers) at the end of this guide.
+> **Important**: CustodiaCloud is a software tool for quantitative research and customer-controlled deployment via the Agent (CCEA). It does not provide investment advice, portfolio management, or trade recommendations, and it does not guarantee any specific results. Trading involves substantial risk of loss. See [Risk Disclaimers](#risk-disclaimers) at the end of this guide.
 
 ---
 
@@ -30,8 +30,8 @@ Welcome! This guide will take you from zero to running your first backtest in un
 
 ### Knowledge Requirements
 - Basic Python knowledge (functions, classes)
-- Understanding of trading concepts (long/short, profit/loss)
-- No ML experience required (we'll guide you!)
+- Understanding of systematic trading concepts (orders, fills, profit/loss)
+- Familiarity with ML/RL concepts is helpful but not required
 
 ---
 
@@ -41,7 +41,7 @@ Welcome! This guide will take you from zero to running your first backtest in un
 
 ```bash
 git clone <repository-url>
-cd TradingBot2
+cd AI-Powered-Quantitative-Research-Platform
 ```
 
 ### Step 2: Create Virtual Environment
@@ -469,7 +469,7 @@ training:
 
 1. **Check logs**: `logs/` directory contains detailed logs
 2. **Run tests**: `pytest tests/` to verify installation
-3. **Documentation**: See [DOCS_INDEX.md](DOCS_INDEX.md)
+3. **Documentation**: See [DOCS_INDEX.md](../DOCS_INDEX.md)
 
 ---
 
@@ -500,7 +500,7 @@ pytest tests/
 ### Directory Structure
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── configs/           # Configuration files
 │   ├── quickstart/    # Pre-built strategy configs
 │   └── *.yaml         # Main configs
@@ -556,16 +556,16 @@ This software is a technology tool and not a regulated financial service. Users 
 3. **Exchange requirements** - Follow the terms of service of your chosen exchanges
 4. **Licensing requirements** - Obtain necessary licenses if required in your jurisdiction
 
-### Platform Compliance & Privacy
+### Platform Alignment Tooling & Privacy
 
-The platform implements comprehensive regulatory compliance:
+The platform includes alignment/evidence tooling designed to support customer procurement and operational reviews (not a certification claim):
 
 | Regulation | Status | Description |
 |------------|--------|-------------|
-| **MiFID II** | Toolkit Ready | Compliance tools for ICT Providers (kill switch, audit, TCA) |
-| **EU AI Act** | Toolkit Ready | Tools designed to align with High-Risk AI System requirements |
-| **DORA** | Toolkit Ready | Digital Operational Resilience controls implemented |
-| **GDPR** | Toolkit Ready | Data protection and privacy controls implemented |
+| **MiFID II** | Tooling | Evidence exports and client workflow tooling (deployment-dependent) |
+| **EU AI Act** | Tooling | Transparency/documentation tooling (deployment-dependent; no self-classification) |
+| **DORA** | Tooling | Operational resilience and vendor-risk documentation patterns |
+| **GDPR** | Controls | Privacy-by-design controls aligned with CCEA boundary |
 
 > **Note**: "Toolkit Ready" means compliance tools have been implemented and designed to help align with regulatory requirements. Independent certification or audit has not been performed. Consult qualified legal/compliance advisors for compliance assessment.
 
@@ -576,9 +576,9 @@ The platform implements comprehensive regulatory compliance:
 - EU-only data residency enforced
 
 For details, see:
-- [Privacy Policy](../legal/PRIVACY_POLICY.md)
+- [Privacy Policy](legal/PRIVACY_POLICY.md)
 - [GDPR Compliance Summary](compliance/GDPR_COMPLIANCE_SUMMARY.md)
-- [CCEA Privacy](../architecture/CCEA_PRIVACY.md)
+- [CCEA Privacy](architecture/CCEA_PRIVACY.md)
 
 ### Software Disclaimer
 
@@ -608,10 +608,10 @@ You've completed the getting started guide. You now know how to:
 | Deep dive into architecture | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Understand execution models | [docs/bar_execution.md](bar_execution.md) |
 | Advanced training options | [docs/UPGD_INTEGRATION.md](UPGD_INTEGRATION.md) |
-| Full API reference | [CLAUDE.md](../CLAUDE.md) |
+| Full API reference | [claude.md](../claude.md) |
 
 ---
 
-*Need help? Open an issue on GitHub or check [DOCS_INDEX.md](DOCS_INDEX.md) for more resources.*
+*Need help? Open an issue on GitHub or check [DOCS_INDEX.md](../DOCS_INDEX.md) for more resources.*
 
 *Last Updated: December 2025*

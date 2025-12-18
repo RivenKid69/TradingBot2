@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the integration of Deribit, the leading crypto options exchange, into the TradingBot2 platform. Deribit offers unique features compared to traditional equity options, primarily **inverse settlement** where P&L is denominated in the underlying cryptocurrency (BTC/ETH) rather than USD.
+This document describes the integration of Deribit (crypto options) into the CustodiaCloud codebase as an **optional digital-assets expansion path**. Deribit offers unique features compared to traditional equity options, primarily **inverse settlement** where P&L is denominated in the underlying cryptocurrency (BTC/ETH) rather than USD.
 
 **Status**: ✅ Tested and operational | **Phase**: 2B | **Tests**: 120 (100% pass)
 

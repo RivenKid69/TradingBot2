@@ -477,11 +477,11 @@ python script_live.py --config configs/config_live_alpaca.yaml --paper
 python script_live.py --config configs/config_live_alpaca.yaml --extended-hours
 ```
 
-Подробная документация: см. [CLAUDE.md](CLAUDE.md) (Phase 2-4, 9).
+Подробная документация: см. [claude.md](claude.md) (Phase 2-4, 9).
 
 ## Regulatory Compliance Layer
 
-Проект реализует **compliance-ready toolkit**, спроектированный в соответствии с требованиями **MiFID II** (все 7 фаз реализованы). Это инструменты для поддержки compliance-процессов клиентов, не сертифицированные независимым аудитором.
+Проект реализует **alignment/evidence toolkit**, сопоставленный с требованиями **MiFID II** (фазы 1–7 представлены в roadmap). Это инструменты для поддержки оценок и процессов клиентов; они не являются аудитом, сертификацией или юридическим утверждением “compliance”.
 
 ### Структура compliance модулей
 
@@ -515,17 +515,17 @@ services/compliance/
 └── nca_notification.py          # NCA notification
 ```
 
-### MiFID II Compliance Status
+### MiFID II Alignment Tooling (engineering coverage)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| Phase 1 | LEI, Clock Sync, Algorithm Registration | ✅ Implemented |
-| Phase 2 | Transaction Reporting (RTS 22) | ✅ Implemented |
-| Phase 3 | Kill Switch, Pre-Trade Controls, Monitoring | ✅ Implemented |
-| Phase 4 | Record Keeping, Audit Trail (5-7 years) | ✅ Implemented |
-| Phase 5 | Best Execution, TCA, Venue Analysis | ✅ Implemented |
-| Phase 6 | Governance, Self-Assessment, BCP | ✅ Implemented |
-| Phase 7 | Testing, Certification, NCA Notification | ✅ Implemented |
+| Phase 1 | LEI, Clock Sync, Algorithm Registration | ✅ Tooling implemented |
+| Phase 2 | Transaction Reporting (RTS 22) | ✅ Tooling implemented |
+| Phase 3 | Kill Switch, Pre-Trade Controls, Monitoring | ✅ Tooling implemented |
+| Phase 4 | Record Keeping, Audit Trail (5-7 years) | ✅ Tooling implemented |
+| Phase 5 | Best Execution, TCA, Venue Analysis | ✅ Tooling implemented |
+| Phase 6 | Governance, Self-Assessment, BCP | ✅ Tooling implemented |
+| Phase 7 | Testing, Certification, NCA Notification | ✅ Tooling implemented |
 
 > **Note**: Status "Implemented" means compliance toolkit is ready for client use. This has not been independently audited or certified. Clients must conduct their own compliance assessment.
 
@@ -660,4 +660,3 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 - **Remote flatten**: DISABLED (enterprise-only by contract)
 - **Silent upgrades**: DISABLED for trading-impacting
 - **Auto-approve**: DISABLED (local policy only)
-

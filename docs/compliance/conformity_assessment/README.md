@@ -6,7 +6,9 @@ This directory contains documents for the EU AI Act conformity assessment proces
 
 ## Overview
 
-As a high-risk AI system classified under the EU AI Act, TradingBot2 undergoes conformity assessment per Article 43 using the **internal control procedure** (Annex VI).
+This directory contains **templates and tooling notes** to support an EU AI Act assessment workflow (e.g., Article 43 / Annex VI) for providers and customers.
+
+**Important:** CustodiaCloud does not self-classify as a high-risk AI system in documentation. Classification and required procedures are jurisdiction- and deployment-dependent and should be validated with qualified counsel (and, where applicable, a notified body).
 
 ---
 
@@ -34,15 +36,15 @@ As a high-risk AI system classified under the EU AI Act, TradingBot2 undergoes c
 3. Validate risk management measures
 
 ### 3. Documentation
-1. Affix CE marking (Article 48)
-2. Draw up EU declaration of conformity (Article 47)
-3. Register in EU database (Article 49)
+1. If applicable, prepare the required provider documentation set
+2. If applicable, draw up an EU declaration of conformity (Article 47)
+3. If applicable, register in an EU database (Article 49)
 
 ---
 
 ## Automated Assessment Tool
 
-Run the conformity self-assessment tool:
+Run the conformity self-assessment tool (internal alignment tooling):
 
 ```python
 from services.ai_act import ConformityAssessmentTool

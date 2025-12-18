@@ -1,10 +1,10 @@
 # GDPR Implementation Plan (CCEA / EU-only)
 
-**Project**: AI-Powered Quantitative Research Platform (CCEA)  
+**Project**: CustodiaCloud (CCEA)  
 **Scope**: GDPR controls required for a software provider operating the CCEA model (Cloud-controlled execution; Agent is customer-operated).  
 **Deployment**: **EU-only** (no non-EU regions).  
 **Enterprise option**: on-prem/VPC deployment is supported **within EU-only posture** (customer-controlled infrastructure located in EU; no vendor-operated non-EU processing).  
-**Primary design source**: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` (Sections 13–16; Privacy/GDPR & Data Residency).
+**Primary technical boundary source (CCEA)**: `archive/root_files/Design Doc CCEA Cloud.txt` (privacy-by-design, secrets/telemetry boundaries, control plane).
 
 ## 0) Why this plan (and what it is not)
 

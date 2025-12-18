@@ -1,8 +1,8 @@
-# Algo Integration API (B2B Compliance Toolkit)
+# Algo Integration API (B2B Alignment/Evidence Toolkit)
 
 `from services.algo_integration import ...`
 
-MiFID II compliance toolkit for enterprise financial institution clients. These modules help B2B clients meet their regulatory obligations under MiFID II.
+MiFID II-related alignment/evidence tooling for enterprise financial institution clients. These modules are designed to support client assessments and internal workflows; they are not a certification claim and do not replace legal/compliance review.
 
 ## Module Overview
 
@@ -16,7 +16,7 @@ MiFID II compliance toolkit for enterprise financial institution clients. These 
 | algorithm_registry | 789 | Article 17(2) | Algorithm registration and tracking |
 | conformance_testing | 1,466 | RTS 6 Art. 5 | Conformance testing framework |
 | test_scenarios | 1,137 | RTS 6 Art. 5 | Standard test scenarios |
-| certification | 1,080 | RTS 6 Art. 7 | Deployment certification |
+| certification | 1,080 | RTS 6 Art. 7 | Deployment attestation (internal evidence artifact) |
 | config | 450 | - | Configuration models |
 
 ## Quick Import
@@ -343,7 +343,7 @@ for scenario in scenarios:
 
 ### certification
 
-Deployment certification per RTS 6 Article 7.
+Deployment attestation per RTS 6 Article 7 (internal evidence artifact; not a regulatory certification claim).
 
 ```python
 from services.algo_integration.certification import (
@@ -431,7 +431,7 @@ suite = create_conformance_suite(
 )
 results = runner.run_suite(suite)
 
-# 3. Create certificate if tests pass
+# 3. Create internal evidence record if tests pass
 if results.all_passed:
     manager = create_certificate_manager(firm_name="Investment Firm Ltd")
     cert = manager.create_certificate(
@@ -440,7 +440,7 @@ if results.all_passed:
         environment="PRODUCTION",
     )
     manager.approve_certificate(cert.id, "Jane Doe")
-    print(f"Algorithm certified: {cert.id}")
+    print(f"Evidence record created: {cert.id}")
 else:
     print(f"Tests failed: {results.failed} failures")
 ```

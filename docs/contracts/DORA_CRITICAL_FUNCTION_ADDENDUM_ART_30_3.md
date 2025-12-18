@@ -312,9 +312,9 @@ Provider SHALL provide Client:
 
 **I.1 Security Standards**
 
-Provider SHALL maintain:
-- SOC2 Type II certification (annual)
-- ISO 27001 certification (target)
+Provider SHALL maintain appropriate security standards, including (where applicable/available):
+- SOC 2 Type II report (roadmap/when available)
+- ISO/IEC 27001 certification status (if pursued/available)
 - Regular penetration testing (annual minimum)
 - Vulnerability scanning (weekly)
 

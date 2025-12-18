@@ -11,7 +11,7 @@ Shared: core_*, impl_*, симуляция/бэктест/тренинг, общ
 Live‑only (Agent): service_signal_runner.py, private‑trading части adapters/*, локальное состояние, kill‑switch enforcement.
 Cloud‑only: UI/IDE/backtest/training orchestration, builder/registry/control plane (сейчас почти отсутствуют).
 Зафиксировать “границу периметра” в виде 1 диаграммы (что где может жить) и списка запрещённых зависимостей для Cloud (broker submitters, private trading clients).
-Определить минимальный sandbox для retail Agent (docker‑default, process‑fallback) и требования enterprise (egress allowlist, ro‑fs).
+Определить минимальный sandbox для default Agent (docker‑default, process‑fallback) и требования enterprise (egress allowlist, ro‑fs).
 Done: утверждённый документ “Target CCEA Architecture” + таблица модулей “куда переезжает”.
 
 Фаза 1. Жёсткое разделение Cloud/Agent/Shared (3–4 недели)
@@ -110,7 +110,7 @@ Done: можно развернуть execution‑контур on‑prem/VPC к�
 Переписать пользовательские и продуктовые доки под CCEA:
 README.md — чёткая формула “cloud research, agent execution, keys local, no cloud orders”.
 ARCHITECTURE.md — новая диаграмма Cloud/Agent/Shared, протокол, state machines.
-`docs/DOCUMENTATION_CANON_DESIGN.md` — каноничное позиционирование software/ICT provider, без “we trade for you”, с едиными терминами CustodiaCloud/CCEA.
+`docs/DOCUMENTATION_CANON_DESIGN.md` — каноничное позиционирование software/ICT provider, без фрейминга исполнения «за клиента», с едиными терминами CustodiaCloud/CCEA.
 Добавить новые разделы:
 docs/CCEA_OVERVIEW.md (boundary, threat model, legal posture).
 docs/cloud/* (control plane API, builder, registry, privacy).

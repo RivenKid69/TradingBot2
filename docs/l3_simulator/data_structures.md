@@ -321,4 +321,4 @@ manager.restore_from_snapshot(snapshot)
 
 - [Matching Engine](matching_engine.md) - How orders are matched
 - [Queue Position](queue_position.md) - Position tracking
-- [State Manager](../lob/state_manager.py) - Full state management
+- [State Manager](../../lob/state_manager.py) - Full state management

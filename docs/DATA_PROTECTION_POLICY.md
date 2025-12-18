@@ -1,6 +1,6 @@
 # Data Protection Policy
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Version**: 1.0
 **Effective Date**: December 2024
@@ -47,7 +47,7 @@ All telemetry sent from Agent to Cloud passes through mandatory redaction:
 │  │             │    │  (MANDATORY)    │    │                             │  │
 │  │  - PII      │    │  Removes:       │    │  - Anonymized metrics       │  │
 │  │  - Secrets  │    │  - API keys     │    │  - Performance data         │  │
-│  │  - Signals  │    │  - Passwords    │    │  - Error logs (safe)        │  │
+│  │  - Strategy outputs │    │  - Passwords    │    │  - Error logs (safe)        │  │
 │  │             │    │  - Auth tokens  │    │                             │  │
 │  └─────────────┘    │  - Trading IDs  │    └─────────────────────────────┘  │
 │                     └─────────────────┘              │                       │
@@ -71,10 +71,10 @@ All telemetry sent from Agent to Cloud passes through mandatory redaction:
 | Level | What's Redacted | When Used | Can Be Disabled |
 |-------|-----------------|-----------|-----------------|
 | **MANDATORY** | API keys, passwords, tokens | Always | ❌ No |
-| **DEFAULT** | + PII, account IDs, trading signals | Production | ❌ No (retail), Yes (enterprise by contract) |
-| **RAW** | Nothing (full telemetry) | Enterprise opt-in | Yes (requires signed agreement) |
+| **DEFAULT** | + PII, account IDs, order-like payloads (orders/targets/signals) | Production | ❌ No |
+| **HIGHER_SENSITIVITY** | Additional fields (enterprise opt-in) | Enterprise opt-in | N/A (explicit opt-in) |
 
-**Enterprise RAW Telemetry**: Available only via explicit contractual agreement. Customer acknowledges responsibility for GDPR compliance of raw data. Must implement their own DPA with end-users.
+**Higher-sensitivity telemetry**: Available only via explicit opt-in and enterprise controls. Data transmitted to Cloud remains subject to redaction/telemetry controls; customers should perform their own legal review for deployments that enable additional telemetry fields.
 
 ### CCEA GDPR Alignment
 
@@ -217,7 +217,7 @@ Data subjects can request human review of automated decisions.
 - Regular policy reviews
 
 ### 7.3 Physical Measures
-- Cloud infrastructure with certified data centers
+- Cloud infrastructure in data centers with relevant security certifications (provider-dependent)
 - Access controls to office premises
 - Secure disposal of physical media
 

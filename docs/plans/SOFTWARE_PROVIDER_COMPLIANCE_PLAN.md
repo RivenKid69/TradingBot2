@@ -429,7 +429,7 @@ class DisclaimerAcknowledgment:
     user_agent: str
 
 PRE_LIVE_TRADING_DISCLAIMER = """
-IMPORTANT: READ BEFORE ENABLING LIVE TRADING
+IMPORTANT: READ BEFORE ENABLING LIVE EXECUTION (VIA AGENT)
 
 1. RISK WARNING
    Trading financial instruments involves substantial risk of loss.
@@ -437,11 +437,12 @@ IMPORTANT: READ BEFORE ENABLING LIVE TRADING
 
 2. NO INVESTMENT ADVICE
    This platform is a software tool. It does NOT provide investment advice,
-   recommendations, or portfolio management services.
+   portfolio management, or trade recommendations.
 
 3. YOUR RESPONSIBILITY
    - You are solely responsible for your trading decisions
    - You are using YOUR OWN broker account and API keys
+   - Cloud does not store credentials; secrets remain local in the Agent environment
    - You must ensure your strategies comply with applicable regulations
 
 4. PAST PERFORMANCE
@@ -1490,7 +1491,7 @@ h) Demonstrate compliance, allow audits
 
 ## 11. Termination
 - Return or delete all data within 30 days
-- Certification of deletion provided
+- Deletion confirmation/attestation provided (upon request)
 
 ## Signatures
 [Signature blocks]

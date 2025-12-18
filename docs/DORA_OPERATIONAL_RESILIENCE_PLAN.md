@@ -92,17 +92,17 @@
 | **DORA Services** | `services/dora/` - 40+ modules | HIGH (needs repositioning) |
 | **DORA Configs** | `configs/dora/`, `config/dora/` | MEDIUM |
 | **DORA Tests** | `tests/dora/` - 12+ test files | MEDIUM |
-| **Operations Runbook** | [OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) | HIGH |
-| **Recovery Procedures** | [RECOVERY_PROCEDURES.md](docs/RECOVERY_PROCEDURES.md) | HIGH |
-| **Service Dependency Map** | [SERVICE_DEPENDENCY_MAP.md](docs/SERVICE_DEPENDENCY_MAP.md) | HIGH |
-| **Cybersecurity Framework** | [CYBERSECURITY_FRAMEWORK.md](docs/CYBERSECURITY_FRAMEWORK.md) (NIST CSF 2.0) | HIGH |
-| **SOC2 Roadmap** | [SOC2_ROADMAP.md](docs/SOC2_ROADMAP.md) | HIGH |
-| **Healthcheck** | [services/healthcheck.py](services/healthcheck.py) | MEDIUM |
-| **Kill Switch** | [services/ops_kill_switch.py](services/ops_kill_switch.py) | HIGH |
-| **Secure Logging** | [services/secure_logging.py](services/secure_logging.py) | MEDIUM |
-| **Monitoring** | [services/monitoring.py](services/monitoring.py) | MEDIUM |
-| **MiFID II Compliance** | `services/compliance/` - BCP, audit, reporting | HIGH |
-| **CI/CD** | [.github/workflows/build-and-test.yml](.github/workflows/build-and-test.yml) | MEDIUM |
+| **Operations Runbook** | [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | HIGH |
+| **Recovery Procedures** | [RECOVERY_PROCEDURES.md](RECOVERY_PROCEDURES.md) | HIGH |
+| **Service Dependency Map** | [SERVICE_DEPENDENCY_MAP.md](SERVICE_DEPENDENCY_MAP.md) | HIGH |
+| **Cybersecurity Framework** | [CYBERSECURITY_FRAMEWORK.md](CYBERSECURITY_FRAMEWORK.md) (NIST CSF 2.0) | HIGH |
+| **SOC2 Roadmap** | [SOC2_ROADMAP.md](SOC2_ROADMAP.md) | HIGH |
+| **Healthcheck** | [services/healthcheck.py](../services/healthcheck.py) | MEDIUM |
+| **Kill Switch** | [services/ops_kill_switch.py](../services/ops_kill_switch.py) | HIGH |
+| **Secure Logging** | [services/secure_logging.py](../services/secure_logging.py) | MEDIUM |
+| **Monitoring** | [services/monitoring.py](../services/monitoring.py) | MEDIUM |
+| **MiFID II / Core Risk Controls** | `services/core/risk_controls/` + `services/algo_integration/` | HIGH |
+| **CI/CD** | [.github/workflows/build-and-test.yml](../.github/workflows/build-and-test.yml) | MEDIUM |
 
 ### 1.2 Key Findings
 
@@ -945,38 +945,38 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 
 | Component | Location | Status | Notes |
 |-----------|----------|--------|-------|
-| Kill Switch | [services/ops_kill_switch.py](services/ops_kill_switch.py) | KEEP | Core safety |
-| Healthcheck | [services/healthcheck.py](services/healthcheck.py) | ENHANCE | Add /ready, /live |
-| Secure Logging | [services/secure_logging.py](services/secure_logging.py) | KEEP | API key masking |
-| Monitoring | [services/monitoring.py](services/monitoring.py) | ENHANCE | Add alerting |
-| Recovery Procedures | [docs/RECOVERY_PROCEDURES.md](docs/RECOVERY_PROCEDURES.md) | KEEP | 10 scenarios |
-| Operations Runbook | [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) | KEEP | Comprehensive |
-| Service Dependency Map | [docs/SERVICE_DEPENDENCY_MAP.md](docs/SERVICE_DEPENDENCY_MAP.md) | KEEP | Architecture |
+| Kill Switch | [services/ops_kill_switch.py](../services/ops_kill_switch.py) | KEEP | Core safety |
+| Healthcheck | [services/healthcheck.py](../services/healthcheck.py) | ENHANCE | Add /ready, /live |
+| Secure Logging | [services/secure_logging.py](../services/secure_logging.py) | KEEP | API key masking |
+| Monitoring | [services/monitoring.py](../services/monitoring.py) | ENHANCE | Add alerting |
+| Recovery Procedures | [RECOVERY_PROCEDURES.md](RECOVERY_PROCEDURES.md) | KEEP | 10 scenarios |
+| Operations Runbook | [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | KEEP | Comprehensive |
+| Service Dependency Map | [SERVICE_DEPENDENCY_MAP.md](SERVICE_DEPENDENCY_MAP.md) | KEEP | Architecture |
 | CI/CD Pipeline | [.github/workflows/](/.github/workflows/) | ENHANCE | Security gates |
-| Audit Trail | [services/compliance/audit_trail_writer.py](services/compliance/audit_trail_writer.py) | KEEP | Reposition as Core |
-| BCP Module | [services/compliance/bcp.py](services/compliance/bcp.py) | KEEP | Core continuity |
+| Audit Trail | [services/core/risk_controls/audit_trail_writer.py](../services/core/risk_controls/audit_trail_writer.py) | KEEP | Core continuity |
+| BCP Module | [services/core/risk_controls/bcp.py](../services/core/risk_controls/bcp.py) | KEEP | Core continuity |
 
 ### 4.B) Core DORA Contractual (ALL EU clients) — NEW CATEGORY
 
 | Component | Location | Action | Rationale |
 |-----------|----------|--------|-----------|
-| **Contractual Requirements** | [services/dora/contractual_requirements.py](services/dora/contractual_requirements.py) | **KEEP as Core** | Art. 30(2) mandatory |
-| **Exit Strategies** | [services/dora/exit_strategies.py](services/dora/exit_strategies.py) | **KEEP, adapt** | Art. 28(8), Art. 30(3)(f) |
-| **Third-Party Risk** | [services/dora/third_party_risk.py](services/dora/third_party_risk.py) | **KEEP, adapt** | Self-documentation |
-| **Incident Management** | [services/dora/incident_management.py](services/dora/incident_management.py) | **KEEP** | Client notification |
-| **Incident Reporting** | [services/dora/incident_reporting.py](services/dora/incident_reporting.py) | **KEEP** | Client reports |
-| **Backup Recovery** | [services/dora/backup_recovery.py](services/dora/backup_recovery.py) | **KEEP** | Art. 30(3)(c) |
-| **ICT Business Continuity** | [services/dora/ict_business_continuity.py](services/dora/ict_business_continuity.py) | **KEEP** | Art. 30(3)(c) |
+| **Contractual Requirements** | [services/dora_integration/contracts/contractual_requirements.py](../services/dora_integration/contracts/contractual_requirements.py) | **KEEP as Core** | Art. 30(2) mandatory |
+| **Exit Strategies** | [services/dora_integration/contracts/exit_strategies.py](../services/dora_integration/contracts/exit_strategies.py) | **KEEP, adapt** | Art. 28(8), Art. 30(3)(f) |
+| **Third-Party Risk** | [services/dora_integration/third_party/third_party_risk.py](../services/dora_integration/third_party/third_party_risk.py) | **KEEP, adapt** | Self-documentation |
+| **Incident Management** | (TBD in current tree) | **TBD** | Client notification |
+| **Incident Reporting** | [services/dora_integration/incident_interface/incident_reporting.py](../services/dora_integration/incident_interface/incident_reporting.py) | **KEEP** | Client reports |
+| **Backup Recovery** | (TBD in current tree) | **TBD** | Art. 30(3)(c) |
+| **ICT Business Continuity** | (TBD in current tree) | **TBD** | Art. 30(3)(c) |
 
 ### 4.C) Enterprise DORA Support (Enhanced for regulated clients)
 
 | Component | Location | Action |
 |-----------|----------|--------|
-| Incident Classification | [services/dora/incident_classification.py](services/dora/incident_classification.py) | Enterprise — extended taxonomy |
-| Register of Information | [services/dora/register_of_information.py](services/dora/register_of_information.py) | **ADAPT** → provider_info_package |
-| TLPT | [services/dora/tlpt.py](services/dora/tlpt.py) | Enterprise — cooperation support |
-| Resilience Testing | [services/dora/resilience_testing.py](services/dora/resilience_testing.py) | Enterprise — joint testing |
-| ICT Testing | [services/dora/ict_testing.py](services/dora/ict_testing.py) | Enterprise — test support |
+| Incident Classification | [services/dora_integration/incident_interface/incident_classification.py](../services/dora_integration/incident_interface/incident_classification.py) | Enterprise — extended taxonomy |
+| Register of Information | [services/dora_integration/reporting/register_of_information.py](../services/dora_integration/reporting/register_of_information.py) | **ADAPT** → provider_info_package |
+| TLPT | (TBD in current tree) | Enterprise — cooperation support |
+| Resilience Testing | (TBD in current tree) | Enterprise — joint testing |
+| ICT Testing | (TBD in current tree) | Enterprise — test support |
 
 ### 4.D) Internal Platform Tools (Repurpose)
 
@@ -4499,14 +4499,14 @@ pooled_audit_framework:
       our_cost: "€30,000-80,000/year (SOC2 audit)"
 
     option_2_iso27001_reliance:
-      name: "ISO 27001 Certification Reliance"
-      description: "Clients rely on our ISO 27001 certification"
-      legal_basis: "Art. 30(4) - third-party certifications"
-      status: "PLANNED - certification in progress"
+      name: "ISO/IEC 27001 (Optional Roadmap)"
+      description: "Optional future certification path to support procurement (no current certification claim)"
+      legal_basis: "Art. 30(4) - third-party certifications (if applicable)"
+      status: "PLANNED - evaluation/roadmap"
       target_date: "Q4 2025"
 
       what_we_provide:
-        - "ISO 27001 certificate"
+        - "ISO/IEC 27001 certificate (if achieved)"
         - "Statement of Applicability"
         - "Annual surveillance audit reports"
 
@@ -4830,8 +4830,8 @@ test_migration:
 **Test Coverage:** 474 tests passing (100%)
 
 **Goals:**
-- ✅ Enable compliance-ready contracts with EU clients NOW
-- ✅ Establish audit readiness
+- ✅ Enable procurement-ready contract templates with EU clients (no certification claim)
+- ✅ Establish evidence-pack readiness (internal)
 - ✅ Clean up non-applicable modules
 - ✅ Validate operational capacity for SLA commitments
 
@@ -4959,7 +4959,7 @@ test_migration:
 - [ ] Multi-region deployment completed
 - [ ] 24/7 on-call team (4+ FTE)
 - [ ] Quarterly DR tests passing
-- [ ] SOC2 Type II certification completed
+- [ ] SOC 2 readiness milestone achieved (report/attestation if available)
 
 ### Phase Summary Timeline
 
@@ -4971,12 +4971,12 @@ Phase 1 (Q1 2025): Contractual foundation
 
 Phase 2 (Q2-Q3 2025): Operational maturity
 ├── Professional tier available
-├── SOC2 audit in progress
+├── SOC 2 program in progress
 └── Trust center operational
 
 Phase 3 (Q4 2025+): Enterprise scale
 ├── Enterprise tier available
-├── SOC2 Type II certified
+├── SOC 2 Type II report available (if achieved)
 └── Multi-region operational
 ```
 
@@ -5101,10 +5101,10 @@ Adaptations:
 |----------|---------|
 | [DORA Article 28](https://www.digital-operational-resilience-act.com/Article_28.html) | ICT third-party risk principles |
 | [DORA Article 30](https://www.digital-operational-resilience-act.com/Article_30.html) | Contractual requirements |
-| [OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md) | Current operations |
-| [RECOVERY_PROCEDURES.md](docs/RECOVERY_PROCEDURES.md) | Current recovery |
-| [CYBERSECURITY_FRAMEWORK.md](docs/CYBERSECURITY_FRAMEWORK.md) | NIST CSF 2.0 |
-| [SOC2_ROADMAP.md](docs/SOC2_ROADMAP.md) | SOC2 certification |
+| [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md) | Current operations |
+| [RECOVERY_PROCEDURES.md](RECOVERY_PROCEDURES.md) | Current recovery |
+| [CYBERSECURITY_FRAMEWORK.md](CYBERSECURITY_FRAMEWORK.md) | NIST CSF 2.0 |
+| [SOC2_ROADMAP.md](SOC2_ROADMAP.md) | SOC 2 readiness roadmap |
 
 ---
 

@@ -16,16 +16,16 @@ This document defines the required disclaimers, warnings, and acknowledgment flo
 
 **Text:**
 ```
-The Platform provides software tools for quantitative research.
-It does NOT provide investment advice, recommendations, or
-portfolio management services. All trading decisions are yours.
+The Platform provides software tools for quantitative research and deployment.
+It does NOT provide investment advice, portfolio management, or trade recommendations.
+All trading decisions are yours.
 ```
 
 **Format:** Persistent footer link + full text on legal pages
 
 ### D2: Risk Warning
 
-**Display Location:** Registration, Live trading activation
+**Display Location:** Registration, Live execution activation
 
 **Text:**
 ```
@@ -40,7 +40,7 @@ afford to lose. Past performance does not guarantee future results.
 
 ### D3: AI-Generated Content
 
-**Display Location:** All AI outputs (signals, predictions, reports)
+**Display Location:** All AI outputs (research outputs, predictions, reports)
 
 **Text:**
 ```
@@ -103,22 +103,22 @@ NEVER receive or store your trading credentials.
 </form>
 ```
 
-### A2: Live Trading Activation
+### A2: Live Execution Activation
 
-**Trigger:** First live trading setup
+**Trigger:** First live execution setup
 
 **Required Acknowledgments:**
 1. ☐ I understand trading involves substantial risk of loss
 2. ☐ I understand I may lose more than my initial investment
 3. ☐ I have sufficient knowledge and experience to trade
 4. ☐ I am solely responsible for all trading decisions
-5. ☐ I understand AI-generated signals may be inaccurate
+5. ☐ I understand AI-generated outputs may be inaccurate
 6. ☐ I will maintain appropriate risk limits
 
 **Implementation:**
 ```html
-<dialog id="live-trading-activation">
-  <h2>⚠️ Live Trading Activation</h2>
+<dialog id="live-execution-activation">
+  <h2>⚠️ Live Execution Activation</h2>
 
   <div class="warning-box">
     <p><strong>TRADING INVOLVES SUBSTANTIAL RISK OF LOSS</strong></p>
@@ -145,7 +145,7 @@ NEVER receive or store your trading credentials.
     </label>
     <label>
       <input type="checkbox" name="ai-limitations" required>
-      I understand AI-generated signals may be inaccurate
+      I understand AI-generated outputs may be inaccurate
     </label>
     <label>
       <input type="checkbox" name="risk-limits" required>
@@ -153,7 +153,7 @@ NEVER receive or store your trading credentials.
     </label>
   </div>
 
-  <button type="submit" disabled>Activate Live Trading</button>
+  <button type="submit" disabled>Activate Live Execution</button>
 </dialog>
 ```
 
@@ -198,7 +198,7 @@ NEVER receive or store your trading credentials.
 
 ### A4: Strategy Deployment
 
-**Trigger:** Deploying strategy to live trading
+**Trigger:** Deploying strategy for live execution (via Agent)
 
 **Required Acknowledgments:**
 1. ☐ I have tested this strategy in paper trading
@@ -206,7 +206,7 @@ NEVER receive or store your trading credentials.
 3. ☐ I have reviewed the risk parameters
 
 **Additional for Trading-Impacting Changes:**
-4. ☐ I understand this change affects live trading
+4. ☐ I understand this change affects live execution
 5. ☐ I have reviewed the change details
 
 ---
@@ -224,13 +224,13 @@ NEVER receive or store your trading credentials.
 
 **Style:** Blue info banner, non-dismissible
 
-### W2: Live Trading Mode
+### W2: Live Execution Mode
 
-**Display:** Always visible when live trading is active
+**Display:** Always visible when live execution is active
 
 **Text:**
 ```
-🔴 LIVE TRADING ACTIVE - Real orders are being executed
+🔴 LIVE EXECUTION ACTIVE - Real orders are being executed (via your Agent)
 ```
 
 **Style:** Red warning banner, non-dismissible
@@ -241,7 +241,7 @@ NEVER receive or store your trading credentials.
 
 **Text:**
 ```
-⛔ TRADING HALTED - Kill switch activated
+⛔ EXECUTION HALTED - Kill switch activated
 Reason: {reason}
 All orders cancelled. Positions held.
 [View Details] [Acknowledge]
@@ -314,7 +314,8 @@ This action requires your local approval.
 ├────────────────────────────────────────────────────────┤
 │                                                         │
 │  This platform uses AI (Reinforcement Learning) to     │
-│  generate trading signals and recommendations.          │
+│  generate research outputs (e.g., indicators,          │
+│  forecasts, and reports).                               │
 │                                                         │
 │  AI-generated content is marked with [AI-GENERATED]    │
 │                                                         │
@@ -418,9 +419,9 @@ Agent operating in degraded mode
 
 - [ ] All mandatory disclaimers are displayed
 - [ ] Registration requires ToS/Privacy acknowledgment
-- [ ] Live trading activation requires risk acknowledgment
+- [ ] Live execution activation requires risk acknowledgment
 - [ ] AI content is marked with [AI-GENERATED]
-- [ ] Paper vs Live trading is clearly distinguished
+- [ ] Paper vs Live execution is clearly distinguished
 - [ ] Kill switch status is visible when active
 - [ ] Risk controls are visible and editable
 - [ ] CCEA architecture is explained during Agent setup
@@ -479,7 +480,7 @@ X-CCEA-Agent-ID: agent_xyz
 - [Terms of Service](../legal/TERMS_OF_SERVICE.md)
 - [Privacy Policy](../legal/PRIVACY_POLICY.md)
 - [CCEA Overview](../CCEA_OVERVIEW.md)
-- [EU AI Act Compliance](../compliance/EU_AI_ACT_COMPLIANCE.md)
+- [EU AI Act Integration Plan](../compliance/EU_AI_ACT_INTEGRATION_PLAN.md)
 
 ---
 

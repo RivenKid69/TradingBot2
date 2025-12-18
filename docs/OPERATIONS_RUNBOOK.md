@@ -1,6 +1,6 @@
 # Operations Runbook
 
-This document provides operational procedures for running the TradingBot2 platform in simulation, training, and live modes.
+This document provides operational procedures for running the CustodiaCloud platform in simulation, training, and live execution modes.
 
 ---
 
@@ -9,7 +9,7 @@ This document provides operational procedures for running the TradingBot2 platfo
 1. [Pre-Flight Checks](#pre-flight-checks)
 2. [Simulation Mode](#simulation-mode)
 3. [Training Mode](#training-mode)
-4. [Live Trading Mode](#live-trading-mode)
+4. [Live Execution Mode](#live-execution-mode)
 5. [Monitoring](#monitoring)
 6. [Emergency Procedures](#emergency-procedures)
 7. [Common Issues & Troubleshooting](#common-issues--troubleshooting)
@@ -152,7 +152,7 @@ python script_eval.py --config configs/config_eval.yaml --all-profiles
 
 ---
 
-## Live Trading Mode
+## Live Execution Mode
 
 **CAUTION: Live trading involves real money. Always test thoroughly first.**
 
@@ -165,7 +165,7 @@ python script_eval.py --config configs/config_eval.yaml --all-profiles
 5. [ ] Ensure kill switch is accessible
 6. [ ] Have emergency contact ready
 
-### Dry Run (No Real Trades)
+### Dry Run (No Real Orders)
 
 ```bash
 # Crypto dry run
@@ -183,7 +183,7 @@ python script_live.py --config configs/config_live_alpaca.yaml
 # Ensure config has: paper: true
 ```
 
-### Live Trading
+### Live Execution
 
 ```bash
 # Crypto live (Binance)
@@ -207,7 +207,7 @@ risk:
   max_orders_per_min: 10           # Rate limit
 ```
 
-### Monitoring Live Trading
+### Monitoring Live Execution
 
 ```bash
 # Watch logs in real-time
@@ -245,7 +245,7 @@ curl http://localhost:8080/health
 - Episode reward (should increase)
 - KL divergence (should stay < 0.1)
 
-**Live Trading:**
+**Live Execution:**
 - P&L (total and daily)
 - Position sizes
 - Order fill rates

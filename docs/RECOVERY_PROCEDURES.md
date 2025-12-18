@@ -1,6 +1,6 @@
 # Recovery Procedures
 
-This document describes recovery procedures for common failure scenarios in TradingBot2.
+This document describes recovery procedures for common failure scenarios in CustodiaCloud.
 
 ---
 
@@ -209,7 +209,7 @@ python script_live.py --config your_config.yaml
 ## 3. Kill Switch Triggered
 
 ### Symptoms
-- Process stops accepting signals
+- Process stops accepting new events/commands
 - "Kill switch triggered" in logs
 - `state/kill_switch.flag` file exists
 
@@ -359,7 +359,7 @@ python script_live.py --config your_config.yaml
 **Step 1: Check what happened**
 ```bash
 # Check system logs (Linux)
-journalctl -u tradingbot --since "1 hour ago"
+journalctl -u ccea-agent --since "1 hour ago"
 
 # Check application logs
 tail -100 logs/*.log
@@ -403,13 +403,13 @@ python script_live.py --config your_config.yaml
 Example systemd service:
 ```ini
 [Unit]
-Description=TradingBot2 Live Trading
+Description=CustodiaCloud Live Execution
 After=network.target
 
 [Service]
 Type=simple
 User=trader
-WorkingDirectory=/path/to/TradingBot2
+WorkingDirectory=/path/to/AI-Powered-Quantitative-Research-Platform
 ExecStart=/usr/bin/python script_live.py --config configs/config_live.yaml
 Restart=on-failure
 RestartSec=30

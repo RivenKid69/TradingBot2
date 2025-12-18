@@ -1,8 +1,10 @@
-# AI-Powered Quantitative Research Platform - Documentation Index
+# CustodiaCloud — Documentation Index
 
 > **Navigation Hub** для всей документации проекта
 >
-> **Canonical Reference:** [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
+> **Canon (позиционирование/нейминг/юридически безопасные формулировки/committee narrative):** [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md)
+>
+> **CCEA technical reference (граница Cloud/Agent, lifecycle vs orders, secrets, telemetry):** `archive/root_files/Design Doc CCEA Cloud.txt` (design/architecture docs are read-only)
 
 ---
 
@@ -26,15 +28,15 @@
 ### For Developers
 | Document | Description |
 |----------|-------------|
-| [CLAUDE.md](CLAUDE.md) | ⭐ **Master technical reference** - complete API documentation (RU) |
+| [claude.md](claude.md) | ⭐ **Master technical reference** - complete API documentation (RU) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture and design patterns |
 | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) | AI agent context and instructions (EN) |
 
 ---
 
-## 🏗️ CCEA Cloud Architecture (Canonical)
+## 🏗️ CCEA Architecture (Technical Docs)
 
-**Reference:** [Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt) - единственный источник истины для архитектуры CCEA.
+**Reference (design/architecture docs; do not edit):** [docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt](docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt)
 
 ### Core Architecture
 | Document | Description |
@@ -70,29 +72,13 @@
 
 ---
 
-## 📊 Статус проекта (2025-12-17)
+## 📊 Engineering status (internal)
 
-**Designed for Production Use (Internal)** - Все критические исправления применены и протестированы. **14,000+ автоматизированных тестов.**
+Этот раздел — инженерный статус/навигация. Актуальность и полноту верифицировать запуском тестов в репозитории (например, `pytest`). Для внешней подачи (committee/investor) использовать канон: `docs/DOCUMENTATION_CANON_DESIGN.md`.
 
-| Компонент | Статус | Версия |
-|-----------|--------|--------|
-| AdaptiveUPGD Optimizer | ✅ Operational | -- |
-| Twin Critics + VF Clipping | ✅ Operational | -- |
-| VGS | ✅ Operational | v3.2 |
-| PBT | ✅ Operational | -- |
-| SA-PPO | ✅ Operational | -- |
-| Data Leakage Prevention | ✅ Operational | -- |
-| **Multi-Asset (Stocks)** | ✅ Operational | Phase 3 |
-| **Execution Providers** | ✅ Operational | Phase 4 (L2) |
-| **Live Trading Improvements** | ✅ Operational | Phase 9 |
-| **MiFID II Alignment Toolkit** | ✅ Toolkit Ready | 7/7 tools implemented |
-| **EU AI Act Alignment Toolkit** | ✅ Toolkit Ready | 4/4 phases complete |
-| **DORA Alignment Toolkit** | ✅ Toolkit Ready | 5/5 phases complete |
-| **GDPR Alignment Toolkit** | ✅ Toolkit Ready | 9/9 phases complete |
-
-> **Note on Compliance Status**: "Toolkit Ready" means we have implemented all necessary tools and controls designed to help clients align with regulatory requirements. These implementations have not undergone independent third-party audit or certification. Clients seeking regulatory compliance should conduct their own compliance assessment or engage qualified legal/compliance advisors.
-
-**⚠️ Переобучите модели**, если они обучены до 2025-11-26.
+- CCEA boundary guardrails и документационные проверки присутствуют
+- Extensive automated tests (верифицировать запуском `pytest`)
+- Alignment/evidence tooling описаны в `docs/compliance/` (не аудит/не сертификация/не claim “compliance”)
 
 ---
 
@@ -102,12 +88,12 @@
 
 | Файл | Описание |
 |------|----------|
-| [CLAUDE.md](CLAUDE.md) | ⭐ **Master reference** - полная документация (RU) |
+| [claude.md](claude.md) | ⭐ **Master reference** - полная документация (RU) |
 | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) | 🤖 **AI Agent Guide** - context & instructions (EN) |
 | [README.md](README.md) | Обзор, установка, quick start и runbooks (sim/live/debug/release) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Архитектура системы |
 | [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md) | Инструкции по сборке |
-| [QUICK_START_REFERENCE.md](QUICK_START_REFERENCE.md) | Быстрый старт |
+| [QUICK_START.md](QUICK_START.md) | Быстрый старт |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Руководство по контрибуции |
 | [CHANGELOG.md](CHANGELOG.md) | История изменений |
 
@@ -139,10 +125,10 @@
 
 | Файл | Описание |
 |------|----------|
-| [CLAUDE.md#multi-exchange-support](CLAUDE.md) | ⭐ Multi-exchange adapters (Binance, Alpaca, Polygon) |
-| [CLAUDE.md#stock-training-backtest](CLAUDE.md) | Stock training & backtest pipeline |
-| [CLAUDE.md#execution-providers](CLAUDE.md) | Execution providers (L2 simulation) |
-| [CLAUDE.md#live-trading-improvements](CLAUDE.md) | Live trading improvements (Phase 9) |
+| [claude.md#multi-exchange-support](claude.md) | ⭐ Multi-exchange adapters (Binance, Alpaca, Polygon) |
+| [claude.md#stock-training-backtest](claude.md) | Stock training & backtest pipeline |
+| [claude.md#execution-providers](claude.md) | Execution providers (L2 simulation) |
+| [claude.md#live-execution-improvements](claude.md) | Live execution improvements (Phase 9) |
 
 **Supported Assets:**
 - **Crypto**: Binance Spot/Futures (24/7)
@@ -164,12 +150,11 @@
 | [docs/seasonality_process.md](docs/seasonality_process.md) | Development process |
 | [docs/seasonality_signoff.md](docs/seasonality_signoff.md) | Sign-off procedure |
 
-### MiFID II Compliance (Toolkit Implementation Complete)
+### MiFID II Alignment (Evidence Toolkit)
 
 | Файл | Описание |
 |------|----------|
-| [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) | ⭐ **Master compliance reference** - все 7 фаз |
-| [services/compliance/](services/compliance/) | 30+ модулей compliance |
+| [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) | ⭐ **Master reference** - tooling + evidence exports to support client workflows |
 
 **Реализованные фазы:**
 - Phase 1: LEI, Clock Sync (RTS 25), Algorithm Registration
@@ -178,16 +163,16 @@
 - Phase 4: Audit Trail, Record Keeping (5-7 years retention)
 - Phase 5: Best Execution, TCA, Venue Analysis
 - Phase 6: Governance, Self-Assessment, BCP
-- Phase 7: Conformance Testing, Certification, NCA Notification
+- Phase 7: Conformance Testing and change control evidence
 
-### EU AI Act Compliance (Toolkit Implementation Complete)
+### EU AI Act Alignment (Evidence Toolkit)
 
 | Файл | Описание |
 |------|----------|
 | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) | ⭐ **Master AI Act reference** - все 4 фазы |
-| [docs/compliance/EU_DECLARATION_OF_CONFORMITY.md](docs/compliance/EU_DECLARATION_OF_CONFORMITY.md) | EU Declaration of Conformity (Article 47) |
+| [docs/compliance/EU_DECLARATION_OF_CONFORMITY.md](docs/compliance/EU_DECLARATION_OF_CONFORMITY.md) | EU Declaration template (customer-specific; not a certification claim) |
 | [docs/compliance/INSTRUCTIONS_FOR_USE.md](docs/compliance/INSTRUCTIONS_FOR_USE.md) | Instructions for Use (Article 13) |
-| [services/ai_act/](services/ai_act/) | 15+ модулей AI Act compliance |
+| [services/ai_act/](services/ai_act/) | AI Act-related tooling modules |
 
 **Completion Reports:**
 | Фаза | Отчёт | Тесты |
@@ -199,13 +184,13 @@
 
 **Total AI Act Tests: 1,007 passed**
 
-### DORA Compliance (Toolkit Implementation Complete)
+### DORA Alignment (Evidence Toolkit)
 
 | Файл | Описание |
 |------|----------|
 | [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) | ⭐ **Master DORA reference** - все 5 фаз |
 | [docs/compliance/dora/proportionality_assessment.md](docs/compliance/dora/proportionality_assessment.md) | Proportionality assessment (Phase 0) |
-| [services/dora/](services/dora/) | 20+ модулей DORA compliance |
+| [services/dora/](services/dora/) | DORA-related tooling modules |
 
 **Реализованные фазы:**
 - Phase 0: Proportionality Assessment & Scope Verification
@@ -217,7 +202,7 @@
 
 **Total DORA Tests: ~1,015 passed**
 
-### GDPR Compliance (Toolkit Implementation Complete)
+### GDPR Controls (CCEA-Aligned)
 
 | Файл | Описание |
 |------|----------|
@@ -318,18 +303,7 @@ pytest tests/test_data_leakage*.py -v  # Data Leakage
 
 ### Статистика тестов
 
-| Категория | Тесты |
-|-----------|-------|
-| **Всего тестов** | **14,000+** |
-| MiFID II Compliance | 200+ |
-| EU AI Act Compliance | 1,007 |
-| DORA Compliance | ~1,015 |
-| Twin Critics | 49+ |
-| UPGD | 119+ |
-| VGS | 7+ |
-| Data Leakage | 46+ |
-| SA-PPO | 16+ |
-| PBT | 14+ |
+Точные количества меняются. Для текущего состояния используйте запуск тестов (`pytest`) и отчёты CI.
 
 ---
 
@@ -369,23 +343,21 @@ python tools/check_feature_parity.py
 
 | Задача | Куда смотреть |
 |--------|---------------|
-| Новичок в проекте | [CLAUDE.md](CLAUDE.md) |
+| Новичок в проекте | [claude.md](claude.md) |
 | Архитектура | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| Быстрый старт | [QUICK_START_REFERENCE.md](QUICK_START_REFERENCE.md) |
+| Быстрый старт | [QUICK_START.md](QUICK_START.md) |
 | Twin Critics | [docs/twin_critics.md](docs/twin_critics.md) |
 | UPGD Optimizer | [docs/UPGD_INTEGRATION.md](docs/UPGD_INTEGRATION.md) |
-| Multi-Asset (Stocks) | [CLAUDE.md](CLAUDE.md) (см. Phase 2-4, 9) |
-| Live Trading | [CLAUDE.md](CLAUDE.md) (см. Phase 9) |
+| Multi-Asset (Stocks) | [claude.md](claude.md) (см. Phase 2-4, 9) |
+| Live Execution | [claude.md](claude.md) (см. Phase 9) |
 | Seasonality | [docs/seasonality.md](docs/seasonality.md) |
-| MiFID II Compliance | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) |
-| EU AI Act Compliance | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) |
-| DORA Compliance | [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) |
-| GDPR Compliance | [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) |
+| MiFID II Alignment Toolkit | [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md) |
+| EU AI Act Alignment Toolkit | [docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md](docs/compliance/EU_AI_ACT_INTEGRATION_PLAN.md) |
+| DORA Alignment Toolkit | [docs/compliance/DORA_INTEGRATION_PLAN.md](docs/compliance/DORA_INTEGRATION_PLAN.md) |
+| GDPR Alignment Toolkit | [docs/compliance/GDPR_COMPLIANCE_SUMMARY.md](docs/compliance/GDPR_COMPLIANCE_SUMMARY.md) |
 | Privacy & Legal | [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md) |
 | Исторические отчёты | `docs/archive/` |
 
 ---
 
-**Last Updated**: 2025-12-17 (MiFID II Compliance-Ready, EU AI Act Compliance-Ready, DORA Compliance-Ready, GDPR Compliance-Ready, CCEA Architecture Implemented, 14,000+ tests)
-**Status**: ✅ Designed for Production
-**Version**: 7.1 (GDPR Implementation Complete)
+**Last Updated**: 2025-12-17 (alignment/evidence tooling; CCEA implemented; verify by tests)

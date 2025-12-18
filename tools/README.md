@@ -1,6 +1,6 @@
 # Tools Directory
 
-Utility scripts for maintaining and managing the TradingBot2 project.
+Utility scripts for maintaining and managing the CustodiaCloud repository.
 
 ## 🧹 Project Maintenance
 
@@ -240,4 +240,4 @@ python setup.py build_ext --inplace
 ---
 
 **Last Updated**: 2025-12-03
-**Maintained by**: TradingBot2 Development Team
+**Maintained by**: CustodiaCloud maintainers

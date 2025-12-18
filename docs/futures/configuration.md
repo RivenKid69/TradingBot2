@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers all configuration options for futures trading in TradingBot2.
+This guide covers all configuration options for futures trading in CustodiaCloud.
 
 ## Configuration Files
 

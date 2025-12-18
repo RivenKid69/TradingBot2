@@ -1,6 +1,6 @@
 # Stock Trading Guide
 
-Complete guide for training, backtesting, and live trading US equities using the AI-Powered Quantitative Research Platform.
+Complete guide for training, backtesting, and live trading US equities using CustodiaCloud (CCEA).
 
 ---
 

@@ -1,10 +1,10 @@
-# SOC 2 Type II Certification Roadmap
+# SOC 2 Type II Readiness Roadmap
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud
 
 **Version**: 1.0
 **Last Updated**: December 2024
-**Target Certification**: Q1 2026
+**Target**: [TBD] (illustrative; subject to resources and audit timelines)
 
 ---
 

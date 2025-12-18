@@ -1,10 +1,10 @@
 # EU AI Act Optional Modules Refactoring Plan v2.2
-## Task: Make High-Risk Modules Optional While Keeping GPAI Mandatory
+## Task: Make Optional EU AI Act Modules Explicit
 ### Version: 2.2.0 | Target: AI Agent Execution | Reviewed: All Critical Issues Resolved + Phases Restructured
 ---
 ## 1. EXECUTIVE SUMMARY
-**Objective**: Restructure `services/ai_act/` to separate mandatory GPAI compliance (Articles 50, 53) from optional High-Risk compliance (Articles 9, 14, 15, 17, 43, 72).
-**Legal Basis**: EU AI Act Regulation 2024/1689 - algorithmic trading NOT in Annex III (High-Risk). Platform = GPAI Provider per Article 53.
+**Objective**: Restructure `services/ai_act/` to separate transparency/documentation tooling (Articles 50/53; deployment-dependent) from optional conservative coverage of Articles 9–17 and related workflows (enterprise feature).
+**Legal Basis**: EU AI Act Regulation 2024/1689. Applicability/classification depends on deployment context; do not self-classify in docs without counsel review.
 **Architecture Pattern**: Follow `services/dora/` facade pattern with integration layers.
 **Key Changes from v2.1:**
 - **RESTRUCTURED**: 10 explicit phases (0-9) with clear Goals and Exit Criteria
@@ -62,14 +62,11 @@
 |---------|-------|-------------------|
 | **Article 52** | Transparency for certain AI systems | Applies to: emotion recognition, biometric categorization, deepfakes. Platform does NOT use these capabilities — algo-trading models process market data, not biometric/emotional data. |
 | **Article 53(2)** | GPAI with systemic risk | Applies to: GPAI models with >10^25 FLOPs training compute OR designated by EU Commission. Platform uses downstream GPAI models (e.g., LLMs for analysis), does NOT train foundation models at systemic risk scale. |
-| **Article 6** | High-Risk classification rules | Platform NOT a safety component, NOT in Annex III use cases. Algo-trading = financial services, but NOT "creditworthiness" (Annex III, 5b) or "life/health insurance" (Annex III, 5a). |
-| **Annex I** | Harmonised legislation | No CE marking required — platform is NOT a product under EU harmonised legislation (Machinery, Medical Devices, etc.). |
+| **Article 6** | High-Risk classification rules | Classification depends on deployment context and roles; we do not self-classify in docs and recommend counsel review for applicability. |
+| **Annex I** | Harmonised legislation | CE marking applicability depends on concrete product scope; verify with qualified counsel before any external statement. |
 
-**Legal Opinion Summary:**
-> The platform operates as a **Software Provider** offering tools for algorithmic trading. Users connect their own brokerage accounts; the platform does NOT hold assets or execute trades on behalf of clients. Per EU AI Act 2024/1689:
-> - Classification: **GPAI Provider** (Article 53)
-> - NOT High-Risk AI System — algorithmic trading absent from Annex III
-> - High-Risk modules = **voluntary overcompliance** for B2B enterprise clients
+**Design Intent Summary (Non-legal):**
+> The platform is designed as a **B2B software/ICT provider**. Users connect their own broker accounts; the Cloud does not hold assets/credentials and does not execute trades on behalf of clients. EU AI Act applicability and classification are deployment-dependent; we do not self-classify as “high-risk AI” in documentation. Optional modules may support Articles 9–17 as a conservative engineering posture.
 
 ---
 ## 3. TARGET ARCHITECTURE
@@ -798,9 +795,9 @@ EnterpriseNotAvailableError.
 Implements lazy loading to avoid importing all 15 modules at once.
 
 Legal Basis:
-    - Articles 9, 14, 15, 17, 43, 72 apply to High-Risk AI Systems (Annex III)
-    - Algorithmic trading NOT in Annex III
-    - These modules provide VOLUNTARY overcompliance for B2B clients
+    - Articles 9, 14, 15, 17, 43, 72 apply to AI systems that are classified as High-Risk (Annex III)
+    - EU AI Act applicability and risk classification are deployment-dependent; do not assume out-of-scope without legal review
+    - These modules provide OPTIONAL evidence/controls for B2B clients (when applicable)
 
 Usage:
     # First, enable enterprise mode:
@@ -1036,11 +1033,10 @@ __all__: list[str]
 """
 EU AI Act Compliance Module - Tiered Architecture.
 Classification:
-    - GPAI Provider (Article 53) - MANDATORY for all deployments
-    - High-Risk (Articles 9-17, 43, 72) - OPTIONAL enterprise feature
+    - Deployment-dependent applicability (counsel review required)
+    - Optional modules may cover Articles 9–17, 43, 72 as a conservative engineering posture
 Legal Reference: EU AI Act Regulation 2024/1689
-    - Annex III does NOT include algorithmic trading
-    - Platform = GPAI Provider, not High-Risk AI System
+    - Avoid self-classification in docs; validate applicability for concrete deployments
 Usage:
     # Default (GPAI only - always available):
     from services.ai_act import TransparencyDisclosureManager

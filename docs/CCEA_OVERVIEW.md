@@ -2,14 +2,16 @@
 
 > **Version**: 2.1.0 | **Last Updated**: 2025-12-16 | **Status**: APPROVED | **Implementation**: All planned features complete
 >
-> **Reference**: This document aligns with `Design Doc CCEA Cloud.txt` (canonical source)
+> **Canon (wording/positioning):** `docs/DOCUMENTATION_CANON_DESIGN.md`
+>
+> **CCEA technical reference:** `archive/root_files/Design Doc CCEA Cloud.txt` (design/architecture docs are read-only)
 
 ## Executive Summary
 
 CCEA (Cloud-Controlled Execution Architecture) defines a strict security boundary between **Cloud** (research/monitoring/lifecycle management) and **Agent** (execution/secrets/risk enforcement). This architecture ensures that:
 
 - **Cloud NEVER has access to trading credentials or order execution capabilities**
-- **All trading operations occur locally in the user's environment (Agent)**
+- **All live execution occurs only in the customer-controlled Agent environment**
 - **Clear regulatory positioning as Software Provider, not Investment Adviser**
 
 ---
@@ -31,7 +33,7 @@ We build a SaaS platform for:
 ### 1.2 Goals
 
 Architecture that:
-1. **Technically** provides good UX for "auto-trading" without Cloud becoming an execution service
+1. **Technically** supports automated execution workflows without Cloud becoming an execution service
 2. **Legally/commercially** positions as "software provider", reducing RTO/execution/advice qualification risks
 3. **Designed for enterprise adoption**: auditability, change control, data governance, vendor pack
 
@@ -129,11 +131,11 @@ Cloud NEVER:
 
 ---
 
-## 4. Product Modes (Design Doc §3.3)
+## 4. Deployment Modes (CCEA)
 
-### 4.1 Retail Research SaaS (EU-friendly)
+### 4.1 B2B Research Cloud + Optional BYO Agent
 
-**Target**: Individual researchers, quants learning algo trading
+**Target**: Professional teams evaluating research/simulation and deployment workflows (equities-first)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -147,23 +149,23 @@ Cloud NEVER:
                               │ Optional: Deploy to Local Agent
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              OPTIONAL: BYO Agent (User's Machine)               │
-│  - Only if user wants live trading                              │
-│  - User provides their own broker credentials                   │
-│  - Agent runs on user's hardware                                │
+│         OPTIONAL: CustodiaCloud Agent (Customer Environment)     │
+│  - Only if customer wants live execution                         │
+│  - Customer provides and controls broker credentials             │
+│  - Agent runs on customer-controlled infrastructure              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Characteristics:**
 - Cloud provides research/simulation/monitoring only
-- Agent is optional, only needed for live trading
-- All secrets stay with the user
+- Agent is optional, only needed for live execution
+- All secrets stay with the customer
 - EU data residency by default
 - GDPR-aligned telemetry (mandatory redaction)
 
-### 4.2 Retail Live via Local Agent
+### 4.2 Customer-Controlled Live Execution via Agent (B2B)
 
-**Target**: Active traders who want automated execution
+**Target**: Professional teams who want customer-controlled automated execution
 
 ```
 Cloud:                          Agent (User's Machine):
@@ -181,11 +183,11 @@ Cloud:                          Agent (User's Machine):
 ```
 
 **Key Characteristics:**
-- Auto-execution runs locally on user's machine
+- Execution runs locally in the customer-controlled environment
 - Cloud provides observability and lifecycle requests only
 - Agent enforces hard caps locally (Cloud cannot override)
 - Local approval required for trading-impacting changes
-- User can disconnect from Cloud and keep trading
+- Customer can disconnect from Cloud and keep running locally (subject to local controls)
 
 ### 4.3 Enterprise Engine (On-Prem/VPC/Self-Hosted)
 
@@ -278,9 +280,9 @@ Any **TRADING_IMPACTING** changes:
 | Regulation | Our Position |
 |------------|--------------|
 | **MiFID II** | Software tool exclusion (ESMA Q&A ESMA35-43-349) |
-| **EU AI Act** | Transparency provider (Article 50), Not high-risk AI deployer |
-| **GDPR** | Data Controller with EU data residency |
-| **DORA** | ICT Service Provider (contractual compliance) |
+| **EU AI Act** | Designed to support transparency obligations (e.g., Article 50); classification depends on deployment (no self-classification) |
+| **GDPR** | Privacy-by-design posture; EU data residency by default for EU deployments (deployment-dependent) |
+| **DORA** | Designed to support client vendor risk assessment (evidence exports; operational documentation) |
 
 ### 6.4 Key Legal Disclaimers
 
@@ -372,7 +374,7 @@ THE PLATFORM IS A SOFTWARE TOOL, NOT INVESTMENT ADVICE.
 - Telemetry verbosity (if not adding sensitive fields)
 - UI/UX parameters
 - Runner non-functional configs (e.g., buffer size)
-- Agent update (retail: auto-update; enterprise: change window policy)
+- Agent update (default: auto-update; enterprise: change window policy)
 
 ### 8.3 Policy Firewall (Local Hard Caps)
 

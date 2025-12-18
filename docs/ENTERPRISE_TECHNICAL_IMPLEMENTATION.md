@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides detailed technical specifications for enterprise deployments of the AI-Powered Quantitative Trading Platform. It covers infrastructure requirements, security configurations, integration patterns, and operational procedures.
+This document provides detailed technical specifications for enterprise deployments of **CustodiaCloud** (CCEA architecture). It covers infrastructure requirements, security configurations, integration patterns, and operational procedures.
 
 > **Architecture**: This platform follows the **CCEA (Cloud-Controlled Execution Architecture)** — Cloud handles research and monitoring, Agent handles execution. For enterprise clients, both components can be deployed on-prem or in customer VPC.
 
@@ -60,7 +60,7 @@ This document provides detailed technical specifications for enterprise deployme
 | Software / ICT infrastructure | Investment advice |
 | Research and simulation tools | Order execution service |
 | Monitoring and lifecycle management | Custody of assets or credentials |
-| Strategy development platform | Trading recommendations |
+| Strategy development platform | Trade recommendations |
 
 ---
 
@@ -952,7 +952,7 @@ module "eks" {
 
   tags = {
     Environment = var.environment
-    Project     = "trading-platform"
+    Project     = "custodiacloud"
   }
 }
 
@@ -1071,15 +1071,15 @@ resource "aws_kms_key" "ebs" {
 ### REST API Integration
 
 ```python
-# Example: Signal Consumer Integration
+# Example: Research Output Consumer Integration (illustrative; no order placement in Cloud)
 import requests
 from typing import List, Dict, Any
 import hmac
 import hashlib
 import time
 
-class TradingPlatformClient:
-    """Client for integrating with trading platform API."""
+class CustodiaCloudClient:
+    """Client for integrating with CustodiaCloud APIs (research outputs + control plane)."""
 
     def __init__(self, base_url: str, api_key: str, api_secret: str):
         self.base_url = base_url
@@ -1122,17 +1122,9 @@ class TradingPlatformClient:
         response.raise_for_status()
         return response.json()
 
-    def get_signals(self, symbols: List[str]) -> List[Dict[str, Any]]:
-        """Get trading signals for symbols."""
-        return self._request("GET", "/api/v2/signals", params={"symbols": symbols})
-
-    def submit_order(self, order: Dict[str, Any]) -> Dict[str, Any]:
-        """Submit order to platform."""
-        return self._request("POST", "/api/v2/orders", json=order)
-
-    def get_positions(self) -> List[Dict[str, Any]]:
-        """Get current positions."""
-        return self._request("GET", "/api/v2/positions")
+    def get_research_outputs(self, symbols: List[str]) -> List[Dict[str, Any]]:
+        """Get AI-assisted research outputs (e.g., indicators/forecasts) for symbols."""
+        return self._request("GET", "/api/v2/research/outputs", params={"symbols": symbols})
 
     def get_risk_limits(self) -> Dict[str, Any]:
         """Get current risk limits."""
@@ -1145,50 +1137,40 @@ class TradingPlatformClient:
 
 # Usage example
 if __name__ == "__main__":
-    client = TradingPlatformClient(
-        base_url="https://api.trading.example.com",
+    client = CustodiaCloudClient(
+        base_url="https://api.custodiacloud.example.com",
         api_key="your_api_key",
         api_secret="your_api_secret"
     )
 
-    # Get signals
-    signals = client.get_signals(["BTCUSDT", "ETHUSDT"])
-
-    # Execute based on signal
-    for signal in signals:
-        if signal["strength"] > 0.7:
-            order = {
-                "symbol": signal["symbol"],
-                "side": signal["direction"],
-                "type": "market",
-                "quantity": calculate_position_size(signal),
-            }
-            result = client.submit_order(order)
-            print(f"Order submitted: {result}")
+    # Fetch research outputs for review (no execution is performed by Cloud)
+    outputs = client.get_research_outputs(["AAPL", "MSFT"])
+    for output in outputs:
+        print(output)
 ```
 
 ### WebSocket Integration
 
 ```python
-# Example: Real-time Signal Consumer
+# Example: Real-time Telemetry Consumer (monitoring + governance)
 import asyncio
 import websockets
 import json
 from typing import Callable, Awaitable
 
-class SignalWebSocket:
-    """WebSocket client for real-time signal consumption."""
+class TelemetryWebSocket:
+    """WebSocket client for real-time telemetry consumption."""
 
     def __init__(
         self,
         ws_url: str,
         api_key: str,
-        on_signal: Callable[[dict], Awaitable[None]],
+        on_telemetry: Callable[[dict], Awaitable[None]],
         on_risk_alert: Callable[[dict], Awaitable[None]],
     ):
         self.ws_url = ws_url
         self.api_key = api_key
-        self.on_signal = on_signal
+        self.on_telemetry = on_telemetry
         self.on_risk_alert = on_risk_alert
         self._ws = None
         self._running = False
@@ -1205,7 +1187,7 @@ class SignalWebSocket:
         # Subscribe to channels
         await self._ws.send(json.dumps({
             "action": "subscribe",
-            "channels": ["signals", "risk_alerts", "system_health"]
+            "channels": ["telemetry", "risk_alerts", "system_health"]
         }))
 
     async def listen(self):
@@ -1215,8 +1197,8 @@ class SignalWebSocket:
                 message = await self._ws.recv()
                 data = json.loads(message)
 
-                if data["type"] == "signal":
-                    await self.on_signal(data["payload"])
+                if data["type"] == "telemetry":
+                    await self.on_telemetry(data["payload"])
                 elif data["type"] == "risk_alert":
                     await self.on_risk_alert(data["payload"])
                 elif data["type"] == "heartbeat":
@@ -1246,21 +1228,19 @@ class SignalWebSocket:
 
 
 # Usage example
-async def handle_signal(signal: dict):
-    """Process incoming trading signal."""
-    print(f"Signal received: {signal}")
-    # Implement your execution logic here
+async def handle_telemetry(payload: dict):
+    """Process telemetry payload (monitoring/governance)."""
+    print(f"Telemetry received: {payload}")
 
 async def handle_risk_alert(alert: dict):
     """Process risk alert."""
     print(f"Risk alert: {alert}")
-    # Implement your risk handling logic here
 
 async def main():
-    client = SignalWebSocket(
-        ws_url="wss://api.trading.example.com/ws",
+    client = TelemetryWebSocket(
+        ws_url="wss://api.custodiacloud.example.com/ws",
         api_key="your_api_key",
-        on_signal=handle_signal,
+        on_telemetry=handle_telemetry,
         on_risk_alert=handle_risk_alert,
     )
 

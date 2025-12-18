@@ -12,7 +12,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
 - **Source**: Configuration files and metadata
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
-  - [DOCUMENTATION_CANON_DESIGN.md](../../../DOCUMENTATION_CANON_DESIGN.md)
+  - [DOCUMENTATION_CANON_DESIGN.md](../../DOCUMENTATION_CANON_DESIGN.md)
   - [ARCHITECTURE.md](../../../ARCHITECTURE.md)
   - [README.md](../../../README.md)
 
@@ -20,7 +20,7 @@ Per Annex IV requirements, technical documentation is generated dynamically usin
 - **Source**: Core algorithm implementations
 - **Generator**: `services/ai_act/technical_documentation.py`
 - **References**:
-  - [CLAUDE.md](../../../CLAUDE.md) - Complete technical reference
+  - [claude.md](../../../claude.md) - Complete technical reference
   - [docs/twin_critics.md](../../twin_critics.md) - Twin critics architecture
   - [docs/UPGD_INTEGRATION.md](../../UPGD_INTEGRATION.md) - UPGD optimizer
   - [docs/pipeline.md](../../pipeline.md) - Decision pipeline

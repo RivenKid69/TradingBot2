@@ -1,8 +1,8 @@
 # GPAI Model Card
 
-**Model**: Distributional PPO Trading Model
+**Model**: Distributional PPO Research Model
 **Version**: 4.0
-**Provider**: AI-Powered Quantitative Research Platform
+**Provider**: CustodiaCloud
 **Release Date**: 2025-12-01
 **Card Version**: 1.0
 **EU AI Act Reference**: Article 53(1)(b)
@@ -23,8 +23,8 @@
 
 ### 2.1 Primary Uses
 
-- Trading Signal Generation
-- Research And Backtesting
+- AI-assisted research output generation (e.g., indicators/forecasts/reports)
+- Research and backtesting
 - Risk Assessment
 - Market Analysis
 
@@ -45,19 +45,7 @@ appropriate use.
 
 ## 3. Performance
 
-### 3.1 Metrics
-
-| Metric | Value | Context | Dataset |
-|--------|-------|---------|---------|
-| Sharpe Ratio | 1.2  | BTC/USDT, ETH/USDT backtest | test |
-| Max Drawdown | 15.0 % | Worst-case across all test periods | test |
-| Win Rate | 52.0 % | Directional accuracy | test |
-| Sortino Ratio | 1.8  | Downside risk-adjusted return | test |
-| Calmar Ratio | 0.8  | Return/Max Drawdown | test |
-
-### 3.2 Evaluation Methodology
-
-Walk-forward validation with 70/15/15 train/val/test split. Test period: 2023-01 to 2024-12 (out-of-sample). Metrics computed across 10 random seeds for statistical significance. Transaction costs of 0.1% included in all calculations.
+CustodiaCloud does not publish performance metrics in documentation. Performance depends on data, configuration, transaction cost assumptions, and deployment context. Customers should evaluate models using their own validation procedures; the platform provides reproducible artifacts and evidence exports to support review.
 
 ## 4. Limitations
 
@@ -75,11 +63,11 @@ Walk-forward validation with 70/15/15 train/val/test split. Test period: 2023-01
 ## 5. Known Biases
 
 - **Temporal Bias**: Better performance in trending vs. ranging markets
-  - Impact: May generate false signals during low-volatility periods
+  - Impact: May produce misleading outputs during low-volatility periods
   - Status: Partially mitigated through regime detection
-- **Asset Bias**: Optimized for major cryptocurrencies (BTC, ETH), may not generalize
-  - Impact: Lower accuracy on smaller altcoins or traditional assets
-  - Status: Documented; users advised to validate on target assets
+- **Asset Bias**: May reflect training-data bias and may not generalize across asset classes
+  - Impact: Outputs may be less reliable outside the customer's validated scope
+  - Status: Users advised to validate on target assets and data sources
 - **Regime Bias**: Trained mostly on 2020-2024 data (post-COVID bull market dominated)
   - Impact: May underperform in prolonged bear markets
   - Status: Mitigated through adversarial training (SA-PPO)
@@ -88,21 +76,21 @@ Walk-forward validation with 70/15/15 train/val/test split. Test period: 2023-01
 
 - **Financial Risk**: Model outputs should not be used as sole decision basis for trading
   - Guidance: Always combine with human judgment and risk management
-- **User Understanding**: Users must understand AI limitations before live trading
+- **User Understanding**: Users must understand AI limitations before live execution (via Agent)
   - Guidance: Implement mandatory disclosure per Article 50
 - **Loss Potential**: Significant financial losses are possible
   - Guidance: Users should only trade with funds they can afford to lose
-- **Vulnerable Users**: Not suitable for users without trading experience
+- **User Qualification**: Not suitable for users without relevant professional experience
   - Guidance: Implement user qualification checks
 
 ## 7. Requirements for Downstream Providers
 
 Per Article 53(1)(b), downstream providers integrating this model must:
 
-- **DR-001** (Article 14(4)(f)): Implement kill switch for immediate trading halt
+- **DR-001** (Article 14(4)(f)): Implement kill switch for immediate execution halt
   - Mandatory: Provide UI button and API endpoint for immediate halt
 - **DR-002** (Article 12): Log all model outputs for audit trail
-  - Mandatory: Store predictions, confidence, timestamp for minimum 5 years
+  - Mandatory: Store predictions/metadata with retention defined by deployment policies and applicable customer obligations
 - **DR-003** (Article 50): Display AI disclosure to end users
   - Mandatory: Show disclosure before first use and in all AI outputs
 - **DR-004** (Article 14): Maintain human oversight capability
@@ -117,10 +105,10 @@ Per Article 53(1)(b), downstream providers integrating this model must:
 Per Article 14 of the EU AI Act, the following oversight measures are recommended:
 
 - Monitor model performance daily with automated alerts
-- Review all anomalous signals before execution (>2 std dev from mean)
+- Review anomalous outputs before execution (where execution is enabled)
 - Set position limits per trade (recommend max 5% of portfolio)
 - Set daily drawdown limit (recommend max 3% of portfolio)
-- Maintain ability to halt all trading within 1 second
+- Maintain ability to halt execution promptly via kill switch
 - Review weekly performance reports for drift detection
 - Conduct monthly model performance review meetings
 - Implement escalation procedures for model failures

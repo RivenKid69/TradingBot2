@@ -1,10 +1,10 @@
 # GDPR Compliance Summary
 
-**AI-Powered Quantitative Research Platform**
+**CustodiaCloud**
 
 **Regulation**: General Data Protection Regulation (EU) 2016/679
 **Architecture**: Cloud-Controlled Execution Architecture (CCEA)
-**Status**: ✅ **Compliance-Ready** (All 9 Phases Implemented)
+**Status**: ✅ Designed to support GDPR alignment (controls/evidence exports; not audited or certified)
 **Completion Date**: 2025-12-17
 **Last Updated**: 2025-12-17
 
@@ -12,7 +12,7 @@
 
 ## Executive Summary
 
-The AI-Powered Quantitative Research Platform is designed to align with GDPR requirements, implementing a comprehensive privacy-by-design architecture aligned with the CCEA (Cloud-Controlled Execution Architecture) model.
+CustodiaCloud is designed to support GDPR-aligned deployments with privacy-by-design controls aligned with the CCEA (Cloud-Controlled Execution Architecture) model.
 
 ### Key Compliance Highlights
 

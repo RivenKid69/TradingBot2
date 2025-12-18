@@ -1,13 +1,16 @@
-# AI-Powered Quantitative Research Platform - Краткий справочник (Quick Reference)
+# CustodiaCloud — Краткий справочник (Developer Quick Reference)
 
 ## 1. ЧТО ЭТО ТАКОЕ?
 
-**AI-Powered Quantitative Research Platform** - это ML-платформа для количественных исследований и торговли на криптовалютах и акциях.
-- **Криптовалюты**: Binance Spot/Futures (24/7)
-- **Акции**: Alpaca/Polygon US Equities (NYSE hours + extended)
-- **ETFs**: SPY, QQQ, IWM, GLD, IAU, SGOL, SLV
+CustodiaCloud — **B2B** платформа для quantitative research и customer-controlled deployment через **Agent** (`CCEA`).
+
+**Hard rule (CCEA boundary):** Cloud не хранит broker credentials и не генерирует/не передаёт/не исполняет live trading instructions (orders/targets/signals). Любое live execution (если используется) происходит только через customer-controlled Agent в окружении клиента.
+
+Этот файл — developer reference (не committee-facing). Канон для позиционирования/нейминга/юридически безопасных формулировок: `docs/DOCUMENTATION_CANON_DESIGN.md`.
+
 - Язык: Python + Cython + C++
 - Архитектура: Слойная (Core → Impl → Service → Scripts)
+- Asset scope: foundation multi-asset (equities/options/futures/FX/optional digital assets), MVP/beachhead — equities-first
 
 ---
 
@@ -29,19 +32,19 @@ python script_backtest.py --config configs/config_sim.yaml
 📁 **Сервис**: `service_backtest.py`
 📁 **Симулятор**: `execution_sim.py`
 
-### ЛАЙВ-ТОРГОВЛЯ / ИНФОРЕНС (CRYPTO)
+### LIVE EXECUTION / INFERENCE (customer-controlled; example connectors)
 ```bash
 python script_live.py --config configs/config_live.yaml
 ```
 📁 **Главный файл**: `script_live.py`
 📁 **Сервис**: `service_signal_runner.py` (ГЛАВНЫЙ)
 
-### ЛАЙВ-ТОРГОВЛЯ / ИНФОРЕНС (STOCKS)
+### LIVE EXECUTION / INFERENCE (customer-controlled; example connectors)
 ```bash
 # Paper trading (Alpaca sandbox)
 python script_live.py --config configs/config_live_alpaca.yaml --paper
 
-# Live trading (real money)
+# Live execution (customer-controlled; ensure approvals and customer-owned broker accounts)
 python script_live.py --config configs/config_live_alpaca.yaml --live
 
 # Extended hours trading
@@ -56,9 +59,9 @@ python script_live.py --config configs/config_live_alpaca.yaml --extended-hours
 python script_eval.py --config configs/config_eval.yaml
 ```
 📁 **Главный файл**: `script_eval.py`
-📁 **Метрики**: Sharpe, Sortino, MDD, CVaR, Hit-rate, PnL
+📁 **Метрики**: валидация/стабильность/риск (без обещаний доходности)
 
-### ЗАГРУЗКА ДАННЫХ (CRYPTO)
+### ЗАГРУЗКА ДАННЫХ (пример: market data connector)
 ```bash
 python ingest_orchestrator.py --symbols BTCUSDT,ETHUSDT --interval 1m
 ```
@@ -155,7 +158,7 @@ EXTERNAL (21)            TOKEN (3)
 ### Основные файлы конфигурации:
 - `configs/config_train.yaml` - обучение
 - `configs/config_sim.yaml` - симуляция/бэктест
-- `configs/config_live.yaml` - лайв-торговля
+- `configs/config_live.yaml` - live execution (customer-controlled Agent)
 - `configs/config_eval.yaml` - оценка метрик
 
 ### Главные параметры:
@@ -277,15 +280,11 @@ risk:
 
 ---
 
-## 10. ВАЖНЫЕ МЕТРИКИ
+## 10. ВАЖНЫЕ МЕТРИКИ (engineering)
 
-- **Sharpe Ratio** - риск-скорректированная доходность
-- **Sortino Ratio** - downside volatility adjusted return
-- **Maximum Drawdown (MDD)** - максимальная просадка
-- **Win Rate** - % прибыльных сделок
-- **PnL** - прибыль/убыток
-- **CVaR** - Conditional Value at Risk (хвостовой риск)
-- **Cumulative Return** - общий возврат
+- **Risk & safety**: drawdown/CVaR limits, kill-switch triggers, exposure/margin checks
+- **Stability**: crashes, retries, data gaps, drift alarms
+- **Simulation quality**: slippage/fee model sanity checks, backtest parity instrumentation (where available)
 
 ---
 
@@ -360,7 +359,7 @@ artifacts/default-run/
 ├── model.pt              - Веса модели
 ├── config.yaml           - Конфигурация
 ├── normalization_stats.json
-└── metrics.json          - Метрики (Sharpe, Sortino, MDD, etc)
+└── metrics.json          - Validation/engineering metrics (risk/stability, etc)
 
 logs/
 ├── log_trades_<run_id>.csv
@@ -434,14 +433,13 @@ python script_eval.py --config configs/config_eval.yaml --all-profiles
 # 5. Сравнить с предыдущими запусками
 python script_compare_runs.py artifacts/run1 artifacts/run2 --csv summary.csv
 
-# 6. Если результаты хорошие - перейти в лайв
+# 6. Если готовы к live execution (customer-controlled)
 python script_live.py --config configs/config_live.yaml
 ```
 
 ---
 
 **Дата**: 2025-11-27
-**Статус**: ✅ Tested and operational (Multi-Asset Support)
+**Статус**: ✅ Engineering reference (верифицировать запуском тестов)
 **Основной язык**: Python + Cython + C++
-**Поддерживаемые рынки**: Crypto (Binance), US Equities (Alpaca/Polygon)
-
+**Asset scope**: foundation multi-asset (equities-first; optional digital assets)

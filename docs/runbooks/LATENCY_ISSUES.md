@@ -339,4 +339,4 @@ If latency persists:
 - [Broker Errors Runbook](./BROKER_ERRORS.md)
 - [Kill Switch Runbook](./KILL_SWITCH.md)
 - [Recovery Procedures](./RECOVERY.md)
-- [Performance Tuning Guide](../agent/PERFORMANCE.md)
+- [Agent Docs](../agent/README.md)

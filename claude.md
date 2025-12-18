@@ -1,4 +1,4 @@
-# Claude Documentation - AI-Powered Quantitative Research Platform
+# Claude Documentation - CustodiaCloud
 
 ---
 
@@ -218,7 +218,7 @@ python scripts/quickstart.py run cme_index
 **ВАЖНО**: Проект реорганизован (commit db9655a). Файлы перемещены:
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── tests/              # 654+ test files, 14,000+ test functions
 │   ├── test_*.py       # All test files
 │   └── conftest.py     # Pytest fixtures
@@ -381,9 +381,8 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 
 | Режим | Описание | Cloud | Agent |
 |-------|----------|-------|-------|
-| **Retail Research SaaS** | EU-friendly research + optional BYO Agent | Research, Sim, Monitoring | Optional (для live) |
-| **Retail Live** | Auto-execution локально + cloud observability | Lifecycle, Telemetry | Local vault + execution |
-| **Enterprise** | On-prem/VPC, всё в инфраструктуре клиента | Self-hosted | HSM/KMS, air-gapped |
+| **Cloud + BYO Agent (B2B)** | Research/sim/monitoring + customer-controlled execution via Agent | Research, Sim, Monitoring | Optional (для live execution) |
+| **Enterprise on‑prem/VPC** | Размещение в инфраструктуре клиента (procurement/security) | Self-hosted | HSM/KMS, air-gapped |
 
 ### Протокол Cloud → Agent
 
@@ -454,15 +453,15 @@ Agent хранит **локальную политику hard caps**:
 | Мы являемся | Мы НЕ являемся |
 |-------------|----------------|
 | Software Provider / ICT Provider | Investment Adviser |
-| Algorithmic trading research tools | Broker-Dealer |
+| Quantitative research & deployment tools | Broker-Dealer |
 | Strategy development platform | Custodian |
 | Infrastructure for users | Asset Manager |
 
 **Регуляторные ссылки:**
 - **MiFID II**: Software tool exclusion (ESMA Q&A ESMA35-43-349)
-- **EU AI Act**: Transparency provider (Article 50), Not high-risk AI deployer
-- **GDPR**: Data Controller with EU data residency
-- **DORA**: ICT Service Provider (contractual compliance)
+- **EU AI Act**: transparency obligations (e.g., Article 50); classification depends on deployment; no self-classification in docs
+- **GDPR**: privacy-by-design posture; evidence exports and data minimization by design
+- **DORA**: designed to support client vendor risk assessment (evidence exports; operational documentation)
 
 ### Threat Model (ключевые угрозы)
 
@@ -478,7 +477,9 @@ Agent хранит **локальную политику hard caps**:
 
 | Файл | Описание |
 |------|----------|
-| `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` | **Canonical Design Doc** (полный) |
+| `docs/DOCUMENTATION_CANON_DESIGN.md` | **Canon**: positioning/terminology/legal-safe language |
+| `archive/root_files/Design Doc CCEA Cloud.txt` | **CCEA technical reference** (Cloud/Agent boundary) |
+| `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` | Design/architecture doc snapshot (read-only) |
 | `docs/CCEA_OVERVIEW.md` | Обзор архитектуры |
 | `docs/design/CCEA_CLOUD/CCEA_TRACEABILITY_MATRIX.md` | Матрица трассируемости требований |
 | `docs/design/CCEA_CLOUD/CCEA_SEQUENCE_DIAGRAMS.md` | Sequence diagrams |
@@ -494,7 +495,7 @@ Agent хранит **локальную политику hard caps**:
 ### Запуск
 
 ```bash
-# Agent daemon (live trading)
+# Agent daemon (live execution)
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
 
 # Development/testing only (NOT production CCEA)
@@ -509,12 +510,12 @@ python script_live.py --config configs/config_live.yaml --dry-run
 
 | Биржа | Тип | Статус | Адаптеры |
 |-------|-----|--------|----------|
-| **Binance** | Crypto (Spot/Futures) | ✅ Production | MarketData, Fee, TradingHours, ExchangeInfo |
-| **Alpaca** | US Equities | ✅ Production | MarketData (REST + WebSocket), Fee, TradingHours, ExchangeInfo, OrderExecution |
-| **Polygon** | US Equities (Data) | ✅ Production | MarketData, TradingHours, ExchangeInfo |
-| **Yahoo** | Indices/Macro | ✅ Production | MarketData (VIX, DXY, Treasury), CorporateActions, Earnings |
-| **OANDA** | Forex (OTC) | ✅ Production | MarketData, Fee, TradingHours, ExchangeInfo, OrderExecution |
-| **Interactive Brokers** | CME Futures (ES, NQ, GC, CL, 6E) | ✅ Production | MarketData, OrderExecution, ExchangeInfo (via TWS API) |
+| **Binance** | Digital assets (Spot/Futures; optional) | ✅ Implemented | MarketData, Fee, TradingHours, ExchangeInfo |
+| **Alpaca** | US Equities (equities-first) | ✅ Implemented | MarketData (REST + WebSocket), Fee, TradingHours, ExchangeInfo, OrderExecution |
+| **Polygon** | US Equities (Data) | ✅ Implemented | MarketData, TradingHours, ExchangeInfo |
+| **Yahoo** | Indices/Macro | ✅ Implemented | MarketData (VIX, DXY, Treasury), CorporateActions, Earnings |
+| **OANDA** | FX (OTC) | ✅ Implemented | MarketData, Fee, TradingHours, ExchangeInfo, OrderExecution |
+| **Interactive Brokers** | Futures (CME examples) | ✅ Implemented | MarketData, OrderExecution, ExchangeInfo (via TWS API) |
 
 ### Архитектура адаптеров
 
@@ -1236,7 +1237,7 @@ provider = EquityParametricSlippageProvider(config=config)
 
 # 3. Из профиля
 provider = EquityParametricSlippageProvider.from_profile("large_cap")
-# Профили: "default", "conservative", "aggressive", "retail", "large_cap", "small_cap"
+# Профили: "default", "conservative", "aggressive", "slow_internet", "large_cap", "small_cap"
 
 # 4. Вычисление slippage с полным набором параметров
 slippage_bps = provider.compute_slippage_bps(
@@ -1299,7 +1300,7 @@ print(f"Recommendation: {estimate['recommendation']}")
 | `default` | 0.05 | 2.0 | 0.5 | Standard institutional |
 | `conservative` | 0.07 | 3.0 | 1.0 | Safer estimates |
 | `aggressive` | 0.04 | 1.5 | 0.3 | Tighter estimates |
-| `retail` | 0.06 | 4.0 | 1.5 | Retail flow (wider spreads) |
+| `slow_internet` | 0.06 | 4.0 | 1.5 | Wider spreads / slower fills |
 | `large_cap` | 0.04 | 1.5 | 0.3 | MEGA/LARGE caps |
 | `small_cap` | 0.08 | 5.0 | 2.0 | SMALL/MICRO caps |
 
@@ -1766,7 +1767,7 @@ Phase 10 добавляет высокоточную симуляцию order bo
 5. **Stage 5: Latency Simulation** (`lob/latency_model.py`, `lob/event_scheduler.py`)
    - Realistic latency distributions: Log-normal, Pareto (heavy tail), Gamma
    - Separate feed/order/exchange/fill latencies
-   - Latency profiles: Co-located (~10-50μs), Proximity (~100-500μs), Retail (~1-10ms), Institutional (~200μs-2ms)
+   - Latency profiles: Co-located (~10-50μs), Proximity (~100-500μs), Internet (~1-10ms), Institutional (~200μs-2ms)
    - Event scheduler with priority queue and race condition detection
    - Time-of-day seasonality adjustments
    - Volatility-adjusted latency
@@ -2812,7 +2813,7 @@ pytest tests/test_ib_adapters.py tests/test_cme_settlement.py tests/test_cme_cal
 | **Margin** | Cross/Isolated with ADL | SPAN margin (risk-based) |
 | **Trading Hours** | 24/7 | Sun 18:00 - Fri 17:00 ET |
 | **Maintenance** | N/A | Daily 16:15-16:30 ET |
-| **Leverage** | Up to 125x (retail) | Regulated by SPAN |
+| **Leverage** | Up to 125x (venue-specific) | Regulated by SPAN |
 | **Mark Price** | Index + funding basis | Last traded price |
 
 ### Dependencies
@@ -3339,7 +3340,7 @@ pytest tests/test_circuit_breaker.py -v      # 67 tests (60 + 7 edge cases)
 | CME Slippage Profiles | 6 | Profile configurations |
 | CME Session Factors | 5 | ETH/settlement/roll |
 | CME Limit Orders | 6 | Passive/aggressive/no-fill |
-| CME Edge Cases | 5 | Currency futures, recommendations |
+| CME Edge Cases | 5 | Currency futures, notes |
 | CME Circuit Breaker | 20 | Rule 80B, overnight limits |
 | Velocity Logic | 7 | Fat-finger protection |
 | Circuit Breaker Manager | 6 | Multi-product management |
@@ -5995,7 +5996,7 @@ pytest tests/test_deribit_options.py::TestThetaDataAdapter -v
 
 ## ✅ FAQ: Закрытые вопросы (НЕ ПЕРЕОТКРЫВАТЬ!)
 
-Эти вопросы были тщательно проанализированы. Подробности: [docs/archive/reports_2025_11_24/conceptual_analysis/CRITICAL_ANALYSIS_THREE_PROBLEMS_2025_11_24.md](docs/archive/reports_2025_11_24/conceptual_analysis/CRITICAL_ANALYSIS_THREE_PROBLEMS_2025_11_24.md)
+Эти вопросы были тщательно проанализированы. Подробности: [archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CONCEPTUAL_ANALYSIS_REPORT_2025_11_24.md)
 
 | Вопрос | Ответ |
 |--------|-------|
@@ -7177,9 +7178,9 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ## 📊 СТАТУС ПРОЕКТА (2025-12-16)
 
-### ✅ Разработано для Production
+### ✅ Инженерный статус (внутренний)
 
-Все критические исправления применены и протестированы. **871 test files, 14,000+ tests** с 97%+ pass rate. MiFID II Compliance-Ready, EU AI Act Compliance-Ready, DORA Compliance-Ready. **CCEA Implementation Complete** (104 test files).
+Все критические исправления применены. Актуальный статус и полноту покрытия верифицировать запуском тестов в репозитории (например, `pytest`). Alignment/evidence tooling (not audited/certified). CCEA implemented.
 
 | Компонент | Статус | Тесты |
 |-----------|--------|-------|
@@ -7279,7 +7280,7 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 
 ## О проекте
 
-**AI-Powered Quantitative Research Platform** -- ML-платформа для количественных исследований и торговли на криптовалютах (Binance spot/futures) и акциях (Alpaca/Polygon), использующая reinforcement learning (Distributional PPO) для принятия торговых решений.
+**CustodiaCloud** — B2B software/ICT платформа для количественных исследований и контролируемого развёртывания в средах клиента. Архитектура **CCEA**: Cloud выполняет research/monitoring/lifecycle-requests; live execution (если используется) выполняется только локальным **Agent** в среде клиента; Cloud не хранит секреты и не отправляет live trading instructions (orders/targets/signals).
 
 ### Основные характеристики
 
@@ -7288,8 +7289,9 @@ reward = float(np.clip(reward_before_clip, -clip_for_clamp, clip_for_clamp))
 - **Optimizer**: AdaptiveUPGD (default) -- continual learning
 - **Gradient Scaling**: VGS v3.2 -- automatic per-layer normalization + anti-blocking
 - **Training**: PBT + SA-PPO (adversarial training)
-- **Биржа**: Binance (Spot/Futures)
-- **Режимы**: Бэктест, Live trading, Обучение
+- **Интеграции**: equities-first (MVP); options/futures/FX/digital assets — опциональное расширение
+- **Режимы**: обучение/бэктест/симуляция; production live execution — через Agent
+- **Канон формулировок**: `docs/DOCUMENTATION_CANON_DESIGN.md` (+ тех. границы CCEA: `archive/root_files/Design Doc CCEA Cloud.txt`)
 
 ---
 
@@ -7508,7 +7510,7 @@ pytest tests/test_conformal_prediction.py -v
 | Мы являемся | Мы НЕ являемся |
 |-------------|----------------|
 | Software Provider / ICT Provider | Investment Adviser |
-| Algorithmic trading research tools | Broker-Dealer |
+| Quantitative research & deployment tools | Broker-Dealer |
 | Strategy development platform | Custodian |
 | Infrastructure for client-controlled execution | Execution Service |
 
@@ -7516,9 +7518,8 @@ pytest tests/test_conformal_prediction.py -v
 
 | Режим | Cloud | Agent | Use Case |
 |-------|-------|-------|----------|
-| **Retail Research SaaS** | Full (IDE, backtest, sim) | Optional | EU-friendly research |
-| **Retail Live via Local Agent** | Lifecycle, Telemetry | Local vault + execution | Auto-execution locally |
-| **Enterprise Engine** | Self-hosted option | HSM/KMS, air-gapped | On-prem/VPC |
+| **Cloud + BYO Agent (B2B)** | Full (IDE, backtest, sim) | Optional | Research + deploy-to-Agent workflows |
+| **Enterprise on‑prem/VPC** | Self-hosted option | HSM/KMS, air-gapped | On-prem/VPC deployments |
 
 #### CCEA Terminology (Эталон)
 
@@ -7828,7 +7829,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 **Последнее обновление**: 2025-12-16
 **Версия документации**: 13.0 (CCEA Implementation Complete)
-**Статус**: ✅ Разработано для Production (871 test files, 14,000+ tests | MiFID II Compliance-Ready, EU AI Act Compliance-Ready, DORA Compliance-Ready, CCEA Implemented)
+**Статус**: ✅ Инженерный статус (верифицировать тестами) | alignment/evidence tooling (not audited/certified) | CCEA implemented
 
 ### Изменения в 13.0:
 - **CCEA Implementation Complete** -- Cloud-Controlled Execution Architecture полностью реализована
@@ -7839,7 +7840,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - Все CI guardrails реализованы
 
 ### Изменения в 12.0:
-- **DORA Compliance** -- Добавлен полный Digital Operational Resilience Act (EU 2022/2554)
+- **DORA alignment tooling** -- Добавлены модули/шаблоны для operational resilience evidence (EU 2022/2554)
   - Phase 0: Proportionality Assessment & Scope Verification
   - Phase 1: ICT Risk Management Framework (Articles 5-16)
   - Phase 2: ICT Incident Management & Reporting (Articles 17-23)
@@ -7898,15 +7899,15 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 - **IP Protection Strategy Documentation** -- Полная документация по защите интеллектуальной собственности
   - [IP_PROTECTION_STRATEGY.md](docs/business/IP_PROTECTION_STRATEGY.md) -- Многоуровневая стратегия защиты IP
   - [INVESTOR_IP_SUMMARY.md](docs/business/INVESTOR_IP_SUMMARY.md) -- Краткое изложение для инвесторов и стартап-комитетов
-  - [COMPETITIVE_MOAT.md](docs/business/COMPETITIVE_MOAT.md) -- **NEW** Количественный анализ конкурентного moat (Morgan Stanley ROIC framework, 8.45/10 score, 18-36 month time-to-copy)
+- [COMPETITIVE_MOAT.md](docs/business/COMPETITIVE_MOAT.md) -- **NEW** Анализ конкурентной защищённости (frameworks; time-to-copy illustrative)
   - [PATENT_CLAIMS_DRAFT.md](docs/business/PATENT_CLAIMS_DRAFT.md) -- Черновик патентных заявок (CVaR-RL, Unified Simulation)
   - [TRADE_SECRET_POLICY.md](docs/business/TRADE_SECRET_POLICY.md) -- Политика защиты коммерческой тайны (TSP-001)
   - [OPEN_CORE_BUSINESS_MODEL.md](docs/business/OPEN_CORE_BUSINESS_MODEL.md) -- Стратегия Open-Core с кейсами Databricks, GitLab, Elastic
   - [PUBLIC_SDK_README_TEMPLATE.md](docs/business/PUBLIC_SDK_README_TEMPLATE.md) -- Шаблон README для публичного SDK
-- **Competitive Moat Analysis:** Morgan Stanley ROIC-WACC framework with quantified moat score (8.45/10)
-- **Time-to-Copy Estimates:** 18-36 months based on McKinsey, COCOMO, industry benchmarks
-- **Repository Architecture:** Private monorepo (core) + Public SDK (MIT License)
-- **Patent Strategy:** Filing Q1 2025 for CVaR-RL architecture and Unified Simulation System
+- **Competitive Moat Analysis:** Morgan Stanley ROIC-WACC framework (illustrative; not a factual guarantee)
+- **Time-to-Copy Estimates:** illustrative ranges based on public frameworks (COCOMO/benchmarks)
+- **Repository Architecture:** Private monorepo (core) + candidate public SDK (license TBD; separate repo if published)
+- **Patent Strategy:** Optional, counsel-led; avoid any public “patent pending/filing” claims unless verified
 - **Trade Secret Protection:** Comprehensive policy with technical, administrative, and physical controls
 - **Open-Core Model:** Based on industry best practices (Databricks $43B, GitLab $11B, Elastic $10B+)
 - **Investor/Committee Language:** Ready-to-use text for visa applications and investor presentations

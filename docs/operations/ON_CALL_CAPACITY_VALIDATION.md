@@ -266,7 +266,7 @@ I confirm that the notification procedures and escalation paths documented here 
 |----------|---------|
 | [OPERATIONS_RUNBOOK.md](../OPERATIONS_RUNBOOK.md) | Operational procedures |
 | [RECOVERY_PROCEDURES.md](../RECOVERY_PROCEDURES.md) | Incident recovery |
-| [SLA Guardrails Module](../../services/dora/sla_guardrails.py) | SLA approval workflow |
+| [SLA Guardrails Module](../../services/dora_integration/contracts/sla_guardrails.py) | SLA approval workflow |
 | [DORA Contract Template](../contracts/DORA_CONTRACT_TEMPLATE_ART_30_2.md) | SLA contract terms |
 
 ---

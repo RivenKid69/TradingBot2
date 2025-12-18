@@ -1,10 +1,12 @@
 # Innovation Statement & Competitive Differentiation
 
-## AI-Powered Quantitative Research Platform
+## CustodiaCloud (CCEA Architecture)
 
 *Version 2.0 | December 2025*
 
-> **Purpose**: This document articulates the novel technologies, intellectual property, and unique innovations that differentiate our platform from existing solutions in the algorithmic trading market. Prepared for startup visa applications, investor due diligence, and strategic positioning.
+**Canonical positioning / safe wording**: `docs/DOCUMENTATION_CANON_DESIGN.md`.
+
+> **Purpose**: This document describes the technical innovations that differentiate CustodiaCloud as a B2B quantitative research & deployment platform for professional systematic trading organizations. Prepared for startup visa applications and investor due diligence.
 
 ---
 
@@ -13,7 +15,7 @@
 > **Foundational Innovation**: Beyond algorithmic innovations, our platform implements a **novel architectural pattern** that separates research/monitoring (Cloud) from execution (Agent), enabling:
 > - **Regulatory clarity**: Clear "Software Provider" positioning (not execution service)
 > - **Security**: Secrets never leave customer environment
-> - **Compliance**: MiFID II, DORA, EU AI Act alignment through architectural design
+> - **Governance**: evidence exports designed to support client procurement and operational reviews
 
 | Component | Responsibility | Secrets | Orders |
 |-----------|---------------|---------|--------|
@@ -22,11 +24,13 @@
 
 **Legal Posture**: Software Provider / ICT Provider — NOT investment adviser, broker-dealer, or execution service.
 
+**Hard rule (CCEA boundary):** Cloud does not store customer broker credentials and does not generate, transmit, or execute live trading instructions (orders/targets/signals). Live execution occurs only via the customer-controlled Agent.
+
 ---
 
 ## Executive Summary: Why This Is Not "Another Trading Platform"
 
-**The core innovation**: We have created one of the first production-oriented integrations of **risk-aware reinforcement learning** with **research-grade market microstructure simulation**, deployed via **CCEA architecture** for regulatory clarity — enabling trading strategies that explicitly optimize for worst-case scenarios rather than average returns.
+**The core innovation**: We integrate **risk-aware reinforcement learning** with **research-grade market microstructure simulation**, deployed via **CCEA architecture** (Cloud research/monitoring + customer-controlled Agent execution) — enabling research and deployment workflows that prioritize risk controls and governance evidence over performance promises.
 
 | Aspect | Traditional Platforms | Our Platform |
 |--------|----------------------|--------------|
@@ -38,7 +42,7 @@
 | **Learning Stability** | Prone to catastrophic forgetting | Utility-weighted continual learning (UPGD) |
 | **Uncertainty** | Assumed known | Distribution-free conformal prediction bounds |
 
-**Quantifiable differentiation**: 11,063 automated tests (vs ~1,000 typical), 5 asset classes unified (vs 1-2 typical), 7+ peer-reviewed papers implemented (vs 0-2 typical), CCEA architecture (unique in market).
+**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + extensive automated tests (verify by running tests in the repo).
 
 ---
 
@@ -46,7 +50,7 @@
 
 ### 1.1 Distributional PPO with Conditional Value-at-Risk (CVaR) Learning
 
-**Innovation**: Among the first production implementations of risk-constrained reinforcement learning for trading.
+**Innovation**: Production-oriented implementation of risk-constrained reinforcement learning patterns for systematic trading research and deployment.
 
 **Academic Foundation**:
 - Dabney et al. (2018), "Distributional Reinforcement Learning with Quantile Regression", AAAI
@@ -337,7 +341,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 **Implementation**:
 - Distribution types: Log-normal, Pareto (heavy tails), Gamma
 - Separate latencies: Feed (market data), Order, Exchange, Fill
-- Profiles: Co-located (10-50μs), Proximity (100-500μs), Retail (1-10ms)
+- Profiles: Co-located (10-50μs), Proximity (100-500μs), Internet / non-colocated (1-10ms)
 - Time-of-day seasonality adjustments
 
 **Why this matters**:
@@ -467,21 +471,21 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 | **18 months** | Causal inference for regime detection | Macro strategies |
 | **24 months** | Federated learning for privacy | Hedge fund clients |
 
-### 5.2 Addressable Market Expansion
+### 5.2 Addressable Market Expansion (Committee‑Safe Framing)
 
-**Current TAM**: $31.49B algorithmic trading market (2028 projection, Allied Market Research)
+Market sizing varies materially by source and definition; any numeric TAM figures should be treated as illustrative and are not the basis of committee claims.
 
 **Expansion vectors**:
-1. **Geographic**: US → EU (MiFID II compliance) → Asia (Singapore, HK)
-2. **Client type**: Prop firms → Hedge funds → Family offices → Retail advanced
-3. **Asset class**: Add commodities (agriculture), fixed income
-4. **Functionality**: Backtesting → Live trading → Portfolio management → Risk analytics SaaS
+1. **Geographic**: EU/UK‑focused (Estonia‑first establishment) → additional EU countries → other jurisdictions (case‑by‑case, with legal review)
+2. **Client type**: systematic prop firms → small funds → larger institutional teams (B2B only)
+3. **Asset class**: expand beyond equities‑first based on validated customer demand (digital assets are optional)
+4. **Functionality**: research/simulation → deploy‑to‑Agent workflows → governance/evidence exports → enterprise operations features
 
 ### 5.3 Defensible Moats
 
-1. **Technical depth**: 2+ years of development, 11,063 tests
-2. **Research integration**: 7+ peer-reviewed papers implemented
-3. **Multi-asset unity**: Single codebase complexity barrier
+1. **Technical depth**: sustained engineering effort with extensive automated tests (verify in repo)
+2. **Research integration**: peer-reviewed references translated into implementation patterns (without performance promises)
+3. **Multi-asset foundation**: single codebase complexity barrier (equities-first MVP)
 4. **Network effects**: Client strategy templates create ecosystem
 5. **Switching costs**: Trained models are platform-specific
 
@@ -501,7 +505,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 | **Dark Pools** | ✓ Multi-venue | ✗ | ✗ | ✗ | ✗ |
 | **Conformal Prediction** | ✓ | ✗ | ✗ | ✗ | ✗ |
 | **Asset Classes** | 5 unified | 2-3 separate | 1 | N/A | 1 |
-| **Test Coverage** | 11,063 | ~1,000? | N/A | ~2,000 | ~500? |
+| **Test Coverage** | Extensive (verify in repo) | Varies | N/A | Varies | Varies |
 | **Live Trading** | ✓ | ✓ | ✓ (broker) | ✗ | ✗ |
 
 ### 6.2 Why We Are Not a Clone
@@ -543,9 +547,9 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 ### Tier 3: Engineering Excellence
 
-7. **Unified Multi-Asset Architecture**: 5 asset classes, 6 exchanges, single codebase
+7. **Unified Multi-Asset Architecture**: foundation multi-asset architecture (equities-first MVP), single codebase
 8. **Production-Oriented Risk Management**: Atomic kill switch (in Agent), session routing
-9. **Comprehensive Testing**: 11,063 automated tests (97%+ pass rate)
+9. **Comprehensive Testing**: extensive automated tests + CI validation (verify by running tests in the repo)
 
 ---
 

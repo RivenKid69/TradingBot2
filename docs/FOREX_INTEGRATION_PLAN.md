@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Комплексный план интеграции Forex в TradingBot2 с параметрической TCA моделью (L2+) и OTC dealer simulation для 95%+ реализма. Полностью параллельно crypto и equity веткам без нарушения существующего функционала.
+Комплексный план интеграции FX в CustodiaCloud с параметрической TCA моделью (L2+) и OTC dealer simulation для повышения реалистичности симуляции. План не меняет CCEA boundary и не меняет equities-first коммерческий фокус (FX — расширение по validated demand).
 
 **Ключевое архитектурное решение**: Forex -- это OTC (Over-The-Counter) рынок с дилерскими котировками, а НЕ биржевой рынок с центральным order book. Поэтому:
 - Используется **L2+ Parametric TCA** (как для crypto/equity), НЕ L3 LOB simulation
@@ -187,7 +187,7 @@ spread_profiles:
 ### New Files Structure
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── adapters/
 │   ├── models.py                          # UPDATE: +OANDA, +IG, +DUKASCOPY
 │   ├── registry.py                        # UPDATE: +lazy loading for oanda

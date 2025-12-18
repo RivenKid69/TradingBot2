@@ -299,4 +299,4 @@ When modifying Twin Critics implementation:
 
 ## License
 
-Same as parent project (AI-Powered Quantitative Research Platform)
+Same as parent project (CustodiaCloud)

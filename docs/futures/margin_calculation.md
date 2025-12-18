@@ -2,7 +2,7 @@
 
 ## Overview
 
-Futures trading requires margin as collateral. TradingBot2 supports two margin systems:
+Futures trading requires margin as collateral. CustodiaCloud supports two margin systems:
 
 1. **Tiered Margin** - Binance-style leverage brackets for crypto perpetuals
 2. **SPAN Margin** - CME's risk-based margin for regulated futures

@@ -1,6 +1,6 @@
 # System Requirements
 
-Minimum system requirements and recommended configurations for the AI-Powered Quantitative Research Platform.
+Minimum system requirements and recommended configurations for the CustodiaCloud codebase (this repository).
 
 ## Table of Contents
 
@@ -429,4 +429,4 @@ Install Python 3.12:
 ---
 
 **Last Updated**: 2025-12-03
-**Maintainer**: TradingBot2 Team
+**Maintainer**: CustodiaCloud Team

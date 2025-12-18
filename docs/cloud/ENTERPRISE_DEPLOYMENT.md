@@ -684,7 +684,7 @@ docker exec ccea-control-plane python -m ccea.cli support-bundle \
 
 ## Related Documentation
 
-- [Architecture Overview](../design/CCEA_CLOUD/ARCHITECTURE.md)
-- [Security Model](../security/SECURITY_MODEL.md)
+- [CCEA Overview](../CCEA_OVERVIEW.md)
+- [Trust Center](../security/TRUST_CENTER.md)
 - [Runbooks](../runbooks/README.md)
 - [API Reference](../api/README.md)

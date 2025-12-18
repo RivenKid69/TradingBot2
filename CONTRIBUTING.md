@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for considering contributing to AI-Powered Quantitative Research Platform.
+Thank you for considering contributing to the CustodiaCloud codebase (`AI-Powered-Quantitative-Research-Platform` repository).
 
 > **CCEA Architecture**: Этот проект использует [Cloud-Controlled Execution Architecture](docs/CCEA_OVERVIEW.md). Перед внесением изменений ознакомьтесь с зональными ограничениями.
 

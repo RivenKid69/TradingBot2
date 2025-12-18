@@ -1,6 +1,6 @@
 # Build Instructions
 
-Comprehensive guide for building native Cython/C++ extensions for the AI-Powered Quantitative Research Platform.
+Comprehensive guide for building native Cython/C++ extensions for the CustodiaCloud codebase (this repository).
 
 ## Table of Contents
 
@@ -368,7 +368,7 @@ ARCHFLAGS="-arch x86_64 -arch arm64" python setup.py build_ext
 After build, project structure:
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── setup.py                    # Build configuration
 ├── Makefile                    # Build automation
 ├── requirements-build.txt      # Pinned build dependencies
@@ -399,4 +399,4 @@ TradingBot2/
 
 **Last Updated**: 2025-12-03
 **Version**: 1.0.0
-**Maintainer**: TradingBot2 Team
+**Maintainer**: CustodiaCloud Team

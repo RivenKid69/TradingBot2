@@ -1,13 +1,13 @@
 # DORA Integration Plan
 # Digital Operational Resilience Act (EU Regulation 2022/2554)
-# План интеграции в AI-Powered Quantitative Research Platform
+# План интеграции в CustodiaCloud
 
 **Версия документа**: 4.1.0
 **Дата создания**: 2025-12-08
 **Последнее обновление**: 2025-12-12
 **Целевое соответствие**: Regulation (EU) 2022/2554 (DORA)
 **Дата вступления в силу**: 17 января 2025
-**Статус проекта**: COMPLIANCE REMEDIATION (DORA уже применяется)
+**Статус проекта**: COMPLIANCE REMEDIATION (pending legal confirmation of applicability)
 
 ---
 
@@ -962,7 +962,7 @@ Digital Operational Resilience Act (DORA) — регулирование ЕС, �
 | **Phase 3** | Digital Resilience Testing | Art. 24-25 (+26-27 if designated) | ~180 | Vulnerability Testing, Pentest, **TLPT only if required** | P1 |
 | **Phase 4** | Third-Party ICT Risk Management | Art. 28-30 (NOT 31-44) | ~220 | Register of Information (15 ITS templates), Gap Analysis | **P0 - DEADLINE Apr** |
 | **Phase 5** | Information Sharing & Integration | Art. 45 + Final | ~150 | Threat Intelligence, Cross-Regulation | P2 |
-| **TOTAL** | | | **~1015** | Proportionate DORA Compliance | |
+| **TOTAL** | | | **~1015** | Proportionate DORA alignment support (tooling; not certified) | |
 
 ### CORRECTED: Phase Dependencies
 
@@ -3086,7 +3086,7 @@ class DORARegulationIntegration:
 
 ```python
 """
-DORA Compliance Module for AI-Powered Quantitative Research Platform.
+DORA alignment tooling module for CustodiaCloud (software/ICT provider posture).
 
 Digital Operational Resilience Act (EU Regulation 2022/2554)
 

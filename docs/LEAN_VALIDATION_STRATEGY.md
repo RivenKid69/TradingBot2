@@ -8,7 +8,7 @@
 
 > All validation activities operate on the **CCEA (Cloud-Controlled Execution Architecture)** model: Cloud for research/monitoring, Agent for execution. This enables clear legal positioning as **Software Provider** during market entry.
 
-For full CCEA details, see: [Design Doc CCEA Cloud.txt](../Design%20Doc%20CCEA%20Cloud.txt)
+For full CCEA details, see: [Design Doc CCEA Cloud.txt](../archive/root_files/Design Doc CCEA Cloud.txt)
 
 ---
 

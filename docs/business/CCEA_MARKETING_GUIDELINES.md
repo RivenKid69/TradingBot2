@@ -1,6 +1,6 @@
-# CCEA Marketing Guidelines
+# CustodiaCloud Marketing Guidelines (CCEA‑Safe)
 
-## Communication Standards for CCEA Platform
+## Communication Standards for CustodiaCloud
 
 **Document Version:** 1.0
 **Date:** December 2025
@@ -10,14 +10,16 @@
 
 ## Purpose
 
-This document establishes **mandatory communication standards** for all CCEA Platform marketing, sales, and public communications. These guidelines ensure:
+This document establishes **mandatory communication standards** for all CustodiaCloud marketing, sales, and public communications. These guidelines ensure:
 
-1. **Regulatory Compliance** - Avoid language that implies investment advice or brokerage services
+1. **Regulatory‑safe messaging** - Avoid language that implies investment advice, brokerage, or execution‑as‑a‑service
 2. **Accurate Positioning** - Clearly communicate our role as a software provider
 3. **Customer Clarity** - Help customers understand our Cloud/Agent architecture
 4. **Legal Protection** - Minimize liability exposure through precise language
 
-**Reference:** See [CCEA_OVERVIEW.md](../architecture/CCEA_OVERVIEW.md) for complete architectural documentation.
+**Canon (single source of truth for wording/positioning):** `docs/DOCUMENTATION_CANON_DESIGN.md`
+
+**Technical reference for the CCEA boundary:** `archive/root_files/Design Doc CCEA Cloud.txt`
 
 ---
 
@@ -28,23 +30,23 @@ This document establishes **mandatory communication standards** for all CCEA Pla
 | Category | Approved Description |
 |----------|---------------------|
 | **Company Type** | Software provider, technology company |
-| **Product Type** | AI-powered quantitative research and simulation platform |
-| **Service Model** | SaaS platform with optional customer-deployed execution agent |
-| **Industry Position** | Infrastructure provider for quantitative trading |
+| **Product Type** | Risk-first quantitative research and deployment platform (equities-first) |
+| **Service Model** | Cloud research/monitoring + customer-controlled execution via Agent |
+| **Industry Position** | B2B infrastructure platform for professional systematic trading organizations |
 
 ### 1.2 One-Line Descriptions (Approved)
 
 **For General Audiences:**
-> "CCEA Platform provides AI-powered tools for quantitative trading research and strategy development."
+> "CustodiaCloud provides risk-first tools for quantitative research and deployment for professional teams."
 
 **For Technical Audiences:**
-> "CCEA Platform offers cloud-based RL training, backtesting, and simulation with customer-controlled local execution."
+> "CustodiaCloud offers cloud-based research/backtesting/simulation with customer-controlled local execution via an Agent (CCEA)."
 
 **For Investors:**
-> "CCEA Platform is an open-core AI infrastructure company serving quantitative trading firms and researchers."
+> "CustodiaCloud is a B2B research & deployment platform with a defensible Cloud/Agent execution boundary (CCEA)."
 
 **For Regulators:**
-> "CCEA Platform is a software provider offering research and simulation tools. Trading execution occurs in customer environments using customer accounts."
+> "CustodiaCloud is a B2B software provider. Live execution occurs only in customer environments via customer-controlled Agent and customer broker accounts; Cloud does not store credentials and does not send live trading instructions."
 
 ---
 
@@ -57,12 +59,12 @@ This document establishes **mandatory communication standards** for all CCEA Pla
 | **Platform Function** | "AI-powered research tools" | "Trading platform" |
 | | "Quantitative simulation environment" | "Execution venue" |
 | | "Strategy development software" | "Automated trading service" |
-| **Execution Model** | "Customer-controlled execution" | "We trade for you" |
-| | "Deploy strategies to your infrastructure" | "Cloud auto-execution" |
+| **Execution Model** | "Customer-controlled execution" | "We execute on your behalf" |
+| | "Deploy strategies to your infrastructure" | "Cloud-side execution" |
 | | "Your Agent, your execution" | "We place orders" |
 | **Performance** | "Backtested performance" | "Guaranteed returns" |
 | | "Historical simulation results" | "Expected profit" |
-| | "Research-based insights" | "Investment recommendations" |
+| | "Research-based insights" | "Investment advice" |
 | **Risk** | "Configurable risk limits" | "Risk-free" |
 | | "Customer-controlled kill switch" | "No losses possible" |
 | | "Built-in risk management tools" | "Protected capital" |
@@ -85,8 +87,8 @@ This document establishes **mandatory communication standards** for all CCEA Pla
 
 | Prohibited Statement | Why Prohibited | Alternative |
 |---------------------|----------------|-------------|
-| "We trade for you" | Implies broker/advisor relationship | "Deploy strategies to your infrastructure" |
-| "Cloud auto-execution" | Architecturally incorrect | "Customer-controlled local execution" |
+| "We execute on your behalf" | Implies broker/advisor relationship | "Deploy strategies to your infrastructure" |
+| "Cloud-side execution" | Architecturally incorrect | "Customer-controlled local execution" |
 | "Guaranteed profit" | Illegal financial claim | "Backtested performance of X%" |
 | "No risk" | Misleading | "Risk management tools included" |
 | "We manage your portfolio" | Investment advisor language | "Tools for portfolio analysis" |
@@ -94,7 +96,7 @@ This document establishes **mandatory communication standards** for all CCEA Pla
 | "Zero losses" | Misleading | "Configurable loss limits" |
 | "Free money" | Misleading | Never use any variant |
 | "Beat the market guaranteed" | Illegal claim | "Research tools for alpha generation" |
-| "Our signals generate profit" | Investment advice | "Backtested signal performance" |
+| "Our research outputs generate profit" | Advice/performance promise | "Backtested simulation results (with disclaimers)" |
 
 ### 3.2 Context-Dependent Restrictions
 
@@ -113,11 +115,12 @@ This document establishes **mandatory communication standards** for all CCEA Pla
 
 **Marketing Materials (Website, Brochures, Ads):**
 ```
-Disclaimer: CCEA Platform provides software tools for quantitative research
-and simulation. We are not a broker, investment advisor, or portfolio manager.
-All trading decisions and execution are made by the customer using their own
-infrastructure and accounts. Past performance does not guarantee future results.
-Trading involves risk of loss.
+Disclaimer: CustodiaCloud is a B2B software/ICT product for professional trading
+organizations. CustodiaCloud does not provide investment advice, portfolio
+management, or trade recommendations. Live execution occurs only via the
+customer-controlled Agent and the customer's own broker accounts; the Cloud does
+not store credentials and does not send live trading instructions (orders/targets/signals).
+Past performance does not guarantee future results. Trading involves risk of loss.
 ```
 
 **Performance Claims (Any Backtest Results):**
@@ -130,13 +133,13 @@ transaction costs, slippage, or market impact that would affect live trading.
 
 **Social Media / Short-Form Content:**
 ```
-Not investment advice. Trading involves risk. Backtest results shown.
+Not investment advice. Trading involves risk. Historical simulation results shown.
 ```
 
 **Email Marketing:**
 ```
 This communication is for informational purposes only and does not constitute
-investment advice. CCEA Platform is a software provider, not a financial advisor.
+investment advice. CustodiaCloud is a software provider, not a financial advisor.
 ```
 
 ### 4.2 Placement Requirements
@@ -172,7 +175,7 @@ investment advice. CCEA Platform is a software provider, not a financial advisor
 - Educational focus, not promotional
 - All performance claims with disclaimers
 - Link to methodology documentation
-- Avoid "tip" or "signal" language
+- Avoid advice-like language ("tips", "recommendations", "execution-on-behalf framing")
 
 ### 5.2 Social Media
 
@@ -198,7 +201,7 @@ investment advice. CCEA Platform is a software provider, not a financial advisor
 
 **Cold Outreach:**
 ```
-Template: "Hi [Name], I'm [Your Name] from CCEA Platform. We provide AI-powered
+Template: "Hi [Name], I'm [Your Name] from CustodiaCloud. We provide AI-powered
 research and simulation tools for quantitative trading teams. Unlike traditional
 platforms, our architecture keeps execution in your environment - you control
 your API keys and trading decisions. Would you be open to a brief conversation
@@ -260,7 +263,7 @@ quality, and other factors. Past performance is not indicative of future results
 **Format:**
 ```
 "[Customer Type] achieved [metric] improvement in [specific area]
-using CCEA Platform's [feature]. Individual results may vary."
+using CustodiaCloud's [feature]. Individual results may vary."
 ```
 
 ---
@@ -303,7 +306,7 @@ When communicating with committees, regulators, or immigration counsel, avoid ab
 
 | Trigger Phrase | Issue | Alternative |
 |----------------|-------|-------------|
-| "100% compliant" / "full compliance" / "certified compliant" | Absolute compliance claim without independent validation | "designed to align with requirements" / "compliance-ready toolkit" / "mapped to requirements" |
+| "100% compliant" / "full compliance" / "certified compliant" | Absolute compliance claim without independent validation | "designed to support alignment" / "alignment/evidence toolkit" / "mapped to requirements" |
 | "GDPR/DORA/MiFID II compliant" | Regulatory compliance claim | "GDPR/DORA/MiFID II-aligned" / "supports client compliance workflows" |
 | "production ready" / "production-grade" | Implies deployment fitness guarantee | "designed for production use" / "ready for production review" / "pilot-ready" |
 
@@ -404,9 +407,9 @@ Report potential violations to:
 - "Tools for quantitative trading"
 
 ### Never Say:
-- "We trade for you"
+- "We execute on your behalf"
 - "Guaranteed profit"
-- "Cloud auto-execution"
+- "Cloud-side execution"
 - "Our algorithm places orders"
 - "Risk-free"
 - "We manage your portfolio"

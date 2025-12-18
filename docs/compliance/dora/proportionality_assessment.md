@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-This document records the DORA proportionality assessment for the AI-Powered Quantitative Research Platform. The assessment determines:
+This document records the DORA proportionality assessment for CustodiaCloud. The assessment determines:
 
 1. Whether DORA applies to the entity (Article 2 scope verification)
 2. Which business functions are "critical or important" (Article 3(22))
@@ -36,7 +36,7 @@ This document records the DORA proportionality assessment for the AI-Powered Qua
 
 Per DORA Article 2(1), the regulation applies to 21 types of financial entities.
 
-**For algorithmic trading platforms, the most likely classifications are:**
+**For software/ICT providers serving financial entities, likely classifications may include:**
 
 | Entity Type | Article | Description | Applicability |
 |-------------|---------|-------------|---------------|

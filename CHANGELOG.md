@@ -275,7 +275,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_lstm_episode_boundary_reset.py` (8 comprehensive tests)
   - Impact: **CRITICAL** - Expected 5-15% improvement in value loss and policy performance
   - Models trained before 2025-11-21: **STRONGLY RECOMMENDED** to retrain for best performance
-  - Reference: [CRITICAL_LSTM_RESET_FIX_REPORT.md](CRITICAL_LSTM_RESET_FIX_REPORT.md)
+  - Reference: [CRITICAL_LSTM_RESET_FIX_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_LSTM_RESET_FIX_REPORT.md)
   - Academic reference: Hausknecht & Stone (2015) "Deep Recurrent Q-Learning for POMDPs"
 
 - **IMPROVEMENT #2: External Features NaN → 0.0 Silent Conversion** (2025-11-21)
@@ -287,7 +287,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_nan_handling_external_features.py` (10 tests, 9 passing, 1 skipped)
   - Impact: MEDIUM - Semantic ambiguity remains (missing data = 0.0), but now debuggable
   - Future work: Add validity flags for external features (v2.2+)
-  - Reference: [NUMERICAL_ISSUES_FIX_SUMMARY.md](NUMERICAL_ISSUES_FIX_SUMMARY.md)
+  - Reference: [NUMERICAL_ISSUES_FIX_SUMMARY.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/NUMERICAL_ISSUES_FIX_SUMMARY.md)
 
 - **CRITICAL BUG #1: Sign Convention Mismatch in LongOnlyWrapper** (2025-11-21)
   - Fixed sign convention where negative actions (reduction signals) were clipped to zero
@@ -296,7 +296,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Files modified: `wrappers/action_space.py`
   - Tests: Covered in `tests/test_critical_action_space_fixes.py` (21 tests, all passing)
   - Impact: HIGH - Policy can now properly reduce positions
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](CRITICAL_FIXES_COMPLETE_REPORT.md#problem-1)
+  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-1)
 
 - **CRITICAL BUG #2: Position Semantics DELTA→TARGET** (2025-11-21)
   - Fixed critical position doubling bug where DELTA semantics caused 2x leverage violation
@@ -306,7 +306,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests: Covered in `tests/test_critical_action_space_fixes.py`
   - Impact: **CRITICAL** - Prevents position doubling in production (2x leverage violation)
   - Models with old DELTA semantics: **MUST** retrain
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](CRITICAL_FIXES_COMPLETE_REPORT.md#problem-2)
+  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-2)
 
 - **CRITICAL BUG #3: Action Space Range [0,1] vs [-1,1]** (2025-11-21)
   - Fixed action space mismatch where different components used different bounds
@@ -315,20 +315,20 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Files modified: Various action space components
   - Tests: Covered in `tests/test_critical_action_space_fixes.py`
   - Impact: HIGH - Prevents action clipping errors and improves training stability
-  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](CRITICAL_FIXES_COMPLETE_REPORT.md#problem-3)
+  - Reference: [CRITICAL_FIXES_COMPLETE_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_COMPLETE_REPORT.md#problem-3)
 
 ### Documentation
 
 - **Documentation Modernization** (2025-11-21)
   - Modernized all core documentation to Version 2.1
-  - Updated [CLAUDE.md](CLAUDE.md) - Main project documentation (v2.0 → v2.1)
+  - Updated [claude.md](claude.md) - Main project documentation (v2.0 → v2.1)
   - Completely rewrote [README.md](README.md) - Comprehensive project overview
   - Updated [DOCS_INDEX.md](DOCS_INDEX.md) - Navigation hub with critical fixes
   - Enhanced [distributional_ppo.py](distributional_ppo.py) - Expanded class docstring (1 line → 58 lines)
-  - Created [DOCUMENTATION_STATUS.md](DOCUMENTATION_STATUS.md) - Centralized status tracking (70% health score)
-  - Created [DOCUMENTATION_MODERNIZATION_REPORT.md](DOCUMENTATION_MODERNIZATION_REPORT.md) - Full modernization report
+  - Created [DOCUMENTATION_STATUS.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_STATUS.md) - Centralized status tracking (historical)
+  - Created [DOCUMENTATION_MODERNIZATION_REPORT.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_MODERNIZATION_REPORT.md) - Full modernization report (historical)
   - Impact: +15% average improvement in audience coverage
-  - Reference: [DOCUMENTATION_MODERNIZATION_REPORT.md](DOCUMENTATION_MODERNIZATION_REPORT.md)
+  - Reference: [DOCUMENTATION_MODERNIZATION_REPORT.md](archive/2025_11/reports_2025_11/integration/DOCUMENTATION_MODERNIZATION_REPORT.md)
 
 ### Test Coverage
 
@@ -345,7 +345,7 @@ from services.core.risk_controls import EnhancedKillSwitch
 ### Regression Prevention
 
 - **Added Comprehensive Checklist** (2025-11-21)
-  - Created [REGRESSION_PREVENTION_CHECKLIST.md](REGRESSION_PREVENTION_CHECKLIST.md)
+  - Created [REGRESSION_PREVENTION_CHECKLIST.md](archive/2025_11/reports_2025_11/verification/REGRESSION_PREVENTION_CHECKLIST.md)
   - Mandatory checklist for developers before modifying critical components
   - Covers: LSTM state management, action space semantics, data integrity
   - Enforces: Running tests, reading fix reports, understanding semantics
@@ -393,7 +393,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_stale_bar_temporal_causality.py` (3 tests)
   - Impact: **CRITICAL** - Models trained with data degradation may have learned incorrect
     temporal patterns. Consider retraining if `stale_prob > 0` was used.
-  - Reference: [CRITICAL_FIXES_REPORT.md](CRITICAL_FIXES_REPORT.md#problem-1-temporal-causality-violation)
+  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-1-temporal-causality-violation)
 
 - **CRITICAL BUG #11: Cross-symbol contamination in feature normalization** (2025-11-20)
   - Fixed critical issue where `shift()` applied after concatenating all symbols caused
@@ -404,7 +404,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests added: `tests/test_normalization_cross_symbol_contamination.py` (4 tests)
   - Impact: **CRITICAL** - Multi-symbol models may have contaminated features. Consider
     retraining if multiple symbols were used with normalization.
-  - Reference: [CRITICAL_FIXES_REPORT.md](CRITICAL_FIXES_REPORT.md#problem-2-cross-symbol-contamination)
+  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-2-cross-symbol-contamination)
 
 - **CRITICAL BUG #12: Inverted quantile loss formula** (2025-11-20)
   - Fixed critical mathematical error where quantile loss used `Q - T` instead of correct
@@ -416,7 +416,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Tests updated: `tests/test_quantile_loss_with_flag.py` (8 tests, all passing)
   - Impact: **CRITICAL** - Quantile critic models have suboptimal convergence and biased
     CVaR estimates. **STRONGLY RECOMMENDED** to retrain all quantile-based models.
-  - Reference: [CRITICAL_FIXES_REPORT.md](CRITICAL_FIXES_REPORT.md#problem-3-inverted-quantile-loss)
+  - Reference: [CRITICAL_FIXES_REPORT.md](archive/2025_11/reports_2025_11_25_cleanup/root_reports/CRITICAL_FIXES_REPORT.md#problem-3-inverted-quantile-loss)
   - Academic reference: Dabney et al. (2018) "Distributional RL with Quantile Regression"
 
 - **Bug #9: VGS parameter tracking after model load** - Fixed critical issue where VGS

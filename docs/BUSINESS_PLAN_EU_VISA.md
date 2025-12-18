@@ -58,7 +58,7 @@ This plan is designed to match how startup visa committees typically evaluate ap
 
 ### 1.1 Business Overview
 
-We are developing an **institutional-grade algorithmic trading platform** that fundamentally transforms how quantitative trading firms develop, test, and deploy trading strategies. Our platform uniquely combines **risk-aware artificial intelligence** with **research-grade market microstructure simulation**, enabling trading operations that explicitly optimize for worst-case scenarios rather than average returns.
+We are developing a **B2B risk-first quantitative research and deployment platform** that reduces the time and cost required for professional teams to develop, test, and deploy systematic strategies. The platform combines **risk-aware AI** with **research-grade execution simulation**, prioritizing risk controls and governance evidence over performance promises.
 
 CustodiaCloud is designed as an **ICT/software provider**: customers trade through their own broker accounts via their own customer-controlled Agent, while our Cloud provides research/simulation/monitoring (design intent; not legal advice).
 
@@ -105,7 +105,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 |----------|----------------------|----------------------------|-------------------|
 | **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No custody, no client secrets in Cloud, no Cloud live trading instructions, no execution on behalf of clients |
 | **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
-| **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming “DORA certified”; clients run their vendor due diligence |
+| **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming certification; clients run their vendor due diligence |
 | **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
 
 ### 1.5 Investment Highlights
@@ -125,8 +125,8 @@ This section describes the product’s design intent for EU-facing deployments. 
 |----------|------------|---------|
 | **Go-to-Market** | 40% | Sales team, customer acquisition, EU market entry |
 | **Engineering** | 35% | DevOps, frontend, cloud infrastructure |
-| **Operations** | 15% | Legal, compliance, SOC 2 certification |
-| **Reserve** | 10% | Contingency, 18-month runway target |
+| **Operations** | 15% | Legal/compliance operations, SOC 2 readiness roadmap |
+| **Reserve** | 10% | Contingency, 18–24 month runway target |
 
 ### 1.7 Key Milestones (12 Months Post-Funding)
 
@@ -137,7 +137,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 | **Q2** | Dashboard MVP Launch | Web-based client interface |
 | **Q2** | First Revenue | EUR 40,000+ ARR |
 | **Q3** | Product-Market Fit | 2+ customers expanding usage |
-| **Q4** | Series A Preparation | EUR 180,000+ ARR, 10+ customers |
+| **Q4** | Series A Preparation | milestone-based readiness (revenue dependent; illustrative) |
 
 ---
 
@@ -237,11 +237,11 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 
 | Feature | Description | Differentiation |
 |---------|-------------|-----------------|
-| **Distributional Value Estimation** | 21-51 quantile predictions (not single-point) | First for trading platforms |
+| **Distributional Value Estimation** | 21-51 quantile predictions (not single-point) | Advanced technique applied to this domain |
 | **CVaR Optimization** | Explicitly penalizes worst 5% outcomes | Novel risk constraint |
 | **Twin Critics** | Dual networks reduce overestimation bias | Academic best practice |
 | **Continual Learning (UPGD)** | Prevents catastrophic forgetting | Novel for finance |
-| **Conformal Prediction** | Distribution-free uncertainty bounds | First integration with trading RL |
+| **Conformal Prediction** | Distribution-free uncertainty bounds | Uncertainty bounds for risk-aware RL workflows |
 
 **Mathematical Foundation**:
 ```
@@ -588,7 +588,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 **The Honest Assessment**: The algorithmic trading infrastructure market is competitive, with established players like QuantConnect (~500K community members) and significant venture-backed alternatives. However, our research reveals critical gaps that create an addressable niche for institutional-grade platforms targeting underserved European firms.
 
 **Strategic Insight**: Existing platforms fall into two categories:
-1. **Retail/Hobbyist Tools** (QuantConnect, Zipline) — feature-rich for backtesting, but lack institutional-grade execution modeling and risk management
+1. **Consumer/prosumer tools** (QuantConnect, Zipline) — feature-rich for backtesting, but typically lack institutional-grade execution modeling and governance/risk controls
 2. **Enterprise Systems** (Bloomberg AIM, Aladdin) — institutional-grade but EUR 250K-2M+ annually, inaccessible to firms under EUR 100M AUM
 
 **Our Position**: The "Institutional Middle Market" — research-grade capabilities at SME-accessible pricing.
@@ -597,7 +597,7 @@ Per-parameter variance tracking with anti-blocking protection for stable trainin
 
 | Segment | Key Players | Market Position | Our Differentiation |
 |---------|-------------|-----------------|---------------------|
-| **Backtesting Platforms** | QuantConnect, Zipline | Retail focus, fixed-cost models | Research-grade TCA, CVaR-RL |
+| **Backtesting Platforms** | QuantConnect, Zipline | Consumer/prosumer focus, fixed-cost models | Research-grade TCA, CVaR-RL |
 | **Broker APIs** | Alpaca, Interactive Brokers | Connectivity only | Intelligence layer integration |
 | **Enterprise Systems** | Bloomberg, Refinitiv Aladdin | EUR 250K-2M/year | 90% cost reduction |
 | **ML Frameworks** | Stable-Baselines3, RLlib | General-purpose | Finance-specific, designed for production use |
@@ -664,13 +664,13 @@ Open-source backtesting libraries are valuable building blocks, but they typical
 
 | Build Factor | In-House Approach | Our Platform |
 |--------------|-------------------|--------------|
-| **Development Time** | 12-24 months (senior quant team) | 2-4 weeks to production |
-| **Upfront Cost** | EUR 450K-1.8M (salaries, infrastructure) | EUR 0 (SaaS) |
-| **Annual Maintenance** | EUR 200K-400K (ongoing development) | EUR 20K-55K (subscription) |
-| **Key Person Risk** | High (lead developer departure = project failure) | Eliminated |
+| **Development Time** | 12-24 months (illustrative; senior team + scope dependent) | weeks (illustrative; depends on onboarding) |
+| **Upfront Cost** | EUR 450K-1.8M (illustrative; salaries, infrastructure) | subscription model (no upfront build project) |
+| **Annual Maintenance** | EUR 200K-400K (illustrative; ongoing development) | subscription + support (pricing dependent) |
+| **Key Person Risk** | High (lead developer departure = project risk) | Reduced via vendor-managed platform |
 | **Technical Debt** | Accumulates over 3-5 years | Vendor-managed |
 
-**Evidence from Industry**: "Building and maintaining technology systems isn't cheap... Low-latency trading platforms, advanced algorithms, and secure IT infrastructure are essential but expensive" — [Brokeree Solutions](https://brokeree.com/articles/challenges-of-proprietary-trading-firms/)
+**Evidence from industry (context)**: Industry commentary notes that building and maintaining low-latency systems and secure infrastructure is expensive and creates ongoing operational pressure for prop firms. Source: [Brokeree Solutions](https://brokeree.com/articles/challenges-of-proprietary-trading-firms/)
 
 ### 6.4 Beachhead Market: European Systematic Equities Teams
 
@@ -700,7 +700,7 @@ Open-source backtesting libraries are valuable building blocks, but they typical
 
 | Characteristic | Target Range | Rationale |
 |----------------|--------------|-----------|
-| **Traders** | 10-50 | Too large for retail tools, too small for Bloomberg |
+| **Traders** | 10-50 | Too large for consumer tools, too small for Bloomberg |
 | **Proprietary Capital** | EUR 5M-100M | Serious operations, cost-conscious |
 | **Asset Mix** | Equities-first (listed markets) | Clear narrative + validated expansion path |
 | **Current Stack** | Patchwork (Python + Excel + broker APIs) | Pain point we solve |
@@ -735,7 +735,7 @@ CustodiaCloud is designed to support professional firms operating under EU/UK go
 
 We primarily compete against:
 1. **In-house builds** (high time and engineering cost)
-2. **Retail/prosumer platforms adapted for professional use** (governance/evidence often missing)
+2. **Prosumer platforms adapted for professional use** (governance/evidence often missing)
 3. **High-cost enterprise OMS/EMS stacks** (pricing and implementation heavy for mid-market firms)
 
 We win by providing a clear Cloud/Agent boundary, risk-first tooling, and governance/evidence exports at mid-market pricing.
@@ -1200,9 +1200,9 @@ We acknowledge that achieving projections depends on multiple factors:
 | Milestone | Description | Success Criteria |
 |-----------|-------------|------------------|
 | **Team Expansion** | Hire sales, DevOps | 4-6 team members |
-| **Product-Market Fit** | Customer expansion signals | 50%+ expanding usage |
-| **ARR Growth** | Revenue scaling | EUR 180,000+ ARR |
-| **SOC 2 Type II** | Security certification | Certification achieved |
+| **Product-Market Fit** | Customer expansion indicators | increased paid usage (illustrative) |
+| **Revenue Traction** | Revenue scaling | milestone-based (illustrative; not a forecast) |
+| **SOC 2 Roadmap** | Security program | readiness milestones (no certification claim) |
 | **Series A Prep** | Investor materials, metrics | Ready for raise |
 
 **Key Risks**: Hiring delays, churn
@@ -1618,7 +1618,7 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 | **New Technology** | Production-oriented CVaR-constrained RL for trading |
 | **Academic Foundation** | 7+ peer-reviewed papers implemented |
 | **Technical Depth** | Large production codebase with extensive automated tests and CI validation |
-| **Differentiation** | Risk-first ML + CCEA boundary + governance/evidence exports (not a direct clone of retail/prosumer platforms) |
+| **Differentiation** | Risk-first ML + CCEA boundary + governance/evidence exports (not a direct clone of consumer/prosumer platforms) |
 
 **Comparison to Existing Solutions**:
 
@@ -1867,18 +1867,12 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 
 **Prop Trading Technology Challenges** (from industry research):
 
-> "Building and maintaining technology systems isn't cheap for proprietary trading firms. Low-latency trading platforms, advanced algorithms, and secure IT infrastructure are essential but expensive. There's also the risk of cyber attacks, which puts pressure on firms to invest in cyber security."
-> — [Brokeree Solutions, 2024](https://brokeree.com/articles/challenges-of-proprietary-trading-firms/)
+Industry commentary highlights that proprietary trading firms face high costs for low-latency systems, secure infrastructure, and cyber risk mitigation. Source: [Brokeree Solutions, 2024](https://brokeree.com/articles/challenges-of-proprietary-trading-firms/)
 
 **European Fintech Funding Gap**:
 
 > "The European private capital sector is dwarfed by its US peers. Deal volumes and annual investments in Europe are about half those of the United States, while PE and VC AUM equate to about 8 percent of GDP in Europe compared with 17 percent in the United States."
 > — [European Investment Bank, 2024](https://www.eib.org/attachments/lucalli/20240130_the_scale_up_gap_en.pdf)
-
-**QuantConnect European User Friction**:
-
-> "It is a pain for us European investors to fight against so many windmills... there's a lot of hoops to jump through as an EU national."
-> — [QuantConnect Community Forum](https://www.quantconnect.com/forum/discussion/4153/uk-retail-investors/)
 
 #### G.6 Target Customer Personas (European Focus)
 

@@ -170,7 +170,7 @@ Every component has comprehensive test coverage:
 ## File Structure
 
 ```
-TradingBot2/
+AI-Powered-Quantitative-Research-Platform/
 ├── core_futures.py                    # Core models and enums
 ├── impl_futures_margin.py             # Tiered margin calculator
 ├── impl_span_margin.py                # CME SPAN margin calculator
@@ -185,7 +185,7 @@ TradingBot2/
 │   ├── futures_risk_guards.py         # Crypto futures risk guards
 │   ├── cme_risk_guards.py             # CME futures risk guards
 │   ├── unified_futures_risk.py        # Unified risk management
-│   ├── futures_live_runner.py         # Live trading coordinator
+│   ├── futures_live_runner.py         # Live execution coordinator
 │   ├── futures_position_sync.py       # Position synchronization
 │   ├── futures_margin_monitor.py      # Margin monitoring
 │   ├── futures_funding_tracker.py     # Funding rate tracking
