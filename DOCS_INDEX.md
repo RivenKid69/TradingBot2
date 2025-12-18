@@ -20,7 +20,8 @@
 |----------|-------------|
 | [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | ⭐ **Canonical narrative** - product, GTM, pilot, funding ask, and safe wording |
 | [docs/INNOVATION_STATEMENT.md](docs/INNOVATION_STATEMENT.md) | ⭐ **Full innovation documentation** - technical depth, IP, academic references |
-| [docs/DOCUMENTATION_CANON_DESIGN.md](docs/DOCUMENTATION_CANON_DESIGN.md) | **Investment highlights (canonical)** - market opportunity, metrics, roadmap |
+| [docs/INVESTOR_BRIEF.md](docs/INVESTOR_BRIEF.md) | **Investment highlights** - market opportunity, metrics, roadmap |
+| [docs/BUSINESS_PLAN_EU_VISA.md](docs/BUSINESS_PLAN_EU_VISA.md) | **Business plan (visa committees)** - EU establishment plan, hiring, budget, risk analysis |
 
 ### For Developers
 | Document | Description |
