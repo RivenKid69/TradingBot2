@@ -230,7 +230,7 @@ Time Saved: 25 months
 | **Vendor lock-in** | Medium | Medium | Data portability clause |
 | **Service discontinuation** | Low | High | Escrow agreement |
 | **Performance issues** | Low | Medium | SLA with penalties |
-| **Data security breach** | Low | Critical | Compliance certifications |
+| **Data security breach** | Low | Critical | Security attestations/audit reports (if available) |
 
 **Expected Risk Cost:** ~**€25K** (due to contractual protections)
 

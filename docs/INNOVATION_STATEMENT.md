@@ -22,7 +22,7 @@
 | **Cloud** | Research, backtesting, artifact builder, monitoring | **NEVER** | **NEVER** |
 | **Agent** | Local execution, vault, risk enforcement, order creation | **LOCAL** | **YES** |
 
-**Legal Posture**: Software Provider / ICT Provider — NOT investment adviser, broker-dealer, or execution service.
+**Legal Posture**: Software Provider / ICT Provider — not investment advice/portfolio management; not an execution service (Cloud does not execute orders or hold credentials/assets).
 
 **Hard rule (CCEA boundary):** Cloud does not store customer broker credentials and does not generate, transmit, or execute live trading instructions (orders/targets/signals). Live execution occurs only via the customer-controlled Agent.
 

@@ -459,7 +459,7 @@ provider_identification:
         - identifier_type: "sec_crd"
           identifier: "Alpaca Securities LLC - CRD# 288202"
           country: "US"
-          registration_authority: "SEC/FINRA"
+          registration_authority: "US registration authority (example; vendor-specific)"
 
     polygon:
       alternatives:

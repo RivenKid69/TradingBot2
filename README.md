@@ -40,7 +40,7 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 - Distributional PPO with twin critics, adaptive UPGD optimizer, and population-based tuning for robust policies.
 - Market-structure-aware execution: limit/market routing, TWAP/POV, slippage and fee modeling, and risk guards.
 - Multi-asset adapters (crypto, equities, FX, options) behind a unified YAML configuration and dependency injection registry.
-- Shared pipeline for training, backtesting, paper trading, and live trading with reproducible artifacts.
+- Shared pipeline for training, backtesting, paper trading, and live execution with reproducible artifacts.
 - Observability and safety: structured logs, KPI benchmarks, sanity checks, and doctor tooling.
 - **Strict zone separation**: Cloud/Agent/Shared packages with CI-enforced import boundaries.
 
@@ -84,7 +84,7 @@ python -m packages.agent.daemon.agentd --config configs/agent.yaml
 # 2. (Optional) Use Cloud control plane to manage runs
 #    Cloud sends lifecycle commands only - NEVER trades or stores keys
 ```
-**Important**: Live trading runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md).
+**Important**: Live execution runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/architecture/CCEA_OVERVIEW.md).
 
 For legacy/development dry-run testing:
 ```bash
@@ -116,7 +116,7 @@ CustodiaCloud is designed to support a **software / ICT provider** posture (clas
 
 **Legal Position:**
 - **NOT** investment advice / portfolio management / trade recommendations
-- **NOT** a broker-dealer or custodian
+- **NOT** an execution service: Cloud does not execute orders or hold credentials/assets
 - B2B software platform for professional trading organizations
 
 See: `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical wording.
@@ -202,7 +202,7 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 3. Execute `python script_backtest.py --config <cfg> --offline-config configs/offline.yaml --dataset-split val`.
 4. Validate outputs: compare KPI to `benchmarks/sim_kpi_thresholds.json`, review reports in `artifacts/` and logs in `logs/`.
 
-### Live trading (CCEA Architecture)
+### Live execution (CCEA Architecture)
 **Production: Via Local Agent**
 1. **Agent Setup**: Install and configure Agent locally (`docs/agent/INSTALLATION.md`).
 2. **Credentials**: Store broker API keys in Agent's local vault (NEVER upload to Cloud).

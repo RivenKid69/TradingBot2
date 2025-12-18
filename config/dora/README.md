@@ -33,5 +33,5 @@ configs/dora/
 
 ## See Also
 
-- [DORA Integration Layer](../../services/dora_integration/README.md)
+- [DORA Integration Layer](../../services/dora_integration/)
 - [Archived FE Modules](../../services/archive/dora_financial_entity/README.md)

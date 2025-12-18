@@ -50,7 +50,7 @@ This document establishes our comprehensive regulatory strategy for operating as
 | Characteristic | Our Platform | Regulated Entity |
 |----------------|--------------|------------------|
 | Trade execution | ❌ No | ✅ Yes |
-| Asset custody | ❌ No | ✅ Yes |
+| Client asset holding | ❌ No | ✅ Yes |
 | Investment advice | ❌ No | ✅ Yes |
 | Client fund handling | ❌ No | ✅ Yes |
 | Discretionary management | ❌ No | ✅ Yes |
@@ -66,7 +66,7 @@ Working assumptions for design and messaging (subject to legal review and deploy
 - Directive 2000/31/EC (E-Commerce Directive)
 - Regulation (EU) 2015/1535 (Technical Standards Notification)
 
-We design and document CustodiaCloud to avoid activities that typically trigger financial-regulated roles (execution on behalf of clients, custody/fund handling, discretionary management, investment advice). Whether any specific regime applies still requires counsel review for the intended go-to-market and deployments.
+We design and document CustodiaCloud to avoid activities that typically trigger financial-regulated roles (execution on behalf of clients, asset/fund handling, discretionary management, investment advice). Whether any specific regime applies still requires counsel review for the intended go-to-market and deployments.
 
 ### 1.3 Analogous Business Models (Precedent)
 
@@ -135,8 +135,8 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 
 | CCEA Design Commitment | Regulatory Impact |
 |----------------|-------------------|
-| Cloud never stores credentials | Not a custodian, no custody requirements |
-| Cloud never sends orders | Not an execution venue, no broker-dealer license |
+| Cloud never stores credentials | No Cloud asset/credential holding obligations |
+| Cloud never sends orders | Not an execution venue (Cloud does not execute orders) |
 | Agent runs locally | Client retains execution control, our liability limited |
 | Mandatory telemetry redaction | GDPR-aligned design, no accidental secret exposure |
 | Signed artifacts only | Supply chain security, audit trail |
@@ -147,10 +147,10 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 
 | Commitment | CCEA Enforcement Mechanism |
 |------------|---------------------------|
-| **Execute trades** on behalf of any client | Cloud has no trading libs, no broker API access |
+| **Execute orders** on behalf of any client | Cloud has no trading libs and no broker/exchange API access |
 | **Manage assets** or portfolios on a discretionary basis | Cloud cannot send order-like payloads |
 | **Provide investment advice** (personalized recommendations) | Platform is a tool, not advice |
-| **Handle client funds** or provide custody services | Cloud never stores credentials |
+| **Handle client funds** or provide asset holding services | Cloud never stores credentials |
 | **Make trading decisions** for clients | Orders created only by local Agent |
 | **Access client brokerage accounts** with execution authority | Secrets stored only in local vault |
 | **Guarantee investment performance** or returns | Terms of Service disclaimers |
@@ -1574,8 +1574,8 @@ This policy applies to all personal data processed by the Company, regardless of
 
 Before engaging any sub-processor:
 1. Security questionnaire completion
-2. SOC 2 or equivalent certification review
-3. GDPR compliance verification
+2. SOC 2 or equivalent audit/attestation review (if available)
+3. GDPR/DPA posture verification
 4. DPA negotiation and execution
 5. Transfer mechanism confirmation (SCCs if needed)
 6. Client notification (as per master DPA)

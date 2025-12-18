@@ -37,7 +37,7 @@ Together referred to as the "Parties" and individually as a "Party".
 
 **1.5** "GDPR" means Regulation (EU) 2016/679 of the European Parliament and of the Council.
 
-**1.6** "Services" means the trading platform services provided by the Processor under the main service agreement.
+**1.6** "Services" means the B2B research and deployment platform services provided by the Processor under the main service agreement.
 
 ---
 
@@ -54,10 +54,12 @@ This DPA shall remain in effect for the duration of the service agreement betwee
 **2.3 Nature of Processing**
 
 The Processor shall process Personal Data to provide:
-- Trading strategy development and backtesting services
-- Order execution via Controller's broker API connections
-- Analytics and performance reporting
-- Platform access and user management
+- Research, simulation/backtesting, and artifact lifecycle services (non-orders)
+- Monitoring and reliability telemetry (redacted/bucketed per configured sensitivity level)
+- Analytics and operational reporting (non-performance and non-advice)
+- Platform access, organization/workspace management, and support operations
+
+**CCEA boundary note (execution and credentials):** Live order execution and broker/exchange credentials are handled in the Controller’s environment by the customer-controlled Agent. The Processor’s Cloud infrastructure does not store broker credentials and does not connect to broker/exchange trading APIs.
 
 ---
 
@@ -68,7 +70,7 @@ The following categories of Personal Data may be processed:
 | Category | Data Elements | Purpose |
 |----------|---------------|---------|
 | Account Data | Email, name, password hash | User authentication and account management |
-| Trading Data | Strategies, backtests, redacted telemetry | Service provision (Cloud zone only) |
+| Research/Strategy Data | Strategies, backtests, redacted telemetry | Service provision (Cloud zone only) |
 | Technical Data | IP addresses, device information, logs | Security and troubleshooting |
 
 **IMPORTANT - CCEA Architecture Note:**
@@ -300,9 +302,9 @@ The Controller may appoint a qualified third-party auditor, subject to:
 **11.4 Audit Reports**
 
 The Processor shall provide the Controller with:
-- Annual SOC 2 Type II report (or equivalent)
+- Annual SOC 2 Type II report (or equivalent), if available
 - Results of penetration testing (summary)
-- Evidence of security certifications
+- Evidence of relevant security audit reports/attestations, if available
 
 ---
 
@@ -313,7 +315,7 @@ The Processor shall provide the Controller with:
 Upon termination of the Services:
 - The Processor shall delete all Personal Data within 30 days
 - Alternatively, return Personal Data in a commonly used format if requested by Controller
-- Provide written certification of deletion upon request
+- Provide written confirmation of deletion upon request
 
 **12.2 Retention Exceptions**
 
@@ -387,7 +389,7 @@ Signature: _______________________
 | Encryption at rest | AES-256-GCM for all sensitive data |
 | Encryption in transit | TLS 1.2 minimum, TLS 1.3 preferred |
 | Key management | AWS KMS with automatic rotation |
-| Broker credentials | AES-256-GCM with per-user derived keys |
+| Agent-local credentials | Stored and decrypted only inside the Controller-managed Agent environment; not processed by the Processor’s Cloud |
 
 ### A.2 Access Controls
 
@@ -420,7 +422,7 @@ Signature: _______________________
 
 | Measure | Implementation |
 |---------|----------------|
-| Data centers | AWS facilities (certifications may include ISO 27001 and SOC 2, depending on region/service) |
+| Data centers | AWS facilities (AWS-provided ISO 27001 and/or SOC 2 reports may be available depending on region/service; verification required) |
 | Access control | Biometric and badge access |
 | Surveillance | 24/7 CCTV monitoring |
 | Environmental | Fire suppression, climate control |

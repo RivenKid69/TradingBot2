@@ -46,20 +46,19 @@ or its affiliates for guidance on the suitability, profitability,
 or appropriateness of any particular trade or investment strategy.
 ```
 
-#### Not a Broker or Custodian
+#### Not a Financial Intermediary
 
 ```legal
-CustodiaCloud is not a broker, dealer, exchange, custodian, or any other
-type of regulated financial intermediary. We do not:
+CustodiaCloud is a software/ICT provider and is not a regulated financial intermediary. We do not:
 
-- Execute trades or place orders on behalf of users
-- Hold, custody, or manage user funds or assets
-- Transmit orders to exchanges or brokers
+- Execute orders on behalf of users or provide execution-as-a-service
+- Hold or manage user funds or assets
+- Transmit orders from the Cloud to execution venues (orders are created and sent only by the Agent)
 - Provide access to financial markets
 - Act as an intermediary between users and any financial institution
 
 Users acknowledge that CustodiaCloud is a software provider only. Any
-trading activities occur through the user's own brokerage accounts and
+execution activities occur through the user's own brokerage accounts and
 relationships, using software tools (the "Agent") deployed and controlled
 entirely within the user's own computing environment.
 ```

@@ -158,6 +158,6 @@ The following guardrails prevent usage of deprecated modules in production:
 ## References
 
 - [ARCHITECTURE.md](../../ARCHITECTURE.md) - Current architecture documentation
-- [Design Doc CCEA Cloud.txt](../../Design%20Doc%20CCEA%20Cloud.txt) - Original design document
+- [Design Doc CCEA Cloud.txt](../../archive/root_files/Design Doc CCEA Cloud.txt) - Original design document
 - [packages/agent/__init__.py](../../packages/agent/__init__.py) - Canonical Agent package
 - [packages/cloud/control_plane/](../../packages/cloud/control_plane/) - Canonical Control Plane

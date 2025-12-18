@@ -1549,7 +1549,7 @@ infrastructure_reality_check:
       - "Multi-region deployment"
       - "24/7 on-call team (4+ FTE)"
       - "Automated DR testing"
-      - "SOC2 Type II certification"
+	      - "SOC 2 Type II report/attestation (if pursued)"
 
   contractual_guidance:
     principle: "Never promise what you cannot deliver"
@@ -1869,7 +1869,7 @@ contractual_sla_guardrails:
           - "Multi-region deployment"
           - "24/7 on-call team (4+ FTE)"
           - "Quarterly DR tests passing"
-          - "SOC2 Type II certification"
+	          - "SOC 2 Type II report/attestation (if pursued)"
 
   # =========================================================================
   # GUARDRAIL 4: CONTRACT REVIEW PROCESS
@@ -2324,9 +2324,10 @@ subcontractor_management:
       # CCEA NOTE: Client's Agent connects directly to Alpaca. Our Cloud has NO access to client credentials.
       has_data_access: false  # We do NOT store or access client API keys - handled by client's local Agent
       data_types_accessed: []  # Our Cloud receives NO brokerage credentials
-      certifications:
-        - "SEC/FINRA registered broker (Alpaca is a broker; we are NOT)"
-        - "SOC 2"
+	      certifications:
+	        - "SOC 2 (vendor-provided report/attestation; verify with vendor)"
+	      regulatory_notes:
+	        - "Alpaca is a broker (vendor status); CustodiaCloud is a software/ICT provider and does not execute orders from the Cloud."
       contract_reference: "Alpaca API Agreement (client's direct relationship)"
       is_material: false  # Client's integration, not ours
       supports_critical_functions: false  # Trading execution happens in client's Agent, not our Cloud
@@ -3478,7 +3479,7 @@ precontractual_portal_implementation:
       security_overview:
         - "Security whitepaper (PDF)"
         - "Architecture overview (high-level)"
-        - "Compliance certifications list"
+	        - "Security attestations list (if available)"
         - "Data handling summary"
 
       service_documentation:
@@ -3488,10 +3489,10 @@ precontractual_portal_implementation:
         - "Pricing models"
 
       trust_indicators:
-        - "SOC2 Type II badge (with report available under NDA)"
-        - "ISO 27001 certification status"
-        - "GDPR compliance statement"
-        - "DORA compliance statement"
+	        - "SOC 2 Type II report availability (under NDA, if applicable)"
+	        - "ISO 27001 status (if applicable)"
+	        - "GDPR posture summary (privacy-by-design; evidence exports)"
+	        - "DORA alignment summary (evidence toolkit; not a certification claim)"
 
   # =========================================================================
   # REGISTERED TIER (Email verification)
@@ -4500,7 +4501,7 @@ pooled_audit_framework:
 
     option_2_iso27001_reliance:
       name: "ISO/IEC 27001 (Optional Roadmap)"
-      description: "Optional future certification path to support procurement (no current certification claim)"
+	      description: "Optional future audit/certification path to support procurement (no current certification claim)"
       legal_basis: "Art. 30(4) - third-party certifications (if applicable)"
       status: "PLANNED - evaluation/roadmap"
       target_date: "Q4 2025"
@@ -4512,7 +4513,7 @@ pooled_audit_framework:
 
       client_benefits:
         - "Internationally recognized standard"
-        - "Continuous certification (surveillance audits)"
+	        - "Surveillance audits (if applicable)"
         - "Comprehensive ISMS coverage"
 
     option_3_joint_audit:
@@ -4659,8 +4660,8 @@ pooled_audit_framework:
          this Agreement, either directly or through appointed auditors.
 
       2. Client may satisfy audit requirements through:
-         (a) Reliance on Provider's SOC2 Type II report and/or ISO 27001
-             certification (copies available upon request under NDA);
+         (a) Reliance on Provider's SOC 2 Type II report and/or ISO 27001
+             attestation/certificate (if available; copies upon request under NDA);
          (b) Participation in pooled audits organized by Provider or
              jointly with other clients;
          (c) Individual audit conducted by Client or Client's auditors.
@@ -4938,10 +4939,10 @@ test_migration:
 | 3.8 | Feature flag system for Enterprise | LOW | |
 | 3.9 | Multi-region deployment | **HIGH** | ✓ |
 | 3.10 | 24/7 on-call (Option C: 4+ engineers) | **HIGH** | ✓ |
-| 3.11 | Complete SOC2 Type II certification | **HIGH** | ✓ |
+	| 3.11 | Complete SOC 2 Type II audit/attestation (if pursued) | **HIGH** | ✓ |
 | 3.12 | Implement pooled audit coordination | MEDIUM | ✓ |
 | 3.13 | Dedicated region deployment option | MEDIUM | ✓ |
-| 3.14 | ISO 27001 certification (start) | MEDIUM | ✓ |
+	| 3.14 | ISO 27001 audit/certification evaluation (optional) | MEDIUM | ✓ |
 
 **Deliverables:**
 - Extended incident reporting system

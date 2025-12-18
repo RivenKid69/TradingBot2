@@ -9,13 +9,13 @@
 
 ## Executive Summary
 
-CustodiaCloud (built on Cloud-Controlled Execution Architecture, CCEA) is seeking **€500K–€750K** in seed funding to accelerate customer validation and go-to-market for our **equities-first** platform. The funding target is designed to support an 18-month runway (illustrative; execution-dependent).
+CustodiaCloud (built on Cloud-Controlled Execution Architecture, CCEA) is seeking **€500K–€750K** in seed funding to accelerate customer validation and go-to-market for our **equities-first** platform. The funding target is designed to support an **18–24 month runway** (illustrative; execution-dependent).
 
 **Key Investment Highlights:**
 - Technical foundation: large automated test suite and implemented CCEA Cloud/Agent separation
 - Unique Cloud/Agent architecture (CCEA): customer-controlled execution; Cloud does not store secrets or execute orders
 - Equities-first MVP and beachhead (Europe); additional asset classes are optional future expansion (non‑MVP)
-- Regulatory posture: software / ICT provider (not a broker, custodian, or investment adviser)
+- Regulatory posture: software / ICT provider (not investment advice/portfolio management; Cloud does not execute orders)
 - Capital efficiency: seed funding focused on customer validation and repeatable GTM (targets are illustrative; not guaranteed)
 
 ---
@@ -26,8 +26,8 @@ CustodiaCloud (built on Cloud-Controlled Execution Architecture, CCEA) is seekin
 
 | Scenario | Amount | Use Case | Dilution Target |
 |----------|--------|----------|-----------------|
-| **Minimum Viable** | €500K | 12-month runway, lean team (4 FTE) | 12-15% |
-| **Optimal** | €750K | 18-month runway, core team (6 FTE) | 15-18% |
+| **Minimum Viable** | €500K | 18-month runway (burn-managed), lean team (4 FTE) | 12-15% |
+| **Optimal** | €750K | 24-month runway (burn-managed), core team (6 FTE) | 15-18% |
 | **Maximum** | €1.2M | 24-month runway, full team (8 FTE) | 18-22% |
 
 **Recommended Target: €500K–€750K** (runway depends on burn and pace of validation)
@@ -86,7 +86,7 @@ Based on comparable seed rounds in quantitative finance software:
 | **Senior ML Engineer** | M1-18 | €90K | Model optimization, training pipeline |
 | **Backend Engineer** | M3-18 | €80K | API, integrations, scalability |
 | **DevOps/SRE** | M6-18 | €60K | Infrastructure, monitoring, reliability |
-| **QA Engineer** (contract) | M1-18 | €40K | Test automation, compliance testing |
+| **QA Engineer** (contract) | M1-18 | €40K | Test automation, governance/evidence testing |
 | **Product Manager** (fractional) | M1-18 | €35K | Roadmap, customer feedback |
 
 #### Sales & Marketing (€187.5K - 25%)
@@ -97,14 +97,14 @@ Based on comparable seed rounds in quantitative finance software:
 | **Conference Presence** | €35K | QuantCon, TradeTech, NeurIPS attendance |
 | **Content Marketing** | €25K | Whitepapers, case studies, webinars |
 | **Digital Marketing** | €20K | LinkedIn, SEO, paid campaigns |
-| **Partnership Development** | €15K | Prime broker, exchange partnerships |
+| **Partnership Development** | €15K | Connectivity/technology partners (customer-dependent) |
 | **Travel & Entertainment** | €12.5K | Customer meetings, due diligence |
 
 #### Operations & Compliance (€112.5K - 15%)
 
 | Category | Budget | Purpose |
 |----------|--------|---------|
-| **MiFID II/MAR Audit** | €40K | External compliance certification |
+| **MiFID II/MAR Legal Review** | €40K | External legal/compliance advisory review (non-legal; not a certification claim) |
 | **Legal Counsel** | €30K | Contracts, partnership agreements |
 | **Accounting & Tax** | €20K | Financial reporting, R&D tax credits |
 | **Office & Admin** | €12.5K | Co-working, tools, subscriptions |
@@ -165,7 +165,7 @@ Based on comparable seed rounds in quantitative finance software:
 - Hire Head of Sales (M7-8)
 - Complete patent filing (M8)
 - Launch partner program with 1 prime broker (M9)
-- Achieve SOC 2 Type I (M11)
+- SOC 2 readiness + optional Type I attestation (target; if pursued)
 
 **Cumulative Capital Deployed:** €500K (67% of total)
 
@@ -182,7 +182,7 @@ Based on comparable seed rounds in quantitative finance software:
 **Key Activities:**
 - Hire DevOps/SRE (M13)
 - Launch US market entry (M14)
-- Achieve SOC 2 Type II (M15)
+- SOC 2 readiness + optional Type II attestation (target; if pursued)
 - Series A preparation & data room (M16-18)
 
 **Total Capital Deployed:** €750K (100%)
@@ -192,7 +192,7 @@ Based on comparable seed rounds in quantitative finance software:
 ```
 M1-3: Design Partners ──────┐
                             ├──→ M4-6: Pilots + First Revenue
-M2-4: MiFID II Pre-Audit ──┘              │
+M2-4: MiFID II alignment review ──┘       │
                                           │
 M7-8: Sales Hire + Patents ───────────────┼──→ M7-10: Customer Scale
                                           │              │
@@ -403,7 +403,7 @@ M14: US Market Entry ───────────────────�
 | **IP Documentation** | ✅ Ready | Data Room / IP |
 | **Technical Documentation** | ✅ Ready | Internal Wiki |
 | **Customer Contracts** | 🟡 In Progress | Data Room / Sales |
-| **Compliance Certifications** | 🟡 In Progress | Data Room / Compliance |
+| **Security Attestations / Evidence Pack** | 🟡 In Progress | Data Room / Security & Compliance |
 
 ---
 

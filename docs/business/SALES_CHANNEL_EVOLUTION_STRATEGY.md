@@ -784,11 +784,11 @@ Per [Cognism](https://www.cognism.com/blog/the-pod-b2b-sales-team-of-the-future)
 - Win/loss analysis
 - Product roadmap alignment
 - Co-marketing planning
-- Certification status
+- Enablement status (training, playbooks, quality review)
 
 **Partner Tiers & Requirements:**
 
-| Tier | Annual Revenue | Certification | Support Level |
+| Tier | Annual Revenue | Enablement | Support Level |
 |------|---------------|---------------|---------------|
 | Registered | <$100K | Basic | Self-serve |
 | Silver | $100K-500K | Advanced | Partner manager |

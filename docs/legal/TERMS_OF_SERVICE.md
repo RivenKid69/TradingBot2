@@ -129,11 +129,11 @@ The Platform is **NOT**:
 
 - An investment adviser or financial adviser
 - A portfolio manager or asset manager
-- A broker-dealer or securities firm
+- A regulated financial intermediary or execution venue
 - A provider of personalized investment recommendations
 - A provider of financial, legal, or tax advice
 - **An order execution service** - Cloud NEVER executes orders; this is done locally by your Agent
-- **A custodian** - We do not hold your assets or credentials in Cloud
+- **An asset holding service** - We do not hold your assets or credentials in Cloud
 - **A provider of execution instructions** - We do not transmit live trading instructions to execute
 
 We are a **software vendor** providing:

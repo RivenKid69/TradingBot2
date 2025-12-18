@@ -8,10 +8,10 @@ Copy and customize these for your own use.
 | File | Mode | Asset Class | Description |
 |------|------|-------------|-------------|
 | `example_train_stocks.yaml` | train | equity | RL model training for stocks |
-| `example_live_stocks.yaml` | live | equity | Live trading (Alpaca) |
+| `example_live_stocks.yaml` | live | equity | Live execution (Alpaca) |
 | `example_train_crypto.yaml` | train | crypto | RL model training for digital assets (optional) |
 | `example_backtest_crypto.yaml` | sim | crypto | Backtesting/simulation (example config; adaptable) |
-| `example_live_crypto.yaml` | live | crypto | Live trading (Binance; optional) |
+| `example_live_crypto.yaml` | live | crypto | Live execution (Binance; optional) |
 
 ## Quick Start
 
@@ -37,7 +37,7 @@ cp configs/examples/example_backtest_crypto.yaml configs/my_backtest.yaml
 python script_backtest.py --config configs/my_backtest.yaml
 ```
 
-### 3. Live Trading
+### 3. Live Execution
 
 **IMPORTANT**: Before running live, always:
 1. Run `python scripts/doctor.py` to verify environment
@@ -136,6 +136,6 @@ Ensure environment variables are set (not in config file!)
 
 ## See Also
 
-- [CLAUDE.md](../../CLAUDE.md) - Full documentation
+- [claude.md](../../claude.md) - Full documentation
 - [docs/pipeline.md](../../docs/pipeline.md) - Signal pipeline
 - [docs/twin_critics.md](../../docs/twin_critics.md) - Twin critics architecture

@@ -13,7 +13,7 @@
 | Characteristic | Our Platform | Investment Firm |
 |----------------|--------------|-----------------|
 | Trade execution | ❌ No | ✅ Yes |
-| Asset custody | ❌ No | ✅ Yes |
+| Client asset holding | ❌ No | ✅ Yes |
 | Investment advice | ❌ No | ✅ Yes |
 | MiFID II applies directly | ❌ **No** | ✅ Yes |
 

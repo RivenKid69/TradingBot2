@@ -54,7 +54,7 @@
 - Завести **Scope Register** (entity type, sector, jurisdiction, exemptions) в `docs/compliance/technical_documentation/` с ссылками на клиентские контракты и сервисные описания.  
 - Построить **gap-матрицу**: Article 20, Article 21 (a–j), Article 23 vs текущие артефакты (`CYBERSECURITY_FRAMEWORK`, `RECOVERY_PROCEDURES`, `cross_regulation`).  
 - Оценить интерфейсы с соседними регуляторками (GDPR 72h, DORA 24h/72h/30d, AI Act 24h) — зафиксировать в единой таблице требований.  
-- Зафиксировать **assumptions/constraints** (например, SaaS-only, no custody, no retail users).  
+- Зафиксировать **assumptions/constraints** (например, SaaS-only, no asset holding, no retail users).  
 
 **Тесты (100% покрытия фазы)**:
 - Unit: классификация entity по Annex I/II (positive/negative cases).  

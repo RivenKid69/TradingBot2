@@ -1868,7 +1868,7 @@ class TestBrokerRateLimiter:
 □ Company registration documents
 □ Revenue projections (or current revenue)
 □ Number of users / API keys managed
-□ Security certifications (SOC 2, ISO 27001)
+□ Security attestations/audit reports (SOC 2, ISO 27001), if applicable
 □ Incident history (breaches, claims)
 □ Terms of Service (insurers review liability caps)
 □ Technical architecture overview

@@ -214,7 +214,7 @@ You are responsible for:
 | Jurisdiction | Typical Requirements |
 |--------------|---------------------|
 | United States | FINRA rules, SEC regulations, state licenses |
-| European Union | MiFID II compliance, national regulations |
+| European Union | MiFID II obligations (customer-specific), national regulations |
 | United Kingdom | FCA rules and authorizations |
 | Other | Local financial regulations |
 

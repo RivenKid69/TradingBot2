@@ -51,7 +51,7 @@ Approved phrasing (canonical):
 
 ## Legal-safe notes (non-legal)
 
-CustodiaCloud is positioned as a **software/ICT provider**. It does **not** provide investment advice, portfolio management, or trade recommendations, and it does **not** execute trades on behalf of clients.
+CustodiaCloud is positioned as a **software/ICT provider**. It does **not** provide investment advice, portfolio management, or trade recommendations, and it does **not** provide execution-as-a-service; live execution occurs only via the customer-controlled Agent and the customer’s own broker accounts (Cloud never sends live trading instructions).
 
 This document does not assert regulatory compliance or certification; CustodiaCloud is designed to **support** customer assessments via controls and evidence exports.
 
@@ -60,4 +60,3 @@ This document does not assert regulatory compliance or certification; CustodiaCl
 ## Licensing
 
 This repository is proprietary (see `LICENSE`). Any future open-core/repo split (e.g., Agent/SDK) would be published as separate repositories with explicit licensing and trademark terms.
-

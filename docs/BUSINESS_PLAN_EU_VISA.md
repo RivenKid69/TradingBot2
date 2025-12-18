@@ -60,7 +60,7 @@ This plan is designed to match how startup visa committees typically evaluate ap
 
 We are developing a **B2B risk-first quantitative research and deployment platform** that reduces the time and cost required for professional teams to develop, test, and deploy systematic strategies. The platform combines **risk-aware AI** with **research-grade execution simulation**, prioritizing risk controls and governance evidence over performance promises.
 
-CustodiaCloud is designed as an **ICT/software provider**: customers trade through their own broker accounts via their own customer-controlled Agent, while our Cloud provides research/simulation/monitoring (design intent; not legal advice).
+CustodiaCloud is designed as an **ICT/software provider**: customers execute via their own broker accounts through their own customer-controlled Agent, while our Cloud provides research/simulation/monitoring (design intent; not legal advice).
 
 ### 1.2 The Opportunity
 
@@ -103,7 +103,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 
 | Framework | What customers need | How CustodiaCloud supports | What we do not do |
 |----------|----------------------|----------------------------|-------------------|
-| **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No custody, no client secrets in Cloud, no Cloud live trading instructions, no execution on behalf of clients |
+| **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No client secrets/assets held in Cloud, no Cloud live trading instructions, no execution-as-a-service (execution remains customer-controlled via Agent) |
 | **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
 | **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming certification; clients run their vendor due diligence |
 | **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
@@ -149,7 +149,7 @@ To make institutional-grade quantitative trading infrastructure accessible to sm
 
 ### 2.2 Vision Statement
 
-To become the leading provider of risk-aware algorithmic trading infrastructure in Europe, enabling trading firms to focus on strategy development rather than infrastructure engineering.
+To become a leading provider of risk-first quantitative **research and deployment infrastructure** in Europe, enabling professional teams to focus on strategy development rather than rebuilding core engineering components.
 
 ### 2.3 Business Model
 
@@ -167,22 +167,17 @@ To become the leading provider of risk-aware algorithmic trading infrastructure 
 
 **Regulatory posture (design intent)**: Software Provider / ICT Provider (classification depends on activities and jurisdiction)
 
-We provide technology tools to trading firms who are themselves regulated. Our **Cloud-Controlled Execution Architecture (CCEA)** ensures clear regulatory boundaries:
+We provide B2B software/ICT tools to professional systematic trading organizations. Our **Cloud-Controlled Execution Architecture (CCEA)** ensures clear operational boundaries:
 
 **What We Are**:
-- Algorithmic trading research tools provider
-- Strategy development and backtesting platform
-- Infrastructure for users to run their own trading systems
+- B2B quantitative research and deployment platform provider (software/ICT)
+- Strategy development, simulation/backtesting, and deployment tooling
+- Infrastructure for customers to run customer-controlled execution via their own Agent
 
 **What We Are NOT** (enforced by CCEA architecture):
-
-| We Are NOT | Why (CCEA Design Commitment) |
-|------------|---------------------|
-| **Investment Adviser** | We do not provide personalized investment advice |
-| **Broker-Dealer** | Cloud NEVER executes trades; users execute via their own brokers |
-| **Custodian** | Cloud NEVER stores or accesses user trading credentials |
-| **Asset Manager** | We do not manage portfolios or make investment decisions |
-| **Execution Service** | Cloud NEVER sends orders; Agent runs locally under user control |
+- We do **not** provide investment advice, portfolio management, or trade recommendations.
+- CustodiaCloud Cloud does **not** store customer broker credentials and does **not** send live trading instructions (orders/targets/signals).
+- Live execution (if used) occurs only via the customer-controlled Agent and the customer’s own broker accounts.
 
 **CCEA Security Design Commitments** (enforced at architecture level):
 - Cloud NEVER stores broker API keys or trading credentials
@@ -191,15 +186,13 @@ We provide technology tools to trading firms who are themselves regulated. Our *
 - All live trading occurs ONLY in user's local Agent environment
 - Mandatory telemetry redaction prevents secret leakage
 
-**Regulatory Framework Positioning**:
+**Regulatory framework positioning (non-legal, illustrative)**:
 
-| Jurisdiction | Our Status | Client Responsibility |
+| Jurisdiction | Intended posture | Client responsibility |
 |--------------|------------|----------------------|
-| **EU/MiFID II** | Technology vendor | Client handles best execution, record-keeping |
-| **Netherlands (AFM)** | Software provider | Client holds required licenses |
-| **France (AMF)** | SaaS provider | Client handles AMF compliance |
-| **Germany (BaFin)** | Technology vendor | Client handles regulatory obligations |
-| **UK (FCA)** | Post-Brexit SaaS | Client handles FCA requirements |
+| **EU (MiFID II context)** | Technology vendor / software provider | Client handles their own regulatory obligations (e.g., record-keeping, best execution where applicable) |
+| **UK (FCA context)** | Software-as-a-Service | Client handles their own regulatory obligations |
+| **Other jurisdictions** | Deployment-dependent | Client handles local obligations; legal review recommended |
 
 **Analogous Companies**: Bloomberg Terminal, Refinitiv Eikon, QuantConnect (all software vendors, not regulated entities)
 
@@ -379,7 +372,7 @@ Our platform implements a **Cloud-Controlled Execution Architecture (CCEA)** tha
 This architecture provides clear regulatory benefits:
 
 1. **Not an Execution Venue**: Cloud never executes or transmits orders
-2. **Not a Custodian**: Cloud never holds or accesses trading credentials
+2. **No credential/asset holding in Cloud**: Cloud never holds or accesses customer trading credentials
 3. **Software Tool Classification**: Analogous to Bloomberg Terminal, QuantConnect
 4. **Client Control**: Users retain full control over execution decisions
 5. **Audit Trail**: Complete separation enables clear compliance documentation
@@ -1591,9 +1584,9 @@ We intentionally avoid presenting “multiplier” and tax-revenue calculations 
 | **Optimistic** | 30 | 70 | Faster enterprise sales |
 | **Accelerated (Funding)** | 35 | 100 | Series A in Y2 |
 
-**Commitment Statement**
+**Economic contribution statement (committee-facing, non-binding)**
 
-> We commit to creating a minimum of **10 high-quality technology jobs** within **3 years** of establishing our European headquarters, contributing over **€1.2 million annually in tax revenue** by Year 3, and generating a **total economic impact exceeding €10 million** over our first five years of operations in Europe. Our growth will prioritize local talent development, sustainable employment practices, and meaningful contribution to the European fintech ecosystem.
+> We plan to create high-skilled jobs as customer validation and revenue scale, starting with engineering, DevOps/SRE, product, sales/BD, and security/compliance operations. Hiring pace will be milestone-based and depends on customer demand and funding outcomes.
 
 ---
 

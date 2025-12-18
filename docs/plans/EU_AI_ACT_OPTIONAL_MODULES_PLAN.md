@@ -66,7 +66,7 @@
 | **Annex I** | Harmonised legislation | CE marking applicability depends on concrete product scope; verify with qualified counsel before any external statement. |
 
 **Design Intent Summary (Non-legal):**
-> The platform is designed as a **B2B software/ICT provider**. Users connect their own broker accounts; the Cloud does not hold assets/credentials and does not execute trades on behalf of clients. EU AI Act applicability and classification are deployment-dependent; we do not self-classify as “high-risk AI” in documentation. Optional modules may support Articles 9–17 as a conservative engineering posture.
+> The platform is designed as a **B2B software/ICT provider**. Users connect their own broker accounts; live execution occurs only via the customer-controlled Agent, and the Cloud does not hold assets/credentials or provide execution-as-a-service. EU AI Act applicability and classification are deployment-dependent; we do not self-classify as “high-risk AI” in documentation. Optional modules may support Articles 9–17 as a conservative engineering posture.
 
 ---
 ## 3. TARGET ARCHITECTURE
@@ -1031,7 +1031,7 @@ __all__: list[str]
 ```python
 # services/ai_act/__init__.py
 """
-EU AI Act Compliance Module - Tiered Architecture.
+EU AI Act Alignment/Evidence Module - Tiered Architecture.
 Classification:
     - Deployment-dependent applicability (counsel review required)
     - Optional modules may cover Articles 9–17, 43, 72 as a conservative engineering posture
@@ -1335,7 +1335,7 @@ class AnnexXISection(Enum):
     EVALUATION_RESULTS = "evaluation_results"
     KNOWN_LIMITATIONS = "known_limitations"
 class GPAIDocumentationGenerator:
-    """Generate Annex XI compliant documentation for GPAI models."""
+    """Generate Annex XI-aligned documentation for GPAI models."""
     # ... implementation
 ```
 **enterprise/high_risk_technical_docs.py** (Article 11, Annex IV):
@@ -1380,7 +1380,7 @@ class AnnexIVSection(Enum):
 
 
 class HighRiskDocumentationGenerator:
-    """Generate Annex IV compliant documentation for High-Risk AI systems."""
+    """Generate Annex IV-aligned documentation for High-Risk AI systems."""
 
     def __init__(
         self,

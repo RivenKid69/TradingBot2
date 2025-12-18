@@ -59,7 +59,7 @@ This document provides detailed technical specifications for enterprise deployme
 |------------|-------------------|
 | Software / ICT infrastructure | Investment advice |
 | Research and simulation tools | Order execution service |
-| Monitoring and lifecycle management | Custody of assets or credentials |
+| Monitoring and lifecycle management | Holding assets or credentials in Cloud |
 | Strategy development platform | Trade recommendations |
 
 ---

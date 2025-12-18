@@ -166,12 +166,12 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ### Why This Architecture?
 
-This platform is positioned as an **ICT Provider** (Information and Communication Technology Provider) under MiFID II, not as an Investment Firm:
+This platform is positioned as an **ICT Provider** (Information and Communication Technology Provider) under MiFID II, not as an Investment Firm (deployment- and activity-dependent; non-legal):
 
-1. **We provide software infrastructure** for algorithmic trading
-2. **Users trade through their own broker accounts** - we don't execute trades on their behalf
-3. **We don't hold client assets** - no custody or dealing
-4. **MiFID II doesn't apply directly to us** - we're a software vendor
+1. **We provide software infrastructure** for quantitative research and customer-controlled deployment
+2. **Users execute via their own broker accounts** through the customer-controlled Agent — Cloud does not execute orders
+3. **We don't hold client assets or credentials in Cloud** — no asset holding or dealing
+4. **MiFID II applicability is activity-dependent** — we design for a software vendor posture
 
 ### Module Positioning
 
@@ -186,7 +186,7 @@ This platform is positioned as an **ICT Provider** (Information and Communicatio
 │  • Pre-Trade Controls   │  • TCA Compliance                 │
 │  • Audit Trail          │  • Conformance Testing (RTS 6)    │
 │  • Time Sync            │  • Algorithm Registry             │
-│  • BCP                  │  • Certification                  │
+│  • BCP                  │  • Evidence exports               │
 ├─────────────────────────────────────────────────────────────┤
 │  "We provide the tools, clients use their own accounts"     │
 │  "MiFID II doesn't apply to us directly"                    │

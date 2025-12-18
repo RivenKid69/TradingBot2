@@ -30,7 +30,7 @@
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
-**Regulatory-First Design**: We are a **SOFTWARE PROVIDER**, not an Investment Adviser or Broker-Dealer.
+**Regulatory-First Design**: CustodiaCloud is a **software/ICT provider**. Cloud does not hold secrets and does not send live trading instructions (orders/targets/signals); execution remains customer-controlled via the Agent.
 
 Our platform implements **CCEA** - a strict architectural separation designed to support regulatory clarity:
 
@@ -64,13 +64,14 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 | Benefit | Description |
 |---------|-------------|
-| **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; we do not execute trades or hold credentials/assets) |
+| **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; Cloud does not execute orders or hold credentials/assets) |
 | **Enterprise-Grade Design** | Designed to satisfy institutional security requirements (secrets never leave user infra) |
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
 | **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 
 **Legal positioning (design intent):**
-- **NOT** an Investment Adviser, Broker-Dealer, Custodian, or Execution Service
+- B2B software/ICT product; **not** investment advice, portfolio management, or trade recommendations
+- **Not** an execution service: Cloud does not execute orders and does not send live trading instructions (orders/targets/signals); execution remains customer-controlled via the Agent
 - Designed for a software/ICT provider posture: Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
 - Enterprise posture: auditability, change control, evidence exports (DORA-aware vendor requirements)
 - Customers remain responsible for market data licensing/terms (bring-your-own data providers)
@@ -85,7 +86,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 | Framework | What customers need | How CustodiaCloud supports | What we do not do |
 |----------|----------------------|----------------------------|-------------------|
-| **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No custody, no client secrets in Cloud, no Cloud live trading instructions, no execution on behalf of clients |
+| **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No client secrets/assets held in Cloud, no Cloud live trading instructions, execution remains customer-controlled via the Agent |
 | **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
 | **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming certification; clients run their vendor due diligence |
 | **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
@@ -639,9 +640,9 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 
 | Funding | Burn Rate | Runway | Milestone |
 |---------|-----------|--------|-----------|
-| €500K | Full (€45K/mo) | 14 mo | €150K ARR |
-| €500K | Reduced (€25K/mo) | 20 mo | €100K ARR |
-| €750K | Full (€45K/mo) | 18 mo | €250K ARR |
+| €500K | Burn-managed (€25K/mo) | 20 mo | Validation + pilot conversion |
+| €750K | Burn-managed (€35K/mo) | 21 mo | Validation + earlier key hires |
+| €750K | Accelerated (€45K/mo) | 18 mo | Faster hiring / higher spend |
 
 ### Why These Numbers Are Credible
 
@@ -670,7 +671,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 ### Our Advantage
 
 - **2+ years of development** completed
-- **Designed for production deployment** with live trading capability
+- **Designed for production deployment** with live execution via customer-controlled Agent
 - **Research-grade** execution models
 - **Enterprise-quality** testing infrastructure
 
@@ -718,7 +719,7 @@ For more information or to schedule a demo, please contact:
 **Our position: Software vendor, not regulated financial entity**
 
 We provide technology tools to trading firms who are themselves regulated. We do not:
-- Execute trades on behalf of clients
+- Provide execution-as-a-service or discretionary execution on behalf of clients
 - Manage client assets
 - Provide investment advice or recommendations
 - Handle client funds

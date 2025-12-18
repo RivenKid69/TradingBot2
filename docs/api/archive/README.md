@@ -4,7 +4,7 @@
 
 **WARNING: These modules are NOT for ICT Providers!**
 
-These modules implement MiFID II requirements specifically for **Investment Firms** (financial entities that execute trades on behalf of clients). Importing this package emits a `DeprecationWarning`.
+These modules implement MiFID II requirements specifically for **Investment Firms** (financial entities that execute client orders and run related reporting/controls). Importing this package emits a `DeprecationWarning`.
 
 ## Who Should Use This?
 
@@ -15,9 +15,9 @@ These modules implement MiFID II requirements specifically for **Investment Firm
 
 ## Who Should NOT Use This?
 
-- **ICT Providers** (software vendors) - that's us!
+- **ICT Providers** (software vendors) - that's CustodiaCloud
 - **Technology platforms** that don't hold client assets
-- **SaaS providers** where users trade through their own brokers
+- **SaaS providers** where users execute via their own broker accounts (customer-controlled)
 
 ## Module Overview
 

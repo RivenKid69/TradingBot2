@@ -132,12 +132,12 @@ Under CCEA architecture, broker credentials are handled differently depending on
 | Mode | Credential Storage | Who Processes | Our Access |
 |------|-------------------|--------------|------------|
 | **Research SaaS** | Not applicable | Not applicable | N/A |
-| **Live Trading (Agent)** | Your local Agent | Your hardware | **NONE** |
+| **Live Execution (Agent)** | Your local Agent | Your hardware | **NONE** |
 | **Enterprise (Self-Hosted)** | Your infrastructure | Your servers | **NONE** |
 
-#### 2.3.1 Agent Local Vault (Live Trading Mode)
+#### 2.3.1 Agent Local Vault (Live Execution Mode)
 
-When you deploy a local Agent for live trading:
+When you deploy a local Agent for live execution:
 
 | Data Type | Storage Location | Encryption | Our Access |
 |-----------|-----------------|------------|------------|
@@ -148,8 +148,8 @@ When you deploy a local Agent for live trading:
 **How the Agent Vault Works:**
 1. Credentials are encrypted on YOUR hardware with keys derived from YOUR passphrase
 2. Master key never leaves your Agent's secure enclave
-3. Credentials are decrypted only in-memory when executing orders
-4. We have no ability to decrypt or access these credentials
+3. Credentials are decrypted only in-memory inside the Agent when executing orders
+4. CustodiaCloud Cloud has no ability to decrypt or access these credentials
 
 #### 2.3.2 What We DO NOT Store
 
@@ -474,7 +474,7 @@ You have the right to object to processing based on legitimate interests. We wil
 
 You have the right not to be subject to decisions based solely on automated processing that produce legal or significant effects.
 
-**Note:** Your local Agent executes trades based on YOUR strategies, not automated decisions by us. The Cloud Platform manages strategy deployment and monitoring only.
+**Note:** Your local Agent executes orders based on YOUR strategies, not automated decisions by us. The Cloud Platform manages strategy deployment and monitoring only.
 
 ### 7.8 Right to Withdraw Consent (Article 7(3))
 
@@ -482,11 +482,7 @@ Where processing is based on consent, you can withdraw consent at any time. With
 
 ### 7.9 Right to Lodge a Complaint
 
-You have the right to lodge a complaint with a supervisory authority:
-
-- **Netherlands:** Autoriteit Persoonsgegevens (Dutch DPA)
-  - Website: https://autoriteitpersoonsgegevens.nl
-- **Your country:** Contact your local data protection authority
+You have the right to lodge a complaint with your local data protection supervisory authority (EEA/UK as applicable).
 
 ### 7.10 DSAR Scope Boundaries (CCEA-specific)
 
@@ -651,7 +647,7 @@ We do not use advertising cookies or allow third-party advertising trackers.
 
 We implement comprehensive security controls:
 
-- **Encryption at rest**: AES-256 for sensitive data, including broker credentials
+- **Encryption at rest**: AES-256 for sensitive Cloud data (e.g., account data, audit logs, redacted telemetry); broker credentials remain in the customer-controlled Agent environment
 - **Encryption in transit**: TLS 1.3 for all communications
 - **Key management**: Hardware Security Modules (HSM) for master keys
 - **Access controls**: Role-based access, multi-factor authentication
