@@ -15,6 +15,8 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 - Register of Information requirements (DORA Art. 28(3))
 - Concentration risk assessment (DORA Art. 29)
 
+> **Note on Vendor Certifications**: All subcontractor certifications listed in this register are vendor-reported and should be independently verified via the vendor's trust center or compliance portal. Links to vendor trust centers are provided where available. Clients should conduct their own due diligence and request current SOC2 reports or certification evidence directly from vendors as needed for their compliance requirements.
+
 ---
 
 ## 2. Subcontractor Summary
@@ -68,11 +70,13 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Subcontracting notification | ✓ Via AWS notifications | AWS compliance updates |
 | Exit support | ✓ S3 data export | AWS documentation |
 
-**Certifications:**
-- SOC 1, 2, 3 Type II
-- ISO 27001, 27017, 27018
-- C5 (Germany)
-- PCI DSS Level 1
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- SOC 1, 2, 3 Type II (vendor-reported; verify via [AWS Artifact](https://aws.amazon.com/artifact/))
+- ISO 27001, 27017, 27018 (vendor-reported; verify via AWS Compliance)
+- C5 (Germany) (vendor-reported)
+- PCI DSS Level 1 (vendor-reported)
+
+**Last Verification**: Certification status should be verified quarterly via AWS Artifact portal and [AWS Compliance](https://aws.amazon.com/compliance/) page.
 
 **Criticality Assessment:**
 | Factor | Assessment |
@@ -116,10 +120,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Audit rights | ✓ Via SOC2 | Cloudflare Trust Hub |
 | EU data processing | ✓ Configurable | Regional services |
 
-**Certifications:**
-- SOC 2 Type II
-- ISO 27001
-- PCI DSS
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- SOC 2 Type II (vendor-reported; verify via [Cloudflare Trust Hub](https://www.cloudflare.com/trust-hub/compliance-resources/))
+- ISO 27001 (vendor-reported; verify via Cloudflare Trust Hub)
+- PCI DSS (vendor-reported)
+
+**Last Verification**: Certification status should be verified quarterly via Cloudflare Trust Hub.
 
 **Criticality Assessment:**
 | Factor | Assessment |
@@ -164,10 +170,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | EU data residency | ✓ Enabled | EU site configuration |
 | Audit rights | ✓ Via SOC2 | Datadog Trust Center |
 
-**Certifications:**
-- SOC 2 Type II
-- ISO 27001
-- HIPAA eligible
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- SOC 2 Type II (vendor-reported; verify via [Datadog Trust Center](https://www.datadoghq.com/security/))
+- ISO 27001 (vendor-reported; verify via Datadog Trust Center)
+- HIPAA eligible (vendor-reported)
+
+**Last Verification**: Certification status should be verified quarterly via Datadog Trust Center.
 
 **Criticality Assessment:**
 | Factor | Assessment |
@@ -202,10 +210,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Data Retention | 90 days |
 | Sensitive Data | Scrubbed by configuration |
 
-**Certifications:**
-- SOC 2 Type II
-- ISO 27001
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- SOC 2 Type II (vendor-reported; verify via [Sentry Security](https://sentry.io/security/))
+- ISO 27001 (vendor-reported; verify via Sentry Security)
 - GDPR commitments (vendor-asserted)
+
+**Last Verification**: Certification status should be verified quarterly via Sentry Security page.
 
 **Criticality Assessment:**
 | Factor | Assessment |
@@ -246,9 +256,11 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | DPA with SCCs | ✓ Signed | Twilio DPA |
 | Data minimization | ✓ Configured | Limited data sent |
 
-**Certifications:**
-- SOC 2 Type II
-- ISO 27001
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- SOC 2 Type II (vendor-reported; verify via [Twilio Trust Center](https://www.twilio.com/en-us/trust-center))
+- ISO 27001 (vendor-reported; verify via Twilio Trust Center)
+
+**Last Verification**: Certification status should be verified quarterly via Twilio Trust Center.
 
 **Criticality Assessment:**
 | Factor | Assessment |
@@ -291,10 +303,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | PCI DSS compliance | ✓ Level 1 | Attestation of Compliance |
 | SCA compliance | ✓ Implemented | Stripe documentation |
 
-**Certifications:**
-- PCI DSS Level 1
-- SOC 1, 2 Type II
-- ISO 27001
+**Certifications** *(vendor-reported; verify via vendor trust centers)*:
+- PCI DSS Level 1 (vendor-reported; verify via [Stripe Compliance](https://stripe.com/docs/security/stripe))
+- SOC 1, 2 Type II (vendor-reported; verify via Stripe Compliance)
+- ISO 27001 (vendor-reported; verify via Stripe Compliance)
+
+**Last Verification**: Certification status should be verified quarterly via Stripe Compliance page and [Stripe Trust Center](https://stripe.com/trust-center).
 
 **Criticality Assessment:**
 | Factor | Assessment |

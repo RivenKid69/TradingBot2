@@ -3,8 +3,10 @@
 
 **Version**: 1.0
 **Date**: 2025-01-17 (DORA Application Date)
-**Status**: Implementation complete
+**Status**: Template available
 **Legal Reference**: Regulation (EU) 2022/2554 Article 30(3)(a-j)
+
+> **⚠️ TEMPLATE ONLY — NOT AN EXECUTED AGREEMENT**: This document is a contract template with illustrative SLA targets and design goals. CustodiaCloud is a pre-seed company. Actual contractual terms, SLA commitments, and operational capabilities will be negotiated and validated per engagement. Do not treat this template as a binding commitment.
 
 ---
 
@@ -21,22 +23,24 @@ This Addendum supplements the base DORA ICT Service Provisions (Art. 30(2)) with
 
 ## ADDENDUM: CRITICAL/IMPORTANT FUNCTION PROVISIONS
 
+> **IMPORTANT**: All SLA targets, response times, and performance metrics in this template are **illustrative defaults** subject to negotiation and infrastructure validation per engagement. Actual service levels must be verified against operational capacity and defined in the executed agreement after engineering sign-off. See `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` for capacity assessment framework.
+
 ### Article 30(3)(a) — FULL SERVICE LEVEL AGREEMENTS
 
-**A.1 Quantitative Performance Targets**
+**A.1 Quantitative Performance Targets** *(illustrative; actual SLA per executed agreement)*
 
-| Service | Metric | Target | Measurement | Breach Consequence |
+| Service | Metric | Target (Illustrative) | Measurement | Breach Consequence |
 |---------|--------|--------|-------------|-------------------|
-| Trading Platform | Availability | 99.95% | Monthly | Service credits |
-| Trading Platform | Order Latency P95 | <100ms | Per transaction | Incident escalation |
-| Trading Platform | Order Latency P99 | <250ms | Per transaction | Breach notification |
-| API Gateway | Availability | 99.95% | Monthly | Service credits |
-| API Gateway | Response Time P95 | <200ms | Hourly | Performance review |
-| Market Data | Data Freshness | <50ms | Per tick | Alert & investigation |
-| Market Data | Completeness | 99.99% | Daily | Gap analysis |
-| Risk Engine | Calculation Time | <5s | Per request | Capacity review |
-| Backup Systems | RPO | 15 minutes | Per backup | Immediate escalation |
-| Backup Systems | RTO | 4 hours | Per DR test | BCP review |
+| Trading Platform | Availability | 99.95% (target) | Monthly | Service credits |
+| Trading Platform | Order Latency P95 | <100ms (target) | Per transaction | Incident escalation |
+| Trading Platform | Order Latency P99 | <250ms (target) | Per transaction | Breach notification |
+| API Gateway | Availability | 99.95% (target) | Monthly | Service credits |
+| API Gateway | Response Time P95 | <200ms (target) | Hourly | Performance review |
+| Market Data | Data Freshness | <50ms (target) | Per tick | Alert & investigation |
+| Market Data | Completeness | 99.99% (target) | Daily | Gap analysis |
+| Risk Engine | Calculation Time | <5s (target) | Per request | Capacity review |
+| Backup Systems | RPO | 15 minutes (target) | Per backup | Immediate escalation |
+| Backup Systems | RTO | 4 hours (target) | Per DR test | BCP review |
 
 **A.2 Service Credits**
 
@@ -290,13 +294,13 @@ Provider SHALL implement:
 - Automated failover capabilities
 - Regular BCP testing with documented results
 
-**H.2 Service Availability Guarantees**
+**H.2 Service Availability Design Targets (Illustrative)**
 
-For critical functions:
-- No single point of failure in production systems
-- Geographic redundancy for data storage
-- Maximum 4-hour RTO for complete service recovery
-- Maximum 15-minute RPO for data recovery
+For critical functions (design targets; actual commitments per executed agreement):
+- No single point of failure in production systems (design goal)
+- Geographic redundancy for data storage (design goal)
+- Design target: 4-hour RTO for complete service recovery (validation pending DR testing)
+- Design target: 15-minute RPO for data recovery (validation pending DR testing)
 
 **H.3 BCP Testing Evidence**
 

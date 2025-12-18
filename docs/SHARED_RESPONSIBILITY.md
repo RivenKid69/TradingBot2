@@ -126,15 +126,15 @@ INCIDENT OCCURS
 
 ## 3. Provider Services and Responsibilities
 
-### 3.1 What We Provide (Contractual Commitments)
+### 3.1 What We Provide (Design Commitments)
 
-**Note**: These are contractual commitments per signed agreements. Specific SLA targets and support coverage are defined in the applicable service agreement.
+**Note**: CustodiaCloud is a pre-seed company. These are design commitments and roadmap targets intended to become contractual terms upon customer contract execution. Actual SLA targets and support coverage will be defined in executed service agreements after operational validation.
 
 | Category | Description | Evidence |
 |----------|-------------|----------|
 | **Platform Security** | SOC2 Type II readiness roadmap, encryption, access controls | SOC2 report (when available, per roadmap) |
-| **Availability** | Target 99.9% SLA (per contract), multi-AZ deployment | Monthly SLA reports |
-| **Incident Support** | Incident response per contract tier, client notifications | Incident reports |
+| **Availability** | Design target: 99.9% availability (actual SLA contract-specific) | Monthly SLA reporting (when operational) |
+| **Incident Support** | Incident response design (contract tier-dependent when operational) | Incident reporting workflow |
 | **Audit Support** | Client and NCA audit cooperation | Audit records |
 | **Data Portability** | Standard export formats, no lock-in | Export functionality |
 | **Subcontractor Transparency** | Full subcontractor documentation | Subcontractor register |

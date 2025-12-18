@@ -1307,9 +1307,12 @@ incident_notification_operations:
   # =========================================================================
   # ON-CALL STRUCTURE (Required for <30min notification SLA)
   # =========================================================================
+  # NOTE: This describes the TARGET on-call structure. Actual on-call coverage
+  # and response times are validated in docs/operations/ON_CALL_CAPACITY_VALIDATION.md.
+  # Do not commit to 24/7 coverage in contracts until team capacity supports it.
   on_call:
-    rotation: "Weekly rotation"
-    coverage: "24/7/365"
+    rotation: "Weekly rotation (design target)"
+    coverage: "24/7/365 (requires minimum 4 FTE; verify capacity before SLA commitment)"
     team_size_minimum: 4  # For sustainable rotation
     escalation_path:
       level_1:
@@ -1436,6 +1439,8 @@ incident_notification_operations:
 ```
 
 ### 5.4.2 Client SLA Tiers — NEW
+
+> **IMPORTANT**: SLA targets below are illustrative design goals for planning infrastructure requirements. Actual SLA commitments are defined in executed service agreements after infrastructure validation and engineering sign-off per the SLA Guardrails framework (Section 5.4.4 and `services/dora/sla_guardrails.py`). Pre-seed companies should not commit to SLAs beyond proven operational capacity.
 
 Different clients require different service levels. Define tiered SLAs with realistic infrastructure backing:
 

@@ -11,15 +11,17 @@
 
 ## 1. EU-only Commitment
 
-**The Platform Provider commits to using only EU-based subprocessors for all personal data processing.**
+**The Platform is designed to use only EU-based subprocessors for all personal data processing.**
 
-This commitment is:
-- A binding term of the Data Processing Agreement (DPA)
-- Enforced by automated EU-only drift checks
-- Verified quarterly through subprocessor audits
-- Communicated to customers in the Privacy Policy
+This design commitment:
+- Is intended to become a binding DPA term upon contract execution
+- Is designed to be enforced by automated EU-only drift checks (test coverage available)
+- Is planned to be verified quarterly through subprocessor audits (when operational)
+- Is communicated to customers in the Privacy Policy
 
-**No personal data is transferred outside the European Union.**
+**No personal data is designed to be transferred outside the European Union in standard deployment configurations.**
+
+> **Note on Vendor Certifications**: All subcontractor certifications listed in this register are vendor-reported. Where specific certifications are referenced, clients should verify current status directly via the vendor's trust center or compliance portal (links provided where available). Certification status should be reviewed quarterly as part of third-party risk management.
 
 ---
 
@@ -313,25 +315,29 @@ The platform implements automated EU-only drift checks:
 
 ## 6. DPA Repository
 
-### 6.1 Signed DPAs
+### 6.1 DPA Templates
 
-| Subprocessor | DPA Version | Signed Date | Signatory | Storage Location |
-|--------------|-------------|-------------|-----------|------------------|
-| AWS | AWS DPA v2.0 | 2024-01-15 | DPO | `/legal/dpas/aws_dpa_signed.pdf` |
-| Supabase | Supabase DPA v1.0 | 2024-01-15 | DPO | `/legal/dpas/supabase_dpa_signed.pdf` |
-| Stripe | Stripe DPA v2.0 | 2024-01-15 | DPO | `/legal/dpas/stripe_dpa_signed.pdf` |
-| SendGrid | Twilio DPA v1.0 | 2024-01-15 | DPO | `/legal/dpas/sendgrid_dpa_signed.pdf` |
-| Sentry | Sentry DPA v1.0 | 2024-01-15 | DPO | `/legal/dpas/sentry_dpa_signed.pdf` |
+> **Note**: CustodiaCloud is a pre-seed company. DPA templates are available for execution. Actual DPA execution dates will be recorded upon customer contract signature.
 
-### 6.2 DPA Review Schedule
+| Subprocessor | DPA Template | DPA Status | Execution Plan | Template Location |
+|--------------|--------------|------------|----------------|-------------------|
+| AWS | AWS DPA v2.0 | Template available | Upon customer contract | `/legal/dpas/aws_dpa_template.pdf` |
+| Supabase | Supabase DPA v1.0 | Template available | Upon customer contract | `/legal/dpas/supabase_dpa_template.pdf` |
+| Stripe | Stripe DPA v2.0 | Template available | Upon customer contract | `/legal/dpas/stripe_dpa_template.pdf` |
+| SendGrid | Twilio DPA v1.0 | Template available | Upon customer contract | `/legal/dpas/sendgrid_dpa_template.pdf` |
+| Sentry | Sentry DPA v1.0 | Template available | Upon customer contract | `/legal/dpas/sentry_dpa_template.pdf` |
 
-| Subprocessor | Last Review | Next Review | Reviewer |
-|--------------|-------------|-------------|----------|
-| AWS | 2025-01-15 | 2025-04-15 | DPO |
-| Supabase | 2025-01-15 | 2025-04-15 | DPO |
-| Stripe | 2025-01-15 | 2025-04-15 | DPO |
-| SendGrid | 2025-01-15 | 2025-04-15 | DPO |
-| Sentry | 2025-01-15 | 2025-04-15 | DPO |
+### 6.2 DPA Review Schedule (When Operational)
+
+> **Note**: Review schedule will commence upon first customer contract execution.
+
+| Subprocessor | Review Frequency | First Review | Reviewer Role |
+|--------------|------------------|--------------|---------------|
+| AWS | Quarterly | Upon operational commencement | DPO |
+| Supabase | Quarterly | Upon operational commencement | DPO |
+| Stripe | Quarterly | Upon operational commencement | DPO |
+| SendGrid | Quarterly | Upon operational commencement | DPO |
+| Sentry | Quarterly | Upon operational commencement | DPO |
 
 ---
 
@@ -344,10 +350,10 @@ For customer due diligence and audits, the following evidence is available:
 | Evidence Type | Description | Location |
 |---------------|-------------|----------|
 | Subprocessor list | This document | `docs/compliance/SUBPROCESSORS_REGISTER.md` |
-| Drift check reports | Automated EU verification | Evidence pack export |
-| DPA copies | Signed agreements | Available on request |
+| Drift check reports | Automated EU verification (test coverage) | Evidence pack export (when operational) |
+| DPA templates | Template agreements for execution | Available on request |
 | Region configuration | Infrastructure settings | Evidence pack export |
-| Compliance certifications | SOC 2, ISO 27001 | Available on request |
+| Vendor certifications | Vendor-reported; verify via vendor trust centers | Vendor compliance portals |
 
 ### 7.2 Customer Access
 
@@ -366,6 +372,7 @@ Request via: dpo@[company-domain].com
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2025-12-16 | Compliance Team | Initial release - GDPR Phase 1 |
+| 1.0.1 | 2025-12-19 | Due Diligence Audit | **Critical correction**: Replaced absolute claims with Canon-compliant language. "Commits" → "designed to use"; "Signed Date" → "Template available"; "Verified quarterly" → "Planned to verify quarterly (when operational)"; "Enforced by" → "Designed to be enforced"; "No personal data transferred" → "No personal data designed to be transferred in standard deployment". |
 
 ---
 

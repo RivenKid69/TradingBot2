@@ -20,8 +20,8 @@ This document provides pre-contractual security information per DORA Article 28(
 | **Certifications** | SOC2 Type II Roadmap | Target 2027 (see Section 2) |
 | **Infrastructure** | AWS (Frankfurt) | EU data residency (by default) |
 | **Encryption** | AES-256 / TLS 1.3 | At-rest and in-transit |
-| **Availability** | Target 99.9% | Multi-AZ deployment (design target) |
-| **Incident Response** | Designed for 24/7 | Target 15-minute critical response |
+| **Availability** | Design target: 99.9% | Multi-AZ deployment (design target; actual SLA contract-specific) |
+| **Incident Response** | Planned: 24/7 on-call | Design target: 15-minute critical response (operational validation pending) |
 | **DORA Alignment** | Designed to support | Art. 30 contract templates available |
 
 ---
@@ -183,7 +183,7 @@ This document provides pre-contractual security information per DORA Article 28(
 
 > **Note**: These are design targets for a pre-seed company. DR testing will be conducted as infrastructure is established. Actual RTO/RPO commitments are contract-specific.
 
-| Scenario | RTO (Target) | RPO (Target) | Testing Plan |
+| Scenario | RTO (Untested Design Target) | RPO (Untested Design Target) | Testing Plan |
 |----------|-----|-----|-------------|
 | Component Failure | 30 min | 0 (real-time) | Monthly (planned) |
 | Availability Zone Failure | 1 hour | 15 min | Quarterly (planned) |
@@ -204,16 +204,18 @@ This document provides pre-contractual security information per DORA Article 28(
 
 - **Multi-AZ Deployment**: Primary and standby in different availability zones
 - **Automated Failover**: Database and application layer
-- **Regular Testing**: Quarterly DR tests with documented results
+- **Regular Testing**: Quarterly DR tests planned (with documented results when operational)
 - **Runbooks**: Documented recovery procedures for all scenarios
 
 ---
 
 ## 7. Incident Response
 
-### 7.1 Response Times
+### 7.1 Response Time Design Targets (Pre-Operational)
 
-| Severity | Detection | Response | Client Notification |
+> **Note**: These are design targets for planning infrastructure. Actual response times will be validated during operations and defined in executed service agreements. For operational capacity validation, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
+
+| Severity | Detection (Target) | Response (Target) | Client Notification (Target) |
 |----------|-----------|----------|-------------------|
 | Critical | 5 min | 15 min | 30 min |
 | High | 15 min | 30 min | 1 hour |
@@ -243,7 +245,9 @@ For DORA-regulated clients:
 
 ### 8.1 Key Subcontractors
 
-| Provider | Service | Criticality | Certifications |
+> **Note**: Certifications are vendor-reported. Clients should verify current status via vendor trust centers (see `docs/contracts/SUBCONTRACTOR_REGISTER.md` for verification links).
+
+| Provider | Service | Criticality | Certifications (Vendor-Reported) |
 |----------|---------|-------------|----------------|
 | AWS | Cloud Infrastructure | Critical | SOC2, ISO27001, C5 |
 | Cloudflare | CDN/Security | High | SOC2, ISO27001 |
@@ -363,6 +367,7 @@ For contracted clients:
 | 1.0 | 2025-01-17 | Initial public release |
 | 1.1 | 2025-12-17 | Updated regulatory alignment (GDPR, EU AI Act, MiFID II - designed to align), added GDPR compliance details |
 | 1.2 | 2025-12-18 | **Critical correction**: Removed false certification claims. SOC2/pentest/audit status now accurately reflects roadmap (planned) vs current state. Added "Certification Roadmap" section with honest timelines. |
+| 1.3 | 2025-12-19 | **Due diligence audit corrections**: Replaced SLA/RTO/incident response absolute claims with Canon-compliant design targets. "Target 99.9%" → "Design target: 99.9% (actual SLA contract-specific)"; "Response Times" → "Response Time Design Targets (Pre-Operational)"; RTO/RPO column headers → "Untested Design Target"; Added vendor-reported note to certifications table; "Designed for 24/7" → "Planned: 24/7 on-call (operational validation pending)". |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team
