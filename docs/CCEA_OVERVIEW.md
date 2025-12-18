@@ -10,10 +10,10 @@
 
 ## Executive Summary
 
-CCEA (Cloud-Controlled Execution Architecture) defines a strict security boundary between **Cloud** (research/monitoring/lifecycle management) and **Agent** (execution/secrets/risk enforcement). This architecture ensures that:
+CCEA (Cloud-Controlled Execution Architecture) defines a strict security boundary between **Cloud** (research/monitoring/lifecycle management) and **Agent** (execution/secrets/risk enforcement). This architecture is designed to ensure that:
 
-- **Cloud NEVER has access to trading credentials or order execution capabilities**
-- **All live execution occurs only in the customer-controlled Agent environment**
+- **By design, Cloud does not store trading credentials and does not generate or transmit live trading instructions (orders/targets/signals)**
+- **Live execution is designed to occur only in the customer-controlled Agent environment**
 - **Clear regulatory positioning as Software Provider, not Investment Adviser**
 
 ---
@@ -424,16 +424,16 @@ Secrets (broker API keys, master keys) are protected by:
    - OS keychain preferred (macOS/Linux/Windows)
    - Encrypted fallback with env var master key
 
-2. TRANSMISSION: Never to Cloud
-   - Redaction middleware is mandatory
+2. TRANSMISSION: Designed to stay local
+   - Redaction middleware is mandatory by design
    - Pattern matching for typical secret formats
 
-3. LOGGING: Never logged
-   - Automatic redaction in all logs
-   - Support dumps never contain secrets
+3. LOGGING: Designed to be redacted
+   - Automatic redaction in all logs by design
+   - Support dumps designed to exclude secrets
 
-4. TELEMETRY: Never transmitted
-   - Env vars not logged
+4. TELEMETRY: Designed to be redacted
+   - Env vars not logged by design
    - Account IDs masked
    - IP addresses anonymized (optional)
 ```

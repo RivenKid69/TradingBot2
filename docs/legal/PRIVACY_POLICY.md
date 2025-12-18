@@ -125,7 +125,7 @@ When you use research/backtesting features, we process:
 
 ### 2.3 Broker Credentials (CCEA Architecture)
 
-**IMPORTANT - CREDENTIALS ARE NEVER STORED IN OUR CLOUD**
+**IMPORTANT - CCEA ARCHITECTURE: CREDENTIALS ARE DESIGNED TO STAY LOCAL**
 
 Under CCEA architecture, broker credentials are handled differently depending on your usage mode:
 
@@ -145,15 +145,15 @@ When you deploy a local Agent for live execution:
 | API Secret | Agent local vault | AES-256-GCM | **NONE** |
 | Passphrase | Agent local vault | AES-256-GCM | **NONE** |
 
-**How the Agent Vault Works:**
-1. Credentials are encrypted on YOUR hardware with keys derived from YOUR passphrase
-2. Master key never leaves your Agent's secure enclave
-3. Credentials are decrypted only in-memory inside the Agent when executing orders
-4. CustodiaCloud Cloud has no ability to decrypt or access these credentials
+**How the Agent Vault Works (by design):**
+1. Credentials are designed to be encrypted on YOUR hardware with keys derived from YOUR passphrase
+2. Master key is designed to remain within your Agent's local environment
+3. Credentials are designed to be decrypted only in-memory inside the Agent when executing orders
+4. CustodiaCloud Cloud is designed without the ability to decrypt or access these credentials
 
 #### 2.3.2 What We DO NOT Store
 
-Our Cloud infrastructure **NEVER** stores or processes:
+Our Cloud infrastructure is designed to not store or process:
 - Broker API keys
 - Broker API secrets
 - Exchange credentials
@@ -286,15 +286,15 @@ We never sell, rent, or trade your personal information to third parties for mar
 
 ### 5.3 Sub-Processors (EU-only)
 
-**All sub-processors are located within the European Union.** We do not use any sub-processors outside the EU.
+**Planned sub-processor configuration: EU-only.** Our current infrastructure design specifies EU-region sub-processors. Actual sub-processor list is maintained at [docs/compliance/SUBPROCESSORS_REGISTER.md](../compliance/SUBPROCESSORS_REGISTER.md).
 
-| Provider | Purpose | Region (EU-only) | DPA Status | Last Review |
-|----------|---------|------------------|------------|-------------|
-| AWS (Amazon Web Services) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) | 2025-01-15 |
-| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Signed | 2025-01-15 |
-| Stripe | Payment processing | EU (Ireland) | Signed (Stripe DPA) | 2025-01-15 |
-| AWS SES / SendGrid | Transactional email | EU | Signed | 2025-01-15 |
-| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Signed | 2025-01-15 |
+| Provider | Purpose | Region (EU-only) | DPA Status | Notes |
+|----------|---------|------------------|------------|-------|
+| AWS (Amazon Web Services) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Template available | Standard AWS DPA |
+| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Template available | Standard Supabase DPA |
+| Stripe | Payment processing | EU (Ireland) | Template available | Standard Stripe DPA |
+| AWS SES / SendGrid | Transactional email | EU | Template available | Standard Twilio DPA |
+| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Template available | Standard Sentry DPA |
 
 **Sub-processor change notification:**
 - **Notification period:** 30 days prior to new sub-processor engagement

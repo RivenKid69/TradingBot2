@@ -130,13 +130,13 @@ This section describes the product’s design intent for EU-facing deployments. 
 
 ### 1.7 Key Milestones (12 Months Post-Funding)
 
-| Quarter | Milestone | Success Metric |
-|---------|-----------|----------------|
+| Quarter | Milestone | Success Metric (target/illustrative) |
+|---------|-----------|-------------------------------------|
 | **Q1** | EU Entity Establishment | Legal entity in Estonia (OÜ) (primary) |
-| **Q1** | First Pilot Customers | 3 signed pilot agreements |
+| **Q1** | First Pilot Customers | 3 signed pilot agreements (target) |
 | **Q2** | Dashboard MVP Launch | Web-based client interface |
-| **Q2** | First Revenue | EUR 40,000+ ARR |
-| **Q3** | Product-Market Fit | 2+ customers expanding usage |
+| **Q2** | First Revenue | EUR 40,000+ ARR (illustrative target) |
+| **Q3** | Product-Market Fit | 2+ customers expanding usage (target) |
 | **Q4** | Series A Preparation | milestone-based readiness (revenue dependent; illustrative) |
 
 ---

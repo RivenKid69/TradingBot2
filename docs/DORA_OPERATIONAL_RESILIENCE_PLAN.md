@@ -516,7 +516,7 @@ art_30_3_detailed_implementation:
     pooled_audit_option:
       available: true
       conditions: "Per Art. 30(4), client may use pooled audits"
-      our_support: "Annual third-party audit report provided"
+      our_support: "Pooled audit documentation available upon request (when operational)"
 
   # Art. 30(3)(f) - Exit Strategies
   exit_strategy:

@@ -295,19 +295,19 @@ security_pipeline:
 │  │  │  (Encrypted, Isolated)│  │                                            │
 │  │  └──────────────────────┘  │                                            │
 │  │                            │                                             │
-│  │  ┌──────────────────────┐  │              SLA GUARANTEES:               │
-│  │  │  Shared Services     │  │              • 99.9% Uptime                │
-│  │  │  • Monitoring        │  │              • <100ms API Latency          │
-│  │  │  • Logging           │  │              • 24/7 Support                │
-│  │  │  • Alerting          │  │              • Daily Backups               │
-│  │  └──────────────────────┘  │              • Geo-Redundancy              │
+│  │  ┌──────────────────────┐  │              DESIGN TARGETS (illustrative):│
+│  │  │  Shared Services     │  │              • 99.9% Uptime target         │
+│  │  │  • Monitoring        │  │              • <100ms API Latency target   │
+│  │  │  • Logging           │  │              • Business hours support      │
+│  │  │  • Alerting          │  │              • Daily Backups (planned)     │
+│  │  └──────────────────────┘  │              • Geo-Redundancy (planned)    │
 │  └────────────────────────────┘                                            │
 │                                                                              │
-│  DATA ISOLATION:                                                             │
-│  ✓ Separate database per tenant                                             │
-│  ✓ Tenant-specific encryption keys                                          │
-│  ✓ Network isolation between tenants                                        │
-│  ✓ No cross-tenant data access possible                                     │
+│  DATA ISOLATION (design goals):                                              │
+│  ✓ Separate database per tenant (planned)                                   │
+│  ✓ Tenant-specific encryption keys (planned)                                │
+│  ✓ Network isolation between tenants (planned)                              │
+│  ✓ Cross-tenant data access prevention by design                            │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -632,12 +632,12 @@ Client-side execution integrations (via Agent):
 
 ### Support Tiers
 
-| Tier | Response Time | Availability | Features |
-|------|---------------|--------------|----------|
+| Tier | Response Time (target) | Availability (target) | Features (planned) |
+|------|------------------------|----------------------|-------------------|
 | **Standard** | < 24 hours | Business hours | Email, documentation |
 | **Premium** | < 4 hours | Extended hours | Phone, priority queue |
-| **Enterprise** | < 1 hour | 24/7 | Dedicated engineer, on-site support |
-| **Strategic** | Immediate | 24/7 | Embedded team, custom SLA |
+| **Enterprise** | < 1 hour | Extended hours | Dedicated engineer, escalation path |
+| **Strategic** | Per SLA | Per SLA | Custom terms, negotiated SLA |
 
 ### First Customer Benefits
 

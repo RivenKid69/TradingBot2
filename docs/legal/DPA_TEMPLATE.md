@@ -447,17 +447,17 @@ Signature: _______________________
 
 ---
 
-## Annex B: Sub-processor List (EU-based, current configuration)
+## Annex B: Sub-processor List (EU-based, planned configuration)
 
-**All current sub-processors are located within the European Union.** Sub-processor changes are subject to the notification process below (Section "Sub-processor Change Notification").
+**Planned sub-processor configuration: EU-only.** Our infrastructure design specifies EU-region sub-processors. Sub-processor changes are subject to the notification process below (Section "Sub-processor Change Notification"). Actual sub-processor list is maintained at [docs/compliance/SUBPROCESSORS_REGISTER.md](../compliance/SUBPROCESSORS_REGISTER.md).
 
-| Sub-processor | Purpose | Region (EU-only) | DPA Status | Last Review |
-|--------------|---------|------------------|------------|-------------|
-| Amazon Web Services (AWS) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) | 2025-01-15 |
-| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Signed | 2025-01-15 |
-| Stripe | Payment processing | EU (Ireland) | Signed (Stripe DPA) | 2025-01-15 |
-| AWS SES / SendGrid | Transactional email | EU | Signed | 2025-01-15 |
-| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Signed | 2025-01-15 |
+| Sub-processor | Purpose | Region (EU-only) | DPA Status | Notes |
+|--------------|---------|------------------|------------|-------|
+| Amazon Web Services (AWS) | Cloud infrastructure (RDS, S3, ElastiCache, CloudWatch) | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Template available | Standard AWS DPA |
+| Supabase | Database hosting (PostgreSQL alternative) | EU (Germany) | Template available | Standard Supabase DPA |
+| Stripe | Payment processing | EU (Ireland) | Template available | Standard Stripe DPA |
+| AWS SES / SendGrid | Transactional email | EU | Template available | Standard Twilio DPA |
+| Sentry | Error monitoring (redacted, no PII) | EU (Germany) | Template available | Standard Sentry DPA |
 
 ### Sub-processor Change Notification
 

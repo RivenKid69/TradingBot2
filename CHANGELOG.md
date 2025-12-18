@@ -56,7 +56,7 @@
   - `TestDesignDocMustHave` - 3 tests
   - `TestStateMachineCompliance` - 3 tests
   - `TestProtocolCompliance` - 3 tests
-  - All tests passing (100%)
+  - All tests passing at time of release
 
 ### Documentation
 
@@ -132,7 +132,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - CORE tests: 12 test files
   - INTEGRATION tests: 12 test files
   - ARCHIVE tests: 10 test files
-  - All tests passing (100%)
+  - All tests passing at time of release
 
 ### Documentation
 

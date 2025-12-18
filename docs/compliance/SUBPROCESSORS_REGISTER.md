@@ -305,9 +305,9 @@ The platform implements automated EU-only drift checks:
       "eu_compliant": true
     }
   ],
-  "subprocessors_verified": 6,
-  "non_eu_endpoints": 0,
-  "next_check": "2025-01-15T11:00:00Z"
+  "subprocessors_listed": 6,
+  "eu_only_configuration": true,
+  "verification_status": "pending_operational_deployment"
 }
 ```
 
@@ -355,11 +355,13 @@ For customer due diligence and audits, the following evidence is available:
 | Region configuration | Infrastructure settings | Evidence pack export |
 | Vendor certifications | Vendor-reported; verify via vendor trust centers | Vendor compliance portals |
 
-### 7.2 Customer Access
+### 7.2 Customer Access (When Operational)
 
-Customers can request:
+> **Note**: Customer access process will be established upon first customer contract execution.
+
+Upon operational commencement, customers will be able to request:
 - Current subprocessor list (this document)
-- EU-only drift check reports (last 90 days)
+- EU-only drift check reports (when available)
 - DPA summaries (full copies under NDA)
 - Change notification history
 

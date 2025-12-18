@@ -328,13 +328,13 @@ Provider SHALL maintain appropriate security standards, including (where applica
 
 **I.2 Security Measures**
 
-| Control Area | Requirement | Validation |
-|--------------|-------------|------------|
-| Access Control | MFA, RBAC, privileged access management | Quarterly review |
-| Encryption | AES-256 at rest, TLS 1.3 in transit | Annual pen test |
-| Network Security | WAF, DDoS protection, IDS/IPS | Continuous monitoring |
-| Endpoint Security | EDR on all systems | Continuous monitoring |
-| Logging | Centralized, immutable audit logs | Daily review |
+| Control Area | Requirement (design target) | Validation (when operational) |
+|--------------|----------------------------|-------------------------------|
+| Access Control | MFA, RBAC, privileged access management | Quarterly review (planned) |
+| Encryption | AES-256 at rest, TLS 1.3 in transit (design specification) | Security assessment (roadmap) |
+| Network Security | WAF, DDoS protection, IDS/IPS | Continuous monitoring (planned) |
+| Endpoint Security | EDR on all systems | Continuous monitoring (planned) |
+| Logging | Centralized, immutable audit logs | Daily review (planned) |
 
 **I.3 Security Testing**
 
