@@ -248,9 +248,9 @@ ORGANIZATION: ccea-platform
 | Community support | ✅ | ✅ | ✅ | ✅ |
 | Email support | ❌ | ✅ | ✅ | ✅ |
 | Dedicated CSM | ❌ | ❌ | ❌ | ✅ |
-| SLA | ❌ | 99.5% | 99.9% | 99.95% |
+| SLA (target) | ❌ | 99.5% (target) | 99.9% (target) | 99.95% (target) |
 
-**Note:** Live execution (if used) runs on the customer's Agent. This supports a software/ICT provider posture; regulatory obligations are deployment-dependent and must be validated by customer teams with qualified counsel.
+**Note:** SLA percentages are design targets, not contractual guarantees. Actual SLA terms depend on customer agreement tier and are defined in individual service agreements. Live execution (if used) runs on the customer's Agent. This supports a software/ICT provider posture; regulatory obligations are deployment-dependent and must be validated by customer teams with qualified counsel.
 
 ### 3.4 Pricing Model
 

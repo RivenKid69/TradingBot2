@@ -56,7 +56,7 @@
   - `TestDesignDocMustHave` - 3 tests
   - `TestStateMachineCompliance` - 3 tests
   - `TestProtocolCompliance` - 3 tests
-  - All tests passing at time of release
+  - All tests passing at time of release (verify via CI run logs)
 
 ### Documentation
 
@@ -209,10 +209,10 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ### Test Coverage
 
-- **~1,015 DORA Tests** (2025-12-08)
+- **~1,015 DORA Tests** (2025-12-08) — verify via CI run logs
   - 18 test files, ~395 test functions
-  - All 5 phases fully tested
-  - Pass rate: 97%+
+  - All 5 phases tested (verify via test plan/matrix)
+  - Pass rate: 97%+ (at time of documentation; verify via CI reports)
 
 ---
 

@@ -31,11 +31,11 @@
 
 ---
 
-## CRITICAL REVIEW v4.0 — Независимый аудит и финальные исправления
+## CRITICAL REVIEW v4.0 — Internal review and corrections
 
-> **ВАЖНО**: Проведён независимый аудит плана v3.0 с проверкой по официальным источникам EUR-Lex и ESAs.
+> **NOTE**: Internal engineering review of plan v3.0 was conducted with reference to official EUR-Lex and ESAs sources. This is an internal review, not an independent third-party audit.
 
-### Исправления v4.0 (Audit-based)
+### Исправления v4.0 (Review-based)
 
 | # | Проблема | Severity | Исправление |
 |---|----------|----------|-------------|

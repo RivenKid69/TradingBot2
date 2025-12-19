@@ -279,7 +279,7 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-}@redis:6379/2
       CCEA_COMPONENT: telemetry-ingester
       CCEA_BIND_PORT: 8001
-      # Redaction is MANDATORY - cannot be disabled
+      # Redaction is designed as mandatory (verify via runtime tests)
       CCEA_TELEMETRY_REDACTION_MANDATORY: "true"
       CCEA_TELEMETRY_DEFAULT_LEVEL: aggregated
     volumes:

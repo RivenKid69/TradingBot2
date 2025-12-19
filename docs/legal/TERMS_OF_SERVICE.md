@@ -194,11 +194,11 @@ For detailed technical information, see our [GPAI Model Card](../compliance/GPAI
 
 ### 2A.3 Training Data Transparency
 
-Per Article 53(1)(d) of the EU AI Act, we provide a public summary of training data used:
+For transparency purposes, and to support Article 53-style disclosure where applicable (Regulation (EU) 2024/1689), we provide a public summary of training data used. Applicability of specific AI Act obligations depends on deployment context and should be validated with qualified counsel.
 
 - **Data Types**: Historical market data (OHLCV), technical indicators, synthetic scenarios
-- **Data Sources**: Licensed market data providers, public exchange APIs
-- **Personal Data**: No personal data is used for model training
+- **Data Sources**: Licensed market data providers (client should verify licensing terms for their use case), public exchange APIs
+- **Personal Data**: No personal data is designed to be used for model training (verify via data lineage documentation)
 
 For the complete training data summary, see [TRAINING_DATA_SUMMARY.md](../compliance/TRAINING_DATA_SUMMARY.md).
 

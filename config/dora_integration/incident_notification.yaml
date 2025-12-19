@@ -221,11 +221,13 @@ crisis_communication:
 #   Intermediate Report: 72h from initial notification
 #   Final Report: 1 month from resolution
 #
-# Our SLA (ICT Provider to Client):
-#   Critical: 30 min (gives client 3.5h for NCA)
-#   High: 60 min (gives client 3h for NCA)
-#   Medium: 240 min (informational)
-#   Low: 1440 min (routine)
+# Our target notification times (ICT Provider to Client):
+# NOTE: These are design targets, not contractual SLA guarantees.
+# Actual SLA terms depend on customer agreement tier.
+#   Critical: 30 min target (gives client 3.5h for NCA)
+#   High: 60 min target (gives client 3h for NCA)
+#   Medium: 240 min target (informational)
+#   Low: 1440 min target (routine)
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------

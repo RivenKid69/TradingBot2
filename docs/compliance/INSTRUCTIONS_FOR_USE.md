@@ -410,7 +410,7 @@ Incidents must be reported if they:
 ### 12.3 Contact for Incidents
 
 - **Email**: incidents@provider.com
-- **Phone**: +XX XXX XXX XXXX (24/7)
+- **Phone**: +XX XXX XXX XXXX (target: 24/7 capacity-dependent)
 - **Portal**: https://provider.com/incident-report
 
 ---

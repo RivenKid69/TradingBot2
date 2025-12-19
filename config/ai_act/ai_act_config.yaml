@@ -1,32 +1,41 @@
-# EU AI Act Compliance Configuration
+# EU AI Act Tooling Configuration
 # Reference: Regulation (EU) 2024/1689 (EU AI Act)
-# System: TradingBot2 - Algorithmic Trading System
+# System: CustodiaCloud (CCEA architecture)
+#
+# NOTE: This configuration file provides optional tooling to support AI Act-oriented
+# documentation and controls. CustodiaCloud does NOT self-classify as "high-risk AI"
+# or claim compliance with specific AI Act provisions. Classification and applicable
+# obligations depend on deployment context, roles, and jurisdiction and should be
+# validated with qualified counsel.
 
 version: "1.0.0"
 regulation_reference: "EU AI Act (Regulation (EU) 2024/1689)"
 last_updated: "2024-12-08"
 
 # =============================================================================
-# System Classification
+# System Identification (no self-classification)
 # =============================================================================
-system_classification:
-  name: "TradingBot2"
+system_identification:
+  name: "CustodiaCloud"
   version: "1.0.0"
-  risk_category: "HIGH_RISK"  # Annex III - Financial Services
+  # NOTE: Risk classification is deployment-dependent; no self-classification here
+  # risk_category: Determined by deployer based on specific use case and counsel review
 
-  # Article 6 - Classification as High-Risk AI System
-  annex_iii_category: "5(b)"  # Credit institutions - trading systems
-  description: "AI-powered algorithmic trading system for cryptocurrency markets"
+  description: |
+    B2B quantitative research and deployment platform (CCEA architecture).
+    Cloud provides research/simulation/monitoring; Agent (customer-controlled)
+    performs any live execution. This is software/infrastructure tooling.
 
   intended_purpose: |
-    Automated analysis of market data and execution of trading decisions
-    for cryptocurrency pairs on regulated exchanges.
+    Quantitative research workflows (simulation/backtesting/monitoring) and
+    packaging signed artifacts for deployment via customer-controlled Agent.
+    Live execution (if any) occurs only via customer's own broker accounts.
 
-  # Deployer Information
-  deployer:
-    type: "financial_institution"
-    jurisdiction: "EU"
-    regulatory_authority: "National Financial Supervisory Authority"
+  # Deployer responsibility note
+  deployer_note: |
+    Classification under EU AI Act and applicable obligations are deployment-
+    and role-dependent. Clients should validate applicability with qualified
+    counsel based on their specific use case and jurisdiction.
 
 # =============================================================================
 # Article 9 - Risk Management System

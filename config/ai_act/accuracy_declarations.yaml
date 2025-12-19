@@ -240,31 +240,32 @@ known_limitations:
     - "Human intervention may override model decisions"
 
 # =============================================================================
-# REGULATORY COMPLIANCE STATEMENT
+# ACCURACY DECLARATION CONTEXT
 # =============================================================================
-regulatory_compliance:
+accuracy_declaration_context:
   statement: |
-    This accuracy declaration is provided in compliance with EU AI Act
-    Article 15 (Regulation (EU) 2024/1689). The declared accuracy levels
-    represent the expected performance of the AI system under specified
-    measurement conditions.
+    This accuracy declaration provides transparency on expected performance
+    metrics for the AI components of the platform. It is designed to support
+    Article 15-style documentation (Regulation (EU) 2024/1689) where applicable.
 
-    Key compliance points:
-    1. Accuracy levels are monitored continuously
-    2. Any significant degradation triggers appropriate alerts
-    3. System maintains audit trail of all accuracy measurements
-    4. Regular reporting to designated oversight personnel
-    5. Immediate notification if metrics fall below minimum thresholds
+    CustodiaCloud does NOT self-classify as a "high-risk AI system" or claim
+    compliance with specific AI Act provisions. Applicable obligations depend
+    on deployment context, roles, and jurisdiction and should be validated
+    with qualified counsel.
 
-  classification: "HIGH-RISK AI SYSTEM per Annex III (5)(b)"
+    Operational practices (design intent):
+    1. Accuracy metrics are designed to be monitored continuously
+    2. Alerts designed to trigger on significant degradation
+    3. Audit trail designed for accuracy measurements
+    4. Reporting designed for designated oversight personnel
+    5. Notification designed for metrics falling below minimum thresholds
 
-  responsible_party:
-    role: "AI System Operator"
-    obligations:
-      - "Monitor accuracy metrics continuously"
-      - "Report significant accuracy degradation"
-      - "Maintain accuracy measurement records for 7+ years"
-      - "Ensure human oversight of accuracy assessments"
+  # NOTE: No self-classification - determined by deployer based on use case
+  classification_note: "Classification is deployment-dependent; no self-classification"
+
+  responsible_party_note: |
+    Operator responsibilities depend on applicable regulations and deployment
+    context. Consult qualified counsel for specific obligations.
 
 # =============================================================================
 # ACCURACY MONITORING SCHEDULE

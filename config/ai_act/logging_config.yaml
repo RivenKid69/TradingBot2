@@ -1,7 +1,9 @@
-# EU AI Act Logging Configuration (Article 12)
+# EU AI Act Logging Configuration (Article 12 Tooling)
 #
-# This configuration file defines settings for the AI Act compliant
-# logging system per Article 12 (Record-Keeping).
+# This configuration file defines settings for a logging system designed
+# to support Article 12-style record-keeping (Regulation (EU) 2024/1689).
+# This is tooling; actual compliance depends on deployment context and
+# must be validated with qualified counsel.
 #
 # Reference: https://artificialintelligenceact.eu/article/12/
 

@@ -13,7 +13,7 @@
 | **0. Key Principle** |||||
 | 0.1 | Cloud = research/control, Agent = secrets/execution | Phase 0 | TARGET_CCEA_ARCHITECTURE.md | DONE |
 | 0.2 | Cloud designed to not store keys | Phase 0 | DECISION_LOG.md (OQ-005) | IMPLEMENTED (verify via tests) |
-| 0.3 | Cloud never sends orders | Phase 0 | protocol_messages.schema.json | DONE |
+| 0.3 | Cloud designed to never send orders | Phase 0 | protocol_messages.schema.json | DONE (verify via schema/tests) |
 | **3-5. Requirements** |||||
 | 3.1 | Product modes (Retail/Enterprise) | Phase 0 | Design_Doc_CCEA_Cloud.md §3 | DONE |
 | 3.2 | Zone separation (Cloud/Agent/Shared) | Phase 0, 2 | TARGET_CCEA_ARCHITECTURE.md | DONE |

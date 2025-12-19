@@ -2403,12 +2403,12 @@ subcontractor_management:
         alternative_providers:
           - name: "Kraken"
             lei: "TBD"
-            regulatory_status: "Reported as licensed in multiple EU jurisdictions (verify independently)"
-            notes: "Recommended for EU-regulated clients; client must verify current licensing status"
+            regulatory_status: "Third-party reported status (not verified by us); clients must verify via official registries"
+            notes: "Clients must independently verify current licensing status in their jurisdiction"
           - name: "Coinbase"
             lei: "5493005KJDX9YGBJI252"
-            regulatory_status: "Reported as US SEC registered with EU licenses (verify independently)"
-            notes: "Recommended for US and EU clients; client must verify current regulatory status"
+            regulatory_status: "Third-party reported status (not verified by us); clients must verify via official registries"
+            notes: "Clients must independently verify current regulatory status in their jurisdiction"
 
         client_disclosure: |
           Binance regulatory status varies significantly by jurisdiction.

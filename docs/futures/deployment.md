@@ -10,7 +10,7 @@ This guide covers deployment of futures trading infrastructure, including featur
 
 ### 1. Code Validation
 
-- [ ] All tests passing (565+ test files)
+- [ ] All tests passing (verify via CI run logs with commit SHA)
 - [ ] Validation metrics meet targets
 - [ ] Backward compatibility confirmed
 - [ ] Performance benchmarks acceptable

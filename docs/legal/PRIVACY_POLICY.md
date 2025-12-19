@@ -80,9 +80,9 @@ Data processed by the optional local Agent (if you deploy one):
 | Local approval records | Your hardware | **NONE** |
 
 **Agent-zone data is designed to remain under your control:**
-1. By design, it does not leave your hardware
-2. It is designed to be encrypted with keys derived locally, which we do not possess by design
-3. The Agent operates autonomously on your infrastructure
+1. By design, Agent-zone data is intended to stay on your hardware (verify via architecture review)
+2. Encryption is designed to use keys derived locally, which we are designed not to possess (verify via threat model/security review)
+3. The Agent is designed to operate autonomously on your infrastructure
 
 ### 1A.4 Telemetry Redaction
 
@@ -540,7 +540,7 @@ This section provides an explicit checklist of privacy design commitments for th
 | **Default is AGGREGATED** | Config default | Runtime check |
 | **DETAILED_NON_SENSITIVE requires opt-in** | Explicit configuration | Audit event |
 | **RAW_ORDER_EVENTS requires enterprise + opt-in** | Tier check + consent record | Audit trail |
-| **Redaction is always on** | Cannot be disabled by flag | CI test + runtime |
+| **Redaction designed as always on** | Designed not to be disabled by flag | CI test + runtime (verify via test reports) |
 | **Order data forbidden in non-RAW** | Schema validation | Runtime rejection |
 
 ### 7A.4 EU-Priority Data Residency

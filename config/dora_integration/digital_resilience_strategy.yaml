@@ -34,30 +34,32 @@ strategy:
   effective_date: "2025-01-17"
   version: "2025.1"
 
-  # Strategic objectives aligned with DORA
+  # Strategic objectives aligned with DORA (target operational goals)
+  # NOTE: These are design targets, not contractual SLA guarantees.
+  # Actual SLA terms depend on customer agreement tier.
   objectives:
     - id: "OBJ-001"
       name: "Service Continuity"
       description: "Maintain service availability for critical functions"
-      target_metric: "99.9% uptime"
+      target_metric: "99.9% uptime (design target)"
       dora_reference: "Art. 11(1)"
 
     - id: "OBJ-002"
       name: "Incident Response"
       description: "Rapid detection and response to ICT incidents"
-      target_metric: "< 15 min MTTD, < 60 min MTTR"
+      target_metric: "< 15 min MTTD, < 60 min MTTR (design target)"
       dora_reference: "Art. 17(1)"
 
     - id: "OBJ-003"
       name: "Data Protection"
       description: "Protect client data integrity and confidentiality"
-      target_metric: "Zero data breaches"
+      target_metric: "Minimize data breach risk (verify via security controls)"
       dora_reference: "Art. 9(1)"
 
     - id: "OBJ-004"
       name: "Recovery Capability"
       description: "Rapid recovery from disruptions"
-      target_metric: "RTO < 4h, RPO < 1h"
+      target_metric: "RTO < 4h, RPO < 1h (design target; verify via DR tests)"
       dora_reference: "Art. 12(1)"
 
     - id: "OBJ-005"
@@ -207,10 +209,11 @@ testing:
       automated: true
 
     penetration_testing:
-      frequency: "quarterly"
+      frequency: "quarterly (target)"
       scope: "external_perimeter"
-      provider: "external_certified"
+      provider: "external_certified (verify via engagement contract)"
       report_to: ["CISO", "CTO", "Compliance"]
+      note: "Pen test reports available upon request under NDA"
 
     red_team_exercise:
       frequency: "annually"
@@ -248,8 +251,9 @@ testing:
     frequency: "every_3_years"
     scope: "critical_functions"
     tester_requirements:
-      - "CREST_certified"
-      - "TIBER_EU_accredited"
+      - "CREST_certified (verify tester credentials)"
+      - "TIBER_EU_accredited (verify tester credentials)"
+    note: "Tester qualifications should be verified via engagement contract"
 
 # =============================================================================
 # Integration with Information Sharing (Art. 45)

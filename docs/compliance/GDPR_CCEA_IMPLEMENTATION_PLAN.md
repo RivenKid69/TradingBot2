@@ -2,7 +2,7 @@
 
 **Project**: CustodiaCloud (CCEA)  
 **Scope**: GDPR controls required for a software provider operating the CCEA model (Cloud-controlled execution; Agent is customer-operated).  
-**Deployment scope**: **EU-only** target (no non-EU regions in design).  
+**Deployment scope**: **EU-only** design target (verify via deployment audits and drift checks).  
 **Enterprise option**: on-prem/VPC deployment is supported **within EU-only posture** (customer-controlled infrastructure located in EU; no vendor-operated non-EU processing).  
 **Primary technical boundary source (CCEA)**: `archive/root_files/Design Doc CCEA Cloud.txt` (privacy-by-design, secrets/telemetry boundaries, control plane).
 
@@ -10,7 +10,7 @@
 
 This plan implements **only** the GDPR elements needed for this project’s architecture and positioning as a **software/platform provider**, aligned with CCEA constraints:
 
-- **Telemetry has three sensitivity levels**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in) — with **mandatory redaction** before leaving the Agent.
+- **Telemetry has three sensitivity levels**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in) — with **redaction designed as mandatory** before leaving the Agent (verify via CI guardrails and tests).
 - **No secrets** (API keys, tokens), **no env vars**, and **no order-like payloads in Cloud→Agent commands** are allowed (enforced by schema/CI); telemetry is separately governed by sensitivity level.
 - **EU data residency by default** (and in this project: EU-only).
 - **Retention per tenant + auto-purge + DSAR export/delete**.
@@ -274,9 +274,9 @@ DoD:
 - 144 tests passing for governance module (no regression)
 - 40 tests passing for Phase 2 governance tests (no regression)
 
-### Phase 3 — EU-only data residency enforcement (tenant/workspace) [IMPLEMENTATION COMPLETE - 2025-12-16]
+### Phase 3 — EU-only data residency enforcement (tenant/workspace) [TOOLING COMPLETE - 2025-12-16]
 
-**Status**: ✅ **IMPLEMENTATION COMPLETE** (internal tooling; verify via CI/tests)
+**Status**: ✅ **TOOLING COMPLETE** (internal implementation; verify via CI/tests and deployment audits)
 
 **Goal**: residency is a runtime enforcement, not just a claim.
 
@@ -354,9 +354,9 @@ DoD (internal criteria; not independently audited):
 }
 ```
 
-**Test Results:**
-- 76 tests passing for residency drift module
-- 52 tests passing for CI residency guardrail
+**Test Results (internal CI; verify via test run logs):**
+- 76 tests passing for residency drift module (at time of documentation)
+- 52 tests passing for CI residency guardrail (at time of documentation)
 - 220 tests passing for governance module (no regression)
 - 99 tests passing for all guardrails (no regression)
 
