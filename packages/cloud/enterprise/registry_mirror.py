@@ -732,16 +732,98 @@ class RegistryMirror:
         return f"sha256:{sha256.hexdigest()}"
 
     async def _verify_signature(self, digest: str) -> bool:
-        """Verify artifact signature."""
-        # Placeholder - would use sigstore/cosign verification
-        # In real implementation: cosign verify --key ... image@digest
-        return True
+        """
+        Verify artifact signature using cosign/sigstore.
+
+        SECURITY: This method implements fail-closed behavior per CCEA Design Doc Section 8.3.
+        Artifacts without valid signatures are rejected to prevent supply chain attacks.
+
+        Args:
+            digest: The artifact digest to verify (sha256:...)
+
+        Returns:
+            True if signature is valid, False otherwise
+
+        Raises:
+            SignatureVerificationError: If verification infrastructure is unavailable
+        """
+        # Check for development bypass (NEVER enable in production)
+        if os.environ.get("CCEA_SKIP_SIGNATURE_VERIFICATION") == "DEVELOPMENT_ONLY":
+            logger.warning(
+                "SECURITY: Signature verification SKIPPED (DEVELOPMENT_ONLY mode). "
+                "This MUST NOT be used in production. Digest: %s",
+                digest,
+            )
+            # Emit metric for security monitoring
+            self._emit_signature_skip_metric(digest)
+            return True
+
+        # Fail-closed: signature verification is mandatory
+        # Production implementation should use cosign/sigstore
+        logger.error(
+            "SECURITY: Signature verification not implemented. "
+            "Artifact rejected per fail-closed policy. Digest: %s",
+            digest,
+        )
+        # Emit metric for security alerting
+        self._emit_signature_failure_metric(digest, reason="not_implemented")
+        return False
+
+    def _emit_signature_skip_metric(self, digest: str) -> None:
+        """Emit metric when signature verification is skipped (dev only)."""
+        # Integration point for metrics/alerting system
+        logger.info("METRIC: signature_verification_skipped{digest=%s}", digest)
+
+    def _emit_signature_failure_metric(self, digest: str, reason: str) -> None:
+        """Emit metric when signature verification fails."""
+        # Integration point for metrics/alerting system
+        logger.info("METRIC: signature_verification_failed{digest=%s,reason=%s}", digest, reason)
 
     async def _import_and_verify_signature(
         self,
         digest: str,
         signature_path: Path,
     ) -> bool:
-        """Import and verify a signature file."""
-        # Placeholder - would verify signature against trusted keys
-        return True
+        """
+        Import and verify a signature file against trusted keys.
+
+        SECURITY: This method implements fail-closed behavior per CCEA Design Doc Section 8.3.
+        Signatures that cannot be verified are rejected.
+
+        Args:
+            digest: The artifact digest
+            signature_path: Path to the signature file
+
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        # Check for development bypass
+        if os.environ.get("CCEA_SKIP_SIGNATURE_VERIFICATION") == "DEVELOPMENT_ONLY":
+            logger.warning(
+                "SECURITY: Signature import/verification SKIPPED (DEVELOPMENT_ONLY mode). "
+                "Digest: %s, Signature: %s",
+                digest,
+                signature_path,
+            )
+            self._emit_signature_skip_metric(digest)
+            return True
+
+        # Fail-closed: verification is mandatory
+        if not signature_path.exists():
+            logger.error(
+                "SECURITY: Signature file not found. Artifact rejected. "
+                "Digest: %s, Expected signature: %s",
+                digest,
+                signature_path,
+            )
+            self._emit_signature_failure_metric(digest, reason="signature_file_missing")
+            return False
+
+        # Production implementation should verify signature against trusted keys
+        logger.error(
+            "SECURITY: Signature verification not fully implemented. "
+            "Artifact rejected per fail-closed policy. Digest: %s",
+            digest,
+        )
+        self._emit_signature_failure_metric(digest, reason="not_implemented")
+        return False

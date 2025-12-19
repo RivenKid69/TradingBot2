@@ -217,7 +217,11 @@ def _get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-# MFA token storage (in production, use Redis/DB)
+# MFA token storage
+# SECURITY: In-memory storage is acceptable for single-instance deployments.
+# For multi-instance/production deployments, use Redis or database storage.
+# Control artifact: docs/security/MFA_STORAGE_REQUIREMENTS.md
+# Metrics: mfa_pending_token_count, mfa_token_issued, mfa_token_redeemed
 _mfa_pending_tokens: dict[str, dict] = {}
 
 
@@ -232,15 +236,31 @@ def _generate_totp_secret() -> str:
 
 
 def _verify_totp(secret: str, code: str) -> bool:
-    """Verify TOTP code against secret."""
+    """
+    Verify TOTP code against secret.
+
+    SECURITY: This function implements fail-closed behavior.
+    If pyotp is not available, verification fails (not bypassed).
+
+    Args:
+        secret: TOTP secret key
+        code: User-provided TOTP code
+
+    Returns:
+        True if code is valid, False otherwise
+    """
     try:
         import pyotp
         totp = pyotp.TOTP(secret)
         return totp.verify(code, valid_window=1)  # Allow 1 window tolerance
     except ImportError:
-        # Fallback - in production pyotp should be installed
-        logger.warning("pyotp not installed, MFA verification disabled")
-        return True
+        # SECURITY: Fail-closed per security requirements
+        # MFA verification MUST NOT be bypassed
+        logger.error(
+            "SECURITY: pyotp not installed. MFA verification FAILED (fail-closed). "
+            "Install pyotp package: pip install pyotp"
+        )
+        return False
 
 
 def _generate_provisioning_uri(secret: str, email: str) -> str:

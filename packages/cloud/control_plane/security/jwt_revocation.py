@@ -96,7 +96,18 @@ class JTIBlocklist:
     """
     In-memory JTI blocklist with LRU eviction.
 
-    For production, use Redis or database storage.
+    DEPLOYMENT CONSIDERATIONS:
+        Single-instance: In-memory storage is acceptable.
+        Multi-instance: Use Redis or database for consistent revocation.
+
+    PRODUCTION REQUIREMENTS (multi-instance deployments):
+        1. Replace in-memory storage with Redis/database backend
+        2. Configure replication for revocation propagation
+        3. Monitor revocation distribution latency
+
+    CONTROL ARTIFACTS:
+        - docs/security/JWT_REVOCATION_REQUIREMENTS.md
+        - Metrics: jwt_revoked_count, jwt_revocation_check_count
 
     Usage:
         blocklist = JTIBlocklist()

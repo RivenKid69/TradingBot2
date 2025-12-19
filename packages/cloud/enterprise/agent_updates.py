@@ -987,10 +987,17 @@ class AgentUpdateManager:
             JSON-encoded signature
         """
         if not CRYPTO_AVAILABLE:
-            logger.warning("Cryptography not available, using placeholder signature")
-            import base64
-            sig = hashlib.sha256(signing_key + payload).digest()
-            return base64.b64encode(sig).decode()
+            # SECURITY: Fail-closed per CCEA Design Doc Section 15.2
+            # Cryptography library is mandatory for agent update signing
+            logger.error(
+                "SECURITY: Cryptography library not available. "
+                "Agent update signing requires proper Ed25519 cryptography. "
+                "Install cryptography package: pip install cryptography"
+            )
+            raise RuntimeError(
+                "Cryptography library required for agent update signing. "
+                "This is a security requirement per CCEA Design Doc Section 15.2."
+            )
 
         try:
             signer = Ed25519Signer(default_signer_id="ccea-agent-update-signer")
@@ -1030,8 +1037,14 @@ class AgentUpdateManager:
             True if signature is valid
         """
         if not CRYPTO_AVAILABLE:
-            logger.warning("Cryptography not available, signature verification skipped")
-            return True
+            # SECURITY: Fail-closed per CCEA Design Doc Section 15.2
+            # Cryptography library is mandatory for signature verification
+            logger.error(
+                "SECURITY: Cryptography library not available. "
+                "Agent update verification requires proper Ed25519 cryptography. "
+                "Signature verification FAILED (fail-closed)."
+            )
+            return False
 
         try:
             # Try to parse as JSON signature

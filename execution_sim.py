@@ -2183,8 +2183,13 @@ class ExecutionSimulator:
             try:
                 self.attach_quantizer(impl=quantizer_impl)
             except Exception:
+                # DATA/ML TECH DEBT: Legacy filter fallback changes execution behavior
+                # Control artifacts: docs/reports/TECH_DEBT_REGISTRY.md#execution-sim-legacy-fallback
+                # Metrics: quantizer_fallback_count, quantizer_error_type
                 logger.exception(
-                    "Failed to attach provided quantizer implementation; falling back to legacy filters"
+                    "Failed to attach provided quantizer implementation; falling back to legacy filters. "
+                    "METRIC: quantizer_fallback_count=1. "
+                    "WARNING: Legacy filters may produce different execution simulation results."
                 )
             else:
                 attached_quantizer = True

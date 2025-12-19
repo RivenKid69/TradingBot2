@@ -1759,8 +1759,25 @@ class Mediator:
             )
         except Exception as e:
             # If obs_builder fails, fall back to legacy
+            # DATA/ML TECH DEBT: Legacy fallback may produce different observation distributions
+            # Control artifacts: docs/reports/TECH_DEBT_REGISTRY.md#mediator-legacy-fallback
+            # Metrics: obs_builder_fallback_count, obs_builder_error_type
             import logging
-            logging.getLogger(__name__).warning(f"obs_builder failed: {e}, falling back to legacy")
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                "obs_builder failed: %s, falling back to legacy. "
+                "METRIC: obs_builder_fallback_count=1, error_type=%s",
+                e, type(e).__name__
+            )
+            # Track fallback frequency for monitoring
+            self._legacy_fallback_count = getattr(self, "_legacy_fallback_count", 0) + 1
+            if self._legacy_fallback_count % 100 == 1:
+                # Log summary every 100 fallbacks
+                logger.warning(
+                    "Legacy fallback summary: total_count=%d. "
+                    "High fallback rates may indicate observation distribution mismatch.",
+                    self._legacy_fallback_count
+                )
             return self._build_observation_legacy(row=row, state=state, mark_price=mark_price)
 
         return obs

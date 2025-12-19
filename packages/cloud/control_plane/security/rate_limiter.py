@@ -176,7 +176,24 @@ class RateLimiter:
     """
     In-memory rate limiter with account lockout support.
 
-    For production, consider using Redis for distributed rate limiting.
+    DEPLOYMENT CONSIDERATIONS:
+        Single-instance: In-memory storage is acceptable.
+        Multi-instance: Use Redis for distributed rate limiting.
+
+    PRODUCTION REQUIREMENTS (multi-instance deployments):
+        1. Replace in-memory storage with Redis backend
+        2. Configure atomic increment operations for rate counting
+        3. Monitor rate limit bypass attempts across instances
+        4. Ensure lockout state is synchronized across all instances
+
+    CONTROL ARTIFACTS:
+        - docs/security/RATE_LIMITING_REQUIREMENTS.md
+        - Metrics: rate_limit_exceeded_count, account_lockout_count, lockout_duration_sec
+
+    SECURITY NOTE:
+        Without distributed state, attackers can bypass rate limits by
+        distributing requests across multiple instances. For production
+        multi-instance deployments, Redis backend is required.
 
     Usage:
         limiter = RateLimiter()
