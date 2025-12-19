@@ -96,7 +96,7 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 | **REQUEST_UPGRADE_ARTIFACT** | `packages/agent/daemon/agentd.py:_handle_upgrade_artifact()` | ✅ |
 | **REQUEST_UPDATE_CONFIG** | `packages/agent/daemon/agentd.py:_handle_update_config()` | ✅ |
 | **Manifest format** | JSON canonical (`manifest.json`), YAML legacy supported | ✅ |
-| **Unsigned artifact rejection** | By design: unsigned = REJECTED (fail-closed) | ✅ |
+| **Unsigned artifact rejection** | Designed to reject unsigned artifacts (fail-closed); verify via CI/tests | ✅ |
 | **ccea/agent/* deprecation** | DeprecationWarning emitted on import | ✅ |
 
 ---
@@ -644,7 +644,7 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 | Threat | Mitigation |
 |--------|------------|
 | RCE in Cloud | Cloud cannot execute orders, no trading libs |
-| Key exfiltration | Keys never leave Agent, redaction mandatory |
+| Key exfiltration | Architecture designed so keys do not leave Agent; redaction designed to be mandatory |
 | Artifact tampering | Digest pinning + signature verification |
 | Cloud becomes execution | No order-like payloads in protocol |
 | Abuse of cloud jobs | Sandbox + quotas + egress allowlist |

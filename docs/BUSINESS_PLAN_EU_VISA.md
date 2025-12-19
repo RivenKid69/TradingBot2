@@ -179,12 +179,12 @@ We provide B2B software/ICT tools to professional systematic trading organizatio
 - CustodiaCloud Cloud does **not** store customer broker credentials and does **not** send live trading instructions (orders/targets/signals).
 - Live execution (if used) occurs only via the customer-controlled Agent and the customer’s own broker accounts.
 
-**CCEA Security Design Commitments** (enforced at architecture level):
-- Cloud NEVER stores broker API keys or trading credentials
-- Cloud NEVER generates, transmits, or executes live trading instructions (orders/targets/signals)
-- Cloud NEVER has access to exchange trading endpoints
-- All live trading occurs ONLY in user's local Agent environment
-- Mandatory telemetry redaction prevents secret leakage
+**CCEA Security Design Commitments** (enforced at architecture level; verify via CI/tests):
+- Cloud is designed not to store broker API keys or trading credentials
+- Cloud is designed not to generate, transmit, or execute live trading instructions (orders/targets/signals)
+- Cloud is designed not to have access to exchange trading endpoints
+- All live trading is designed to occur only in user's local Agent environment
+- Telemetry redaction is designed to be mandatory (intended to reduce the risk of secret leakage)
 
 **Regulatory framework positioning (non-legal, illustrative)**:
 

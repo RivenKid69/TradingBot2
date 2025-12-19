@@ -82,9 +82,9 @@ python script_backtest.py --config configs/my_backtest.yaml --offline-config con
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
 
 # 2. (Optional) Use Cloud control plane to manage runs
-#    Cloud sends lifecycle commands only - NEVER trades or stores keys
+#    Cloud sends lifecycle commands only - designed not to trade or store keys
 ```
-**Important**: Live execution runs ONLY in your local Agent. Cloud manages lifecycle (start/stop/deploy) but NEVER executes orders or stores your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
+**Important**: Live execution runs only in your local Agent. Cloud manages lifecycle (start/stop/deploy) and is designed so it does not execute orders or store your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
 
 For legacy/development dry-run testing:
 ```bash

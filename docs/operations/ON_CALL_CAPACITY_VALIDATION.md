@@ -233,7 +233,7 @@ PRIMARY ON-CALL (5 min)
 
 ### Engineering Validation
 
-I confirm that the SLA commitments in this document accurately reflect our current operational capacity and are achievable with our existing team and infrastructure.
+I confirm that the response time targets in this document are intended to reflect our planned operational capacity and are designed to be achievable with our existing team and infrastructure (subject to validation under actual operational conditions).
 
 **Engineering Lead**: _______________________
 

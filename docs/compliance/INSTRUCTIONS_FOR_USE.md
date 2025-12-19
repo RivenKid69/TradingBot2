@@ -34,7 +34,7 @@ CustodiaCloud does **not** self-classify as a “high-risk AI system” in docum
 
 | Support Level | Contact | Hours |
 |---------------|---------|-------|
-| **Critical Issues** | critical-support@provider.com | 24/7 |
+| **Critical Issues** | critical-support@provider.com | Target: 24/7 (capacity dependent) |
 | **General Support** | support@provider.com | Business hours |
 | **Documentation** | docs@provider.com | Business hours |
 

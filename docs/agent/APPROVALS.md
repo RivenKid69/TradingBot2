@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Local Approval System ensures that **trading-impacting changes require explicit local approval** before execution. Cloud cannot bypass this requirement.
+The Local Approval System is designed to ensure that **trading-impacting changes require explicit local approval** before execution. The architecture is designed so that Cloud cannot bypass this requirement (verify via protocol specification and tests).
 
 ## Security Design Commitments
 
@@ -12,7 +12,7 @@ The Local Approval System ensures that **trading-impacting changes require expli
 Local Approval DESIGN COMMITMENTS (enforced at architecture level):
   - Trading-impacting changes ALWAYS require local approval
   - Cloud CANNOT auto-approve on behalf of user
-  - Approval evidence is cryptographically signed
+  - Approval evidence is designed to be cryptographically signed (verify via implementation)
   - Approval audit trail is maintained locally
   - Stop/Pause commands do NOT require approval (safety)
 ```

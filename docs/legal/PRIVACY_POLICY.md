@@ -62,7 +62,7 @@ Data processed in our Cloud infrastructure:
 | Aggregated telemetry | Cloud (EU) | 90 days |
 | Audit logs | Cloud (EU) | 5 years |
 
-**Cloud does not receive or process:**
+**Cloud is designed not to receive or process (enforced via CCEA architecture):**
 - Broker API keys or secrets (secrets stay in customer-controlled Agent)
 - Trading credentials of any kind
 - Order details (side, quantity, price)
@@ -81,7 +81,7 @@ Data processed by the optional local Agent (if you deploy one):
 
 **Agent-zone data is designed to remain under your control:**
 1. By design, it does not leave your hardware
-2. It is encrypted with keys derived locally, which we do not possess by design
+2. It is designed to be encrypted with keys derived locally, which we do not possess by design
 3. The Agent operates autonomously on your infrastructure
 
 ### 1A.4 Telemetry Redaction
@@ -206,7 +206,7 @@ We process data for our legitimate business interests:
 - **Service improvement**: Analyzing usage patterns to improve functionality
 - **Communication**: Sending service-related notifications
 
-**Balancing Test:** We have conducted legitimate interest assessments to ensure our interests do not override your rights and freedoms.
+**Balancing Test:** We have conducted legitimate interest assessments intended to ensure our interests do not override your rights and freedoms (assessment documentation available upon request).
 
 ### 3.3 Consent (Article 6(1)(a))
 
@@ -282,7 +282,7 @@ We do NOT:
 
 **WE DO NOT SELL YOUR PERSONAL DATA.**
 
-We never sell, rent, or trade your personal information to third parties for marketing or any other purposes.
+We do not sell, rent, or trade your personal information to third parties for marketing or any other purposes.
 
 ### 5.3 Sub-Processors (EU-only)
 

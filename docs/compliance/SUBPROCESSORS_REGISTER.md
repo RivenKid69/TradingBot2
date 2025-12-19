@@ -231,7 +231,7 @@ The platform implements automated EU-only drift checks:
 │                      EU-ONLY DRIFT CHECK                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  CHECK FREQUENCY: Every deployment + hourly runtime check                   │
+│  CHECK FREQUENCY: Designed for every deployment + hourly runtime check     │
 │                                                                              │
 │  VERIFIED ITEMS:                                                            │
 │  ├── Database endpoints (RDS) → must be eu-central-1 or eu-west-1          │

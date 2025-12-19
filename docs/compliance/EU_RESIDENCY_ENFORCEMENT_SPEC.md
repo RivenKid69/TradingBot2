@@ -13,7 +13,7 @@
 
 ## 1. Overview
 
-This specification defines the EU-only data residency enforcement mechanisms designed for the CCEA Cloud platform. The goal is that all personal data processing occurs within the European Union, with automated verification and fail-closed enforcement.
+This specification defines the EU-only data residency enforcement mechanisms designed for the CCEA Cloud platform. The design goal is that all personal data processing occurs within the European Union, with automated verification and fail-closed enforcement (verify via deployment audits and CI tests).
 
 ### 1.1 Design Doc Reference
 
