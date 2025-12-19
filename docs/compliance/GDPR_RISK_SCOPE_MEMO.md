@@ -3,7 +3,7 @@
 **Document Type**: Compliance Engineering Specification
 **Version**: 1.0
 **Last Updated**: 2025-12-16
-**Scope**: EU-only CCEA Cloud platform
+**Scope**: CCEA Cloud platform (EU deployment target; verify via infrastructure configuration)
 **Primary Design Source**: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt`
 
 ---
@@ -245,7 +245,7 @@ For **Agent Zone data**, the customer is the sole Controller:
 │     │                │  │ Buffer         │                                  │
 │     │ - Poll commands│  │                │                                  │
 │     │ - Send acks    │  │ ┌────────────┐ │                                  │
-│     │ - Report state │  │ │ Redaction  │ │ ◄── ALWAYS ON (cannot disable)   │
+│     │ - Report state │  │ │ Redaction  │ │ ◄── ON by default (no disable flag) │
 │     │                │  │ │ Middleware │ │                                  │
 │     └───────┬────────┘  │ └────────────┘ │                                  │
 │             │           │ ┌────────────┐ │                                  │
@@ -277,8 +277,8 @@ For **Agent Zone data**, the customer is the sole Controller:
 │     │  │ - Tokens     │ │ limits,      ││                                   │
 │     │  │ - Passwords  │ │ kill switch  ││                                   │
 │     │  │              │ │              ││                                   │
-│     │  │ [NEVER SENT  │ └──────┬───────┘│                                   │
-│     │  │  TO CLOUD]   │        │        │                                   │
+│     │  │ [Designed to │ └──────┬───────┘│                                   │
+│     │  │  stay local] │        │        │                                   │
 │     │  └──────────────┘        │        │                                   │
 │     └──────────────────────────┼────────┘                                   │
 │                                │                                            │
@@ -513,8 +513,8 @@ For **Agent Zone data**, the customer is the sole Controller:
 
 | System | Data Category | Controller | Processor | Notes |
 |---|---|---|---|---|
-| **Local Vault** | Broker Credentials (API keys, secrets) | Customer | None (local only) | Never transmitted to Cloud |
-| **Local Vault** | OAuth Tokens | Customer | None (local only) | Never transmitted to Cloud |
+| **Local Vault** | Broker Credentials (API keys, secrets) | Customer | None (local only) | Designed to remain local (not transmitted to Cloud) |
+| **Local Vault** | OAuth Tokens | Customer | None (local only) | Designed to remain local (not transmitted to Cloud) |
 | **Strategy Runner** | Live Intent/Signal Data | Customer | None (local only) | Generated and consumed locally |
 | **Broker Connector** | Order/Fill Data | Customer | None (local only) | Transmitted to broker only, not Cloud (unless RAW opt-in) |
 | **Risk Manager** | Position Data | Customer | None (local only) | Local enforcement |

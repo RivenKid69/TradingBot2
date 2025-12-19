@@ -209,10 +209,10 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 ### Test Coverage
 
-- **~1,015 DORA Tests** (2025-12-08) — verify via CI run logs
-  - 18 test files, ~395 test functions
-  - All 5 phases tested (verify via test plan/matrix)
-  - Pass rate: 97%+ (at time of documentation; verify via CI reports)
+- **~1,015 DORA Tests** (2025-12-08; approximate count at documentation time; verify current count via CI)
+  - 18 test files, ~395 test functions (approximate)
+  - All 5 phases covered (verify via test plan/matrix)
+  - Pass rate at documentation time: 97%+ (verify current status via CI reports)
 
 ---
 

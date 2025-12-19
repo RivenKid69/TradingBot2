@@ -396,8 +396,8 @@ class TelemetryBuffer:
     """
     Buffer for telemetry events before transmission.
 
-    CRITICAL: Redaction is ALWAYS enabled. There is no way to disable it.
-    The redaction_enabled flag does not exist by design.
+    CRITICAL: Redaction is enabled by default and designed with no disable flag.
+    The redaction_enabled flag does not exist by design (verify via code review).
     """
 
     REDACT_PATTERNS = [

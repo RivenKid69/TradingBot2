@@ -3,9 +3,9 @@
 **Document Type**: Compliance Record
 **Version**: 1.0.0
 **Last Updated**: 2025-12-16
-**Owner**: Data Protection Officer
-**Review Frequency**: Quarterly
-**Scope**: EU-only CCEA Cloud platform
+**Owner**: Data Protection Officer (role to be assigned; see governance plan)
+**Review Frequency**: Quarterly (target; pending operational maturity)
+**Scope**: CCEA Cloud platform (EU deployment target)
 
 ---
 

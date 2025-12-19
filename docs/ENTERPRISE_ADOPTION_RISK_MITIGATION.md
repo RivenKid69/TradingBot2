@@ -877,11 +877,11 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 
 ### Why Enterprise Clients Will Trust Us
 
-1. **Zero Data Exposure**: On-premises and VPC options mean trading strategies never leave client infrastructure
+1. **Data Residency Options**: On-premises and VPC options are designed so trading strategies remain within client infrastructure (verify via deployment architecture)
 
 2. **Regulatory Alignment**: Purpose-built for European markets with architecture designed to support MiFID II, GDPR, and DORA alignment
 
-3. **Proven Foundation**: 11,000+ tests, battle-tested frameworks, and enterprise-grade security
+3. **Tested Foundation**: Comprehensive test suite (verify count via CI); production-ready architecture with enterprise-focused security design
 
 4. **Flexible Integration**: Modular architecture that extends existing systems rather than replacing them
 

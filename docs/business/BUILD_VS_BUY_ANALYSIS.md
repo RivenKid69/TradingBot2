@@ -12,17 +12,19 @@
 
 This document provides a **comprehensive framework** for evaluating the build-vs-buy decision for quantitative trading infrastructure. Based on industry research from **McKinsey, Deloitte, COCOMO II methodology**, and academic sources, we present a rigorous analysis of costs, timelines, risks, and strategic implications.
 
-### Key Finding
+### Key Finding (Model-Based Estimate)
 
-> **For firms with AUM < €500M, buying specialized infrastructure delivers 4-7x better ROI than building in-house**, based on COCOMO II cost modeling and industry benchmarks.
+> **For firms with AUM < €500M, buying specialized infrastructure may deliver 4-7x better ROI than building in-house**, based on COCOMO II cost modeling and industry benchmarks. Actual results depend on team size, scope, existing infrastructure, and execution quality; this is an illustrative model, not a guarantee.
 
-| Decision Factor | Build In-House | Buy CCEA | Advantage |
-|-----------------|----------------|--------------|-----------|
-| **Time to Production** | 18-36 months | 1-4 weeks | **72-156x faster** |
-| **5-Year TCO** | €1.5M - €5M | €120K - €600K | **75-90% savings** |
-| **Ongoing Maintenance** | 40-60% of dev cost/year | Included | **Predictable** |
+| Decision Factor | Build In-House (est.) | Buy CCEA (target) | Estimated Advantage |
+|-----------------|----------------------|-------------------|---------------------|
+| **Time to Production** | 18-36 months (industry range) | 1-4 weeks (target) | **Potentially 72-156x faster** |
+| **5-Year TCO** | €1.5M - €5M (model estimate) | €120K - €600K (target pricing) | **Potentially 75-90% savings** |
+| **Ongoing Maintenance** | 40-60% of dev cost/year (industry avg.) | Included | **Predictable** |
 | **Innovation Risk** | High (self-funded R&D) | Low (shared) | **De-risked** |
-| **Opportunity Cost** | 2-3 years of alpha | Immediate deployment | **Critical** |
+| **Opportunity Cost** | 2-3 years of alpha (estimate) | Target: faster deployment | **Significant (case-dependent)** |
+
+> **Disclaimer**: Estimates based on COCOMO II methodology, industry benchmarks (McKinsey, Deloitte), and internal modeling. Actual results will vary based on firm size, team capabilities, scope, and execution. This is decision-support material, not a guarantee of outcomes.
 
 ---
 

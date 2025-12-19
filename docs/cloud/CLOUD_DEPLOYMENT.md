@@ -8,7 +8,7 @@
 
 This guide describes deployment of the **Cloud Control Plane** using zone-separated artifacts.
 
-**Key Principle**: Cloud zone NEVER contains trading libraries, broker clients, or execution code.
+**Key Principle**: Cloud zone is designed to not contain trading libraries, broker clients, or execution code (verify via CI guardrails and artifact SBOM).
 
 ## Zone Separation Architecture
 

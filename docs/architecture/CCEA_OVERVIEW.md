@@ -289,7 +289,7 @@ All TRADING_IMPACTING commands require local approval:
 
 | Mode | Description | Target User | Regulatory Position |
 |------|-------------|-------------|---------------------|
-| **Pro Research SaaS (B2B)** | Cloud-only access to backtest, simulation, training. No live execution. | Professional systematic teams (research workflows only) | Software Provider (no broker license needed) |
+| **Pro Research SaaS (B2B)** | Cloud-only access to backtest, simulation, training. No live execution. | Professional systematic teams (research workflows only) | Software Provider posture (licensing depends on activities and jurisdiction; verify with counsel) |
 | **Pro Live via Customer Agent (B2B)** | Cloud services + customer-deployed Agent for live trading | Professional systematic teams, prop firms | Software Provider (customer executes) |
 | **Enterprise Engine (B2B)** | On-premise or VPC deployment of full stack | Hedge funds, banks, large prop firms | Software License (customer owns entire stack) |
 

@@ -672,9 +672,9 @@ We implement comprehensive security controls:
 
 In the event of a personal data breach:
 
-- We will notify the supervisory authority within 72 hours (GDPR Art. 33)
-- We will notify affected users without undue delay if high risk (GDPR Art. 34)
-- We will document all breaches in our breach register
+- We aim to notify the supervisory authority within 72 hours (GDPR Art. 33 target; operational readiness pending IR process validation)
+- We aim to notify affected users without undue delay if high risk (GDPR Art. 34)
+- We will document all breaches in our breach register (process under development)
 
 ---
 

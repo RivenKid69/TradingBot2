@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Phase 8 (Final Integration & Cleanup) of the DORA Integration Layer Migration has been successfully completed. All 21 integration modules are now properly organized in 6 subpackages, the `services/dora/` directory has been converted to a thin facade, and all 1225 tests are passing.
+Phase 8 (Final Integration & Cleanup) of the DORA Integration Layer Migration has been completed. All 21 integration modules are now properly organized in 6 subpackages, the `services/dora/` directory has been converted to a thin facade, and 1225 tests were passing at documentation time (verify current status via CI).
 
 ---
 

@@ -30,16 +30,16 @@ This document defines privacy controls, data governance, and GDPR-aligned design
 | **Strategy Metadata** | Names, configs (no code) | Service operation | User-controlled |
 | **Aggregated Telemetry** | PnL, drawdown, errors | Monitoring | Configurable (default 90 days) |
 
-### 1.3 Data We NEVER Collect
+### 1.3 Data Cloud Is Designed to Not Collect
 
 | Data Type | Reason |
 |-----------|--------|
-| Broker API keys | Stored in Agent only |
-| Raw order events | Privacy, IP protection |
-| Exact position sizes | Privacy |
+| Broker API keys | Designed to stay in Agent only |
+| Raw order events (by default) | Privacy, IP protection; opt-in for enterprise |
+| Exact position sizes (by default) | Privacy; aggregated telemetry only unless opted-in |
 | Account balances | Privacy |
-| Individual trade details | Privacy, IP protection |
-| Strategy source code | IP protection (unless training service used) |
+| Individual trade details (by default) | Privacy, IP protection; aggregated unless opted-in |
+| Strategy source code | IP protection (unless training service used)
 
 ---
 

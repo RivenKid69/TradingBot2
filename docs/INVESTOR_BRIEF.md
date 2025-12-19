@@ -24,11 +24,11 @@
 | **Ask** | Seed funding for customer validation & go-to-market |
 | **Primary ICP** | European systematic equities teams (prop firms + small funds) |
 
-**What we've built**: A trading infrastructure platform with built-in risk management that reduces time-to-market from months to days.
+**What we've built**: A trading infrastructure platform with built-in risk management designed to reduce time-to-market (target: days vs. industry-typical months; pending customer validation).
 
 **Where we are now**: Core foundation implemented. We are entering the **customer validation phase** — planning pilot programs with European systematic equities teams to validate product-market fit before scaling. **Note**: No pilots are currently active; no signed LOIs, customers, or revenue exist as of this document's date.
 
-**Why it matters**: Prop trading firms often spend 6-12 months and €200K-1.8M+ building trading infrastructure (team- and scope-dependent). We reduce this to days at a fraction of the cost.
+**Why it matters**: Prop trading firms often spend 6-12 months and €200K-1.8M+ building trading infrastructure (team- and scope-dependent). We aim to reduce this significantly (target: days; pending customer case study validation).
 
 ---
 
@@ -69,7 +69,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 | Benefit | Description |
 |---------|-------------|
 | **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; Cloud does not execute orders or hold credentials/assets) |
-| **Enterprise-Grade Design** | Designed to satisfy institutional security requirements (secrets never leave user infra) |
+| **Enterprise-Grade Design** | Designed to satisfy institutional security requirements (secrets designed to stay in user infra) |
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
 | **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 

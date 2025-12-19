@@ -262,7 +262,7 @@ Before seeking significant funding, we will demonstrate:
 1. **Reduced Iteration Risk**: Solid architecture allows fast feature changes without breaking production
 2. **Credibility with Technical Buyers**: CTOs of prop firms evaluate technical quality
 3. **Defensibility**: Comprehensive test suite (see CI) and continuous development create barrier to entry
-4. **Regulatory Compliance**: MiFID II requires robust risk management — we have it
+4. **Regulatory Alignment**: MiFID II expects robust risk management — our architecture is designed to support this (see CCEA docs)
 
 ### Reframing the Narrative
 
