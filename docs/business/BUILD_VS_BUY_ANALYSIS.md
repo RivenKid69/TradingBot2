@@ -14,15 +14,15 @@ This document provides a **comprehensive framework** for evaluating the build-vs
 
 ### Key Finding (Model-Based Estimate)
 
-> **For firms with AUM < €500M, buying specialized infrastructure may deliver 4-7x better ROI than building in-house**, based on COCOMO II cost modeling and industry benchmarks. Actual results depend on team size, scope, existing infrastructure, and execution quality; this is an illustrative model, not a guarantee.
+> **Based on COCOMO II cost modeling and industry benchmarks, our analysis suggests potential cost advantages for firms with AUM < €500M**. The model estimates 4-7x ROI differential between building in-house vs. buying specialized infrastructure, but actual results depend on team size, scope, existing infrastructure, and execution quality. This is an illustrative decision-support model, not a guarantee or proven outcome.
 
-| Decision Factor | Build In-House (est.) | Buy CCEA (target) | Estimated Advantage |
-|-----------------|----------------------|-------------------|---------------------|
-| **Time to Production** | 18-36 months (industry range) | 1-4 weeks (target) | **Potentially 72-156x faster** |
-| **5-Year TCO** | €1.5M - €5M (model estimate) | €120K - €600K (target pricing) | **Potentially 75-90% savings** |
-| **Ongoing Maintenance** | 40-60% of dev cost/year (industry avg.) | Included | **Predictable** |
-| **Innovation Risk** | High (self-funded R&D) | Low (shared) | **De-risked** |
-| **Opportunity Cost** | 2-3 years of alpha (estimate) | Target: faster deployment | **Significant (case-dependent)** |
+| Decision Factor | Build In-House (est.) | Buy CCEA (target) | Model Estimate (not proven) |
+|-----------------|----------------------|-------------------|------------------------------|
+| **Time to Production** | 18-36 months (industry range) | 1-4 weeks (target) | **Model suggests 72-156x faster** |
+| **5-Year TCO** | €1.5M - €5M (model estimate) | €120K - €600K (target pricing) | **Model suggests 75-90% savings** |
+| **Ongoing Maintenance** | 40-60% of dev cost/year (industry avg.) | Included | **Predictable (design goal)** |
+| **Innovation Risk** | High (self-funded R&D) | Low (shared) | **Lower risk (model assumption)** |
+| **Opportunity Cost** | 2-3 years of alpha (estimate) | Target: faster deployment | **Significant (model-dependent)** |
 
 > **Disclaimer**: Estimates based on COCOMO II methodology, industry benchmarks (McKinsey, Deloitte), and internal modeling. Actual results will vary based on firm size, team capabilities, scope, and execution. This is decision-support material, not a guarantee of outcomes.
 

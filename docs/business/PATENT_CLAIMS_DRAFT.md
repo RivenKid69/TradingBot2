@@ -321,7 +321,7 @@ A computer-implemented simulation environment for algorithmic trading developmen
 |--------|---------------|-------------------|-----------------|
 | CVaR in RL | Embedded in distributional value | Tamar (2015): constraint only | Direct integration, not constraint |
 | Twin Critics | With distributional outputs | Fujimoto (2018): scalar only | Novel combination |
-| Conformal bounds | On trading risk estimates | Romano (2019): general ML | First application to trading RL |
+| Conformal bounds | On trading risk estimates | Romano (2019): general ML | Applied to trading RL (uncommon) |
 | Multi-asset sim | Unified L1-L3 fidelity | Separate per-asset systems | Single architecture, common API |
 | Auto-calibration | From LOB data | Manual parameter tuning | Automated, continuous |
 

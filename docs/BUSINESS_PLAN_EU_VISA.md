@@ -385,7 +385,7 @@ This architecture provides clear regulatory benefits:
 
 #### 4.1.1 Risk-Aware Distributional Reinforcement Learning
 
-**Innovation**: Among the first production implementations of CVaR-constrained reinforcement learning for trading.
+**Innovation**: Production-oriented implementation of CVaR-constrained reinforcement learning for trading (uncommon in commercial platforms).
 
 **Academic Foundation**:
 - Dabney et al. (2018), "Distributional RL with Quantile Regression", AAAI
@@ -398,11 +398,11 @@ This architecture provides clear regulatory benefits:
 - Our approach explicitly penalizes the worst 5% of outcomes
 - **Result**: Strategies that avoid large drawdowns, not just maximize gains
 
-**Competitive Position**: No commercial or open-source platform offers this capability.
+**Competitive Position**: This capability is not commonly found in commercial or open-source platforms based on our market research (not exhaustive).
 
 #### 4.1.2 Continual Learning for Finance (UPGD)
 
-**Innovation**: Among the first applications of continual learning to financial reinforcement learning.
+**Innovation**: Production-oriented application of continual learning to financial reinforcement learning (uncommon in trading platforms).
 
 **Academic Foundation**:
 - Kirkpatrick et al. (2017), "Overcoming Catastrophic Forgetting", PNAS
@@ -418,7 +418,7 @@ This architecture provides clear regulatory benefits:
 
 #### 4.1.3 Conformal Prediction Integration
 
-**Innovation**: Among the first applications of conformal prediction to trading risk management.
+**Innovation**: Production-oriented application of conformal prediction to trading risk management (uncommon in commercial platforms).
 
 **Academic Foundation**:
 - Romano et al. (2019), "Conformalized Quantile Regression", NeurIPS

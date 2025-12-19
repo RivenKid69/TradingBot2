@@ -56,11 +56,13 @@ Per **Nielsen** and **Demand Gen** research:
 
 ### 1.3 Competitive Disadvantage
 
-| Competitor | Testimonials | Case Studies | Reviews |
-|------------|--------------|--------------|---------|
-| QuantConnect | 50+ quotes | 10+ | 200+ (G2) |
-| Alpaca | 100+ quotes | 20+ | 150+ |
-| **CCEA (Current)** | **0** | **0** | **0** |
+> **Note**: Competitor counts below are approximate estimates based on public website inspection (December 2025) and are not independently verified. They are intended for internal gap analysis only, not external claims.
+
+| Competitor | Testimonials (est.) | Case Studies (est.) | Reviews (approx.) |
+|------------|---------------------|---------------------|-------------------|
+| QuantConnect | ~50+ quotes | ~10+ | ~200+ (G2, Dec 2025) |
+| Alpaca | ~100+ quotes | ~20+ | ~150+ (Dec 2025) |
+| **CustodiaCloud (Current)** | **0** | **0** | **0** |
 
 ---
 

@@ -65,21 +65,21 @@ According to S&P 500 Economic Moat Index:
 
 ### 2.1 Novel Technical Contribution
 
-CCEA's core innovation combines **three research advances** that have never been integrated:
+CCEA's core innovation combines **three research advances** in a manner not commonly found in commercial or open-source platforms:
 
 | Component | Academic Origin | CCEA Innovation |
 |-----------|----------------|---------------------|
 | **Distributional RL** | Dabney et al. (2018) QR-DQN | Extended with CVaR-aware policy gradient |
 | **CVaR Optimization** | Tamar et al. (2015) | Embedded in value function, not constraint |
 | **Twin Critics** | Fujimoto et al. (2018) TD3 | Combined with distributional outputs |
-| **Conformal Prediction** | Romano et al. (2019) CQR | First application to trading RL |
-| **Cloud/Agent Split** | Novel Architecture | Execution in customer environment for regulatory compliance |
+| **Conformal Prediction** | Romano et al. (2019) CQR | Applied to trading RL (uncommon in production) |
+| **Cloud/Agent Split** | Differentiated Architecture | Execution in customer environment for regulatory compliance |
 
-**Prior Art Gap:**
+**Prior Art Gap (subject to counsel review):**
 - Academic work treats CVaR as a **constraint** on the optimization
 - CCEA **embeds CVaR directly into the distributional value function**
-- Prior-art and patent strategy should be validated by counsel before any external claim; we avoid “patent pending” phrasing in public/committee materials
-- **Unique architectural approach:** Cloud handles training/simulation, Agent handles execution locally
+- Prior-art and patent strategy should be validated by counsel before any external claim; we avoid "patent pending" phrasing in public/committee materials
+- **Differentiated architectural approach:** Cloud handles training/simulation, Agent handles execution locally
 
 ### 2.2 Technical Complexity Quantification
 
