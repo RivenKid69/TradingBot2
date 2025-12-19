@@ -1622,11 +1622,11 @@ cluster-node-timeout 15000
 This technical implementation guide provides the foundation for enterprise-grade deployments following the CCEA architecture. For specific customization or additional requirements, please contact our enterprise team.
 
 **Key CCEA Design Commitments for Enterprise** (enforced at architecture level):
-- Cloud **NEVER** stores broker API keys or credentials
-- Cloud **NEVER** creates, transmits, or executes orders
-- Agent deployed in customer infrastructure is the **ONLY** execution point
+- Cloud **does not** store broker API keys or credentials (by design)
+- Cloud **does not** create, transmit, or execute orders (by design)
+- Agent deployed in customer infrastructure is the execution point
 - All TRADING_IMPACTING changes require local approval
-- Full audit trail for compliance (MiFID II, DORA)
+- Audit trail designed to support client governance reviews (MiFID II, DORA readiness)
 
 **Support Contacts**:
 - Technical Support: support@[company].com

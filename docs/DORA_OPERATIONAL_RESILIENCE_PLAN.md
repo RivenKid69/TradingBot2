@@ -2065,8 +2065,8 @@ notification_sla_by_capacity:
         medium: "2 hours"
 
       client_disclosure: |
-        Dedicated 24/7 operations team with continuous monitoring.
-        Client notification within 15 minutes for critical incidents.
+        Illustrative target: Dedicated 24/7 operations team with continuous monitoring (subject to staffing/contracts).
+        Target: Client notification within 15 minutes for critical incidents (aspirational; actual SLA per contract).
 
       cost: "€15,000-25,000/month (3 FTE)"
       risk: "High fixed cost"
@@ -2403,12 +2403,12 @@ subcontractor_management:
         alternative_providers:
           - name: "Kraken"
             lei: "TBD"
-            regulatory_status: "Licensed in multiple EU jurisdictions"
-            notes: "Recommended for EU-regulated clients"
+            regulatory_status: "Reported as licensed in multiple EU jurisdictions (verify independently)"
+            notes: "Recommended for EU-regulated clients; client must verify current licensing status"
           - name: "Coinbase"
             lei: "5493005KJDX9YGBJI252"
-            regulatory_status: "US SEC registered, EU licenses"
-            notes: "Recommended for US and EU clients"
+            regulatory_status: "Reported as US SEC registered with EU licenses (verify independently)"
+            notes: "Recommended for US and EU clients; client must verify current regulatory status"
 
         client_disclosure: |
           Binance regulatory status varies significantly by jurisdiction.
@@ -2432,9 +2432,9 @@ subcontractor_management:
       has_data_access: true  # Logs may contain metadata
       data_types_accessed: ["System logs", "Performance metrics"]
       certifications:
-        - "SOC 2 Type II"
-        - "ISO 27001"
-        - "GDPR commitments (vendor-asserted)"
+        - "SOC 2 Type II (verify scope/period with vendor)"
+        - "ISO 27001 (verify scope/period with vendor)"
+        - "GDPR commitments (vendor-asserted; verify DPA)"
       contract_reference: "Datadog Enterprise Agreement"
       is_material: false
       supports_critical_functions: false

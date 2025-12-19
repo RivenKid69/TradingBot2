@@ -14,7 +14,7 @@
 
 > **Foundational Innovation**: Beyond algorithmic innovations, our platform implements a **novel architectural pattern** that separates research/monitoring (Cloud) from execution (Agent), enabling:
 > - **Regulatory clarity**: Clear "Software Provider" positioning (not execution service)
-> - **Security**: Secrets never leave customer environment
+> - **Security**: Secrets designed to stay in customer environment (by architecture)
 > - **Governance**: evidence exports designed to support client procurement and operational reviews
 
 | Component | Responsibility | Secrets | Orders |

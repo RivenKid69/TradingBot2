@@ -915,11 +915,11 @@ We maintain real-time visibility into platform-wide abuse indicators:
 │  2. Order rate limit (4)                                        │
 │  3. EOD size restriction (3)                                    │
 │                                                                  │
-│  COMPLIANCE STATUS                                               │
+│  COMPLIANCE STATUS (illustrative UI mockup)                      │
 │  ────────────────                                                │
-│  ✅ All systems operational                                      │
-│  ✅ No STOR pending                                              │
-│  ✅ No regulatory inquiries                                      │
+│  ⬜ All systems operational                                      │
+│  ⬜ No STOR pending                                              │
+│  ⬜ No regulatory inquiries                                      │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```

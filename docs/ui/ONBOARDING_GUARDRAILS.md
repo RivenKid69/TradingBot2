@@ -295,9 +295,9 @@ This action requires your local approval.
 │  ✅ You control risk limits Cloud cannot override      │
 │  ✅ You can disconnect and keep trading                │
 │                                                         │
-│  ❌ Cloud NEVER stores your API keys                   │
-│  ❌ Cloud NEVER executes orders                        │
-│  ❌ Cloud NEVER has access to your broker              │
+│  ❌ Cloud does not store your API keys (by design)     │
+│  ❌ Cloud does not execute orders (by design)          │
+│  ❌ Cloud does not have access to your broker (design) │
 │                                                         │
 │  [Learn More About CCEA Architecture]                  │
 └────────────────────────────────────────────────────────┘

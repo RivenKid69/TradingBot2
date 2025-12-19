@@ -17,10 +17,10 @@
 
 The data controller responsible for your personal data is:
 
-**[Company Name]**
+**[Company Name]** *(template; finalize upon entity formation)*
 - **Registered Address:** [Address]
 - **Registration Number:** [Number]
-- **Country:** Netherlands (EU)
+- **Country:** [Final jurisdiction TBD upon entity formation]
 
 ### 1.2 Contact Information
 
@@ -41,26 +41,26 @@ For Users outside the EU, our EU representative is:
 
 ### 1A.1 Architectural Overview
 
-**IMPORTANT - DATA RESIDENCY BY ARCHITECTURE:**
+**IMPORTANT - DATA RESIDENCY BY DESIGN (design intent; implementation may vary by deployment):**
 
-The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, which strictly separates data processing between Cloud and Agent zones:
+The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, which is designed to separate data processing between Cloud and Agent zones:
 
 | Zone | Data Processed | Credentials Access | Your Sensitive Data |
 |------|---------------|-------------------|---------------------|
-| **Cloud** | Research, backtesting, monitoring | **NEVER** | Aggregated telemetry only |
-| **Agent** | Execution, risk enforcement | **YES (Local Only)** | Stays on YOUR hardware |
+| **Cloud** | Research, backtesting, monitoring | **None (by design)** | Aggregated telemetry only |
+| **Agent** | Execution, risk enforcement | **YES (Local Only)** | Designed to stay on YOUR hardware |
 
 ### 1A.2 Cloud Zone Data (Processed by Us)
 
 Data processed in our Cloud infrastructure:
 
-| Data Type | Processing Location | Retention |
+| Data Type | Processing Location (design target) | Retention (target) |
 |-----------|-------------------|-----------|
-| Account information | Cloud (EU) | Until deletion |
-| Research/backtest jobs | Cloud (EU) | Per retention policy |
-| Strategy source code | Cloud (EU) | Until deletion |
-| Aggregated telemetry | Cloud (EU) | 90 days |
-| Audit logs | Cloud (EU) | 5 years |
+| Account information | Cloud (EU region by design) | Until deletion |
+| Research/backtest jobs | Cloud (EU region by design) | Per retention policy |
+| Strategy source code | Cloud (EU region by design) | Until deletion |
+| Aggregated telemetry | Cloud (EU region by design) | 90 days (target) |
+| Audit logs | Cloud (EU region by design) | 5 years (target) |
 
 **Cloud is designed not to receive or process (enforced via CCEA architecture):**
 - Broker API keys or secrets (secrets stay in customer-controlled Agent)
@@ -316,9 +316,9 @@ When you operate a local Agent, it may send telemetry to Cloud for monitoring:
 | Errors | Error codes | No order details |
 | Equity | Bucketed range | No exact values |
 
-#### 5.4.2 What Telemetry NEVER Contains
+#### 5.4.2 What Telemetry Is Designed Not to Contain
 
-These fields are **blocked at the protocol level**:
+These fields are **designed to be blocked at the protocol level** (per CCEA architecture):
 - Order side (buy/sell)
 - Order quantity
 - Order price
@@ -329,7 +329,7 @@ These fields are **blocked at the protocol level**:
 
 #### 5.4.3 Telemetry Sensitivity Levels (CCEA Design)
 
-The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is designed to be always active**; the architecture does not expose configuration options or feature flags to disable it (enforced via CI guardrails and runtime checks).
+The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is designed to be always active**; the architecture is designed not to expose configuration options or feature flags to disable it (enforced via CI guardrails and runtime checks; design intent).
 
 | Level | Description | Data Included | Opt-in Required |
 |-------|-------------|---------------|-----------------|

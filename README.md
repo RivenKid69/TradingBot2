@@ -155,8 +155,8 @@ CustodiaCloud includes documentation, controls, and evidence export patterns int
 - Cloud **does not** store or receive broker credentials or API keys (secrets stay in the customer-controlled Agent)
 - Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
 - Telemetry **designed to be redacted** before transmission; raw order events require explicit opt-in
-- EU data residency **by design** for EU customers (enterprise: on-prem/customer-managed options available)
-- DSAR scope is Cloud-only; Agent data is customer-controlled
+- EU data residency **by design** for EU customers (design target; enterprise: on-prem/customer-managed options available)
+- DSAR scope is Cloud-only (by design); Agent data is customer-controlled
 
 Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 

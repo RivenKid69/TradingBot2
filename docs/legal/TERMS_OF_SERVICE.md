@@ -278,7 +278,7 @@ By configuring your Broker API Keys in the local Agent, you:
 Your Broker API Keys are protected by security measures designed to include:
 
 - **Encryption at rest**: Encryption designed to use AES-256-GCM (or equivalent) with unique keys per user (implementation may vary by deployment)
-- **Encryption in transit**: TLS 1.2 or higher (TLS 1.3 where supported) for data transmission
+- **Encryption in transit**: TLS 1.2 or higher (TLS 1.3 where supported) designed for data transmission (verify deployment configuration)
 - **Access controls**: Keys are designed to be decrypted only when required for order execution in the Agent
 - **Audit logging**: Credential access is designed to be logged for security monitoring
 

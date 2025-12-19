@@ -456,10 +456,10 @@ The new EU regulation for ICT risk management in financial services (effective J
 │                                                                              │
 │  PILLAR 3: Digital Operational Resilience Testing                           │
 │  ┌────────────────────────────────────────────────────────────────────┐    │
-│  │ ✅ Regular vulnerability assessments                                 │    │
-│  │ ✅ Penetration testing (annual)                                      │    │
-│  │ ✅ Threat-led penetration testing (TLPT) support                     │    │
-│  │ ✅ Scenario-based testing capabilities                               │    │
+│  │ 🔲 Regular vulnerability assessments (roadmap)                       │    │
+│  │ 🔲 Penetration testing (annual; planned)                             │    │
+│  │ 🔲 Threat-led penetration testing (TLPT) support (roadmap)           │    │
+│  │ 🔲 Scenario-based testing capabilities (roadmap)                     │    │
 │  └────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 │  PILLAR 4: ICT Third-Party Risk Management                                  │
