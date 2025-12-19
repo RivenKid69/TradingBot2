@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 1.3
+**Version**: 1.4
 **Date**: 2025-12-20
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -282,6 +282,18 @@ Each entry contains:
 | **Control Artifact** | `docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md` |
 | **Note** | Acceptable for single-instance; Redis required for multi-instance production |
 
+### security-model-loading {#security-model-loading}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tools/convert_legacy_models.py:92-96`, `infer_signals.py` |
+| **Severity** | Medium |
+| **Description** | Legacy model conversion uses unsafe pickle loading in controlled context |
+| **Status** | Controlled |
+| **Control Artifact** | `docs/security/THREAT_MODEL_MODEL_LOADING.md` |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Controls C1-C5 implemented: fail-closed default, explicit opt-in, conversion utility, artifact signing, static analysis |
+
 ---
 
 ## Docs/Drift
@@ -296,6 +308,18 @@ Each entry contains:
 | **Status** | Controlled |
 | **Control Artifact** | CI_GUARDRAILS.md now accurately reflects target vs implemented |
 | **Note** | Docs corrected to state "TARGET" per Documentation Canon |
+
+### docs-ci-workflow-existence {#docs-ci-workflow-existence}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `BUILD_INSTRUCTIONS.md:344-346`, `SYSTEM_REQUIREMENTS.md:350-352` |
+| **Severity** | Medium |
+| **Description** | Documentation references CI workflows and SBOM generation |
+| **Status** | Closed |
+| **Control Artifact** | `.github/workflows/build-and-test.yml`, `.github/workflows/security-sast.yml` |
+| **Closure Date** | 2025-12-20 |
+| **Note** | CI workflows exist and are fully functional: build-and-test.yml (hash verification, CCEA guardrails), security-sast.yml (SBOM, gitleaks, trufflehog, bandit, semgrep) |
 
 ---
 
@@ -322,14 +346,14 @@ Each entry contains:
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
 | Testing/Quality | 1 | 3 | 1 | 5 | 3 | 2 |
 | Reliability/Operations | 2 | 2 | 0 | 4 | 4 | 0 |
-| Security | 3 | 2 | 0 | 5 | 2 | 3 |
-| Docs/Drift | 0 | 1 | 0 | 1 | 1 | 0 |
+| Security | 3 | 3 | 0 | 6 | 3 | 3 |
+| Docs/Drift | 0 | 2 | 0 | 2 | 1 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **12** | **2** | **24** | **17** | **7** |
+| **TOTAL** | **10** | **14** | **2** | **26** | **18** | **8** |
 
 **Status Summary**:
-- 17 items Controlled (with active monitoring/artifacts)
-- 7 items Closed (resolved in this session)
+- 18 items Controlled (with active monitoring/artifacts)
+- 8 items Closed (resolved)
 
 ---
 
@@ -341,6 +365,7 @@ Each entry contains:
 | 1.1 | 2025-12-19 | Created missing control artifacts: SECURITY_ROADMAP.md, test_orderbook_tif_conformance.cpp stub |
 | 1.2 | 2025-12-20 | Added testing-compute-failures entry; updated control artifacts for 16-item closure |
 | 1.3 | 2025-12-20 | Added 8 new entries from security/testing/data-ml closure; 7 items closed with code fixes |
+| 1.4 | 2025-12-20 | Added security-model-loading (controlled), docs-ci-workflow-existence (closed); verified all 18 original findings |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
