@@ -1,5 +1,5 @@
 # EU Data Residency Configuration
-## DORA Article 30(2)(b) Compliance
+## DORA Article 30(2)(b) Alignment (Design Specification)
 
 **Version**: 1.0
 **Date**: 2025-01-17
@@ -88,7 +88,7 @@ Article 30(2)(b) mandates contracts include:
 
 ## 4. Data Classification and Location
 
-### 4.1 Client Data (Always EU)
+### 4.1 Client Data (EU by design)
 
 | Data Type | Processing | Storage | Backup | Retention |
 |-----------|------------|---------|--------|-----------|

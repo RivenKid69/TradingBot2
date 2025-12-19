@@ -4,7 +4,7 @@
 
 **Version**: 1.0
 **Effective Date**: December 2024
-**Policy Owner**: Data Protection Officer
+**Policy Owner**: Security Lead (DPO designation pending organizational scale)
 **Review Cycle**: Annual
 
 ---
@@ -25,7 +25,7 @@ Our platform implements strict data separation between Cloud Zone and Agent Zone
 
 | Data Category | Cloud Zone | Agent Zone | Protection Mechanism |
 |---------------|------------|------------|---------------------|
-| **Trading Credentials** | ❌ Not stored | ✅ Local Vault only | Architecture enforcement |
+| **Trading Credentials** | ❌ Not stored (by design) | ✅ Local Vault only | Architectural design goal |
 | **Broker API Keys** | ❌ Not accessed | ✅ HSM/KMS/Keychain | Secrets stay in Agent |
 | **User Strategies** | ✅ Research/backtest | ✅ Execution | Encryption + access control |
 | **Telemetry Data** | ✅ Redacted by default | Raw at source | Redaction middleware (on by default) |
@@ -59,9 +59,9 @@ Telemetry sent from Agent to Cloud is designed to pass through mandatory redacti
 │                              CLOUD ZONE                                      │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │  Telemetry Storage (receives only sanitized data)                    │    │
-│  │  - CANNOT reconstruct secrets                                        │    │
-│  │  - CANNOT identify trading positions                                 │    │
-│  │  - CANNOT replay trading activity                                    │    │
+│  │  - Designed not to reconstruct secrets                               │    │
+│  │  - Designed not to identify trading positions                        │    │
+│  │  - Designed not to replay trading activity                           │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -140,7 +140,7 @@ We adhere to the following principles (GDPR Article 5):
 - Serve as contact point for supervisory authorities
 - Handle data subject requests
 
-**Contact**: dpo@[company].com
+**Contact**: privacy@[company].com (DPO contact when designated)
 
 ### 4.2 Management
 - Ensure adequate resources for data protection

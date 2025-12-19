@@ -323,7 +323,7 @@ INCIDENT DETECTED
 
 | Role | Contact | Escalation |
 |------|---------|------------|
-| Security Lead | [Internal] | 24/7 on-call |
+| Security Lead | [Internal] | Escalation available (capacity dependent) |
 | Legal Counsel | [External Firm] | Business hours |
 | CEO | [Internal] | Critical only |
 
@@ -370,7 +370,7 @@ All external information sharing must be logged:
 |------------|-----------|---------|-------|
 | Access Review | Monthly | Security Lead | Who has access |
 | Policy Compliance | Quarterly | Legal | Adherence to this policy |
-| Technical Controls | Semi-annual | External | Penetration testing |
+| Technical Controls | Semi-annual (target) | External (planned) | Security testing (scope per engagement) |
 | Full Trade Secret | Annual | External Counsel | Complete audit |
 
 ### 7.2 Metrics and KPIs

@@ -280,9 +280,9 @@ We do NOT:
 
 ### 5.2 No Sale of Data
 
-**WE DO NOT SELL YOUR PERSONAL DATA.**
+**We do not sell your personal data.**
 
-We do not sell, rent, or trade your personal information to third parties for marketing or any other purposes.
+Our policy is not to sell, rent, or trade your personal information to third parties for marketing or any other purposes.
 
 ### 5.3 Sub-Processors (EU-only)
 

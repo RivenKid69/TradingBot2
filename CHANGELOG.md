@@ -7,7 +7,7 @@
 - **P0: Real Cryptographic Signature Verification** (2025-12-15)
   - Integrated `ArtifactVerifier` into `preflight.py` for Ed25519 cryptographic verification
   - Replaced presence-only signature check with real crypto verification per Design Doc Phase 4
-  - Unsigned artifacts now properly REJECTED (fail-closed security model)
+  - Unsigned artifacts now properly REJECTED (designed for fail-closed behavior)
   - Files: `packages/agent/daemon/preflight.py`
   - Tests: `tests/ccea/test_design_doc_compliance.py::TestPreflightVerifierIntegration`
 

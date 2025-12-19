@@ -221,7 +221,7 @@ security_pipeline:
 │                    │  OANDA, IB, etc.) │                                    │
 │                    └───────────────────┘                                    │
 │                                                                              │
-│  ✓ Zero data leaves client infrastructure                                   │
+│  ✓ Data designed to remain within client infrastructure                     │
 │  ✓ Full control over updates and configuration                              │
 │  ✓ Air-gapped option available for strategy development                     │
 │  ✓ Client manages all encryption keys                                       │

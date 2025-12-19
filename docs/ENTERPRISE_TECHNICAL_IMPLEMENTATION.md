@@ -30,8 +30,8 @@ This document provides detailed technical specifications for enterprise deployme
 │  │  • Control Plane (lifecycle commands ONLY)     │                     │
 │  │  • Telemetry Ingestion (redacted data only)    │                     │
 │  │                                                │                     │
-│  │  SECRETS: NEVER                                │                     │
-│  │  ORDERS: NEVER                                 │                     │
+│  │  SECRETS: Does not store (by design)           │                     │
+│  │  ORDERS: Does not generate (by design)         │                     │
 │  └────────────────────────────────────────────────┘                     │
 │                              │                                           │
 │                              │ REQUEST_START, REQUEST_STOP, etc.         │

@@ -24,8 +24,8 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         CLOUD ZONE (Research & Control)                      │
 │                                                                              │
-│  SECURITY DESIGN COMMITMENTS (enforced at architecture level):               │
-│  ✗ NO trading credentials stored (secrets never enter Cloud)                │
+│  SECURITY DESIGN COMMITMENTS (architectural design goals):                   │
+│  ✗ NO trading credentials stored (designed not to enter Cloud)              │
 │  ✗ NO order generation or transmission (no trading libs in build)           │
 │  ✗ NO access to exchange trading endpoints (no broker APIs)                 │
 │  ✗ NO order-like payloads (side/qty/price blocked in schema)                │

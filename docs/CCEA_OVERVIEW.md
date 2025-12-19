@@ -74,11 +74,11 @@ Agent: keys, live decision loop, risk controls, order creation/sending, local ap
 Cloud = research / build / monitoring / control plane (lifecycle requests)
 Agent = secrets + live loop + risk enforce + order creation/sending
 
-Cloud NEVER:
-  - Stores broker API keys
-  - Generates or transmits orders
-  - Has access to exchange trading endpoints
-  - Sends order-like payloads (side/qty/price)
+Cloud does not (by design):
+  - Store broker API keys
+  - Generate or transmit orders
+  - Access exchange trading endpoints
+  - Send order-like payloads (side/qty/price)
 ```
 
 ### 3.2 Visual Architecture
@@ -385,7 +385,7 @@ Agent stores local policy that:
 - Prohibits some instruments/order types
 - Prohibits auto-approve for some changes
 
-**Cloud CANNOT raise risk above hard caps ever.**
+**Cloud is designed not to raise risk above local hard caps (Policy Firewall enforcement).**
 
 ---
 
