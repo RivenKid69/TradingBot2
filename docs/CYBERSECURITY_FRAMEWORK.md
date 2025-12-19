@@ -24,10 +24,10 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         CLOUD ZONE (Research & Control)                      │
 │                                                                              │
-│  SECURITY DESIGN COMMITMENTS (architectural design goals):                   │
-│  ✗ NO trading credentials stored (designed not to enter Cloud)              │
-│  ✗ NO order generation or transmission (no trading libs in build)           │
-│  ✗ NO access to exchange trading endpoints (no broker APIs)                 │
+│  SECURITY DESIGN GOALS (architectural intent; verify via CI/audit):          │
+│  ✗ Trading credentials: designed not to enter Cloud (local vault only)      │
+│  ✗ Order generation: designed to be absent from Cloud (no trading libs)     │
+│  ✗ Exchange access: designed to be absent from Cloud (no broker APIs)       │
 │  ✗ NO order-like payloads (side/qty/price blocked in schema)                │
 │  ✓ Mandatory telemetry redaction (secrets blocked in transmission)          │
 │  ✓ Signed artifacts only (supply chain security)                            │
@@ -137,14 +137,14 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 - Risk appetite statement
 - Risk treatment plans
 
-**GV.RM-02: Risk Tolerance Established**
+**GV.RM-02: Risk Tolerance Targets (internal goals, not contractual SLAs)**
 
-| Risk Category | Tolerance Level |
-|---------------|-----------------|
-| Data breach | Zero tolerance |
-| Service unavailability | <4 hours/year |
-| Financial loss | <€100K/incident |
-| Regulatory non-compliance | Zero tolerance |
+| Risk Category | Tolerance Target | Note |
+|---------------|------------------|------|
+| Data breach | Zero tolerance | Aspirational security goal |
+| Service unavailability | <4 hours/year | Internal target; actual SLAs are contract-specific |
+| Financial loss | <€100K/incident | Internal risk appetite; liability limits per contract |
+| Regulatory non-compliance | Zero tolerance | Design goal; clients responsible for own compliance |
 
 ### 3.3 Cybersecurity Supply Chain Risk (GV.SC)
 

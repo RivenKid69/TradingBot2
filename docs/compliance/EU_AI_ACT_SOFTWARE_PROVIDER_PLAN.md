@@ -1461,7 +1461,7 @@ from .training_data_summary import (
 **Status**: ✅ COMPLETED (2025-12-10)
 **Scope**: Документация, GPAI Model Card, обновление классификации
 **Modules**: 2 новых модуля + обновления документации
-**Tests**: 133 тестов (69 + 64) - 100% pass rate
+**Tests**: 133 tests (69 + 64) - pass rate at time of writing (verify via CI run; coverage may vary with code changes)
 
 **Deliverables**:
 - ✅ `services/ai_act/gpai_model_card.py` - GPAI Model Card system

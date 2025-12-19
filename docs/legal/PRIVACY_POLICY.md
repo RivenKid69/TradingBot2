@@ -272,17 +272,17 @@ Your Agent (local) → Broker API (direct connection)
 Cloud receives ONLY redacted telemetry (no order details)
 ```
 
-We do NOT:
-- Store your broker credentials
-- Transmit orders on your behalf
-- Have any connection to your broker accounts
-- Receive order details (side, quantity, price)
+Our architecture is designed so that Cloud does NOT:
+- Store your broker credentials (designed to remain in local Agent vault only)
+- Transmit orders on your behalf (execution designed to occur only via customer-controlled Agent)
+- Have direct connection to your broker accounts (Agent connects to brokers locally)
+- Receive order details (side, quantity, price) in telemetry (redaction enforced by design)
 
 ### 5.2 No Sale of Data
 
-**We do not sell your personal data.**
+**We are not in the business of selling your personal data.**
 
-Our policy is not to sell, rent, or trade your personal information to third parties for marketing or any other purposes.
+Our policy is designed not to sell, rent, or trade your personal information to third parties for marketing purposes. This commitment is subject to our sub-processor agreements and applicable law.
 
 ### 5.3 Sub-Processors (EU-only)
 

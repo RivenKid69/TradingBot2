@@ -408,8 +408,8 @@ General Data Protection Regulation requirements for data handling:
 │  │  │ • Performance metrics    │        │                          │  │    │
 │  │  └──────────────────────────┘        └──────────────────────────┘  │    │
 │  │                                                                      │    │
-│  │  CCEA NOTE: Broker API keys are NEVER stored in Cloud.              │    │
-│  │  They reside in customer's local Agent encrypted vault only.        │    │
+│  │  CCEA NOTE: Broker API keys are designed not to be stored in Cloud. │    │
+│  │  They are designed to reside in customer's local Agent vault only.  │    │
 │  │           │                                    │                    │    │
 │  │           ▼                                    ▼                    │    │
 │  │  Standard Processing                  Enhanced Protection           │    │

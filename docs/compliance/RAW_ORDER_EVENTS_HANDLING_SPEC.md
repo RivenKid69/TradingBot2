@@ -554,7 +554,7 @@ See `docs/compliance/TELEMETRY_DATA_DICTIONARY.md` Section 5 for complete list.
 
 ### 8.2 Still Forbidden Fields
 
-Even with RAW_ORDER_EVENTS, the following are **ALWAYS FORBIDDEN**:
+Even with RAW_ORDER_EVENTS, the following are **designed to be FORBIDDEN** (verify via redaction tests):
 
 ```python
 ALWAYS_FORBIDDEN_FIELDS = frozenset({

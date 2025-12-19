@@ -198,22 +198,23 @@ testing:
     frequency: "continuous"
     scope: "all_critical_services"
 
-  # Testing types and schedules
+  # Testing types and schedules (target cadence; operational status pending infrastructure build-out)
   test_types:
     vulnerability_assessment:
-      frequency: "weekly"
-      scope: "all_systems"
-      tools:
-        - "Nessus"
-        - "Qualys"
-      automated: true
+      frequency: "weekly (target cadence; verify actual scan schedule)"
+      scope: "all_systems (planned)"
+      tools_planned:  # Tooling selection is a design goal; verify licenses/deployment before relying on this
+        - "Nessus (candidate)"
+        - "Qualys (candidate)"
+      automated: true  # design goal
+      note: "Operational evidence (scan reports, remediation tickets) required to demonstrate execution"
 
     penetration_testing:
-      frequency: "quarterly (target)"
-      scope: "external_perimeter"
-      provider: "external_certified (verify via engagement contract)"
+      frequency: "quarterly (target; not yet operational)"
+      scope: "external_perimeter (planned)"
+      provider: "external_certified (to be engaged; verify via engagement contract when available)"
       report_to: ["CISO", "CTO", "Compliance"]
-      note: "Pen test reports available upon request under NDA"
+      note: "Pen test reports will be available upon request under NDA once engagements begin"
 
     red_team_exercise:
       frequency: "annually"

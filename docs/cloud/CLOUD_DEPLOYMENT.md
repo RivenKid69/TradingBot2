@@ -53,7 +53,7 @@ make dist-cloud
 - `ccea/protocol/` - Protocol validation
 - `ccea/telemetry/` - Telemetry schemas (no agent-side code)
 
-**Cloud artifact NEVER contains:**
+**Cloud artifact is designed not to contain (verify via `make artifact-check-cloud`):**
 - `packages/agent/` - Agent daemon, execution, vault
 - `ccea/agent/` - Legacy agent shim (deprecated)
 - `ccea/control_plane/` - Legacy control plane shim (deprecated)

@@ -31,11 +31,11 @@ DORA References:
     - Art. 30(3)(a): Service level descriptions for critical functions
     - Art. 30(4): Pooled audits
 
-Enterprise Tier Requirements:
-    - Multi-region deployment completed
-    - 24/7 on-call team (4+ FTE)
-    - Quarterly DR tests passing
-    - SOC2 Type II certification completed
+Enterprise Tier Requirements (design goals; verify actual status):
+    - Multi-region deployment (planned)
+    - 24/7 on-call team (target: 4+ FTE; pending hiring)
+    - Quarterly DR tests (target cadence)
+    - SOC2 Type II certification (roadmap item; not yet completed)
 """
 
 from __future__ import annotations

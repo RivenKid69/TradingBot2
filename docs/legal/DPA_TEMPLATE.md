@@ -434,9 +434,9 @@ Signature: _______________________
 | Measure | Implementation |
 |---------|----------------|
 | Response plan | Documented incident response procedures |
-| Response team | Dedicated security incident team |
-| Communication | Defined escalation paths |
-| Testing | Annual incident response exercises |
+| Response team | Incident response team (planned; verify staffing status) |
+| Communication | Escalation paths (documented; verify operational readiness) |
+| Testing | Annual incident response exercises (target cadence; verify execution records) |
 
 ### A.7 Business Continuity
 

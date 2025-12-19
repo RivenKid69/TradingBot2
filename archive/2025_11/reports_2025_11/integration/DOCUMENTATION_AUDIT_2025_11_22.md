@@ -399,7 +399,7 @@ When you start working on this project:
 **Files Updated**: 1 (DOCS_INDEX.md)
 **Status**: ✅ Complete
 
-**Verification**: All findings have been verified against actual code and configuration files. Test coverage numbers confirmed via pytest.
+**Verification Note**: This is an internal documentation review (not a formal independent audit). Findings were cross-checked against code and configs where feasible. Test coverage numbers are based on internal pytest runs at the time of review.
 
 ---
 

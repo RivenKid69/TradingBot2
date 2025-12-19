@@ -2421,7 +2421,7 @@ Phase 2: Transaction Reporting ✅ COMPLETED (2025-12-07)
     - Pipeline settings
     - Validation settings
     - Reference data
-[x] 100% тестовое покрытие (147 тестов)
+[x] Test coverage target (147 tests at time of writing; verify via CI for current status)
     - tests/test_mifid_compliance_transaction_report.py (71 тестов)
     - tests/test_mifid_compliance_arm_client.py (42 теста)
     - tests/test_mifid_compliance_reporting_pipeline.py (34 теста)

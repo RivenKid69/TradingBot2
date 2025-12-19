@@ -151,9 +151,9 @@ from services.core.risk_controls import EnhancedKillSwitch
 
 CustodiaCloud includes documentation, controls, and evidence export patterns intended to **support** customer procurement and operational reviews (jurisdiction- and customer-dependent; not a certification claim).
 
-**CCEA Privacy Design Commitments:**
-- Cloud **does not** store or receive broker credentials or API keys (secrets stay in the customer-controlled Agent)
-- Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
+**CCEA Privacy Design Goals:**
+- Cloud **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
+- Cloud **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
 - Telemetry **designed to be redacted** before transmission; raw order events require explicit opt-in
 - EU data residency **by design** for EU customers (design target; enterprise: on-prem/customer-managed options available)
 - DSAR scope is Cloud-only (by design); Agent data is customer-controlled
@@ -204,7 +204,7 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 ### Live execution (CCEA Architecture)
 **Production: Via Local Agent**
 1. **Agent Setup**: Install and configure Agent locally (`docs/agent/INSTALLATION.md`).
-2. **Credentials**: Store broker API keys in Agent's local vault (NEVER upload to Cloud).
+2. **Credentials**: Store broker API keys in Agent's local vault (designed not to be uploaded to Cloud).
 3. **Deploy Strategy**: Use Cloud control plane to deploy strategy artifact to Agent.
 4. **Start Run**: Cloud sends `REQUEST_START_RUN`; Agent executes locally with your credentials.
 5. **Monitor**: Cloud receives redacted telemetry; full position data stays in Agent.

@@ -4,13 +4,13 @@ CCEA Artifact Publish Pipeline.
 
 Complete pipeline for building, signing, and publishing artifacts.
 Per Design Doc Phase 4:
-- Without signature, artifact is NOT published
-- Agent does NOT run artifact without successful verification
+- Without signature, artifact is designed not to be published
+- Agent is designed not to run artifact without successful verification
 
-Security:
-- ALL artifacts must be signed
-- NO bypass for signature requirement
-- SBOM generation mandatory
+Security design requirements (verify via tests and CI):
+- Artifacts are designed to be signed before publish
+- Signature requirement is designed with no bypass path
+- SBOM generation is a design requirement
 """
 
 from __future__ import annotations

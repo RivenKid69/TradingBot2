@@ -266,7 +266,7 @@ All fields from AGGREGATED level **plus** the following:
 | `fill_qty` | Fill quantity | `PROHIBITED_FIELD` |
 | `slippage` | Slippage | `PROHIBITED_FIELD` |
 
-#### PII Fields (ALWAYS FORBIDDEN in Cloud)
+#### PII Fields (Designed to be FORBIDDEN in Cloud; verify via redaction tests)
 | Field | Reason | Violation Type |
 |-------|--------|----------------|
 | `email` | Personal data | `SENSITIVE_PII` |
