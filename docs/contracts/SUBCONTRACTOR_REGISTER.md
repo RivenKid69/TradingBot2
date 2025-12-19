@@ -27,7 +27,7 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Cloudflare | Network Security | CDN, DDoS Protection, WAF | Limited | HIGH | Yes (EU PoPs) |
 | Datadog | Monitoring | APM, Logging, Metrics | Metadata | MEDIUM | Configurable |
 | Sentry | Error Tracking | Error Monitoring | Error Data | MEDIUM | EU (Frankfurt) |
-| SendGrid (Twilio) | Communication | Email Delivery | Email Addresses | LOW | US (with DPA) |
+| SendGrid (Twilio) | Communication | Email Delivery | Email Addresses | LOW | US (with DPA + SCCs; note: non-EU processing—verify transfer impact assessment) |
 | Stripe | Payment | Payment Processing | Payment Data | HIGH | EU/US |
 
 ---
@@ -246,14 +246,14 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Attribute | Value |
 |-----------|-------|
 | Data Types Processed | Email addresses, notification content |
-| Processing Locations | US (with EU SCCs) |
-| Storage Locations | US (with EU SCCs) |
+| Processing Locations | US (with EU SCCs; verify transfer impact assessment has been completed) |
+| Storage Locations | US (with EU SCCs; verify transfer impact assessment has been completed) |
 | Data Retention | 7 days (logs), real-time delivery |
 
 **Contractual Provisions:**
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| DPA with SCCs | ✓ Signed | Twilio DPA |
+| DPA with SCCs | Planned (verify actual signature status via contract register) | Twilio DPA |
 | Data minimization | ✓ Configured | Limited data sent |
 
 **Certifications** *(vendor-reported; verify via vendor trust centers)*:

@@ -329,7 +329,7 @@ These fields are **designed to be blocked at the protocol level** (per CCEA arch
 
 #### 5.4.3 Telemetry Sensitivity Levels (CCEA Design)
 
-The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is designed to be always active**; the architecture is designed not to expose configuration options or feature flags to disable it (enforced via CI guardrails and runtime checks; design intent).
+The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is designed to be active by default**; the architecture is designed not to expose configuration options or feature flags to disable it (enforced via CI guardrails and runtime checks; design intent—verify via test reports).
 
 | Level | Description | Data Included | Opt-in Required |
 |-------|-------------|---------------|-----------------|
@@ -649,9 +649,9 @@ We do not use advertising cookies or allow third-party advertising trackers.
 
 We implement comprehensive security controls:
 
-- **Encryption at rest**: AES-256 for sensitive Cloud data (e.g., account data, audit logs, redacted telemetry); broker credentials remain in the customer-controlled Agent environment
-- **Encryption in transit**: TLS 1.3 for all communications
-- **Key management**: Hardware Security Modules (HSM) for master keys
+- **Encryption at rest**: AES-256 is the design target for sensitive Cloud data (e.g., account data, audit logs, redacted telemetry); broker credentials are designed to remain in the customer-controlled Agent environment (verify via deployment configuration)
+- **Encryption in transit**: TLS 1.3 is the design target for communications (verify via TLS policy and configuration exports)
+- **Key management**: Hardware Security Modules (HSM) for master keys is the design target (verify via KMS/HSM architecture documentation)
 - **Access controls**: Role-based access, multi-factor authentication
 - **Network security**: Firewalls, intrusion detection, DDoS protection
 

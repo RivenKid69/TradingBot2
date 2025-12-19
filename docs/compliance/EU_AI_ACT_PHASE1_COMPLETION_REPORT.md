@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaCloud codebase. This document summarizes the implemented modules and internal test coverage. This is not a legal compliance or certification claim.
+Phase 1 of the EU AI Act-related tooling has been implemented in the CustodiaCloud codebase. This document summarizes the implemented modules and internal test coverage (verify current status via CI run logs). This is not a legal compliance or certification claim.
 
 ### Tooling Coverage (Article Mapping)
 

@@ -1,7 +1,9 @@
-# Value Head Output Audit
+# Value Head Output Check (Automated)
+
+> **Note**: This is an automated internal check, not a formal third-party audit or security review.
 
 - **Date:** 2025-10-06T16:22:00Z
-- **Inspector:** Automated agent
+- **Inspector:** Automated agent (internal tooling)
 - **Scope:** Distributional value head in `custom_policy_patch1.py`
 
 ## Findings
@@ -12,4 +14,4 @@
 
 ## Verdict
 
-- **Status:** PASS -- Value distribution uses fixed (albeit dynamically adjusted) bounded support.
+- **Status:** CHECK PASSED (automated) -- Value distribution uses fixed (albeit dynamically adjusted) bounded support. This is an internal automated check, not a formal audit verdict.

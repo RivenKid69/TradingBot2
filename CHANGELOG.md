@@ -132,7 +132,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - CORE tests: 12 test files
   - INTEGRATION tests: 12 test files
   - ARCHIVE tests: 10 test files
-  - All tests passing at time of release
+  - All tests passing at time of release (verify via CI run logs for release tag)
 
 ### Documentation
 

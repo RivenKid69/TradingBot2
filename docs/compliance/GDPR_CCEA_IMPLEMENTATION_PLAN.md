@@ -791,7 +791,7 @@ DoD (internal tooling validation; not a compliance claim):
 
 Key work:
 - ✅ Add CI/PR gates for new telemetry fields, new logs, new data stores: classification + retention + redaction.
-- ✅ Compliance dashboards: DSAR SLA, purge success, break-glass usage, residency drift = 0.
+- ✅ Compliance dashboards: DSAR SLA tracking, purge success monitoring, break-glass usage audit, residency drift monitoring (design target: drift = 0; verify via dashboard exports).
 - ✅ Quarterly review cadence: retention schedule, subprocessors list, DSAR metrics, incident learnings.
 
 Deliverables:

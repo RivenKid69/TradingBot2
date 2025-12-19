@@ -79,9 +79,9 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 
 The following commitments describe the intended CCEA boundary and default privacy posture of the Platform:
 
-**A. Cloud Does Not Receive Secrets**
-- Cloud **does not** store or process your broker API keys, secrets, or credentials (secrets stay in customer-controlled Agent)
-- Cloud **does not** receive environment variables or tokens
+**A. Cloud Is Designed Not to Receive Secrets**
+- Cloud **is designed not to** store or process your broker API keys, secrets, or credentials (secrets are intended to stay in customer-controlled Agent; verify via CCEA architecture documentation)
+- Cloud **is designed not to** receive environment variables or tokens
 
 **B. No Order-like Payloads in Protocol**
 - Cloud→Agent commands **do not** contain order-like payloads (side, quantity, price, order_id, target_position)
@@ -132,7 +132,7 @@ The Platform is **NOT**:
 - A regulated financial intermediary or execution venue
 - A provider of personalized investment recommendations
 - A provider of financial, legal, or tax advice
-- **An order execution service** - Cloud NEVER executes orders; this is done locally by your Agent
+- **An order execution service** - Cloud is designed not to execute orders; execution occurs locally by your Agent (per CCEA architecture)
 - **An asset holding service** - We do not hold your assets or credentials in Cloud
 - **A provider of execution instructions** - We do not transmit live trading instructions to execute
 

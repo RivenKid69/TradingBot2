@@ -11,7 +11,9 @@
 
 ## 1. EU-only Commitment
 
-**The Platform is designed to use only EU-based subprocessors for all personal data processing.**
+**The Platform is designed to use EU-based subprocessors for personal data processing wherever feasible.**
+
+> **Note on Exceptions**: Certain ancillary services (e.g., transactional email) may involve non-EU processing under SCCs/DPF. See SUBCONTRACTOR_REGISTER.md for details and transfer impact assessments.
 
 This design commitment:
 - Is intended to become a binding DPA term upon contract execution

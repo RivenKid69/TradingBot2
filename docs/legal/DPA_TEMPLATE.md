@@ -59,7 +59,7 @@ The Processor shall process Personal Data to provide:
 - Analytics and operational reporting (non-performance and non-advice)
 - Platform access, organization/workspace management, and support operations
 
-**CCEA boundary note (execution and credentials):** Live order execution and broker/exchange credentials are handled in the Controller’s environment by the customer-controlled Agent. The Processor’s Cloud infrastructure does not store broker credentials and does not connect to broker/exchange trading APIs.
+**CCEA boundary note (execution and credentials):** Live order execution and broker/exchange credentials are designed to be handled in the Controller's environment by the customer-controlled Agent. The Processor's Cloud infrastructure is designed not to store broker credentials and is designed not to connect to broker/exchange trading APIs (per CCEA architecture; verify via security architecture documentation).
 
 ---
 
@@ -107,11 +107,13 @@ If Controller enables `RAW_ORDER_EVENTS`:
 - Processing is audited and access-restricted
 - Alternative: Controller may select "telemetry stays local" mode (no Cloud transmission)
 
-**Data Never Processed (at any level):**
+**Data Designed Not to Be Processed (at any level):**
 - Broker API keys, secrets, credentials
 - Environment variables
 - Unmasked account identifiers
 - Order-like payloads in commands (side, quantity, price)
+
+> Note: "Designed not to be processed" reflects architectural intent. Verify enforcement via CI guardrails, protocol allowlist, and redaction middleware.
 
 ---
 

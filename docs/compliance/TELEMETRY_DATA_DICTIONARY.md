@@ -25,9 +25,9 @@ This document defines the canonical telemetry data dictionary for Cloud ingestio
 ### 1.2 Governing Principles
 
 1. **Data Minimization**: Collect only what's necessary for monitoring, billing, and support (with consent).
-2. **Redaction Is Mandatory**: Cannot be disabled by configuration or feature flag.
+2. **Redaction Is Designed to Be Mandatory**: Architecture is designed so that redaction cannot be disabled by configuration or feature flag (verify via CI guardrails and runtime tests).
 3. **Order-Like Fields Forbidden**: Except for `RAW_ORDER_EVENTS` with enterprise opt-in.
-4. **EU-Only Residency**: All telemetry stored in EU regions only.
+4. **EU-Priority Residency**: Telemetry is designed to be stored in EU regions (verify via infrastructure configuration and drift checks).
 5. **Retention Per Tenant**: Auto-purge according to retention policies.
 
 ---
