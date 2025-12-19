@@ -35,10 +35,12 @@ This design commitment:
 |--------------|--------------|---------|----------------|
 | **Amazon Web Services (AWS)** | Amazon Web Services EMEA SARL | Cloud infrastructure | All Cloud-zone data |
 
-**AWS Services Used:**
+**AWS Services (Planned Configuration — not currently deployed):**
 
-| AWS Service | Region | Purpose | Data Category |
-|-------------|--------|---------|---------------|
+> **Note**: This table describes the planned AWS service configuration. Actual deployment is pending. Production evidence (AWS Config/CloudTrail exports) will be available upon deployment.
+
+| AWS Service | Region (Planned) | Purpose | Data Category |
+|-------------|------------------|---------|---------------|
 | RDS (PostgreSQL) | eu-central-1 (Frankfurt) | Primary database | User accounts, strategies, telemetry, commands, audit logs |
 | RDS (PostgreSQL) | eu-west-1 (Ireland) | Disaster recovery replica | Same as primary (encrypted replicas) |
 | S3 | eu-central-1 (Frankfurt) | Object storage | Artifacts, models, backtest results, SBOM |
@@ -139,11 +141,11 @@ This design commitment:
 |---------|--------|---------|
 | Email API | EU | Transactional emails |
 
-**EU Residency Evidence:**
+**EU Residency Evidence (planned configuration; verify upon deployment):**
 - Processing Region: EU
-- GDPR DPA: Signed
-- Last Review: 2025-01-15
-- Next Review: 2025-04-15
+- GDPR DPA: Standard DPA available via Twilio
+- Last Review: To be scheduled upon deployment
+- Next Review: To be scheduled upon deployment
 
 ---
 
@@ -160,12 +162,12 @@ This design commitment:
 | Error Tracking | EU (Germany) | Stack traces, error context |
 | Performance | EU (Germany) | Transaction traces |
 
-**EU Residency Evidence:**
-- Data Center: EU (Germany)
-- GDPR DPA: Signed
-- Data scrubbing: Enabled (PII removal)
-- Last Review: 2025-01-15
-- Next Review: 2025-04-15
+**EU Residency Evidence (planned configuration; verify upon deployment):**
+- Data Center: EU (Germany) — planned
+- GDPR DPA: Standard DPA available via Sentry
+- Data scrubbing: Enabled (PII removal) — design target
+- Last Review: To be scheduled upon deployment
+- Next Review: To be scheduled upon deployment
 
 **Data Minimization:**
 - PII scrubbing enabled by default
@@ -176,14 +178,16 @@ This design commitment:
 
 ## 3. Subprocessor Summary Table
 
-| Subprocessor | Service | EU Region | DPA Status | Last Review | Next Review |
-|--------------|---------|-----------|------------|-------------|-------------|
-| AWS | Infrastructure | eu-central-1, eu-west-1 | Signed | 2025-01-15 | 2025-04-15 |
-| Supabase | Database | EU (Germany) | Signed | 2025-01-15 | 2025-04-15 |
-| Stripe | Payments | EU (Ireland) | Signed | 2025-01-15 | 2025-04-15 |
-| AWS SES | Email | eu-west-1 | Signed | 2025-01-15 | 2025-04-15 |
-| SendGrid | Email | EU | Signed | 2025-01-15 | 2025-04-15 |
-| Sentry | Monitoring | EU (Germany) | Signed | 2025-01-15 | 2025-04-15 |
+| Subprocessor | Service | EU Region (Planned) | DPA Status | Review Schedule |
+|--------------|---------|---------------------|------------|-----------------|
+| AWS | Infrastructure | eu-central-1, eu-west-1 | Standard DPA available | Upon deployment |
+| Supabase | Database | EU (Germany) | Standard DPA available | Upon deployment |
+| Stripe | Payments | EU (Ireland) | Standard DPA available | Upon deployment |
+| AWS SES | Email | eu-west-1 | Standard DPA available | Upon deployment |
+| SendGrid | Email | EU | Standard DPA available | Upon deployment |
+| Sentry | Monitoring | EU (Germany) | Standard DPA available | Upon deployment |
+
+> **Note**: This table describes planned subprocessor configuration. DPA execution and review schedules will commence upon customer contract execution. "Standard DPA available" indicates vendor offers standard DPA terms; actual execution is pending.
 
 ---
 
@@ -376,7 +380,8 @@ Request via: dpo@[company-domain].com
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2025-12-16 | Compliance Team | Initial release - GDPR Phase 1 |
-| 1.0.1 | 2025-12-19 | Due Diligence Audit | **Critical correction**: Replaced absolute claims with Canon-compliant language. "Commits" → "designed to use"; "Signed Date" → "Template available"; "Verified quarterly" → "Planned to verify quarterly (when operational)"; "Enforced by" → "Designed to be enforced"; "No personal data transferred" → "No personal data designed to be transferred in standard deployment". |
+| 1.0.1 | 2025-12-19 | Internal Review | **Critical correction**: Replaced absolute claims with Canon-compliant language. "Commits" → "designed to use"; "Signed Date" → "Template available"; "Verified quarterly" → "Planned to verify quarterly (when operational)"; "Enforced by" → "Designed to be enforced"; "No personal data transferred" → "No personal data designed to be transferred in standard deployment". |
+| 1.0.2 | 2025-12-19 | Internal Review | **Data residency/Privacy correction**: Removed "GDPR DPA: Signed" claims and specific review dates that implied executed contracts. Changed to "Standard DPA available" with "Upon deployment" review schedule. Added clarifying note that DPA execution is pending customer contracts. |
 
 ---
 

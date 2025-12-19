@@ -9,7 +9,9 @@
 
 ## 1. Overview
 
-This document defines the shared responsibility model between our platform (ICT Third-Party Provider) and EU financial entity clients (Financial Entities under DORA). It clarifies obligations to support DORA compliance alignment through the contractual relationship.
+This document describes the intended shared responsibility model between our platform (designed to support ICT Third-Party Provider obligations under DORA) and EU financial entity clients (Financial Entities under DORA). It clarifies how obligations may be allocated to support DORA compliance alignment through the contractual relationship.
+
+> **Note**: Regulatory classification (ICT Third-Party Provider vs. other categories) depends on the actual services provided and contractual arrangements. This document describes a design intent; clients should validate regulatory applicability with qualified legal counsel.
 
 ### Our Position in DORA Ecosystem
 

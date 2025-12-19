@@ -11,7 +11,7 @@
 
 ## 1. Platform Security Overview
 
-This document provides pre-contractual security information per DORA Article 28(7) requirements, enabling financial entities to conduct due diligence on our ICT services.
+This document provides pre-contractual security information designed to support DORA Article 28(7) requirements, enabling financial entities to conduct due diligence on our ICT services. Compliance with DORA Art. 28(7) depends on actual contractual arrangements and should be validated by qualified legal counsel.
 
 ### 1.1 Executive Summary
 
@@ -373,6 +373,7 @@ For contracted clients:
 | 1.2 | 2025-12-18 | **Critical correction**: Removed false certification claims. SOC2/pentest/audit status now accurately reflects roadmap (planned) vs current state. Added "Certification Roadmap" section with honest timelines. |
 | 1.3 | 2025-12-19 | **Due diligence audit corrections**: Replaced SLA/RTO/incident response absolute claims with Canon-compliant design targets. "Target 99.9%" → "Design target: 99.9% (actual SLA contract-specific)"; "Response Times" → "Response Time Design Targets (Pre-Operational)"; RTO/RPO column headers → "Untested Design Target"; Added vendor-reported note to certifications table; "Designed for 24/7" → "Planned: 24/7 on-call (operational validation pending)". |
 | 1.4 | 2025-12-19 | **Due diligence audit - operational capability claims**: Further strengthened disclaimers per Canon. "Design target: 99.9%" → "Aspirational target: 99.9% (unvalidated design goal; pending infrastructure)"; RTO/RPO → "Aspirational, Unvalidated"; Response times → "pending 4+ FTE hiring and operational validation"; Infrastructure → "planned (deployment pending)"; All columns now explicitly state "(unvalidated target)" or "(pending X)". |
+| 1.5 | 2025-12-19 | **Regulatory/Legal claim correction**: Changed "per DORA Article 28(7) requirements" → "designed to support DORA Article 28(7) requirements" with note that compliance depends on contractual arrangements and requires legal validation. |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team

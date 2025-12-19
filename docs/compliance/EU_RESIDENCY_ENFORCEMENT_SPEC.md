@@ -173,6 +173,8 @@ When a non-EU endpoint is detected:
 
 ### 5.1 Machine-Readable JSON Report
 
+> **Note**: The following is an **illustrative format example**, not actual operational data. Actual drift-check reports will be generated upon production deployment. The `dpa_status` and other values shown are examples of the schema, not assertions about current state.
+
 ```json
 {
   "check_id": "drift-check-2025-01-15-abc12345",
@@ -243,9 +245,10 @@ When a non-EU endpoint is detected:
       "service": "Cloud infrastructure",
       "region": "eu-central-1, eu-west-1",
       "eu_compliant": true,
-      "dpa_status": "Signed"
+      "dpa_status": "standard_available"
     }
   ],
+  "_note": "ILLUSTRATIVE FORMAT ONLY - not actual operational data. dpa_status values: 'standard_available' (vendor offers standard DPA), 'pending_execution' (awaiting contract), 'executed' (signed with customer)",
   "violations": [],
   "subprocessors_verified": 1,
   "endpoints_verified": 7,

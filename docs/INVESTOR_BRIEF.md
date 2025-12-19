@@ -5,7 +5,7 @@
 *Last Updated: 2025-12-19 | Pre-Seed Stage*
 
 **Changelog:**
-- 2025-12-19: **Due diligence audit corrections**: Changed "Now Testing with Customers" to "Entering Customer Validation Phase" to avoid implying active pilots; added explicit disclaimer to validation milestones clarifying targets are planned/aspirational and no customers/pilots/LOIs currently signed
+- 2025-12-19: **Internal due diligence review corrections**: Changed "Now Testing with Customers" to "Entering Customer Validation Phase" to avoid implying active pilots; added explicit disclaimer to validation milestones clarifying targets are planned/aspirational and no customers/pilots/LOIs currently signed
 - 2025-12-18: Updated regulatory posture, asset coverage
 
 **Canonical positioning / safe wording**: see `docs/DOCUMENTATION_CANON_DESIGN.md`.
@@ -187,7 +187,7 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 | Metric | Value | Why It Matters for Customers |
 |--------|-------|------------------------------|
 | **Automated Tests** | Extensive automated test suite | Designed for production deployment — comprehensive quality assurance |
-| **CI Validation** | Continuous | Unit/integration/regression suite with reports available under NDA |
+| **CI Validation** | Continuous | Internal unit/integration/regression suite; CI test reports available under NDA (not third-party audited) |
 | **Asset Classes** | 5 (MVP: Equities) | Extensibility proven; MVP focused on equities |
 | **Connectivity** | Multi-provider architecture | Flexibility for customer requirements |
 

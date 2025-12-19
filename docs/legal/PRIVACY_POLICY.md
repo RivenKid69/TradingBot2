@@ -129,21 +129,23 @@ When you use research/backtesting features, we process:
 
 Under CCEA architecture, broker credentials are handled differently depending on your usage mode:
 
-| Mode | Credential Storage | Who Processes | Our Access |
-|------|-------------------|--------------|------------|
+| Mode | Credential Storage | Who Processes | Our Designed Access |
+|------|-------------------|--------------|---------------------|
 | **Research SaaS** | Not applicable | Not applicable | N/A |
-| **Live Execution (Agent)** | Your local Agent | Your hardware | **NONE** |
-| **Enterprise (Self-Hosted)** | Your infrastructure | Your servers | **NONE** |
+| **Live Execution (Agent)** | Your local Agent | Your hardware | **Designed: no access** |
+| **Enterprise (Self-Hosted)** | Your infrastructure | Your servers | **Designed: no access** |
+
+> **Note**: "Designed: no access" means the architecture is designed so credentials remain in customer-controlled environments. This is a design goal enforced via protocol design and CI guardrails; clients should verify independently if required.
 
 #### 2.3.1 Agent Local Vault (Live Execution Mode)
 
 When you deploy a local Agent for live execution:
 
-| Data Type | Storage Location | Encryption | Our Access |
-|-----------|-----------------|------------|------------|
-| API Key | Agent local vault | AES-256-GCM | **NONE** |
-| API Secret | Agent local vault | AES-256-GCM | **NONE** |
-| Passphrase | Agent local vault | AES-256-GCM | **NONE** |
+| Data Type | Storage Location | Encryption (Design) | Our Designed Access |
+|-----------|-----------------|---------------------|---------------------|
+| API Key | Agent local vault | AES-256-GCM | **Designed: no access** |
+| API Secret | Agent local vault | AES-256-GCM | **Designed: no access** |
+| Passphrase | Agent local vault | AES-256-GCM | **Designed: no access** |
 
 **How the Agent Vault Works (by design):**
 1. Credentials are designed to be encrypted on YOUR hardware with keys derived from YOUR passphrase
@@ -160,7 +162,7 @@ Our Cloud infrastructure is designed to not store or process:
 - Trading passphrases
 - Any authentication tokens for brokers
 
-**This is enforced by architecture** - Cloud has no API or mechanism to receive credentials.
+**This is designed to be enforced by architecture** — Cloud is designed without API or mechanism to receive credentials. This design goal is validated via CI guardrails and protocol schema validation; independent verification available on request.
 
 ### 2.4 Technical Data
 

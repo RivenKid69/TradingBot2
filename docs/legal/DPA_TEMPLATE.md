@@ -384,14 +384,16 @@ Signature: _______________________
 
 ## Annex A: Technical and Organizational Measures
 
-### A.1 Encryption
+> **Note**: This Annex describes design targets and planned implementation. Actual implementation status is subject to deployment. Clients should request current implementation evidence if required for procurement/audit purposes.
 
-| Measure | Implementation |
-|---------|----------------|
+### A.1 Encryption (Design Targets)
+
+| Measure | Implementation (Design Target) |
+|---------|-------------------------------|
 | Encryption at rest | AES-256-GCM for all sensitive data |
 | Encryption in transit | TLS 1.2 minimum, TLS 1.3 preferred |
-| Key management | AWS KMS with automatic rotation |
-| Agent-local credentials | Stored and decrypted only inside the Controller-managed Agent environment; not processed by the Processor’s Cloud |
+| Key management | AWS KMS with automatic rotation (planned configuration) |
+| Agent-local credentials | Designed to be stored and decrypted only inside the Controller-managed Agent environment; not designed to be processed by the Processor's Cloud |
 
 ### A.2 Access Controls
 

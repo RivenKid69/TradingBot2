@@ -66,8 +66,8 @@ The minimal GDPR subset for this project typically includes:
 
 These constraints are required for the platform’s compliance posture and must remain invariant:
 
-1. **Cloud is designed to never receive** broker credentials, API keys/tokens, or env vars (enforced via redaction + validation + CI guardrails; see CI artifacts for current test status).
-2. **Cloud→Agent protocol commands** never carry **order-like payloads** (side/qty/price/order id/fill details); forbidden at schema + CI (“no order commands”).
+1. **Cloud is designed to not receive** broker credentials, API keys/tokens, or env vars (design goal validated via redaction + validation + CI guardrails; see CI artifacts for current test status).
+2. **Cloud→Agent protocol commands** are designed to not carry **order-like payloads** (side/qty/price/order id/fill details); prohibited at schema level + CI validation ("no order commands" design constraint).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L750`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L754`.
 3. **Cloud telemetry sensitivity levels are fixed and named**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L846`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`.
@@ -75,12 +75,12 @@ These constraints are required for the platform’s compliance posture and must 
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
 5. Default telemetry is **AGGREGATED** (retail/pro); any increase in sensitivity is explicit, audited, and controlled; enterprise may select “telemetry stays local” (local-only mode) instead of Cloud ingestion.
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
-6. **Telemetry redaction is designed to be always on** and the architecture does not expose configuration or feature flags to disable it; env var logging is prohibited by design (enforced via CI guardrails; see CI artifacts for current test status).
+6. **Telemetry redaction is designed to be enabled by default** and the architecture is designed without configuration or feature flags to disable it; env var logging is prohibited by design (validated via CI guardrails; see CI artifacts for current test status).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
 7. EU-only residency (design requirement): storage, backups, logs, observability, and support tooling are designed to remain in EU; **EU-only drift checks are designed to be mandatory** (fail closed by design; see CI artifacts for current test coverage).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745`.
 8. Break-glass access is **incident-only**, time-bound, scope-limited, reason-required, and fully audited.
-9. Cloud builds **must not** contain broker trading client libraries (import/dependency boundary enforced in CI).  
+9. Cloud builds are designed to not contain broker trading client libraries (import/dependency boundary validated via CI).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1029`.
 10. **Order-like payloads are prohibited at schema + CI** (hard constraint, not “best effort”).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1039`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1697`.

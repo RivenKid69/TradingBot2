@@ -2,10 +2,10 @@
 
 **Version**: 2.5
 **Date**: 2025-12-19
-**Status**: Phase 1 Complete — Toolkit Implementation Finished (verify via CI; not independently audited)
+**Status**: Phase 1 Complete — Toolkit Implementation Finished (verify via internal CI tests; no independent third-party audit conducted)
 **Revision**: Due diligence audit corrections (SLA disclaimers, infrastructure validation requirements)
 
-> **Important**: This document describes the DORA compliance toolkit provided to clients. The status "Toolkit Ready" means all planned tools and controls have been implemented and tested. This does NOT constitute certification or guarantee of regulatory compliance. Clients must conduct their own compliance assessment with qualified advisors.
+> **Important**: This document describes the DORA compliance toolkit provided to clients. The status "Toolkit Ready" means all planned tools and controls have been implemented and passed internal automated tests. This does NOT constitute certification, independent audit, or guarantee of regulatory compliance. Test results are internal CI outputs; clients must conduct their own compliance assessment with qualified advisors.
 
 > **Note (v2.4)**: References to `services/compliance/` are historical. MiFID II compliance modules have been reorganized:
 > - `services/core/risk_controls/` (universal risk controls, audit_trail, bcp)
