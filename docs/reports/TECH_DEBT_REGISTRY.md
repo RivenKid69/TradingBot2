@@ -1,7 +1,7 @@
 # Technical Debt Registry
 
-**Version**: 1.0
-**Date**: 2025-12-19
+**Version**: 1.2
+**Date**: 2025-12-20
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
 
@@ -123,6 +123,18 @@ Each entry contains:
 | **Control Artifact** | `tests/cpp/test_orderbook_tif_conformance.cpp` (stub with GTEST_SKIP; T2b milestone) |
 | **Tracking** | Linked to IOC implementation in L4-tif |
 
+### testing-compute-failures {#testing-compute-failures}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/COMPREHENSIVE_TEST_REPORT.md:53-66` |
+| **Severity** | Medium |
+| **Description** | 10 failing tests in test_distributional_ppo_compute.py documenting edge case behavior |
+| **Status** | Controlled |
+| **Control Artifact** | `tests/COMPREHENSIVE_TEST_REPORT.md` (Tech Debt Control Status section) |
+| **Note** | Tests document known API specification mismatches for edge cases (alpha=0, single-value); not production bugs |
+| **Tracking** | Resolution planned as part of API stabilization milestone |
+
 ---
 
 ## Reliability/Operations
@@ -224,12 +236,12 @@ Each entry contains:
 |----------|------|--------|-----|-------|----------------|
 | Architecture | 1 | 0 | 0 | 1 | Yes |
 | Data/ML | 3 | 2 | 0 | 5 | Yes |
-| Testing/Quality | 1 | 1 | 0 | 2 | Yes |
+| Testing/Quality | 1 | 2 | 0 | 3 | Yes |
 | Reliability/Operations | 2 | 2 | 0 | 4 | Yes |
 | Security | 0 | 1 | 0 | 1 | Yes |
 | Docs/Drift | 0 | 1 | 0 | 1 | Yes |
 | Other | 0 | 0 | 1 | 1 | Yes |
-| **TOTAL** | **7** | **7** | **1** | **15** | **Yes** |
+| **TOTAL** | **7** | **8** | **1** | **16** | **Yes** |
 
 ---
 
@@ -239,6 +251,7 @@ Each entry contains:
 |---------|------|---------|
 | 1.0 | 2025-12-19 | Initial registry with 15 items from tech debt closure |
 | 1.1 | 2025-12-19 | Created missing control artifacts: SECURITY_ROADMAP.md, test_orderbook_tif_conformance.cpp stub |
+| 1.2 | 2025-12-20 | Added testing-compute-failures entry; updated control artifacts for 16-item closure |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
