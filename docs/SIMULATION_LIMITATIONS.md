@@ -115,12 +115,12 @@ for validating simulation results against live execution before deploying capita
 
 **Validation Required**:
 - [ ] Implement IOC: execute immediate match, cancel unfilled remainder
-- [ ] Create conformance tests: `tests/cpp/test_orderbook_tif_conformance.cpp`
+- [x] Create conformance tests stub: `tests/cpp/test_orderbook_tif_conformance.cpp`
 - [ ] Validate against reference exchange matching engine behavior
 
-**Control Artifact**: Matching engine conformance test suite (T2b milestone).
+**Control Artifact**: `tests/cpp/test_orderbook_tif_conformance.cpp` (stub with GTEST_SKIP; T2b milestone).
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L4-tif
-**Status**: Controlled - limitation documented, IOC avoidance recommended until implemented
+**Status**: Controlled - limitation documented, IOC avoidance recommended until T2b implementation
 
 ---
 

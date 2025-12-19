@@ -63,11 +63,12 @@ All items have been addressed with:
 | # | Finding | File:Line | Resolution | Control Artifact |
 |---|---------|-----------|------------|------------------|
 | 7 | Low test coverage (35% baseline) | `COMPREHENSIVE_TEST_REPORT.md:14-17` | Added control artifact header | CI coverage reference, registry entry |
-| 8 | OrderBook conformance tests TODO | `OrderBook.cpp:70-79` | Enhanced tracking comment | T2b milestone tracking |
+| 8 | OrderBook conformance tests TODO | `OrderBook.cpp:70-79` | Created stub test file | `tests/cpp/test_orderbook_tif_conformance.cpp` |
 
 **Changes Made**:
 - Added "Control Artifact Status" section to COMPREHENSIVE_TEST_REPORT.md
 - Updated OrderBook.cpp comment with Status, Control Artifact, Tech Debt references
+- Created `tests/cpp/test_orderbook_tif_conformance.cpp` stub with GTEST_SKIP markers
 - Both items link to tech debt registry
 
 ---
@@ -93,10 +94,11 @@ All items have been addressed with:
 
 | # | Finding | File:Line | Resolution | Control Artifact |
 |---|---------|-----------|------------|------------------|
-| 14 | Pen-test/SOC2 not conducted | `TRUST_CENTER.md:46-56` | Added tech debt tracking | SECURITY_ROADMAP.md (planned) |
+| 14 | Pen-test/SOC2 not conducted | `TRUST_CENTER.md:46-56` | Added tech debt tracking | `docs/security/SECURITY_ROADMAP.md` |
 
 **Changes Made**:
 - Added Tech Debt Tracking and Control Artifact references after Third-Party Audits table
+- Created `docs/security/SECURITY_ROADMAP.md` with security program roadmap
 - Roadmap items honestly disclosed as funding-dependent
 
 ---
@@ -133,6 +135,8 @@ All items have been addressed with:
 | Artifact | Location | Purpose |
 |----------|----------|---------|
 | **Tech Debt Registry** | `docs/reports/TECH_DEBT_REGISTRY.md` | **NEW** - Central tracking for all 15 items |
+| **Security Roadmap** | `docs/security/SECURITY_ROADMAP.md` | **NEW** - Security program roadmap (SOC2/pentest) |
+| **TIF Conformance Tests** | `tests/cpp/test_orderbook_tif_conformance.cpp` | **NEW** - Stub for T2b milestone with GTEST_SKIP |
 | **distributional_ppo.py header** | Lines 45-77 | Enhanced with control artifacts |
 | **SIMULATION_LIMITATIONS.md** | All L1-L4 sections | Added control artifact references |
 | **COMPREHENSIVE_TEST_REPORT.md** | Header section | Added control artifact status |
@@ -162,6 +166,12 @@ grep -n "Control Artifact" docs/SIMULATION_LIMITATIONS.md
 
 # Check CI_GUARDRAILS PM-005
 grep -A5 "PM-005" docs/design/CCEA_CLOUD/CI_GUARDRAILS.md
+
+# Verify SECURITY_ROADMAP.md exists
+cat docs/security/SECURITY_ROADMAP.md | head -30
+
+# Verify TIF conformance test stub exists
+head -60 tests/cpp/test_orderbook_tif_conformance.cpp
 
 # Run tests to verify no regressions
 make test

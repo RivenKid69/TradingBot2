@@ -120,7 +120,7 @@ Each entry contains:
 | **Severity** | Medium |
 | **Description** | Matching engine conformance tests marked as T2b milestone |
 | **Status** | Controlled |
-| **Control Artifact** | `tests/cpp/test_orderbook_tif_conformance.cpp` (T2b milestone) |
+| **Control Artifact** | `tests/cpp/test_orderbook_tif_conformance.cpp` (stub with GTEST_SKIP; T2b milestone) |
 | **Tracking** | Linked to IOC implementation in L4-tif |
 
 ---
@@ -183,7 +183,7 @@ Each entry contains:
 | **Severity** | Medium |
 | **Description** | Pen-test and SOC2 audits are roadmap items; not yet conducted |
 | **Status** | Controlled |
-| **Control Artifact** | `docs/security/SECURITY_ROADMAP.md` (planned) |
+| **Control Artifact** | `docs/security/SECURITY_ROADMAP.md` |
 | **Note** | Roadmap items honestly disclosed; funding-dependent |
 
 ---
@@ -238,6 +238,7 @@ Each entry contains:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-19 | Initial registry with 15 items from tech debt closure |
+| 1.1 | 2025-12-19 | Created missing control artifacts: SECURITY_ROADMAP.md, test_orderbook_tif_conformance.cpp stub |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

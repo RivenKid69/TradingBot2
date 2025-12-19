@@ -52,7 +52,7 @@ This document provides pre-contractual security information designed to support 
 | Code Security Review | Per major release | Internal review active | Summary on request |
 
 **Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#security-external-audits`
-**Control Artifact**: `docs/security/SECURITY_ROADMAP.md` (planned)
+**Control Artifact**: `docs/security/SECURITY_ROADMAP.md`
 **Status**: Controlled - roadmap items honestly disclosed; funding-dependent
 
 ---
