@@ -13,7 +13,7 @@
 
 ## 1. Overview
 
-This specification defines the EU-only data residency enforcement mechanisms designed for the CCEA Cloud platform. The design goal is that all personal data processing occurs within the European Union, with automated verification and fail-closed enforcement (verify via deployment audits and CI tests).
+This specification defines the EU-only data residency enforcement mechanisms designed for the CCEA Cloud platform. The design goal is that all personal data processing occurs within the European Union, with automated verification and fail-closed behavior by design (verify via deployment audits and CI tests; actual enforcement subject to infrastructure deployment and testing validation).
 
 ### 1.1 Design Doc Reference
 
@@ -25,7 +25,7 @@ This specification defines the EU-only data residency enforcement mechanisms des
 | Principle | Description |
 |-----------|-------------|
 | **EU-Only by Default** | Data storage and processing designed to default to EU regions |
-| **Fail-Closed Design** | Non-EU endpoint detection designed to block deployment/operation |
+| **Fail-Closed Design Goal** | Non-EU endpoint detection designed to block deployment/operation (subject to deployment testing validation) |
 | **Continuous Verification** | Automated drift checks designed for deployment and runtime |
 | **Auditable Evidence** | Machine-readable reports designed for compliance audits |
 
@@ -158,12 +158,12 @@ Every deployment must verify EU residency for:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.3 Fail-Closed Behavior
+### 4.3 Fail-Closed Behavior (Design Goal)
 
-When a non-EU endpoint is detected:
+When a non-EU endpoint is detected, the system is designed to:
 
-1. **Deployment Phase**: Deployment is blocked
-2. **Runtime Phase**: Alert triggered + automatic rollback
+1. **Deployment Phase**: Block deployment (design intent; subject to testing validation)
+2. **Runtime Phase**: Trigger alert + automatic rollback (design intent)
 3. **Incident Created**: For investigation
 4. **Evidence Stored**: For audit trail
 

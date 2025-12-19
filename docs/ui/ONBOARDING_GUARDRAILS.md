@@ -59,9 +59,9 @@ be inaccurate. You are responsible for all trading decisions.
 ```
 🔒 YOUR CREDENTIALS STAY LOCAL
 
-Under CCEA architecture, your broker API keys are stored only
-on YOUR hardware in an encrypted vault. Our Cloud services
-NEVER receive or store your trading credentials.
+Under CCEA architecture, your broker API keys are designed to be stored
+on YOUR hardware in an encrypted vault. The Cloud is designed not to
+receive or store your trading credentials (enforced via CCEA architecture).
 ```
 
 **Format:** Info card during Agent setup
@@ -185,7 +185,7 @@ NEVER receive or store your trading credentials.
 │  │ ❌ No orders│       │ ✅ Your orders│               │
 │  └─────────────┘       └─────────────┘                 │
 │                                                          │
-│  Your credentials NEVER leave your hardware.             │
+│  Credentials designed to remain on your hardware (CCEA).  │
 │                                                          │
 │  ☐ I understand my Agent operates on MY hardware         │
 │  ☐ I understand credentials are stored locally           │

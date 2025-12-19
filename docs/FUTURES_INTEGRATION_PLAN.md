@@ -2838,7 +2838,7 @@ class IBRateLimiter:
 
 class IBConnectionManager:
     """
-    Production-grade IB TWS connection lifecycle manager.
+    IB TWS connection lifecycle manager designed for production use.
 
     Handles:
     - Automatic heartbeat every 30 seconds (IB requires activity)

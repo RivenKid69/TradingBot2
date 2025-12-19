@@ -45,7 +45,7 @@ The platform implements **CCEA (Cloud-Controlled Execution Architecture)** with 
 │  └──────────────┘  └──────────────┘  └──────────────┘  └─────────────────┘  │
 │                                                                              │
 │  SECURITY DESIGN COMMITMENTS:                                                │
-│  - Secrets NEVER leave this zone                                             │
+│  - Architecture designed so secrets remain in this zone                      │
 │  - All orders created and sent from this zone                                │
 │  - Hard caps enforced locally                                                │
 │  - Artifact signature verification required                                  │

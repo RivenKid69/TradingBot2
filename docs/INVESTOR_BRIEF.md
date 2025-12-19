@@ -186,7 +186,7 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 
 | Metric | Value | Why It Matters for Customers |
 |--------|-------|------------------------------|
-| **Automated Tests** | Extensive automated test suite | Designed for production deployment — comprehensive quality assurance |
+| **Automated Tests** | Extensive automated test suite | Designed for production use — comprehensive internal QA (not independently audited) |
 | **CI Validation** | Continuous | Internal unit/integration/regression suite; CI test reports available under NDA (not third-party audited) |
 | **Asset Classes** | 5 (MVP: Equities) | Extensibility proven; MVP focused on equities |
 | **Connectivity** | Multi-provider architecture | Flexibility for customer requirements |
@@ -195,7 +195,7 @@ We've built a **technically mature platform** that solves infrastructure fragmen
 
 **Core Innovation: Risk-Aware Reinforcement Learning**
 
-Unlike traditional algorithmic trading platforms that optimize average returns, our platform provides a **production-oriented implementation of CVaR-constrained reinforcement learning** for trading:
+Unlike traditional algorithmic trading platforms that optimize average returns, our platform provides an **implementation of CVaR-constrained reinforcement learning designed for production use** in trading:
 
 ```
 Traditional: maximize E[Return]
@@ -677,9 +677,9 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 ### Our Advantage
 
 - **2+ years of development** completed
-- **Designed for production deployment** with live execution via customer-controlled Agent
+- **Designed for production use** with live execution via customer-controlled Agent
 - **Research-grade** execution models
-- **Enterprise-quality** testing infrastructure
+- **Extensive** internal testing infrastructure (not independently audited)
 
 ---
 

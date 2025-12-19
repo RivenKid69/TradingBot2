@@ -1,5 +1,7 @@
 # Claude Documentation - CustodiaCloud
 
+> **IMPORTANT DISCLAIMER (Internal Document)**: This is an **internal technical guide for AI assistants**. Status badges like "✅ Tested and operational" and test count claims (e.g., "205/205 pass") refer to **internal CI test results at time of writing** (verify current status via CI run logs with commit SHA). These are **NOT** claims of independent third-party audit, certification, or regulatory compliance. This document is for internal development use only and should not be used for external marketing, investor materials, or committee submissions without appropriate disclaimers.
+
 ---
 
 ## 🤖 БЫСТРАЯ НАВИГАЦИЯ ДЛЯ AI-АССИСТЕНТОВ

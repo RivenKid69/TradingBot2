@@ -269,7 +269,7 @@ Before seeking significant funding, we will demonstrate:
 | Old Framing | New Framing |
 |-------------|-------------|
 | "11,000+ automated tests" | "Deployment-ready from day one — no beta quality issues" |
-| "2+ years development" | "Battle-tested architecture ready for customer feedback" |
+| "2+ years development" | "Extensively tested architecture ready for customer feedback" |
 | "5 asset classes" | "Crypto-focused MVP with proven extensibility" |
 | "7+ academic papers" | "Research-backed risk management that regulators trust" |
 

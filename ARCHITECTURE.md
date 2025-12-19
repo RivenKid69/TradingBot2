@@ -96,7 +96,7 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 | **REQUEST_UPGRADE_ARTIFACT** | `packages/agent/daemon/agentd.py:_handle_upgrade_artifact()` | ✅ |
 | **REQUEST_UPDATE_CONFIG** | `packages/agent/daemon/agentd.py:_handle_update_config()` | ✅ |
 | **Manifest format** | JSON canonical (`manifest.json`), YAML legacy supported | ✅ |
-| **Unsigned artifact rejection** | Designed to reject unsigned artifacts (fail-closed); verify via CI/tests | ✅ |
+| **Unsigned artifact rejection** | Designed to reject unsigned artifacts with fail-closed behavior; verify via CI/tests and architecture review | ✅ |
 | **ccea/agent/* deprecation** | DeprecationWarning emitted on import | ✅ |
 
 ---
@@ -641,22 +641,22 @@ JSON payload в командах **НЕ ДОЛЖЕН** содержать:
 
 ## Threat Model
 
-| Threat | Mitigation |
+| Threat | Mitigation (Design Intent) |
 |--------|------------|
-| RCE in Cloud | Cloud cannot execute orders, no trading libs |
-| Key exfiltration | Architecture designed so keys do not leave Agent; redaction designed to be mandatory |
+| RCE in Cloud | Cloud designed without order execution libs; no trading API access |
+| Key exfiltration | Architecture designed so keys remain in Agent; redaction designed to be mandatory |
 | Artifact tampering | Digest pinning + signature verification |
-| Cloud becomes execution | No order-like payloads in protocol |
+| Cloud becomes execution | Protocol schema designed to prohibit order-like payloads |
 | Abuse of cloud jobs | Sandbox + quotas + egress allowlist |
-| Man-in-the-middle | mTLS/signed messages |
+| Man-in-the-middle | mTLS/signed messages (design goal) |
 | Replay attacks | Idempotency keys + timestamps |
-| Privilege escalation | RBAC + tenant isolation |
+| Privilege escalation | RBAC + tenant isolation (design goal) |
 
-### Safe Defaults
+### Safe Defaults (Design Intent)
 
-- **Redaction**: ON (cannot be disabled)
-- **Local approval**: REQUIRED for trading_impacting
+- **Redaction**: ON by design (designed not to be disabled)
+- **Local approval**: REQUIRED for trading_impacting (enforced via Agent)
 - **RAW telemetry**: OFF (opt-in, enterprise-only)
 - **Remote flatten**: DISABLED (enterprise-only by contract)
 - **Silent upgrades**: DISABLED for trading-impacting
-- **Auto-approve**: DISABLED (local policy only)
+- **Auto-approve**: DISABLED by default (local policy only)

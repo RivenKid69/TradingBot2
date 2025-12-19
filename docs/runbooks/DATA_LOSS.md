@@ -73,7 +73,7 @@ ccea-agent preflight
 ```
 
 **CRITICAL:**
-- Credentials are NEVER stored in Cloud
+- Credentials designed not to be stored in Cloud (CCEA architecture enforces this via protocol schema and Agent implementation)
 - If vault is lost and no backup exists, you must obtain new API keys from broker
 - Consider rotating keys after any vault compromise
 
@@ -109,9 +109,9 @@ ccea-agent start
 ```
 
 **Broker is Source of Truth:**
-- Agent state can always be rebuilt from broker
-- Never trust agent state over broker state
-- Always reconcile after any state issue
+- Agent state can be rebuilt from broker
+- Prioritize broker state over agent state in case of mismatch
+- Reconcile after any state issue
 
 ### 2.3 Order History Loss
 

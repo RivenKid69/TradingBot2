@@ -4,17 +4,17 @@
 
 ## Overview
 
-The Local Vault securely stores broker API credentials on the agent's local system. **Credentials NEVER leave the agent** and are NEVER transmitted to Cloud.
+The Local Vault securely stores broker API credentials on the agent's local system. The CCEA architecture is **designed so credentials remain in the customer-controlled Agent** and are **designed not to be transmitted to Cloud** (enforced via protocol schema and Agent implementation).
 
 ## Security Design Commitments
 
 ```
 Local Vault DESIGN COMMITMENTS (enforced at architecture level):
-  - Credentials stored ONLY locally (never in Cloud)
+  - Credentials designed to be stored locally (architecture designed so they are not transmitted to Cloud)
   - Encryption at rest (AES-256-GCM)
   - OS keychain integration when available
   - Automatic redaction in logs/telemetry
-  - Master key NEVER transmitted to Cloud
+  - Master key designed not to be transmitted to Cloud (enforced via Agent implementation)
 ```
 
 ---
@@ -109,7 +109,7 @@ ccea-agent vault list
 # cred_xyz    alpaca    paper-trading   2025-12-10
 ```
 
-**Note:** API keys/secrets are NEVER displayed.
+**Note:** API keys/secrets are designed not to be displayed (redacted by default).
 
 ### Removing Credentials
 
@@ -240,21 +240,21 @@ ccea-agent vault rotate-key
 
 ### DON'T
 
-1. **Never share vault files**
+1. **Do not share vault files**
    - Vault is tied to local machine
-   - Cannot be transferred
+   - Should not be transferred
 
-2. **Never log credentials**
+2. **Do not log credentials**
    - Agent automatically redacts
    - Custom code must also redact
 
-3. **Never store in version control**
+3. **Do not store in version control**
    - Add `~/.ccea/` to `.gitignore`
-   - Never commit `.env` files
+   - Do not commit `.env` files
 
-4. **Never transmit to Cloud**
-   - Agent enforces this
-   - No API endpoint accepts credentials
+4. **Credentials designed not to transmit to Cloud**
+   - Agent architecture enforces this
+   - Cloud API designed without credential-accepting endpoints
 
 ---
 

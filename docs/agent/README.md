@@ -6,7 +6,7 @@
 
 ## Overview
 
-The Agent Zone handles all live trading operations locally on the user's infrastructure. It is designed with complete autonomy and security - secrets never leave the agent, and all orders are created and sent locally.
+The Agent Zone handles all live trading operations locally on the user's infrastructure. It is designed with complete autonomy and security - the architecture is designed so secrets remain in the customer-controlled Agent, and all orders are created and sent locally.
 
 ### Design Doc Reference (§4.2)
 
@@ -23,12 +23,12 @@ Agent components per Design Doc:
 
 ```
 Agent Zone DESIGN COMMITMENTS (enforced by architecture):
-  - Secrets (API keys) NEVER leave the local environment
-  - Orders are created and sent ONLY locally
-  - Local hard caps CANNOT be overridden by Cloud
-  - Trading-impacting changes require LOCAL approval
+  - Secrets (API keys) designed to remain in the local environment (enforced via CCEA architecture)
+  - Orders are created and sent locally only (Cloud has no broker API access)
+  - Local hard caps designed not to be overridden by Cloud (enforced via local policy layer)
+  - Trading-impacting changes require local approval by design
   - Agent can operate independently if Cloud is unreachable
-  - All telemetry is redacted before transmission
+  - All telemetry designed to be redacted before transmission (enforced via middleware)
 ```
 
 ## Components
