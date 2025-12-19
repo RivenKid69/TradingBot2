@@ -35,29 +35,22 @@ This design commitment:
 |--------------|--------------|---------|----------------|
 | **Amazon Web Services (AWS)** | Amazon Web Services EMEA SARL | Cloud infrastructure | All Cloud-zone data |
 
-**AWS Services (Planned Configuration — not currently deployed):**
+**AWS Configuration (Deployment Pending):**
 
-> **Note**: This table describes the planned AWS service configuration. Actual deployment is pending. Production evidence (AWS Config/CloudTrail exports) will be available upon deployment.
+> **IMPORTANT**: CustodiaCloud infrastructure is not yet deployed. The configuration below describes planned architecture only and should not be treated as current operational state. Actual deployed configuration will be documented upon production deployment.
 
-| AWS Service | Region (Planned) | Purpose | Data Category |
-|-------------|------------------|---------|---------------|
-| RDS (PostgreSQL) | eu-central-1 (Frankfurt) | Primary database | User accounts, strategies, telemetry, commands, audit logs |
-| RDS (PostgreSQL) | eu-west-1 (Ireland) | Disaster recovery replica | Same as primary (encrypted replicas) |
-| S3 | eu-central-1 (Frankfurt) | Object storage | Artifacts, models, backtest results, SBOM |
-| S3 | eu-west-1 (Ireland) | Backup storage | Encrypted backups |
-| ElastiCache (Redis) | eu-central-1 (Frankfurt) | Session management | Session tokens, rate limits |
-| CloudWatch | eu-central-1 (Frankfurt) | Logging & monitoring | Application logs (redacted) |
-| KMS | eu-central-1 (Frankfurt) | Key management | Encryption keys |
-| Secrets Manager | eu-central-1 (Frankfurt) | Secrets storage | Internal service credentials |
+**Planned AWS Services**: RDS (PostgreSQL), S3, ElastiCache, CloudWatch, KMS, Secrets Manager
+**Planned Regions**: eu-central-1 (Frankfurt), eu-west-1 (Dublin)
+**Deployment Status**: Infrastructure deployment pending
+**Data Categories (when deployed)**: User accounts, strategies, telemetry, artifacts, audit logs
 
-**EU Residency Evidence (planned configuration; verify upon deployment):**
-- AWS Region: `eu-central-1` (Frankfurt, Germany) — planned
-- AWS Region: `eu-west-1` (Dublin, Ireland) — planned
-- AWS GDPR DPA: Standard AWS DPA available at link below
-- AWS Data Processing Addendum: [AWS DPA](https://aws.amazon.com/compliance/gdpr-center/)
-- Data residency controls: Region-lock to be enforced via IAM policies (pending deployment)
-- Last Review: To be scheduled upon deployment
-- Next Review: To be scheduled upon deployment
+**EU Residency Controls (to be implemented upon deployment):**
+- Region lock via IAM policies (not yet configured)
+- AWS GDPR DPA: [Standard AWS DPA available](https://aws.amazon.com/compliance/gdpr-center/) (execution upon deployment)
+- Evidence exports: AWS Config/CloudTrail (available upon deployment)
+- Review schedule: To be established upon deployment
+
+For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMENT_ARCHITECTURE.md`. For current operational status, contact the compliance team.
 
 ---
 

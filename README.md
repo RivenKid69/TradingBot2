@@ -20,10 +20,10 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 | **Agent** | Live execution, risk enforcement, local vault, order creation | **Local only** | **Yes** (customer-controlled) |
 
 **Key Security Design Commitments:**
-- Cloud is designed to **not** store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
-- Cloud **does not** generate, transmit, or execute **live trading instructions** (orders/targets/signals)
-- Cloud may send **lifecycle commands** and **signed artifacts** to the Agent; the Agent performs any live execution via customer accounts
-- Telemetry is **redacted by default**; raw order events require explicit opt-in (deployment- and customer-dependent)
+- Cloud does not store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
+- Cloud does not generate, transmit, or execute live trading instructions (orders/targets/signals)
+- Cloud may send lifecycle commands and signed artifacts to the Agent; the Agent performs any live execution via customer accounts
+- Telemetry is redacted by default; raw order events require explicit opt-in (deployment- and customer-dependent)
 
 **Deployment Modes (B2B):**
 1. **Cloud + BYO Agent**: Cloud research/simulation/monitoring + customer-controlled Agent execution

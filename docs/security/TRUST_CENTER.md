@@ -17,38 +17,38 @@ This document provides pre-contractual security information designed to support 
 
 | Aspect | Status | Details |
 |--------|--------|---------|
-| **Certifications** | SOC2 Type II Roadmap | Target 2027 (not currently certified; see Section 2) |
+| **Security Program** | SOC2 Type II Roadmap | Target 2027 (not currently certified; budget and auditor engagement pending; see Section 2) |
 | **Infrastructure** | AWS (Frankfurt) planned | EU data residency design goal (infrastructure deployment pending) |
 | **Encryption** | AES-256 / TLS 1.3 design | At-rest and in-transit (implementation subject to deployment) |
-| **Availability** | Aspirational target: 99.9% | Multi-AZ deployment (unvalidated design goal; actual SLA contract-specific and pending infrastructure) |
-| **Incident Response** | Planned: 24/7 on-call | Aspirational target: 15-minute critical response (pending 4+ FTE hiring and operational validation) |
+| **Availability** | Design goal | Multi-AZ deployment (unvalidated; no production uptime data; actual SLA contract-specific) |
+| **Incident Response** | Roadmap item | Incident response capability pending operational team hiring (current capacity: business hours only) |
 | **DORA Alignment** | Designed to support | Art. 30 contract templates available (not operational commitments) |
 
 ---
 
 ## 2. Security Certifications & Attestations
 
-### 2.1 Certification Roadmap
+### 2.1 Security Program Roadmap
 
-**Note**: CustodiaCloud is a pre-seed stage company. We do not claim certifications we have not yet achieved. This section describes our roadmap and current posture.
+**Note**: CustodiaCloud is a pre-seed stage company. We do not claim certifications we have not yet achieved. This section describes roadmap targets that are budget-dependent and subject to auditor availability.
 
-| Certification | Scope | Status | Target |
-|---------------|-------|--------|--------|
-| SOC2 Type I | Platform operations | Planned | 2026 |
-| SOC2 Type II | Platform operations | Planned | 2027 |
-| ISO 27001 | Information security | Planned | 2027+ |
-| GDPR | Data protection | Designed to align | Ongoing |
+| Program Element | Scope | Status | Roadmap Target |
+|-----------------|-------|--------|----------------|
+| SOC2 Type I | Platform operations | Roadmap item (no auditor engagement) | Budget-dependent; earliest 2026 if funded |
+| SOC2 Type II | Platform operations | Roadmap item (no auditor engagement) | Budget-dependent; earliest 2027 if funded |
+| ISO 27001 | Information security | Evaluation phase (optional) | Budget-dependent; post-2027 if pursued |
+| GDPR | Data protection | Designed to align | Ongoing (not a certification) |
 
 ### 2.2 Third-Party Audits (Planned)
 
 **Current state**: As a pre-seed company, formal third-party audits are planned but not yet completed. We maintain internal security practices and will engage external auditors as part of our SOC2 roadmap.
 
-| Audit Type | Planned Frequency | Status | Availability |
-|------------|-------------------|--------|--------------|
-| Penetration Testing | Annual | Planned 2026 | Summary on request (when available) |
+| Security Activity | Target Frequency | Status | Availability |
+|-------------------|------------------|--------|--------------|
+| Penetration Testing | Annual (roadmap) | Roadmap item (no vendor contract) | Not yet conducted |
 | Vulnerability Assessment | Quarterly | Internal scans (ongoing) | Summary on request |
-| SOC2 Audit (Type I) | Annual | Planned 2026 | Report under NDA (when available) |
-| SOC2 Audit (Type II) | Annual | Planned 2027 | Report under NDA (when available) |
+| SOC2 Audit (Type I) | Annual (roadmap) | Roadmap item (no auditor engagement) | Not yet conducted |
+| SOC2 Audit (Type II) | Annual (roadmap) | Roadmap item (no auditor engagement) | Not yet conducted |
 | Code Security Review | Per major release | Internal review active | Summary on request |
 
 ---
@@ -183,16 +183,21 @@ This document provides pre-contractual security information designed to support 
 
 ## 6. Business Continuity
 
-### 6.1 Recovery Objectives
+### 6.1 Disaster Recovery Program
 
-> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational track record and no current customers. These are **aspirational design targets** that require multi-AZ infrastructure deployment, DR automation implementation, and testing validation before they can be committed. DR testing has not yet been conducted. Actual RTO/RPO commitments are contract-specific and require infrastructure capacity validation and successful DR test execution.
+> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational track record and no current customers. DR testing has not yet been conducted. RTO/RPO values cannot be provided without validated DR test results. Actual recovery objectives are contract-specific and require infrastructure deployment, testing validation, and operational capacity assessment.
 
-| Scenario | RTO (Aspirational, Unvalidated) | RPO (Aspirational, Unvalidated) | Testing Plan (Not Yet Conducted) |
-|----------|-----|-----|-------------|
-| Component Failure | 30 min (unvalidated target) | 0 (real-time) (unvalidated target) | Monthly (planned upon operational deployment) |
-| Availability Zone Failure | 1 hour (unvalidated target) | 15 min (unvalidated target) | Quarterly (planned upon operational deployment) |
-| Region Failure | 4 hours (unvalidated target) | 1 hour (unvalidated target) | Annually (planned upon operational deployment) |
-| Complete Disaster | 24 hours (unvalidated target) | 4 hours (unvalidated target) | Annually (planned upon operational deployment) |
+**Current State:**
+- DR testing: Not yet conducted
+- Multi-AZ deployment: Not yet deployed
+- DR automation: Design phase
+- Recovery runbooks: Documented (not validated)
+
+**Roadmap (budget-dependent):**
+- DR testing framework implementation
+- Infrastructure deployment and hardening
+- Quarterly DR test execution (when operational)
+- RTO/RPO measurement and reporting (post-validation)
 
 ### 6.2 Backup Strategy
 
@@ -215,16 +220,22 @@ This document provides pre-contractual security information designed to support 
 
 ## 7. Incident Response
 
-### 7.1 Response Time Aspirational Targets (Pre-Operational, Unvalidated)
+### 7.1 Incident Response Capability
 
-> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational on-call team, no current customers, and no incident response track record. These are **aspirational targets** that require 4+ FTE on-call hiring, PagerDuty/monitoring implementation, and operational validation before they can be committed. Actual response times will be defined in executed service agreements after hiring and operational validation. For capacity assessment framework, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
+> **CRITICAL DISCLAIMER**: CustodiaCloud is a pre-revenue startup with no operational on-call team, no current customers, and no incident response track record. Response time commitments cannot be provided without validated operational capacity. Actual response times will be defined in executed service agreements after team hiring, monitoring deployment, and operational validation. For capacity assessment framework, see `docs/operations/ON_CALL_CAPACITY_VALIDATION.md`.
 
-| Severity | Detection (Aspirational, Unvalidated) | Response (Aspirational, Unvalidated) | Client Notification (Aspirational, Unvalidated) |
-|----------|-----------|----------|-------------------|
-| Critical | 5 min (pending monitoring deployment) | 15 min (pending 24/7 on-call hiring) | 30 min (pending operational validation) |
-| High | 15 min (pending monitoring deployment) | 30 min (pending on-call hiring) | 1 hour (pending operational validation) |
-| Medium | 1 hour (pending monitoring deployment) | 4 hours (pending on-call hiring) | 4 hours (pending operational validation) |
-| Low | 24 hours (pending monitoring deployment) | Next business day (pending on-call hiring) | Weekly summary (pending operational validation) |
+**Current Capacity:**
+- Coverage: Business hours only (EU timezone)
+- Team size: 1 FTE
+- On-call rotation: Not established
+- 24/7 monitoring: Not deployed
+
+**Roadmap (budget and hiring dependent):**
+- Hire 4+ FTE for sustainable on-call rotation
+- Deploy 24/7 monitoring and alerting infrastructure
+- Establish incident response procedures and runbooks
+- Validate response times via tabletop exercises and actual incidents
+- Define contract-specific SLA terms after operational validation
 
 ### 7.2 Incident Categories
 
@@ -351,8 +362,7 @@ For contracted clients:
 
 ### Incident Reporting
 - Email: incidents@[platform-domain]
-- Urgent: [24/7 phone number]
-- Response: Per severity (see Section 7)
+- Response: Business hours (24/7 coverage pending operational team hiring)
 
 ### Audit Requests
 - Email: compliance@[platform-domain]
@@ -374,6 +384,7 @@ For contracted clients:
 | 1.3 | 2025-12-19 | **Due diligence audit corrections**: Replaced SLA/RTO/incident response absolute claims with Canon-compliant design targets. "Target 99.9%" → "Design target: 99.9% (actual SLA contract-specific)"; "Response Times" → "Response Time Design Targets (Pre-Operational)"; RTO/RPO column headers → "Untested Design Target"; Added vendor-reported note to certifications table; "Designed for 24/7" → "Planned: 24/7 on-call (operational validation pending)". |
 | 1.4 | 2025-12-19 | **Due diligence audit - operational capability claims**: Further strengthened disclaimers per Canon. "Design target: 99.9%" → "Aspirational target: 99.9% (unvalidated design goal; pending infrastructure)"; RTO/RPO → "Aspirational, Unvalidated"; Response times → "pending 4+ FTE hiring and operational validation"; Infrastructure → "planned (deployment pending)"; All columns now explicitly state "(unvalidated target)" or "(pending X)". |
 | 1.5 | 2025-12-19 | **Regulatory/Legal claim correction**: Changed "per DORA Article 28(7) requirements" → "designed to support DORA Article 28(7) requirements" with note that compliance depends on contractual arrangements and requires legal validation. |
+| 1.6 | 2025-12-19 | **Due diligence audit - toxic claims elimination**: Per Canon strict compliance: (1) Removed RTO/RPO table with specific values (replaced with current state + roadmap); (2) Removed "15-minute response" and all specific response times (replaced with current capacity disclosure); (3) Removed "99.9% availability" target (replaced with design goal statement); (4) Changed "Certifications" → "Security Program" to avoid implying existing certs; (5) Changed "Planned 2026/2027" → "Budget-dependent; earliest 2026/2027 if funded" for all audit/cert roadmap items; (6) Removed "[24/7 phone number]" placeholder (replaced with business hours disclosure). |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team

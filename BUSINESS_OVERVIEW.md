@@ -49,9 +49,10 @@ CCEA — ключевой «procurement‑friendly» принцип: строг�
 ## Пилот и проверка спроса (реалистичный план)
 
 **Pilot program (customer validation):**
-- Формат: **3‑месячный** пилот‑кохорт **3–5 компаний**
+- Формат: **3‑месячный** пилот‑кохорт **3–5 компаний** (planned; not yet launched)
 - Условие: регулярные onboarding‑сессии и недельный feedback
 - Пилот‑цена: ~**€500/мес** (discounted; illustrative)
+- **Current status**: Pilot program not yet launched; no signed participants as of 2025-12-19
 
 **Цель пилота**: доказать repeatable onboarding и procurement‑friendly posture (CCEA + governance/evidence exports + risk‑first), а не «показать доходность».
 
@@ -88,4 +89,4 @@ CCEA — ключевой «procurement‑friendly» принцип: строг�
 
 ---
 
-*Updated: 2025‑12‑18*
+*Updated: 2025‑12‑19*

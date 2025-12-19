@@ -27,22 +27,25 @@ This Addendum supplements the base DORA ICT Service Provisions (Art. 30(2)) with
 
 ### Article 30(3)(a) — FULL SERVICE LEVEL AGREEMENTS
 
-**A.1 Quantitative Performance Targets**
+**A.1 Service Level Framework**
 
-> **CRITICAL DISCLAIMER**: All values below are **unvalidated aspirational targets for planning purposes only**. CustodiaCloud has no operational track record and no current customers. These targets require infrastructure implementation, capacity validation, and DR testing before they can be committed. Actual SLA must be defined in executed agreement after engineering sign-off and operational validation. See `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` for validation framework.
+> **TEMPLATE PLACEHOLDER SECTION - REQUIRES VALIDATION BEFORE USE**
+>
+> This section must be completed based on actual operational capacity assessment. CustodiaCloud is a pre-revenue company with no operational track record, no DR testing conducted, and no production deployment. SLA values cannot be provided without infrastructure validation and testing.
 
-| Service | Metric | Aspirational Target (Unvalidated) | Measurement | Breach Consequence |
-|---------|--------|--------|-------------|-------------------|
-| Trading Platform | Availability | 99.95% (unvalidated target) | Monthly | Service credits |
-| Trading Platform | Order Latency P95 | <100ms (unvalidated target) | Per transaction | Incident escalation |
-| Trading Platform | Order Latency P99 | <250ms (unvalidated target) | Per transaction | Breach notification |
-| API Gateway | Availability | 99.95% (unvalidated target) | Monthly | Service credits |
-| API Gateway | Response Time P95 | <200ms (unvalidated target) | Hourly | Performance review |
-| Market Data | Data Freshness | <50ms (unvalidated target) | Per tick | Alert & investigation |
-| Market Data | Completeness | 99.99% (unvalidated target) | Daily | Gap analysis |
-| Risk Engine | Calculation Time | <5s (unvalidated target) | Per request | Capacity review |
-| Backup Systems | RPO | 15 minutes (unvalidated target) | Per backup | Immediate escalation |
-| Backup Systems | RTO | 4 hours (unvalidated target) | Per DR test | BCP review |
+**Parties must complete the following validation before populating SLA values:**
+
+| Validation Required | Status | Validator | Evidence Required |
+|---------------------|--------|-----------|-------------------|
+| Load testing and performance validation | ❌ Not conducted | Engineering + CTO | Load test reports, P95/P99 latency data |
+| DR testing and RTO/RPO measurement | ❌ Not conducted | Operations + CTO | DR drill reports with actual timing |
+| Multi-AZ deployment and failover validation | ❌ Not deployed | Infrastructure + CTO | Deployment configs, failover test logs |
+| On-call capacity and response time validation | ❌ Not established | Operations | On-call schedule, incident response drill reports |
+| Legal review of SLA terms | ❌ Not conducted | Legal counsel | Legal opinion letter |
+
+**Placeholder SLA Table (DO NOT USE WITHOUT VALIDATION):**
+
+See `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` and `services/dora/sla_guardrails.py` for the validation framework that must be completed before any SLA values can be committed in this section.
 
 **A.2 Service Credits**
 

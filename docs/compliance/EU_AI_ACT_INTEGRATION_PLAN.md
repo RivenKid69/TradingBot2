@@ -11,23 +11,23 @@
 
 #### Optional modules (Articles 9–17)
 
-| Phase | Status | Completion Date | Tests |
-|-------|--------|-----------------|-------|
-| **Phase 1: Foundation & Risk Management** | **IMPLEMENTED (tooling)** | 2025-12-08 | 372/372 passed (internal CI) |
-| **Phase 2: Technical Documentation & Logging** | **IMPLEMENTED (tooling)** | 2025-12-08 | 236/236 passed (internal CI) |
-| **Phase 3: QMS & Testing** | **IMPLEMENTED (tooling)** | 2025-12-08 | 318/318 passed (internal CI) |
-| **Phase 4: Conformity Assessment (templates/tooling)** | **IMPLEMENTED (tooling)** | 2025-12-08 | 81/81 passed |
+| Phase | Status | Completion Date | Internal Test Coverage |
+|-------|--------|-----------------|------------------------|
+| **Phase 1: Foundation & Risk Management** | Tooling implemented | 2025-12-08 | 372 internal unit tests passing (not regulatory certification) |
+| **Phase 2: Technical Documentation & Logging** | Tooling implemented | 2025-12-08 | 236 internal unit tests passing (not regulatory certification) |
+| **Phase 3: QMS & Testing** | Tooling implemented | 2025-12-08 | 318 internal unit tests passing (not regulatory certification) |
+| **Phase 4: Conformity Assessment (templates/tooling)** | Tooling implemented | 2025-12-08 | 81 internal unit tests passing (not regulatory certification) |
 | Phase 5: Ongoing monitoring | Planned | - | - |
 
 #### Transparency & documentation modules (deployment-dependent)
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
-| **GPAI Phase 1: Transparency & Copyright** | **IMPLEMENTED (tooling)** | 2025-12-10 | 189/189 passed |
-| **GPAI Phase 2: Model Card & Acknowledgment** | **IMPLEMENTED (tooling)** | 2025-12-10 | TBD |
+| **GPAI Phase 1: Transparency & Copyright** | Tooling implemented | 2025-12-10 | 189 internal unit tests passing (not regulatory certification) |
+| **GPAI Phase 2: Model Card & Acknowledgment** | Tooling implemented | 2025-12-10 | Internal tests (count TBD) |
 | GPAI Phase 3: Documentation & Monitoring | Planned | - | - |
 
-**Total AI Act Tooling Tests: 1196+ passed (not a compliance claim)**
+**Total Internal Test Coverage**: 1196+ internal unit tests passing (internal CI validation only; not regulatory certification or third-party audit)
 
 ### Module Version
 

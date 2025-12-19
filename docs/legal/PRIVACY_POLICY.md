@@ -72,17 +72,19 @@ Data processed in our Cloud infrastructure:
 
 Data processed by the optional local Agent (if you deploy one):
 
-| Data Type | Storage Location | Our Access |
-|-----------|-----------------|------------|
-| Broker API credentials | Your hardware (encrypted vault) | **NONE** |
-| Order execution data | Your hardware | **NONE** |
-| Position details | Your hardware | **NONE** |
-| Local approval records | Your hardware | **NONE** |
+| Data Type | Storage Location | Our Designed Access |
+|-----------|-----------------|---------------------|
+| Broker API credentials | Your hardware (encrypted vault) | Designed: no access |
+| Order execution data | Your hardware | Designed: no access |
+| Position details | Your hardware | Designed: no access |
+| Local approval records | Your hardware | Designed: no access |
 
 **Agent-zone data is designed to remain under your control:**
-1. By design, Agent-zone data is intended to stay on your hardware (verify via architecture review)
-2. Encryption is designed to use keys derived locally, which we are designed not to possess (verify via threat model/security review)
+1. By design, Agent-zone data is intended to stay on your hardware (verify via CCEA architecture documentation)
+2. Encryption is designed to use keys derived locally, which we do not possess by design (verify via technical documentation)
 3. The Agent is designed to operate autonomously on your infrastructure
+
+> **Note**: "Designed: no access" means the CCEA architecture is designed so credentials and execution data remain in customer-controlled environments. This is a design goal enforced via protocol constraints and CI guardrails. For independent verification, clients may conduct security reviews or request architecture documentation.
 
 ### 1A.4 Telemetry Redaction
 
