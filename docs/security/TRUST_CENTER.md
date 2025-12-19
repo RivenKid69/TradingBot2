@@ -245,14 +245,14 @@ For DORA-regulated clients:
 
 ### 8.1 Key Subcontractors
 
-> **Note**: Certifications are vendor-reported. Clients should verify current status via vendor trust centers (see `docs/contracts/SUBCONTRACTOR_REGISTER.md` for verification links).
+> **Note**: Certifications below are vendor-reported and subject to change. They may not apply to all services or regions. Clients must verify current certification status, applicable scope, and specific services via vendor trust centers before relying on these claims. See `docs/contracts/SUBCONTRACTOR_REGISTER.md` for verification links.
 
-| Provider | Service | Criticality | Certifications (Vendor-Reported) |
-|----------|---------|-------------|----------------|
-| AWS | Cloud Infrastructure | Critical | SOC2, ISO27001, C5 |
-| Cloudflare | CDN/Security | High | SOC2, ISO27001 |
-| Datadog | Monitoring | Medium | SOC2, ISO27001 |
-| Stripe | Payments | High | PCI DSS L1, SOC2 |
+| Provider | Service | Criticality | Certifications (Vendor-Reported; verify before relying) |
+|----------|---------|-------------|----------------------------------------------------------|
+| AWS | Cloud Infrastructure | Critical | SOC2, ISO27001, C5 (verify: [AWS Compliance](https://aws.amazon.com/compliance/)) |
+| Cloudflare | CDN/Security | High | SOC2, ISO27001 (verify: [Cloudflare Trust Hub](https://www.cloudflare.com/trust-hub/)) |
+| Datadog | Monitoring | Medium | SOC2, ISO27001 (verify: [Datadog Security](https://www.datadoghq.com/security/)) |
+| Stripe | Payments | High | PCI DSS L1, SOC2 (verify: [Stripe Security](https://stripe.com/docs/security)) |
 
 ### 8.2 Due Diligence
 

@@ -340,7 +340,7 @@ from services.core.risk_controls import EnhancedKillSwitch
   - Cross-Symbol Contamination: 4 tests (from 2025-11-20)
   - Quantile Loss Formula: 11 tests (from 2025-11-20)
   - Total: 57 new regression prevention tests
-  - All critical issues now have comprehensive test coverage
+  - Critical issues identified as of 2025-11-21 have test coverage (coverage scope defined per issue; verify via CI for current status)
 
 ### Regression Prevention
 

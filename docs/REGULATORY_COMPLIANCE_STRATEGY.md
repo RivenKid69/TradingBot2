@@ -1361,12 +1361,14 @@ We provide a comprehensive DPA to all clients covering:
 
 #### 9.4.1 Incident Classification
 
-| Severity | Definition | Response Time | Examples |
-|----------|------------|---------------|----------|
-| **Critical** | Service unavailable, data breach | 15 minutes | Major outage, confirmed breach |
-| **High** | Significant degradation, potential breach | 1 hour | Performance issues, suspicious activity |
-| **Medium** | Limited impact, contained | 4 hours | Single user issues, minor vulnerabilities |
-| **Low** | Minimal impact | 24 hours | Policy violations, minor bugs |
+| Severity | Definition | Response Time (Target) | Examples |
+|----------|------------|------------------------|----------|
+| **Critical** | Service unavailable, data breach | 15 minutes (target; pending operational validation) | Major outage, confirmed breach |
+| **High** | Significant degradation, potential breach | 1 hour (target) | Performance issues, suspicious activity |
+| **Medium** | Limited impact, contained | 4 hours (target) | Single user issues, minor vulnerabilities |
+| **Low** | Minimal impact | 24 hours (target) | Policy violations, minor bugs |
+
+> **Note**: Response times are aspirational targets pending 24/7 operational team staffing and validated incident response processes. Contract-specific SLAs will supersede these targets.
 
 #### 9.4.2 Incident Response Phases
 
@@ -1421,11 +1423,13 @@ We provide a comprehensive DPA to all clients covering:
 
 #### 9.5.1 Recovery Objectives
 
-| Metric | Target | Justification |
-|--------|--------|---------------|
-| RTO (Recovery Time Objective) | 4 hours | Trading window consideration |
-| RPO (Recovery Point Objective) | 1 hour | Acceptable data loss |
-| MTPD (Maximum Tolerable Period of Disruption) | 24 hours | Business impact analysis |
+| Metric | Target (Aspirational) | Justification |
+|--------|----------------------|---------------|
+| RTO (Recovery Time Objective) | 4 hours (design target; pending DR validation) | Trading window consideration |
+| RPO (Recovery Point Objective) | 1 hour (design target; pending DR validation) | Acceptable data loss |
+| MTPD (Maximum Tolerable Period of Disruption) | 24 hours (design target) | Business impact analysis |
+
+> **Note**: Recovery objectives are design targets pending validated disaster recovery testing. Actual SLAs are contract-specific and depend on infrastructure deployment status.
 
 #### 9.5.2 Disaster Recovery Architecture
 

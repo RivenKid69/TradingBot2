@@ -32,15 +32,17 @@
 
 ## Roadmap по фазам (оптимально закрывать по одному промпту Opus 4.5)
 
-| Фаза | Цель | Ключевые артефакты | Тесты (100% покрытия фазы) |
-|------|------|--------------------|----------------------------|
-| **Phase 0: Scope & Gap** | Подтвердить применимость NIS2, выбрать NCA/CSIRT, снять gap-матрицу | Scope register, NCA/CSIRT контакты, gap-to-Article21 | 18/18 (scope logic, gap parser, classification) |
-| **Phase 1: Governance & Policies** | Закрепить ответственность Article 20, обновить политики | RACI, policy pack, board training proof | 22/22 (policy lint, approvals, training evidence) |
-| **Phase 2: Core Controls (Art.21 a,f,g,h,i,j)** | Базовые кибермеры: идентичность, доступ, крипто, журналирование, тестирование эффективности | `services/nis2/risk_management.py`, IAM/MFA baseline, logging schema | 40/40 (unit+integration на контрольные списки, IAM/crypto checks) |
-| **Phase 3: Incident Handling & Reporting (Art.21b, Art.23)** | Единый инцидентный процесс и уведомления | `services/nis2/incident_reporting.py`, runbook, CSIRT forms | 36/36 (timeline calc, schema validation, dry-run submissions) |
-| **Phase 4: Resilience & BCP/DR (Art.21c)** | Восстановление, резилиентность, failover | BCP, DR playbooks, backup/restore proofs | 28/28 (backup drills, RTO/RPO sims, chaos tests) |
-| **Phase 5: Supply Chain & Vendor Security (Art.21d,e)** | Управление поставщиками/библиотеками, CVD, secure SDLC | Vendor registry, SBOM, SBoM attestations, contract clauses | 34/34 (SBOM diff, SAST/DAST gates, vendor controls) |
-| **Phase 6: Awareness & Continuous Compliance (Art.21g + supervision)** | Обучение, метрики, постоянный мониторинг | Training program, KPI dashboard, audit pack | 18/18 (training completion, KPI calc, audit export) |
+| Фаза | Цель | Ключевые артефакты | Тесты (targets; verify via CI) |
+|------|------|--------------------|-------------------------------|
+| **Phase 0: Scope & Gap** | Подтвердить применимость NIS2, выбрать NCA/CSIRT, снять gap-матрицу | Scope register, NCA/CSIRT контакты, gap-to-Article21 | 18 planned (scope logic, gap parser, classification) |
+| **Phase 1: Governance & Policies** | Закрепить ответственность Article 20, обновить политики | RACI, policy pack, board training proof | 22 planned (policy lint, approvals, training evidence) |
+| **Phase 2: Core Controls (Art.21 a,f,g,h,i,j)** | Базовые кибермеры: идентичность, доступ, крипто, журналирование, тестирование эффективности | `services/nis2/risk_management.py`, IAM/MFA baseline, logging schema | 40 planned (unit+integration на контрольные списки, IAM/crypto checks) |
+| **Phase 3: Incident Handling & Reporting (Art.21b, Art.23)** | Единый инцидентный процесс и уведомления | `services/nis2/incident_reporting.py`, runbook, CSIRT forms | 36 planned (timeline calc, schema validation, dry-run submissions) |
+| **Phase 4: Resilience & BCP/DR (Art.21c)** | Восстановление, резилиентность, failover | BCP, DR playbooks, backup/restore proofs | 28 planned (backup drills, RTO/RPO sims, chaos tests) |
+| **Phase 5: Supply Chain & Vendor Security (Art.21d,e)** | Управление поставщиками/библиотеками, CVD, secure SDLC | Vendor registry, SBOM, SBoM attestations, contract clauses | 34 planned (SBOM diff, SAST/DAST gates, vendor controls) |
+| **Phase 6: Awareness & Continuous Compliance (Art.21g + supervision)** | Обучение, метрики, постоянный мониторинг | Training program, KPI dashboard, audit pack | 18 planned (training completion, KPI calc, audit export) |
+
+> **Note**: Test counts are planned targets. Actual pass rates should be verified via CI. "Planned" indicates roadmap scope, not completion status.
 
 ---
 
@@ -182,7 +184,7 @@
 **Тесты (100% покрытия фазы)**:
 - Unit: метрики собираются и корректно считаются (например, % MFA-enabled).  
 - Integration: дашборд обновляется из источников (CI, SIEM, SBOM) без ручных шагов.  
-- Evidence: 100% сотрудников прошли обучение; фишинг-симуляция имеет результаты и ретест.  
+- Evidence: training completion records required (target: all personnel; verify via LMS/HR records); phishing simulation results and retest records required.  
 - Audit rehearsal: mock запрос от NCA → формируется пакет артефактов.  
 
 ---
@@ -200,7 +202,7 @@
 ## Deliverables & Definition of Done (DoD)
 
 - По итогам каждой фазы: обновлённые документы в `docs/compliance/` + реализованные сервисные модули (`services/nis2/*`), конфиги и CI-пайплайны.  
-- **Tests**: 100% заявленных тестов на фазу выполнены и задокументированы (протоколы tabletop/chaos, отчёты CI, логи dry-run уведомлений).  
+- **Tests**: All phase tests executed and documented (verify via CI artifacts: tabletop/chaos protocols, CI reports, dry-run notification logs). Test completion status subject to current CI run.  
 - **Evidence**: ссылки на политики, реестры, лог-файлы SIEM, результаты восстановления, отчёты по CVE, training completion.  
 - **Ownership**: назначен владелец каждого контроля и процедура ежегодного пересмотра.  
 

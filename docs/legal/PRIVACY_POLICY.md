@@ -329,7 +329,7 @@ These fields are **blocked at the protocol level**:
 
 #### 5.4.3 Telemetry Sensitivity Levels (CCEA Design)
 
-The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is always mandatory and cannot be disabled** at any level.
+The Platform implements three distinct telemetry sensitivity levels as defined in the CCEA architecture. **Redaction is designed to be always active**; the architecture does not expose configuration options or feature flags to disable it (enforced via CI guardrails and runtime checks).
 
 | Level | Description | Data Included | Opt-in Required |
 |-------|-------------|---------------|-----------------|
@@ -547,7 +547,7 @@ This section provides an explicit checklist of privacy design commitments for th
 
 | Design Goal | Enforcement | Verification |
 |-------------|-------------|--------------|
-| **Core storage in EU** | Region configuration | Drift check (fail-closed) |
+| **Core storage in EU** | Region configuration (design goal) | Drift check (fail-closed; pending infrastructure deployment) |
 | **Core backups in EU** | Backup region policy | Automated verification |
 | **Core logs in EU** | CloudWatch region lock | Infrastructure audit |
 | **Sub-processors: EU where possible** | Contractual + DPA; SCCs/DPF for non-EU | Quarterly review |

@@ -590,7 +590,7 @@ def validate_raw_order_payload(
         4. Validate field types
         5. Return result
 
-    CRITICAL: Credentials are never allowed, even in RAW.
+    CRITICAL: Credentials are designed to be rejected at all telemetry levels, including RAW (enforced via redaction middleware and schema validation).
     """
     ...
 ```

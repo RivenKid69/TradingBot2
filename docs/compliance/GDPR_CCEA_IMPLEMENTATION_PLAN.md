@@ -66,7 +66,7 @@ The minimal GDPR subset for this project typically includes:
 
 These constraints are required for the platform’s compliance posture and must remain invariant:
 
-1. **Cloud never receives** broker credentials, API keys/tokens, or env vars (redaction + validation + CI guardrails).
+1. **Cloud is designed to never receive** broker credentials, API keys/tokens, or env vars (enforced via redaction + validation + CI guardrails; see CI artifacts for current test status).
 2. **Cloud→Agent protocol commands** never carry **order-like payloads** (side/qty/price/order id/fill details); forbidden at schema + CI (“no order commands”).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L750`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L754`.
 3. **Cloud telemetry sensitivity levels are fixed and named**: `AGGREGATED` (default), `DETAILED_NON_SENSITIVE` (opt-in), `RAW_ORDER_EVENTS` (enterprise-only, explicit opt-in).
@@ -75,7 +75,7 @@ These constraints are required for the platform’s compliance posture and must 
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L851`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L853`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1739`.
 5. Default telemetry is **AGGREGATED** (retail/pro); any increase in sensitivity is explicit, audited, and controlled; enterprise may select “telemetry stays local” (local-only mode) instead of Cloud ingestion.
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
-6. **Telemetry redaction is always on** and cannot be disabled by configuration/feature flag; env var logging is forbidden.  
+6. **Telemetry redaction is designed to be always on** and the architecture does not expose configuration or feature flags to disable it; env var logging is prohibited by design (enforced via CI guardrails; see CI artifacts for current test status).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
 7. EU-only residency: all storage, backups, logs, observability, and support tooling remain in EU; **EU-only drift checks are mandatory** (fail closed).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745`.
@@ -582,9 +582,9 @@ DoD:
   - Legal hold blocking with exemption tracking
   - CCEA boundary in export packages
 
-### Phase 6 — Access control, access audit, and break-glass [COMPLETED - 2025-12-17]
+### Phase 6 — Access control, access audit, and break-glass [INTERNAL TOOLING COMPLETE - 2025-12-17]
 
-**Status**: ✅ **COMPLETED**
+**Status**: ✅ **INTERNAL TOOLING COMPLETE** (implementation artifacts available; not independently audited)
 
 **Goal**: least privilege with provable accountability for access to sensitive data.
 
@@ -780,8 +780,8 @@ Key work:
 DoD (internal tooling validation; not a compliance claim):
 - ✅ Simulated breach workflow produces notification decision package and evidence trail (target: 72h external deadline; internal tabletop target: draft package + timeline within 24h).
 - ✅ Evidence pack exports: signed artifact inventory + SBOM + change journal + staged rollout/rollback records + research sandbox policy/violations.
-- ✅ 146 tests passing (Phase 7 tooling coverage).
-- ✅ 573 governance tests passing (internal tooling validation).
+- ✅ 146 tests passing at time of Phase 7 completion (verify current status via CI; commit hash to be recorded in release notes).
+- ✅ 573 governance tests passing at time of completion (verify current status via CI; test counts subject to change as codebase evolves).
 
 ### Phase 8 — Continuous compliance (prevent regressions) ✅ COMPLETED
 

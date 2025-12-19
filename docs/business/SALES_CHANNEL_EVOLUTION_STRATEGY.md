@@ -219,7 +219,7 @@ Per [Bessemer Venture Partners](https://www.bvp.com/atlas/a-b2b-founders-guide-t
 │  └──────┬───────┘                                           │
 │         │ 10% convert                                        │
 │  ┌──────▼───────┐                                           │
-│  │ Paid Starter │  ────▶ 60 paying customers (target)       │
+│  │ Paid Starter │  ────▶ 60 paying customers (forecast target) │
 │  │   ($49/mo)   │                                           │
 │  └──────┬───────┘                                           │
 │         │ 20% upgrade                                        │
@@ -382,13 +382,15 @@ Per [BNP Paribas Prime Brokerage](https://thehedgefundjournal.com/bnpps-prime-br
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Target Prime Broker Tiers:**
+**Target Prime Broker Tiers (illustrative examples; no existing relationships):**
 
-| Tier | Examples | Strategy | Timeline |
-|------|----------|----------|----------|
+| Tier | Example Firms (Targets, Not Partners) | Strategy | Timeline |
+|------|---------------------------------------|----------|----------|
 | **Tier 2/3** | Marex, Cowen, Wedbush | Direct outreach, pilot | 6-12 mo |
 | **Boutique Crypto** | BitGo, Coinbase Prime | Partnership alignment | 3-6 mo |
 | **Tier 1** | GS, MS, JPM | Build credibility first | 18-24 mo |
+
+> **Note**: Firms listed are illustrative target segments for go-to-market planning. No partnerships, LOIs, or commercial agreements exist with these firms as of this document's date.
 
 ---
 

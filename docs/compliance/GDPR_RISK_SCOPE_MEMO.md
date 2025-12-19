@@ -577,13 +577,15 @@ For **Agent Zone data**, the customer is the sole Controller:
 
 ### 6.1 Approved Subprocessors (EU-only)
 
-| Subprocessor | Service | Data Processed | Region | DPA Status | Last Review |
+| Subprocessor | Service | Data Processed | Region | DPA Status (Internal Record) | Last Review |
 |---|---|---|---|---|---|
-| **AWS (Amazon Web Services)** | Infrastructure (RDS, S3, ElastiCache, CloudWatch) | All Cloud data | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) | 2025-01-15 |
-| **Supabase** | Database hosting (PostgreSQL alternative) | All Cloud data | EU (Germany) | Signed | 2025-01-15 |
-| **Stripe** | Payment processing | Billing data only | EU (Ireland) | Signed (Stripe DPA) | 2025-01-15 |
-| **SendGrid / AWS SES** | Transactional email | Email addresses, notification content | EU | Signed | 2025-01-15 |
-| **Sentry** | Error monitoring | Error logs (redacted, no PII in stack traces) | EU (Germany) | Signed | 2025-01-15 |
+| **AWS (Amazon Web Services)** | Infrastructure (RDS, S3, ElastiCache, CloudWatch) | All Cloud data | eu-central-1 (Frankfurt), eu-west-1 (Ireland) | Signed (AWS DPA) — verify current status via internal contract register | 2025-01-15 |
+| **Supabase** | Database hosting (PostgreSQL alternative) | All Cloud data | EU (Germany) | Signed — verify current status via internal contract register | 2025-01-15 |
+| **Stripe** | Payment processing | Billing data only | EU (Ireland) | Signed (Stripe DPA) — verify current status via internal contract register | 2025-01-15 |
+| **SendGrid / AWS SES** | Transactional email | Email addresses, notification content | EU | Signed — verify current status via internal contract register | 2025-01-15 |
+| **Sentry** | Error monitoring | Error logs (redacted, no PII in stack traces) | EU (Germany) | Signed — verify current status via internal contract register | 2025-01-15 |
+
+> **Note**: DPA status reflects internal records at time of last review. Actual contract status and effective dates should be verified via the internal contract register (`docs/contracts/SUBCONTRACTOR_REGISTER.md`).
 
 ### 6.2 Subprocessor Change Notification
 

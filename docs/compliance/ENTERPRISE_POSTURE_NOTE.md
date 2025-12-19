@@ -206,13 +206,15 @@ The following claims are NOT accurate and must NOT be used:
 
 These claims require specific conditions to be accurate:
 
-| Claim | Condition |
-|-------|-----------|
-| "Data never leaves your infrastructure" | On-Prem or Air-Gapped mode |
-| "No telemetry to vendor" | Telemetry Local Mode enabled |
-| "Complete data sovereignty" | On-Prem + CMK + Local telemetry |
-| "24/7 support" | Enterprise support contract |
-| "99.9% SLA" | Enterprise SLA agreement |
+| Claim | Condition | Notes |
+|-------|-----------|-------|
+| "Data designed to stay in your infrastructure" | On-Prem or Air-Gapped mode | Subject to deployment configuration verification |
+| "Telemetry designed to be local-only" | Telemetry Local Mode enabled | Verify via configuration audit |
+| "Data sovereignty (design goal)" | On-Prem + CMK + Local telemetry | Requires validated deployment |
+| "24/7 support" | Enterprise support contract | Requires signed contract |
+| "99.9% SLA" | Enterprise SLA agreement | Requires signed contract |
+
+> **Note**: These claims are conditional and design-oriented. Absolute claims (e.g., "never leaves") should be avoided as they may be difficult to prove definitively and could be undermined by telemetry, updates, or support channels. Use "designed to" language in customer-facing materials.
 
 ---
 

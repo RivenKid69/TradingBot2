@@ -293,7 +293,9 @@ The following roles must sign off quarterly:
 
 ### 6.2 Internal Verification Statement
 
-> We verify that the CCEA privacy design commitments documented in this checklist have been internally reviewed as of the date signed. All automated tests passed at the time of signing (per internal CI), manual verification has been completed, and evidence has been archived. This is an internal verification, not an external certification.
+> We verify that the CCEA privacy design commitments documented in this checklist have been internally reviewed as of the date signed. At the time of signing, automated tests passed per internal CI (CI run reference and commit hash to be recorded below). Manual verification has been completed to the extent practical for current development stage. Evidence has been archived internally. **This is an internal verification only, not an external certification, and does not constitute a compliance attestation. Actual test pass status and evidence availability should be verified via CI artifacts and internal evidence repository.**
+>
+> **CI Run Reference**: _________________ **Commit Hash**: _________________
 
 ---
 

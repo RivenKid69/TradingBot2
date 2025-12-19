@@ -155,12 +155,14 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 
 **Key Vendors**:
 
-| Vendor | Service | Risk Level | Controls |
-|--------|---------|------------|----------|
-| AWS | Cloud hosting | High | SOC 2, ISO 27001, DPA |
-| MongoDB Atlas | Database | High | SOC 2, encryption |
-| Stripe | Payments | Medium | PCI DSS, SOC 2 |
-| SendGrid | Email | Low | SOC 2, DPA |
+| Vendor | Service | Risk Level | Controls (Vendor-Reported) |
+|--------|---------|------------|----------------------------|
+| AWS | Cloud hosting | High | SOC 2, ISO 27001, DPA (verify via [AWS Trust Center](https://aws.amazon.com/compliance/)) |
+| MongoDB Atlas | Database | High | SOC 2, encryption (verify via [MongoDB Trust](https://www.mongodb.com/cloud/trust)) |
+| Stripe | Payments | Medium | PCI DSS, SOC 2 (verify via [Stripe Security](https://stripe.com/docs/security)) |
+| SendGrid | Email | Low | SOC 2, DPA (verify via [Twilio Trust](https://www.twilio.com/trust-center)) |
+
+> **Note**: Certifications listed are vendor-reported and subject to change. Clients must verify current certifications, applicable regions, and specific services via vendor trust centers before relying on these claims.
 
 ---
 
@@ -348,11 +350,13 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Intrusion detection | AWS GuardDuty |
 
 **PR.IR-02: Recovery Capabilities**
-- RTO: 4 hours
-- RPO: 1 hour
-- Daily backups with 35-day retention
-- Cross-region replication
-- Annual DR testing
+- RTO: 4 hours (target; pending DR test validation)
+- RPO: 1 hour (target; pending DR test validation)
+- Daily backups with 35-day retention (design goal)
+- Cross-region replication (planned)
+- Annual DR testing (planned; not yet completed)
+
+> **Note**: RTO/RPO values are aspirational design targets. Actual recovery objectives require validated DR tests and may vary based on infrastructure deployment. Contract-specific SLAs will supersede these targets.
 
 ---
 
@@ -466,9 +470,11 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 5. Determine scope
 
 **RS.AN-02: Forensic Capabilities**
-- Log retention (1 year production, 7 years audit)
-- Immutable audit trails
-- External forensics retainer (on call)
+- Log retention (1 year production, 7 years audit) — design goal
+- Immutable audit trails (design goal; implementation pending)
+- External forensics capability (planned; retainer to be established as operational capacity scales)
+
+> **Note**: Forensics capabilities described are planned infrastructure. Formal retainer contracts and 24/7 on-call arrangements will be established as part of operational scaling.
 
 ### 7.3 Incident Response Reporting (RS.CO)
 

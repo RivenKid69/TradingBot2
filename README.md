@@ -77,7 +77,7 @@ python script_backtest.py --config configs/my_backtest.yaml --offline-config con
 
 - Live execution via local Agent (CCEA architecture):
 ```bash
-# 1. Deploy Agent locally (credentials stay on YOUR machine; designed to never be sent to cloud)
+# 1. Deploy Agent locally (credentials stay on YOUR machine; architecture designed so they are not sent to cloud)
 #    See docs/agent/INSTALLATION.md for full setup
 python -m packages.agent.daemon.agentd --config configs/agent.yaml
 
@@ -126,7 +126,7 @@ See: `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical wording.
 | Package | Purpose | Load |
 |---------|---------|------|
 | `services.core.risk_controls` | Universal risk controls (kill switch, pre-trade, audit) | Always |
-| `services.algo_integration` | Alignment/evidence tooling for regulated clients | Enterprise clients |
+| `services.algo_integration` | Alignment/evidence tooling for regulated clients | Enterprise tier (target segment) |
 | `services.archive.mifid_financial_entity` | Investment Firm modules | Archived (not loaded) |
 
 #### For ICT Providers (Default)

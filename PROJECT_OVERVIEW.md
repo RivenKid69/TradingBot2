@@ -12,7 +12,7 @@ CustodiaCloud uses the `CCEA` architecture (Cloud/Agent separation):
 - **Cloud**: research/simulation/monitoring + artifact building/registry + lifecycle control plane (non-orders)
 - **Agent**: runs in the customer environment; holds secrets locally; enforces risk controls; performs any live execution via the customer’s own broker accounts
 
-**Hard rule (CCEA boundary):** Cloud does **not** store customer broker credentials and does **not** generate, transmit, or execute **live trading instructions** (orders/targets/signals).
+**Hard rule (CCEA boundary):** Cloud is designed so it does **not** store customer broker credentials and does **not** generate, transmit, or execute **live trading instructions** (orders/targets/signals). This is enforced via schema validation, CI guardrails, and protocol allowlists.
 
 ---
 

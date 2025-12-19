@@ -2,7 +2,7 @@
 
 **Версия**: 8.0
 **Дата**: 2025-12-11
-**Статус**: ALL TOOLKIT PHASES IMPLEMENTED (Internal tooling; not certified; not a compliance claim)
+**Статус**: ALL TOOLKIT PHASES IMPLEMENTED (Internal tooling; verify via CI for current test status; not independently audited or certified; not a compliance claim)
 
 ---
 
@@ -2392,7 +2392,7 @@ Phase 1: Foundation ✅ COMPLETED (2025-12-07)
 [x] Algorithm Registry создан (services/compliance/algorithm_registry.py)
 [x] Config модуль готов (services/compliance/config.py)
 [x] YAML конфигурация готова (configs/compliance/mifid_compliance.yaml)
-[x] 100% тестовое покрытие (tests/test_mifid_compliance_*.py)
+[x] Test suite implemented (tests/test_mifid_compliance_*.py); verify current pass rate via CI
 
 Phase 2: Transaction Reporting ✅ COMPLETED (2025-12-07)
 [x] Transaction Report Data Model (RTS 22 - 65 полей)
@@ -2620,16 +2620,18 @@ Phase 7: Testing & Internal Conformance ✅ COMPLETED (2025-12-07)
 
 Все 7 фаз MiFID II compliance toolkit успешно реализованы (не сертифицировано независимым аудитором):
 
-| Фаза | Статус | Тесты |
-|------|--------|-------|
-| Phase 1: Foundation | ✅ 100% | ~250 |
-| Phase 2: Transaction Reporting | ✅ 100% | ~147 |
-| Phase 3: Algo Controls | ✅ 100% | ~200 |
-| Phase 4: Record Keeping | ✅ 100% | ~236 |
-| Phase 5: Best Execution | ✅ 100% | ~255 |
-| Phase 6: Governance | ✅ 100% | ~233 |
-| Phase 7: Testing & Certification | ✅ 100% | 183 |
-| **TOTAL** | **100%** | **~1500** |
+| Фаза | Статус | Тесты (approx.) |
+|------|--------|-----------------|
+| Phase 1: Foundation | ✅ Tooling complete | ~250 |
+| Phase 2: Transaction Reporting | ✅ Tooling complete | ~147 |
+| Phase 3: Algo Controls | ✅ Tooling complete | ~200 |
+| Phase 4: Record Keeping | ✅ Tooling complete | ~236 |
+| Phase 5: Best Execution | ✅ Tooling complete | ~255 |
+| Phase 6: Governance | ✅ Tooling complete | ~233 |
+| Phase 7: Testing & Certification | ✅ Tooling complete | 183 |
+| **TOTAL** | **Tooling complete** | **~1500** |
+
+> **Note**: Test counts are approximate and subject to change. "Tooling complete" means internal implementation is done; verify current test pass rates via CI. This is internal tooling, not an independent audit or certification.
 
 Система включает alignment/evidence toolkit, спроектированный для поддержки клиентских оценок и внутренних compliance‑workflow (не является сертификацией и не заменяет юридическую/комплаенс‑оценку клиента):
 - MiFID II (Directive 2014/65/EU)

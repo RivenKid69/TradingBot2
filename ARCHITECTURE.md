@@ -527,7 +527,7 @@ services/compliance/
 | Phase 6 | Governance, Self-Assessment, BCP | ✅ Tooling implemented |
 | Phase 7 | Testing, Certification, NCA Notification | ✅ Tooling implemented |
 
-> **Note**: Status "Implemented" means compliance toolkit is ready for client use. This has not been independently audited or certified. Clients must conduct their own compliance assessment.
+> **Note**: Status "Tooling implemented" means internal compliance toolkit implementation is complete. This tooling is designed to support client compliance workflows but has not been independently audited or certified. This is not a compliance claim. Clients must conduct their own compliance and legal assessment before relying on this tooling for regulated use cases.
 
 Детали: [docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md](docs/compliance/MIFID_II_COMPLIANCE_ROADMAP.md)
 

@@ -26,7 +26,7 @@
 
 **What we've built**: A trading infrastructure platform with built-in risk management that reduces time-to-market from months to days.
 
-**Where we are now**: Core foundation implemented. We are entering the **customer validation phase** — pilot programs with European systematic equities teams to validate product-market fit before scaling.
+**Where we are now**: Core foundation implemented. We are entering the **customer validation phase** — planning pilot programs with European systematic equities teams to validate product-market fit before scaling. **Note**: No pilots are currently active; no signed LOIs, customers, or revenue exist as of this document's date.
 
 **Why it matters**: Prop trading firms often spend 6-12 months and €200K-1.8M+ building trading infrastructure (team- and scope-dependent). We reduce this to days at a fraction of the cost.
 

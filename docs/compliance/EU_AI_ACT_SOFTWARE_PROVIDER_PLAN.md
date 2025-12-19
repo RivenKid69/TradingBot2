@@ -34,7 +34,7 @@
 
 **Scope**: Обязательные требования EU AI Act
 **Modules**: 3 новых файла + обновления существующих
-**Tests**: 166 тестов (100% pass rate)
+**Tests**: 166 tests implemented (verify current pass rate via CI; test counts subject to change)
 
 ### 1.1 AI System Disclosure (Article 50)
 

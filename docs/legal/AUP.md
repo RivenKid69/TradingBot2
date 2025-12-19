@@ -26,7 +26,7 @@ The Platform implements **Cloud-Controlled Execution Architecture (CCEA)**, whic
 | **Cloud** | Research, backtesting, monitoring, lifecycle management | Compute resources for your strategies |
 | **Agent** | Live execution, credential storage (user-operated) | Local execution on your hardware |
 
-**Key Principle:** Cloud resources are for **research and monitoring only** - never for order execution or credential storage.
+**Key Principle:** Cloud resources are designed for **research and monitoring only** — not for order execution or credential storage. This is enforced via CCEA schema validation, CI guardrails, and protocol allowlists.
 
 ---
 

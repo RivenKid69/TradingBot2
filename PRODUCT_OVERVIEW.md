@@ -11,7 +11,7 @@ CustodiaCloud is a **B2B**, risk-first quantitative **research and deployment pl
 - **CustodiaCloud Cloud**: research, simulation/backtesting, artifact building/registry, monitoring/telemetry, and lifecycle control plane.
 - **CustodiaCloud Agent**: runs in the customer environment; holds secrets locally; enforces risk controls; performs any live execution via the customer’s own broker accounts.
 
-**Hard rule (CCEA boundary):** Cloud does **not** store customer broker credentials and does **not** generate, transmit, or execute **live trading instructions** (orders/targets/signals). Execution remains under the customer’s control via the Agent.
+**Hard rule (CCEA boundary):** Cloud is designed so it does **not** store customer broker credentials and does **not** generate, transmit, or execute **live trading instructions** (orders/targets/signals). Execution remains under the customer's control via the Agent. This is enforced via schema validation, CI guardrails, and protocol allowlists (see `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt` for technical details).
 
 ---
 
