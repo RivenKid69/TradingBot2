@@ -973,10 +973,12 @@ DORA contractual requirements (Art. 30) — это не "Enterprise feature", а
 | **Contractual Requirements** | [services/dora_integration/contracts/contractual_requirements.py](../services/dora_integration/contracts/contractual_requirements.py) | **KEEP as Core** | Art. 30(2) mandatory |
 | **Exit Strategies** | [services/dora_integration/contracts/exit_strategies.py](../services/dora_integration/contracts/exit_strategies.py) | **KEEP, adapt** | Art. 28(8), Art. 30(3)(f) |
 | **Third-Party Risk** | [services/dora_integration/third_party/third_party_risk.py](../services/dora_integration/third_party/third_party_risk.py) | **KEEP, adapt** | Self-documentation |
-| **Incident Management** | (TBD in current tree) | **TBD** | Client notification |
+| **Incident Management** | (Pending infrastructure deployment) | **ROADMAP** | Client notification; requires operational team |
 | **Incident Reporting** | [services/dora_integration/incident_interface/incident_reporting.py](../services/dora_integration/incident_interface/incident_reporting.py) | **KEEP** | Client reports |
-| **Backup Recovery** | (TBD in current tree) | **TBD** | Art. 30(3)(c) |
-| **ICT Business Continuity** | (TBD in current tree) | **TBD** | Art. 30(3)(c) |
+| **Backup Recovery** | (Pending infrastructure deployment) | **ROADMAP** | Art. 30(3)(c); requires production environment |
+| **ICT Business Continuity** | (Pending infrastructure deployment) | **ROADMAP** | Art. 30(3)(c); requires production environment |
+
+> **Tech Debt Note**: Incident Management, Backup Recovery, and ICT Business Continuity are marked as ROADMAP items pending production infrastructure deployment. This is accurately documented per Documentation Canon (no false claims about operational capabilities). Control artifacts: `docs/runbooks/` (documented procedures), `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` (capacity assessment). Tech Debt Tracking: `docs/reports/TECH_DEBT_REGISTRY.md#ops-dora-gaps`
 
 ### 4.C) Enterprise DORA Support (Enhanced for regulated clients)
 

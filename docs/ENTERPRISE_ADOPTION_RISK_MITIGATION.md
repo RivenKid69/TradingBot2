@@ -792,6 +792,10 @@ CustodiaCloud maintains an automated test suite and documentation guardrails. Ex
 
 Latency, fill rates, and uptime metrics depend on customer environment, venue connectivity, and configuration. CustodiaCloud does not make performance promises; customer teams should validate with paper/sandbox runs and phased rollout before enabling live execution. No operational track record yet.
 
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#ops-metrics-baseline`
+**Control Artifact**: SLO/SLI dashboard (planned for post-deployment)
+**Status**: Controlled - pre-deployment stage honestly disclosed; metrics framework designed
+
 ---
 
 ## Risk Mitigation Strategies

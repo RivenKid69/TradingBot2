@@ -27,7 +27,12 @@
 | PM-002 | `protocol-allowlist` | Protocol changes | Block merge + Security review |
 | PM-003 | `redaction-test` | Telemetry code | Block merge |
 | PM-004 | `secret-scan` | All files | Block merge |
-| PM-005 | `test-coverage` | All code | Block if < 80% |
+| PM-005 | `test-coverage` | All code | **TARGET**: Block if < 80% (see note) |
+
+> **PM-005 Implementation Note**: Test coverage enforcement is a target goal. Current CI runs tests via `make test` but does not enforce the 80% threshold as a merge gate. Coverage is tracked via `pytest --cov` and reported in `tests/COMPREHENSIVE_TEST_REPORT.md`. Threshold enforcement is planned for implementation when coverage baseline reaches 70%+.
+>
+> **Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#docs-ci-coverage-gate`
+> **Status**: Docs accurately reflect target vs implemented state per Documentation Canon
 
 ### 1.3 Runtime Guardrails (Agent)
 

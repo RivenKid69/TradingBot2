@@ -282,12 +282,21 @@ class OptionsComboOrder:
         Calculate maximum profit potential.
 
         Returns None if cannot be determined.
+
+        Note:
+            Currently implemented for IRON_CONDOR only.
+            Other strategies return None (conservative - no false profit estimates).
+            This is tracked as low-priority tech debt.
+
+        Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#options-max-profit
         """
         # Strategy-specific calculations
         if self.strategy == ComboStrategy.IRON_CONDOR:
             # Max profit is net credit received
             return self.limit_price if self.is_credit else None
-        # TODO: Implement for other strategies
+        # Other strategies: return None (conservative)
+        # Tracking: Low priority - additional strategies can be implemented on demand
+        # Control: Returning None is safe (no false profit estimates)
         return None
 
     def get_max_loss(self) -> Optional[Decimal]:

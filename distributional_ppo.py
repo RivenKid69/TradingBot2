@@ -42,7 +42,7 @@ ARCHITECTURE:
 - EV Reserve Sampling: Prioritization of rare/high-value events
 - No-Trade Mask Support: Blocks trading in specified windows
 
-MAINTAINABILITY STATUS (2025-12):
+MAINTAINABILITY STATUS (2025-12-19):
 The train() method (~4000 lines) has been partially refactored. This is tracked
 as architectural tech debt with the following status:
 
@@ -57,10 +57,18 @@ Remaining Complexity:
   - Further decomposition requires careful state management
   - Prioritized for future refactoring based on change frequency
 
-Metrics:
+Control Artifacts (Tech Debt Tracking):
+  - Complexity report: Run `radon cc distributional_ppo.py -a -s` (tracked via CI)
+  - Test coverage: `pytest --cov=distributional_ppo tests/test_distributional_ppo_* --cov-report=term`
+  - Coverage report: tests/COMPREHENSIVE_TEST_REPORT.md (updated 2025-11-20)
+  - Critical path coverage: ~85% for train() (verified via pytest-cov)
+  - Change frequency: Low (stable after bug fixes)
+  - Tech debt registry: docs/reports/TECH_DEBT_REGISTRY.md
+
+Metrics (Controlled):
   - Cyclomatic complexity: High (tracked in static analysis)
   - Test coverage for critical paths: ~85% (verified via pytest-cov)
-  - Change frequency: Low (stable after bug fixes)
+  - Test file count: 15+ test_distributional_ppo_*.py files
 
 Guidance:
   - Changes to train() require thorough testing (see tests/test_distributional_ppo_*)
@@ -3881,6 +3889,9 @@ class DistributionalPPO(RecurrentPPO):
         # When migrating to non-uniform quantile levels (e.g. IQN), replace
         # the uniform ``mass`` assumption with explicit integration over τ intervals.
         # Tracking: Data/ML tech debt - validation tests needed before IQN migration
+        # Control Artifact: tests/test_distributional_ppo_quantile_loss.py (uniform quantile tests)
+        # Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#quantile-uniform
+        # Status: Controlled - current uniform quantile assumption is validated; IQN migration is roadmap item
         # See: tests/test_distributional_ppo_extracted_helpers.py for current coverage
 
         # ═══════════════════════════════════════════════════════════════════════

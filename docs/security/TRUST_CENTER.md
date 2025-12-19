@@ -51,6 +51,10 @@ This document provides pre-contractual security information designed to support 
 | SOC2 Audit (Type II) | Annual (roadmap) | Roadmap item (no auditor engagement) | Not yet conducted |
 | Code Security Review | Per major release | Internal review active | Summary on request |
 
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#security-external-audits`
+**Control Artifact**: `docs/security/SECURITY_ROADMAP.md` (planned)
+**Status**: Controlled - roadmap items honestly disclosed; funding-dependent
+
 ---
 
 ## 3. Infrastructure Security
@@ -199,6 +203,10 @@ This document provides pre-contractual security information designed to support 
 - Quarterly DR test execution (when operational)
 - RTO/RPO measurement and reporting (post-validation)
 
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#ops-dr-testing`
+**Control Artifact**: `docs/runbooks/` (documented procedures pending validation)
+**Status**: Controlled - limitations honestly disclosed per Documentation Canon
+
 ### 6.2 Backup Strategy
 
 | Data Type | Frequency | Retention | Location |
@@ -236,6 +244,10 @@ This document provides pre-contractual security information designed to support 
 - Establish incident response procedures and runbooks
 - Validate response times via tabletop exercises and actual incidents
 - Define contract-specific SLA terms after operational validation
+
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#ops-incident-response`
+**Control Artifact**: `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` (capacity assessment framework)
+**Status**: Controlled - current capacity honestly disclosed; expansion requires funding
 
 ### 7.2 Incident Categories
 

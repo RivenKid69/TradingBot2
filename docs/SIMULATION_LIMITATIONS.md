@@ -44,6 +44,10 @@ for validating simulation results against live execution before deploying capita
 - [ ] Calibrate statistical model against real execution data
 - [ ] Document acceptable slippage divergence thresholds
 
+**Control Artifact**: TCA (Transaction Cost Analysis) calibration report required before live deployment.
+**Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L1-slippage
+**Status**: Controlled - limitations documented, mitigations specified, calibration required per deployment
+
 ### L2: LOB Fill Simulation (STUB)
 
 **Component**: `execution_providers.py:LOBFillProvider`
@@ -65,6 +69,10 @@ for validating simulation results against live execution before deploying capita
 2. Assume worst-case fill prices for limit orders
 3. Test with various fill delay assumptions
 
+**Control Artifact**: Fill-rate comparison report (sim vs paper/live) required before live deployment.
+**Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L2-fill
+**Status**: Controlled - limitations documented, OHLCV fallback provides conservative baseline
+
 ### L3: Market Impact (Not Implemented)
 
 **Status**: Not implemented
@@ -77,6 +85,10 @@ for validating simulation results against live execution before deploying capita
 **Mitigation**:
 - Use conservative slippage estimates that implicitly include impact
 - Limit order sizes relative to ADV (e.g., <1% of daily volume)
+
+**Control Artifact**: Market impact validation report required for institutional-size orders.
+**Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L3-impact
+**Status**: Controlled - limitation documented, conservative slippage mitigates; formal model is roadmap item
 
 ### L4: TIF-Conformance (IOC Not Implemented) {#TIF-Conformance}
 
@@ -105,6 +117,10 @@ for validating simulation results against live execution before deploying capita
 - [ ] Implement IOC: execute immediate match, cancel unfilled remainder
 - [ ] Create conformance tests: `tests/cpp/test_orderbook_tif_conformance.cpp`
 - [ ] Validate against reference exchange matching engine behavior
+
+**Control Artifact**: Matching engine conformance test suite (T2b milestone).
+**Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L4-tif
+**Status**: Controlled - limitation documented, IOC avoidance recommended until implemented
 
 ---
 

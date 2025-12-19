@@ -72,7 +72,10 @@ int OrderBook::add_limit_order_ex(bool is_buy_side,
     // Tracking: T2b milestone (matching engine conformance)
     // Impact: IOC orders remain on book instead of canceling unfilled portion
     // See: docs/SIMULATION_LIMITATIONS.md#TIF-Conformance
-    // Conformance tests: tests/cpp/test_orderbook_tif_conformance.cpp (TODO)
+    // Control Artifact: tests/cpp/test_orderbook_tif_conformance.cpp (T2b milestone)
+    // Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#testing-tif-conformance
+    // Status: Controlled - limitation documented, IOC avoidance recommended until T2b
+    // Implementation: T2b will add execute-immediate-match + cancel-remainder logic
     // if (tif == TIF_IOC) { /* execute immediate match, cancel remainder */ }
 
     // Обычное размещение как в add_limit_order(...)
