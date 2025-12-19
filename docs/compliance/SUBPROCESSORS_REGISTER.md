@@ -46,14 +46,14 @@ This design commitment:
 | KMS | eu-central-1 (Frankfurt) | Key management | Encryption keys |
 | Secrets Manager | eu-central-1 (Frankfurt) | Secrets storage | Internal service credentials |
 
-**EU Residency Evidence:**
-- AWS Region: `eu-central-1` (Frankfurt, Germany)
-- AWS Region: `eu-west-1` (Dublin, Ireland)
-- AWS GDPR DPA: Signed
+**EU Residency Evidence (planned configuration; verify upon deployment):**
+- AWS Region: `eu-central-1` (Frankfurt, Germany) — planned
+- AWS Region: `eu-west-1` (Dublin, Ireland) — planned
+- AWS GDPR DPA: Standard AWS DPA available at link below
 - AWS Data Processing Addendum: [AWS DPA](https://aws.amazon.com/compliance/gdpr-center/)
-- Data residency controls: Region-lock enforced via IAM policies
-- Last Review: 2025-01-15
-- Next Review: 2025-04-15
+- Data residency controls: Region-lock to be enforced via IAM policies (pending deployment)
+- Last Review: To be scheduled upon deployment
+- Next Review: To be scheduled upon deployment
 
 ---
 
@@ -69,12 +69,12 @@ This design commitment:
 | Realtime | EU (Germany) | Real-time subscriptions |
 | Auth | EU (Germany) | Authentication (if used) |
 
-**EU Residency Evidence:**
-- Data Center: EU (Germany)
-- GDPR DPA: Signed
+**EU Residency Evidence (planned configuration; verify upon deployment):**
+- Data Center: EU (Germany) — planned
+- GDPR DPA: Standard DPA available via Supabase
 - Data residency commitment: [Supabase Privacy](https://supabase.com/privacy)
-- Last Review: 2025-01-15
-- Next Review: 2025-04-15
+- Last Review: To be scheduled upon deployment
+- Next Review: To be scheduled upon deployment
 
 ---
 

@@ -388,7 +388,9 @@ if self.logger:
 
 ---
 
-**Статус**: ✅ **AUDIT PASSED - NO ISSUES FOUND**
+**Статус**: ✅ **INTERNAL REVIEW COMPLETED - NO ISSUES FOUND**
+
+> **Note**: This is an internal AI-assisted code review, not an independent third-party audit or attestation.
 
 **Подготовлено**: Claude Code Agent
 **Дата**: 2025-11-20

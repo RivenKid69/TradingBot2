@@ -35,13 +35,13 @@ This policy applies to all training data used for:
 | Volume Statistics | Not copyrightable | Aggregated factual statistics |
 | Trade Execution Data | Not copyrightable | Factual transaction records |
 
-**Legal Basis**: Price, volume, and trading data constitute factual information not subject to copyright protection under EU law. Per the Database Directive 96/9/EC, factual data compilations may have sui generis database rights, but individual data points are not copyrightable.
+**Legal Basis (internal assessment; subject to counsel review)**: Price, volume, and trading data generally constitute factual information. Per the Database Directive 96/9/EC, factual data compilations may have sui generis database rights. This assessment is based on general principles and specific data sources should be reviewed for their particular licensing terms and legal status.
 
 ### 3.2 Licensed Data
 
-| Provider | License Type | Usage Rights | Verification Date |
+| Provider | License Type | Usage Rights (internal assessment) | Last Reviewed |
 |----------|--------------|--------------|-------------------|
-| Polygon.io | Commercial API License | ML training permitted | 2024-12-01 |
+| Polygon.io | Commercial API License | Review ToS for ML training terms | 2024-12-01 |
 | Alpha Vantage | API Terms of Service | Research and commercial use | 2024-12-01 |
 | Binance | API Terms of Service | Historical data access | 2024-12-01 |
 | OANDA | API License | Forex data for analysis | 2024-12-01 |

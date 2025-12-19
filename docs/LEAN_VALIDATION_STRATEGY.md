@@ -261,7 +261,7 @@ Before seeking significant funding, we will demonstrate:
 
 1. **Reduced Iteration Risk**: Solid architecture allows fast feature changes without breaking production
 2. **Credibility with Technical Buyers**: CTOs of prop firms evaluate technical quality
-3. **Defensibility**: 11,000+ tests and 2+ years of development create barrier to entry
+3. **Defensibility**: Comprehensive test suite (see CI) and continuous development create barrier to entry
 4. **Regulatory Compliance**: MiFID II requires robust risk management — we have it
 
 ### Reframing the Narrative

@@ -2,7 +2,7 @@
 
 **Project**: CustodiaCloud (CCEA)  
 **Scope**: GDPR controls required for a software provider operating the CCEA model (Cloud-controlled execution; Agent is customer-operated).  
-**Deployment**: **EU-only** (no non-EU regions).  
+**Deployment scope**: **EU-only** target (no non-EU regions in design).  
 **Enterprise option**: on-prem/VPC deployment is supported **within EU-only posture** (customer-controlled infrastructure located in EU; no vendor-operated non-EU processing).  
 **Primary technical boundary source (CCEA)**: `archive/root_files/Design Doc CCEA Cloud.txt` (privacy-by-design, secrets/telemetry boundaries, control plane).
 
@@ -77,7 +77,7 @@ These constraints are required for the platform’s compliance posture and must 
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
 6. **Telemetry redaction is designed to be always on** and the architecture does not expose configuration or feature flags to disable it; env var logging is prohibited by design (enforced via CI guardrails; see CI artifacts for current test status).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
-7. EU-only residency: all storage, backups, logs, observability, and support tooling remain in EU; **EU-only drift checks are mandatory** (fail closed).  
+7. EU-only residency (design requirement): storage, backups, logs, observability, and support tooling are designed to remain in EU; **EU-only drift checks are designed to be mandatory** (fail closed by design; see CI artifacts for current test coverage).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745`.
 8. Break-glass access is **incident-only**, time-bound, scope-limited, reason-required, and fully audited.
 9. Cloud builds **must not** contain broker trading client libraries (import/dependency boundary enforced in CI).  
@@ -268,15 +268,15 @@ DoD:
 - Redaction non-bypassable enforcement (feature flag protection)
 - Comprehensive field sets: AGGREGATED_ALLOWED_FIELDS, DETAILED_ALLOWED_FIELDS, RAW_ORDER_ALLOWED_FIELDS, ALWAYS_FORBIDDEN_FIELDS, ORDER_LIKE_FIELDS, PII_FIELDS
 
-**Test Results:**
-- 48 tests passing for telemetry contract module
-- 47 tests passing for Phase 2 guardrails
+**Test Results (internal; verify via CI):**
+- 48 tests passing for telemetry contract module (at time of implementation)
+- 47 tests passing for Phase 2 guardrails (at time of implementation)
 - 144 tests passing for governance module (no regression)
 - 40 tests passing for Phase 2 governance tests (no regression)
 
-### Phase 3 — EU-only data residency enforcement (tenant/workspace) [COMPLETED - 2025-12-16]
+### Phase 3 — EU-only data residency enforcement (tenant/workspace) [IMPLEMENTATION COMPLETE - 2025-12-16]
 
-**Status**: ✅ **COMPLETED**
+**Status**: ✅ **IMPLEMENTATION COMPLETE** (internal tooling; verify via CI/tests)
 
 **Goal**: residency is a runtime enforcement, not just a claim.
 
@@ -296,8 +296,8 @@ Deliverables:
 - Drift check produces a machine-readable report (e.g., JSON) listing every configured endpoint/bucket/region/subprocessor used at runtime (for evidence pack storage).
 - Evidence pack: list of EU services/subprocessors and regions
 
-DoD:
-- Automated drift check fails closed if any configured endpoint/storage/support tool is outside EU, and produces a stored report artifact.
+DoD (internal criteria; not independently audited):
+- Automated drift check is designed to fail closed if any configured endpoint/storage/support tool is outside EU, and to produce a stored report artifact (see test coverage for current validation status).
 
 **Implementation Summary (2025-12-16):**
 

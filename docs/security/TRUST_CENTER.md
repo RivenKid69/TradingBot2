@@ -55,9 +55,11 @@ This document provides pre-contractual security information per DORA Article 28(
 
 ## 3. Infrastructure Security
 
-### 3.1 Cloud Infrastructure
+### 3.1 Cloud Infrastructure (Planned Configuration)
 
-| Component | Provider | Region | Security Features |
+> **Note**: This table describes the planned infrastructure configuration. Actual deployment is pending. Production evidence (AWS Config/CloudTrail exports) will be available upon deployment.
+
+| Component | Provider (Planned) | Region (Planned) | Security Features (Design) |
 |-----------|----------|--------|-------------------|
 | Compute | AWS EC2 | eu-central-1 | Private subnets, security groups |
 | Database | AWS RDS | eu-central-1 | Encryption, IAM auth, automated backups |
@@ -104,21 +106,23 @@ This document provides pre-contractual security information per DORA Article 28(
 
 ### 3.3 Security Controls
 
-| Control | Implementation | Validation |
+| Control | Implementation (Design) | Validation (Target) |
 |---------|---------------|------------|
-| DDoS Protection | Cloudflare + AWS Shield | Continuous |
-| Web Application Firewall | Cloudflare + AWS WAF | Continuous |
-| Intrusion Detection | AWS GuardDuty | Continuous |
-| Vulnerability Scanning | Automated weekly | Weekly |
-| Patch Management | Automated + manual review | Within 24h critical |
+| DDoS Protection | Cloudflare + AWS Shield | Continuous (planned) |
+| Web Application Firewall | Cloudflare + AWS WAF | Continuous (planned) |
+| Intrusion Detection | AWS GuardDuty | Continuous (planned) |
+| Vulnerability Scanning | Automated weekly (planned) | Weekly (target) |
+| Patch Management | Automated + manual review (planned) | Within 24h critical (target) |
 
 ---
 
 ## 4. Data Protection
 
-### 4.1 Encryption
+### 4.1 Encryption (Design Targets)
 
-| Data State | Method | Key Management |
+> **Note**: This describes the encryption design. Implementation is subject to deployment. Configuration evidence (KMS keys, TLS policy) will be available upon deployment.
+
+| Data State | Method (Design) | Key Management (Planned) |
 |------------|--------|----------------|
 | At Rest | AES-256 | AWS KMS (CMK) |
 | In Transit | TLS 1.3 | Managed certificates |

@@ -31,9 +31,9 @@ Our platform implements strict data separation between Cloud Zone and Agent Zone
 | **Telemetry Data** | ✅ Redacted by default | Raw at source | Redaction middleware (on by default) |
 | **Order Data** | ❌ Not generated | ✅ Created locally | No order payloads in Cloud |
 
-### Mandatory Telemetry Redaction
+### Mandatory Telemetry Redaction (Design)
 
-All telemetry sent from Agent to Cloud passes through mandatory redaction:
+Telemetry sent from Agent to Cloud is designed to pass through mandatory redaction (see CCEA architecture and test coverage for implementation status):
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐

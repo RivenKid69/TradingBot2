@@ -1,6 +1,6 @@
 # Архитектура проекта
 
-> **Last Updated**: 2025-12-16 | **Version**: 6.1 (Design Doc Compliance Complete)
+> **Last Updated**: 2025-12-16 | **Version**: 6.1 (Design Doc Alignment)
 
 ## Cloud-Controlled Execution Architecture (CCEA)
 
@@ -11,11 +11,11 @@ Cloud = research/build/monitoring/control plane (lifecycle requests)
 Agent = secrets + live loop + risk enforce + order creation/sending
 ```
 
-**Cloud НИКОГДА:**
-- Не хранит broker API keys
-- Не генерирует и не передаёт ордера
-- Не имеет доступа к trading endpoints бирж
-- Не может отправить order-like payload (side/qty/price)
+**Cloud (по архитектуре CCEA):**
+- Не хранит broker API keys (ключи хранятся только в Agent)
+- Не генерирует и не передаёт live trading instructions (orders/targets/signals)
+- Не имеет доступа к trading endpoints бирж (доступ только в Agent)
+- Не передаёт order-like payload (side/qty/price) — только lifecycle commands
 
 ### Архитектурная диаграмма
 
@@ -109,12 +109,12 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 
 | Рынок | Адаптер | Статус |
 |-------|---------|--------|
-| Crypto (Binance Spot/Futures) | `adapters/binance/` | ✅ Production |
-| US Equities (Alpaca) | `adapters/alpaca/` | ✅ Production |
-| US Equities Data (Polygon) | `adapters/polygon/` | ✅ Production |
-| Forex (OANDA) | `adapters/oanda/` | ✅ Production |
-| CME Futures (IB) | `adapters/ib/` | ✅ Production |
-| Crypto Options (Deribit) | `adapters/deribit/` | ✅ Beta |
+| Crypto (Binance Spot/Futures) | `adapters/binance/` | ✅ Implemented |
+| US Equities (Alpaca) | `adapters/alpaca/` | ✅ Implemented |
+| US Equities Data (Polygon) | `adapters/polygon/` | ✅ Implemented |
+| Forex (OANDA) | `adapters/oanda/` | ✅ Implemented |
+| CME Futures (IB) | `adapters/ib/` | ✅ Implemented |
+| Crypto Options (Deribit) | `adapters/deribit/` | 🔄 Beta |
 
 ## Слои
 

@@ -170,7 +170,7 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 
 | Regulation | Applicability | Our Obligations | CCEA Alignment |
 |------------|---------------|-----------------|----------------|
-| **GDPR** (2016/679) | ✅ Directly applicable | Privacy-by-design controls; counsel-reviewed obligations | Mandatory redaction, EU residency |
+| **GDPR** (2016/679) | ✅ Directly applicable | Privacy-by-design controls (internal assessment; counsel review planned) | Mandatory redaction, EU residency |
 | **MiFID II** (2014/65/EU) | ⚠️ Indirect (via clients) | Support client compliance | Software tool exclusion (ESMA Q&A) |
 | **MAR** (596/2014) | ⚠️ Indirect | No market manipulation | Cloud cannot send orders |
 | **DORA** (2022/2554) | ✅ ICT Provider (context-dependent) | Vendor risk posture + evidence exports | Operational documentation and controls |
@@ -1828,7 +1828,7 @@ To maintain clear regulatory boundaries:
 | Security incidents (high severity) | 0 | 0 |
 | Regulatory inquiries | <2/year | 0 |
 | Client compliance concerns | <5/year | 0 |
-| Staff training completion | 100% | 100% |
+| Staff training completion | 100% | N/A (pre-launch; training policy to be implemented) |
 | SOC 2 control exceptions | <5 | N/A (pre-audit) |
 
 ### 13.4 External Counsel & Advisors

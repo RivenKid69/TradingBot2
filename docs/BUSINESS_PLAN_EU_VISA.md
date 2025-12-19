@@ -1157,7 +1157,7 @@ We acknowledge that achieving projections depends on multiple factors:
 | **Bank Account** | EU business banking | Account operational |
 | **Office Setup** | Co-working space in Tallinn (primary); Amsterdam (secondary) | Address established |
 | **Visa Processing** | Estonia startup visa / residence permit application (or equivalent) | Residence permit |
-| **Local Counsel** | Legal advisor engagement | Retained |
+| **Local Counsel** | Legal advisor engagement | Planned (to be engaged upon establishment) |
 
 **Key Risks**: Visa processing delays, banking requirements
 **Mitigation**: Parallel processing, backup bank options

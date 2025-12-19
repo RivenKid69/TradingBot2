@@ -362,14 +362,16 @@ Between annual audits, provide bridge letters to clients confirming:
 
 ---
 
-## Success Metrics
+## Success Metrics (Targets)
+
+> **Note**: These are target success criteria for the SOC2 program, not current operational metrics.
 
 | Metric | Target |
 |--------|--------|
 | Control exceptions | <5 per report |
 | Evidence collection compliance | >95% |
-| Audit findings remediated | 100% |
-| Client audit requests fulfilled | <24 hours |
+| Audit findings remediated | 100% (target) |
+| Client audit requests fulfilled | <24 hours (target) |
 | Security incidents during observation | 0 critical |
 
 ---

@@ -2,7 +2,7 @@
 
 > **Version**: 2.0.0
 > **Date**: 2025-12-16
-> **Status**: APPROVED
+> **Status**: INTERNAL REVIEW COMPLETE (engineering team approval; not independently audited)
 
 Матрица трассируемости связывает требования Design Doc с фазами плана, кодом и проверками.
 
@@ -12,7 +12,7 @@
 |--------------------|-------------|------------|----------------|--------|
 | **0. Key Principle** |||||
 | 0.1 | Cloud = research/control, Agent = secrets/execution | Phase 0 | TARGET_CCEA_ARCHITECTURE.md | DONE |
-| 0.2 | Cloud never stores keys | Phase 0 | DECISION_LOG.md (OQ-005) | DONE |
+| 0.2 | Cloud designed to not store keys | Phase 0 | DECISION_LOG.md (OQ-005) | IMPLEMENTED (verify via tests) |
 | 0.3 | Cloud never sends orders | Phase 0 | protocol_messages.schema.json | DONE |
 | **3-5. Requirements** |||||
 | 3.1 | Product modes (Retail/Enterprise) | Phase 0 | Design_Doc_CCEA_Cloud.md §3 | DONE |

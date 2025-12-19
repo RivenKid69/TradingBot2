@@ -6,7 +6,7 @@ This document addresses the primary concern of enterprise adoption risk: **Will 
 
 The answer is **yes**, and here's why:
 
-1. **Zero Data Exposure**: On-premises and VPC deployment options designed to ensure client trading strategies and data never leave their infrastructure
+1. **Data Isolation Design**: On-premises and VPC deployment options designed so client trading strategies and data stay within their infrastructure (actual data flows depend on deployment configuration)
 2. **Test-Mature Foundation**: Built on proven frameworks (Nautilus Trader patterns, SB3) with automated test suite (verify via `pytest`; no customer production usage yet)
 3. **European Regulatory Alignment**: Architecture designed to support MiFID II, GDPR, and DORA alignment (not certified; clients run their own compliance assessment)
 4. **Designed for Enterprise Security**: Multi-layer security design with audit trails, kill switches, and SOC 2 certification roadmap (not yet certified; target 2027)
@@ -349,11 +349,11 @@ The Markets in Financial Instruments Directive II is the cornerstone of European
 │  │  • Circuit breakers                   • Kill switch                  │   │
 │  │                                                                       │   │
 │  │  Algorithm Testing                    ✅ Comprehensive testing        │   │
-│  │  • Backtesting requirements           • 11,000+ automated tests      │   │
+│  │  • Backtesting requirements           • Automated tests (see CI)     │   │
 │  │  • Stress testing                     • PBT adversarial training     │   │
 │  │  • Simulation environments            • Shadow mode deployment       │   │
 │  │                                                                       │   │
-│  │  Record Keeping                       ✅ Complete audit trail         │   │
+│  │  Record Keeping                       ✅ Audit trail design           │   │
 │  │  • 5-year retention                   • Immutable logs               │   │
 │  │  • Order reconstruction               • Full state snapshots         │   │
 │  │  • Timestamp precision                • Microsecond timestamps       │   │
@@ -802,7 +802,7 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 | **Vendor Lock-in** | Open APIs and standard formats; export patterns for artifacts/configs |
 | **Performance Risk** | Shadow mode and paper/sandbox validation before enabling live execution |
 | **Regulatory Risk** | Designed to support client alignment workflows (controls + evidence exports); deployment-dependent |
-| **Operational Risk** | Kill switches, circuit breakers, 24/7 monitoring |
+| **Operational Risk** | Kill switches, circuit breakers, monitoring (24/7 per support tier) |
 | **Counterparty Risk** | Customer controls broker/venue relationships; CustodiaCloud is not an intermediary |
 
 ### For Investors/Accelerators
@@ -812,7 +812,7 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 | **Will firms adopt?** | On-premises option removes primary blocker |
 | **Can they compete with incumbents?** | Superior ML/cost structure, EU focus |
 | **What about compliance?** | MiFID II-aligned toolkit, DORA roadmap, SOC 2 planned (not yet certified) |
-| **Is the tech proven?** | 11,000+ tests, battle-tested frameworks |
+| **Is the tech proven?** | Automated test suite (see CI), built on established frameworks |
 | **What's the support model?** | Enterprise tiers, custom development |
 
 ### Competitive Differentiation
@@ -823,13 +823,13 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  vs. TRADITIONAL VENDORS (Bloomberg, Refinitiv)                             │
-│  ✓ 10x lower cost of ownership                                              │
+│  ✓ Lower cost of ownership (illustrative; TCO depends on deployment)        │
 │  ✓ Modern ML-first architecture                                             │
 │  ✓ Faster innovation cycles                                                 │
 │  ✓ Flexible deployment options                                              │
 │                                                                              │
 │  vs. IN-HOUSE DEVELOPMENT                                                   │
-│  ✓ 80% faster time to production                                            │
+│  ✓ Faster time to production (illustrative; based on design)                │
 │  ✓ Pre-built compliance-supporting toolkit                                       │
 │  ✓ Ongoing maintenance included                                             │
 │  ✓ Access to continuous improvements                                        │
