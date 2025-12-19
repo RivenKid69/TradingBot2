@@ -569,22 +569,24 @@ tracing:
 
 ### 10.1 Enterprise Support Tiers *(illustrative; actual tiers per executed agreement)*
 
+> **Note**: 24/7 support tiers require operational infrastructure (on-call rotation, 4+ FTE) pending hiring and operational validation. Actual support coverage will be defined in executed service agreements after team scaling.
+
 | Tier | Response Time | Availability | Features |
 |------|---------------|--------------|----------|
 | Standard | 24 hours | Business hours | Email support |
-| Premium | 4 hours | 24/7 | Phone + email |
-| Critical | 1 hour | 24/7 | Dedicated TAM |
+| Premium (pending staffing) | 4 hours | 24/7 (target) | Phone + email |
+| Critical (pending staffing) | 1 hour | 24/7 (target) | Dedicated TAM |
 
 ### 10.2 SLA Targets *(illustrative design targets; actual SLA per executed agreement)*
 
-| Metric | Target |
-|--------|--------|
-| Control plane uptime | 99.9% |
-| API latency (p99) | < 500ms |
-| Data durability | Per underlying cloud provider SLA |
-| Recovery time | < 4 hours |
+> **Note**: These are unvalidated design targets for enterprise tier. CustodiaCloud has no production uptime history. Actual SLA commitments are defined in the executed service agreement after operational validation and infrastructure deployment.
 
-> **Note**: Durability and availability targets depend on deployment configuration and underlying infrastructure. Actual SLA commitments are defined in the executed service agreement.
+| Metric | Target (Unvalidated Design Goal) |
+|--------|----------------------------------|
+| Control plane uptime | 99.9% (aspirational; pending infrastructure deployment) |
+| API latency (p99) | < 500ms (pending load testing validation) |
+| Data durability | Per underlying cloud provider SLA |
+| Recovery time | < 4 hours (untested; pending DR validation) |
 
 ---
 

@@ -25,7 +25,7 @@ This specification defines the EU-only data residency enforcement mechanisms des
 | Principle | Description |
 |-----------|-------------|
 | **EU-Only by Default** | Data storage and processing designed to default to EU regions |
-| **Fail-Closed Design Goal** | Non-EU endpoint detection designed to block deployment/operation (subject to deployment testing validation) |
+| **Fail-Closed Design Goal** | Non-EU endpoint detection designed to block deployment/operation (design intent; enforcement subject to CI test correctness, deployment validation, and penetration testing verification) |
 | **Continuous Verification** | Automated drift checks designed for deployment and runtime |
 | **Auditable Evidence** | Machine-readable reports designed for compliance audits |
 

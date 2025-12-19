@@ -2457,7 +2457,7 @@ Phase 3: Algo Controls ✅ COMPLETED (2025-12-07)
     - pre_trade_controls_v2 section
     - realtime_monitoring section
     - otr_monitoring section
-[x] 100% тестовое покрытие
+[x] Comprehensive test coverage (verify current status via CI)
     - tests/test_mifid_phase3_enhanced_kill_switch.py
     - tests/test_mifid_phase3_pre_trade_controls.py
     - tests/test_mifid_phase3_realtime_monitor.py
@@ -2510,7 +2510,7 @@ Phase 5: Best Execution ✅ COMPLETED (2025-12-07)
     - smart_order_routing section
     - execution_quality_reports section
     - execution_venues configuration
-[x] 100% тестовое покрытие (~255 тестов)
+[x] Comprehensive test coverage (~255 тестов; verify current count via CI)
     - tests/test_mifid_phase5_best_execution.py
     - tests/test_mifid_phase5_tca_compliance.py
     - tests/test_mifid_phase5_venue_analysis.py
@@ -2547,7 +2547,7 @@ Phase 6: Governance ✅ COMPLETED (2025-12-07)
     - self_assessment section
     - business_continuity section
     - governance section
-[x] 100% тестовое покрытие (233 тестов)
+[x] Comprehensive test coverage (233 тестов; verify current count via CI)
     - tests/test_mifid_phase6_self_assessment.py
     - tests/test_mifid_phase6_bcp.py
     - tests/test_mifid_phase6_governance.py
@@ -2584,7 +2584,7 @@ Phase 7: Testing & Internal Conformance ✅ COMPLETED (2025-12-07)
     - test_scenarios section
     - certification section
     - nca_notification section
-[x] 100% тестовое покрытие (183 теста)
+[x] Comprehensive test coverage (183 теста; verify current count via CI)
     - tests/test_mifid_phase7_conformance_testing.py (~46 тестов)
     - tests/test_mifid_phase7_test_scenarios.py (~43 теста)
     - tests/test_mifid_phase7_certification.py (~45 тестов)

@@ -135,7 +135,7 @@ INCIDENT OCCURS
 | Category | Description | Evidence |
 |----------|-------------|----------|
 | **Platform Security** | SOC2 Type II readiness roadmap, encryption, access controls | SOC2 report (when available, per roadmap) |
-| **Availability** | Design target: 99.9% availability (actual SLA contract-specific) | Monthly SLA reporting (when operational) |
+| **Availability** | Unvalidated design target: 99.9% availability (no production uptime data; actual SLA contract-specific) | Monthly SLA reporting (when operational) |
 | **Incident Support** | Incident response design (contract tier-dependent when operational) | Incident reporting workflow |
 | **Audit Support** | Client and NCA audit cooperation | Audit records |
 | **Data Portability** | Standard export formats, no lock-in | Export functionality |

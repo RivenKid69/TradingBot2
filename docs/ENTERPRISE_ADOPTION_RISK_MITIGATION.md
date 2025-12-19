@@ -482,14 +482,16 @@ The new EU regulation for ICT risk management in financial services (effective J
 
 ### Regulatory Compliance Roadmap
 
-| Milestone | Timeline | Status |
-|-----------|----------|--------|
+> **Important**: Certification timelines below are aspirational targets subject to funding availability, auditor engagement, and customer demand. No auditor has been engaged and no certification work has commenced. Dates are illustrative only and should not be treated as commitments.
+
+| Milestone | Aspirational Timeline | Status |
+|-----------|----------------------|--------|
 | MiFID II audit trail toolkit | Q1 2025 | ✅ Implemented (not externally certified) |
 | GDPR data handling toolkit | Q1 2025 | ✅ Implemented (not externally certified) |
 | DORA ICT risk framework | Q2 2025 | 🔄 In Progress |
-| SOC 2 Type I certification | Q3 2025 | 📋 Planned |
-| SOC 2 Type II certification | Q1 2026 | 📋 Planned |
-| ISO 27001 certification | Q2 2026 | 📋 Planned |
+| SOC 2 Type I certification | Target 2026+ (budget-dependent) | 📋 Planned (no auditor engagement) |
+| SOC 2 Type II certification | Target 2027+ (budget-dependent) | 📋 Planned (no auditor engagement) |
+| ISO 27001 certification | Target 2027+ (budget-dependent) | 📋 Planned (evaluation phase) |
 
 ---
 
@@ -708,7 +710,7 @@ For our first 5 enterprise customers, we offer:
 │  ├─ Q1: GDPR compliance audit (external) — PLANNED (not scheduled)          │
 │  ├─ Q2: DORA readiness assessment — PLANNED (not scheduled)                 │
 │  ├─ Q3: SOC 2 Type I certification — PLANNED (not scheduled)                │
-│  └─ Q4: Penetration testing (annual) — PLANNED (not scheduled)              │
+│  └─ Q4: Penetration testing (first) — PLANNED (no vendor engagement)        │
 │                                                                              │
 │  2026 (TARGETS, NOT COMMITMENTS)                                            │
 │  ├─ Q1: SOC 2 Type II certification — PLANNED (not scheduled)               │

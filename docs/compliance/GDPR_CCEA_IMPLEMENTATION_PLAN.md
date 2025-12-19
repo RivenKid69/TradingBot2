@@ -77,7 +77,7 @@ These constraints are required for the platform’s compliance posture and must 
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L855`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L861`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1749`.
 6. **Telemetry redaction is designed to be enabled by default** and the architecture is designed without configuration or feature flags to disable it; env var logging is prohibited by design (validated via CI guardrails; see CI artifacts for current test status).
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L871`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1051`.
-7. EU-only residency (design requirement): storage, backups, logs, observability, and support tooling are designed to remain in EU; **EU-only drift checks are designed to be mandatory** (fail closed by design; see CI artifacts for current test coverage).  
+7. EU-only residency (design requirement): storage, backups, logs, observability, and support tooling are designed to remain in EU; EU-only drift checks are designed to be mandatory and configured to fail-closed in the event of non-EU endpoint detection (design intent; enforcement subject to CI test correctness, deployment validation, and penetration testing verification; see CI artifacts for current test status).  
    Reference: `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L892`, `docs/design/CCEA_CLOUD/Design_Doc_CCEA_Cloud.txt#L1745`.
 8. Break-glass access is **incident-only**, time-bound, scope-limited, reason-required, and fully audited.
 9. Cloud builds are designed to not contain broker trading client libraries (import/dependency boundary validated via CI).
