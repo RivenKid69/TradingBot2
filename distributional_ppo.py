@@ -3877,9 +3877,11 @@ class DistributionalPPO(RecurrentPPO):
         if num_quantiles == 0:
             return predicted_quantiles.new_zeros(predicted_quantiles.shape[0])
         mass = 1.0 / float(num_quantiles)
-        # TODO(quantile-critic): When migrating to non-uniform quantile levels
-        # (e.g. IQN), replace the uniform ``mass`` assumption with explicit
-        # integration over the τ intervals.
+        # LIMITATION(quantile-critic): Assumes uniform quantile levels.
+        # When migrating to non-uniform quantile levels (e.g. IQN), replace
+        # the uniform ``mass`` assumption with explicit integration over τ intervals.
+        # Tracking: Data/ML tech debt - validation tests needed before IQN migration
+        # See: tests/test_distributional_ppo_extracted_helpers.py for current coverage
 
         # ═══════════════════════════════════════════════════════════════════════
         # QUANTILE LEVEL ASSUMPTION: tau_i = (i + 0.5) / N

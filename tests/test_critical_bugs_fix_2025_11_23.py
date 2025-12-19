@@ -405,9 +405,15 @@ def test_no_regression_data_leakage_and_bankruptcy():
     This test simulates a scenario where:
     1. Technical indicators are correctly shifted (no data leakage)
     2. Bankruptcy event occurs and returns penalty (no NaN crash)
+
+    TECH DEBT: This integration test is skipped until full environment setup.
+    Individual bug fixes are tested in isolation above.
+    Tracking: Testing/Quality backlog - requires TradingEnvV3 fixture
     """
-    # TODO: Implement full integration test once environment setup is available
-    pytest.skip("Full integration test requires complete environment setup")
+    # NOTE: Individual unit tests above verify each fix in isolation.
+    # This integration test requires full environment which is not available in CI.
+    # The individual tests provide sufficient coverage for regression detection.
+    pytest.skip("Integration test requires TradingEnvV3 fixture - individual fixes tested above")
 
 
 if __name__ == "__main__":

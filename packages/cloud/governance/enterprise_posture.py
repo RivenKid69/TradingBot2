@@ -809,9 +809,66 @@ class EnterpriseEvidencePackExporter:
 
                 verification["all_artifacts_valid"] = all_valid
 
-                # TODO: Verify signature if public key provided
+                # Verify signature if public key provided (per Design Doc 8.3)
                 if public_key_path:
-                    verification["signature_verification"] = "not_implemented"
+                    try:
+                        from ccea.crypto.signing import verify_signature
+                        from ccea.crypto.keys import load_public_key
+
+                        # Look for signature file in pack
+                        sig_path = "evidence_pack.sig"
+                        if sig_path in zf.namelist():
+                            signature = zf.read(sig_path)
+                            manifest_content = zf.read("manifest.json")
+
+                            # Load public key
+                            public_key = load_public_key(
+                                Path(public_key_path).read_text()
+                            )
+
+                            # Verify signature over manifest
+                            sig_valid = verify_signature(
+                                manifest_content, signature, public_key
+                            )
+
+                            verification["signature_verification"] = {
+                                "verified": sig_valid,
+                                "public_key_path": str(public_key_path),
+                                "signed_content": "manifest.json",
+                            }
+
+                            if not sig_valid:
+                                all_valid = False
+                                verification["checks"].append({
+                                    "name": "signature_verification",
+                                    "passed": False,
+                                    "message": "Evidence pack signature invalid",
+                                })
+                            else:
+                                verification["checks"].append({
+                                    "name": "signature_verification",
+                                    "passed": True,
+                                })
+                        else:
+                            verification["signature_verification"] = {
+                                "verified": False,
+                                "error": "No signature file in evidence pack",
+                            }
+                            verification["checks"].append({
+                                "name": "signature_verification",
+                                "passed": False,
+                                "message": "Evidence pack not signed",
+                            })
+                    except ImportError:
+                        verification["signature_verification"] = {
+                            "verified": False,
+                            "error": "ccea.crypto module not available",
+                        }
+                    except Exception as sig_err:
+                        verification["signature_verification"] = {
+                            "verified": False,
+                            "error": str(sig_err),
+                        }
 
                 return all_valid, verification
 

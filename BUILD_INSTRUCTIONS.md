@@ -341,9 +341,9 @@ make verify-hash
 
 The build system includes automated verification:
 
-- **CI workflow**: `.github/workflows/build-and-test.yml` runs on every PR
-- **Hash verification**: `make verify-hash` compares build output hashes
-- **SBOM generation**: CI generates SBOM (CycloneDX) for dependency auditing
+- **CI workflow**: [.github/workflows/build-and-test.yml](.github/workflows/build-and-test.yml) runs on every PR
+- **Hash verification**: `make verify-hash` compares build output hashes (step: "Verify build hash report")
+- **SBOM generation**: [.github/workflows/security-sast.yml](.github/workflows/security-sast.yml) generates SBOM (CycloneDX) for dependency auditing
 
 ### Hash Report
 

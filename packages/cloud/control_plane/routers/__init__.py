@@ -17,7 +17,7 @@ from . import (
     governance,
     health,
     organizations,
-    # research_jobs,  # TODO: Fix dependency issues
+    research_jobs,
     strategies,
     telemetry,
     users,
@@ -36,7 +36,7 @@ __all__ = [
     "governance",
     "health",
     "organizations",
-    # "research_jobs",
+    "research_jobs",
     "strategies",
     "telemetry",
     "users",

@@ -89,9 +89,11 @@ def convert_model(
         shutil.copy2(path, backup_path)
         logger.info(f"Created backup: {backup_path}")
 
-    # Load model unsafely (we're in a controlled conversion context)
+    # Load model unsafely (controlled conversion context)
+    # SECURITY: This unsafe loading is ONLY used for one-time conversion of known legacy
+    # models. This risk is documented and controlled per docs/security/THREAT_MODEL_MODEL_LOADING.md
+    # Controls: C3 (conversion utility), backup creation, immediate re-save as secure format
     try:
-        # Note: This is intentionally unsafe - we're converting known legacy models
         model = torch.load(path, map_location="cpu", weights_only=False)
     except Exception as e:
         return False, f"Failed to load model: {e}"

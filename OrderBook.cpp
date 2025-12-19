@@ -67,8 +67,13 @@ int OrderBook::add_limit_order_ex(bool is_buy_side,
         }
     }
 
-    // Пока IOC не активируем: ведём себя как GTC (будет реализовано в T2b)
-    // if (tif == TIF_IOC) { /* TODO: лимитированный матч без размещения */ }
+    // IOC (Immediate-Or-Cancel) LIMITATION:
+    // Currently behaves as GTC. This is a documented simulation limitation.
+    // Tracking: T2b milestone (matching engine conformance)
+    // Impact: IOC orders remain on book instead of canceling unfilled portion
+    // See: docs/SIMULATION_LIMITATIONS.md#TIF-Conformance
+    // Conformance tests: tests/cpp/test_orderbook_tif_conformance.cpp (TODO)
+    // if (tif == TIF_IOC) { /* execute immediate match, cancel remainder */ }
 
     // Обычное размещение как в add_limit_order(...)
     Order ord{order_id, volume, is_agent, timestamp};

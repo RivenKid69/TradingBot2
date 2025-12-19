@@ -1,10 +1,12 @@
 """
-Tests for PPO bug fixes (BUG #2, #6, #1).
+Tests for PPO bug fixes (BUG #2, #6).
 
 This module tests the fixes for critical bugs discovered in distributional_ppo.py:
 - BUG #2: Advantage normalization explosion when std=0
 - BUG #6: Log ratio NaN detection incomplete
-- BUG #1: Twin Critics VF clipping asymmetry (TODO)
+
+Note: BUG #1 (Twin Critics VF clipping asymmetry) is covered in:
+  tests/test_twin_critics_vf_clipping_fix.py
 
 Reference: PPO_BUGS_ANALYSIS_REPORT.md
 """

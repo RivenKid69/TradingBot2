@@ -262,8 +262,12 @@ def test_future_enhancement_roadmap():
     # - More robust to data quality issues
     # - Breaking change requiring retraining
 
-    # For now, document this as technical debt
-    assert True, "Future enhancement documented"
+    # TECH DEBT: Validity flags for NaN handling
+    # Tracking: Model compatibility matrix needed for pre/post-validity model versions
+    # Impact: Models trained before validity flags will be incompatible
+    # Control artifact: Model versioning with compatibility metadata in model manifest
+    # See: docs/SIMULATION_LIMITATIONS.md for simulation accuracy tracking
+    assert True, "Future enhancement documented - validity flags for robust NaN handling"
 
 
 if __name__ == "__main__":

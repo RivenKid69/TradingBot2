@@ -1980,11 +1980,42 @@ class AgentDaemon:
             artifact_manager = ArtifactManager(cache_dir=artifact_cache_dir)
 
             # Try to get ArtifactVerifier for crypto verification
+            # Per Design Doc 8.3: Agent verifies digest + signature + allowlist registry
             verifier = None
             try:
                 from ccea.artifact.verifier import ArtifactVerifier as CCEAVerifier
-                verifier = CCEAVerifier(strict_mode=True)
-                # TODO: Load trusted keys from config/keychain
+                from ccea.artifact.verifier import create_verifier_from_key_manager
+                from ccea.crypto.key_manager import KeyManager
+
+                # Load trusted keys from config/keychain per Design Doc 8.3
+                # Priority: 1) KeyManager from trusted_keys dir, 2) Strict mode (reject unsigned)
+                trusted_keys_path = self.config.data_dir / "trusted_keys"
+
+                if trusted_keys_path.exists():
+                    try:
+                        key_manager = KeyManager(keys_dir=trusted_keys_path)
+                        verifier = create_verifier_from_key_manager(
+                            key_manager=key_manager,
+                            allowed_registries={"local", "ccea-registry"},
+                            require_sbom=True,
+                        )
+                        self._log_event(TelemetryEventType.STATE_CHANGE, {
+                            "message": "ArtifactVerifier initialized with KeyManager",
+                            "trusted_keys_path": str(trusted_keys_path),
+                            "key_count": len(key_manager.list_keys()),
+                        })
+                    except Exception as km_err:
+                        self._log_event(TelemetryEventType.WARNING, {
+                            "message": f"KeyManager init failed, using strict verifier: {km_err}",
+                        })
+                        verifier = CCEAVerifier(strict_mode=True)
+                else:
+                    # No trusted keys configured - strict mode rejects unsigned artifacts
+                    verifier = CCEAVerifier(strict_mode=True)
+                    self._log_event(TelemetryEventType.WARNING, {
+                        "message": "No trusted_keys directory - strict mode (unsigned rejected)",
+                        "expected_path": str(trusted_keys_path),
+                    })
             except ImportError:
                 self._log_event(TelemetryEventType.WARNING, {
                     "message": "ArtifactVerifier not available - signature verification limited",

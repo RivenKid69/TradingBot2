@@ -78,6 +78,34 @@ for validating simulation results against live execution before deploying capita
 - Use conservative slippage estimates that implicitly include impact
 - Limit order sizes relative to ADV (e.g., <1% of daily volume)
 
+### L4: TIF-Conformance (IOC Not Implemented) {#TIF-Conformance}
+
+**Component**: `OrderBook.cpp:add_limit_order_ex`
+
+**Status**: IOC (Immediate-Or-Cancel) behaves as GTC
+
+**Current Behavior**:
+- POST_ONLY: Implemented correctly (rejects crossing orders)
+- GTC (Good-Till-Cancel): Implemented correctly
+- IOC: Falls through to GTC behavior (orders remain on book)
+
+**Impact**:
+- Strategies using IOC orders will see unrealistic fill behavior
+- Unfilled IOC portions remain on book instead of being cancelled
+- May overestimate fill rates for IOC orders
+
+**Mitigation**:
+1. Avoid IOC order types in simulation until implemented
+2. Use GTC with manual cancel logic as approximation
+3. Document IOC usage assumptions in strategy backtests
+
+**Tracking**: T2b milestone (matching engine conformance)
+
+**Validation Required**:
+- [ ] Implement IOC: execute immediate match, cancel unfilled remainder
+- [ ] Create conformance tests: `tests/cpp/test_orderbook_tif_conformance.cpp`
+- [ ] Validate against reference exchange matching engine behavior
+
 ---
 
 ## Validation Procedures
