@@ -27,27 +27,46 @@ OUT_DIR = Path("data/signals")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def _load_model():
+    """Load a trained model from models/ directory.
+
+    Security Policy (fail-closed):
+    - PyTorch models are loaded with weights_only=True by default
+    - Legacy models with custom objects are REJECTED unless ALLOW_UNSAFE_MODEL_LOAD=1
+    - This prevents arbitrary code execution from untrusted model files
+    - See: https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models
+
+    To convert legacy models, run: python tools/convert_legacy_models.py
+    """
     # Try PyTorch first
     pt_candidates = sorted(MODELS_DIR.glob("*.pt")) + sorted(MODELS_DIR.glob("*.pth"))
     if pt_candidates:
         try:
             import torch
-            import warnings
             path = pt_candidates[0]
 
-            # Security: Try loading with weights_only=True to prevent arbitrary code execution
-            # See: https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models
+            # Security: Load with weights_only=True to prevent arbitrary code execution
             try:
                 model = torch.load(path, map_location="cpu", weights_only=True)
             except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
-                # Fallback for legacy models that contain custom objects
-                # TODO: Re-save models using secure format (state_dict only)
-                warnings.warn(
-                    f"Model {path} contains non-tensor data and cannot be loaded securely. "
-                    f"Falling back to unsafe loading. Please re-save this model. Error: {e}",
-                    UserWarning
-                )
-                model = torch.load(path, map_location="cpu", weights_only=False)
+                # FAIL-CLOSED: Do not load unsafe models by default
+                allow_unsafe = os.environ.get("ALLOW_UNSAFE_MODEL_LOAD", "").lower() in ("1", "true", "yes")
+                if allow_unsafe:
+                    import warnings
+                    warnings.warn(
+                        f"SECURITY WARNING: Loading model {path} with weights_only=False "
+                        f"(ALLOW_UNSAFE_MODEL_LOAD is set). This allows arbitrary code execution. "
+                        f"Convert to secure format: python tools/convert_legacy_models.py",
+                        SecurityWarning
+                    )
+                    model = torch.load(path, map_location="cpu", weights_only=False)
+                else:
+                    raise RuntimeError(
+                        f"SECURITY: Model {path} contains non-tensor data and cannot be loaded securely. "
+                        f"This is blocked by default to prevent arbitrary code execution. "
+                        f"Options: (1) Convert model: python tools/convert_legacy_models.py, "
+                        f"(2) Set ALLOW_UNSAFE_MODEL_LOAD=1 if you trust this model's provenance. "
+                        f"Original error: {e}"
+                    ) from e
 
             model.eval()
             return ("torch", model, path)

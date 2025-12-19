@@ -138,13 +138,12 @@ from services.core.risk_controls import (
 ```
 
 #### Migration Note
-The old `services.compliance` module is now a deprecated facade that emits warnings:
+The legacy `services.compliance` module has been removed. Use the new modular structure:
 ```python
-# Old (deprecated - emits DeprecationWarning)
-from services.compliance import EnhancedKillSwitch
-
-# New (recommended)
+# Current (canonical import path)
 from services.core.risk_controls import EnhancedKillSwitch
+
+# The old services.compliance path is no longer supported
 ```
 
 ## Regulatory Compliance

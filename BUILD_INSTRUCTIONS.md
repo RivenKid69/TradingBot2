@@ -288,12 +288,77 @@ WARNING: numpy 1.26.3 != 1.26.4 (pinned)
 WARNING: Cython 3.0.9 != 3.0.10 (pinned)
 ```
 
-**Impact**: Build will succeed, but reproducibility is not guaranteed.
+**Impact**: Build will succeed, but reproducibility may not be guaranteed.
 
-**Solution**: Install exact pinned versions:
+**Why this matters**: Different dependency versions can produce different compiled artifacts,
+making it harder to audit and verify builds. For production deployments, use exact pinned versions.
+
+**Solution**: Install exact pinned versions from lockfiles:
 ```bash
+# For CPU-only builds
+pip install -r requirements-cpu.lock.txt
+
+# For GPU builds
+pip install -r requirements-gpu.lock.txt
+
+# Or force specific versions
 pip install --force-reinstall numpy==1.26.4 Cython==3.0.10
 ```
+
+**Verification**: After installing, run `make verify-hash` to confirm build hash matches expected value.
+
+---
+
+## Reproducibility
+
+### Deterministic Build Requirements
+
+For reproducible builds, ensure:
+
+1. **Exact dependency versions**: Use lockfiles (`requirements-cpu.lock.txt` or `requirements-gpu.lock.txt`)
+2. **Same Python version**: Python 3.12.x
+3. **Same compiler toolchain**: MSVC 19.x on Windows, GCC 11+ on Linux
+4. **Clean build environment**: Run `make clean` before building
+
+### Lockfile-Based Installation
+
+```bash
+# Clean environment
+make clean
+
+# Install exact versions from lockfile
+pip install -r requirements-cpu.lock.txt
+pip install -r requirements-build.txt
+
+# Build
+make build
+
+# Verify hash matches expected
+make verify-hash
+```
+
+### CI/CD Verification
+
+The build system includes automated verification:
+
+- **CI workflow**: `.github/workflows/build-and-test.yml` runs on every PR
+- **Hash verification**: `make verify-hash` compares build output hashes
+- **SBOM generation**: CI generates SBOM (CycloneDX) for dependency auditing
+
+### Hash Report
+
+After building, check the hash report:
+```bash
+make verify-hash
+# Outputs: BUILD_HASH_REPORT.txt with SHA-256 hashes of all compiled artifacts
+```
+
+The hash report contains:
+- SHA-256 hash of each `.so`/`.pyd` compiled extension
+- Build timestamp and environment info
+- Dependency versions used
+
+For audit/compliance, this report provides evidence of deterministic builds.
 
 ### Debug Build
 

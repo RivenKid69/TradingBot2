@@ -3275,7 +3275,28 @@ class LOBSlippageProvider:
         """
         Compute slippage from order book walk-through.
 
-        STUB: Falls back to simple spread-based estimate.
+        IMPLEMENTATION STATUS: STUB (spread-based fallback)
+        ---------------------------------------------------
+        This method uses a simplified spread-based estimate instead of
+        full order book walk-through simulation. This is a known limitation
+        that may affect simulation accuracy for large orders.
+
+        Sim-to-Live Gap Risk:
+        - Underestimates slippage for orders consuming multiple price levels
+        - Does not account for hidden liquidity or queue position
+        - May overestimate available liquidity at best bid/ask
+
+        Mitigation:
+        - Use StatisticalSlippageProvider with calibrated historical data
+        - Apply conservative slippage multipliers for live trading
+        - Monitor sim-to-live slippage divergence in production
+
+        Future Implementation (LOB walk-through) will:
+        - Walk through bid/ask levels to compute cumulative slippage
+        - Model partial fills at each price level
+        - Account for order size vs available depth
+
+        See: docs/SIMULATION_LIMITATIONS.md for validation status
         """
         # Check if L3 data available
         if market.bid_depth is None or market.ask_depth is None:
@@ -3283,8 +3304,8 @@ class LOBSlippageProvider:
             spread = market.get_spread_bps() or 10.0
             return spread / 2.0
 
-        # TODO: Implement LOB walk-through
-        # For now, return spread-based estimate
+        # STUB: Spread-based estimate (conservative upper bound)
+        # Full LOB walk-through requires implementing depth consumption logic
         spread = market.get_spread_bps() or 10.0
         return spread / 2.0
 

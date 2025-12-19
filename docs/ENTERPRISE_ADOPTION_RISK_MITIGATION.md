@@ -883,7 +883,7 @@ Latency, fill rates, and uptime metrics depend on customer environment, venue co
 
 2. **Regulatory Alignment**: Purpose-built for European markets with architecture designed to support MiFID II, GDPR, and DORA alignment
 
-3. **Tested Foundation**: Comprehensive test suite (verify count via CI); production-ready architecture with enterprise-focused security design
+3. **Tested Foundation**: Test suite with CI/CD pipeline (see `.github/workflows/build-and-test.yml` and `.github/workflows/security-sast.yml`); architecture designed with enterprise security considerations
 
 4. **Flexible Integration**: Modular architecture that extends existing systems rather than replacing them
 

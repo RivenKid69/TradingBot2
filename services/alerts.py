@@ -1,7 +1,19 @@
+"""
+Alert delivery system for CustodiaCloud platform.
+
+Supports multiple delivery channels:
+- noop: Silent (for testing)
+- telegram: Telegram bot API
+- http: Generic HTTP POST webhook
+- webhook: Alias for http
+
+Configuration via settings dict or environment variables.
+See AlertManager docstring for details.
+"""
 import logging
 import os
 import time
-from typing import Any, Callable, Dict, Mapping
+from typing import Any, Callable, Dict, Mapping, Optional
 
 import requests
 
@@ -17,6 +29,59 @@ def _get_cfg_value(cfg: Any, key: str, default: Any = None) -> Any:
     if isinstance(cfg, Mapping):
         return cfg.get(key, default)
     return getattr(cfg, key, default)
+
+
+def send_http_webhook(text: str, config: Any | None = None) -> bool:
+    """Send an alert via generic HTTP POST webhook.
+
+    Configuration via config dict or environment:
+        url / ALERT_WEBHOOK_URL: Webhook endpoint URL (required)
+        method: HTTP method (default: POST)
+        headers: Additional headers dict
+        payload_template: JSON payload template with {text} placeholder
+        timeout_sec: Request timeout (default: 10)
+
+    Example config:
+        {
+            "url": "https://hooks.example.com/alert",
+            "headers": {"Authorization": "Bearer token"},
+            "payload_template": {"message": "{text}", "source": "custodia"}
+        }
+    """
+    url = _get_cfg_value(config, "url") or os.getenv("ALERT_WEBHOOK_URL")
+    if not url:
+        logger.warning("HTTP webhook URL not configured (set url or ALERT_WEBHOOK_URL)")
+        return False
+
+    method = str(_get_cfg_value(config, "method", "POST") or "POST").upper()
+    timeout = float(_get_cfg_value(config, "timeout_sec", 10.0) or 10.0)
+    headers = _get_cfg_value(config, "headers") or {}
+
+    # Build payload
+    payload_template = _get_cfg_value(config, "payload_template")
+    if payload_template and isinstance(payload_template, Mapping):
+        # Replace {text} placeholders in template
+        payload = {}
+        for k, v in payload_template.items():
+            if isinstance(v, str):
+                payload[k] = v.replace("{text}", text)
+            else:
+                payload[k] = v
+    else:
+        # Default payload
+        payload = {"text": text, "timestamp": time.time()}
+
+    try:
+        if method == "GET":
+            response = requests.get(url, params=payload, headers=headers, timeout=timeout)
+        else:
+            response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+
+        response.raise_for_status()
+        return True
+    except requests.exceptions.RequestException as exc:
+        logger.warning("failed to send HTTP webhook alert: %s", exc, exc_info=exc)
+        return False
 
 
 def send_telegram(text: str, config: Any | None = None) -> bool:
@@ -57,20 +122,40 @@ def send_telegram(text: str, config: Any | None = None) -> bool:
 
 
 class AlertManager:
-    """Manage alert notifications with cooldown control."""
+    """Manage alert notifications with cooldown control.
+
+    Supported channels:
+    - noop: Silent/no-op (for testing)
+    - telegram: Telegram bot API (requires TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+    - http: Generic HTTP POST webhook (requires url or ALERT_WEBHOOK_URL)
+    - webhook: Alias for http
+
+    Configuration example:
+        settings = {
+            "channel": "telegram",
+            "cooldown_sec": 60.0,
+            "telegram": {
+                "bot_token": "...",
+                "chat_id": "..."
+            }
+        }
+        manager = AlertManager(settings)
+        manager.notify("price_alert", "BTC crossed $50k")
+    """
 
     def __init__(self, settings: Any | None = None) -> None:
         channel = _get_cfg_value(settings, "channel", "noop") or "noop"
         cooldown = _get_cfg_value(settings, "cooldown_sec", 0.0)
         telegram_cfg = _get_cfg_value(settings, "telegram")
+        http_cfg = _get_cfg_value(settings, "http") or _get_cfg_value(settings, "webhook")
 
         self.cooldown_sec = float(cooldown or 0.0)
         self._last_sent: Dict[str, float] = {}
         self._channels: Dict[str, Callable[[str], bool]] = {
             "noop": lambda text: True,
             "telegram": lambda text, cfg=telegram_cfg: send_telegram(text, cfg),
-            "http": self._unsupported_sender("http"),
-            "webhook": self._unsupported_sender("webhook"),
+            "http": lambda text, cfg=http_cfg: send_http_webhook(text, cfg),
+            "webhook": lambda text, cfg=http_cfg: send_http_webhook(text, cfg),
         }
 
         if channel not in self._channels:
@@ -102,11 +187,3 @@ class AlertManager:
 
         if self.cooldown_sec > 0:
             self._last_sent[key] = now
-
-    @staticmethod
-    def _unsupported_sender(channel: str) -> Callable[[str], bool]:
-        def _send(_: str) -> bool:
-            logger.info("alert channel '%s' is not implemented", channel)
-            return False
-
-        return _send
