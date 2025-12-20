@@ -3,7 +3,7 @@ import types
 import pytest
 pytest.importorskip("torch")
 
-import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 import distributional_ppo as distributional_ppo_module
 from distributional_ppo import DistributionalPPO
@@ -22,7 +22,6 @@ def test_popart_logger_rebound_after_setup_learn(monkeypatch: pytest.MonkeyPatch
     new_logger = _CaptureLogger()
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
-    algo.logger = old_logger
     algo._logger = old_logger
     algo._popart_holdout_loader = None
     algo._popart_config_logs = {}
@@ -59,7 +58,6 @@ def test_popart_logger_rebound_after_setup_learn(monkeypatch: pytest.MonkeyPatch
         progress_bar=False,
     ):
         self._logger = new_logger
-        self.logger = new_logger
         return total_timesteps, callback
 
     monkeypatch.setattr(

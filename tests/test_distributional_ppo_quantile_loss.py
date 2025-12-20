@@ -3,7 +3,7 @@ import math
 import pytest
 pytest.importorskip("torch")
 
-import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 
 @pytest.mark.parametrize("target_shape", [(2,), (2, 1), (2, 1, 1), (2, 1, 1, 1)])

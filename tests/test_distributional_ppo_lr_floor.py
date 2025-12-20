@@ -5,7 +5,7 @@ import pytest
 pytest.importorskip("torch")
 
 try:  # noqa: SIM105
-    import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+    from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 except ImportError:  # pragma: no cover - optional dependency for local pytest setups
     pass
 
@@ -24,7 +24,7 @@ class _CaptureLogger:
 
 def test_optimizer_lr_floor_dry_run_logs_chain() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
-    algo.logger = _CaptureLogger()
+    algo._logger = _CaptureLogger()
     algo._optimizer_lr_min = 5e-6
     algo._optimizer_lr_max = 1e-3
     algo._optimizer_lr_floor_warned = False

@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 torch = pytest.importorskip("torch")
 
-import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 import distributional_ppo as distributional_ppo_module
 from distributional_ppo import DistributionalPPO
@@ -158,7 +158,6 @@ def test_vf_clip_warmup_allows_ev_growth(monkeypatch: pytest.MonkeyPatch) -> Non
 
     def _fake_super_init(self, policy: object, env: object, *args: object, **kwargs: object) -> None:
         del env, args, kwargs
-        self.logger = logger
         self._logger = logger
         self.policy = policy  # type: ignore[assignment]
         self.device = torch.device("cpu")
@@ -201,7 +200,6 @@ def test_vf_clip_warmup_allows_ev_growth(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(DistributionalPPO, "_configure_gradient_accumulation", lambda self, **_: None)
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
-    algo.logger = logger
     algo._logger = logger
 
     DistributionalPPO.__init__(

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 torch = pytest.importorskip("torch")
 
-import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
+from tests import test_distributional_ppo_raw_outliers  # noqa: F401  # ensure RL stubs are installed
 
 from distributional_ppo import (
     DistributionalPPO,
@@ -91,7 +91,7 @@ def test_should_skip_ev_reserve_batch_all_masked_logs_warning() -> None:
         def record(self, key: str, value: float) -> None:
             self.records.setdefault(key, []).append(value)
 
-    algo.logger = _Logger()
+    algo._logger = _Logger()
 
     rollout = SimpleNamespace(mask=torch.zeros((4, 2), dtype=torch.float32))
 
@@ -109,7 +109,7 @@ def test_should_skip_ev_reserve_batch_allows_positive_mask() -> None:
         def record(self, key: str, value: float) -> None:
             self.records.setdefault(key, []).append(value)
 
-    algo.logger = _Logger()
+    algo._logger = _Logger()
     rollout = SimpleNamespace(mask=torch.tensor([[0.0], [1.0]], dtype=torch.float32))
 
     assert algo._should_skip_ev_reserve_batch(rollout, None, None) is False
@@ -347,7 +347,7 @@ def _make_algo_for_ev_gate(
 ) -> tuple[DistributionalPPO, _CaptureLogger]:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     logger = _CaptureLogger()
-    algo.logger = logger
+    algo._logger = logger
     algo._logger = logger
     algo.policy = _PolicyMinimal()
     algo.device = torch.device("cpu")
@@ -624,7 +624,7 @@ def test_explained_variance_fallback_uses_raw_targets() -> None:
     algo._ret_std_snapshot = 1.5
     algo.value_target_scale = 1.0
     algo._value_target_scale_effective = 1.0
-    algo.logger = _DummyLogger()
+    algo._logger = _DummyLogger()
 
     y_true_norm = torch.tensor([[1.0], [1.0], [1.0]], dtype=torch.float32)
     y_pred_norm = torch.tensor([[0.0], [1.0], [2.0]], dtype=torch.float32)
@@ -671,7 +671,7 @@ def test_explained_variance_fallback_recovers_from_clipped_targets() -> None:
     algo.normalize_returns = False
     algo.value_target_scale = 1.5
     algo._value_target_scale_effective = 0.75
-    algo.logger = _DummyLogger()
+    algo._logger = _DummyLogger()
 
     # Normalised targets are clipped to a constant, but raw returns preserve variance.
     y_true_norm = torch.zeros((4, 1), dtype=torch.float32)
@@ -711,7 +711,7 @@ def test_explained_variance_metric_retains_primary_path_with_small_variance() ->
     algo.normalize_returns = False
     algo.value_target_scale = 1.0
     algo._value_target_scale_effective = 1.0
-    algo.logger = _DummyLogger()
+    algo._logger = _DummyLogger()
 
     y_true_norm = torch.tensor([[0.0], [1.0]], dtype=torch.float32)
     y_pred_norm = torch.tensor([[0.25], [0.75]], dtype=torch.float32)
@@ -826,7 +826,7 @@ def test_explained_variance_logging_marks_availability_when_metric_present() -> 
             self.records.setdefault(key, []).append(float(value))
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
-    algo.logger = _DummyLogger()
+    algo._logger = _DummyLogger()
 
     algo._record_explained_variance_logs(0.25, grouped_mean_unweighted=0.1, grouped_median=0.2)
 
@@ -847,7 +847,7 @@ def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
             self.records.setdefault(key, []).append(float(value))
 
     algo = DistributionalPPO.__new__(DistributionalPPO)
-    algo.logger = _DummyLogger()
+    algo._logger = _DummyLogger()
 
     algo._record_explained_variance_logs(None)
 
@@ -859,7 +859,7 @@ def test_explained_variance_logging_marks_absence_when_metric_missing() -> None:
 def test_update_explained_variance_tracking_handles_bad_and_good_values() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     logger = _CaptureLogger()
-    algo.logger = logger
+    algo._logger = logger
     algo._bad_explained_counter = 1
     algo._value_scale_auto_thaw_bad_ev = 2
     algo._value_scale_frozen = True
@@ -898,7 +898,7 @@ def test_update_explained_variance_tracking_handles_bad_and_good_values() -> Non
 def test_update_explained_variance_tracking_clears_state_when_metric_missing() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     logger = _CaptureLogger()
-    algo.logger = logger
+    algo._logger = logger
     algo._bad_explained_counter = 4
     algo._last_explained_variance = 0.2
     algo._vf_clip_latest_ev = 0.2
@@ -920,7 +920,7 @@ def test_update_explained_variance_tracking_clears_state_when_metric_missing() -
 def test_update_explained_variance_warning_streak_triggers_logging() -> None:
     algo = DistributionalPPO.__new__(DistributionalPPO)
     logger = _CaptureLogger()
-    algo.logger = logger
+    algo._logger = logger
     algo._explained_variance_warn_streak = 0
 
     algo._update_explained_variance_warning_streak(None)

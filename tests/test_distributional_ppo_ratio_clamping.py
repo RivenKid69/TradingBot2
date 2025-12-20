@@ -260,12 +260,13 @@ def test_ppo_theory_alignment() -> None:
     clip_range = 0.2
 
     # Test cases with known outcomes
+    # PPO takes min(r*A, clip(r)*A), so when A>0 and r<1, unclipped r*A is smaller
     test_cases = [
         # (log_ratio, advantage, expected_loss_contribution)
-        (0.0, 1.0, -1.0),           # ratio=1.0, A=1.0 → -1.0*1.0
-        (0.1, 1.0, -1.105),         # ratio=1.105, A=1.0 → -1.105*1.0 (not clipped)
-        (0.5, 1.0, -1.2),           # ratio=1.649, A=1.0 → -1.2*1.0 (clipped to 1.2)
-        (-0.5, 1.0, -0.8),          # ratio=0.606, A=1.0 → -0.8*1.0 (clipped to 0.8)
+        (0.0, 1.0, -1.0),           # ratio=1.0, A=1.0 → -min(1.0, 1.0) = -1.0
+        (0.1, 1.0, -1.105),         # ratio=1.105, A=1.0 → -min(1.105, 1.105) = -1.105 (not clipped)
+        (0.5, 1.0, -1.2),           # ratio=1.649, A=1.0 → -min(1.649, 1.2) = -1.2 (clipped)
+        (-0.5, 1.0, -0.6065),       # ratio=0.606, A=1.0 → -min(0.606, 0.8) = -0.606 (unclipped is smaller)
     ]
 
     for log_ratio_val, advantage_val, expected_loss in test_cases:

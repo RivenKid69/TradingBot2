@@ -101,8 +101,8 @@ def test_exp_overflow_at_boundary() -> None:
     log_ratios_unsafe = torch.tensor([-89.0, 89.0], dtype=torch.float32)
     ratios_unsafe = torch.exp(log_ratios_unsafe)
 
-    # exp(-89) → 0 (underflow to 0)
-    assert ratios_unsafe[0].item() == 0.0, "exp(-89) should underflow to 0"
+    # exp(-89) → ~0 (underflow to subnormal/zero)
+    assert ratios_unsafe[0].item() < 1e-38, "exp(-89) should underflow to near-zero"
     # exp(89) → inf (overflow)
     assert torch.isinf(ratios_unsafe[1]), "exp(89) should overflow to inf"
 

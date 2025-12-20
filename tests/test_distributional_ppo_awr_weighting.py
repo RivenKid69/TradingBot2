@@ -52,8 +52,8 @@ def test_awr_weight_max_clipping() -> None:
     exp_arg = torch.clamp(extreme_advantages / beta, max=math.log(max_weight))
     weights = torch.exp(exp_arg)
 
-    # All weights should be <= max_weight
-    assert torch.all(weights <= max_weight), \
+    # All weights should be <= max_weight (with float32 tolerance)
+    assert torch.all(weights <= max_weight + 1e-5), \
         f"Weights exceeded max_weight: {weights.tolist()}"
 
     # Weights should be very close to max_weight for extreme advantages
@@ -145,7 +145,7 @@ def test_awr_weight_vectorized() -> None:
 
     # Verify all weights are in valid range
     assert torch.all(weights > 0), "All weights should be positive"
-    assert torch.all(weights <= max_weight), f"Weights exceeded max_weight: {weights.tolist()}"
+    assert torch.all(weights <= max_weight + 1e-5), f"Weights exceeded max_weight: {weights.tolist()}"
 
 
 def test_awr_weight_zero_advantage() -> None:

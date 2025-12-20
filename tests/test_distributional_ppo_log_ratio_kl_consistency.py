@@ -116,11 +116,13 @@ def test_extreme_log_ratio_vs_kl_relationship() -> None:
     torch = pytest.importorskip("torch")
 
     # Test cases: (log_ratio, expected behavior)
+    # Note: "concerning" threshold is > 1.0, so we use 1.01 to clearly exceed it
     test_cases = [
         (0.01, "healthy"),      # approx_kl = 0.01 (at target)
         (0.1, "healthy"),       # approx_kl = 0.1 (still ok)
-        (1.0, "concerning"),    # approx_kl = 1.0 (high)
-        (10.0, "severe"),       # approx_kl = 10.0 (catastrophic)
+        (1.0, "healthy"),       # approx_kl = 1.0 (at boundary, still healthy)
+        (1.01, "concerning"),   # approx_kl = 1.01 (just above threshold)
+        (10.01, "severe"),      # approx_kl > 10 (catastrophic)
     ]
 
     for log_ratio_val, expected_level in test_cases:
@@ -219,20 +221,21 @@ def test_numerical_precision_log_ratio_kl() -> None:
     """Test numerical precision in log_ratio to approx_kl conversion."""
     torch = pytest.importorskip("torch")
 
-    # Very small differences (high precision required)
-    new_log_prob = torch.tensor([-1.0000001, -2.0000001], dtype=torch.float32)
-    old_log_prob = torch.tensor([-1.0000000, -2.0000000], dtype=torch.float32)
+    # Small differences (precision suitable for float32)
+    # Note: float32 has ~7 decimal digits of precision
+    new_log_prob = torch.tensor([-1.001, -2.001], dtype=torch.float32)
+    old_log_prob = torch.tensor([-1.000, -2.000], dtype=torch.float32)
 
     log_ratio = new_log_prob - old_log_prob
     approx_kl = old_log_prob - new_log_prob
 
-    # Verify precision
-    expected_log_ratio = torch.tensor([-1e-7, -1e-7], dtype=torch.float32)
+    # Verify precision (float32 can handle 1e-3 differences reliably)
+    expected_log_ratio = torch.tensor([-1e-3, -1e-3], dtype=torch.float32)
     expected_approx_kl = -expected_log_ratio
 
-    assert torch.allclose(log_ratio, expected_log_ratio, atol=1e-8), \
+    assert torch.allclose(log_ratio, expected_log_ratio, atol=1e-5), \
         f"High precision log_ratio: {log_ratio.tolist()}"
-    assert torch.allclose(approx_kl, expected_approx_kl, atol=1e-8), \
+    assert torch.allclose(approx_kl, expected_approx_kl, atol=1e-5), \
         f"High precision approx_kl: {approx_kl.tolist()}"
 
 
@@ -292,7 +295,7 @@ def test_ratio_clipping_vs_kl_clipping_distinction() -> None:
     assert abs(ratio.item() - 148.4) < 0.1, f"ratio should be exp(5)≈148: {ratio.item()}"
 
     # 3. ratio is clipped to [0.8, 1.2] in loss
-    assert ratio_clipped.item() == 1.2, \
+    assert ratio_clipped.item() == pytest.approx(1.2), \
         f"ratio should be clipped to 1.2 in loss: {ratio_clipped.item()}"
 
     # 4. But monitoring should detect log_ratio = 5.0 as concerning

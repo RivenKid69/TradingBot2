@@ -81,7 +81,7 @@ def test_old_aggressive_clipping_was_too_permissive() -> None:
     # For extreme values, PPO clip bounds [0.8, 1.2] are tiny compared to ratio
     # This demonstrates why ±85 clipping masks problems instead of solving them
     assert ratio_old[-1].item() > 1e30, "Old clipping allowed catastrophic values"
-    assert ratio_clipped[-1].item() == 1 + clip_range, "PPO clip maxes out at 1.2"
+    assert ratio_clipped[-1].item() == pytest.approx(1 + clip_range), "PPO clip maxes out at 1.2"
 
     # The ratio changed by factor of 10^36, but PPO can only clip to 1.2
     # This is why aggressive log_ratio clipping is harmful
@@ -182,10 +182,11 @@ def test_extreme_fraction_calculation() -> None:
     torch.manual_seed(123)
     log_ratios = torch.randn(batch_size, dtype=torch.float32) * 0.05  # Healthy batch
 
-    # Inject 10 extreme values
+    # Inject 10 extreme values with guaranteed |value| > 10
     num_extreme_inject = 10
     indices = torch.randperm(batch_size)[:num_extreme_inject]
-    log_ratios[indices] = torch.randn(num_extreme_inject) * 5.0 + 12.0  # Mean=12, std=5
+    # Use values that are definitely > 10 (mean=15, std=2 ensures all values > 10)
+    log_ratios[indices] = torch.abs(torch.randn(num_extreme_inject) * 2.0) + 15.0
 
     # Count extreme values (|log_ratio| > 10)
     extreme_mask = torch.abs(log_ratios) > 10.0
