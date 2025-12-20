@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 1.4
+**Version**: 1.6
 **Date**: 2025-12-20
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -333,6 +333,19 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Controls C1-C5 fully implemented: fail-closed default (weights_only=True), explicit opt-in via ALLOW_UNSAFE_MODEL_LOAD, conversion utility, artifact signing, static analysis. PBT scheduler updated 2025-12-20. |
 
+### security-legacy-models {#security-legacy-models}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/security/THREAT_MODEL_MODEL_LOADING.md:66-90` (Threat T3) |
+| **Severity** | Medium |
+| **Description** | Legacy model accumulation - models requiring weights_only=False create ongoing risk |
+| **Status** | Controlled |
+| **Control Artifact** | `docs/security/LEGACY_MODEL_REGISTRY.md` (monthly audit with conversion tracking) |
+| **Metrics** | Legacy model count (0), conversion rate, ALLOW_UNSAFE_MODEL_LOAD usage (0) |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Registry created for visibility; current state: 0 legacy models. Monthly audit schedule established. |
+
 ---
 
 ## Docs/Drift
@@ -359,6 +372,18 @@ Each entry contains:
 | **Control Artifact** | `.github/workflows/build-and-test.yml`, `.github/workflows/security-sast.yml` |
 | **Closure Date** | 2025-12-20 |
 | **Note** | CI workflows exist and are fully functional: build-and-test.yml (hash verification, CCEA guardrails), security-sast.yml (SBOM, gitleaks, trufflehog, bandit, semgrep) |
+
+### docs-dora-test-claim {#docs-dora-test-claim}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/DORA_OPERATIONAL_RESILIENCE_PLAN.md:4850-4853` |
+| **Severity** | Low |
+| **Description** | 100% pass rate claim required traceable CI verification link |
+| **Status** | Closed |
+| **Control Artifact** | `.github/workflows/build-and-test.yml` (pytest runs on every PR/push) |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Document updated with CI verification reference and test report artifact location |
 
 ---
 
@@ -411,7 +436,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-20 after 19-item tech debt closure batch*
+*Updated 2025-12-20 after 13-item tech debt closure batch (CTO-level audit)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -419,16 +444,16 @@ Each entry contains:
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
 | Testing/Quality | 1 | 3 | 1 | 5 | 2 | 3 |
 | Reliability/Operations | 2 | 3 | 0 | 5 | 4 | 1 |
-| Security | 3 | 3 | 0 | 6 | 2 | 4 |
-| Docs/Drift | 0 | 2 | 0 | 2 | 1 | 1 |
+| Security | 3 | 4 | 0 | 7 | 3 | 4 |
+| Docs/Drift | 0 | 2 | 1 | 3 | 1 | 2 |
 | Process/Governance | 0 | 0 | 1 | 1 | 0 | 1 |
 | Reproducibility/Build | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **17** | **3** | **30** | **17** | **13** |
+| **TOTAL** | **10** | **18** | **4** | **32** | **18** | **14** |
 
 **Status Summary**:
-- 17 items Controlled (with active monitoring/artifacts)
-- 13 items Closed (resolved)
+- 18 items Controlled (with active monitoring/artifacts)
+- 14 items Closed (resolved)
 
 ---
 
@@ -442,6 +467,7 @@ Each entry contains:
 | 1.3 | 2025-12-20 | Added 8 new entries from security/testing/data-ml closure; 7 items closed with code fixes |
 | 1.4 | 2025-12-20 | Added security-model-loading (controlled), docs-ci-workflow-existence (closed); verified all 18 original findings |
 | 1.5 | 2025-12-20 | Added arch-binance-spot-stub entry with BINANCE_CONFORMANCE.md control artifact; all 19 requested items verified |
+| 1.6 | 2025-12-20 | CTO-level audit batch: Added security-legacy-models (controlled with LEGACY_MODEL_REGISTRY.md), docs-dora-test-claim (closed with CI reference). All 13 audit items verified. |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

@@ -1,7 +1,7 @@
 # Threat Model: Model Artifact Loading
 
 **Document Status**: Active
-**Last Updated**: 2025-12-19
+**Last Updated**: 2025-12-20
 **Owner**: Security/Engineering
 **Review Cycle**: Quarterly or on significant change
 
@@ -77,6 +77,17 @@ Per CCEA architecture:
 **Likelihood**: High (natural technical debt)
 
 **Severity**: Medium
+
+**Control Status**: CONTROLLED
+
+**Control Artifact**: `docs/security/LEGACY_MODEL_REGISTRY.md` (legacy model registry with monthly audit)
+
+**Metrics Tracked**:
+- Legacy model count (current: 0)
+- Monthly conversion rate
+- `ALLOW_UNSAFE_MODEL_LOAD` production usage (current: 0)
+
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#security-legacy-models`
 
 ---
 

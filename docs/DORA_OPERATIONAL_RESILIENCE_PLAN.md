@@ -4849,6 +4849,8 @@ test_migration:
 
 **Status:** COMPLETED (2025-12-09)
 **Test Coverage:** 474 tests passing (100%)
+**CI Verification**: `.github/workflows/build-and-test.yml` (pytest runs on every PR/push)
+**Test Report Artifact**: CI produces test results on each run; historical results in Actions logs
 
 **Goals:**
 - ✅ Enable procurement-ready contract templates with EU clients (no certification claim)
