@@ -468,6 +468,7 @@ Each entry contains:
 | 1.4 | 2025-12-20 | Added security-model-loading (controlled), docs-ci-workflow-existence (closed); verified all 18 original findings |
 | 1.5 | 2025-12-20 | Added arch-binance-spot-stub entry with BINANCE_CONFORMANCE.md control artifact; all 19 requested items verified |
 | 1.6 | 2025-12-20 | CTO-level audit batch: Added security-legacy-models (controlled with LEGACY_MODEL_REGISTRY.md), docs-dora-test-claim (closed with CI reference). All 13 audit items verified. |
+| 1.7 | 2025-12-20 | Final verification of 14-item tech debt batch. All items verified as Controlled or Closed with artifacts. See docs/reports/TECH_DEBT_CLOSURE_2025-12-20.md |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
