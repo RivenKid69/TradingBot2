@@ -1847,3 +1847,37 @@ class CustomActorCriticPolicy(RecurrentActorCriticPolicy):
             need_relax = True
         load_strict = strict and not need_relax
         return super().load_state_dict(filtered_state, strict=load_strict)
+
+
+class DistributionalActorCriticPolicy(CustomActorCriticPolicy):
+    """Default distributional policy with quantile critic enabled."""
+
+    def __init__(
+        self,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        lr_schedule: Optional[Schedule] = None,
+        *args,
+        arch_params: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
+        policy_arch = dict(arch_params or {})
+        critic_cfg = dict(policy_arch.get("critic") or {})
+        critic_cfg.setdefault("distributional", True)
+        critic_cfg.setdefault("categorical", False)
+        critic_cfg.setdefault("num_quantiles", 32)
+        critic_cfg.setdefault("huber_kappa", 1.0)
+        critic_cfg.setdefault("use_twin_critics", True)
+        policy_arch["critic"] = critic_cfg
+        policy_arch.setdefault("num_atoms", 51)
+        policy_arch.setdefault("v_min", -10.0)
+        policy_arch.setdefault("v_max", 10.0)
+
+        super().__init__(
+            observation_space,
+            action_space,
+            lr_schedule,
+            *args,
+            arch_params=policy_arch,
+            **kwargs,
+        )

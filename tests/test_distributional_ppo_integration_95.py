@@ -155,6 +155,39 @@ def make_vec_env(env_cls=MinimalDeterministicEnv, n_envs=1, seed=42):
         return env
     return DummyVecEnv([make_env for _ in range(n_envs)])
 
+def make_model(env, **overrides):
+    """Create a minimal DistributionalPPO model for integration tests."""
+    model_kwargs = {
+        "policy": "DistributionalPolicy",
+        "env": env,
+        "n_steps": 8,
+        "batch_size": 4,
+        "n_epochs": 1,
+        "learning_rate": 3e-4,
+        "device": "cpu",
+        "verbose": 0,
+    }
+    model_kwargs.update(overrides)
+    return DistributionalPPO(**model_kwargs)
+
+
+def setup_and_collect_rollouts(model, env, n_rollout_steps):
+    """Prepare learner state and collect one rollout."""
+    total_timesteps = int(n_rollout_steps * env.num_envs)
+    _, callback = model._setup_learn(
+        total_timesteps=total_timesteps,
+        callback=DummyCallback(),
+        reset_num_timesteps=True,
+    )
+    model._last_callback = callback
+    model._current_progress_remaining = 1.0
+    return model.collect_rollouts(
+        env,
+        callback,
+        model.rollout_buffer,
+        n_rollout_steps=n_rollout_steps,
+    )
+
 
 # =============================================================================
 # Mock Components
@@ -195,7 +228,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -215,7 +248,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -239,7 +272,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -262,7 +295,7 @@ class TestDistributionalPPOInit:
 
         for mode in ["disable", "mean_only", "mean_and_variance", "per_quantile"]:
             model = DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -280,7 +313,7 @@ class TestDistributionalPPOInit:
 
         with pytest.raises(ValueError, match="distributional_vf_clip_mode"):
             DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -296,7 +329,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -316,7 +349,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -338,7 +371,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -359,7 +392,7 @@ class TestDistributionalPPOInit:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -391,7 +424,7 @@ class TestDistributionalPPOInit:
 
         with pytest.raises(ValueError, match="clip_range_vf"):
             DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -408,7 +441,7 @@ class TestDistributionalPPOInit:
 
         with pytest.raises(ValueError, match="vf_clip_threshold_ev"):
             DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -425,7 +458,7 @@ class TestDistributionalPPOInit:
 
         with pytest.raises(ValueError, match="distributional_vf_clip_variance_factor"):
             DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -444,53 +477,134 @@ class TestDistributionalPPOInit:
 class TestDistributionalPPOCollectRollouts:
     """Tests for DistributionalPPO.collect_rollouts."""
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
     def test_collect_rollouts_basic(self):
         """Test basic rollout collection."""
-        pass
+        env = make_vec_env()
+        model = make_model(env)
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
+        collected = setup_and_collect_rollouts(model, env, n_rollout_steps=8)
+
+        assert collected is True
+        assert model.rollout_buffer.full is True
+        assert model._last_obs is not None
+        assert model._last_lstm_states is not None
+
+        env.close()
+
     def test_collect_rollouts_multiple_envs(self):
         """Test rollout collection with multiple environments."""
-        pass
+        env = make_vec_env(n_envs=2)
+        model = make_model(env, n_steps=4, batch_size=4)
+
+        collected = setup_and_collect_rollouts(model, env, n_rollout_steps=4)
+
+        assert collected is True
+        assert model.n_envs == 2
+        assert model.rollout_buffer.full is True
+        assert model.rollout_buffer.observations.shape[1] == 2
+
+        env.close()
 
 
 class TestDistributionalPPOTrain:
     """Tests for DistributionalPPO.train."""
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
     def test_train_after_collect(self):
         """Test training after collecting rollouts."""
-        pass
+        env = make_vec_env()
+        model = make_model(env)
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
+        setup_and_collect_rollouts(model, env, n_rollout_steps=8)
+
+        assert model._global_update_step == 0
+        model.train()
+        assert model._global_update_step == 1
+
+        env.close()
+
     def test_train_with_cvar_constraint(self):
         """Test training with CVaR constraint."""
-        pass
+        env = make_vec_env()
+        model = make_model(
+            env,
+            cvar_use_constraint=True,
+            cvar_use_penalty=True,
+            cvar_use_predicted_for_dual=True,
+            cvar_alpha=0.1,
+            cvar_weight=0.5,
+            cvar_limit=-0.2,
+            cvar_lambda_lr=0.05,
+        )
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
+        setup_and_collect_rollouts(model, env, n_rollout_steps=8)
+        model.train()
+
+        assert model._cvar_predicted_last_raw is not None
+        assert model._cvar_predicted_last_unit is not None
+
+        env.close()
+
     def test_train_with_kl_early_stop(self):
         """Test training with KL early stopping."""
-        pass
+        env = make_vec_env()
+        model = make_model(
+            env,
+            target_kl=1e-6,
+            kl_early_stop=True,
+            kl_exceed_stop_fraction=0.1,
+            kl_absolute_stop_factor=2.0,
+        )
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
+        setup_and_collect_rollouts(model, env, n_rollout_steps=8)
+        model.train()
+
+        assert model._global_update_step == 1
+
+        env.close()
+
     def test_train_with_vf_clip_warmup(self):
         """Test training with VF clip warmup."""
-        pass
+        env = make_vec_env()
+        model = make_model(
+            env,
+            clip_range_vf=0.2,
+            vf_clip_warmup_updates=2,
+            vf_clip_threshold_ev=0.1,
+        )
+
+        setup_and_collect_rollouts(model, env, n_rollout_steps=8)
+        model.train()
+
+        assert model._vf_clip_warmup_updates == 2
+
+        env.close()
 
 
 class TestDistributionalPPOLearn:
     """Tests for DistributionalPPO.learn."""
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
     def test_learn_short_run(self):
         """Test short learn run."""
-        pass
+        env = make_vec_env()
+        model = make_model(env)
 
-    @pytest.mark.skip(reason="Requires custom policy with distributional value head")
+        model.learn(total_timesteps=16)
+
+        assert model.num_timesteps >= 16
+
+        env.close()
+
     def test_learn_with_callback(self):
         """Test learn with callback."""
-        pass
+        env = make_vec_env()
+        model = make_model(env)
+        callback = DummyCallback()
+
+        model.learn(total_timesteps=16, callback=callback)
+
+        assert callback.n_calls > 0
+
+        env.close()
 
 
 # =============================================================================
@@ -505,7 +619,7 @@ class TestDistributionalPPOHelperMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -532,7 +646,7 @@ class TestDistributionalPPOHelperMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -554,7 +668,7 @@ class TestDistributionalPPOHelperMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -604,7 +718,7 @@ class TestDistributionalPPOHelperMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -624,7 +738,7 @@ class TestDistributionalPPOHelperMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -781,7 +895,7 @@ class TestPopArtControllerIntegration:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -800,7 +914,7 @@ class TestPopArtControllerIntegration:
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             model = DistributionalPPO(
-                policy="MlpLstmPolicy",
+                policy="DistributionalPolicy",
                 env=env,
                 n_steps=8,
                 batch_size=4,
@@ -827,7 +941,7 @@ class TestDistributionalPPOSerialization:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -846,7 +960,7 @@ class TestDistributionalPPOSerialization:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -924,7 +1038,7 @@ class TestComputeEmpiricalCvar:
         """Test with empty rewards tensor."""
         env = make_vec_env()
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -944,7 +1058,7 @@ class TestComputeEmpiricalCvar:
         """Test with normal rewards."""
         env = make_vec_env()
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -965,7 +1079,7 @@ class TestComputeEmpiricalCvar:
         """Test that winsorization is applied."""
         env = make_vec_env()
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -997,7 +1111,7 @@ class TestComputeCvarStatistics:
         """Test with empty rewards."""
         env = make_vec_env()
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1017,7 +1131,7 @@ class TestComputeCvarStatistics:
         """Test with normal rewards."""
         env = make_vec_env()
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1107,7 +1221,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1125,7 +1239,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1143,7 +1257,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1162,7 +1276,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1181,7 +1295,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1204,7 +1318,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1223,7 +1337,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1241,7 +1355,7 @@ class TestDistributionalPPOInitExtended:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1340,7 +1454,7 @@ class TestKLPropertyMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1362,7 +1476,7 @@ class TestKLPropertyMethods:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1392,7 +1506,7 @@ class TestCvarWinsorPctProperty:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,
@@ -1411,7 +1525,7 @@ class TestCvarWinsorPctProperty:
         env = make_vec_env()
 
         model = DistributionalPPO(
-            policy="MlpLstmPolicy",
+            policy="DistributionalPolicy",
             env=env,
             n_steps=8,
             batch_size=4,

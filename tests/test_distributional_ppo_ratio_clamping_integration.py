@@ -36,7 +36,9 @@ def _create_minimal_env():
             self.observation_space = gym.spaces.Box(
                 low=-1.0, high=1.0, shape=(4,), dtype=np.float32
             )
-            self.action_space = gym.spaces.Discrete(2)
+            self.action_space = gym.spaces.Box(
+                low=-1.0, high=1.0, shape=(1,), dtype=np.float32
+            )
             self._step_count = 0
 
         def reset(self, seed=None, options=None):
@@ -62,7 +64,7 @@ def minimal_ppo():
 
     # Minimal config to create instance
     algo = DistributionalPPO(
-        policy="MlpPolicy",
+        policy="DistributionalPolicy",
         env=env,
         n_steps=64,
         batch_size=32,

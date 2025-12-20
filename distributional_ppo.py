@@ -147,6 +147,15 @@ from stable_baselines3.common.callbacks import BaseCallback, CallbackList, EvalC
 from stable_baselines3.common.vec_env import VecEnv
 from stable_baselines3.common.vec_env.vec_normalize import VecNormalize
 from stable_baselines3.common.type_aliases import GymEnv
+
+try:
+    from custom_policy_patch1 import DistributionalActorCriticPolicy
+except Exception:
+    DistributionalActorCriticPolicy = None  # type: ignore[assignment]
+
+_DISTRIBUTIONAL_POLICY_ALIASES: dict[str, Any] = {}
+if DistributionalActorCriticPolicy is not None:
+    _DISTRIBUTIONAL_POLICY_ALIASES["DistributionalPolicy"] = DistributionalActorCriticPolicy
 from stable_baselines3.common.running_mean_std import RunningMeanStd
 from stable_baselines3.common.save_util import load_from_zip_file
 
@@ -1880,6 +1889,10 @@ class DistributionalPPO(RecurrentPPO):
     - CVaR Learning: Chow et al. (2015) "Risk-Constrained RL"
     - Distributional RL: Dabney et al. (2018) "Distributional RL with Quantile Regression"
     """
+
+    policy_aliases = dict(getattr(RecurrentPPO, "policy_aliases", {}))
+    if _DISTRIBUTIONAL_POLICY_ALIASES:
+        policy_aliases.update(_DISTRIBUTIONAL_POLICY_ALIASES)
 
     _LOGGER_MIN_KEY_LENGTH = 80
 
@@ -10040,6 +10053,7 @@ class DistributionalPPO(RecurrentPPO):
         cvar_loss_unit_value = 0.0
         cvar_term_raw_value = 0.0
         cvar_term_value = 0.0
+        predicted_cvar_violation_unit_value = 0.0
         total_loss_value = 0.0
         clamp_below_sum = 0.0
         clamp_above_sum = 0.0
@@ -13253,4 +13267,3 @@ class DistributionalPPO(RecurrentPPO):
                 model._initialise_popart_controller({})
             model._ensure_score_action_space()
         return model
-
