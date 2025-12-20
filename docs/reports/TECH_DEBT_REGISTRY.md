@@ -39,6 +39,19 @@ Each entry contains:
 | **Metrics** | Cyclomatic complexity tracked via `.github/workflows/build-and-test.yml` (radon cc), ~85% critical path coverage |
 | **Updated** | 2025-12-20 - Added CI job for complexity tracking with artifact upload |
 
+### arch-binance-spot-stub {#arch-binance-spot-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/binance_spot_private.py:231-241` |
+| **Severity** | Medium |
+| **Description** | place_order and cancel_order are stubs raising NotImplementedError |
+| **Status** | Controlled |
+| **Control Artifact** | `tests/integration/BINANCE_CONFORMANCE.md` (integration test requirements) |
+| **Mitigation** | Fail-closed by design: stubs throw explicit errors preventing accidental live usage |
+| **Note** | CCEA Architecture mandates Agent-side execution; Cloud stub is intentional per Design Doc |
+| **Updated** | 2025-12-20 - Added to registry with conformance test documentation |
+
 ---
 
 ## Data/ML
@@ -398,11 +411,11 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-20 after tech debt closure batch*
+*Updated 2025-12-20 after 19-item tech debt closure batch*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
-| Architecture | 1 | 0 | 0 | 1 | 1 | 0 |
+| Architecture | 1 | 1 | 0 | 2 | 2 | 0 |
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
 | Testing/Quality | 1 | 3 | 1 | 5 | 2 | 3 |
 | Reliability/Operations | 2 | 3 | 0 | 5 | 4 | 1 |
@@ -411,11 +424,11 @@ Each entry contains:
 | Process/Governance | 0 | 0 | 1 | 1 | 0 | 1 |
 | Reproducibility/Build | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **16** | **3** | **29** | **16** | **13** |
+| **TOTAL** | **10** | **17** | **3** | **30** | **17** | **13** |
 
 **Status Summary**:
-- 18 items Controlled (with active monitoring/artifacts)
-- 8 items Closed (resolved)
+- 17 items Controlled (with active monitoring/artifacts)
+- 13 items Closed (resolved)
 
 ---
 
@@ -428,6 +441,7 @@ Each entry contains:
 | 1.2 | 2025-12-20 | Added testing-compute-failures entry; updated control artifacts for 16-item closure |
 | 1.3 | 2025-12-20 | Added 8 new entries from security/testing/data-ml closure; 7 items closed with code fixes |
 | 1.4 | 2025-12-20 | Added security-model-loading (controlled), docs-ci-workflow-existence (closed); verified all 18 original findings |
+| 1.5 | 2025-12-20 | Added arch-binance-spot-stub entry with BINANCE_CONFORMANCE.md control artifact; all 19 requested items verified |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

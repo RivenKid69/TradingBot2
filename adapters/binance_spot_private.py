@@ -229,14 +229,32 @@ def fetch_account_fee_info(
 
 @retry_sync(DEFAULT_RETRY_CFG, _no_retry)
 def place_order(*args: Any, **kwargs: Any):
-    """Stub for placing an order on Binance Spot."""
+    """Stub for placing an order on Binance Spot.
+
+    TECH DEBT: This is an intentional stub per CCEA Architecture.
+    - Status: Controlled
+    - Tracking: docs/reports/TECH_DEBT_REGISTRY.md#arch-binance-spot-stub
+    - Control Artifact: tests/integration/BINANCE_CONFORMANCE.md
+    - Rationale: Cloud code MUST NOT execute live orders (CCEA Design Doc Section 0.2)
+    - Live execution: Requires Agent-side implementation with Local Vault secrets
+
+    This stub is fail-closed by design: it raises an explicit error to prevent
+    accidental live trading from Cloud environment.
+    """
 
     raise NotImplementedError("Binance spot private API is not yet connected")
 
 
 @retry_sync(DEFAULT_RETRY_CFG, _no_retry)
 def cancel_order(*args: Any, **kwargs: Any):
-    """Stub for cancelling an order on Binance Spot."""
+    """Stub for cancelling an order on Binance Spot.
+
+    TECH DEBT: This is an intentional stub per CCEA Architecture.
+    - Status: Controlled
+    - Tracking: docs/reports/TECH_DEBT_REGISTRY.md#arch-binance-spot-stub
+    - Rationale: Cloud code MUST NOT execute live orders (CCEA Design Doc Section 0.2)
+    - See place_order() for full documentation.
+    """
 
     raise NotImplementedError("Binance spot private API is not yet connected")
 
