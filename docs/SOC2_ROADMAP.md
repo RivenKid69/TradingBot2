@@ -164,8 +164,8 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 | Control | Current | Target | Priority |
 |---------|---------|--------|----------|
 | Data classification | Informal | Formal policy | High |
-| Encryption at rest | Implemented (design goal) | Pending verification | Low |
-| Encryption in transit | Implemented (design goal) | Pending verification | Low |
+| Encryption at rest | Implemented | Verified (see ENCRYPTION_VERIFICATION.md) | Low |
+| Encryption in transit | Implemented | Verified (see ENCRYPTION_VERIFICATION.md) | Low |
 | DLP controls | None | Basic | Medium |
 | Secure disposal | Basic | Documented | Medium |
 

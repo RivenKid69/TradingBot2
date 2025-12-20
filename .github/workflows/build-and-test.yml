@@ -169,6 +169,58 @@ jobs:
       - name: Run test suite
         run: make test
 
+      # ========================================================================
+      # Cyclomatic Complexity Tracking (Tech Debt: arch-train-monolith)
+      # ========================================================================
+      - name: Install radon
+        run: python -m pip install radon
+
+      - name: Cyclomatic Complexity Report
+        run: |
+          echo "=== Cyclomatic Complexity Report ==="
+          echo "Tracking arch-train-monolith tech debt item"
+          echo ""
+          echo "--- distributional_ppo.py Summary ---"
+          python -m radon cc distributional_ppo.py -a -s --json > complexity-report.json
+          python -m radon cc distributional_ppo.py -a -s
+          echo ""
+          echo "--- High Complexity Functions (CC > 20) ---"
+          python - <<'PY'
+          import json
+          import sys
+          try:
+              data = json.load(open("complexity-report.json", "r", encoding="utf-8"))
+              high_cc = []
+              for filename, items in data.items():
+                  for item in items:
+                      cc = item.get("complexity", 0)
+                      if cc > 20:
+                          high_cc.append({
+                              "name": item.get("name"),
+                              "type": item.get("type"),
+                              "complexity": cc,
+                              "lineno": item.get("lineno")
+                          })
+              if high_cc:
+                  print(f"Found {len(high_cc)} functions with complexity > 20:")
+                  for item in sorted(high_cc, key=lambda x: -x["complexity"]):
+                      print(f"  {item['name']} (line {item['lineno']}): CC={item['complexity']}")
+              else:
+                  print("No functions with complexity > 20 found")
+          except Exception as e:
+              print(f"Analysis error: {e}")
+              sys.exit(0)  # Don't fail build on analysis errors
+          PY
+
+      - name: Upload complexity report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complexity-report-${{ matrix.os }}
+          path: complexity-report.json
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Clean artifacts
         run: make clean
 

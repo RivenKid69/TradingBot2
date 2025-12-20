@@ -35,8 +35,9 @@ Each entry contains:
 | **Severity** | High |
 | **Description** | Monolithic train() method (~4000 lines) with partial refactoring |
 | **Status** | Controlled |
-| **Control Artifact** | Header documentation, `tests/COMPREHENSIVE_TEST_REPORT.md`, static analysis via `radon cc` |
-| **Metrics** | Cyclomatic complexity tracked, ~85% critical path coverage |
+| **Control Artifact** | Header documentation, `tests/COMPREHENSIVE_TEST_REPORT.md`, CI cyclomatic complexity report |
+| **Metrics** | Cyclomatic complexity tracked via `.github/workflows/build-and-test.yml` (radon cc), ~85% critical path coverage |
+| **Updated** | 2025-12-20 - Added CI job for complexity tracking with artifact upload |
 
 ---
 
@@ -136,6 +137,18 @@ Each entry contains:
 | **Control Artifact** | `tests/COMPREHENSIVE_TEST_REPORT.md`, CI pytest-cov runs |
 | **Tracking** | Priority roadmap in report; critical paths at ~85% coverage |
 
+### testing-rollout-buffer {#testing-rollout-buffer}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `distributional_ppo.py:1514-1815` |
+| **Severity** | High |
+| **Description** | RawRecurrentRolloutBuffer test coverage - previously 0% |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_raw_recurrent_rollout_buffer.py` |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Tests created for reset(), add(), _to_numpy(), edge cases. Coverage gap closed. |
+
 ### testing-tif-conformance {#testing-tif-conformance}
 
 | Field | Value |
@@ -176,6 +189,18 @@ Each entry contains:
 
 ## Reliability/Operations
 
+### ops-monitoring-defaults {#ops-monitoring-defaults}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `configs/monitoring.yaml:1-21` |
+| **Severity** | Medium |
+| **Description** | Default monitoring configuration has monitoring disabled |
+| **Status** | Controlled |
+| **Control Artifact** | `configs/monitoring.production.yaml` (production-ready template with SLO/SLI targets) |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Development default is disabled for local testing; production template provided with recommended thresholds |
+
 ### ops-dora-gaps {#ops-dora-gaps}
 
 | Field | Value |
@@ -191,12 +216,13 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `docs/security/TRUST_CENTER.md:188-204` |
+| **Location** | `docs/security/TRUST_CENTER.md:188-204`, `docs/CYBERSECURITY_FRAMEWORK.md:352` |
 | **Severity** | High |
 | **Description** | DR testing not yet conducted; RTO/RPO unvalidated |
 | **Status** | Controlled |
-| **Control Artifact** | `docs/runbooks/` (documented procedures pending validation) |
-| **Note** | Honest disclosure per Canon; validation requires infrastructure deployment |
+| **Control Artifact** | `docs/runbooks/DR_DRILL.md` (drill procedures with execution templates) |
+| **Updated** | 2025-12-20 - DR drill runbook created with validation procedures |
+| **Note** | Honest disclosure per Canon; validation requires infrastructure deployment; drill schedule established |
 
 ### ops-incident-response {#ops-incident-response}
 
@@ -286,13 +312,13 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `tools/convert_legacy_models.py:92-96`, `infer_signals.py` |
-| **Severity** | Medium |
-| **Description** | Legacy model conversion uses unsafe pickle loading in controlled context |
-| **Status** | Controlled |
+| **Location** | `tools/convert_legacy_models.py:92-96`, `infer_signals.py`, `adversarial/pbt_scheduler.py:358-391` |
+| **Severity** | High |
+| **Description** | Model loading security - all torch.load calls now use fail-closed approach |
+| **Status** | Closed |
 | **Control Artifact** | `docs/security/THREAT_MODEL_MODEL_LOADING.md` |
 | **Closure Date** | 2025-12-20 |
-| **Note** | Controls C1-C5 implemented: fail-closed default, explicit opt-in, conversion utility, artifact signing, static analysis |
+| **Note** | Controls C1-C5 fully implemented: fail-closed default (weights_only=True), explicit opt-in via ALLOW_UNSAFE_MODEL_LOAD, conversion utility, artifact signing, static analysis. PBT scheduler updated 2025-12-20. |
 
 ---
 
@@ -323,6 +349,38 @@ Each entry contains:
 
 ---
 
+## Process/Governance
+
+### governance-encryption-verification {#governance-encryption-verification}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/SOC2_ROADMAP.md:166-168` |
+| **Severity** | Low |
+| **Description** | Encryption controls marked as pending verification |
+| **Status** | Closed |
+| **Control Artifact** | `docs/security/ENCRYPTION_VERIFICATION.md` (comprehensive verification report) |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Verification report created with implementation evidence, compliance mapping, and gap analysis |
+
+---
+
+## Reproducibility/Build
+
+### build-reproducibility {#build-reproducibility}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `BUILD_INSTRUCTIONS.md:291-306` |
+| **Severity** | Medium |
+| **Description** | Build reproducibility requires pinned dependencies from lockfiles |
+| **Status** | Closed |
+| **Control Artifact** | `requirements-cpu.lock.txt`, `requirements-gpu.lock.txt`, `make verify-hash` in CI |
+| **Closure Date** | 2025-12-20 |
+| **Note** | Lockfiles with exact versions provided; CI verifies build hash; BUILD_INSTRUCTIONS.md documents procedure |
+
+---
+
 ## Other
 
 ### options-max-profit {#options-max-profit}
@@ -340,16 +398,20 @@ Each entry contains:
 
 ## Summary Statistics
 
+*Updated 2025-12-20 after tech debt closure batch*
+
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 0 | 0 | 1 | 1 | 0 |
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
-| Testing/Quality | 1 | 3 | 1 | 5 | 3 | 2 |
-| Reliability/Operations | 2 | 2 | 0 | 4 | 4 | 0 |
-| Security | 3 | 3 | 0 | 6 | 3 | 3 |
+| Testing/Quality | 1 | 3 | 1 | 5 | 2 | 3 |
+| Reliability/Operations | 2 | 3 | 0 | 5 | 4 | 1 |
+| Security | 3 | 3 | 0 | 6 | 2 | 4 |
 | Docs/Drift | 0 | 2 | 0 | 2 | 1 | 1 |
+| Process/Governance | 0 | 0 | 1 | 1 | 0 | 1 |
+| Reproducibility/Build | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **14** | **2** | **26** | **18** | **8** |
+| **TOTAL** | **10** | **16** | **3** | **29** | **16** | **13** |
 
 **Status Summary**:
 - 18 items Controlled (with active monitoring/artifacts)

@@ -355,13 +355,40 @@ class PBTScheduler:
                     f"(performance: {member.performance:.4f} -> {source_member.performance:.4f})"
                 )
 
-                # Security: weights_only=False needed for dicts/metadata
-                # We validate format_version to prevent arbitrary code execution
-                checkpoint = torch.load(
-                    source_member.checkpoint_path,
-                    map_location="cpu",
-                    weights_only=False
-                )
+                # SECURITY: Fail-closed model loading per THREAT_MODEL_MODEL_LOADING.md
+                # First try secure loading (weights_only=True)
+                # Fall back to unsafe loading only with explicit opt-in via env var
+                checkpoint = None
+                try:
+                    checkpoint = torch.load(
+                        source_member.checkpoint_path,
+                        map_location="cpu",
+                        weights_only=True
+                    )
+                except Exception as secure_load_error:
+                    # Secure loading failed - check if unsafe fallback is allowed
+                    if os.environ.get("ALLOW_UNSAFE_MODEL_LOAD", "").lower() in ("1", "true", "yes"):
+                        logger.warning(
+                            f"Member {member.member_id}: Secure loading failed ({type(secure_load_error).__name__}). "
+                            f"Using unsafe fallback (ALLOW_UNSAFE_MODEL_LOAD=1). "
+                            f"SECURITY METRIC: pbt_unsafe_load_count=1"
+                        )
+                        checkpoint = torch.load(
+                            source_member.checkpoint_path,
+                            map_location="cpu",
+                            weights_only=False
+                        )
+                    else:
+                        logger.error(
+                            f"Member {member.member_id}: Checkpoint cannot be loaded securely. "
+                            f"Error: {secure_load_error}. "
+                            f"Set ALLOW_UNSAFE_MODEL_LOAD=1 to enable legacy loading, "
+                            f"or convert checkpoint using tools/convert_legacy_models.py"
+                        )
+                        raise RuntimeError(
+                            f"Checkpoint at {source_member.checkpoint_path} cannot be loaded securely. "
+                            f"See docs/security/THREAT_MODEL_MODEL_LOADING.md for mitigation options."
+                        ) from secure_load_error
 
                 # Handle both old and new checkpoint formats
                 if isinstance(checkpoint, dict) and "format_version" in checkpoint:

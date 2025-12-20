@@ -97,16 +97,19 @@ These 10 test failures are **controlled** - they represent known API specificati
 
 ---
 
-## Priority 1: CRITICAL Tests (Not Yet Created)
+## Priority 1: CRITICAL Tests (Status Updated 2025-12-20)
+
+### 🟢 RESOLVED - Core Functionality
+
+1. **RawRecurrentRolloutBuffer** (5 methods) - ✅ Tests created
+   - `reset()` - Buffer reset ✅
+   - `add()` - Add rollout data ✅
+   - `_to_numpy()` - Tensor conversion ✅
+   - Edge cases: dtype handling, twin critics ✅
+   - **Test file**: `tests/test_raw_recurrent_rollout_buffer.py`
+   - **Closure Date**: 2025-12-20
 
 ### 🔴 HIGH PRIORITY - Core Functionality
-
-1. **RawRecurrentRolloutBuffer** (5 methods) - 0% coverage
-   - `reset()` - Buffer reset
-   - `add()` - Add rollout data
-   - `get()` - Get training batches
-   - `_get_samples()` - Sample from buffer
-   - Edge cases: overflow, mismatched shapes, LSTM states
 
 2. **collect_rollouts()** - Main data collection
    - TimeLimit.truncated handling

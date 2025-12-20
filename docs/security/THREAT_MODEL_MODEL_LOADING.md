@@ -84,7 +84,7 @@ Per CCEA architecture:
 
 ### C1: Fail-Closed Model Loading (IMPLEMENTED)
 
-**Control**: `infer_signals.py` rejects models that cannot be loaded with `weights_only=True` by default.
+**Control**: `infer_signals.py` and `adversarial/pbt_scheduler.py` reject models that cannot be loaded with `weights_only=True` by default.
 
 **Implementation**:
 ```python
