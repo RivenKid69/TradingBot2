@@ -64,6 +64,25 @@ except ImportError:
     SigningKey = None
     Signature = None
 
+# Environment detection for fail-closed behavior
+# Tech Debt: security-evidence-pack-signatures (TECH_DEBT_REGISTRY.md)
+def _is_production_environment() -> bool:
+    """Check if running in production environment."""
+    env = os.environ.get("CCEA_ENVIRONMENT", "development").lower()
+    return env in ("production", "prod", "staging")
+
+def _allow_placeholder_signatures() -> bool:
+    """
+    Determine if placeholder signatures are allowed.
+
+    Fail-closed in production: cryptography MUST be available.
+    Development only: placeholder signatures allowed with warning.
+    """
+    if _is_production_environment():
+        return False
+    # Explicit opt-in for development placeholder signatures
+    return os.environ.get("CCEA_ALLOW_PLACEHOLDER_SIGNATURES", "0") == "1"
+
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -926,17 +945,37 @@ class EvidencePackExporter:
         Sign the evidence pack checksum using Ed25519.
 
         Uses the crypto module for real cryptographic signatures.
+        FAIL-CLOSED in production: cryptography library MUST be available.
 
         Args:
             checksum: Pack checksum to sign
 
         Returns:
             JSON-encoded signature or None if signing not available
+
+        Raises:
+            RuntimeError: In production if cryptography not available
         """
         if not CRYPTO_AVAILABLE:
-            logger.warning("Cryptography not available, using placeholder signature")
+            if _is_production_environment():
+                # FAIL-CLOSED: Production requires real cryptographic signatures
+                raise RuntimeError(
+                    "SECURITY ERROR: Evidence pack signing requires cryptography library "
+                    "in production environment. Install with: pip install cryptography"
+                )
+            if not _allow_placeholder_signatures():
+                logger.error(
+                    "Cryptography not available and placeholder signatures not enabled. "
+                    "Set CCEA_ALLOW_PLACEHOLDER_SIGNATURES=1 for development."
+                )
+                return None
+            # Development-only placeholder (explicit opt-in required)
+            logger.warning(
+                "DEVELOPMENT MODE: Using placeholder signature. "
+                "This is NOT suitable for production use."
+            )
             import base64
-            sig_data = f"CCEA-EVIDENCE-SIG::{checksum}::{datetime.now(timezone.utc).isoformat()}"
+            sig_data = f"PLACEHOLDER-DEV-ONLY::{checksum}::{datetime.now(timezone.utc).isoformat()}"
             return base64.b64encode(sig_data.encode()).decode()
 
         try:
@@ -975,23 +1014,43 @@ class EvidencePackExporter:
         """
         Verify pack signature using Ed25519.
 
+        FAIL-CLOSED in production: cryptography library MUST be available,
+        and placeholder signatures are rejected.
+
         Args:
             checksum: Original checksum
             signature: JSON-encoded signature
 
         Returns:
-            True if signature is valid
+            True if signature is valid, False otherwise
+
+        Raises:
+            RuntimeError: In production if cryptography not available
         """
         if not CRYPTO_AVAILABLE:
-            logger.warning("Cryptography not available, signature verification skipped")
-            return True
+            if _is_production_environment():
+                # FAIL-CLOSED: Production requires real cryptographic verification
+                raise RuntimeError(
+                    "SECURITY ERROR: Signature verification requires cryptography library "
+                    "in production environment. Install with: pip install cryptography"
+                )
+            logger.warning(
+                "DEVELOPMENT MODE: Cryptography not available, verification skipped"
+            )
+            return not _is_production_environment()  # False in prod, True in dev
 
         try:
             sig_data = json.loads(signature)
 
-            # Handle placeholder signatures
+            # Handle placeholder signatures - REJECT in production
             if "signature" not in sig_data:
-                # Legacy/placeholder format
+                if _is_production_environment():
+                    logger.error(
+                        "SECURITY ERROR: Placeholder signature rejected in production"
+                    )
+                    return False
+                # Development: warn but accept placeholder
+                logger.warning("Accepting placeholder signature in development mode")
                 return True
 
             sig_obj = Signature.from_dict(sig_data)

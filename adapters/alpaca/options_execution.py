@@ -5,7 +5,18 @@ Alpaca options order execution adapter for US equities options.
 
 Phase 6: Options Trading (L3 Enhancement)
 
-Supports:
+**IMPLEMENTATION STATUS: PARTIAL STUB**
+
+The following methods are partially implemented or stub:
+- `get_option_chain()`: Returns empty chain with warning (API integration pending)
+- Multi-leg strategies: Placeholder implementation
+
+Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY.
+This adapter runs exclusively in the customer-controlled Agent environment.
+
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#adapter-alpaca-options-stub`
+
+Supports (when fully implemented):
 - Options order submission (calls, puts)
 - Single-leg options orders
 - Multi-leg strategies (spreads, straddles, etc.)

@@ -37,11 +37,29 @@ This directory contains operational runbooks for incident response, recovery pro
 
 ### Emergency Contacts
 
+> **DEPLOYMENT-SPECIFIC CONFIGURATION REQUIRED**
+>
+> The contacts below are **template placeholders**. Before production use:
+> 1. Copy this file to your deployment-specific runbooks directory
+> 2. Replace all `@example.com` addresses with actual team contacts
+> 3. Verify contacts are reachable and on-call schedules are active
+>
+> **Control Artifact**: Deployment checklist must verify contact configuration.
+> **Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#ops-runbook-contacts`
+
 | Role | Contact | Escalation |
 |------|---------|------------|
-| On-call Engineer | ops@example.com | Immediate |
-| Security Team | security@example.com | Security incidents |
-| Platform Lead | platform@example.com | Major outages |
+| On-call Engineer | `<CONFIGURE: ops@your-domain.com>` | Immediate |
+| Security Team | `<CONFIGURE: security@your-domain.com>` | Security incidents |
+| Platform Lead | `<CONFIGURE: platform@your-domain.com>` | Major outages |
+
+**Environment Variable Override** (recommended for automation):
+```bash
+# Set in deployment environment
+CCEA_OPS_CONTACT="ops@your-domain.com"
+CCEA_SECURITY_CONTACT="security@your-domain.com"
+CCEA_PLATFORM_CONTACT="platform@your-domain.com"
+```
 
 ---
 

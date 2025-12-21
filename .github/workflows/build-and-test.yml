@@ -170,6 +170,75 @@ jobs:
         run: make test
 
       # ========================================================================
+      # Test Skip Count Tracking (Tech Debt: testing-skipif-tracking)
+      # ========================================================================
+      - name: Track skipped tests
+        if: always()
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          echo "=== Skipped Tests Report ==="
+          echo "Tracking testing-skipif-tracking tech debt item"
+          echo ""
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          # Run pytest with --collect-only to get skip info
+          result = subprocess.run(
+              [sys.executable, "-m", "pytest", "--collect-only", "-q", "--ignore=sandbox", "tests/"],
+              capture_output=True,
+              text=True,
+              timeout=300
+          )
+
+          # Count skipif markers in test files
+          skip_count = 0
+          skip_files = {}
+          for test_file in Path("tests").rglob("*.py"):
+              try:
+                  content = test_file.read_text(encoding="utf-8", errors="ignore")
+                  file_skips = content.count("@pytest.mark.skip")
+                  file_skips += content.count("pytest.importorskip")
+                  if file_skips > 0:
+                      skip_files[str(test_file)] = file_skips
+                      skip_count += file_skips
+              except Exception:
+                  pass
+
+          report = {
+              "total_skip_markers": skip_count,
+              "files_with_skips": len(skip_files),
+              "top_files": dict(sorted(skip_files.items(), key=lambda x: -x[1])[:10])
+          }
+
+          Path("skip-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+          print(f"Total skip markers found: {skip_count}")
+          print(f"Files with skip markers: {len(skip_files)}")
+          print("")
+          print("Top 10 files by skip count:")
+          for fname, count in list(report["top_files"].items())[:10]:
+              print(f"  {fname}: {count} skips")
+
+          # Threshold check (warn if > 100 skips)
+          if skip_count > 100:
+              print(f"\nWARNING: High skip count ({skip_count} > 100 threshold)")
+              print("Review if all skips are intentional and tracked")
+          PY
+
+      - name: Upload skip report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: skip-report-${{ matrix.os }}
+          path: skip-report.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # ========================================================================
       # Cyclomatic Complexity Tracking (Tech Debt: arch-train-monolith)
       # ========================================================================
       - name: Install radon

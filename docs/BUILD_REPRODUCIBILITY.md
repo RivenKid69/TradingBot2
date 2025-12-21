@@ -47,8 +47,9 @@ The build reproducibility system verifies:
    - See `requirements-cpu.lock.txt`, `requirements-gpu.lock.txt`
 
 2. **Transitive Dependencies**
-   - SBOM generated but not hash-pinned
-   - See CI SBOM artifact
+   - SBOM generated with SHA256 hash verification
+   - See CI artifacts: `sbom.json` and `sbom-verification.json`
+   - Hash recorded per CI run for audit trail
 
 3. **Cross-Build Reproducibility**
    - Hashes may differ across platforms
@@ -64,6 +65,7 @@ The build reproducibility system verifies:
 | `requirements-cpu.lock.txt` | Repository root | Pinned CPU dependencies |
 | `requirements-gpu.lock.txt` | Repository root | Pinned GPU dependencies |
 | `sbom.json` | CI artifact | CycloneDX SBOM |
+| `sbom-verification.json` | CI artifact | SBOM hash + git SHA + timestamp for audit |
 
 ---
 

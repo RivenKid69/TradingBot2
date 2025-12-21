@@ -284,6 +284,31 @@ jobs:
           done
           cyclonedx-py --format json --output sbom.json $args
 
+      # Tech Debt: repro-sbom-hash-pinning (TECH_DEBT_REGISTRY.md)
+      - name: Generate SBOM hash for verification
+        run: |
+          set -euo pipefail
+          if [ -f sbom.json ]; then
+            # Generate deterministic hash of SBOM content
+            SBOM_HASH=$(sha256sum sbom.json | cut -d' ' -f1)
+            echo "SBOM SHA256: $SBOM_HASH"
+
+            # Create verification metadata
+            cat > sbom-verification.json <<EOF
+          {
+            "sbom_file": "sbom.json",
+            "sha256": "$SBOM_HASH",
+            "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "git_sha": "${{ github.sha }}",
+            "workflow_run": "${{ github.run_id }}",
+            "control_artifact": "CI artifact sbom-verification.json"
+          }
+          EOF
+
+            echo "SBOM verification metadata:"
+            cat sbom-verification.json
+          fi
+
       - name: Upload dependency audit artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -293,6 +318,7 @@ jobs:
             pip-audit-*.json
             safety-*.json
             sbom.json
+            sbom-verification.json
           if-no-files-found: ignore
           retention-days: 30
 

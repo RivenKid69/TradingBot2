@@ -1,7 +1,7 @@
 # Technical Debt Registry
 
-**Version**: 1.6
-**Date**: 2025-12-20
+**Version**: 1.9
+**Date**: 2025-12-21
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
 
@@ -75,6 +75,18 @@ Each entry contains:
 | **Control Artifact** | README.md updated with accurate status column (Stub/Implemented/Beta/Experimental) |
 | **Closure Date** | 2025-12-21 |
 | **Note** | Dukascopy correctly marked as "Stub (Phase 0)" per actual implementation |
+
+### adapter-alpaca-options-stub {#adapter-alpaca-options-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/alpaca/options_execution.py:8-17, 432-454` |
+| **Severity** | Low |
+| **Description** | Alpaca options adapter has partial stub implementations (get_option_chain returns empty) |
+| **Status** | Controlled |
+| **Control Artifact** | Module docstring documents IMPLEMENTATION STATUS: PARTIAL STUB; Tech Debt reference added |
+| **Added** | 2025-12-21 |
+| **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stub is fail-safe (returns empty chain with warning). API integration pending Alpaca options API availability. |
 
 ---
 
@@ -222,6 +234,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Tests gracefully handle missing feature registry; isolation verified when available |
 
+### testing-skipif-tracking {#testing-skipif-tracking}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_unit_train_model_multi_patch.py:134-1714`, multiple test files |
+| **Severity** | Medium |
+| **Description** | 40+ skipif tests require CI tracking to prevent false green builds |
+| **Status** | Closed |
+| **Control Artifact** | `.github/workflows/build-and-test.yml` (Track skipped tests job, skip-report.json artifact) |
+| **Closure Date** | 2025-12-21 |
+| **Note** | CI now tracks skip markers with threshold warning (>100); top files by skip count reported |
+
 ---
 
 ## Reliability/Operations
@@ -271,6 +295,18 @@ Each entry contains:
 | **Status** | Controlled |
 | **Control Artifact** | `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` |
 | **Note** | Current capacity honestly disclosed; expansion requires funding |
+
+### ops-runbook-contacts {#ops-runbook-contacts}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/runbooks/README.md:40-62` |
+| **Severity** | Medium |
+| **Description** | Runbook emergency contacts are template placeholders requiring deployment-specific configuration |
+| **Status** | Closed |
+| **Control Artifact** | Explicit DEPLOYMENT-SPECIFIC CONFIGURATION block in README.md; environment variable override pattern |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Placeholders now marked with `<CONFIGURE:>` prefix; deployment checklist must verify contact configuration |
 
 ### ops-metrics-baseline {#ops-metrics-baseline}
 
@@ -368,6 +404,18 @@ Each entry contains:
 | **Status** | Controlled |
 | **Control Artifact** | `docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md` |
 | **Note** | Acceptable for single-instance; Redis required for multi-instance production |
+
+### security-evidence-pack-signatures {#security-evidence-pack-signatures}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/enterprise/evidence_pack.py:959-1054` |
+| **Severity** | Medium |
+| **Description** | Evidence pack signing now fail-closed in production; placeholder signatures rejected |
+| **Status** | Closed |
+| **Control Artifact** | Code raises RuntimeError in production without cryptography; CCEA_ALLOW_PLACEHOLDER_SIGNATURES for dev-only |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Production: cryptography MUST be available, placeholder rejected. Development: explicit opt-in required (env var). |
 
 ### security-model-loading {#security-model-loading}
 
@@ -489,6 +537,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Comprehensive documentation of what is/isn't verified; lockfiles address Python deps |
 
+### repro-sbom-hash-pinning {#repro-sbom-hash-pinning}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `.github/workflows/security-sast.yml:287-310` |
+| **Severity** | Low |
+| **Description** | SBOM now has SHA256 hash verification with audit trail |
+| **Status** | Closed |
+| **Control Artifact** | CI artifact `sbom-verification.json` (contains hash, git_sha, timestamp); `docs/BUILD_REPRODUCIBILITY.md` updated |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Each CI run generates SBOM hash + verification metadata for supply chain audit trail |
+
 ---
 
 ## Dependency/Supply-chain
@@ -524,25 +584,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after comprehensive tech debt closure batch (CTO-level due diligence audit)*
+*Updated 2025-12-21 after tech debt discovery and closure batch*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
-| Architecture | 1 | 3 | 0 | 4 | 1 | 3 |
+| Architecture | 1 | 3 | 1 | 5 | 2 | 3 |
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
-| Testing/Quality | 1 | 3 | 1 | 5 | 2 | 3 |
-| Reliability/Operations | 2 | 3 | 0 | 5 | 4 | 1 |
-| Security | 3 | 5 | 0 | 8 | 2 | 6 |
+| Testing/Quality | 1 | 3 | 1 | 5 | 1 | 4 |
+| Reliability/Operations | 2 | 4 | 0 | 6 | 4 | 2 |
+| Security | 3 | 6 | 0 | 9 | 2 | 7 |
 | Docs/Drift | 0 | 2 | 1 | 3 | 1 | 2 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
-| Reproducibility/Build | 0 | 2 | 0 | 2 | 0 | 2 |
+| Reproducibility/Build | 0 | 2 | 1 | 3 | 0 | 3 |
 | Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **23** | **5** | **38** | **16** | **22** |
+| **TOTAL** | **10** | **25** | **7** | **42** | **16** | **26** |
 
 **Status Summary**:
 - 16 items Controlled (with active monitoring/artifacts)
-- 22 items Closed (resolved)
+- 26 items Closed (resolved)
 
 ---
 
@@ -559,6 +619,7 @@ Each entry contains:
 | 1.6 | 2025-12-20 | CTO-level audit batch: Added security-legacy-models (controlled with LEGACY_MODEL_REGISTRY.md), docs-dora-test-claim (closed with CI reference). All 13 audit items verified. |
 | 1.7 | 2025-12-20 | Final verification of 14-item tech debt batch. All items verified as Controlled or Closed with artifacts. See docs/reports/TECH_DEBT_CLOSURE_2025-12-20.md |
 | 1.8 | 2025-12-21 | CTO due diligence closure batch: Added 8 new entries (security-jwt-default, security-signature-bypass-ci, arch-deprecated-modules, arch-adapter-status-sync, reproducibility-hash-scope, dependency-optional-fallbacks, governance-registry-ci). Total: 38 items (16 Controlled, 22 Closed). |
+| 1.9 | 2025-12-21 | New tech debt discovery and closure: Added 5 items (ops-runbook-contacts, testing-skipif-tracking, security-evidence-pack-signatures, repro-sbom-hash-pinning, adapter-alpaca-options-stub). 4 Closed, 1 Controlled. Total: 42 items (16 Controlled, 26 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
