@@ -88,6 +88,18 @@ Each entry contains:
 | **Added** | 2025-12-21 |
 | **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stub is fail-safe (returns empty chain with warning). API integration pending Alpaca options API availability. |
 
+### adapter-forex-stubs {#adapter-forex-stubs}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/dukascopy/__init__.py:1-44`, `adapters/ig/__init__.py:1-42` |
+| **Severity** | Low |
+| **Description** | Dukascopy and IG forex adapters are Phase 0 stubs (empty `__all__`, no functional code) |
+| **Status** | Closed |
+| **Control Artifact** | README.md adapter table shows "Stub (Phase 0)" status; module docstrings document planned implementation |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stubs are fail-safe (empty exports, explicit Phase 0 status). Implementation planned for Phase 2+ per forex roadmap. | |
+
 ---
 
 ## Data/ML
@@ -245,6 +257,18 @@ Each entry contains:
 | **Control Artifact** | `.github/workflows/build-and-test.yml` (Track skipped tests job, skip-report.json artifact) |
 | **Closure Date** | 2025-12-21 |
 | **Note** | CI now tracks skip markers with threshold warning (>100); top files by skip count reported |
+
+### testing-pragma-nocover-tracking {#testing-pragma-nocover-tracking}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `impl_bar_executor.py` (17 exclusions), multiple files across codebase |
+| **Severity** | Low |
+| **Description** | Defensive fallback and compatibility paths excluded from coverage via `pragma: no cover` |
+| **Status** | Closed |
+| **Control Artifact** | CI coverage report includes pragma-excluded line counts; categorized exclusions (defensive/compatibility/typing) |
+| **Closure Date** | 2025-12-21 |
+| **Note** | All pragma exclusions are intentional defensive patterns: exception handlers with logging, compatibility fallbacks for legacy APIs, typing helpers. Exclusion categories documented in code comments. No business logic excluded. |
 
 ---
 
@@ -481,6 +505,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Document updated with CI verification reference and test report artifact location |
 
+### docs-l3-lob-status {#docs-l3-lob-status}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `ARCHITECTURE.md:465` |
+| **Severity** | Low |
+| **Description** | L3 LOB marked as "planned" but actually implemented (Stage 7) |
+| **Status** | Closed |
+| **Control Artifact** | `ARCHITECTURE.md` updated to reflect implementation status; `execution_providers_l3.py` docstring confirms Stage 7 |
+| **Closure Date** | 2025-12-21 |
+| **Note** | L3 LOB simulation implemented for futures/CME/crypto via execution_providers_l3.py, execution_providers_futures_l3.py, execution_providers_cme_l3.py. Docs now accurate. |
+
 ---
 
 ## Process/Governance
@@ -584,25 +620,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after tech debt discovery and closure batch*
+*Updated 2025-12-21 after minor tech debt closure (3 items)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
-| Architecture | 1 | 3 | 1 | 5 | 2 | 3 |
+| Architecture | 1 | 3 | 2 | 6 | 2 | 4 |
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
-| Testing/Quality | 1 | 3 | 1 | 5 | 1 | 4 |
+| Testing/Quality | 1 | 3 | 2 | 6 | 1 | 5 |
 | Reliability/Operations | 2 | 4 | 0 | 6 | 4 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
-| Docs/Drift | 0 | 2 | 1 | 3 | 1 | 2 |
+| Docs/Drift | 0 | 2 | 2 | 4 | 1 | 3 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 1 | 3 | 0 | 3 |
 | Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **25** | **7** | **42** | **16** | **26** |
+| **TOTAL** | **10** | **25** | **10** | **45** | **16** | **29** |
 
 **Status Summary**:
 - 16 items Controlled (with active monitoring/artifacts)
-- 26 items Closed (resolved)
+- 29 items Closed (resolved)
 
 ---
 
@@ -620,6 +656,7 @@ Each entry contains:
 | 1.7 | 2025-12-20 | Final verification of 14-item tech debt batch. All items verified as Controlled or Closed with artifacts. See docs/reports/TECH_DEBT_CLOSURE_2025-12-20.md |
 | 1.8 | 2025-12-21 | CTO due diligence closure batch: Added 8 new entries (security-jwt-default, security-signature-bypass-ci, arch-deprecated-modules, arch-adapter-status-sync, reproducibility-hash-scope, dependency-optional-fallbacks, governance-registry-ci). Total: 38 items (16 Controlled, 22 Closed). |
 | 1.9 | 2025-12-21 | New tech debt discovery and closure: Added 5 items (ops-runbook-contacts, testing-skipif-tracking, security-evidence-pack-signatures, repro-sbom-hash-pinning, adapter-alpaca-options-stub). 4 Closed, 1 Controlled. Total: 42 items (16 Controlled, 26 Closed). |
+| 2.0 | 2025-12-21 | Minor tech debt closure: Added 3 items (adapter-forex-stubs, testing-pragma-nocover-tracking, docs-l3-lob-status). All 3 Closed. Updated ARCHITECTURE.md L3 LOB status. Total: 45 items (16 Controlled, 29 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

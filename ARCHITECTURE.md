@@ -462,7 +462,7 @@ adapters/
 |-------|--------|----------|
 | L1 | Constant | Фиксированный spread/fee (placeholder) |
 | **L2** | Statistical | √participation impact (Almgren-Chriss) |
-| L3 | LOB | Full order book simulation (planned) |
+| L3 | LOB | Full order book simulation (implemented: futures/CME/crypto via `execution_providers_l3.py`, Stage 7) |
 
 ### Live Trading (Phase 9)
 
