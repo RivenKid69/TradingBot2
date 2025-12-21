@@ -259,9 +259,10 @@ cdef double compute_reward_view(
         closed_reason,
     ) / reward_scale
 
-    # FIX (MEDIUM #9): Use parameterized reward_cap instead of hard-coded 10.0
-    # This allows configuration via config files and experimentation
-    # Default value (10.0) maintains backward compatibility
+    # FIXED (MEDIUM #9): reward_cap is now parameterized (default: 10.0)
+    # Allows configuration via config files for experimentation.
+    # Default value (10.0) maintains backward compatibility.
+    # Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#perf-reward-cap (Closed)
     reward = _clamp(reward, -reward_cap, reward_cap)
 
     if out_potential != <double*>0:

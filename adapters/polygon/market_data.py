@@ -5,8 +5,19 @@ Polygon.io market data adapter implementation.
 
 This module provides a MarketDataAdapter for Polygon.io, supporting:
 - Historical OHLCV bars (stocks, crypto, forex)
-- Real-time streaming via WebSocket
+- Real-time bar streaming via WebSocket
 - Technical indicator data (SMA, EMA, RSI, MACD)
+
+IMPLEMENTATION STATUS
+=====================
+- Historical bars: ✅ Implemented
+- Bar streaming: ✅ Implemented
+- Tick streaming: ⚠️ Returns empty iterator (see stream_ticks method)
+
+Tick streaming via Polygon WebSocket "T.*" channels is not yet implemented.
+Use bar streaming or historical bars for production use cases.
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#adapter-polygon-tick-streaming
 
 API Reference:
     https://polygon.io/docs/stocks/getting-started
@@ -22,7 +33,7 @@ Usage:
     # Historical bars
     bars = adapter.get_bars("AAPL", "1h", limit=100)
 
-    # Real-time streaming
+    # Real-time streaming (bars only; tick streaming not implemented)
     for bar in adapter.stream_bars(["AAPL", "MSFT"], interval_ms=60000):
         process(bar)
 """
@@ -387,9 +398,19 @@ class PolygonMarketDataAdapter(MarketDataAdapter):
         Yields:
             Tick objects
         """
-        # Similar implementation to stream_bars but for trades
-        # Using Polygon WebSocket "T.*" channels
-        logger.warning("Tick streaming not fully implemented - returning empty iterator")
+        # Tick streaming via Polygon WebSocket "T.*" channels is not yet implemented.
+        # This is a known limitation - use bar streaming or historical data instead.
+        #
+        # Implementation would require:
+        # 1. WebSocket subscription to "T.<symbol>" channels
+        # 2. Message parsing for trade events
+        # 3. Tick object construction from trade data
+        #
+        # Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#adapter-polygon-tick-streaming
+        logger.warning(
+            "Tick streaming not implemented for Polygon adapter. "
+            "Use stream_bars() or get_bars() instead. Returns empty iterator."
+        )
         return iter([])
 
     def get_bars_multi(

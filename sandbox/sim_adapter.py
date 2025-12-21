@@ -1,4 +1,26 @@
 # sandbox/sim_adapter.py
+"""
+Simulation adapter for backtesting and paper trading execution.
+
+DEFENSIVE EXCEPTION HANDLING PATTERN
+=====================================
+This module uses broad `except Exception:` blocks intentionally as part of the
+CCEA design principle: **trading continuity takes precedence over logging failures**.
+
+Pattern Categories:
+1. **Monitoring/Metrics Updates** - Exception in metric emission must NOT halt trading
+2. **Type Coercion with Safe Defaults** - Parse user config gracefully, use defaults on error
+3. **Optional Feature Extraction** - Missing optional data should not crash the simulation
+
+All exception handlers either:
+- Log the error and continue with safe defaults
+- Silently skip non-critical operations (metrics, telemetry)
+- Return conservative fallback values
+
+This is INTENTIONAL per CCEA Design Doc Section 8.2 (Fault Tolerance).
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#arch-defensive-exception-sandbox
+"""
 from __future__ import annotations
 
 import logging

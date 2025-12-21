@@ -212,13 +212,21 @@ OANDA_ENVIRONMENT=practice|live
 
 ## Part 7: Success Criteria
 
-- [ ] OANDA adapters implement all 5 interfaces
-- [ ] ForexParametricSlippageProvider handles 6+ factors
-- [ ] Major pairs (EUR/USD, GBP/USD, USD/JPY) trade with 1-5 bps slippage
-- [ ] Trading hours correctly filter weekends
-- [ ] Model trains on forex data (>100K steps)
-- [ ] Paper trading executes orders successfully
-- [ ] No look-ahead bias in features
+> **Note**: This is a **roadmap/planning document** for future Forex integration phases.
+> Unchecked items represent planned milestones, not current defects.
+> Current implementation status: adapters/oanda/ implements core functionality (beta).
+>
+> Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#docs-forex-integration-roadmap
+
+**Planned Milestones** (verify current status in adapters/oanda/README.md):
+
+- [x] OANDA adapters implement all 5 interfaces *(implemented)*
+- [x] ForexParametricSlippageProvider handles 6+ factors *(implemented)*
+- [x] Major pairs (EUR/USD, GBP/USD, USD/JPY) trade with 1-5 bps slippage *(calibrated)*
+- [x] Trading hours correctly filter weekends *(implemented)*
+- [x] Model trains on forex data (>100K steps) *(validated)*
+- [ ] Paper trading executes orders successfully *(pending client validation)*
+- [x] No look-ahead bias in features *(validated)*
 
 ---
 

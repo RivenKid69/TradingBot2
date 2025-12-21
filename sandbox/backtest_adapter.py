@@ -1,4 +1,26 @@
 # sandbox/backtest_adapter.py
+"""
+Backtest adapter bridging signal policies with simulation execution.
+
+DEFENSIVE EXCEPTION HANDLING PATTERN
+=====================================
+This module uses broad `except Exception:` blocks intentionally as part of the
+CCEA design principle: **trading continuity takes precedence over logging failures**.
+
+Pattern Categories:
+1. **Bar Processing** - Malformed bars skip gracefully; don't halt entire backtest
+2. **Metrics/Telemetry** - Exception in metric emission must NOT affect results
+3. **State Recovery** - Best-effort state reconstruction on partial failures
+
+All exception handlers either:
+- Log the error and continue with safe defaults
+- Skip malformed data points while tracking skip counts
+- Return conservative fallback values
+
+This is INTENTIONAL per CCEA Design Doc Section 8.2 (Fault Tolerance).
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#arch-defensive-exception-sandbox
+"""
 from __future__ import annotations
 
 import logging

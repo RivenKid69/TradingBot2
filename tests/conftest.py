@@ -1,3 +1,28 @@
+"""
+tests/conftest.py
+
+Central pytest configuration with optional dependency detection.
+
+OPTIONAL DEPENDENCY PATTERN
+============================
+This module implements graceful test skipping for tests that require optional
+dependencies (torch, gymnasium, stable-baselines3, etc.). This is an **intentional
+design pattern** to support:
+
+1. **Minimal CI Runs** - Core tests run without ML dependencies
+2. **Full CI Runs** - All tests run with complete dependency set
+3. **Local Development** - Developers can run subset of tests without full stack
+
+The pattern uses pytest hooks to automatically skip tests based on:
+- Import availability checks (cached at module load)
+- Test file name patterns (e.g., "test_ppo" requires torch)
+- Explicit pytest markers
+
+This is NOT tech debt - it's a feature enabling flexible test execution.
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#testing-optional-deps-pattern (Closed)
+Related: docs/testing/TESTING_POLICY.md
+"""
 from __future__ import annotations
 
 import sys

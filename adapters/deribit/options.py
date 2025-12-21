@@ -29,6 +29,25 @@ Expiration Pattern (all at 08:00 UTC):
     - Monthly: Last Friday of month
     - Quarterly: Last Friday of Mar/Jun/Sep/Dec
 
+IMPLEMENTATION STATUS
+=====================
+This adapter is **REST-only**. Streaming methods raise NotImplementedError.
+
+- REST Market Data: ✅ Implemented (get_option_chain, get_option_quote, etc.)
+- REST Order Execution: ✅ Implemented (place_order, cancel_order, etc.)
+- WebSocket Streaming: ❌ Not implemented in this adapter
+
+For real-time streaming, use `DeribitWebSocketClient` from `adapters/deribit/websocket.py`.
+
+The REST adapter is suitable for:
+- Historical data analysis
+- Position queries
+- Order management with polling
+
+For low-latency real-time data, WebSocket is recommended.
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#adapter-deribit-rest-only
+
 References:
     - Deribit API: https://docs.deribit.com/
     - DVOL Methodology: https://www.deribit.com/pages/docs/volatility-index
