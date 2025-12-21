@@ -5,8 +5,8 @@ CCEA Key Management.
 Provides Ed25519 key generation, loading, and serialization.
 Agent generates keypair locally; only public key is shared with cloud.
 
-Security:
-- Private keys NEVER leave the agent
+Security (design intent):
+- Private keys designed to remain in the agent (verify via security review)
 - Keys are generated with cryptographically secure random
 """
 

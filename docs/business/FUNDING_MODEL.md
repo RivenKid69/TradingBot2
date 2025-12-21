@@ -281,7 +281,7 @@ M14: US Market Entry (target) ────────────────�
 | **Regulatory Posture** | Alignment tooling + clear separation (not a certification) | Often unclear boundaries |
 | **Market Coverage** | Equities-first; optional future expansion | Varies |
 | **Simulation Fidelity** | L3 LOB with market impact | Basic backtesting |
-| **Credential Security** | Customer-controlled (never leaves their environment) | Vendor-managed (risk exposure) |
+| **Credential Security** | Customer-controlled (designed to remain in their environment) | Vendor-managed (risk exposure) |
 
 **2. Market Timing**
 

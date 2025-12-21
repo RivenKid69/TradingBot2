@@ -27,7 +27,7 @@ Key rotation is a critical security practice that limits the impact of key compr
 ## 1. Master Vault Key Rotation
 
 The master vault key encrypts broker credentials stored locally on the agent.
-This key NEVER leaves the agent machine.
+This key is designed to remain on the agent machine (verify via security review).
 
 ### 1.1 Preparation
 

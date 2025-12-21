@@ -56,7 +56,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | Threat | Attack Vector | CCEA Mitigation |
 |--------|---------------|-----------------|
 | **RCE in Cloud** | Exploit in web app | Cloud has no trading libs, no broker APIs - blast radius limited |
-| **Key Exfiltration** | Memory dump, logs | Keys never leave Agent zone, mandatory redaction in telemetry |
+| **Key Exfiltration** | Memory dump, logs | Keys designed to remain in Agent zone; redaction designed as mandatory |
 | **Artifact Tampering** | MITM, supply chain | Digest pinning + signature verification required |
 | **Cloud as Execution** | Rogue insider | No order-like payloads allowed in protocol schema |
 | **Replay Attacks** | Message replay | Idempotency keys + timestamps in all commands |

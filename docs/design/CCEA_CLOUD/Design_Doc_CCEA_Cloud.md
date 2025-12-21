@@ -367,7 +367,7 @@ Priority (highest to lowest):
 | Threat | Mitigation |
 |--------|------------|
 | RCE in Cloud | Cloud cannot execute orders, no trading libs |
-| Key exfiltration | Keys never leave Agent, redaction mandatory |
+| Key exfiltration | Keys designed to remain in Agent; redaction designed as mandatory |
 | Artifact tampering | Digest pinning + signature verification |
 | Cloud becomes execution | No order-like payloads in protocol |
 | Abuse of cloud jobs | Sandbox + quotas + egress allowlist |

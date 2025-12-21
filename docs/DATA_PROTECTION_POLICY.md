@@ -82,7 +82,7 @@ Telemetry sent from Agent to Cloud is designed to pass through mandatory redacti
 |----------------|---------------------|
 | **Data Minimization** | Cloud does not receive trading credentials |
 | **Storage Limitation** | Secrets stored only in local Agent vault |
-| **Integrity & Confidentiality** | Mandatory redaction prevents secret exposure |
+| **Integrity & Confidentiality** | Redaction designed as mandatory to prevent secret exposure |
 | **Privacy by Design** | Architecture enforces data separation |
 | **Accountability** | Audit trail of all data flows |
 

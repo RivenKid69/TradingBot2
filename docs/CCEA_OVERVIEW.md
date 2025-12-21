@@ -394,7 +394,7 @@ Agent stores local policy that:
 | Threat | Attack Vector | Mitigation |
 |--------|---------------|------------|
 | **RCE in Cloud** | Attacker gains code execution in Cloud | Cloud has no trading libs, no broker APIs, cannot execute orders |
-| **Key Exfiltration** | Attacker tries to steal broker credentials | Keys never leave Agent, mandatory redaction, no secret logging |
+| **Key Exfiltration** | Attacker tries to steal broker credentials | Keys designed to remain in Agent; redaction designed as mandatory; secret logging prohibited by design |
 | **Artifact Tampering** | Attacker modifies trading artifact | Digest pinning, signature verification, SBOM tracking |
 | **Cloud Becomes Execution** | Cloud attempts to send trading commands | Protocol schema prohibits order-like payloads (side/qty/price) |
 | **Compute Abuse** | User mines crypto on cloud resources | Sandbox isolation, CPU/RAM/time quotas, egress allowlist |

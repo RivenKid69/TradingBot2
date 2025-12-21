@@ -135,10 +135,10 @@ Our platform implements the **Cloud-Controlled Execution Architecture (CCEA)** w
 
 | CCEA Design Commitment | Regulatory Impact |
 |----------------|-------------------|
-| Cloud never stores credentials | No Cloud asset/credential holding obligations |
-| Cloud never sends orders | Not an execution venue (Cloud does not execute orders) |
+| Cloud designed to not store credentials | No Cloud asset/credential holding obligations (by design) |
+| Cloud designed to not send orders | Not an execution venue (Cloud does not execute orders by design) |
 | Agent runs locally | Client retains execution control, our liability limited |
-| Mandatory telemetry redaction | GDPR-aligned design, no accidental secret exposure |
+| Telemetry redaction designed as mandatory | GDPR-aligned design, accidental secret exposure prevented by design |
 | Signed artifacts only | Supply chain security, audit trail |
 
 ### 1.5 What We Explicitly Do NOT Do
@@ -150,7 +150,7 @@ To maintain our software vendor status, we contractually commit to NOT doing the
 | **Execute orders** on behalf of any client | Cloud has no trading libs and no broker/exchange API access |
 | **Manage assets** or portfolios on a discretionary basis | Cloud cannot send order-like payloads |
 | **Provide investment advice** (personalized recommendations) | Platform is a tool, not advice |
-| **Handle client funds** or provide asset holding services | Cloud never stores credentials |
+| **Handle client funds** or provide asset holding services | Cloud designed to not store credentials |
 | **Make trading decisions** for clients | Orders created only by local Agent |
 | **Access client brokerage accounts** with execution authority | Secrets stored only in local vault |
 | **Guarantee investment performance** or returns | Terms of Service disclaimers |

@@ -128,7 +128,7 @@ session = httpx.Client(
 ### 1. Agent Vault Keys
 
 **Implementation**:
-- User-provided master key (never stored)
+- User-provided master key (not stored by design)
 - Derived keys for encryption operations
 - Key rotation supported via re-encryption
 

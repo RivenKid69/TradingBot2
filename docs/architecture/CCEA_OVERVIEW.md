@@ -27,7 +27,7 @@ All other documentation should reference this document for architectural consist
 CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative research and execution tools while maintaining:
 
 1. **Regulatory Compliance** - Cloud never touches trading execution
-2. **Security** - Customer credentials never leave customer environment
+2. **Security** - Customer credentials designed to remain in customer environment
 3. **Transparency** - Open-source Agent enables customer audit
 4. **Control** - Customer approves all trading-impacting changes locally
 

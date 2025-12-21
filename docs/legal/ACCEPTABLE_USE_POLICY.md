@@ -122,7 +122,7 @@ You MAY automate:
 **PROHIBITED:**
 
 - Attempting to send order payloads through Cloud (blocked by design)
-- Attempting to extract credentials from Cloud (never stored)
+- Attempting to extract credentials from Cloud (not stored by design)
 - Tampering with protocol signatures
 - Replaying commands with modified payloads
 - Bypassing local approval requirements

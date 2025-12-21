@@ -470,7 +470,7 @@ Agent хранит **локальную политику hard caps**:
 | Угроза | Защита CCEA |
 |--------|-------------|
 | RCE in Cloud | Cloud has no trading libs, no broker APIs |
-| Key exfiltration | Keys never leave Agent, mandatory redaction |
+| Key exfiltration | Keys designed to remain in Agent; redaction designed as mandatory (verify via architecture review and pen-test) |
 | Artifact tampering | Digest pinning + signature verification |
 | Cloud becomes execution | No order-like payloads in protocol schema |
 | Replay attacks | Idempotency keys + timestamps |
@@ -972,7 +972,7 @@ pytest tests/test_execution_providers.py -v
 pytest tests/test_execution_providers.py::TestIntegration -v
 ```
 
-**Покрытие**: 95 тестов (100% pass) + 84 теста parametric TCA
+**Покрытие**: 95 тестов (at documentation time; verify via CI) + 84 теста parametric TCA
 
 ### Референсы
 
@@ -990,7 +990,7 @@ pytest tests/test_execution_providers.py::TestIntegration -v
 
 Smart parametric Transaction Cost Analysis model для криптовалютных рынков. Расширяет базовую √participation модель (Almgren-Chriss) с 6 crypto-специфичными факторами.
 
-**Статус**: ✅ Tested and operational | **Тесты**: 84 (100% pass)
+**Статус**: ✅ Tested and operational | **Тесты**: 84 (at documentation time; verify via CI)
 
 ### Формула Total Slippage
 
@@ -1137,7 +1137,7 @@ pytest tests/test_crypto_parametric_tca.py::TestWhaleDetection -v
 pytest tests/test_crypto_parametric_tca.py::TestAdaptiveImpact -v
 ```
 
-**Покрытие**: 84 теста (100% pass)
+**Покрытие**: 84 теста (at documentation time; verify via CI)
 
 ---
 
@@ -1147,7 +1147,7 @@ pytest tests/test_crypto_parametric_tca.py::TestAdaptiveImpact -v
 
 Smart parametric Transaction Cost Analysis model для US equities. Расширяет базовую √participation модель (Almgren-Chriss) с equity-специфичными факторами.
 
-**Статус**: ✅ Tested and operational | **Тесты**: 86 (100% pass)
+**Статус**: ✅ Tested and operational | **Тесты**: 86 (at documentation time; verify via CI)
 
 ### Формула Total Slippage
 
@@ -1334,7 +1334,7 @@ pytest tests/test_equity_parametric_tca.py::TestSectorRotation -v
 pytest tests/test_equity_parametric_tca.py::TestL2Integration -v
 ```
 
-**Покрытие**: 86 тестов (100% pass)
+**Покрытие**: 86 тестов (at documentation time; verify via CI)
 
 ### Референсы
 
@@ -1722,7 +1722,7 @@ pytest tests/test_phase9_live_trading.py::TestSessionRouter -v
 pytest tests/test_phase9_live_trading.py::TestBackwardCompatibility -v
 ```
 
-**Покрытие**: 46 тестов (100% pass)
+**Покрытие**: 46 тестов (at documentation time; verify via CI)
 
 ### Ключевые файлы
 
@@ -1801,7 +1801,7 @@ Phase 10 добавляет высокоточную симуляцию order bo
    - Historical data loading utilities
 
 9. **Stage 9: Testing & Validation** (see `docs/L3_VALIDATION_REPORT.md`)
-   - 749+ tests passing (100% pass rate)
+   - 749+ tests passing (at documentation time; verify via CI)
    - Validation metrics: fill rate >95%, slippage <2bps, queue error <10%
    - Performance benchmarks meeting targets
    - Full backward compatibility with crypto
@@ -2503,7 +2503,7 @@ OANDA_PRACTICE=true  # or false for live
 
 ## 📦 Phase 3B: Interactive Brokers & CME Settlement (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 205/205 (100% pass)
+**Статус**: ✅ Tested and operational | **Тесты**: 205/205 (at documentation time; verify via CI)
 
 Phase 3B добавляет полную поддержку CME Group futures через Interactive Brokers TWS API:
 
@@ -2797,7 +2797,7 @@ pytest tests/test_cme_calendar.py -v
 pytest tests/test_ib_adapters.py tests/test_cme_settlement.py tests/test_cme_calendar.py -v
 ```
 
-**Coverage**: 205 tests (100% pass rate)
+**Coverage**: 205 tests (at documentation time; verify via CI)
 
 | Test Suite | Tests | Focus |
 |------------|-------|-------|
@@ -2877,7 +2877,7 @@ exec_adapter = create_order_execution_adapter("ib", {"port": 7497})
 
 ## 📊 Phase 4A: L2 Execution Provider for Crypto Futures (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 54/54 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 54/54 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 4A extends the crypto parametric TCA model with futures-specific factors for Binance USDT-M perpetuals.
 
@@ -3012,7 +3012,7 @@ provider = create_execution_provider(AssetClass.FUTURES, level="L2")
 # All futures tests (54 tests)
 pytest tests/test_futures_execution_providers.py -v
 
-# Coverage: 54 passed, 1 skipped (100% pass rate)
+# Coverage: 54 passed, 1 skipped (at documentation time; verify via CI)
 ```
 
 ### Test Categories
@@ -3064,7 +3064,7 @@ pytest tests/test_futures_execution_providers.py -v
 
 ## 📊 Phase 4B: CME SPAN Margin & Slippage (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 258/258 (100% pass) | **Покрытие**: 99% | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 258/258 (at documentation time; verify via CI) | **Покрытие**: 99% | **Date**: 2025-12-02
 
 Phase 4B implements CME-specific margin calculation (SPAN methodology) and slippage modeling for CME Group futures.
 
@@ -3371,7 +3371,7 @@ pytest tests/test_circuit_breaker.py -v      # 67 tests (60 + 7 edge cases)
 
 ## 📊 Phase 5A: L3 LOB Integration for Crypto Futures (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 100/100 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 100/100 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 5A integrates L3 Limit Order Book simulation with crypto perpetual futures, adding liquidation cascade simulation, insurance fund dynamics, ADL queue management, and funding period-aware execution.
 
@@ -3610,7 +3610,7 @@ pytest tests/test_futures_l3_execution.py::TestFuturesL3ExecutionProvider -v
 pytest tests/test_futures_l3_execution.py::TestIntegration -v
 ```
 
-**Coverage**: 100 tests (100% pass rate)
+**Coverage**: 100 tests (at documentation time; verify via CI)
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -3653,7 +3653,7 @@ pytest tests/test_futures_l3_execution.py::TestIntegration -v
 
 ## 📊 Phase 5B: L3 LOB for CME Futures (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 42/42 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 42/42 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 5B implements L3 Limit Order Book simulation for CME Group futures, including Globex-style FIFO matching, Market with Protection (MWP) orders, stop orders with velocity logic, and daily settlement simulation.
 
@@ -3910,7 +3910,7 @@ pytest tests/test_cme_l3_execution.py::TestCMEL3FillProvider -v
 pytest tests/test_cme_l3_execution.py::TestIntegration -v
 ```
 
-**Coverage**: 42 tests (100% pass rate)
+**Coverage**: 42 tests (at documentation time; verify via CI)
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -3945,7 +3945,7 @@ pytest tests/test_cme_l3_execution.py::TestIntegration -v
 
 ## 🛡️ Phase 6A: Crypto Futures Risk Management (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 101/101 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 101/101 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 6A implements comprehensive risk management for crypto perpetual futures (Binance USDT-M), including leverage guards, margin monitoring, funding exposure, position concentration limits, and ADL risk tracking.
 
@@ -4196,7 +4196,7 @@ pytest tests/test_futures_risk_guards.py::TestThreadSafety -v
 pytest tests/test_futures_risk_guards.py::TestIntegrationScenarios -v
 ```
 
-**Coverage**: 101 tests (100% pass rate)
+**Coverage**: 101 tests (at documentation time; verify via CI)
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -4239,7 +4239,7 @@ pytest tests/test_futures_risk_guards.py::TestIntegrationScenarios -v
 
 ## 🛡️ Phase 6B: CME Futures Risk Management (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 130/130 (100% pass) | **Покрытие**: 98% | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 130/130 (at documentation time; verify via CI) | **Покрытие**: 98% | **Date**: 2025-12-02
 
 Phase 6B implements comprehensive risk management for CME Group futures (via Interactive Brokers), including SPAN margin monitoring, position limits, circuit breaker awareness, settlement risk management, and contract rollover guards.
 
@@ -4480,7 +4480,7 @@ roll_config = RolloverGuardConfig(
 
 ## 🛡️ Phase 7: Unified Futures Risk Management (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 116/116 (100% pass) | **Покрытие**: 98% | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 116/116 (at documentation time; verify via CI) | **Покрытие**: 98% | **Date**: 2025-12-02
 
 Phase 7 unifies crypto futures and CME futures risk management into a single interface with automatic asset type detection, portfolio-level risk aggregation, and cross-asset correlation handling.
 
@@ -4748,7 +4748,7 @@ pytest tests/test_unified_futures_risk.py::TestIntegration -v
 pytest tests/test_futures_risk_guards.py tests/test_cme_risk_guards.py -v  # 231 tests
 ```
 
-**Coverage**: 116 Phase 7 tests + 231 regression tests = 347 total tests passing
+**Coverage**: 116 Phase 7 tests + 231 regression tests = 347 total tests (at documentation time; verify via CI)
 
 ### Ключевые файлы
 
@@ -4769,7 +4769,7 @@ pytest tests/test_futures_risk_guards.py tests/test_cme_risk_guards.py -v  # 231
 
 ## 🔴 Phase 9: Unified Futures Live Trading (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 81/81 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 81/81 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 9 implements unified live trading infrastructure for futures, including position synchronization, margin monitoring, funding rate tracking, and a coordinated live runner.
 
@@ -5009,7 +5009,7 @@ pytest tests/test_futures_live_trading.py::TestFuturesFundingTracker -v
 pytest tests/test_futures_live_trading.py::TestFuturesLiveRunner -v
 ```
 
-**Coverage**: 81 tests (100% pass rate)
+**Coverage**: 81 tests (at documentation time; verify via CI)
 
 | Category | Tests | Coverage |
 |----------|-------|----------|
@@ -5048,7 +5048,7 @@ pytest tests/test_futures_live_trading.py::TestFuturesLiveRunner -v
 
 ## 📋 Phase 10: Validation & Documentation (COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 171/171 (100% pass) | **Date**: 2025-12-02
+**Статус**: ✅ Tested and operational | **Тесты**: 171/171 (at documentation time; verify via CI) | **Date**: 2025-12-02
 
 Phase 10 completes the Futures Integration project with comprehensive validation testing, backward compatibility verification, performance benchmarks, and documentation.
 
@@ -5091,6 +5091,8 @@ Phase 10 completes the Futures Integration project with comprehensive validation
 | Configuration | 4 | ✅ All pass |
 
 ### Validation Metrics Achieved
+
+> **Note**: Metrics below are from internal testing at documentation time. Verify current performance via test suite execution.
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
@@ -5165,7 +5167,7 @@ python benchmarks/bench_futures_simulation.py
 
 ## 📈 Options Integration (Phase 1: COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 240/240 (100% pass) | **Date**: 2025-12-03
+**Статус**: ✅ Tested and operational | **Тесты**: 240/240 (at documentation time; verify via CI) | **Date**: 2025-12-03
 
 Phase 1 implements core options pricing, Greeks computation, IV solving, and exercise probability analysis.
 
@@ -5729,7 +5731,7 @@ pytest tests/test_options_adapters.py::TestEdgeCases -v
 
 ## 📈 Options Integration (Phase 2B: Deribit Crypto Options - COMPLETED)
 
-**Статус**: ✅ Tested and operational | **Тесты**: 118/118 (100% pass) | **Date**: 2025-12-03
+**Статус**: ✅ Tested and operational | **Тесты**: 118/118 (at documentation time; verify via CI) | **Date**: 2025-12-03
 
 Phase 2B implements Deribit integration for BTC/ETH options with inverse settlement and DVOL integration.
 
@@ -7400,7 +7402,7 @@ adversarial:
 
 ### 6. Conformal Prediction
 
-**Статус**: ✅ Tested and operational | **Тесты**: 59 (100% pass)
+**Статус**: ✅ Tested and operational | **Тесты**: 59 (at documentation time; verify via CI)
 
 Distribution-free uncertainty bounds на CVaR и value estimates.
 
@@ -7555,7 +7557,7 @@ pytest tests/test_conformal_prediction.py -v
 | Угроза | Митигация |
 |--------|-----------|
 | RCE in Cloud | Cloud не имеет trading libs, broker APIs |
-| Key Exfiltration | Keys never leave Agent, mandatory redaction |
+| Key Exfiltration | Keys designed to remain in Agent; redaction designed as mandatory (verify via architecture review and pen-test) |
 | Artifact Tampering | Digest pinning, signature verification, SBOM |
 | Cloud Becomes Execution | Schema prohibits order-like payloads |
 | Compute Abuse | Sandbox, CPU/RAM/time quotas, egress allowlist |
@@ -7927,7 +7929,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - OPTIONS_INTEGRATION_PLAN.md updated with Phase 1, 2, 2B completion status
 
 ### Изменения в 11.10:
-- **Options Integration Phase 2 COMPLETE** -- 165 tests (100% pass rate)
+- **Options Integration Phase 2 COMPLETE** -- 165 tests (at documentation time; verify via CI)
   - IB Options Adapter with market data, execution, Greeks streaming
   - IB Options Rate Limiter with priority queue and LRU caching
   - IB Combo Orders for multi-leg spreads (vertical, IC, butterfly, calendar)
@@ -7940,7 +7942,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 - Created docs/options/exchange_adapters.md comprehensive documentation
 
 ### Изменения в 11.9:
-- **Options Integration Phase 1 COMPLETE** -- 240 tests (100% pass rate)
+- **Options Integration Phase 1 COMPLETE** -- 240 tests (at documentation time; verify via CI)
   - Black-Scholes-Merton pricing with continuous dividends
   - Binomial trees (Leisen-Reimer, CRR)
   - Merton jump-diffusion model
@@ -7978,7 +7980,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - FuturesSyncEventType -- 12 event types for position changes, margin calls, ADL
   - ADLRiskLevel -- SAFE, WARNING, DANGER, CRITICAL levels
   - configs/config_live_futures.yaml -- Live trading configuration
-  - 81 тестов (100% pass rate)
+  - 81 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 9 теперь ✅ DONE
 - Добавлены Phase 9 entries в Quick Reference таблицу
 - Обновлён FUTURES_INTEGRATION_PLAN.md с Phase 9 completion
@@ -7993,7 +7995,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - configs/config_futures_unified.yaml -- Unified futures config template
   - configs/feature_flags_futures.yaml -- Feature flags configuration
   - Integration с train_model_multi_patch.py через create_futures_env()
-  - 131 тестов (100% pass rate)
+  - 131 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 8 теперь ✅ DONE
 - Добавлены Phase 8 entries в Quick Reference таблицу
 - Обновлён FUTURES_INTEGRATION_PLAN.md с Phase 8 completion
@@ -8008,7 +8010,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - UnifiedMarginResult для унифицированных результатов проверки маржи
   - PortfolioRiskManager для cross-asset correlation handling
   - Configuration с profiles (conservative, aggressive)
-  - 116 тестов (100% pass rate)
+  - 116 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 7 теперь ✅ DONE
 - Добавлены Phase 7 entries в Quick Reference таблицу
 - Добавлены примеры использования UnifiedFuturesRiskGuard, config profiles
@@ -8023,7 +8025,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - Session detection (RTH vs ETH) with spread multipliers
   - DailySettlementSimulator с variation margin calculation
   - CMEL3ExecutionProvider combining all L3 CME components
-  - 42 тестов (100% pass rate)
+  - 42 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 5B теперь ✅ DONE
 - Добавлены примеры использования GlobexMatchingEngine, MWP, stop orders
 - Добавлены референсы на CME Group Globex documentation
@@ -8036,7 +8038,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - ADLQueueManager для auto-deleveraging queue
   - FundingPeriodDynamics для funding window detection
   - FuturesL3ExecutionProvider combining all L3 components
-  - 100 тестов (100% pass rate)
+  - 100 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 5A теперь ✅ DONE
 - Добавлены примеры использования cascade simulation, insurance fund, ADL queue
 - Добавлены референсы на Kyle (1985), Almgren-Chriss, Binance liquidation protocol
@@ -8048,7 +8050,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - CME Slippage Provider с session/settlement факторами
   - CME Circuit Breaker (Rule 80B, overnight limits, velocity logic)
   - CircuitBreakerManager для multi-product
-  - 237 тестов (100% pass rate)
+  - 237 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- Phase 4B теперь ✅ DONE
 - Добавлены Phase 4B entries в Quick Reference таблицу
 - Добавлены примеры использования SPAN margin, circuit breakers
@@ -8062,7 +8064,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
   - Contract Rollover Manager (8 days before expiry for ES/NQ)
   - CME Trading Calendar (Globex hours, holidays, maintenance)
   - 30+ поддерживаемых контрактов (ES, NQ, GC, CL, 6E, ZN и др.)
-  - 205 тестов (100% pass rate)
+  - 205 тестов (at documentation time; verify via CI)
 - Обновлена секция "Futures Integration" -- статус изменён с PLANNED на Partial
 - Добавлены Phase 3B entries в Quick Reference таблицу
 - Добавлены примеры использования IB adapters, CME settlement, rollover

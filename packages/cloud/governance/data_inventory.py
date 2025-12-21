@@ -82,7 +82,7 @@ class RedactionRequirement(str, Enum):
     NONE = "none"                     # No redaction needed
     OPTIONAL = "optional"             # Redaction available if requested
     MANDATORY = "mandatory"           # Must be redacted before transmission
-    NEVER_TRANSMIT = "never_transmit" # Must never leave agent
+    NEVER_TRANSMIT = "never_transmit"  # Designed to remain in agent
 
 
 class InventoryEntryType(str, Enum):

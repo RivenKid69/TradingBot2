@@ -367,7 +367,7 @@ artifact_signing:
 
 ### TM-002: Key Exfiltration
 
-**Mitigation:** Keys never leave Agent.
+**Mitigation:** Keys designed to remain in Agent (verify via security review).
 
 **Implementation:**
 - Vault only in Agent
