@@ -541,6 +541,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Per CCEA Design Doc Section 7.1: Cloud is research/simulation/monitoring. CustodiaCloud's DORA obligations derive from Article 30 (contractual provisions), not Article 2 (FE scope). Document now explicitly states this is a CLIENT template, not self-assessment. Cross-references added to correct DORA documents (DORA_OPERATIONAL_RESILIENCE_PLAN.md, DORA_CONTRACT_TEMPLATE_ART_30_2.md). |
 
+### sim-live-validation-framework {#sim-live-validation-framework}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/SIMULATION_LIMITATIONS.md:17-31, 42-51` |
+| **Severity** | Medium |
+| **Description** | Empty validation checklists (`[ ]`) in SIMULATION_LIMITATIONS.md created impression of incomplete work; reframed as deployment-time client responsibility |
+| **Status** | Closed |
+| **Control Artifact** | `docs/SIMULATION_LIMITATIONS.md` updated with "Pre-Production Status and Client Responsibility" section and deployment-time validation tables |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Per CCEA Design Doc Section 5.1: "Live Intent is created only on Agent." Sim-to-live calibration is per-deployment client responsibility, not platform pre-release gate. Validation steps now presented as deployment-time requirements with clear ownership (Client ops/quant/risk teams). Documentation Canon Section 4.3 referenced (no performance promises). |
+
 ---
 
 ## Process/Governance
@@ -716,7 +728,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after CTO due diligence new findings closure*
+*Updated 2025-12-21 after sim-live-validation-framework closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -725,16 +737,16 @@ Each entry contains:
 | Testing/Quality | 1 | 3 | 3 | 7 | 2 | 5 |
 | Reliability/Operations | 2 | 5 | 0 | 7 | 5 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
-| Docs/Drift | 1 | 2 | 3 | 6 | 1 | 5 |
+| Docs/Drift | 1 | 3 | 3 | 7 | 1 | 6 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **11** | **26** | **15** | **52** | **18** | **34** |
+| **TOTAL** | **11** | **27** | **15** | **53** | **18** | **35** |
 
 **Status Summary**:
 - 18 items Controlled (with active monitoring/artifacts)
-- 34 items Closed (resolved)
+- 35 items Closed (resolved)
 
 ---
 
@@ -756,6 +768,7 @@ Each entry contains:
 | 2.1 | 2025-12-21 | CTO due diligence minor items: Added 2 items (docs-gdpr-coverage-targets, build-cross-platform-nondeterminism). Both Closed. GDPR_INTEGRATION_PLAN.md updated with coverage target disclaimer. Total: 47 items (16 Controlled, 31 Closed). |
 | 2.2 | 2025-12-21 | DORA proportionality scope closure: Added docs-dora-proportionality-scope (High, Closed). Document restructured as Client Reference Template per CCEA ICT Provider posture. Total: 48 items (16 Controlled, 32 Closed). |
 | 2.3 | 2025-12-21 | CTO due diligence new findings closure: Added 4 items (ops-signal-runner-exceptions [Controlled], testing-mock-density [Controlled], data-ib-hardcoded-specs [Closed], build-lockfile-freshness [Closed]). Created TESTING_POLICY.md, added lockfile freshness CI check, documented defensive exception patterns. Total: 52 items (18 Controlled, 34 Closed). |
+| 2.4 | 2025-12-21 | Sim-live validation framework closure: Added sim-live-validation-framework (Medium, Closed). SIMULATION_LIMITATIONS.md updated with Pre-Production Status section and deployment-time validation tables. Empty checkboxes replaced with structured tables per Documentation Canon. Total: 53 items (18 Controlled, 35 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

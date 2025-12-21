@@ -2,7 +2,7 @@
 
 **Document Purpose**: Track known limitations in execution simulation and their validation status.
 
-**Last Updated**: 2025-12-19
+**Last Updated**: 2025-12-21
 
 ---
 
@@ -13,6 +13,22 @@ This document tracks known limitations and their potential impact on sim-to-live
 
 Per Documentation Canon: We make no guarantees about simulation accuracy. Users are responsible
 for validating simulation results against live execution before deploying capital.
+
+### Pre-Production Status and Client Responsibility
+
+Per CCEA Design Doc Section 5.1: "Live Intent is created only on Agent (in strategy runtime)."
+Cloud provides research and simulation tools; live execution validation is a client-side responsibility.
+
+**Important distinctions**:
+
+| Aspect | Platform Responsibility | Client Responsibility |
+|--------|------------------------|----------------------|
+| Simulation models | Provide documented models with honest limitation disclosure | Validate models against their execution data before live deployment |
+| Calibration | Provide calibration interfaces and guidance | Perform calibration with their broker/execution data |
+| Slippage/fill accuracy | Document known limitations and mitigations | Apply conservative multipliers and validate thresholds |
+| Live deployment decision | Provide tools and risk controls | Own the decision to deploy capital |
+
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#sim-live-validation-framework`
 
 ---
 
@@ -39,10 +55,15 @@ for validating simulation results against live execution before deploying capita
 2. Apply conservative slippage multipliers (e.g., 1.5x-2x) in live deployment
 3. Monitor actual vs simulated slippage in production
 
-**Validation Required**:
-- [ ] Compare simulated vs actual slippage for sample order set
-- [ ] Calibrate statistical model against real execution data
-- [ ] Document acceptable slippage divergence thresholds
+**Deployment-Time Validation** (per-client responsibility):
+
+Operators deploying live strategies must complete these validation steps before capital deployment. These are deployment-time requirements, not platform pre-release gates, per Documentation Canon Section 4.3 (no performance promises).
+
+| Step | Description | Owner |
+|------|-------------|-------|
+| Slippage comparison | Compare simulated vs actual slippage for representative order set | Client ops team |
+| Model calibration | Calibrate statistical slippage model against real execution data | Client quant team |
+| Threshold documentation | Document acceptable slippage divergence thresholds for strategy | Client risk team |
 
 **Control Artifact**: TCA (Transaction Cost Analysis) calibration report required before live deployment.
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L1-slippage
@@ -113,10 +134,13 @@ for validating simulation results against live execution before deploying capita
 
 **Tracking**: T2b milestone (matching engine conformance)
 
-**Validation Required**:
-- [ ] Implement IOC: execute immediate match, cancel unfilled remainder
-- [x] Create conformance tests stub: `tests/cpp/test_orderbook_tif_conformance.cpp`
-- [ ] Validate against reference exchange matching engine behavior
+**Implementation Roadmap** (T2b milestone):
+
+| Task | Status | Notes |
+|------|--------|-------|
+| IOC implementation | Planned (T2b) | Execute immediate match, cancel unfilled remainder |
+| Conformance test stub | Done | `tests/cpp/test_orderbook_tif_conformance.cpp` |
+| Exchange validation | Planned (T2b) | Validate against reference exchange matching engine behavior |
 
 **Control Artifact**: `tests/cpp/test_orderbook_tif_conformance.cpp` (stub with GTEST_SKIP; T2b milestone).
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L4-tif
