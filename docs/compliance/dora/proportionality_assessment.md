@@ -1,68 +1,103 @@
-# DORA Proportionality Assessment
+# DORA Proportionality Assessment Template
 
-## Phase 0: Proportionality Assessment Report
+## Client Reference Template for Financial Entities
 
-**Document Version**: 1.0
-**Assessment Date**: [TO BE COMPLETED]
+**Document Version**: 2.0
+**Date**: 2025-12-21
+**Status**: Client Reference Template
 **Regulation Reference**: Regulation (EU) 2022/2554 (DORA)
 **Applicable Articles**: Articles 2, 3(22), 4, 16
+**Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
+
+---
+
+## Document Scope and Applicability
+
+> **IMPORTANT: This document is a CLIENT REFERENCE TEMPLATE for Financial Entities (FEs)
+> that use CustodiaCloud as their ICT service provider.**
+>
+> **CustodiaCloud itself is positioned as an ICT Third-Party Provider (CTPP) under DORA
+> Article 30, NOT as a Financial Entity under Article 2.** As such:
+>
+> - CustodiaCloud does NOT require Article 2 scope verification for itself
+> - CustodiaCloud does NOT require Article 16 simplified framework assessment for itself
+> - CustodiaCloud's DORA obligations derive from **Article 30** (contractual provisions with FE clients)
+>
+> **For CustodiaCloud's ICT Provider DORA posture, see:**
+> - `docs/DORA_OPERATIONAL_RESILIENCE_PLAN.md` (Section 2: Target DORA Posture)
+> - `docs/contracts/DORA_CONTRACT_TEMPLATE_ART_30_2.md` (Article 30(2) contract provisions)
+> - `docs/contracts/DORA_CRITICAL_FUNCTION_ADDENDUM_ART_30_3.md` (Article 30(3) critical function addendum)
+>
+> Per CCEA Architecture (Design Doc Section 7.1): Cloud is research/simulation/monitoring;
+> Agent performs customer-controlled execution. This boundary determines DORA obligations.
+>
+> **Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#docs-dora-proportionality-scope`
 
 ---
 
 ## 1. Executive Summary
 
-This document records the DORA proportionality assessment for CustodiaCloud. The assessment determines:
+This template assists **CustodiaCloud's Financial Entity clients** in conducting their own
+DORA proportionality assessment. The assessment determines:
 
-1. Whether DORA applies to the entity (Article 2 scope verification)
+1. Whether DORA applies to the client entity (Article 2 scope verification)
 2. Which business functions are "critical or important" (Article 3(22))
 3. What DORA regime applies (full, simplified, or microenterprise exemptions)
 4. How requirements should be implemented proportionately (Article 4)
 
-### Assessment Status
+> **Disclaimer**: This template is provided as a reference tool for clients. It is NOT legal advice.
+> Financial Entities must conduct their own assessment with qualified legal counsel.
+> CustodiaCloud makes no representations about the completeness or applicability of this template
+> for any specific client's regulatory situation.
+
+### Assessment Status (Client to Complete)
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Scope Verification | ⏳ Pending | Article 2 check required |
-| Function Classification | ⏳ Pending | Article 3(22) assessment required |
-| Proportionality Determination | ⏳ Pending | Articles 4, 16 assessment required |
-| Legal Review | ⏳ Pending | Required before implementation |
-| NCA Confirmation | ⏳ Not Started | If required |
+| Scope Verification | [ ] Pending | Article 2 check required |
+| Function Classification | [ ] Pending | Article 3(22) assessment required |
+| Proportionality Determination | [ ] Pending | Articles 4, 16 assessment required |
+| Legal Review | [ ] Pending | Required before implementation |
+| NCA Confirmation | [ ] Not Started | If required |
 
 ---
 
 ## 2. DORA Scope Verification (Article 2)
 
+> **Note for Clients**: This section helps you determine if DORA applies to YOUR entity.
+> CustodiaCloud as an ICT Provider is subject to Article 30, not Article 2.
+
 ### 2.1 Entity Type Determination
 
 Per DORA Article 2(1), the regulation applies to 21 types of financial entities.
 
-**For software/ICT providers serving financial entities, likely classifications may include:**
+**Common entity types for CustodiaCloud clients:**
 
-| Entity Type | Article | Description | Applicability |
-|-------------|---------|-------------|---------------|
-| Investment Firm | 2(1)(e) | MiFID II authorized investment firm | **Most Likely** |
-| Crypto-Asset Service Provider | 2(1)(f) | MiCA authorized CASP | If crypto trading |
-| Trading Venue | 2(1)(i) | If operating own venue | Unlikely |
-| AIFM | 2(1)(k) | If managing AIFs | If applicable |
+| Entity Type | Article | Description | Client to Check |
+|-------------|---------|-------------|-----------------|
+| Investment Firm | 2(1)(e) | MiFID II authorized investment firm | [ ] Applicable |
+| Crypto-Asset Service Provider | 2(1)(f) | MiCA authorized CASP | [ ] Applicable |
+| Trading Venue | 2(1)(i) | If operating own venue | [ ] Applicable |
+| AIFM | 2(1)(k) | If managing AIFs | [ ] Applicable |
 
-### 2.2 Authorization Check
+### 2.2 Authorization Check (Client to Complete)
 
-| Field | Value |
-|-------|-------|
-| Legal Name | [TO BE COMPLETED] |
-| LEI | [TO BE COMPLETED] |
-| Authorization Type | [TO BE COMPLETED] |
-| Authorizing NCA | [TO BE COMPLETED] |
-| Member State | [TO BE COMPLETED] |
-| Authorization Reference | [TO BE COMPLETED] |
+| Field | Client Value |
+|-------|--------------|
+| Legal Name | [CLIENT TO COMPLETE] |
+| LEI | [CLIENT TO COMPLETE] |
+| Authorization Type | [CLIENT TO COMPLETE] |
+| Authorizing NCA | [CLIENT TO COMPLETE] |
+| Member State | [CLIENT TO COMPLETE] |
+| Authorization Reference | [CLIENT TO COMPLETE] |
 
-### 2.3 Scope Result
+### 2.3 Scope Result (Client to Determine)
 
-**DORA Applies**: [ ] Yes / [ ] No / [ ] Unclear - Legal Review Required
+**DORA Applies to Client**: [ ] Yes / [ ] No / [ ] Unclear - Legal Review Required
 
-**Article Reference**: [TO BE COMPLETED]
+**Article Reference**: [CLIENT TO COMPLETE]
 
-**Notes**: [TO BE COMPLETED]
+**Notes**: [CLIENT TO COMPLETE]
 
 ---
 
@@ -117,12 +152,12 @@ Per EU Recommendation 2003/361 (SME Definition):
 | Medium Enterprise | < 250 | < €50M (turnover) / < €43M (balance) | [CHECK] |
 | Large Enterprise | ≥ 250 | ≥ €50M | [CHECK] |
 
-**Entity Metrics**:
-- Employee Count: [TO BE COMPLETED]
-- Annual Turnover (EUR): [TO BE COMPLETED]
-- Balance Sheet (EUR): [TO BE COMPLETED]
+**Client Entity Metrics** (Client to Complete):
+- Employee Count: [CLIENT TO COMPLETE]
+- Annual Turnover (EUR): [CLIENT TO COMPLETE]
+- Balance Sheet (EUR): [CLIENT TO COMPLETE]
 
-**Size Classification**: [TO BE DETERMINED]
+**Client Size Classification**: [CLIENT TO DETERMINE]
 
 ### 4.2 Article 16 Simplified Framework Check
 
@@ -151,9 +186,9 @@ If entity qualifies as microenterprise, the following exemptions apply:
 
 Based on the assessment:
 
-**Applicable Regime**: [ ] FULL / [ ] SIMPLIFIED / [ ] MICROENTERPRISE
+**Client Applicable Regime**: [ ] FULL / [ ] SIMPLIFIED / [ ] MICROENTERPRISE
 
-**Rationale**: [TO BE COMPLETED]
+**Rationale**: [CLIENT TO COMPLETE WITH LEGAL COUNSEL]
 
 ---
 
@@ -255,7 +290,8 @@ Based on the assessment:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | [DATE] | System | Initial assessment template |
+| 2.0 | 2025-12-21 | System | Restructured as Client Reference Template; clarified CustodiaCloud ICT Provider posture (Art. 30); removed self-assessment placeholders; added cross-references to ICT Provider DORA docs |
+| 1.0 | 2024-XX-XX | System | Initial assessment template (incorrectly scoped for self-assessment) |
 
 ---
 
