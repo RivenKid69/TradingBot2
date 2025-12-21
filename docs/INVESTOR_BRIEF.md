@@ -2,9 +2,10 @@
 
 ## Risk-First Systematic Equities Research & Deployment Platform
 
-*Last Updated: 2025-12-19 | Pre-Seed Stage*
+*Last Updated: 2025-12-21 | Pre-Seed Stage*
 
 **Changelog:**
+- 2025-12-21: **Due diligence corrections**: Replaced "✅ Complete" status markers with "Foundation implemented" and "Defined" per Canon §4.5 (avoid absolute claims). Affected: Technical Foundation and Customer Validation tables.
 - 2025-12-19: **Internal due diligence review corrections**: Changed "Now Testing with Customers" to "Entering Customer Validation Phase" to avoid implying active pilots; added explicit disclaimer to validation milestones clarifying targets are planned/aspirational and no customers/pilots/LOIs currently signed
 - 2025-12-18: Updated regulatory posture, asset coverage
 
@@ -406,14 +407,14 @@ Beachhead (Equities)         Adjacent Segments
 
 We are transparent that this is an early-stage opportunity. The core technical foundation is implemented; we are now focused on customer validation following lean startup principles.
 
-### What We've Completed (Technical Foundation)
+### Technical Foundation (Implemented)
 
 | Phase | Status | Evidence |
 |-------|--------|----------|
-| Core platform | ✅ Complete | Equities execution + simulation functional |
-| Multi-asset architecture | ✅ Complete | 5 asset classes supported |
-| Risk management | ✅ Complete | CVaR optimization, risk guards |
-| Testing infrastructure | ✅ Complete | Extensive automated tests; CI validation reports available |
+| Core platform | Foundation implemented | Equities execution + simulation functional (verify via tests) |
+| Multi-asset architecture | Foundation implemented | 5 asset classes supported (verify via tests) |
+| Risk management | Foundation implemented | CVaR optimization, risk guards (verify via tests) |
+| Testing infrastructure | Foundation implemented | Automated tests; CI validation reports available |
 
 ### What We're Doing Now (Customer Validation)
 
@@ -421,8 +422,8 @@ We are transparent that this is an early-stage opportunity. The core technical f
 |----------|--------|--------|
 | Customer discovery interviews | 🔄 In progress | 20+ (Phase 1) |
 | Pain point validation | 🔄 In progress | Ranked problem list |
-| Pilot program design | ✅ Complete | 3-month structured program |
-| MVP scope definition | ✅ Complete | Equities execution + risk mgmt |
+| Pilot program design | Defined | 3-month structured program |
+| MVP scope definition | Defined | Equities execution + risk mgmt |
 
 ### What's Next (Revenue Validation)
 

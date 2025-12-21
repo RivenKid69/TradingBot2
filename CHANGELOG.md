@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.1.1] - 2025-12-21
+
+### Due Diligence Documentation Corrections
+
+Per Canon (`docs/DOCUMENTATION_CANON_DESIGN.md`) Section 4.2 (avoid certification claims) and Section 4.5 (avoid absolute/unprovable claims):
+
+- **SUBCONTRACTOR_REGISTER.md** (v1.1): Replaced "✓ Signed" and "Executed" DPA claims with "Standard DPA available (verify execution status via contract register)" for Cloudflare, Datadog, Stripe sections. DPA execution depends on customer contract phase; these are vendor-offered terms, not executed contracts.
+
+- **EU_AI_ACT_INTEGRATION_PLAN.md** (v1.6): Replaced specific test counts (372, 236, 318, 81, 189, 1196+) with "Internal tests (verify count via CI)" to avoid outdated claims. Changed "**IMPLEMENTED**" to "Tooling implemented" for Article status table.
+
+- **INVESTOR_BRIEF.md**: Replaced "✅ Complete" status markers with "Foundation implemented" and "Defined" to avoid absolute completion claims.
+
+---
+
 ## [6.1.0] - 2025-12-15
 
 ### Design Doc CCEA Compliance

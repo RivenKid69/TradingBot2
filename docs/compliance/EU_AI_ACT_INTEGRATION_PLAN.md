@@ -1,9 +1,9 @@
 # EU AI Act Integration Plan
 # План интеграции EU AI Act tooling в CustodiaCloud
 
-**Версия документа**: 1.5
+**Версия документа**: 1.6
 **Дата создания**: 2025-12-06
-**Последнее обновление**: 2025-12-10
+**Последнее обновление**: 2025-12-21
 **Reference**: Regulation (EU) 2024/1689 (AI Act)
 **Note**: Regulatory timelines and applicability depend on deployment context; validate with qualified counsel.
 
@@ -13,21 +13,21 @@
 
 | Phase | Status | Completion Date | Internal Test Coverage |
 |-------|--------|-----------------|------------------------|
-| **Phase 1: Foundation & Risk Management** | Tooling implemented | 2025-12-08 | 372 internal unit tests passing (not regulatory certification) |
-| **Phase 2: Technical Documentation & Logging** | Tooling implemented | 2025-12-08 | 236 internal unit tests passing (not regulatory certification) |
-| **Phase 3: QMS & Testing** | Tooling implemented | 2025-12-08 | 318 internal unit tests passing (not regulatory certification) |
-| **Phase 4: Conformity Assessment (templates/tooling)** | Tooling implemented | 2025-12-08 | 81 internal unit tests passing (not regulatory certification) |
+| **Phase 1: Foundation & Risk Management** | Tooling implemented | 2025-12-08 | Internal tests (verify count via CI; not regulatory certification) |
+| **Phase 2: Technical Documentation & Logging** | Tooling implemented | 2025-12-08 | Internal tests (verify count via CI; not regulatory certification) |
+| **Phase 3: QMS & Testing** | Tooling implemented | 2025-12-08 | Internal tests (verify count via CI; not regulatory certification) |
+| **Phase 4: Conformity Assessment (templates/tooling)** | Tooling implemented | 2025-12-08 | Internal tests (verify count via CI; not regulatory certification) |
 | Phase 5: Ongoing monitoring | Planned | - | - |
 
 #### Transparency & documentation modules (deployment-dependent)
 
 | Phase | Status | Completion Date | Tests |
 |-------|--------|-----------------|-------|
-| **GPAI Phase 1: Transparency & Copyright** | Tooling implemented | 2025-12-10 | 189 internal unit tests passing (not regulatory certification) |
-| **GPAI Phase 2: Model Card & Acknowledgment** | Tooling implemented | 2025-12-10 | Internal tests (count TBD) |
+| **GPAI Phase 1: Transparency & Copyright** | Tooling implemented | 2025-12-10 | Internal tests (verify count via CI; not regulatory certification) |
+| **GPAI Phase 2: Model Card & Acknowledgment** | Tooling implemented | 2025-12-10 | Internal tests (verify count via CI) |
 | GPAI Phase 3: Documentation & Monitoring | Planned | - | - |
 
-**Total Internal Test Coverage**: 1196+ internal unit tests passing (internal CI validation only; not regulatory certification or third-party audit)
+**Total Internal Test Coverage**: Internal unit tests passing (verify current count via CI; internal validation only; not regulatory certification or third-party audit)
 
 ### Module Version
 
@@ -62,18 +62,18 @@ CustodiaCloud **не** делает self‑classification (например, “
 
 | Статья | Требование | Текущее состояние проекта | Приоритет |
 |--------|------------|---------------------------|-----------|
-| [Article 9](https://artificialintelligenceact.eu/article/9/) | Risk Management System | **IMPLEMENTED** (services/ai_act/risk_management.py, risk_registry.py) | P0 |
-| [Article 10](https://artificialintelligenceact.eu/article/10/) | Data Governance | **IMPLEMENTED** (services/ai_act/data_governance.py, data_lineage.py) | P0 |
-| [Article 11](https://artificialintelligenceact.eu/article/11/) | Technical Documentation | **IMPLEMENTED** (services/ai_act/technical_documentation.py) | P0 |
-| [Article 12](https://artificialintelligenceact.eu/article/12/) | Record-Keeping (Logging) | **IMPLEMENTED** (services/ai_act/logging_system.py) | P1 |
-| [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | **IMPLEMENTED** (services/ai_act/explainability.py) | P1 |
-| [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | **IMPLEMENTED** (services/ai_act/human_oversight.py) | P0 |
-| [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | **IMPLEMENTED** (services/ai_act/accuracy_metrics.py, robustness_testing.py) | P1 |
-| [Article 17](https://artificialintelligenceact.eu/article/17/) | Quality Management System | **IMPLEMENTED** (services/ai_act/qms.py) | P1 |
-| [Article 43](https://artificialintelligenceact.eu/article/43/) | Conformity Assessment | **IMPLEMENTED** (services/ai_act/conformity_assessment.py) | P2 |
-| [Article 47](https://artificialintelligenceact.eu/article/47/) | EU Declaration of Conformity | **IMPLEMENTED** (conformity_assessment.py) | P2 |
-| [Article 49](https://artificialintelligenceact.eu/article/49/) | EU Database Registration | **IMPLEMENTED** (conformity_assessment.py) | P2 |
-| [Article 72](https://artificialintelligenceact.eu/article/72/) | Post-Market Monitoring | **IMPLEMENTED** (services/ai_act/post_market_monitoring.py) | P1 |
+| [Article 9](https://artificialintelligenceact.eu/article/9/) | Risk Management System | Tooling implemented (services/ai_act/risk_management.py, risk_registry.py) | P0 |
+| [Article 10](https://artificialintelligenceact.eu/article/10/) | Data Governance | Tooling implemented (services/ai_act/data_governance.py, data_lineage.py) | P0 |
+| [Article 11](https://artificialintelligenceact.eu/article/11/) | Technical Documentation | Tooling implemented (services/ai_act/technical_documentation.py) | P0 |
+| [Article 12](https://artificialintelligenceact.eu/article/12/) | Record-Keeping (Logging) | Tooling implemented (services/ai_act/logging_system.py) | P1 |
+| [Article 13](https://artificialintelligenceact.eu/article/13/) | Transparency & Instructions | Tooling implemented (services/ai_act/explainability.py) | P1 |
+| [Article 14](https://artificialintelligenceact.eu/article/14/) | Human Oversight | Tooling implemented (services/ai_act/human_oversight.py) | P0 |
+| [Article 15](https://artificialintelligenceact.eu/article/15/) | Accuracy, Robustness, Cybersecurity | Tooling implemented (services/ai_act/accuracy_metrics.py, robustness_testing.py) | P1 |
+| [Article 17](https://artificialintelligenceact.eu/article/17/) | Quality Management System | Tooling implemented (services/ai_act/qms.py) | P1 |
+| [Article 43](https://artificialintelligenceact.eu/article/43/) | Conformity Assessment | Tooling implemented (services/ai_act/conformity_assessment.py) | P2 |
+| [Article 47](https://artificialintelligenceact.eu/article/47/) | EU Declaration of Conformity | Tooling implemented (conformity_assessment.py) | P2 |
+| [Article 49](https://artificialintelligenceact.eu/article/49/) | EU Database Registration | Tooling implemented (conformity_assessment.py) | P2 |
+| [Article 72](https://artificialintelligenceact.eu/article/72/) | Post-Market Monitoring | Tooling implemented (services/ai_act/post_market_monitoring.py) | P1 |
 
 ---
 
@@ -89,7 +89,7 @@ CustodiaCloud **не** делает self‑classification (например, “
 │ & Risk   │   │ Doc &    │   │ Testing  │   │ Assessment│   │ Monitoring│
 │ COMPLETED │   │ COMPLETED │   │ COMPLETED │   │ COMPLETED │   │ Planned  │
 └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
-  372 tests      236 tests      318 tests      81 tests       TBD
+  (verify CI)    (verify CI)    (verify CI)    (verify CI)    TBD
 ```
 
 ---

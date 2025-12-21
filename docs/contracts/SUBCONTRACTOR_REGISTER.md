@@ -1,8 +1,8 @@
 # DORA Subcontractor Register
 ## ICT Third-Party Service Provider Disclosure
 
-**Version**: 1.0
-**Date**: 2025-01-17
+**Version**: 1.1
+**Date**: 2025-12-21
 **Status**: Active
 **Legal Reference**: DORA Article 30(2)(a), CIR 2024/2956 Template B_99.01
 
@@ -116,7 +116,7 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 **Contractual Provisions (per vendor terms; verify current status):**
 | Requirement | Target | Evidence |
 |-------------|--------|----------|
-| DPA with SCCs | Executed (verify with vendor) | Cloudflare DPA |
+| DPA with SCCs | Standard DPA available (verify execution status via contract register) | Cloudflare DPA |
 | Audit rights | Via SOC2 (vendor-reported) | Cloudflare Trust Hub |
 | EU data processing | Configurable (verify in vendor settings) | Regional services |
 
@@ -163,12 +163,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Data Retention | Configurable (default 15 days logs) |
 | Sensitive Data | Masked/excluded by policy |
 
-**Contractual Provisions:**
+**Contractual Provisions (per vendor terms; verify current status):**
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| DPA with SCCs | ✓ Signed | Datadog DPA |
-| EU data residency | ✓ Enabled | EU site configuration |
-| Audit rights | ✓ Via SOC2 | Datadog Trust Center |
+| DPA with SCCs | Standard DPA available (verify execution status via contract register) | Datadog DPA |
+| EU data residency | Configured (verify in vendor portal) | EU site configuration |
+| Audit rights | Via SOC2 (vendor-reported) | Datadog Trust Center |
 
 **Certifications** *(vendor-reported; verify via vendor trust centers)*:
 - SOC 2 Type II (vendor-reported; verify via [Datadog Trust Center](https://www.datadoghq.com/security/))
@@ -296,12 +296,12 @@ This register documents all subcontractors engaged by the Platform for ICT servi
 | Storage Locations | Stripe-managed (PCI DSS) |
 | Data Retention | Per PCI DSS requirements |
 
-**Contractual Provisions:**
+**Contractual Provisions (per vendor terms; verify current status):**
 | Requirement | Status | Evidence |
 |-------------|--------|----------|
-| DPA | ✓ Signed | Stripe DPA |
-| PCI DSS compliance | ✓ Level 1 | Attestation of Compliance |
-| SCA compliance | ✓ Implemented | Stripe documentation |
+| DPA | Standard DPA available (verify execution status via contract register) | Stripe DPA |
+| PCI DSS compliance | Vendor-reported Level 1 (verify via vendor trust center) | Attestation of Compliance |
+| SCA compliance | Vendor-reported (verify via vendor documentation) | Stripe documentation |
 
 **Certifications** *(vendor-reported; verify via vendor trust centers)*:
 - PCI DSS Level 1 (vendor-reported; verify via [Stripe Compliance](https://stripe.com/docs/security/stripe))
@@ -364,6 +364,7 @@ Clients will be notified of subcontractor changes per contractual terms:
 
 | Date | Change | Description |
 |------|--------|-------------|
+| 2025-12-21 | Due diligence corrections | Replaced "Signed/Executed" DPA claims with "Standard DPA available (verify execution status)" per Canon §4.2 (avoid unprovable claims). Affected: Cloudflare, Datadog, Stripe sections. |
 | 2025-01-17 | Initial | Register created |
 
 ---
