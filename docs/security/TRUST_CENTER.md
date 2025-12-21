@@ -1,8 +1,8 @@
 # Security Trust Center
 ## Pre-Contractual Security Overview
 
-**Version**: 1.4
-**Date**: 2025-12-19
+**Version**: 1.7
+**Date**: 2025-12-21
 **Status**: Public
 **Legal Reference**: DORA Article 28(7)
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -155,14 +155,16 @@ This document provides pre-contractual security information designed to support 
 
 ## 5. Access Control
 
-### 5.1 Authentication
+### 5.1 Authentication (Design Configuration)
 
-| Mechanism | Requirement | Enforcement |
-|-----------|-------------|-------------|
-| Multi-Factor Authentication | All users | Required |
-| Password Policy | Min 12 chars, complexity | Enforced |
-| Session Management | 8h timeout, secure cookies | Automatic |
-| API Authentication | OAuth 2.0 / API Keys | Required |
+> **Note**: This table describes the **planned authentication configuration**. Implementation is pending platform deployment. "Required/Enforced" describes design intent, not current operational state.
+
+| Mechanism | Requirement | Enforcement (Design) |
+|-----------|-------------|----------------------|
+| Multi-Factor Authentication | All users | Required (planned) |
+| Password Policy | Min 12 chars, complexity | Enforced (planned) |
+| Session Management | 8h timeout, secure cookies | Automatic (planned) |
+| API Authentication | OAuth 2.0 / API Keys | Required (planned) |
 
 ### 5.2 Authorization
 
@@ -207,10 +209,12 @@ This document provides pre-contractual security information designed to support 
 **Control Artifact**: `docs/runbooks/` (documented procedures pending validation)
 **Status**: Controlled - limitations honestly disclosed per Documentation Canon
 
-### 6.2 Backup Strategy
+### 6.2 Backup Strategy (Design Configuration)
 
-| Data Type | Frequency | Retention | Location |
-|-----------|-----------|-----------|----------|
+> **Note**: This table describes the **planned backup configuration**. Infrastructure is not yet deployed. Actual backup schedules and retention will be validated upon deployment and included in executed service agreements.
+
+| Data Type | Frequency (Design Target) | Retention (Design Target) | Location (Planned) |
+|-----------|---------------------------|---------------------------|---------------------|
 | Database | Continuous (streaming) | 30 days | eu-central-1 |
 | Database Snapshots | Daily | 30 days | eu-central-1 |
 | Application State | Every 15 min | 7 days | eu-central-1 |
@@ -258,11 +262,13 @@ This document provides pre-contractual security information designed to support 
 | Data Incident | Data integrity/confidentiality | Data corruption, exposure |
 | Performance | SLA breach | Degraded response times |
 
-### 7.3 Incident Reporting
+### 7.3 Incident Reporting (Contract Terms, Not Current Capability)
 
-For DORA-regulated clients:
-- Initial notification: Within 30 minutes (critical)
-- Detailed report: Within 24 hours
+> **Note**: The response times below describe **contractual terms** that will be offered in service agreements once operational capacity is validated. As stated in Section 7.1, current operational capacity is business hours only with 1 FTE. Actual response time commitments require 4+ FTE hiring, 24/7 monitoring deployment, and operational validation.
+
+For DORA-regulated clients (contractual terms, capacity-dependent):
+- Initial notification: Within 30 minutes (critical) — requires 24/7 on-call capability
+- Detailed report: Within 24 hours — requires incident response team
 - Root cause analysis: Within 5 business days
 - Final report: Upon closure
 
@@ -397,6 +403,7 @@ For contracted clients:
 | 1.4 | 2025-12-19 | **Due diligence audit - operational capability claims**: Further strengthened disclaimers per Canon. "Design target: 99.9%" → "Aspirational target: 99.9% (unvalidated design goal; pending infrastructure)"; RTO/RPO → "Aspirational, Unvalidated"; Response times → "pending 4+ FTE hiring and operational validation"; Infrastructure → "planned (deployment pending)"; All columns now explicitly state "(unvalidated target)" or "(pending X)". |
 | 1.5 | 2025-12-19 | **Regulatory/Legal claim correction**: Changed "per DORA Article 28(7) requirements" → "designed to support DORA Article 28(7) requirements" with note that compliance depends on contractual arrangements and requires legal validation. |
 | 1.6 | 2025-12-19 | **Due diligence audit - toxic claims elimination**: Per Canon strict compliance: (1) Removed RTO/RPO table with specific values (replaced with current state + roadmap); (2) Removed "15-minute response" and all specific response times (replaced with current capacity disclosure); (3) Removed "99.9% availability" target (replaced with design goal statement); (4) Changed "Certifications" → "Security Program" to avoid implying existing certs; (5) Changed "Planned 2026/2027" → "Budget-dependent; earliest 2026/2027 if funded" for all audit/cert roadmap items; (6) Removed "[24/7 phone number]" placeholder (replaced with business hours disclosure). |
+| 1.7 | 2025-12-21 | **Due diligence audit - remaining claims**: (1) Backup Strategy table → "Design Configuration" with disclaimer; (2) Incident Reporting response times → "Contract Terms, Not Current Capability" with explicit capacity note; (3) Authentication table → "Design Configuration" with "planned" suffix. |
 
 **Review Frequency**: Quarterly
 **Owner**: Security Team

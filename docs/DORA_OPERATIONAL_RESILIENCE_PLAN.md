@@ -4988,23 +4988,25 @@ test_migration:
 - [ ] Quarterly DR tests passing
 - [ ] SOC 2 readiness milestone achieved (report/attestation if available)
 
-### Phase Summary Timeline
+### Phase Summary Timeline (Illustrative, Budget-Dependent)
+
+> **Disclaimer**: This timeline is **illustrative only**. All phases and dates are subject to funding, resource allocation, and gate criteria completion. Quarters shown are planning placeholders, not commitments.
 
 ```
-Phase 1 (Q1 2025): Contractual foundation
+Phase 1 (~Q1 2025, if funded): Contractual foundation
 ├── Contract templates ready
 ├── Standard tier only
 └── Insurance in place
 
-Phase 2 (Q2-Q3 2025): Operational maturity
-├── Professional tier available
-├── SOC 2 program in progress
+Phase 2 (~Q2-Q3 2025, dependent on Phase 1 + funding): Operational maturity
+├── Professional tier available (gate criteria must pass)
+├── SOC 2 program in progress (if auditor engaged)
 └── Trust center operational
 
-Phase 3 (Q4 2025+): Enterprise scale
-├── Enterprise tier available
+Phase 3 (~Q4 2025+, dependent on Phase 2 + funding): Enterprise scale
+├── Enterprise tier available (gate criteria must pass)
 ├── SOC 2 Type II report available (if achieved)
-└── Multi-region operational
+└── Multi-region operational (if deployed)
 ```
 
 ---

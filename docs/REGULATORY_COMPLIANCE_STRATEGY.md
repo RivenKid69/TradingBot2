@@ -1099,31 +1099,33 @@ We provide a comprehensive DPA to all clients covering:
 | **Confidentiality** | ✅ Yes | Client strategy protection |
 | **Privacy** | ⚠️ Optional | GDPR covers this |
 
-### 8.3 Implementation Timeline
+### 8.3 Implementation Timeline (Illustrative, Budget-Dependent)
+
+> **Disclaimer**: This timeline is **illustrative only**. All phases, dates, and budgets are subject to funding, auditor availability, and resource allocation. No SOC 2 audit has been initiated, scheduled, or contracted.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SOC 2 IMPLEMENTATION TIMELINE                │
+│         SOC 2 IMPLEMENTATION TIMELINE (ILLUSTRATIVE)            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  Q1 2025          Q2 2025          Q3 2025          Q4 2025     │
+│  ~Q1 2025         ~Q2 2025         ~Q3 2025         ~Q4 2025    │
 │  ────────         ────────         ────────         ────────     │
 │  Gap              Remediation      Type I           Type II      │
 │  Assessment       & Controls       Audit            Observation  │
-│                   Implementation                    Period       │
+│  (if funded)      Implementation   (if contracted)  Period       │
 │                                                                  │
-│  Q1 2026                                                         │
+│  ~Q1 2026                                                        │
 │  ────────                                                        │
 │  Type II                                                         │
 │  Report                                                          │
-│  Issued                                                          │
+│  (if funded)                                                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 8.4 Phase 1: Gap Assessment (Q1 2025)
+### 8.4 Phase 1: Gap Assessment (Illustrative: ~Q1 2025, budget-dependent)
 
-**Duration**: 6-8 weeks
-**Budget**: €15,000-25,000
+**Duration**: 6-8 weeks (estimated)
+**Budget**: €15,000-25,000 (estimated, subject to vendor quotes)
 **Deliverable**: Gap assessment report with remediation roadmap
 
 **Activities**:
@@ -1144,10 +1146,10 @@ We provide a comprehensive DPA to all clients covering:
 - Logging and monitoring
 - Employee security training
 
-### 8.5 Phase 2: Remediation & Control Implementation (Q2 2025)
+### 8.5 Phase 2: Remediation & Control Implementation (Illustrative: ~Q2 2025, budget-dependent)
 
-**Duration**: 8-12 weeks
-**Budget**: €20,000-40,000 (tools, processes, consultant time)
+**Duration**: 8-12 weeks (estimated)
+**Budget**: €20,000-40,000 (estimated, subject to scope)
 
 **Security Controls**:
 | Control | Current State | Target State |
@@ -1184,10 +1186,10 @@ We provide a comprehensive DPA to all clients covering:
 | Data classification | Informal | Formal policy |
 | DLP | None | Basic controls |
 
-### 8.6 Phase 3: Type I Audit (Q3 2025)
+### 8.6 Phase 3: Type I Audit (Illustrative: ~Q3 2025, auditor-dependent)
 
-**Duration**: 4-6 weeks
-**Budget**: €25,000-40,000 (auditor fees)
+**Duration**: 4-6 weeks (estimated)
+**Budget**: €25,000-40,000 (estimated, subject to auditor quotes)
 **Deliverable**: SOC 2 Type I Report
 
 **Scope**: Point-in-time assessment of control design
@@ -1203,7 +1205,7 @@ We provide a comprehensive DPA to all clients covering:
 - BDO, Grant Thornton, RSM (Mid-tier)
 - Coalfire, A-LIGN (Specialized)
 
-### 8.7 Phase 4: Type II Observation Period (Q4 2025)
+### 8.7 Phase 4: Type II Observation Period (Illustrative: ~Q4 2025, dependent on Phase 3)
 
 **Duration**: Minimum 6 months (typically 6-12 months)
 **Budget**: Included in Phase 5
@@ -1248,14 +1250,16 @@ We provide a comprehensive DPA to all clients covering:
 
 **Estimated Annual Cost**: €40,000-60,000
 
-### 8.10 SOC 2 Budget Summary
+### 8.10 SOC 2 Budget Summary (Illustrative Estimates)
 
-| Phase | Timeline | Budget (€) |
-|-------|----------|------------|
-| Gap Assessment | Q1 2025 | 15,000-25,000 |
-| Remediation | Q2 2025 | 20,000-40,000 |
-| Type I Audit | Q3 2025 | 25,000-40,000 |
-| Type II Audit | Q1 2026 | 30,000-50,000 |
+> **Note**: All figures below are planning estimates, not commitments. Actual costs depend on vendor selection, scope, and auditor quotes.
+
+| Phase | Timeline (Illustrative) | Budget (€, estimated) |
+|-------|-------------------------|------------------------|
+| Gap Assessment | ~Q1 2025 | 15,000-25,000 |
+| Remediation | ~Q2 2025 | 20,000-40,000 |
+| Type I Audit | ~Q3 2025 | 25,000-40,000 |
+| Type II Audit | ~Q1 2026 | 30,000-50,000 |
 | **Total Initial** | | **90,000-155,000** |
 | Annual Ongoing | Yearly | 40,000-60,000 |
 
@@ -1311,7 +1315,7 @@ We provide a comprehensive DPA to all clients covering:
 | Password policy | Min 12 chars, complexity, 90-day rotation | Designed |
 | Session management | 8-hour timeout, concurrent session limits | Designed |
 | Privileged access management | Separate admin accounts, just-in-time access | In progress |
-| Access reviews | Quarterly automated reviews | Planned Q2 2025 |
+| Access reviews | Quarterly automated reviews | Planned (budget-dependent) |
 
 #### 9.3.2 Data Protection
 
@@ -1344,7 +1348,7 @@ We provide a comprehensive DPA to all clients covering:
 | Static analysis | SonarQube, Bandit | Designed |
 | Dependency scanning | Dependabot, Snyk | Designed |
 | DAST | OWASP ZAP in CI/CD | In progress |
-| Penetration testing | Annual external testing | Planned Q3 2025 |
+| Penetration testing | Annual external testing | Planned (budget-dependent; no vendor contract) |
 
 #### 9.3.5 Monitoring & Logging
 
@@ -1851,43 +1855,45 @@ To maintain clear regulatory boundaries:
 
 ---
 
-## 14. Implementation Timeline
+## 14. Implementation Timeline (Illustrative, Budget-Dependent)
 
-### 14.1 Phase 1: Foundation (Q1 2025)
+> **Disclaimer**: All timelines below are **illustrative planning targets**, not commitments. Actual execution depends on funding, resource allocation, and vendor/auditor availability. No audits have been initiated or contracted.
 
-| Task | Timeline | Status |
-|------|----------|--------|
-| Engage EU legal counsel | Jan 2025 | 📋 Planned |
-| Complete GDPR documentation | Jan 2025 | 🔄 In Progress |
-| Finalize DPA template | Jan 2025 | 🔄 In Progress |
-| SOC 2 gap assessment | Feb 2025 | 📋 Planned |
-| Security control remediation plan | Feb 2025 | 📋 Planned |
-| Incident response testing | Mar 2025 | 📋 Planned |
+### 14.1 Phase 1: Foundation (Illustrative: ~Q1 2025)
 
-### 14.2 Phase 2: Audit Readiness Preparation (timeline TBD)
+| Task | Timeline (Illustrative) | Status |
+|------|-------------------------|--------|
+| Engage EU legal counsel | ~Q1 2025 | 📋 Planned |
+| Complete GDPR documentation | ~Q1 2025 | 🔄 In Progress |
+| Finalize DPA template | ~Q1 2025 | 🔄 In Progress |
+| SOC 2 gap assessment | ~Q1 2025 | 📋 Planned (budget-dependent) |
+| Security control remediation plan | ~Q1 2025 | 📋 Planned |
+| Incident response testing | ~Q1 2025 | 📋 Planned |
 
-| Task | Timeline | Status |
-|------|----------|--------|
-| SOC 2 control implementation | Apr-May 2025 | 📋 Planned |
-| Penetration testing | May 2025 | 📋 Planned |
-| Staff security training | Apr 2025 | 📋 Planned |
-| Privacy notice deployment | Apr 2025 | 📋 Planned |
-| DPO appointment (formal) | Apr 2025 | 📋 Planned |
+### 14.2 Phase 2: Audit Readiness Preparation (Illustrative: ~Q2 2025, budget-dependent)
 
-### 14.3 Phase 3: Initial Audit (Type I) (timeline TBD)
+| Task | Timeline (Illustrative) | Status |
+|------|-------------------------|--------|
+| SOC 2 control implementation | ~Q2 2025 | 📋 Planned (budget-dependent) |
+| Penetration testing | ~Q2 2025 | 📋 Planned (no vendor contract) |
+| Staff security training | ~Q2 2025 | 📋 Planned |
+| Privacy notice deployment | ~Q2 2025 | 📋 Planned |
+| DPO appointment (formal) | ~Q2 2025 | 📋 Planned |
 
-| Task | Timeline | Status |
-|------|----------|--------|
-| SOC 2 Type I audit | Jul-Aug 2025 | 📋 Planned |
-| Client compliance documentation | Jul 2025 | 📋 Planned |
-| Regulatory opinion letter | Aug 2025 | 📋 Planned |
+### 14.3 Phase 3: Initial Audit (Type I) (Illustrative: ~Q3 2025, auditor-dependent)
 
-### 14.4 Phase 4: Ongoing Readiness (Type II) (timeline TBD)
+| Task | Timeline (Illustrative) | Status |
+|------|-------------------------|--------|
+| SOC 2 Type I audit | ~Q3 2025 | 📋 Planned (no auditor engagement) |
+| Client compliance documentation | ~Q3 2025 | 📋 Planned |
+| Regulatory opinion letter | ~Q3 2025 | 📋 Planned |
 
-| Task | Timeline | Status |
-|------|----------|--------|
-| SOC 2 Type II observation period | Sep 2025 - Feb 2026 | 📋 Planned |
-| SOC 2 Type II report | Mar 2026 | 📋 Planned |
+### 14.4 Phase 4: Ongoing Readiness (Type II) (Illustrative: ~Q4 2025+, dependent on Phase 3)
+
+| Task | Timeline (Illustrative) | Status |
+|------|-------------------------|--------|
+| SOC 2 Type II observation period | ~Q4 2025 - Q1 2026 | 📋 Planned (dependent on Phase 3) |
+| SOC 2 Type II report | ~Q1-Q2 2026 | 📋 Planned (dependent on observation) |
 | Annual compliance program | Ongoing | 📋 Planned |
 
 ---

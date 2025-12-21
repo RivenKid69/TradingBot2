@@ -50,7 +50,7 @@
 
 ### 1.1 Distributional PPO with Conditional Value-at-Risk (CVaR) Learning
 
-**Innovation**: Production-oriented implementation of risk-constrained reinforcement learning patterns for systematic trading research and deployment.
+**Innovation**: Implementation of risk-constrained reinforcement learning patterns designed for systematic trading research and deployment.
 
 **Academic Foundation**:
 - Dabney et al. (2018), "Distributional Reinforcement Learning with Quantile Regression", AAAI
@@ -385,7 +385,7 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 ---
 
-### 3.2 Production-Oriented Risk Management
+### 3.2 Risk Management Features (Designed for Production Deployment)
 
 **Innovations**:
 
@@ -410,15 +410,17 @@ P(fill in T) = 1 - exp(-λ·T / position_in_queue)
 
 ### 4.1 Novel Algorithms (Proprietary)
 
+> **Note**: "Implemented" status means the algorithm is coded, tested, and integrated into the codebase. It does not imply customer-deployed production usage (CustodiaCloud is pre-revenue with no active customer deployments as of this document's date).
+
 | Innovation | Category | Status | Defensibility |
 |------------|----------|--------|---------------|
-| **CCEA Architecture** | System Design | Production | High (architectural) |
-| Twin Critics + Distributional + CVaR | ML Architecture | Production | High (novel combination) |
-| AdaptiveUPGD with VGS coupling | Optimizer | Production | High (first for finance) |
-| VGS v3.2 with anti-blocking | Gradient scaling | Production | Medium (engineering) |
-| 9-factor Equity TCA | Execution | Production | Medium (model parameters) |
-| Queue-reactive fill probability | Microstructure | Production | Medium (implementation) |
-| Conformal prediction integration | Risk management | Production | High (novel application) |
+| **CCEA Architecture** | System Design | Implemented (no customer deployments) | High (architectural) |
+| Twin Critics + Distributional + CVaR | ML Architecture | Implemented (CI-tested) | High (novel combination) |
+| AdaptiveUPGD with VGS coupling | Optimizer | Implemented (CI-tested) | High (first for finance) |
+| VGS v3.2 with anti-blocking | Gradient scaling | Implemented (CI-tested) | Medium (engineering) |
+| 9-factor Equity TCA | Execution | Implemented (CI-tested) | Medium (model parameters) |
+| Queue-reactive fill probability | Microstructure | Implemented (CI-tested) | Medium (implementation) |
+| Conformal prediction integration | Risk management | Implemented (CI-tested) | High (novel application) |
 
 ### 4.2 CCEA Innovation Details
 
@@ -495,10 +497,12 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 
 ### 6.1 Detailed Competitor Analysis
 
+> **Disclaimer**: Competitor feature comparisons are based on publicly available information as of December 2024. This analysis may be incomplete or outdated. Verify current competitor capabilities via their official documentation before relying on this comparison.
+
 | Feature | Our Platform | QuantConnect | Alpaca | SB3 | Zipline |
 |---------|--------------|--------------|--------|-----|---------|
 | **ML Type** | Distributional RL + CVaR | Supervised/Rules | None | Generic RL | Rules |
-| **Twin Critics** | ✓ Production | ✗ | ✗ | ✗ | ✗ |
+| **Twin Critics** | ✓ Implemented | ✗ | ✗ | ✗ | ✗ |
 | **Continual Learning** | ✓ UPGD | ✗ | ✗ | ✗ | ✗ |
 | **TCA Factors** | 6-9 dynamic | 0-1 fixed | N/A | N/A | 0-1 |
 | **L3 LOB** | ✓ Full | ✗ | ✗ | ✗ | ✗ |
@@ -506,7 +510,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 | **Conformal Prediction** | ✓ | ✗ | ✗ | ✗ | ✗ |
 | **Asset Classes** | 5 unified | 2-3 separate | 1 | N/A | 1 |
 | **Test Coverage** | Extensive (CI-verified) | Varies | N/A | Varies | Varies |
-| **Live Trading** | ✓ | ✓ | ✓ (broker) | ✗ | ✗ |
+| **Live Trading** | ✓ (design) | ✓ | ✓ (broker) | ✗ | ✗ |
 
 ### 6.2 Why We Are Not a Clone
 
@@ -548,7 +552,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 ### Tier 3: Engineering Excellence
 
 7. **Unified Multi-Asset Architecture**: foundation multi-asset architecture (equities-first MVP), single codebase
-8. **Production-Oriented Risk Management**: Atomic kill switch (in Agent), session routing
+8. **Risk Management Features**: Atomic kill switch (in Agent), session routing (designed for production deployment)
 9. **Comprehensive Testing**: Extensive automated test coverage on core ML components, CI validation (coverage reports available under NDA)
 
 ---

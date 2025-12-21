@@ -145,20 +145,22 @@ We have implemented the core technical foundation. Our focus now is entering the
 
 ### Market Opportunity
 
-The global algorithmic trading market is projected to reach **$31.49 billion by 2028** (CAGR 12.2%, Allied Market Research).
+> **Note**: Market sizing figures are from third-party research and should be independently verified. These figures are illustrative context, not the basis of investment claims.
+
+The global algorithmic trading market is projected to reach **$31.49 billion by 2028** (CAGR 12.2%, per Allied Market Research report; verify current figures at source).
 
 **Our focus: Systematic Equities Teams (EU)**
 
-Per FIA/SIFMA data, there are 500+ active prop trading firms in the US alone, with similar density in EU (London, Amsterdam) and Asia (Singapore, Hong Kong). Key drivers:
+Per FIA/SIFMA data (verify at source), there are 500+ active prop trading firms in the US alone, with similar density in EU (London, Amsterdam) and Asia (Singapore, Hong Kong). Key drivers:
 
-- Institutional adoption of ML-based strategies (Greenwich Associates: 60% of buy-side firms now use systematic strategies)
+- Institutional adoption of ML-based strategies (per Greenwich Associates research; verify current figures at source)
 - Regulatory push for systematic risk management (MiFID II best execution, SEC 15c3-5 market access rule)
 - Demand for systematic equities infrastructure with auditability (MiFID II best execution, governance, and monitoring expectations)
 - Execution automation and risk controls becoming mandatory as teams scale
 
 ### Our Position
 
-We've built a **technically mature platform** that solves infrastructure fragmentation:
+We've built a **technically developed platform** designed to solve infrastructure fragmentation:
 
 | Challenge | Traditional Approach | Our Solution |
 |-----------|---------------------|--------------|
@@ -214,7 +216,7 @@ This means strategies explicitly avoid catastrophic tail losses, not just maximi
 
 **Academic Research Integration**
 
-Our execution models implement 7+ peer-reviewed papers:
+Our execution models are informed by 7+ peer-reviewed papers (implementation fidelity varies; see code for details):
 
 | Model | Publication | Application |
 |-------|-------------|-------------|

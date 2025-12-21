@@ -2,15 +2,19 @@
 
 ## CustodiaCloud
 
-**Version**: 1.0
+**Version**: 1.1
 **Last Updated**: December 2024
-**Target**: [TBD] (illustrative; subject to resources and audit timelines)
+**Status**: Illustrative roadmap (not yet funded or scheduled)
+
+---
+
+> **Important Disclaimer**: This document is an **illustrative planning roadmap**, not a commitment or timeline. All phases, dates, and budgets are subject to funding, auditor availability, and resource allocation. No SOC 2 audit has been initiated, scheduled, or contracted. Timelines shown (e.g., "Q1 2025") are planning placeholders and should not be interpreted as commitments.
 
 ---
 
 ## Executive Summary
 
-This document outlines our roadmap to achieve SOC 2 Type II certification, demonstrating our commitment to security, availability, processing integrity, and confidentiality for our B2B SaaS platform serving regulated trading firms.
+This document outlines an **illustrative roadmap** toward SOC 2 Type II readiness, demonstrating our design intent for security, availability, processing integrity, and confidentiality controls for our B2B SaaS platform. Actual certification requires funding, auditor engagement, and successful completion of all phases.
 
 **Why SOC 2?**
 - Industry standard for B2B SaaS trust
@@ -50,10 +54,10 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 
 ---
 
-## Phase 1: Gap Assessment (Q1 2025)
+## Phase 1: Gap Assessment (Illustrative: ~Q1 2025, budget-dependent)
 
-**Duration**: 6-8 weeks
-**Budget**: €15,000-25,000
+**Duration**: 6-8 weeks (estimated)
+**Budget**: €15,000-25,000 (estimated, subject to vendor quotes)
 
 ### Objectives
 1. Identify current control environment
@@ -112,10 +116,10 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 
 ---
 
-## Phase 2: Control Implementation (Q2 2025)
+## Phase 2: Control Implementation (Illustrative: ~Q2 2025, budget-dependent)
 
-**Duration**: 8-12 weeks
-**Budget**: €20,000-40,000
+**Duration**: 8-12 weeks (estimated)
+**Budget**: €20,000-40,000 (estimated, subject to scope)
 
 ### Control Implementation Matrix
 
@@ -181,10 +185,10 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 
 ---
 
-## Phase 3: Type I Audit (Q3 2025)
+## Phase 3: Type I Audit (Illustrative: ~Q3 2025, auditor-dependent)
 
-**Duration**: 4-6 weeks
-**Budget**: €25,000-40,000
+**Duration**: 4-6 weeks (estimated)
+**Budget**: €25,000-40,000 (estimated, subject to auditor quotes)
 
 ### Objectives
 1. Verify control design adequacy
@@ -234,9 +238,9 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 
 ---
 
-## Phase 4: Type II Observation Period (Q4 2025)
+## Phase 4: Type II Observation Period (Illustrative: ~Q4 2025, dependent on Phase 3)
 
-**Duration**: Minimum 6 months (October 2025 - March 2026)
+**Duration**: Minimum 6 months (illustrative: October 2025 - March 2026, subject to Phase 3 completion)
 
 ### Objectives
 1. Demonstrate control operating effectiveness
@@ -284,10 +288,10 @@ This document outlines our roadmap to achieve SOC 2 Type II certification, demon
 
 ---
 
-## Phase 5: Type II Audit (Q1 2026)
+## Phase 5: Type II Audit (Illustrative: ~Q1 2026, dependent on observation period)
 
-**Duration**: 4-6 weeks
-**Budget**: €30,000-50,000
+**Duration**: 4-6 weeks (estimated)
+**Budget**: €30,000-50,000 (estimated, subject to auditor quotes)
 
 ### Audit Timeline
 
@@ -349,15 +353,17 @@ Between annual audits, provide bridge letters to clients confirming:
 
 ---
 
-## Budget Summary
+## Budget Summary (Illustrative Estimates)
 
-| Phase | Timeline | Budget (€) |
-|-------|----------|------------|
-| Gap Assessment | Q1 2025 | 15,000-25,000 |
-| Control Implementation | Q2 2025 | 20,000-40,000 |
-| Type I Audit | Q3 2025 | 25,000-40,000 |
-| Type II Audit | Q1 2026 | 30,000-50,000 |
-| **Total Initial** | 15 months | **90,000-155,000** |
+> **Note**: All figures below are planning estimates, not commitments. Actual costs depend on vendor selection, scope, and auditor quotes.
+
+| Phase | Timeline (Illustrative) | Budget (€, estimated) |
+|-------|-------------------------|------------------------|
+| Gap Assessment | ~Q1 2025 | 15,000-25,000 |
+| Control Implementation | ~Q2 2025 | 20,000-40,000 |
+| Type I Audit | ~Q3 2025 | 25,000-40,000 |
+| Type II Audit | ~Q1 2026 | 30,000-50,000 |
+| **Total Initial** | ~15 months | **90,000-155,000** |
 | **Annual Ongoing** | Yearly | **55,000-80,000** |
 
 ---
