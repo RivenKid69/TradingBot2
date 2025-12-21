@@ -42,7 +42,7 @@
 | **Learning Stability** | Prone to catastrophic forgetting | Utility-weighted continual learning (UPGD) |
 | **Uncertainty** | Assumed known | Distribution-free conformal prediction bounds |
 
-**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + extensive automated test coverage on core ML components (CI-verified; coverage reports available under NDA).
+**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + extensive automated test coverage on core ML components (CI-verified; test output available on request).
 
 ---
 
@@ -483,7 +483,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 
 ### 5.3 Defensible Moats
 
-1. **Technical depth**: sustained engineering effort with extensive automated tests — core ML module (`distributional_ppo.py`) has CI-verified test coverage (reports available under NDA)
+1. **Technical depth**: sustained engineering effort with extensive automated tests — core ML module (`distributional_ppo.py`) has CI-verified test coverage (CI test output available on request)
 2. **Research integration**: peer-reviewed references translated into implementation patterns (without performance promises)
 3. **Multi-asset foundation**: single codebase complexity barrier (equities-first MVP)
 4. **Network effects**: Client strategy templates create ecosystem

@@ -89,13 +89,15 @@ Any data transfer outside the EU/EEA SHALL be subject to:
 
 ### 3. DATA SECURITY PROVISIONS — Article 30(2)(c)
 
-**3.1 Availability Commitments** *(illustrative targets; actual SLA per executed agreement)*
+**3.1 Availability Commitments** *(template placeholder values; subject to negotiation)*
 
 | Service | Target Availability | Measurement Period | Exclusions |
 |---------|-------------------|-------------------|------------|
-| Trading Platform | 99.9% | Monthly | Scheduled maintenance |
-| API Services | 99.9% | Monthly | Force majeure |
-| Data Services | 99.5% | Monthly | Third-party outages |
+| Trading Platform | [PLACEHOLDER] | Monthly | Scheduled maintenance |
+| API Services | [PLACEHOLDER] | Monthly | Force majeure |
+| Data Services | [PLACEHOLDER] | Monthly | Third-party outages |
+
+> **IMPORTANT**: Values above are template placeholders. Actual availability targets will be defined in executed service agreements based on operational validation and infrastructure deployment. CustodiaCloud is a pre-revenue company without production uptime history; SLA commitments require operational track record.
 
 **3.2 Authenticity Measures**
 

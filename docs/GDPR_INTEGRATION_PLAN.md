@@ -15925,7 +15925,7 @@ Class CEF2025ComplianceManager:
 | **TOTAL** | **99** | **93** | **94% (UPDATED v2.2)** |
 
 > **Note**: Only Articles 1-2 (definitions), 55 (general competence - implicit in territorial scope) remain uncovered.
-> Effective implementable coverage: **~98%** (internal estimate based on article→implementation mapping; coverage methodology documented in compliance/technical_documentation/; actual compliance requires independent review)
+> **Design coverage estimate**: internal article→implementation mapping (methodology documented in compliance/technical_documentation/). **This is NOT a compliance certification.** Actual GDPR compliance requires independent legal review and is the responsibility of the data controller. Coverage percentages are internal development metrics, not audit results.
 >
 > **v2.2 Additions:**
 > - Chapter 6: Articles 51-54, 57-59 (SA structure and powers)

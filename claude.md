@@ -7860,19 +7860,19 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
 
 ### Изменения в 11.14:
 - **Customer Evidence Documentation** -- Документация для закрытия gap в социальном доказательстве
-  - [PROJECTED_CASE_STUDIES.md](docs/business/PROJECTED_CASE_STUDIES.md) -- 4 research-backed проектируемых кейса
-    - Small Crypto Prop (€5M AUM): 85-90% time savings, 6x faster deployment
-    - Mid-Size Systematic Fund (€75M): 90% timeline reduction, €2.3M 5-year savings
-    - Bank Trading Desk (€2B): €10.3M 5-year savings, 62% cost reduction
-    - Independent Quant Researcher: 6-month acceleration to fundraising
-  - [CUSTOMER_VALUE_FRAMEWORK.md](docs/business/CUSTOMER_VALUE_FRAMEWORK.md) -- ROI/TCO калькуляторы
+  - [PROJECTED_CASE_STUDIES.md](docs/business/PROJECTED_CASE_STUDIES.md) -- 4 **hypothetical templates** (not confirmed customer results)
+    - Small Crypto Prop (€5M AUM): illustrative projections
+    - Mid-Size Systematic Fund (€75M): illustrative projections
+    - Bank Trading Desk (€2B): illustrative projections
+    - Independent Quant Researcher: illustrative projections
+  - [CUSTOMER_VALUE_FRAMEWORK.md](docs/business/CUSTOMER_VALUE_FRAMEWORK.md) -- ROI/TCO калькуляторы (illustrative models, not guarantees)
     - 4 value pillars: Time, Cost, Performance, Risk
-    - TCO comparison: Build €1.67M vs Buy €120K (5-year)
-    - Segment-specific ROI templates (25x-88x typical ROI)
-  - [BUILD_VS_BUY_ANALYSIS.md](docs/business/BUILD_VS_BUY_ANALYSIS.md) -- Build vs Buy с COCOMO II
-    - Full cost breakdown: €2.2M build vs €305K buy (90% savings)
-    - Timeline comparison: 26 months vs 4 weeks (26x faster)
-    - Risk-adjusted TCO, opportunity cost analysis
+    - TCO comparison: illustrative Build vs Buy analysis
+    - Segment-specific ROI templates (illustrative ranges)
+  - [BUILD_VS_BUY_ANALYSIS.md](docs/business/BUILD_VS_BUY_ANALYSIS.md) -- Build vs Buy с COCOMO II (illustrative model)
+    - Full cost breakdown: illustrative COCOMO II estimates
+    - Timeline comparison: illustrative estimates
+    - Risk-adjusted TCO, opportunity cost analysis (illustrative)
   - [TESTIMONIAL_ACQUISITION_STRATEGY.md](docs/business/TESTIMONIAL_ACQUISITION_STRATEGY.md) -- Playbook для testimonials
     - Pilot-to-testimonial pipeline
     - 5-tier evidence program (quotes → case studies → references)
@@ -7892,7 +7892,7 @@ BINANCE_PUBLIC_FEES_DISABLE_AUTO=1      # Отключить автообнов�
     - Phased evolution: Y0 (100% founder) → Y1 (70/30) → Y2 (50/30/20)
     - PLG funnel: 10K downloads → 200 free users → 60 paid customers
     - Partnership pyramid: Affiliates (10%) → Referrals (15%) → Resellers (20%)
-    - Prime broker strategy: BNP, Goldman Sachs, Morgan Stanley partnerships
+    - Prime broker strategy: aspirational targets (BNP, Goldman Sachs, Morgan Stanley); no partnerships signed
     - Hiring sequence: Head of Sales → AE → SDR → CSM
 - **Research-backed:** 24+ industry references (McKinsey, Bessemer, Simon-Kucher, SBI Growth)
 - Added docs/business/ entries for new strategy documents
