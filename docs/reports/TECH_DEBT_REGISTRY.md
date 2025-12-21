@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 1.9
+**Version**: 2.1
 **Date**: 2025-12-21
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -517,6 +517,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | L3 LOB simulation implemented for futures/CME/crypto via execution_providers_l3.py, execution_providers_futures_l3.py, execution_providers_cme_l3.py. Docs now accurate. |
 
+### docs-gdpr-coverage-targets {#docs-gdpr-coverage-targets}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/GDPR_INTEGRATION_PLAN.md:486,1790,2749,etc.` (10 instances) |
+| **Severity** | Low |
+| **Description** | "Test Coverage Target: 100%" labels are aspirational goals, not CI-enforced gates |
+| **Status** | Closed |
+| **Control Artifact** | Document header disclaimer added (lines 12-13) clarifying targets are design goals, not current state |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Per Documentation Canon Section 4.5: targets now explicitly labeled as aspirational. Actual coverage tracked in CI artifacts. |
+
 ---
 
 ## Process/Governance
@@ -585,6 +597,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Each CI run generates SBOM hash + verification metadata for supply chain audit trail |
 
+### build-cross-platform-nondeterminism {#build-cross-platform-nondeterminism}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/BUILD_REPRODUCIBILITY.md:142-156` |
+| **Severity** | Low |
+| **Description** | Native extensions produce different hashes across platforms due to compiler variations |
+| **Status** | Closed |
+| **Control Artifact** | `docs/BUILD_REPRODUCIBILITY.md` Section "Known Limitations" explicitly documents limitation |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Per Documentation Canon: honest disclosure of limitation. Platform recorded in hash report. Per-platform CI verification provides audit trail. Full cross-platform reproducibility is not a goal for native extensions. |
+
 ---
 
 ## Dependency/Supply-chain
@@ -620,7 +644,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after minor tech debt closure (3 items)*
+*Updated 2025-12-21 after CTO due diligence minor items closure (2 items)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -629,16 +653,16 @@ Each entry contains:
 | Testing/Quality | 1 | 3 | 2 | 6 | 1 | 5 |
 | Reliability/Operations | 2 | 4 | 0 | 6 | 4 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
-| Docs/Drift | 0 | 2 | 2 | 4 | 1 | 3 |
+| Docs/Drift | 0 | 2 | 3 | 5 | 1 | 4 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
-| Reproducibility/Build | 0 | 2 | 1 | 3 | 0 | 3 |
+| Reproducibility/Build | 0 | 2 | 2 | 4 | 0 | 4 |
 | Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **25** | **10** | **45** | **16** | **29** |
+| **TOTAL** | **10** | **25** | **12** | **47** | **16** | **31** |
 
 **Status Summary**:
 - 16 items Controlled (with active monitoring/artifacts)
-- 29 items Closed (resolved)
+- 31 items Closed (resolved)
 
 ---
 
@@ -657,6 +681,7 @@ Each entry contains:
 | 1.8 | 2025-12-21 | CTO due diligence closure batch: Added 8 new entries (security-jwt-default, security-signature-bypass-ci, arch-deprecated-modules, arch-adapter-status-sync, reproducibility-hash-scope, dependency-optional-fallbacks, governance-registry-ci). Total: 38 items (16 Controlled, 22 Closed). |
 | 1.9 | 2025-12-21 | New tech debt discovery and closure: Added 5 items (ops-runbook-contacts, testing-skipif-tracking, security-evidence-pack-signatures, repro-sbom-hash-pinning, adapter-alpaca-options-stub). 4 Closed, 1 Controlled. Total: 42 items (16 Controlled, 26 Closed). |
 | 2.0 | 2025-12-21 | Minor tech debt closure: Added 3 items (adapter-forex-stubs, testing-pragma-nocover-tracking, docs-l3-lob-status). All 3 Closed. Updated ARCHITECTURE.md L3 LOB status. Total: 45 items (16 Controlled, 29 Closed). |
+| 2.1 | 2025-12-21 | CTO due diligence minor items: Added 2 items (docs-gdpr-coverage-targets, build-cross-platform-nondeterminism). Both Closed. GDPR_INTEGRATION_PLAN.md updated with coverage target disclaimer. Total: 47 items (16 Controlled, 31 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

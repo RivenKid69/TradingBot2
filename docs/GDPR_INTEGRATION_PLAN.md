@@ -9,6 +9,8 @@
 
 > **Note (v2.4)**: Module paths referencing `services/compliance/` in this document are historical.
 > Any completeness/coverage labels in this document are illustrative scaffolding until validated; this repository does not claim audited compliance status in documentation.
+>
+> **Test Coverage Targets**: The "100% Test Coverage Target" labels throughout this document are **aspirational design goals**, not CI-enforced gates. Actual test coverage varies by module maturity and is reported in CI artifacts. These targets indicate implementation intent, not current state.
 > Compliance modules have been reorganized to a three-tier architecture. See [MIFID_II_COMPLIANCE_ROADMAP.md](compliance/MIFID_II_COMPLIANCE_ROADMAP.md#31-module-location-mapping) for current paths:
 > - `services/core/risk_controls/` (audit_trail, retention_policy, etc.)
 > - `services/algo_integration/` (B2B compliance toolkit)
