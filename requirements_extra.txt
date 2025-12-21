@@ -1,3 +1,19 @@
+# =============================================================================
+# Optional/Extended Dependencies
+# =============================================================================
+#
+# PURPOSE: This file provides OPTIONAL dependencies for extended functionality.
+# These are NOT required for core platform operation.
+#
+# VERSIONING POLICY:
+# - Uses range specifiers (>=, <) for flexibility in diverse environments
+# - Primary lock files (requirements-cpu.lock, requirements-gpu.lock) provide
+#   exact pinned versions for reproducible builds
+# - For production: always use lock files, not this file
+#
+# See docs/DEPENDENCY_MANAGEMENT.md for full policy.
+# =============================================================================
+
 numpy>=1.24.0
 optuna>=3.0.0,<4.0.0
 pandas>=2.0.0
@@ -5,8 +21,8 @@ pyarrow>=12.0.0
 requests>=2.31.0
 investpy==1.0.8
 joblib>=1.3.0
-torch>=2.0.0 ; platform_system!="Windows"  # если нужен PyTorch для .pt моделей
+torch>=2.0.0 ; platform_system!="Windows"  # PyTorch for .pt models
 stable-baselines3>=2.0.0,<3.0.0
 fastapi>=0.110.0
 uvicorn>=0.27.0
-arch>=5.0.0  # для GARCH(1,1) условной волатильности
+arch>=5.0.0  # GARCH(1,1) conditional volatility

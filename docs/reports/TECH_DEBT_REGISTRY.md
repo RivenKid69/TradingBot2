@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 2.2
+**Version**: 2.5
 **Date**: 2025-12-21
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -270,6 +270,42 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | All pragma exclusions are intentional defensive patterns: exception handlers with logging, compatibility fallbacks for legacy APIs, typing helpers. Exclusion categories documented in code comments. No business logic excluded. |
 
+### testing-cmk-conditional-skip {#testing-cmk-conditional-skip}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/ccea/phase8/test_cmk.py:12-27` |
+| **Severity** | High |
+| **Description** | CMK test module uses conditional skip when cryptography dependency unavailable |
+| **Status** | Controlled |
+| **Control Artifact** | `requirements-dev.txt:88` (cryptography>=42.0.0); conditional skip pattern at module level |
+| **Added** | 2025-12-21 |
+| **Note** | Proper pattern: 527-line comprehensive test suite skips ONLY when optional cryptography unavailable. CI environments with requirements-dev.txt installed run all tests. Skip is explicit and logged. |
+
+### testing-backtest-init-skip {#testing-backtest-init-skip}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_service_backtest.py:488` |
+| **Severity** | Medium |
+| **Description** | Complex initialization test skipped due to extensive mocking requirements |
+| **Status** | Controlled |
+| **Control Artifact** | Skip reason documented in decorator; integration tests cover path implicitly |
+| **Added** | 2025-12-21 |
+| **Note** | Test requires mocking 4+ internal dependencies (SimExecutor, SimAdapter, configure_simulator_execution). Integration tests in `tests/integration/` provide equivalent coverage. Skip reason explicit per pytest best practices. |
+
+### testing-prepare-data-assertions {#testing-prepare-data-assertions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_prepare_advanced_data.py:1-27` |
+| **Severity** | Low |
+| **Description** | Test lacked assertions; now has proper validation |
+| **Status** | Closed |
+| **Control Artifact** | Code fix: added file existence and content assertions |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Test now asserts: (1) output file exists, (2) file contains timestamp column. Test verified passing. |
+
 ---
 
 ## Reliability/Operations
@@ -342,6 +378,18 @@ Each entry contains:
 | **Status** | Controlled |
 | **Control Artifact** | SLO/SLI dashboard (planned for post-deployment) |
 | **Note** | Pre-deployment stage honestly disclosed |
+
+### ops-dr-drill-rto-rpo {#ops-dr-drill-rto-rpo}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/runbooks/DR_DRILL.md:17-27` |
+| **Severity** | High |
+| **Description** | RTO/RPO targets stated as "Pending drill validation" |
+| **Status** | Controlled |
+| **Control Artifact** | DR_DRILL.md explicit disclosure: "These are design targets. Actual validated values will be documented after successful DR drills." |
+| **Added** | 2025-12-21 |
+| **Note** | Per Documentation Canon: design targets disclosed as unvalidated. DR drill schedule documented (quarterly). Validation procedure in runbook. This is honest pre-production disclosure, not a gap. |
 
 ---
 
@@ -553,6 +601,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Per CCEA Design Doc Section 5.1: "Live Intent is created only on Agent." Sim-to-live calibration is per-deployment client responsibility, not platform pre-release gate. Validation steps now presented as deployment-time requirements with clear ownership (Client ops/quant/risk teams). Documentation Canon Section 4.3 referenced (no performance promises). |
 
+### docs-archive-production-ready {#docs-archive-production-ready}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `archive/2025_11/reports_2025_11_25_cleanup/reports/integration/TWIN_CRITICS_INTEGRATION_COMPLETE.md:5,459,484` |
+| **Severity** | Medium |
+| **Description** | Archive file uses "Production Ready" language prohibited by CCEA_MARKETING_GUIDELINES.md |
+| **Status** | Controlled |
+| **Control Artifact** | Archive exemption: `archive/` directory contains historical records; live docs in `docs/` follow guidelines |
+| **Added** | 2025-12-21 |
+| **Note** | Per archive policy: files in `archive/` are historical snapshots not subject to live documentation standards. Active Twin Critics documentation in `docs/twin_critics.md` uses compliant language. CCEA_MARKETING_GUIDELINES.md:310 applies to live docs only. |
+
 ---
 
 ## Process/Governance
@@ -661,6 +721,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | CI checks lockfile age (warn if >90 days) and compares mtime with requirements files. Warns if requirements newer than lockfiles. |
 
+### dependency-extra-unpinned {#dependency-extra-unpinned}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `requirements_extra.txt:1-28` |
+| **Severity** | Low |
+| **Description** | Optional dependencies file used range specifiers (>=) instead of pinned versions |
+| **Status** | Closed |
+| **Control Artifact** | File header documenting purpose and versioning policy |
+| **Closure Date** | 2025-12-21 |
+| **Note** | requirements_extra.txt now has header explaining: (1) these are OPTIONAL dependencies, (2) range specifiers provide flexibility for diverse environments, (3) primary lock files provide pinned versions for production. Per dependency management policy, extra deps are intentionally flexible. |
+
 ---
 
 ## Testing/Quality
@@ -728,25 +800,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after sim-live-validation-framework closure*
+*Updated 2025-12-21 after CTO due diligence batch 2 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 2 | 6 | 2 | 4 |
 | Data/ML | 3 | 4 | 1 | 8 | 5 | 3 |
-| Testing/Quality | 1 | 3 | 3 | 7 | 2 | 5 |
-| Reliability/Operations | 2 | 5 | 0 | 7 | 5 | 2 |
+| Testing/Quality | 2 | 4 | 4 | 10 | 4 | 6 |
+| Reliability/Operations | 3 | 5 | 0 | 8 | 6 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
-| Docs/Drift | 1 | 3 | 3 | 7 | 1 | 6 |
+| Docs/Drift | 1 | 4 | 3 | 8 | 2 | 6 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
-| Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
+| Dependency/Supply-chain | 0 | 1 | 1 | 2 | 0 | 2 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **11** | **27** | **15** | **53** | **18** | **35** |
+| **TOTAL** | **13** | **29** | **17** | **59** | **22** | **37** |
 
 **Status Summary**:
-- 18 items Controlled (with active monitoring/artifacts)
-- 35 items Closed (resolved)
+- 22 items Controlled (with active monitoring/artifacts)
+- 37 items Closed (resolved)
 
 ---
 
@@ -769,6 +841,7 @@ Each entry contains:
 | 2.2 | 2025-12-21 | DORA proportionality scope closure: Added docs-dora-proportionality-scope (High, Closed). Document restructured as Client Reference Template per CCEA ICT Provider posture. Total: 48 items (16 Controlled, 32 Closed). |
 | 2.3 | 2025-12-21 | CTO due diligence new findings closure: Added 4 items (ops-signal-runner-exceptions [Controlled], testing-mock-density [Controlled], data-ib-hardcoded-specs [Closed], build-lockfile-freshness [Closed]). Created TESTING_POLICY.md, added lockfile freshness CI check, documented defensive exception patterns. Total: 52 items (18 Controlled, 34 Closed). |
 | 2.4 | 2025-12-21 | Sim-live validation framework closure: Added sim-live-validation-framework (Medium, Closed). SIMULATION_LIMITATIONS.md updated with Pre-Production Status section and deployment-time validation tables. Empty checkboxes replaced with structured tables per Documentation Canon. Total: 53 items (18 Controlled, 35 Closed). |
+| 2.5 | 2025-12-21 | CTO due diligence batch 2: Added 6 items (testing-cmk-conditional-skip [Controlled], testing-backtest-init-skip [Controlled], testing-prepare-data-assertions [Closed], ops-dr-drill-rto-rpo [Controlled], docs-archive-production-ready [Controlled], dependency-extra-unpinned [Closed]). Code fixes: test assertions added, requirements_extra.txt header added. Total: 59 items (22 Controlled, 37 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
