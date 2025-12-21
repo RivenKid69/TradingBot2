@@ -574,6 +574,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Registry created for visibility; current state: 0 legacy models. Monthly audit schedule established. |
 
+### security-lob-cache-pickle {#security-lob-cache-pickle}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `lob/lazy_multi_series.py:1055-1143` |
+| **Severity** | Low |
+| **Description** | LOB cache uses pickle for disk persistence; pickle deserialization is unsafe with untrusted data |
+| **Status** | Closed |
+| **Control Artifact** | Module docstring "DISK CACHE SECURITY MODEL" section; HMAC verification in code |
+| **Closure Date** | 2025-12-22 |
+| **Note** | HMAC-SHA256 integrity verification implemented: (1) Each cache file includes 32-byte signature, (2) Signature verified BEFORE pickle.loads(), (3) Tampered files rejected and deleted, (4) Key configurable via LOB_CACHE_HMAC_KEY env var. Threat model: local cache only, production requires key rotation. |
+
 ---
 
 ## Docs/Drift
@@ -896,7 +908,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after CTO due diligence batch 4 closure*
+*Updated 2025-12-22 after security-lob-cache-pickle closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -904,17 +916,17 @@ Each entry contains:
 | Data/ML | 3 | 4 | 2 | 9 | 5 | 4 |
 | Testing/Quality | 2 | 4 | 5 | 11 | 4 | 7 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
-| Security | 3 | 6 | 0 | 9 | 2 | 7 |
+| Security | 3 | 6 | 1 | 10 | 2 | 8 |
 | Docs/Drift | 1 | 4 | 4 | 9 | 2 | 7 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **13** | **30** | **24** | **67** | **22** | **45** |
+| **TOTAL** | **13** | **30** | **25** | **68** | **22** | **46** |
 
 **Status Summary**:
 - 22 items Controlled (with active monitoring/artifacts)
-- 45 items Closed (resolved)
+- 46 items Closed (resolved)
 
 ---
 
@@ -940,6 +952,7 @@ Each entry contains:
 | 2.5 | 2025-12-21 | CTO due diligence batch 2: Added 6 items (testing-cmk-conditional-skip [Controlled], testing-backtest-init-skip [Controlled], testing-prepare-data-assertions [Closed], ops-dr-drill-rto-rpo [Controlled], docs-archive-production-ready [Controlled], dependency-extra-unpinned [Closed]). Code fixes: test assertions added, requirements_extra.txt header added. Total: 59 items (22 Controlled, 37 Closed). |
 | 2.6 | 2025-12-21 | CTO due diligence batch 3: Added 2 items (data-transformers-defensive-exceptions [Closed], dependency-numpy-2x-migration [Closed]). Created: transformers.py module docstring with pattern documentation, docs/migration/NUMPY_2X_MIGRATION_PLAN.md with phased migration strategy. Total: 61 items (22 Controlled, 39 Closed). |
 | 2.7 | 2025-12-21 | CTO due diligence batch 4: Added 6 items (arch-defensive-exception-sandbox [Closed], adapter-polygon-tick-streaming [Closed], adapter-deribit-rest-only [Closed], docs-forex-integration-roadmap [Closed], testing-optional-deps-pattern [Closed], perf-reward-cap [Closed]). Module docstrings added to sandbox/*.py, adapters/polygon/market_data.py, adapters/deribit/options.py. FOREX_INTEGRATION.md checkboxes clarified. tests/conftest.py pattern documented. reward.pyx comment updated. Total: 67 items (22 Controlled, 45 Closed). |
+| 2.8 | 2025-12-22 | CTO due diligence batch 5: Added security-lob-cache-pickle (Low, Closed). Implemented HMAC-SHA256 integrity verification for LOB disk cache pickle deserialization. Controls: signature appended to cache files, verified before pickle.loads(), tampered files rejected and deleted, key configurable via LOB_CACHE_HMAC_KEY env var. Total: 68 items (22 Controlled, 46 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

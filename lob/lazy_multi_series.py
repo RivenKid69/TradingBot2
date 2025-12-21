@@ -26,13 +26,37 @@ Performance Targets:
     - LOB access latency: < 1 ms (including lazy load)
     - Event propagation: < 100 μs per tick
     - Peak memory for SPY full chain: < 4 GB
+
+DISK CACHE SECURITY MODEL
+--------------------------
+This module uses pickle for disk persistence. Pickle deserialization can execute
+arbitrary code if cache files are tampered with. Security controls:
+
+1. HMAC Integrity Verification:
+   - Each cache file includes HMAC-SHA256 signature
+   - Signature verified before deserialization
+   - Tampered files are rejected and logged
+
+2. Threat Model:
+   - TRUSTED: Cache files created by this process (same machine, same user)
+   - UNTRUSTED: Cache files from external sources, shared drives, or after compromise
+   - Control: HMAC key from LOB_CACHE_HMAC_KEY env var (default: research-only key)
+
+3. Operational Guidance:
+   - Production: Set LOB_CACHE_HMAC_KEY to a strong random secret
+   - Research: Default key acceptable for local-only caches
+   - Never share cache directories across trust boundaries without key rotation
+
+Tech Debt Reference: docs/reports/TECH_DEBT_REGISTRY.md#security-lob-cache-pickle
 """
 
 from __future__ import annotations
 
 import gzip
 import hashlib
+import hmac
 import logging
+import os
 import pickle
 import threading
 import time
@@ -57,6 +81,33 @@ from typing import (
 from lob.data_structures import LimitOrder, OrderBook, PriceLevel, Side
 
 logger = logging.getLogger(__name__)
+
+
+# ==============================================================================
+# Cache Security - HMAC Integrity Verification
+# ==============================================================================
+
+# HMAC key for cache file integrity verification
+# Production: Set LOB_CACHE_HMAC_KEY environment variable to a strong secret
+# Research: Default key is acceptable for local-only, single-user caches
+_LOB_CACHE_HMAC_KEY: bytes = os.environ.get(
+    "LOB_CACHE_HMAC_KEY",
+    "lob-cache-research-default-key-v1"  # Default for research use only
+).encode("utf-8")
+
+# HMAC signature length (SHA-256 = 32 bytes)
+_HMAC_SIGNATURE_LENGTH = 32
+
+
+def _compute_cache_hmac(data: bytes) -> bytes:
+    """Compute HMAC-SHA256 signature for cache data."""
+    return hmac.new(_LOB_CACHE_HMAC_KEY, data, hashlib.sha256).digest()
+
+
+def _verify_cache_hmac(data: bytes, signature: bytes) -> bool:
+    """Verify HMAC signature for cache data. Returns True if valid."""
+    expected = _compute_cache_hmac(data)
+    return hmac.compare_digest(expected, signature)
 
 
 # ==============================================================================
@@ -1001,7 +1052,11 @@ class LazyMultiSeriesLOBManager:
         return key
 
     def _persist_to_disk_internal(self, key: str, state: SeriesLOBState) -> None:
-        """Persist LOB state to disk (internal method)."""
+        """Persist LOB state to disk (internal method).
+
+        Security: Appends HMAC-SHA256 signature for integrity verification.
+        See module docstring for security model.
+        """
         if not self._disk_cache_path:
             return
 
@@ -1022,10 +1077,14 @@ class LazyMultiSeriesLOBManager:
             if self._enable_compression:
                 data = gzip.compress(data, compresslevel=self._compression_level)
 
+            # Compute HMAC signature for integrity verification
+            signature = _compute_cache_hmac(data)
+
             # Atomic write (write to temp then replace)
+            # Format: [data][32-byte HMAC signature]
             # Note: Using replace() instead of rename() for Windows compatibility
             temp_file = cache_file.with_suffix('.tmp')
-            temp_file.write_bytes(data)
+            temp_file.write_bytes(data + signature)
             temp_file.replace(cache_file)
 
             self._stats.disk_writes += 1
@@ -1035,7 +1094,11 @@ class LazyMultiSeriesLOBManager:
             raise
 
     def _try_restore_from_disk(self, key: str) -> Optional[SeriesLOBState]:
-        """Attempt to restore LOB from disk."""
+        """Attempt to restore LOB from disk.
+
+        Security: Verifies HMAC-SHA256 signature before deserialization.
+        Rejects tampered cache files. See module docstring for security model.
+        """
         if not self._disk_cache_path:
             return None
 
@@ -1045,13 +1108,38 @@ class LazyMultiSeriesLOBManager:
             return None
 
         try:
-            data = cache_file.read_bytes()
+            raw_data = cache_file.read_bytes()
 
-            # Decompress if needed
+            # Extract HMAC signature (last 32 bytes)
+            if len(raw_data) < _HMAC_SIGNATURE_LENGTH:
+                logger.warning(
+                    f"Cache file too small for {key}: {len(raw_data)} bytes "
+                    f"(minimum {_HMAC_SIGNATURE_LENGTH} for HMAC)"
+                )
+                return None
+
+            data = raw_data[:-_HMAC_SIGNATURE_LENGTH]
+            signature = raw_data[-_HMAC_SIGNATURE_LENGTH:]
+
+            # Verify HMAC signature BEFORE deserialization (security critical)
+            if not _verify_cache_hmac(data, signature):
+                logger.error(
+                    f"SECURITY: Cache file HMAC verification failed for {key}. "
+                    f"File may be corrupted or tampered. Rejecting cache."
+                )
+                # Delete the potentially malicious file
+                try:
+                    cache_file.unlink()
+                    logger.warning(f"Deleted suspicious cache file: {cache_file}")
+                except OSError:
+                    pass
+                return None
+
+            # Decompress if needed (after HMAC verification)
             if self._enable_compression:
                 data = gzip.decompress(data)
 
-            # Deserialize
+            # Deserialize (safe - HMAC verified)
             state_dict = pickle.loads(data)
 
             # Reconstruct OrderBook
