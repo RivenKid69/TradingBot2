@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 2.5
+**Version**: 2.6
 **Date**: 2025-12-21
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -182,6 +182,18 @@ Each entry contains:
 | **Control Artifact** | Exception logging with metrics; warning on fallback |
 | **Closure Date** | 2025-12-20 |
 | **Note** | Legacy filters may produce different execution simulation results |
+
+### data-transformers-defensive-exceptions {#data-transformers-defensive-exceptions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `transformers.py:531-533, 1437-1459` |
+| **Severity** | Low |
+| **Description** | Silent exception handling in GARCH fallback and OHLCV parsing |
+| **Status** | Closed |
+| **Control Artifact** | Module docstring documents intentional patterns with rationale |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Three-tier fallback cascade (GARCH → EWMA → Historical) is intentional. OHLCV parsing continues with available data. Patterns documented in module header per defensive programming policy. |
 
 ---
 
@@ -733,6 +745,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | requirements_extra.txt now has header explaining: (1) these are OPTIONAL dependencies, (2) range specifiers provide flexibility for diverse environments, (3) primary lock files provide pinned versions for production. Per dependency management policy, extra deps are intentionally flexible. |
 
+### dependency-numpy-2x-migration {#dependency-numpy-2x-migration}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `pyproject.toml:59` |
+| **Severity** | Medium |
+| **Description** | NumPy pinned to 1.x (`numpy>=1.26.0,<2.0.0`) due to breaking changes in NumPy 2.0 |
+| **Status** | Closed |
+| **Control Artifact** | `docs/migration/NUMPY_2X_MIGRATION_PLAN.md` |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Migration plan created with: (1) breaking changes analysis, (2) dependency compatibility matrix, (3) phased migration steps, (4) Cython rebuild requirements, (5) Q2 2026 target timeline. Pin is intentional per ecosystem stability; plan ensures future migration path. |
+
 ---
 
 ## Testing/Quality
@@ -800,25 +824,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after CTO due diligence batch 2 closure*
+*Updated 2025-12-21 after CTO due diligence batch 3 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 2 | 6 | 2 | 4 |
-| Data/ML | 3 | 4 | 1 | 8 | 5 | 3 |
+| Data/ML | 3 | 4 | 2 | 9 | 5 | 4 |
 | Testing/Quality | 2 | 4 | 4 | 10 | 4 | 6 |
 | Reliability/Operations | 3 | 5 | 0 | 8 | 6 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
 | Docs/Drift | 1 | 4 | 3 | 8 | 2 | 6 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
-| Dependency/Supply-chain | 0 | 1 | 1 | 2 | 0 | 2 |
+| Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **13** | **29** | **17** | **59** | **22** | **37** |
+| **TOTAL** | **13** | **30** | **18** | **61** | **22** | **39** |
 
 **Status Summary**:
 - 22 items Controlled (with active monitoring/artifacts)
-- 37 items Closed (resolved)
+- 39 items Closed (resolved)
 
 ---
 
@@ -842,6 +866,7 @@ Each entry contains:
 | 2.3 | 2025-12-21 | CTO due diligence new findings closure: Added 4 items (ops-signal-runner-exceptions [Controlled], testing-mock-density [Controlled], data-ib-hardcoded-specs [Closed], build-lockfile-freshness [Closed]). Created TESTING_POLICY.md, added lockfile freshness CI check, documented defensive exception patterns. Total: 52 items (18 Controlled, 34 Closed). |
 | 2.4 | 2025-12-21 | Sim-live validation framework closure: Added sim-live-validation-framework (Medium, Closed). SIMULATION_LIMITATIONS.md updated with Pre-Production Status section and deployment-time validation tables. Empty checkboxes replaced with structured tables per Documentation Canon. Total: 53 items (18 Controlled, 35 Closed). |
 | 2.5 | 2025-12-21 | CTO due diligence batch 2: Added 6 items (testing-cmk-conditional-skip [Controlled], testing-backtest-init-skip [Controlled], testing-prepare-data-assertions [Closed], ops-dr-drill-rto-rpo [Controlled], docs-archive-production-ready [Controlled], dependency-extra-unpinned [Closed]). Code fixes: test assertions added, requirements_extra.txt header added. Total: 59 items (22 Controlled, 37 Closed). |
+| 2.6 | 2025-12-21 | CTO due diligence batch 3: Added 2 items (data-transformers-defensive-exceptions [Closed], dependency-numpy-2x-migration [Closed]). Created: transformers.py module docstring with pattern documentation, docs/migration/NUMPY_2X_MIGRATION_PLAN.md with phased migration strategy. Total: 61 items (22 Controlled, 39 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

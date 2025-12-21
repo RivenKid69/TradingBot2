@@ -56,7 +56,10 @@ requires-python = ">=3.12,<3.13"
 # Note: PyTorch is in optional dependencies due to CPU/GPU variants
 dependencies = [
     # ---- Data Processing ----
-    "numpy>=1.26.0,<2.0.0",          # NumPy 2.0 has breaking changes, pin to 1.x
+    # NumPy 2.0 has breaking changes; pin to 1.x until ecosystem stabilizes
+    # Migration plan: docs/migration/NUMPY_2X_MIGRATION_PLAN.md
+    # Tech debt: docs/reports/TECH_DEBT_REGISTRY.md#dependency-numpy-2x-migration
+    "numpy>=1.26.0,<2.0.0",
     "pandas>=2.1.0,<3.0.0",          # 2.1+ for pyarrow backend improvements
     "pyarrow>=14.0.0,<16.0.0",       # Parquet I/O, string dtype
 

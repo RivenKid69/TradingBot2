@@ -1,4 +1,33 @@
 # transformers.py
+"""
+Feature transformation module for technical indicators and volatility models.
+
+DEFENSIVE EXCEPTION PATTERNS
+============================
+This module uses intentional silent exception handling in specific contexts:
+
+1. **GARCH Model Fallback** (lines ~531-533):
+   - Pattern: `except (ValueError, RuntimeError, LinAlgError, Exception): pass`
+   - Purpose: GARCH optimization may fail to converge; fallback to EWMA is expected behavior
+   - Cascade: GARCH → EWMA → Historical Volatility (three-tier fallback)
+   - Rationale: Model non-convergence is data-dependent, not a bug
+
+2. **OHLCV Parsing** (lines ~1437-1459):
+   - Pattern: `try: float(bar[key]) except Exception: pass`
+   - Purpose: Parse available OHLCV fields; skip malformed values silently
+   - Rationale: Continue with available data rather than fail entire update
+
+3. **Data Validation Skip** (line ~486):
+   - Pattern: `if invalid_data: pass` (not exception, control flow)
+   - Purpose: Skip GARCH attempt if data is unsuitable
+
+These patterns are INTENTIONAL per trading system requirements:
+- Data continuity takes precedence over strict validation
+- Fallback cascades ensure feature availability
+- Silent handling prevents noisy logs during normal operation
+
+Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#data-transformers-defensive-exceptions
+"""
 from __future__ import annotations
 
 import math
