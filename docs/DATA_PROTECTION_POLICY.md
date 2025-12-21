@@ -99,7 +99,7 @@ This policy applies to:
 
 ## 3. Data Protection Principles
 
-We adhere to the following principles (GDPR Article 5):
+This policy is designed to support the following principles (GDPR Article 5):
 
 ### 3.1 Lawfulness, Fairness, and Transparency
 - Process personal data only with a valid legal basis

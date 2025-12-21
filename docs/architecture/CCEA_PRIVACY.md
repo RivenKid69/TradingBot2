@@ -544,7 +544,7 @@ privacy:
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2025-12-16 | CCEA Team | Initial privacy doc per Design Doc |
-| 2.0.0 | 2025-12-17 | CCEA Team | GDPR controls implementation complete, RAW_ORDER_EVENTS enterprise support documented |
+| 2.0.0 | 2025-12-17 | CCEA Team | GDPR controls implementation documented (internal; not independently audited), RAW_ORDER_EVENTS enterprise support documented |
 
 ---
 

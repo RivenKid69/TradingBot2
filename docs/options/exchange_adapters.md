@@ -4,10 +4,10 @@
 
 This document describes the exchange adapters for options trading, providing unified access to multiple data sources and execution venues. The architecture enables seamless integration with Interactive Brokers (IB), Theta Data, and Polygon.io for comprehensive options market data and execution.
 
-**Status**: ✅ Tested and operational
+**Status**: ✅ Internal testing complete (not independently audited)
 **Implementation Date**: 2025-12-03
 **Reference**: [OPTIONS_INTEGRATION_PLAN.md](../OPTIONS_INTEGRATION_PLAN.md) Phase 2
-**Tests**: 165 tests (100% pass rate)
+**Tests**: 165 internal tests (see CI for current status)
 
 ## Supported Exchanges
 

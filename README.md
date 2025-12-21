@@ -20,10 +20,10 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 | **Agent** | Live execution, risk enforcement, local vault, order creation | **Local only** | **Yes** (customer-controlled) |
 
 **Key Security Design Commitments:**
-- Cloud does not store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
-- Cloud does not generate, transmit, or execute live trading instructions (orders/targets/signals)
+- Cloud is designed not to store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
+- Cloud is designed not to generate, transmit, or execute live trading instructions (orders/targets/signals)
 - Cloud may send lifecycle commands and signed artifacts to the Agent; the Agent performs any live execution via customer accounts
-- Telemetry is redacted by default; raw order events require explicit opt-in (deployment- and customer-dependent)
+- Telemetry redaction is mandatory by design; default telemetry is **AGGREGATED** and RAW order events are enterprise-only with explicit opt-in (deployment- and customer-dependent)
 
 **Deployment Modes (B2B):**
 1. **Cloud + BYO Agent**: Cloud research/simulation/monitoring + customer-controlled Agent execution
@@ -153,8 +153,8 @@ CustodiaCloud includes documentation, controls, and evidence export patterns int
 **CCEA Privacy Design Goals:**
 - Cloud **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
 - Cloud **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
-- Telemetry **designed to be redacted** before transmission; raw order events require explicit opt-in
-- EU data residency **by design** for EU customers (design target; enterprise: on-prem/customer-managed options available)
+- Telemetry redaction is mandatory by design; default telemetry is **AGGREGATED** and RAW order events are enterprise-only with explicit opt-in
+- EU data residency **by design** for EU customers (design target; deployment- and contract-specific; enterprise: on-prem/customer-managed options available)
 - DSAR scope is Cloud-only (by design); Agent data is customer-controlled
 
 Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`

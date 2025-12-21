@@ -33,7 +33,7 @@ CCEA — ключевой «procurement‑friendly» принцип: строг�
 | CustodiaCloud Cloud | research/simulation/monitoring + artifact builder/registry + lifecycle control plane | **нет** | **нет** |
 | CustodiaCloud Agent | секреты, риск‑enforcement, локальные approvals, формирование и отправка ордеров | **локально** | **да (у клиента)** |
 
-**Hard rule (использовать последовательно в документах):** Cloud **спроектирован так, чтобы не хранить** broker credentials и **не отправлять** live trading instructions (orders/targets/signals). Это обеспечивается валидацией схемы, CI guardrails и allowlist-ами протокола. Любое live‑исполнение возможно только через customer‑controlled Agent и аккаунты клиента у брокера.
+**Hard rule (использовать последовательно в документах):** Cloud **спроектирован так, чтобы не хранить** broker credentials и **не отправлять** live trading instructions (orders/targets/signals). Это архитектурное ограничение и обеспечивается валидацией схемы, CI guardrails и allowlist-ами протокола. Любое live‑исполнение возможно только через customer‑controlled Agent и аккаунты клиента у брокера.
 
 ---
 

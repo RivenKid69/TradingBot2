@@ -515,7 +515,7 @@ This notification is provided per DORA Article 30(2)(f) contractual obligations.
 
 ### Audit Response Procedure
 
-**Target Response Time:** 5 business days for standard requests, 24 hours for regulatory urgent (operational capacity dependent; not a guaranteed SLA commitment).
+**Target Response Time:** 5 business days for standard requests, 24 hours for regulatory urgent (planning target; capacity dependent; not a guaranteed SLA commitment; actual terms defined in executed service agreements).
 
 **Audit Request Processing:**
 1. Log request in `services/dora/audit_readiness.py`

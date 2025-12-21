@@ -92,13 +92,13 @@ For detailed planned infrastructure architecture, see `docs/ENTERPRISE_DEPLOYMEN
 **EU Residency Evidence:**
 - Legal Entity: Stripe Payments Europe, Limited (Ireland)
 - Data Processing: configured for EU-region processing where supported by the vendor (deployment-dependent; verify in vendor documentation and contract)
-- PCI DSS Level 1: vendor-reported certification (verify in current Stripe documentation)
+- PCI DSS Level 1 (vendor-reported; verify directly with Stripe as part of client/vendor due diligence; not a CustodiaCloud certification claim)
 - GDPR DPA: [Stripe DPA](https://stripe.com/legal/dpa)
 - Last Review: 2025-01-15
 - Next Review: 2025-04-15
 
 **Data Minimization (design goal):**
-- Payment card numbers not stored by Platform (tokenization via Stripe)
+- Payment card numbers are designed not to be stored by the platform (tokenization via Stripe; verify in deployment configuration)
 - Only tokenized references designed to be stored
 - Billing email stored for invoicing
 

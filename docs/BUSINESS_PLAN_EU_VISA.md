@@ -1170,7 +1170,7 @@ We acknowledge that achieving projections depends on multiple factors:
 | **Dashboard MVP** | Web interface for clients | Basic UI functional |
 | **Documentation** | User guides, API docs | Complete and reviewed |
 | **MiFID II Posture** | Audit trail, record keeping | Internal control/evidence checklist completed; legal review scheduled |
-| **Security Audit** | External penetration testing (planned) | Scheduled; results TBD |
+| **Security Audit** | External penetration testing (planned; no audit completed) | Scheduling pending; results TBD |
 
 **Key Risks**: Technical delays, compliance gaps
 **Mitigation**: Parallel development tracks, external review

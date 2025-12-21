@@ -198,11 +198,11 @@ RAW_ORDER_EVENTS (Enterprise-only + Explicit Opt-in)
 
 | Metric | Design Target | Dashboard (Planned) |
 |--------|--------|-----------|
-| DSAR Response Time | < 30 days | Compliance Dashboard |
+| DSAR Response Time | < 30 days (planned; not an SLA) | Compliance Dashboard |
 | Residency Drift | 0 violations | EU Drift Check |
 | Purge Success Rate | >99% | Retention Dashboard |
 | Break-Glass Usage | Audit-only | Access Audit |
-| Breach Response Time | < 72 hours | Breach Workflow |
+| Breach Response Time | < 72 hours (planned; not an SLA) | Breach Workflow |
 
 ### Quarterly Reviews (Planned)
 
