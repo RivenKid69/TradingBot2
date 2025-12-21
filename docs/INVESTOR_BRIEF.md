@@ -516,7 +516,7 @@ Our European expansion plan targets meaningful economic contribution while build
 |----------|----------|------------|---------|
 | 1 | **Sales/GTM** | 40% | Sales lead hire, pilot customer acquisition |
 | 2 | **Engineering** | 35% | DevOps, frontend, infrastructure |
-| 3 | **Operations** | 15% | Legal/compliance operations, SOC 2 readiness roadmap |
+| 3 | **Operations** | 15% | Legal/compliance operations, vendor due diligence preparedness |
 | 4 | **Reserve** | 10% | Contingency buffer (runway target 18–24 months) |
 
 ### Key Milestones (12 months post-funding)
@@ -560,7 +560,7 @@ Targeting 18-24 month runway to reach Series A milestones. Conservative burn ass
 |------|----------|------------|
 | **Exchange API changes** | Low | Adapter abstraction layer; connector monitoring |
 | **Model degradation** | Low | Continuous retraining pipelines built-in |
-| **Security breach** | Medium | SOC 2 roadmap; no client funds handled |
+| **Security breach** | Medium | Security best practices; no client funds/secrets in Cloud |
 
 ### Investment Risks
 
@@ -744,10 +744,12 @@ We provide technology tools to trading firms who are themselves regulated. We do
 - Clients use our tools to implement *their* strategies with *their* regulatory obligations
 - We do not recommend specific trades or strategies
 
-**Compliance roadmap (for enterprise clients):**
-- SOC 2 readiness roadmap (planned within Phase 3; no certification claim)
+**Compliance tooling (for enterprise clients):**
+- Vendor due diligence documentation (designed to support client procurement reviews)
 - GDPR data handling documentation (available now)
 - Audit logs + export tooling to support client record-keeping and best-execution analysis (where applicable)
+
+*No certification claims are made. Clients run their own compliance and legal review per their requirements.*
 
 *Legal review recommended for specific client engagements. This section describes our current understanding and is not legal advice.*
 

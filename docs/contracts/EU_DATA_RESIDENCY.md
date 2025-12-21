@@ -128,25 +128,27 @@ EU-Only configuration is available at:
 - **Professional Tier**: Included (default)
 - **Enterprise Tier**: Included with dedicated region options
 
-### 5.2 What EU-Only Provides
+### 5.2 What EU-Only Is Designed to Provide
 
-When EU-Only is enabled:
+> **Note**: This section describes design intent. Actual enforcement depends on infrastructure configuration and should be verified via deployment audit. See Section 5.3 for known exceptions.
 
-**Data Processing:**
-- All client data processing occurs within EU/EEA
-- No client data transfers to non-EU jurisdictions
-- All database queries processed in EU regions
+When EU-Only is enabled, the configuration is designed to:
 
-**Data Storage:**
+**Data Processing (design intent):**
+- Process client data within EU/EEA regions
+- Minimize client data transfers to non-EU jurisdictions (see exceptions in 5.3)
+- Process database queries in EU regions
+
+**Data Storage (design intent):**
 - Primary storage: Germany (Frankfurt)
 - Backup storage: Germany (Frankfurt) or Ireland
 - DR storage: Ireland (EU)
-- No storage in non-EU regions
+- Avoid storage in non-EU regions (see exceptions in 5.3)
 
 **Data Transit:**
 - Encrypted in transit (TLS 1.3)
 - Routed through EU network paths where possible
-- CDN caches within EU Points of Presence only
+- CDN caches within EU Points of Presence where possible (see exceptions in 5.3)
 
 ### 5.3 What EU-Only Does NOT Cover
 

@@ -3107,8 +3107,12 @@ data_residency_configuration:
   # =========================================================================
   # DATA CLASSIFICATION BY RESIDENCY
   # =========================================================================
+  # Note: Classifications below describe design intent. Actual residency
+  # enforcement depends on infrastructure deployment and should be verified
+  # via configuration audit. CustodiaCloud does not make absolute guarantees
+  # about data residency in documentation.
   data_classification:
-    always_eu:
+    designed_eu_primary:  # Design intent; requires infrastructure verification
       - "User credentials and authentication data"
       - "Trading strategies and configurations"
       - "Backtest results"

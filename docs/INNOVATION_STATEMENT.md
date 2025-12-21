@@ -42,7 +42,7 @@
 | **Learning Stability** | Prone to catastrophic forgetting | Utility-weighted continual learning (UPGD) |
 | **Uncertainty** | Assumed known | Distribution-free conformal prediction bounds |
 
-**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + 95%+ test coverage on core ML components (2000+ tests).
+**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + extensive automated test coverage on core ML components (CI-verified; coverage reports available under NDA).
 
 ---
 
@@ -483,7 +483,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 
 ### 5.3 Defensible Moats
 
-1. **Technical depth**: sustained engineering effort with extensive automated tests — core ML module (`distributional_ppo.py`) verified at 95%+ line coverage (2000+ tests)
+1. **Technical depth**: sustained engineering effort with extensive automated tests — core ML module (`distributional_ppo.py`) has CI-verified test coverage (reports available under NDA)
 2. **Research integration**: peer-reviewed references translated into implementation patterns (without performance promises)
 3. **Multi-asset foundation**: single codebase complexity barrier (equities-first MVP)
 4. **Network effects**: Client strategy templates create ecosystem
@@ -505,7 +505,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 | **Dark Pools** | ✓ Multi-venue | ✗ | ✗ | ✗ | ✗ |
 | **Conformal Prediction** | ✓ | ✗ | ✗ | ✗ | ✗ |
 | **Asset Classes** | 5 unified | 2-3 separate | 1 | N/A | 1 |
-| **Test Coverage** | 95%+ core ML (2000+ tests) | Varies | N/A | Varies | Varies |
+| **Test Coverage** | Extensive (CI-verified) | Varies | N/A | Varies | Varies |
 | **Live Trading** | ✓ | ✓ | ✓ (broker) | ✗ | ✗ |
 
 ### 6.2 Why We Are Not a Clone
@@ -549,7 +549,7 @@ Market sizing varies materially by source and definition; any numeric TAM figure
 
 7. **Unified Multi-Asset Architecture**: foundation multi-asset architecture (equities-first MVP), single codebase
 8. **Production-Oriented Risk Management**: Atomic kill switch (in Agent), session routing
-9. **Comprehensive Testing**: 95%+ line coverage on core ML components, 2000+ automated tests, CI validation
+9. **Comprehensive Testing**: Extensive automated test coverage on core ML components, CI validation (coverage reports available under NDA)
 
 ---
 

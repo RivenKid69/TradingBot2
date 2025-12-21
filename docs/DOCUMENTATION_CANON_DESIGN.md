@@ -160,7 +160,7 @@ These are the concrete “what we do / for whom / how we validate” facts that 
 
 **Funding ask (investor-facing, but must not contradict committee docs)**:
 - Target raise: €500K–€750K (illustrative).
-- Use of proceeds (illustrative): 40% GTM, 35% engineering, 15% operations (legal/compliance/SOC 2 roadmap), 10% reserve.
+- Use of proceeds (illustrative): 40% GTM, 35% engineering, 15% operations (legal/compliance/vendor due diligence preparedness), 10% reserve.
 - Runway target: 18–24 months to reach “Series A readiness” milestones (burn and revenue traction dependent; milestone-based spending).
 
 **12-month milestones (illustrative, not forecasts)**:

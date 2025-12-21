@@ -569,24 +569,24 @@ tracing:
 
 ### 10.1 Enterprise Support Tiers *(illustrative; actual tiers per executed agreement)*
 
-> **Note**: 24/7 support tiers require operational infrastructure (on-call rotation, 4+ FTE) pending hiring and operational validation. Actual support coverage will be defined in executed service agreements after team scaling.
+> **Note**: Support tiers described below are illustrative design targets. Actual support levels, response times, and availability are defined in executed service agreements. CustodiaCloud does not currently operate 24/7 support infrastructure; such tiers require operational validation, staffing, and infrastructure investment before they can be offered.
 
 | Tier | Response Time | Availability | Features |
 |------|---------------|--------------|----------|
-| Standard | 24 hours | Business hours | Email support |
-| Premium (pending staffing) | 4 hours | 24/7 (target) | Phone + email |
-| Critical (pending staffing) | 1 hour | 24/7 (target) | Dedicated TAM |
+| Standard | Business hours (illustrative) | Business hours | Email support |
+| Premium | Per agreement | Per agreement | Per agreement |
+| Critical | Per agreement | Per agreement | Dedicated TAM (if contracted) |
 
 ### 10.2 SLA Targets *(illustrative design targets; actual SLA per executed agreement)*
 
-> **Note**: These are unvalidated design targets for enterprise tier. CustodiaCloud has no production uptime history. Actual SLA commitments are defined in the executed service agreement after operational validation and infrastructure deployment.
+> **Note**: CustodiaCloud has no production uptime history and does not make SLA commitments in documentation. Any SLA metrics are defined exclusively in executed service agreements after operational validation. The table below describes design goals only.
 
-| Metric | Target (Unvalidated Design Goal) |
-|--------|----------------------------------|
-| Control plane uptime | 99.9% (aspirational; pending infrastructure deployment) |
-| API latency (p99) | < 500ms (pending load testing validation) |
+| Metric | Status |
+|--------|--------|
+| Control plane uptime | Per executed agreement (no public SLA commitment) |
+| API latency (p99) | Per executed agreement (pending load testing) |
 | Data durability | Per underlying cloud provider SLA |
-| Recovery time | < 4 hours (untested; pending DR validation) |
+| Recovery time | Per executed agreement (pending DR validation) |
 
 ---
 

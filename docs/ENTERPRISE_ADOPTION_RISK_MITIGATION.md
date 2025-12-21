@@ -9,7 +9,7 @@ The answer is **yes**, and here's why:
 1. **Data Isolation Design**: On-premises and VPC deployment options designed so client trading strategies and data stay within their infrastructure (actual data flows depend on deployment configuration)
 2. **Test-Mature Foundation**: Built on proven frameworks (Nautilus Trader patterns, SB3) with automated test suite (verify via `pytest`; no customer production usage yet)
 3. **European Regulatory Alignment**: Architecture designed to support MiFID II, GDPR, and DORA alignment (not certified; clients run their own compliance assessment)
-4. **Designed for Enterprise Security**: Multi-layer security design with audit trails, kill switches, and SOC 2 certification roadmap (not yet certified; target 2027)
+4. **Designed for Enterprise Security**: Multi-layer security design with audit trails, kill switches, and vendor due diligence support (no certification claims; security documentation available under NDA)
 5. **Modular Integration**: Pluggable architecture designed to extend existing workflows rather than replacing them
 
 ---

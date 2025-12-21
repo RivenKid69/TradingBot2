@@ -125,7 +125,7 @@ This section describes the product’s design intent for EU-facing deployments. 
 |----------|------------|---------|
 | **Go-to-Market** | 40% | Sales team, customer acquisition, EU market entry |
 | **Engineering** | 35% | DevOps, frontend, cloud infrastructure |
-| **Operations** | 15% | Legal/compliance operations, SOC 2 readiness roadmap |
+| **Operations** | 15% | Legal/compliance operations, vendor due diligence preparedness |
 | **Reserve** | 10% | Contingency, 18–24 month runway target |
 
 ### 1.7 Key Milestones (12 Months Post-Funding)
@@ -1195,7 +1195,7 @@ We acknowledge that achieving projections depends on multiple factors:
 | **Team Expansion** | Hire sales, DevOps | 4-6 team members |
 | **Product-Market Fit** | Customer expansion indicators | increased paid usage (illustrative) |
 | **Revenue Traction** | Revenue scaling | milestone-based (illustrative; not a forecast) |
-| **SOC 2 Roadmap** | Security program | readiness milestones (no certification claim) |
+| **Security Program** | Vendor due diligence preparedness | security practices documentation (no certification claim) |
 | **Series A Prep** | Investor materials, metrics | Ready for raise |
 
 **Key Risks**: Hiring delays, churn
@@ -1332,7 +1332,7 @@ Series A Prep                                 ████████
 |------|-------------|--------|------------|
 | **Exchange API Changes** | Medium | Low | Adapter abstraction layer; monitored connectors and fast patch cadence |
 | **Model Degradation** | Low | Medium | Continuous retraining pipelines |
-| **Security Breach** | Low | High | SOC 2 roadmap; no client funds handled |
+| **Security Breach** | Low | High | Security best practices; no client funds/secrets in Cloud |
 | **System Downtime** | Low | High | Multi-region deployment, failover |
 
 ### 11.4 Financial Risks

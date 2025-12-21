@@ -115,19 +115,23 @@ Per Article 14 of the EU AI Act, the following oversight measures are recommende
 
 ## 9. EU AI Act Classification
 
+> **Note**: Classification and applicable obligations depend on deployment context and should be validated with qualified legal counsel. CustodiaCloud does not self-classify in documentation.
+
 | Attribute | Value |
 |-----------|-------|
-| Classification | General-Purpose AI Model (GPAI) |
-| Relevant Articles | Article 53, Article 50, Article 52, Article 12, Article 14 |
-| Compliance Deadline | August 2, 2026 |
+| Classification | Deployment-dependent (consult legal counsel) |
+| Relevant Articles | Article 53, Article 50, Article 52, Article 12, Article 14 (indicative; requires legal review) |
+| Compliance Deadline | Per applicable regulation (requires legal verification) |
 
 ## 10. Contact Information
 
+> **Note**: Contact information will be updated upon EU entity establishment. For current inquiries, contact via repository issue tracker or founding team directly.
+
 | Type | Contact |
 |------|---------|
-| Technical Support | ai-support@platform.com |
-| Compliance Inquiries | compliance@platform.com |
-| General | info@platform.com |
+| Technical Support | [Pending EU entity establishment] |
+| Compliance Inquiries | [Pending EU entity establishment] |
+| General | [Pending EU entity establishment] |
 
 ---
 

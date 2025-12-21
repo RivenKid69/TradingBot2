@@ -134,7 +134,7 @@ INCIDENT OCCURS
 
 | Category | Description | Evidence |
 |----------|-------------|----------|
-| **Platform Security** | SOC2 Type II readiness roadmap, encryption, access controls | SOC2 report (when available, per roadmap) |
+| **Platform Security** | Security program, encryption, access controls | Security documentation (available under NDA) |
 | **Availability** | Unvalidated design target: 99.9% availability (no production uptime data; actual SLA contract-specific) | Monthly SLA reporting (when operational) |
 | **Incident Support** | Incident response design (contract tier-dependent when operational) | Incident reporting workflow |
 | **Audit Support** | Client and NCA audit cooperation | Audit records |
@@ -216,7 +216,7 @@ Our subcontractor contracts are designed to require:
 |-------------|---------|----------|
 | Provider Information Package | Client's ROI submission | On request / portal |
 | Subcontractor Register | Third-party risk assessment | On request / portal |
-| SOC2 Report | Due diligence | On request under NDA (if/when obtained; roadmap) |
+| Security Documentation | Due diligence | On request under NDA |
 | SLA Reports | Ongoing monitoring | Periodic (cadence defined per contract) |
 | Incident Reports | Regulatory compliance | Per incident |
 | Exit Plan Summary | Exit planning | On request |
@@ -260,7 +260,7 @@ Our subcontractor contracts are designed to require:
 | Client operational audit | Client | Full cooperation | Per client schedule |
 | Client security audit | Client | Evidence provision | Per client schedule |
 | NCA inspection | Client/NCA | Cooperation | Per NCA schedule |
-| SOC2 audit | Provider | Coordination | Annual |
+| Security audit (if applicable) | Provider | Coordination | Per roadmap (no current commitment) |
 | Pooled audit | Provider | Coordination | Annual |
 
 ### 6.3 Exit Coordination
