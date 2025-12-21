@@ -1,6 +1,6 @@
 # Local Vault: Credential Storage
 
-> **Version**: 1.0.0 | **Last Updated**: 2025-12-16
+> **Version**: 1.0.1 | **Last Updated**: 2025-12-22
 
 ## Overview
 
@@ -57,8 +57,8 @@ vault:
 
 **Encryption:**
 - Algorithm: AES-256-GCM
-- Key derivation: Argon2id
-- Unique salt per vault
+- Key derivation: PBKDF2-HMAC-SHA256 (100,000 iterations)
+- Unique salt per vault (16 bytes)
 
 ---
 

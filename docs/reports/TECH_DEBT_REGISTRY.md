@@ -1,7 +1,7 @@
 # Technical Debt Registry
 
-**Version**: 2.7
-**Date**: 2025-12-21
+**Version**: 2.9
+**Date**: 2025-12-22
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
 
@@ -697,6 +697,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Per Documentation Canon: unchecked items in planning docs represent milestones, not defects. Section clarified with note: "Unchecked items represent planned milestones, not current defects." Checkboxes updated to reflect actual implementation status (6/7 complete, 1 pending client validation). |
 
+### docs-vault-kdf-drift {#docs-vault-kdf-drift}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/agent/LOCAL_VAULT.md:60` |
+| **Severity** | Medium |
+| **Description** | Documentation claimed "Key derivation: Argon2id" but implementation uses PBKDF2-HMAC-SHA256 |
+| **Status** | Closed |
+| **Control Artifact** | `docs/security/ENCRYPTION_VERIFICATION.md:28-44` (verifies PBKDF2), `packages/agent/vault/local_vault.py:427-435` (implementation) |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Documentation corrected from "Argon2id" to "PBKDF2-HMAC-SHA256 (100,000 iterations)". PBKDF2-HMAC-SHA256 with 100,000 iterations is NIST-approved and meets security requirements per OWASP Password Storage Cheat Sheet. ENCRYPTION_VERIFICATION.md already correctly documented the actual implementation. Per Documentation Canon: documentation must reflect reality. |
+
 ---
 
 ## Process/Governance
@@ -908,7 +920,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after security-lob-cache-pickle closure*
+*Updated 2025-12-22 after docs-vault-kdf-drift closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -917,16 +929,16 @@ Each entry contains:
 | Testing/Quality | 2 | 4 | 5 | 11 | 4 | 7 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
 | Security | 3 | 6 | 1 | 10 | 2 | 8 |
-| Docs/Drift | 1 | 4 | 4 | 9 | 2 | 7 |
+| Docs/Drift | 1 | 5 | 4 | 10 | 2 | 8 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **13** | **30** | **25** | **68** | **22** | **46** |
+| **TOTAL** | **13** | **31** | **25** | **69** | **22** | **47** |
 
 **Status Summary**:
 - 22 items Controlled (with active monitoring/artifacts)
-- 46 items Closed (resolved)
+- 47 items Closed (resolved)
 
 ---
 
@@ -953,6 +965,7 @@ Each entry contains:
 | 2.6 | 2025-12-21 | CTO due diligence batch 3: Added 2 items (data-transformers-defensive-exceptions [Closed], dependency-numpy-2x-migration [Closed]). Created: transformers.py module docstring with pattern documentation, docs/migration/NUMPY_2X_MIGRATION_PLAN.md with phased migration strategy. Total: 61 items (22 Controlled, 39 Closed). |
 | 2.7 | 2025-12-21 | CTO due diligence batch 4: Added 6 items (arch-defensive-exception-sandbox [Closed], adapter-polygon-tick-streaming [Closed], adapter-deribit-rest-only [Closed], docs-forex-integration-roadmap [Closed], testing-optional-deps-pattern [Closed], perf-reward-cap [Closed]). Module docstrings added to sandbox/*.py, adapters/polygon/market_data.py, adapters/deribit/options.py. FOREX_INTEGRATION.md checkboxes clarified. tests/conftest.py pattern documented. reward.pyx comment updated. Total: 67 items (22 Controlled, 45 Closed). |
 | 2.8 | 2025-12-22 | CTO due diligence batch 5: Added security-lob-cache-pickle (Low, Closed). Implemented HMAC-SHA256 integrity verification for LOB disk cache pickle deserialization. Controls: signature appended to cache files, verified before pickle.loads(), tampered files rejected and deleted, key configurable via LOB_CACHE_HMAC_KEY env var. Total: 68 items (22 Controlled, 46 Closed). |
+| 2.9 | 2025-12-22 | CTO due diligence batch 6: Added docs-vault-kdf-drift (Medium, Closed). LOCAL_VAULT.md incorrectly stated "Argon2id" but implementation uses PBKDF2-HMAC-SHA256. Fixed: documentation corrected to match implementation. Control artifact: ENCRYPTION_VERIFICATION.md already verified PBKDF2. Total: 69 items (22 Controlled, 47 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
