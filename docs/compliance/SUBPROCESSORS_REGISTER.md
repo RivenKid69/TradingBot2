@@ -21,7 +21,7 @@ This design commitment:
 - Is planned to be verified quarterly through subprocessor audits (when operational)
 - Is communicated to customers in the Privacy Policy
 
-**No personal data is designed to be transferred outside the European Union in standard deployment configurations.**
+**Design intent**: In standard deployment configurations, the platform is designed to process personal data within the European Union only. *This is a design commitment; operational enforcement depends on infrastructure deployment, configuration validation, and ongoing drift monitoring. Verification artifacts will be available post-deployment.*
 
 > **Note on Vendor Certifications**: All subcontractor certifications listed in this register are vendor-reported. Where specific certifications are referenced, clients should verify current status directly via the vendor's trust center or compliance portal (links provided where available). Certification status should be reviewed quarterly as part of third-party risk management.
 

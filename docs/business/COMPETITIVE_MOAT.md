@@ -57,7 +57,7 @@ According to S&P 500 Economic Moat Index:
 - **33%** have "narrow moat" (5-10 years)
 - **50%** have no sustainable moat
 
-**Target:** Narrow-to-wide defensibility through trade secrets, execution-quality engineering, and unique Cloud/Agent boundary; potential patent strategy is optional and counsel-led (no “patent pending” claims).
+**Target (intended strategy, not validated market position):** Narrow-to-wide defensibility through trade secrets, execution-quality engineering, and differentiated Cloud/Agent boundary (CCEA). Potential patent strategy is optional and counsel-led (no "patent pending" claims). *Per Canon 4.5: this is an intended defensibility strategy; actual competitive position depends on market validation and customer adoption.*
 
 ---
 

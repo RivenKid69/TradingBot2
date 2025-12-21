@@ -649,7 +649,7 @@ Open-source backtesting libraries are valuable building blocks, but they typical
 | BlackRock Aladdin | EUR 500K-2M+ | EUR 2B+ AUM | EUR 20K-200K |
 | Refinitiv Eikon | EUR 22K-48K/user | Enterprise only | Mid-market subscription (size-based) |
 
-**Our Value Proposition**: 80-90% cost reduction for equivalent institutional-grade capabilities, accessible to firms with EUR 5M-100M in proprietary capital.
+**Our Value Proposition**: Designed to significantly reduce infrastructure costs compared to enterprise incumbents (target: meaningful savings for teams currently evaluating Bloomberg/Refinitiv alternatives or in-house builds), intended to be accessible to firms with EUR 5M-100M in proprietary capital. *Actual cost savings depend on customer use case, deployment scope, and current infrastructure spend; no specific percentage is guaranteed.*
 
 #### 6.3.5 In-House Development — The Hidden Competitor
 
@@ -1901,7 +1901,7 @@ Industry commentary highlights that proprietary trading firms face high costs fo
 
 **Scenario 3: Bloomberg Budget Rejection**
 - **Trigger**: CFO rejects EUR 250K+ Bloomberg AIM proposal
-- **Our Message**: "Same institutional capabilities, 80-90% less cost"
+- **Our Message**: "Institutional-grade research and deployment capabilities at a fraction of enterprise pricing" *(illustrative positioning; actual value depends on customer use case)*
 - **Proof Point**: Client-controlled execution boundary + risk-first ML + deployment and evidence workflows
 
 ---

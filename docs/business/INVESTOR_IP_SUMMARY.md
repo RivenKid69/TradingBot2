@@ -12,7 +12,7 @@
 
 ## Executive Summary
 
-CustodiaCloud’s defensibility is engineering-led:
+CustodiaCloud's intended defensibility strategy is engineering-led (not relying on legal claims or performance promises):
 
 - **CCEA architecture**: Cloud research/monitoring + customer-controlled Agent execution boundary.
 - **Operational know-how**: repeatable deployment workflows, risk controls, and governance/evidence exports.

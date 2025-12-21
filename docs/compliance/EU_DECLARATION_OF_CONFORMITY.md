@@ -1,5 +1,17 @@
 # EU Declaration of Conformity (Template)
 
+> **⚠️ CRITICAL LEGAL NOTICE — READ BEFORE USE**
+>
+> This document is a **draft template only** and does **NOT** constitute:
+> - A legal declaration of conformity
+> - A certification or audit result
+> - An assertion that any system is compliant with the EU AI Act
+> - A substitute for legal counsel or notified body assessment
+>
+> **Before any external use**: This template **must** be reviewed and completed by qualified legal counsel. If the AI system is determined to be high-risk (deployment-dependent), involvement of a notified body may be required.
+>
+> CustodiaCloud does not claim EU AI Act compliance or conformity. Per `docs/DOCUMENTATION_CANON_DESIGN.md` Section 4.2: "Do not claim... 'EU AI Act compliant', 'conformity assessment completed'."
+
 **IMPORTANT (Template):** This document is a draft template for providers to complete as part of their own conformity assessment workflow. It does not constitute a legal declaration, certification, or independent audit result. Replace all placeholders and validate requirements with qualified counsel and (where applicable) a notified body before use.
 
 ## Regulation (EU) 2024/1689 (Artificial Intelligence Act)
@@ -49,11 +61,15 @@ Software/ML-enabled research and deployment platform (CCEA architecture) that su
 
 ---
 
-## 3. Declaration of Conformity (Provider Statement)
+## 3. Declaration of Conformity (Provider Statement Template)
 
-This declaration of conformity is issued under the sole responsibility of the provider (once completed and signed by the provider).
+> **Template Section**: The text below is template language to be completed by the provider after their own conformity assessment. It does NOT represent a current assertion by CustodiaCloud.
 
-**The AI system described above is in conformity with:**
+*[When completed by the provider, this section would state:]*
+
+This declaration of conformity is issued under the sole responsibility of the provider.
+
+**[PROVIDER TO COMPLETE AFTER CONFORMITY ASSESSMENT]:** The provider asserts that the AI system described above is in conformity with:
 
 - **Regulation (EU) 2024/1689** of the European Parliament and of the Council of 13 June 2024 laying down harmonised rules on artificial intelligence (Artificial Intelligence Act)
 

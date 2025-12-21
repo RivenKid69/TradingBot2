@@ -44,7 +44,9 @@ This invention relates to machine learning systems for automated trading, specif
 
 **Patent Prior Art Search (Preliminary Internal Review):**
 
-> **IMPORTANT**: This is a **preliminary internal search** using Google Patents and USPTO public search (conducted December 2024). This is **NOT** a professional Freedom-to-Operate (FTO) analysis. A comprehensive FTO search by qualified patent counsel is required before any filing or public "patent pending" claims.
+> **⚠️ STALE SEARCH WARNING**: The preliminary search below was conducted in **December 2024**. As of this document's date, this search is **approximately 12 months old** and likely stale. Patent databases change frequently; any reliance on this search for filing or commercial decisions requires an **updated professional FTO analysis**.
+
+> **IMPORTANT**: This is a **preliminary internal search** using Google Patents and USPTO public search (conducted December 2024). This is **NOT** a professional Freedom-to-Operate (FTO) analysis. A comprehensive FTO search by qualified patent counsel is required before any filing or public "patent pending" claims. Per `docs/DOCUMENTATION_CANON_DESIGN.md` Section 4.5: avoid absolute claims like "no patents found" or "freedom to operate confirmed".
 
 Sample patents reviewed (non-exhaustive):
 - US10,614,520 (Goldman Sachs) - "Reinforcement learning for trading" - General RL, no CVaR integration identified
