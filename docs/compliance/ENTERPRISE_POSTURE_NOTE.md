@@ -94,7 +94,7 @@ This document applies to:
 
 ### 3.2 Data Residency Commitments
 
-**All deployment modes enforce EU-only data residency:**
+**All deployment modes are designed to enforce EU-only data residency (verify via deployment configuration and audits):**
 
 | Component | SaaS/Enterprise Cloud | On-Prem/VPC/Air-Gapped |
 |-----------|----------------------|------------------------|

@@ -4,7 +4,7 @@
 
 **Regulation**: General Data Protection Regulation (EU) 2016/679
 **Architecture**: Cloud-Controlled Execution Architecture (CCEA)
-**Status**: Privacy-by-design controls implemented (legal review pending; not a compliance certification)
+**Status**: Privacy-by-design controls implemented in internal tooling (legal review pending; not a compliance certification; verify via CI/deployment evidence)
 **Last Updated**: 2025-12-19
 
 ---

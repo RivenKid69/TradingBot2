@@ -52,7 +52,7 @@ Sample patents reviewed (non-exhaustive):
 - US10,614,520 (Goldman Sachs) - "Reinforcement learning for trading" - General RL, no CVaR integration identified
 - US11,048,741 (Two Sigma) - "Execution optimization" - Not RL-based per patent abstract
 
-**Preliminary observation** (subject to professional FTO validation): Initial search did not identify patents explicitly combining all of: Distributional RL + CVaR integration + Twin Critics + Conformal prediction bounds for financial execution.
+**Preliminary note (non-exhaustive; not a conclusion):** The internal search was limited and should not be used to infer freedom-to-operate or the absence of relevant patents.
 
 **Required before filing**: Professional FTO report from patent counsel covering:
 - Comprehensive USPTO/EPO/WIPO database search

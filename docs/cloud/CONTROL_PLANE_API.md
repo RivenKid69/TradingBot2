@@ -542,7 +542,7 @@ POST /webhooks
 
 ### Prohibited Payloads
 
-The API **REJECTS** any payload containing order-like fields:
+The API is designed to reject payloads containing order-like fields (schema validation + guardrails; verify via tests in the current deployment):
 
 ```json
 // REJECTED - returns 400 Bad Request
@@ -555,7 +555,7 @@ The API **REJECTS** any payload containing order-like fields:
 
 ### Signature Verification
 
-All commands from Cloud are signed. Agents MUST verify:
+Commands from Cloud are designed to be signed under the CCEA protocol. Agents MUST verify:
 
 1. Signature is valid for payload
 2. Timestamp is within acceptable drift (default: 60 seconds)

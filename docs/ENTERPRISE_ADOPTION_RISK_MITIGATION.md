@@ -37,10 +37,10 @@ Prop trading firms have legitimate concerns about adopting external software:
 
 | Concern | Our Response |
 |---------|--------------|
-| **"Our strategies are our competitive edge"** | On-premises deployment - designed so your data does not leave your servers |
+| **"Our strategies are our competitive edge"** | On-premises deployment - designed so data stays on customer infrastructure; verify via deployment configuration |
 | **"Startups may disappear"** | Open architecture, no vendor lock-in, source code escrow options |
-| **"We need 99.99% uptime"** | Multi-region failover design, comprehensive monitoring (planned), 24/7 support tier (planned; pending 4+ FTE on-call team; actual coverage per executed agreement) |
-| **"Regulatory compliance is critical"** | MiFID II-aligned audit trails, GDPR-aligned data handling |
+| **"We need 99.99% uptime"** | Multi-region failover design (planned), monitoring (planned), support tiers per executed agreement; no public SLA commitments |
+| **"Regulatory compliance is critical"** | Tooling designed to support MiFID II/GDPR alignment; clients run their own compliance and legal review |
 | **"Integration with existing systems"** | REST/WebSocket APIs, FIX protocol support, modular adapters |
 | **"We need control over updates"** | Customer-controlled update cycles, staging environments |
 

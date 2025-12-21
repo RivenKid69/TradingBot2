@@ -63,9 +63,9 @@ Per Threat Model T3 (Legacy Model Accumulation), this registry enables:
 - CI/CD scans (Bandit) flag new unsafe loading code
 - Production alerts on ALLOW_UNSAFE_MODEL_LOAD environment variable
 
-### Monthly Audit
+### Monthly Audit (target cadence; verify via audit logs)
 
-The security team performs monthly audits:
+Target cadence: monthly audits by the security team:
 1. Query model storage for pickle-format files
 2. Verify all models load with `weights_only=True`
 3. Update this registry with any new legacy models

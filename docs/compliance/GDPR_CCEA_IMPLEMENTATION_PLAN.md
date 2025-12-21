@@ -274,9 +274,9 @@ DoD:
 - 144 tests passing for governance module (no regression)
 - 40 tests passing for Phase 2 governance tests (no regression)
 
-### Phase 3 — EU-only data residency enforcement (tenant/workspace) [TOOLING COMPLETE - 2025-12-16]
+### Phase 3 — EU-only data residency enforcement (tenant/workspace) [INTERNAL TOOLING COMPLETE - 2025-12-16]
 
-**Status**: ✅ **TOOLING COMPLETE** (internal implementation; verify via CI/tests and deployment audits)
+**Status**: ✅ **INTERNAL TOOLING COMPLETE** (codebase status; verify via CI/tests and deployment audits; enforcement depends on deployment validation)
 
 **Goal**: residency is a runtime enforcement, not just a claim.
 

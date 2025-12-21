@@ -98,7 +98,7 @@ Telemetry transmitted from Agent to Cloud is redacted/bucketed according to the 
 | `equity: 100500.25` | `equity_bucket: "100K-500K"` | Bucketed |
 | `pnl: 5.23%` | `pnl_percent: 5.2` | Rounded |
 
-Redaction is enforced by schema/controls for data transmitted to Cloud.
+Redaction is designed to be enforced by schema/controls for data transmitted to Cloud (verify via tests and deployment configuration).
 
 ---
 
@@ -651,7 +651,7 @@ We do not use advertising cookies or allow third-party advertising trackers.
 
 ### 9.1 Technical Measures
 
-We implement comprehensive security controls:
+We are designing security controls with the following targets (deployment- and contract-dependent):
 
 - **Encryption at rest**: AES-256 is the design target for sensitive Cloud data (e.g., account data, audit logs, redacted telemetry); broker credentials are designed to remain in the customer-controlled Agent environment (verify via deployment configuration)
 - **Encryption in transit**: TLS 1.3 is the design target for communications (verify via TLS policy and configuration exports)
@@ -668,7 +668,7 @@ We implement comprehensive security controls:
 
 ### 9.3 Audit and Monitoring
 
-- Security assessments (internal) and penetration testing (planned; see Trust Center for roadmap)
+- Internal security assessments (planned/ongoing; see Trust Center for roadmap) and penetration testing (planned; see Trust Center for roadmap)
 - Continuous monitoring for suspicious activities
 - Audit logging of all sensitive data access
 

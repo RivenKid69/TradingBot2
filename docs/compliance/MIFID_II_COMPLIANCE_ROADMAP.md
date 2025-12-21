@@ -2,7 +2,7 @@
 
 **Версия**: 8.0
 **Дата**: 2025-12-11
-**Статус**: Toolkit phases implemented (internal tooling; verify current status via CI run logs; not independently audited or certified; not a compliance claim)
+**Статус**: Toolkit phases implemented in internal tooling (verification via CI run logs required; not independently audited or certified; not a compliance claim)
 
 ---
 

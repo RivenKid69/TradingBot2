@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Artifact Builder creates immutable, signed trading strategy artifacts. Every artifact is:
+The Artifact Builder is designed to create immutable, signed trading strategy artifacts. Artifacts are designed to be:
 - **Digest-pinned**: Content-addressable by SHA256
 - **Signed**: Cryptographically signed with cosign/GPG
 - **Documented**: Includes SBOM and provenance

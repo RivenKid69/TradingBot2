@@ -184,7 +184,7 @@ The following limitations apply to this AI system:
 
 ### 6.1 Oversight Requirements (Article 13(3)(b)(v))
 
-This AI system is designed to be operated under effective human oversight in accordance with Article 14 of the EU AI Act.
+This AI system is designed to support effective human oversight aligned with Article 14 of the EU AI Act (deployment-dependent; not a compliance claim).
 
 ### 6.2 Oversight Capabilities
 
