@@ -59,8 +59,29 @@ except ImportError:
 # Contract Specifications
 # =========================
 
-# Hardcoded contract specs (as fallback when not connected to IB)
-# These are from CME Group specifications
+# HARDCODED CONTRACT SPECS - FALLBACK DATA
+# =========================================
+# Tech Debt: data-ib-hardcoded-specs (docs/reports/TECH_DEBT_REGISTRY.md)
+#
+# Purpose: Fallback contract specifications when IB connection unavailable
+# Source: CME Group public specifications (https://www.cmegroup.com/trading/products/)
+# Last Updated: 2025-12-21
+# Version: 1.0.0
+#
+# IMPORTANT:
+# - These values are APPROXIMATE and may become stale
+# - Margin requirements change frequently based on market conditions
+# - Always prefer live IB data when available
+# - For production, verify against live broker specs
+#
+# Refresh procedure:
+# 1. Check CME Group website for current specs
+# 2. Update values below
+# 3. Update "Last Updated" date above
+# 4. Run tests: pytest tests/test_ib_adapters.py -v
+#
+CONTRACT_SPECS_VERSION = "1.0.0"
+CONTRACT_SPECS_UPDATED = "2025-12-21"
 CONTRACT_SPECS: Dict[str, Dict[str, Any]] = {
     # E-mini S&P 500
     "ES": {

@@ -14,6 +14,27 @@ cfg = CommonRunConfig(...)
 for report in from_config(cfg):
     print(report)
 ```
+
+DEFENSIVE EXCEPTION HANDLING PATTERN (Tech Debt: ops-signal-runner-exceptions)
+===============================================================================
+This module uses intentional `except Exception: pass` blocks in two categories:
+
+1. **Monitoring/Telemetry Updates** (e.g., lines ~943-955):
+   - Monitoring failures must not interrupt the critical trading flow
+   - Pattern: try: monitoring.update(...) except Exception: pass
+   - Rationale: Fail-safe for non-critical observability; main loop continues
+
+2. **Type Coercion with Fallback** (e.g., lines ~356-368):
+   - Input parsing with safe defaults when conversion fails
+   - Pattern: try: value = str(x) except Exception: return ""
+   - Rationale: Defensive parsing; invalid input yields safe default
+
+These patterns are INTENTIONAL and CONTROLLED:
+- Registry: docs/reports/TECH_DEBT_REGISTRY.md#ops-signal-runner-exceptions
+- Rationale: Trading continuity takes precedence over logging/monitoring failures
+- Observability: Monitoring layer has its own error tracking; core loop must not fail
+
+Do NOT remove these blocks without understanding the fail-safe design.
 """
 
 from __future__ import annotations

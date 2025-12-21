@@ -637,6 +637,66 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | doctor.py now checks pyotp, argon2, cryptography, requests and reports fallback behavior |
 
+### build-lockfile-freshness {#build-lockfile-freshness}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `.github/workflows/build-and-test.yml:293-393` |
+| **Severity** | Low |
+| **Description** | Lockfile freshness now tracked in CI with age warnings |
+| **Status** | Closed |
+| **Control Artifact** | CI job `Check lockfile freshness` + artifact `lockfile-freshness.json` |
+| **Closure Date** | 2025-12-21 |
+| **Note** | CI checks lockfile age (warn if >90 days) and compares mtime with requirements files. Warns if requirements newer than lockfiles. |
+
+---
+
+## Testing/Quality
+
+### testing-mock-density {#testing-mock-density}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/**/*.py` (344 files, ~5580 mock usages) |
+| **Severity** | Low |
+| **Description** | High mock density in tests (~16 mocks per file average) |
+| **Status** | Controlled |
+| **Control Artifact** | `docs/testing/TESTING_POLICY.md` |
+| **Note** | Mock density is intentional for external API testing (Binance, Alpaca, IB, OANDA). Policy documents acceptable vs unacceptable mock usage. Integration tests exist for critical paths. |
+| **Added** | 2025-12-21 |
+
+---
+
+## Reliability/Operations
+
+### ops-signal-runner-exceptions {#ops-signal-runner-exceptions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `service_signal_runner.py:18-37` (header), multiple exception blocks |
+| **Severity** | Medium |
+| **Description** | Defensive `except Exception: pass` blocks (50+) for monitoring/parsing |
+| **Status** | Controlled |
+| **Control Artifact** | Module docstring documents pattern; this registry entry |
+| **Note** | Two categories: (1) Monitoring updates - failures must not interrupt trading flow; (2) Type coercion with safe defaults. Pattern is INTENTIONAL per CCEA Design Doc: trading continuity takes precedence over logging failures. |
+| **Added** | 2025-12-21 |
+
+---
+
+## Data/ML
+
+### data-ib-hardcoded-specs {#data-ib-hardcoded-specs}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/ib/exchange_info.py:62-84` |
+| **Severity** | Low |
+| **Description** | Hardcoded CME contract specs used as fallback when IB unavailable |
+| **Status** | Closed |
+| **Control Artifact** | Version metadata (CONTRACT_SPECS_VERSION, CONTRACT_SPECS_UPDATED) + refresh procedure in code comments |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Specs are fallback-only (prefer live IB data). Version/date tracking added. Refresh procedure documented. Margin values marked as approximate. |
+
 ---
 
 ## Other
@@ -656,25 +716,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-21 after DORA proportionality scope closure*
+*Updated 2025-12-21 after CTO due diligence new findings closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 2 | 6 | 2 | 4 |
-| Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
-| Testing/Quality | 1 | 3 | 2 | 6 | 1 | 5 |
-| Reliability/Operations | 2 | 4 | 0 | 6 | 4 | 2 |
+| Data/ML | 3 | 4 | 1 | 8 | 5 | 3 |
+| Testing/Quality | 1 | 3 | 3 | 7 | 2 | 5 |
+| Reliability/Operations | 2 | 5 | 0 | 7 | 5 | 2 |
 | Security | 3 | 6 | 0 | 9 | 2 | 7 |
 | Docs/Drift | 1 | 2 | 3 | 6 | 1 | 5 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
-| Reproducibility/Build | 0 | 2 | 2 | 4 | 0 | 4 |
+| Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **11** | **25** | **12** | **48** | **16** | **32** |
+| **TOTAL** | **11** | **26** | **15** | **52** | **18** | **34** |
 
 **Status Summary**:
-- 16 items Controlled (with active monitoring/artifacts)
-- 32 items Closed (resolved)
+- 18 items Controlled (with active monitoring/artifacts)
+- 34 items Closed (resolved)
 
 ---
 
@@ -695,6 +755,7 @@ Each entry contains:
 | 2.0 | 2025-12-21 | Minor tech debt closure: Added 3 items (adapter-forex-stubs, testing-pragma-nocover-tracking, docs-l3-lob-status). All 3 Closed. Updated ARCHITECTURE.md L3 LOB status. Total: 45 items (16 Controlled, 29 Closed). |
 | 2.1 | 2025-12-21 | CTO due diligence minor items: Added 2 items (docs-gdpr-coverage-targets, build-cross-platform-nondeterminism). Both Closed. GDPR_INTEGRATION_PLAN.md updated with coverage target disclaimer. Total: 47 items (16 Controlled, 31 Closed). |
 | 2.2 | 2025-12-21 | DORA proportionality scope closure: Added docs-dora-proportionality-scope (High, Closed). Document restructured as Client Reference Template per CCEA ICT Provider posture. Total: 48 items (16 Controlled, 32 Closed). |
+| 2.3 | 2025-12-21 | CTO due diligence new findings closure: Added 4 items (ops-signal-runner-exceptions [Controlled], testing-mock-density [Controlled], data-ib-hardcoded-specs [Closed], build-lockfile-freshness [Closed]). Created TESTING_POLICY.md, added lockfile freshness CI check, documented defensive exception patterns. Total: 52 items (18 Controlled, 34 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

@@ -290,6 +290,108 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
+      # ========================================================================
+      # Lockfile Freshness Check (Tech Debt: build-lockfile-freshness)
+      # ========================================================================
+      - name: Check lockfile freshness
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "=== Lockfile Freshness Report ==="
+          echo "Tech Debt: build-lockfile-freshness"
+          echo ""
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timedelta
+          from pathlib import Path
+
+          LOCKFILES = [
+              "requirements-cpu.lock.txt",
+              "requirements-gpu.lock.txt",
+          ]
+          REQUIREMENTS = [
+              "requirements.txt",
+              "requirements-dev.txt",
+              "requirements-build.txt",
+          ]
+          MAX_AGE_DAYS = 90  # Warn if lockfile older than 90 days
+          report = {"lockfiles": [], "warnings": [], "status": "OK"}
+
+          for lockfile in LOCKFILES:
+              path = Path(lockfile)
+              if not path.exists():
+                  report["warnings"].append(f"{lockfile}: NOT FOUND")
+                  continue
+
+              # Check for Generated header with date
+              content = path.read_text(encoding="utf-8", errors="ignore")
+              generated_date = None
+              for line in content.split("\n")[:10]:
+                  if "Generated" in line or "generated" in line:
+                      # Try to extract date
+                      import re
+                      match = re.search(r"(\d{4}-\d{2}-\d{2})", line)
+                      if match:
+                          generated_date = match.group(1)
+                          break
+
+              lock_stat = path.stat()
+              lock_mtime = datetime.fromtimestamp(lock_stat.st_mtime)
+              age_days = (datetime.now() - lock_mtime).days
+
+              entry = {
+                  "file": lockfile,
+                  "mtime": lock_mtime.isoformat(),
+                  "age_days": age_days,
+                  "generated_date": generated_date,
+              }
+              report["lockfiles"].append(entry)
+
+              if age_days > MAX_AGE_DAYS:
+                  report["warnings"].append(
+                      f"{lockfile}: {age_days} days old (threshold: {MAX_AGE_DAYS})"
+                  )
+
+          # Check if requirements are newer than lockfiles
+          for req in REQUIREMENTS:
+              req_path = Path(req)
+              if not req_path.exists():
+                  continue
+              req_mtime = datetime.fromtimestamp(req_path.stat().st_mtime)
+              for lock_entry in report["lockfiles"]:
+                  lock_mtime = datetime.fromisoformat(lock_entry["mtime"])
+                  if req_mtime > lock_mtime:
+                      report["warnings"].append(
+                          f"{req} is newer than {lock_entry['file']} - regenerate lockfile"
+                      )
+
+          if report["warnings"]:
+              report["status"] = "WARN"
+
+          Path("lockfile-freshness.json").write_text(
+              json.dumps(report, indent=2), encoding="utf-8"
+          )
+
+          print(f"Status: {report['status']}")
+          for entry in report["lockfiles"]:
+              print(f"  {entry['file']}: {entry['age_days']} days old")
+              if entry.get("generated_date"):
+                  print(f"    Generated: {entry['generated_date']}")
+          if report["warnings"]:
+              print("\nWarnings:")
+              for w in report["warnings"]:
+                  print(f"  - {w}")
+          PY
+
+      - name: Upload lockfile freshness report
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.os == 'ubuntu-latest'
+        with:
+          name: lockfile-freshness
+          path: lockfile-freshness.json
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Clean artifacts
         run: make clean
 
