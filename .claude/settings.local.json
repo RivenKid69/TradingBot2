@@ -31,7 +31,8 @@
       "Bash(cmd /c \"dir /B *.md\")",
       "Bash(mkdir:*)",
       "Bash(for dir in docs/reports/*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(python3 -m pytest:*)"
     ],
     "deny": [],
     "ask": []

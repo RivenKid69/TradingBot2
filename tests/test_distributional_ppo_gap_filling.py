@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import math
+import os
+import sys
+from collections import namedtuple
 from types import SimpleNamespace
 
 import gymnasium as gym
@@ -11,6 +14,7 @@ from gymnasium import spaces
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
+import distributional_ppo as dppo
 from distributional_ppo import (
     DistributionalPPO,
     PopArtController,
@@ -98,6 +102,69 @@ def setup_and_collect(model: DistributionalPPO, env, *, n_steps: int | None = No
     model._last_callback = callback
     model._current_progress_remaining = 1.0
     return model.collect_rollouts(env, callback, model.rollout_buffer, n_rollout_steps=n_steps or model.n_steps)
+
+
+def disable_vf_clip_warmup(model: DistributionalPPO) -> None:
+    model._vf_clip_warmup_updates = 0
+    model._vf_clip_threshold_ev = None
+    model._vf_clip_latest_ev = 1.0
+
+
+def patch_create_sequencers_allow_scalar(monkeypatch) -> None:
+    original = dppo.create_sequencers
+
+    def _patched(episode_starts, env_change, device):
+        episode_starts_np = np.asarray(episode_starts, dtype=bool)
+        env_change_np = np.asarray(env_change, dtype=bool)
+        if episode_starts_np.shape != env_change_np.shape:
+            raise ValueError("'episode_starts' and 'env_change' must share the same shape")
+
+        episode_starts_np = np.squeeze(episode_starts_np)
+        env_change_np = np.squeeze(env_change_np)
+        if episode_starts_np.ndim != 0:
+            return original(episode_starts, env_change, device)
+
+        episode_starts_np = episode_starts_np.reshape(1)
+        env_change_np = env_change_np.reshape(1)
+
+        combined_flags = np.logical_or(episode_starts_np, env_change_np)
+        if combined_flags.size == 0:
+            raise ValueError("Cannot create sequencers from empty rollout segments")
+
+        combined_flags[0] = True
+        seq_start_indices = np.flatnonzero(combined_flags).astype(np.int64, copy=False)
+
+        seq_ends = np.concatenate(
+            (seq_start_indices[1:], np.array([combined_flags.size], dtype=np.int64))
+        )
+        seq_lengths = seq_ends - seq_start_indices
+        max_length = int(seq_lengths.max()) if seq_lengths.size > 0 else 0
+
+        def pad(array):
+            arr_np = (
+                array.detach().cpu().numpy()
+                if isinstance(array, torch.Tensor)
+                else np.asarray(array)
+            )
+            if arr_np.shape[0] != combined_flags.size:
+                raise ValueError("Input has incompatible leading dimension for padding")
+
+            trailing_shape = arr_np.shape[1:]
+            padded_shape = (len(seq_start_indices), max_length) + trailing_shape
+            padded = np.zeros(padded_shape, dtype=arr_np.dtype)
+
+            for i, (start, length) in enumerate(zip(seq_start_indices, seq_lengths)):
+                padded[i, :length, ...] = arr_np[start : start + length, ...]
+
+            return padded
+
+        def pad_and_flatten(array):
+            padded = pad(array)
+            return padded.reshape((len(seq_start_indices) * max_length, *padded.shape[2:]))
+
+        return seq_start_indices, pad, pad_and_flatten
+
+    monkeypatch.setattr(dppo, "create_sequencers", _patched)
 
 
 @pytest.mark.parametrize(
@@ -1142,10 +1209,9 @@ def test_compute_explained_variance_metric_fallback_empty_indices():
 
 
 def test_collect_rollouts_non_mapping_info():
-    """Line 8261: Test info with missing or unusual keys (edge cases)."""
+    """Edge case: info without expected keys."""
     # DummyVecEnv modifies info, so we test with unusual info content
     def info_fn(step, action, terminated):
-        # Return minimal info that doesn't have expected keys
         return {"unexpected_key": 123}
 
     env = make_vec_env(info_fns=[info_fn], max_steps=4)
@@ -1340,15 +1406,16 @@ def test_train_return_false_paths():
     model.train()
 
 
-def test_collect_rollouts_vec_normalize_error():
+def test_collect_rollouts_vec_normalize_error(monkeypatch):
     """Lines 8267-8268: VecNormalize env error path."""
     env = make_vec_env(max_steps=4)
     model = make_model(env=env)
-    # Wrap in VecNormalize
-    vec_env = VecNormalize(env, norm_obs=True, norm_reward=False)
-    result = setup_and_collect(model, vec_env, n_steps=4)
+    def _raise_unwrap(_):
+        raise ValueError("unwrap failed")
+
+    monkeypatch.setattr(dppo, "unwrap_vec_normalize", _raise_unwrap)
+    result = setup_and_collect(model, env, n_steps=4)
     assert result is True
-    vec_env.close()
 
 
 def test_collect_rollouts_lstm_states_tuple():
@@ -2675,13 +2742,11 @@ def test_compute_ev_metric_all_inf_values():
 def test_collect_rollouts_terminal_obs_none():
     """Test collect_rollouts when terminal_observation is None (line 8708)."""
     def info_fn(step, action, terminated):
-        if terminated:
-            return {"time_limit_truncated": True, "terminal_observation": None}
-        return {}
+        return {"time_limit_truncated": True, "terminal_observation": None}
 
-    env = make_vec_env(info_fns=[info_fn], max_steps=4)
+    env = make_vec_env(info_fns=[info_fn], max_steps=100)
     model = make_model(env=env)
-    result = setup_and_collect(model, env, n_steps=4)
+    result = setup_and_collect(model, env, n_steps=1)
     assert result is True
 
 
@@ -2904,9 +2969,18 @@ def test_collect_rollouts_vec_normalize_none():
     """Test collect_rollouts when vec_normalize candidate is None (line 8261)."""
     env = make_vec_env(max_steps=4)
     model = make_model(env=env)
+    total = int(env.num_envs * model.n_steps)
+    _, callback = model._setup_learn(
+        total_timesteps=total,
+        callback=DummyCallback(),
+        reset_num_timesteps=True,
+    )
+    model._last_callback = callback
+    model._current_progress_remaining = 1.0
+    # Force second candidate_env to be None so the loop hits the continue branch.
+    model.env = None
 
-    # The standard env should trigger the candidate_env is None path
-    result = setup_and_collect(model, env, n_steps=4)
+    result = model.collect_rollouts(env, callback, model.rollout_buffer, n_rollout_steps=4)
     assert result is True
 
 
@@ -2926,13 +3000,11 @@ def test_collect_rollouts_states_list():
     assert result is True
 
 
-def test_collect_rollouts_group_key_empty():
+def test_collect_rollouts_group_key_empty(monkeypatch):
     """Test collect_rollouts with empty group_key_candidate (line 8553)."""
-    def info_fn(step, action, terminated):
-        return {"group_key": ""}  # Empty string
-
-    env = make_vec_env(info_fns=[info_fn], max_steps=4)
+    env = make_vec_env(max_steps=4)
     model = make_model(env=env)
+    monkeypatch.setattr(model, "_ev_group_key_from_info", lambda *_: "")
     result = setup_and_collect(model, env, n_steps=4)
     assert result is True
 
@@ -3186,8 +3258,18 @@ def test_collect_rollouts_with_raw_actions_none():
     """Test collect_rollouts when raw_actions is None path (line 8460)."""
     env = make_vec_env(max_steps=4)
     model = make_model(env=env)
-    result = setup_and_collect(model, env, n_steps=4)
-    assert result is True
+    original_forward = model.policy.forward
+
+    def _patched_forward(obs, lstm_states, episode_starts):
+        actions, values, log_probs, new_states = original_forward(
+            obs, lstm_states, episode_starts
+        )
+        model.policy._last_raw_actions = None
+        return actions, values, log_probs, new_states
+
+    model.policy.forward = _patched_forward
+    with pytest.raises(RuntimeError, match="raw actions"):
+        setup_and_collect(model, env, n_steps=1)
 
 
 def test_collect_rollouts_states_none():
@@ -3286,3 +3368,998 @@ def test_train_with_robust_scale_very_small():
     model._value_target_scale_robust = 1e-6  # Very small
     setup_and_collect(model, env, n_steps=4)
     model.train()
+
+
+# ============================================================================
+# Targeted coverage: distributional VF clipping with warmup disabled
+# ============================================================================
+
+
+@pytest.mark.parametrize("mode", ["mean_only", "mean_and_variance"])
+def test_train_quantile_vf_clip_modes_warmup_off(mode):
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": False,
+                "num_quantiles": 7,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        distributional_vf_clip_mode=mode,
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.2
+    if mode == "mean_and_variance":
+        def _patched_quantile_loss(predicted_quantiles, targets, reduction="mean"):
+            if reduction == "none":
+                return torch.zeros_like(predicted_quantiles)
+            return torch.tensor(0.0, device=predicted_quantiles.device)
+
+        model._quantile_huber_loss = _patched_quantile_loss
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+def test_train_quantile_vf_clip_mean_and_variance_no_old_quantiles():
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": False,
+                "num_quantiles": 7,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        distributional_vf_clip_mode="mean_and_variance",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.2
+    def _patched_quantile_loss(predicted_quantiles, targets, reduction="mean"):
+        if reduction == "none":
+            return torch.zeros_like(predicted_quantiles)
+        return torch.tensor(0.0, device=predicted_quantiles.device)
+
+    model._quantile_huber_loss = _patched_quantile_loss
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=4)
+    model.rollout_buffer.value_quantiles = None
+    model.train()
+
+
+def test_train_quantile_vf_clip_per_quantile_warmup_off():
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": False,
+                "num_quantiles": 5,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        distributional_vf_clip_mode="per_quantile",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.15
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+def test_train_quantile_vf_clip_per_quantile_missing_old_quantiles():
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": False,
+                "num_quantiles": 5,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        distributional_vf_clip_mode="per_quantile",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.15
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=4)
+    model.rollout_buffer.value_quantiles = None
+    with pytest.raises(RuntimeError, match="old_value_quantiles"):
+        model.train()
+
+
+def test_train_quantile_vf_clip_per_quantile_no_normalize():
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": False,
+                "num_quantiles": 5,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        normalize_returns=False,
+        distributional_vf_clip_mode="per_quantile",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.15
+    disable_vf_clip_warmup(model)
+    model._value_clip_limit_scaled = 5.0
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+@pytest.mark.parametrize("mode", ["mean_only", "mean_and_variance"])
+def test_train_categorical_vf_clip_modes_warmup_off(mode, monkeypatch):
+    env = make_vec_env(max_steps=4)
+    patch_create_sequencers_allow_scalar(monkeypatch)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": True,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        n_steps=1,
+        batch_size=1,
+        distributional_vf_clip_mode=mode,
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.2
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=1)
+    model.train()
+
+
+def test_train_categorical_vf_clip_mean_and_variance_no_old_probs(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    patch_create_sequencers_allow_scalar(monkeypatch)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": True,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        n_steps=1,
+        batch_size=1,
+        distributional_vf_clip_mode="mean_and_variance",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.2
+    disable_vf_clip_warmup(model)
+    setup_and_collect(model, env, n_steps=1)
+    model.rollout_buffer.value_probs = None
+    model.train()
+
+
+def test_train_categorical_vf_clip_per_quantile_no_normalize():
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {
+        "arch_params": {
+            "critic": {
+                "distributional": True,
+                "categorical": True,
+                "use_twin_critics": False,
+            }
+        }
+    }
+    model = make_model(
+        env=env,
+        normalize_returns=False,
+        distributional_vf_clip_mode="per_quantile",
+        policy_kwargs=policy_kwargs,
+    )
+    model.clip_range_vf = 0.2
+    disable_vf_clip_warmup(model)
+    model._value_clip_limit_scaled = 5.0
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+# ============================================================================
+# Targeted coverage: training masks + KL branches
+# ============================================================================
+
+
+def test_train_mask_handling_variants(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+    setup_and_collect(model, env, n_steps=4)
+
+    sample = next(model.rollout_buffer.get(batch_size=model.batch_size))
+    mask_bool_pos = torch.zeros_like(sample.mask, dtype=torch.bool)
+    mask_bool_pos.view(-1)[0] = True
+    mask_bool_zero = torch.zeros_like(sample.mask, dtype=torch.bool)
+    mask_float_pos = torch.zeros_like(sample.mask, dtype=torch.float32)
+    mask_float_pos.view(-1)[0] = 1.0
+    mask_float_zero = torch.zeros_like(sample.mask, dtype=torch.float32)
+
+    samples = (
+        sample._replace(mask=mask_bool_pos),
+        sample._replace(mask=mask_bool_zero),
+        sample._replace(mask=mask_float_pos),
+        sample._replace(mask=mask_float_zero),
+    )
+
+    def _fake_prepare(microbatch_size, effective_batch_size, grad_accum_steps):
+        def _iter():
+            yield samples
+
+        return _iter(), effective_batch_size
+
+    monkeypatch.setattr(model, "_prepare_minibatch_iterator", _fake_prepare)
+    model.train()
+
+
+def test_train_kl_ema_smoothing():
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+    model.target_kl = 0.1
+    model.kl_early_stop = True
+    model._kl_early_stop_use_ema = True
+    model._kl_ema_alpha = 0.5
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+def test_train_kl_window_smoothing(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+    model.target_kl = 0.1
+    model.kl_early_stop = True
+    model._kl_early_stop_use_ema = True
+    model._kl_ema_alpha = None
+    model._kl_ema_window = 1
+    setup_and_collect(model, env, n_steps=4)
+
+    sample = next(model.rollout_buffer.get(batch_size=model.batch_size))
+
+    def _fake_prepare(microbatch_size, effective_batch_size, grad_accum_steps):
+        def _iter():
+            yield (sample,)
+            yield (sample,)
+
+        return _iter(), effective_batch_size
+
+    monkeypatch.setattr(model, "_prepare_minibatch_iterator", _fake_prepare)
+    model.train()
+
+
+def test_train_kl_consecutive_stop(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+    model.target_kl = 0.01
+    model.kl_early_stop = True
+    model._kl_consec_minibatches = 1
+    setup_and_collect(model, env, n_steps=4)
+
+    sample = next(model.rollout_buffer.get(batch_size=model.batch_size))
+    high_log_prob = torch.full_like(sample.old_log_prob, 10.0)
+    sample_high_kl = sample._replace(old_log_prob=high_log_prob)
+
+    def _fake_prepare(microbatch_size, effective_batch_size, grad_accum_steps):
+        def _iter():
+            yield (sample_high_kl,)
+
+        return _iter(), effective_batch_size
+
+    monkeypatch.setattr(model, "_prepare_minibatch_iterator", _fake_prepare)
+    model.train()
+
+
+def test_train_kl_absolute_stop_logger_exceptions(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+    model.target_kl = 0.01
+    model.kl_early_stop = True
+    model._kl_absolute_stop_factor = 0.1
+    setup_and_collect(model, env, n_steps=4)
+
+    sample = next(model.rollout_buffer.get(batch_size=model.batch_size))
+    high_log_prob = torch.full_like(sample.old_log_prob, 10.0)
+    sample_high_kl = sample._replace(old_log_prob=high_log_prob)
+
+    def _fake_prepare(microbatch_size, effective_batch_size, grad_accum_steps):
+        def _iter():
+            yield (sample_high_kl,)
+
+        return _iter(), effective_batch_size
+
+    monkeypatch.setattr(model, "_prepare_minibatch_iterator", _fake_prepare)
+
+    original_record = model.logger.record
+    raised_once = {"flag": False}
+
+    def _record_with_raise(key, *args, **kwargs):
+        if key == "train/kl_absolute_stop_trigger" and not raised_once["flag"]:
+            raised_once["flag"] = True
+            raise RuntimeError("logger failure")
+        if key == "train/kl_stop_reason":
+            raise RuntimeError("logger failure")
+        return original_record(key, *args, **kwargs)
+
+    monkeypatch.setattr(model.logger, "record", _record_with_raise)
+    model.train()
+
+
+def test_train_scheduler_get_last_lr_type_error():
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env)
+
+    class _SchedulerStub:
+        def step(self):
+            return None
+
+        def get_last_lr(self):
+            raise TypeError("bad scheduler")
+
+    model.lr_scheduler = _SchedulerStub()
+    setup_and_collect(model, env, n_steps=4)
+    model.train()
+
+
+# ============================================================================
+# Targeted coverage: empty minibatch fallback for categorical logits
+# ============================================================================
+
+
+def test_train_value_logits_fallback_when_empty_minibatch(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    policy_kwargs = {"arch_params": {"critic": {"distributional": True, "categorical": True}}}
+    model = make_model(env=env, policy_kwargs=policy_kwargs)
+    setup_and_collect(model, env, n_steps=4)
+
+    def _fake_prepare(microbatch_size, effective_batch_size, grad_accum_steps):
+        return None, effective_batch_size
+
+    monkeypatch.setattr(model, "_prepare_minibatch_iterator", _fake_prepare)
+    model.train()
+
+
+# ============================================================================
+# Targeted coverage: collect_rollouts edge cases
+# ============================================================================
+
+
+def test_collect_rollouts_time_limit_bad_terminal_obs():
+    """Line 8711: bootstrap_value None on invalid terminal_obs."""
+    sentinel = object()
+
+    def info_fn(step, action, terminated):
+        return {"time_limit_truncated": True, "terminal_observation": sentinel}
+
+    env = make_vec_env(info_fns=[info_fn], max_steps=100)
+    model = make_model(env=env)
+    original_obs_to_tensor = model.policy.obs_to_tensor
+
+    def _patched_obs_to_tensor(obs, *args, **kwargs):
+        if obs is sentinel:
+            raise ValueError("bad terminal obs")
+        return original_obs_to_tensor(obs, *args, **kwargs)
+
+    model.policy.obs_to_tensor = _patched_obs_to_tensor
+    result = setup_and_collect(model, env, n_steps=1)
+    assert result is True
+
+
+def test_collect_rollouts_non_tensor_actions_discrete():
+    """Line 8468: non-tensor actions are converted for discrete action space."""
+    class _FakeActions:
+        def __init__(self, tensor: torch.Tensor):
+            self._array = tensor.detach().cpu().numpy()
+
+        def cpu(self):
+            return self
+
+        def numpy(self):
+            return self._array
+
+        def __len__(self):
+            return len(self._array)
+
+        def __iter__(self):
+            return iter(self._array)
+
+        def __getitem__(self, idx):
+            return self._array[idx]
+
+        def __array__(self, dtype=None):
+            if dtype is None:
+                return self._array
+            return self._array.astype(dtype, copy=False)
+
+    env = make_vec_env(max_steps=2)
+    model = make_model(env=env)
+    model.action_space = spaces.Discrete(2)
+    model._ensure_score_action_space = lambda: None
+
+    original_forward = model.policy.forward
+
+    def _patched_forward(obs, lstm_states, episode_starts):
+        actions, values, log_probs, new_states = original_forward(
+            obs, lstm_states, episode_starts
+        )
+        return _FakeActions(actions), values, log_probs, new_states
+
+    model.policy.forward = _patched_forward
+    result = setup_and_collect(model, env, n_steps=1)
+    assert result is True
+
+
+def test_patch_rand_for_tests_guard():
+    original_rand = torch.rand
+    original_flag = getattr(torch, "_distributional_rand_patch", False)
+    original_pytest = sys.modules.get("pytest")
+    original_env = os.environ.get("PYTEST_CURRENT_TEST")
+    try:
+        if "pytest" in sys.modules:
+            sys.modules.pop("pytest")
+        os.environ.pop("PYTEST_CURRENT_TEST", None)
+        torch._distributional_rand_patch = False
+        dppo._patch_rand_for_tests()
+        assert torch.rand is original_rand
+    finally:
+        if original_pytest is not None:
+            sys.modules["pytest"] = original_pytest
+        else:
+            sys.modules.pop("pytest", None)
+        if original_env is not None:
+            os.environ["PYTEST_CURRENT_TEST"] = original_env
+        else:
+            os.environ.pop("PYTEST_CURRENT_TEST", None)
+        torch.rand = original_rand
+        torch._distributional_rand_patch = original_flag
+
+
+def test_cfg_get_custom_getter():
+    class _Cfg:
+        def __init__(self):
+            self.value = "ok"
+
+        def get(self, key, default=None):
+            if default is not None:
+                raise TypeError("no default allowed")
+            if key == "foo":
+                return self.value
+            return None
+
+    cfg = _Cfg()
+    assert dppo._cfg_get(cfg, "foo", "fallback") == "ok"
+
+
+def test_unwrap_vec_normalize_fallback(monkeypatch):
+    env = make_vec_env()
+    vec_norm = VecNormalize(env, norm_reward=False)
+    monkeypatch.setattr(dppo, "_sb3_unwrap", None)
+    assert dppo.unwrap_vec_normalize(vec_norm) is vec_norm
+    assert dppo.unwrap_vec_normalize(env) is None
+
+
+def test_create_sequencers_pad_incompatible():
+    _, pad, _ = dppo.create_sequencers(
+        np.array([True, False]),
+        np.array([True, False]),
+        "cpu",
+    )
+    with pytest.raises(ValueError, match="leading dimension"):
+        pad(np.zeros((1, 2), dtype=np.float32))
+
+
+def test_popart_evaluate_holdout_rnnstates(monkeypatch):
+    env = make_vec_env()
+    model = make_model(env=env)
+    controller = PopArtController(enabled=True, mode="shadow")
+    model._use_quantile_value = False
+
+    def _policy_value_outputs(obs, lstm_states, episode_starts):
+        return torch.zeros((obs.shape[0],), dtype=torch.float32)
+
+    monkeypatch.setattr(model, "_policy_value_outputs", _policy_value_outputs)
+    rnn_states = dppo.RNNStates(
+        pi=(torch.zeros((1, 1, 1)),),
+        vf=(torch.zeros((1, 1, 1)),),
+    )
+    holdout = PopArtHoldoutBatch(
+        observations=torch.zeros((2, 4), dtype=torch.float32),
+        returns_raw=torch.zeros((2, 1), dtype=torch.float32),
+        episode_starts=torch.zeros((2,), dtype=torch.bool),
+        lstm_states=rnn_states,
+        mask=None,
+    )
+    evaluation = controller._evaluate_holdout(
+        model=model,
+        holdout=holdout,
+        old_mean=0.0,
+        old_std=1.0,
+        new_mean=0.0,
+        new_std=1.0,
+    )
+    assert evaluation.baseline_raw.numel() >= 0
+
+
+def test_popart_apply_live_update_categorical():
+    env = make_vec_env()
+    policy_kwargs = {
+        "arch_params": {"critic": {"distributional": True, "categorical": True}}
+    }
+    model = make_model(env=env, policy_kwargs=policy_kwargs)
+    model._use_quantile_value = False
+    controller = PopArtController(enabled=True, mode="live")
+    controller.apply_live_update(
+        model=model,
+        old_mean=0.0,
+        old_std=1.0,
+        new_mean=0.1,
+        new_std=1.1,
+    )
+    assert controller.apply_count >= 1
+
+
+def test_popart_apply_quantile_transform_missing_linear():
+    controller = PopArtController(enabled=True, mode="live")
+    dummy_model = SimpleNamespace(
+        policy=SimpleNamespace(quantile_head=SimpleNamespace(linear=None))
+    )
+    controller._apply_quantile_transform(
+        model=dummy_model,
+        old_mean=0.0,
+        old_std=1.0,
+        new_mean=0.0,
+        new_std=1.0,
+    )
+
+
+def test_record_value_debug_stats_no_logger_record():
+    model = make_model()
+    model._logger = SimpleNamespace()
+    model._record_value_debug_stats("no_logger", torch.tensor([1.0]))
+
+
+def test_record_value_debug_stats_empty_tensor():
+    class _Logger:
+        def __init__(self):
+            self.records = []
+
+        def record(self, key, value, **kwargs):
+            self.records.append((key, value))
+
+    model = make_model()
+    model._logger = _Logger()
+    model._record_value_debug_stats("empty", torch.tensor([], dtype=torch.float32))
+
+
+def test_log_vf_clip_dispersion_empty_inputs():
+    class _Logger:
+        def __init__(self):
+            self.records = []
+
+        def record(self, key, value, **kwargs):
+            self.records.append((key, value))
+
+    model = make_model()
+    model._logger = _Logger()
+    model._log_vf_clip_dispersion(
+        "debug/test",
+        raw_pre=None,
+        raw_post=torch.tensor([], dtype=torch.float32),
+        norm_pre=torch.tensor([], dtype=torch.float32),
+        norm_post=None,
+    )
+
+
+def test_cvar_winsor_pct_invalid_and_clamp():
+    model = make_model()
+    with pytest.raises(ValueError, match="cvar_winsor_pct"):
+        model.cvar_winsor_pct = -1.0
+    model.cvar_winsor_pct = 100.0
+    assert model._cvar_winsor_pct <= 50.0
+
+
+def test_clone_states_to_device_namedtuple_and_list():
+    model = make_model()
+    State = namedtuple("State", ["h", "c"])
+    state = State(torch.ones(1), torch.zeros(1))
+    cloned = model._clone_states_to_device(state, torch.device("cpu"))
+    assert isinstance(cloned, State)
+
+    list_state = [torch.ones(1)]
+    cloned_list = model._clone_states_to_device(list_state, torch.device("cpu"))
+    assert isinstance(cloned_list, list)
+
+
+def test_clone_observations_to_device_to_fallback():
+    class _ToOnlyPositional:
+        def to(self, device_arg):
+            return f"moved:{device_arg}"
+
+    model = make_model()
+    result = model._clone_observations_to_device(
+        _ToOnlyPositional(), torch.device("cpu")
+    )
+    assert result == "moved:cpu"
+
+
+def test_extract_group_keys_for_indices_edge_cases():
+    model = make_model()
+
+    rollout_data = SimpleNamespace(sample_indices=None)
+    assert model._extract_group_keys_for_indices(rollout_data, None) == []
+
+    rollout_data = SimpleNamespace(sample_indices=torch.arange(3))
+    empty_index = torch.tensor([], dtype=torch.long)
+    assert model._extract_group_keys_for_indices(rollout_data, empty_index) == []
+
+    bad_index = torch.tensor([5], dtype=torch.long)
+    assert model._extract_group_keys_for_indices(rollout_data, bad_index) == []
+
+    rollout_data = SimpleNamespace(sample_indices=torch.full((2,), -1))
+    assert model._extract_group_keys_for_indices(rollout_data, None) == []
+
+
+def test_should_skip_ev_reserve_batch_empty_mask():
+    model = make_model()
+    rollout_data = SimpleNamespace(mask=torch.zeros((0,)))
+    assert model._should_skip_ev_reserve_batch(rollout_data, None, None) is True
+
+
+def test_filter_ev_reserve_rows_edge_cases():
+    model = make_model()
+    target_norm = torch.ones((2, 1))
+    target_raw = torch.ones((2, 1))
+
+    rollout_data = SimpleNamespace(sample_indices="bad")
+    result = model._filter_ev_reserve_rows(rollout_data, target_norm, target_raw, None, None)
+    assert result[0] is target_norm
+
+    rollout_data = SimpleNamespace(sample_indices=torch.zeros((0,), dtype=torch.long))
+    result = model._filter_ev_reserve_rows(rollout_data, target_norm, target_raw, None, None)
+    assert result[0] is target_norm
+
+    rollout_data = SimpleNamespace(sample_indices=torch.zeros((3,), dtype=torch.long))
+    result = model._filter_ev_reserve_rows(rollout_data, target_norm, target_raw, None, None)
+    assert result[0] is target_norm
+
+    rollout_data = SimpleNamespace(sample_indices=torch.full((2,), -1))
+    target_norm_out, target_raw_out, weights_out, indices_out = model._filter_ev_reserve_rows(
+        rollout_data,
+        target_norm,
+        target_raw,
+        torch.ones((2, 1)),
+        None,
+    )
+    assert target_norm_out.numel() == 0
+    assert target_raw_out.numel() == 0
+    assert indices_out.numel() == 0
+    assert weights_out is None or weights_out.numel() == 0
+
+
+def test_build_support_distribution_delta_z_fallback():
+    model = make_model()
+    model.policy.v_min = 0.0
+    model.policy.v_max = 0.0
+    model.policy.delta_z = 0.0
+    returns_norm = torch.zeros((2, 1), dtype=torch.float32)
+    template = torch.zeros((2, 3), dtype=torch.float32)
+    dist = model._build_support_distribution(returns_norm, template)
+    assert dist.shape == template.shape
+
+
+def test_twin_critics_vf_clipping_padding_logits():
+    model = make_model()
+    original_policy = model.policy
+
+    class _StubPolicy:
+        def __init__(self):
+            self._value_type = "categorical"
+            self._use_quantile_value_head = False
+            self.num_atoms = 5
+            self.atoms = torch.linspace(-1.0, 1.0, 5)
+
+        def _get_value_logits(self, latent):
+            return None
+
+        def _get_value_logits_2(self, latent):
+            return None
+
+    model.policy = _StubPolicy()
+    latent_vf = torch.zeros((2, 2), dtype=torch.float32)
+    old_probs = torch.full((2, 5), 1.0 / 5.0)
+    target_distribution = torch.full((2, 5), 1.0 / 5.0)
+    model._twin_critics_vf_clipping_loss(
+        latent_vf,
+        targets=None,
+        old_quantiles_critic1=None,
+        old_quantiles_critic2=None,
+        clip_delta=0.2,
+        reduction="none",
+        old_probs_critic1=old_probs,
+        old_probs_critic2=old_probs,
+        target_distribution=target_distribution,
+        return_full=True,
+    )
+    model.policy = original_policy
+
+
+def test_record_quantile_summary_empty():
+    class _Logger:
+        def record(self, *args, **kwargs):
+            return None
+
+    model = make_model()
+    model._logger = _Logger()
+    model._record_quantile_summary([], [])
+
+
+def test_ensure_score_action_space_errors():
+    model = make_model()
+    model.policy.action_space = None
+    model.action_space = spaces.Discrete(2)
+    with pytest.raises(RuntimeError, match="Box"):
+        model._ensure_score_action_space()
+
+    model.action_space = spaces.Box(-1.0, 1.0, (2,), np.float32)
+    with pytest.raises(RuntimeError, match="shape"):
+        model._ensure_score_action_space()
+
+    model.action_space = spaces.Box(-np.inf, 1.0, (1,), np.float32)
+    with pytest.raises(RuntimeError, match="finite"):
+        model._ensure_score_action_space()
+
+    model.action_space = spaces.Box(0.5, 0.7, (1,), np.float32)
+    with pytest.raises(RuntimeError, match="cover"):
+        model._ensure_score_action_space()
+
+
+def test_ensure_score_action_space_action_dim():
+    model = make_model()
+    model.action_space = None
+    model.policy.action_space = spaces.Box(0.0, 1.0, (1,), np.float32)
+    model.policy.action_dim = 2
+    with pytest.raises(RuntimeError, match="action_dim"):
+        model._ensure_score_action_space()
+
+
+def test_initialise_popart_controller_coerce_float_and_warn():
+    env = make_vec_env()
+    model = make_model(env=env)
+
+    class _BadFloat:
+        def __float__(self):
+            raise TypeError("bad float")
+
+    class _Logger:
+        def __init__(self):
+            self.messages = []
+
+        def warning(self, msg):
+            self.messages.append(msg)
+
+    model._logger = _Logger()
+    model._popart_disabled_logged = False
+    cfg = {"enabled": True, "replay_seed": _BadFloat(), "replay_batch_size": _BadFloat()}
+    model._initialise_popart_controller(cfg)
+    assert model.logger.messages
+
+
+def test_smooth_value_target_scale_beta_nan_and_pct_limit():
+    model = make_model()
+    model._value_target_scale_smoothing_beta = float("nan")
+    model._value_target_scale_max_change_pct = -1.0
+    value = model._smooth_value_target_scale(previous=0.0, target=2.0)
+    assert value > 0.0
+
+
+def test_smooth_value_target_scale_beta_zero():
+    model = make_model()
+    model._value_target_scale_smoothing_beta = 0.0
+    model._value_target_scale_max_change_pct = None
+    value = model._smooth_value_target_scale(previous=1.0, target=2.0)
+    assert value == 1.0
+
+
+def test_limit_v_range_step_branches():
+    model = make_model()
+    model._value_scale_range_max_rel_step = 0.0
+    assert model._limit_v_range_step(0.0, 1.0, -1.0, 2.0) == (-1.0, 2.0)
+
+    model._value_scale_range_max_rel_step = 0.1
+    assert model._limit_v_range_step(1.0, 1.0, -1.0, 2.0) == (-1.0, 2.0)
+
+
+def test_robust_std_from_returns_floor():
+    model = make_model()
+    model._value_scale_std_floor = 0.5
+    value = model._robust_std_from_returns(torch.zeros((4, 1), dtype=torch.float32))
+    assert value == 0.5
+
+
+def test_kl_absolute_stop_factor_validation():
+    model = make_model()
+    model.kl_absolute_stop_factor = None
+    with pytest.raises(ValueError, match="kl_absolute_stop_factor"):
+        model.kl_absolute_stop_factor = -1.0
+
+
+def test_collect_rollouts_adv_std_below_epsilon(monkeypatch):
+    env = make_vec_env()
+    model = make_model(env=env)
+    original_compute = model.rollout_buffer.compute_returns_and_advantage
+
+    def _patched(*args, **kwargs):
+        result = original_compute(*args, **kwargs)
+        model.rollout_buffer.advantages = np.zeros_like(model.rollout_buffer.advantages)
+        return result
+
+    monkeypatch.setattr(model.rollout_buffer, "compute_returns_and_advantage", _patched)
+    result = setup_and_collect(model, env, n_steps=2)
+    assert result is True
+
+
+def test_collect_rollouts_advantages_invalid(monkeypatch):
+    env = make_vec_env()
+    model = make_model(env=env)
+    original_compute = model.rollout_buffer.compute_returns_and_advantage
+
+    def _patched(*args, **kwargs):
+        result = original_compute(*args, **kwargs)
+        model.rollout_buffer.advantages = np.array([np.nan, 1.0], dtype=np.float32)
+        return result
+
+    monkeypatch.setattr(model.rollout_buffer, "compute_returns_and_advantage", _patched)
+    result = setup_and_collect(model, env, n_steps=2)
+    assert result is True
+
+
+def test_collect_rollouts_empty_advantages(monkeypatch):
+    env = make_vec_env()
+    model = make_model(env=env)
+    original_compute = model.rollout_buffer.compute_returns_and_advantage
+
+    def _patched(*args, **kwargs):
+        result = original_compute(*args, **kwargs)
+        model.rollout_buffer.advantages = np.array([], dtype=np.float32)
+        return result
+
+    monkeypatch.setattr(model.rollout_buffer, "compute_returns_and_advantage", _patched)
+    result = setup_and_collect(model, env, n_steps=1)
+    assert result is True
+
+
+def test_train_kl_consecutive_stop_reason(monkeypatch):
+    env = make_vec_env(max_steps=4)
+    model = make_model(env=env, n_epochs=1)
+    setup_and_collect(model, env, n_steps=4)
+    model.rollout_buffer.log_probs[:] = 10.0
+    model.target_kl = 1e-6
+    model.kl_early_stop = True
+    model._kl_consec_minibatches = 1
+    model._kl_absolute_stop_factor = None
+    model._kl_early_stop_use_ema = False
+
+    original_eval = model.policy.evaluate_actions
+
+    def _patched_eval(obs, actions, lstm_states, episode_starts, **kwargs):
+        values, log_prob, entropy = original_eval(obs, actions, lstm_states, episode_starts, **kwargs)
+        return values, torch.zeros_like(log_prob), entropy
+
+    monkeypatch.setattr(model.policy, "evaluate_actions", _patched_eval)
+    model.train()
+
+
+def test_restore_kl_penalty_state_invalid_values():
+    model = make_model()
+    state = {
+        "kl_beta": "bad",
+        "kl_err_int": float("inf"),
+        "kl_err_prev": float("nan"),
+    }
+    model._restore_kl_penalty_state(state)
+
+
+def test_refresh_value_prediction_tensors_categorical_atoms_softmax(monkeypatch):
+    env = make_vec_env()
+    policy_kwargs = {
+        "arch_params": {"critic": {"distributional": True, "categorical": True}}
+    }
+    model = make_model(env=env, policy_kwargs=policy_kwargs)
+    model._use_quantile_value = False
+    model.policy.atoms = torch.linspace(-1.0, 1.0, 5)
+
+    def _policy_value_outputs(obs, lstm_states, episode_starts):
+        return torch.zeros((obs.shape[0], model.policy.atoms.numel()), dtype=torch.float32)
+
+    monkeypatch.setattr(model, "_policy_value_outputs", _policy_value_outputs)
+
+    def _predict_values(obs, lstm_states, episode_starts):
+        return torch.zeros((obs.shape[0], 1), dtype=torch.float32)
+
+    monkeypatch.setattr(model.policy, "predict_values", _predict_values)
+    entry = _ValuePredictionCacheEntry(
+        observations=torch.zeros((2, 4), dtype=torch.float32),
+        lstm_states=None,
+        episode_starts=torch.zeros((2,), dtype=torch.bool),
+        valid_indices=None,
+        base_scale=1.0,
+        old_values_raw=torch.zeros((2, 1), dtype=torch.float32),
+        mask_values=None,
+    )
+    model._refresh_value_prediction_tensors(
+        primary_cache=[entry],
+        primary_predictions=[],
+        reserve_cache=[],
+        reserve_predictions=[],
+        primary_weights=[None],
+        reserve_weights=[],
+        clip_range_vf_value=None,
+        ret_mu_tensor=torch.tensor(0.0),
+        ret_std_tensor=torch.tensor(1.0),
+    )
+
+
+def test_refresh_value_prediction_tensors_categorical_value_pred_1d(monkeypatch):
+    env = make_vec_env()
+    policy_kwargs = {
+        "arch_params": {"critic": {"distributional": True, "categorical": True}}
+    }
+    model = make_model(env=env, policy_kwargs=policy_kwargs)
+    model._use_quantile_value = False
+    model.policy.atoms = None
+
+    def _policy_value_outputs(obs, lstm_states, episode_starts):
+        return torch.zeros((obs.shape[0],), dtype=torch.float32)
+
+    monkeypatch.setattr(model, "_policy_value_outputs", _policy_value_outputs)
+
+    def _predict_values(obs, lstm_states, episode_starts):
+        return torch.zeros((obs.shape[0],), dtype=torch.float32)
+
+    monkeypatch.setattr(model.policy, "predict_values", _predict_values)
+    entry = _ValuePredictionCacheEntry(
+        observations=torch.zeros((2, 4), dtype=torch.float32),
+        lstm_states=None,
+        episode_starts=torch.zeros((2,), dtype=torch.bool),
+        valid_indices=None,
+        base_scale=1.0,
+        old_values_raw=torch.zeros((2, 1), dtype=torch.float32),
+        mask_values=None,
+    )
+    model._refresh_value_prediction_tensors(
+        primary_cache=[entry],
+        primary_predictions=[],
+        reserve_cache=[],
+        reserve_predictions=[],
+        primary_weights=[None],
+        reserve_weights=[],
+        clip_range_vf_value=None,
+        ret_mu_tensor=torch.tensor(0.0),
+        ret_std_tensor=torch.tensor(1.0),
+    )
