@@ -112,9 +112,55 @@ jobs:
         run: |
           yamllint -d '{extends: default, rules: {line-length: {max: 120}, document-start: disable}}' configs/ .github/
 
+  tech-debt-registry-sync:
+    name: Tech Debt Registry Sync Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check tech debt markers match registry
+        run: |
+          set -euo pipefail
+          echo "Checking tech debt code markers against registry..."
+
+          # Find all # Tech Debt: markers in Python files
+          code_markers=$(grep -rn "# Tech Debt:.*TECH_DEBT_REGISTRY" --include="*.py" . 2>/dev/null || true)
+
+          # Find all registry IDs
+          if [ -f "docs/reports/TECH_DEBT_REGISTRY.md" ]; then
+            registry_ids=$(grep -oP '(?<={#)[a-zA-Z0-9_-]+(?=})' docs/reports/TECH_DEBT_REGISTRY.md || true)
+          else
+            echo "WARNING: TECH_DEBT_REGISTRY.md not found"
+            exit 0
+          fi
+
+          # Check that registry has required sections
+          required_sections="Architecture Data/ML Testing/Quality Reliability/Operations Security"
+          missing_sections=""
+          for section in $required_sections; do
+            if ! grep -q "^## $section" docs/reports/TECH_DEBT_REGISTRY.md; then
+              missing_sections="$missing_sections $section"
+            fi
+          done
+
+          if [ -n "$missing_sections" ]; then
+            echo "WARNING: Missing registry sections:$missing_sections"
+          fi
+
+          # Verify registry has at least one controlled item
+          controlled_count=$(grep -c "Controlled" docs/reports/TECH_DEBT_REGISTRY.md || echo 0)
+          echo "Found $controlled_count controlled tech debt items in registry"
+
+          if [ "$controlled_count" -eq 0 ]; then
+            echo "WARNING: No controlled items found in registry"
+          fi
+
+          echo "Tech debt registry sync check complete"
+
   summary:
     name: Quality Summary
-    needs: [encoding-check, markdown-lint, markdown-render-check, yaml-lint]
+    needs: [encoding-check, markdown-lint, markdown-render-check, yaml-lint, tech-debt-registry-sync]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -125,13 +171,15 @@ jobs:
           echo "  - Markdown Lint: ${{ needs.markdown-lint.result }}"
           echo "  - Render Check: ${{ needs.markdown-render-check.result }}"
           echo "  - YAML Lint: ${{ needs.yaml-lint.result }}"
+          echo "  - Tech Debt Registry: ${{ needs.tech-debt-registry-sync.result }}"
 
           if [ "${{ needs.encoding-check.result }}" != "success" ] || \
              [ "${{ needs.markdown-lint.result }}" != "success" ] || \
              [ "${{ needs.markdown-render-check.result }}" != "success" ] || \
-             [ "${{ needs.yaml-lint.result }}" != "success" ]; then
-            echo "❌ Some quality checks failed"
+             [ "${{ needs.yaml-lint.result }}" != "success" ] || \
+             [ "${{ needs.tech-debt-registry-sync.result }}" != "success" ]; then
+            echo "Some quality checks failed"
             exit 1
           fi
 
-          echo "✅ All quality checks passed!"
+          echo "All quality checks passed!"

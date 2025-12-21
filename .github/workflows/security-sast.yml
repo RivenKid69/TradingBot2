@@ -296,9 +296,66 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+  production-security-flags:
+    name: Production Security Flags Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for forbidden bypass flags in production configs
+        run: |
+          set -euo pipefail
+          echo "Checking for forbidden security bypass flags in production configs..."
+
+          # Check for signature verification bypass in production configs
+          if grep -rn "CCEA_SKIP_SIGNATURE_VERIFICATION" deploy/production/ deploy/helm/*/values-production*.yaml 2>/dev/null; then
+            echo "::error::CCEA_SKIP_SIGNATURE_VERIFICATION found in production configs"
+            exit 1
+          fi
+
+          # Check for default JWT secret references in production configs
+          if grep -rn "dev-secret-change-in-production" deploy/production/ deploy/helm/*/values-production*.yaml 2>/dev/null; then
+            echo "::error::Default JWT secret reference found in production configs"
+            exit 1
+          fi
+
+          # Check for ALLOW_UNSAFE_MODEL_LOAD in production configs
+          if grep -rn "ALLOW_UNSAFE_MODEL_LOAD" deploy/production/ deploy/helm/*/values-production*.yaml 2>/dev/null; then
+            echo "::error::ALLOW_UNSAFE_MODEL_LOAD found in production configs"
+            exit 1
+          fi
+
+          # Check for CCEA_TEST_MODE in production configs
+          if grep -rn "CCEA_TEST_MODE.*true" deploy/production/ deploy/helm/*/values-production*.yaml 2>/dev/null; then
+            echo "::error::CCEA_TEST_MODE=true found in production configs"
+            exit 1
+          fi
+
+          echo "No forbidden security bypass flags found in production configs"
+
+      - name: Verify fail-closed patterns exist in code
+        run: |
+          set -euo pipefail
+          echo "Verifying fail-closed security patterns..."
+
+          # Verify JWT secret fail-closed check exists
+          if ! grep -q "SECURITY VIOLATION.*CCEA_JWT_SECRET" packages/cloud/control_plane/dependencies.py; then
+            echo "::error::JWT secret fail-closed check not found in dependencies.py"
+            exit 1
+          fi
+
+          # Verify MFA fail-closed behavior exists
+          if ! grep -q "Fail-closed" packages/cloud/control_plane/routers/auth.py; then
+            echo "::error::MFA fail-closed behavior not found in auth.py"
+            exit 1
+          fi
+
+          echo "Fail-closed security patterns verified"
+
   summary:
     name: Security Summary
-    needs: [bandit, semgrep, secrets-scan, dependency-audit]
+    needs: [bandit, semgrep, secrets-scan, dependency-audit, production-security-flags]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -309,8 +366,9 @@ jobs:
           echo "  - Semgrep: ${{ needs.semgrep.result }}"
           echo "  - Secret Scans: ${{ needs.secrets-scan.result }}"
           echo "  - Dependency Audit: ${{ needs.dependency-audit.result }}"
-          if [ "${{ needs.bandit.result }}" == "failure" ] || [ "${{ needs.semgrep.result }}" == "failure" ] || [ "${{ needs.secrets-scan.result }}" == "failure" ] || [ "${{ needs.dependency-audit.result }}" == "failure" ]; then
-            echo "❌ Security checks failed"
+          echo "  - Production Security Flags: ${{ needs.production-security-flags.result }}"
+          if [ "${{ needs.bandit.result }}" == "failure" ] || [ "${{ needs.semgrep.result }}" == "failure" ] || [ "${{ needs.secrets-scan.result }}" == "failure" ] || [ "${{ needs.dependency-audit.result }}" == "failure" ] || [ "${{ needs.production-security-flags.result }}" == "failure" ]; then
+            echo "Security checks failed"
             exit 1
           fi
-          echo "✅ Security checks passed"
+          echo "Security checks passed"

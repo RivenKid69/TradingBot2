@@ -164,9 +164,12 @@ Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
 | --- | --- | --- | --- | --- |
 | Equities execution (MVP/beachhead) | Alpaca | adapters/alpaca/ | sim, paper, live | Implemented |
 | Equities data | Polygon, Yahoo | adapters/polygon/, adapters/yahoo/ | data, sim | Implemented |
-| FX | OANDA, Dukascopy | adapters/oanda/, adapters/dukascopy/ | sim, live (OANDA), historical (Dukascopy) | Implemented (beta) |
+| FX | OANDA | adapters/oanda/ | sim, live | Implemented (beta) |
+| FX (historical) | Dukascopy | adapters/dukascopy/ | historical data only | Stub (Phase 0) |
 | Listed options / futures (optional) | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
 | Digital assets (optional) | Binance, Deribit | adapters/binance/, adapters/deribit/ | sim, live | Implemented (beta) |
+
+> **Note**: Status reflects current implementation state. Stubs indicate interface definition without full integration. See individual adapter READMEs for details.
 
 ## Guides
 

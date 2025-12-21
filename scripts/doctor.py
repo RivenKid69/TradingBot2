@@ -62,6 +62,16 @@ EXCHANGE_PACKAGES = [
     ("binance", "python-binance"),
 ]
 
+# Optional packages with security/feature implications
+# Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#dependency-optional-fallbacks
+# Each entry: (import_name, pip_name, feature, fallback_behavior)
+OPTIONAL_PACKAGES = [
+    ("pyotp", "pyotp", "MFA/TOTP", "MFA verification will fail-closed (return False)"),
+    ("argon2", "argon2-cffi", "Argon2id password hashing", "Falls back to bcrypt/PBKDF2"),
+    ("cryptography", "cryptography", "Artifact signing", "Signature verification will fail-closed"),
+    ("requests", "requests", "HTTP client for adapters", "Some adapters may not function"),
+]
+
 REQUIRED_DIRS = [
     "configs",
     "data",
@@ -274,6 +284,47 @@ def check_exchange_packages() -> CheckResult:
         message=f"{installed_count}/{len(EXCHANGE_PACKAGES)} installed",
         severity="warning",
         details={"packages": results},
+    )
+
+
+def check_optional_packages() -> CheckResult:
+    """Check optional packages with security/feature implications.
+
+    Optional packages that affect security or feature behavior.
+    Missing packages result in documented fallback behavior.
+
+    Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#dependency-optional-fallbacks
+    """
+    results = {}
+    missing_security = []  # Security-critical missing packages
+
+    for import_name, pkg_name, feature, fallback in OPTIONAL_PACKAGES:
+        is_installed, version = check_package_installed(import_name)
+        results[pkg_name] = {
+            "installed": is_installed,
+            "version": version,
+            "feature": feature,
+            "fallback": fallback if not is_installed else None,
+        }
+        # Track security-related missing packages
+        if not is_installed and import_name in ("pyotp", "argon2", "cryptography"):
+            missing_security.append(f"{pkg_name} ({feature})")
+
+    installed_count = sum(1 for r in results.values() if r["installed"])
+
+    # Warning if security packages missing, but not error
+    passed = len(missing_security) == 0
+
+    message = f"{installed_count}/{len(OPTIONAL_PACKAGES)} optional packages installed"
+    if missing_security:
+        message += f". Missing security: {', '.join(missing_security)}"
+
+    return CheckResult(
+        name="Optional Packages (Security/Features)",
+        passed=passed,
+        message=message,
+        severity="warning",  # Warning, not error - fallbacks exist
+        details={"packages": results, "missing_security": missing_security},
     )
 
 
@@ -553,6 +604,7 @@ def run_doctor(verbose: bool = False, skip_network: bool = False) -> DoctorRepor
         check_core_packages,
         check_ml_packages,
         check_exchange_packages,
+        check_optional_packages,  # Security/feature optional packages
         check_api_credentials,
         check_directories,
         check_config_files,

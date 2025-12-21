@@ -52,6 +52,30 @@ Each entry contains:
 | **Note** | CCEA Architecture mandates Agent-side execution; Cloud stub is intentional per Design Doc |
 | **Updated** | 2025-12-20 - Added to registry with conformance test documentation |
 
+### arch-deprecated-modules {#arch-deprecated-modules}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `ccea/agent/*`, `ccea/control_plane/*` |
+| **Severity** | Medium |
+| **Description** | Deprecated modules in ccea/* - must use packages/* instead |
+| **Status** | Closed |
+| **Control Artifact** | `importlinter.ini` contracts: deprecated-ccea-agent, deprecated-ccea-control-plane |
+| **Closure Date** | 2025-12-21 |
+| **Note** | CI enforces no imports from deprecated paths via import-linter |
+
+### arch-adapter-status-sync {#arch-adapter-status-sync}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `README.md:162-172` |
+| **Severity** | Medium |
+| **Description** | Adapter status in README now accurately reflects implementation state |
+| **Status** | Closed |
+| **Control Artifact** | README.md updated with accurate status column (Stub/Implemented/Beta/Experimental) |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Dukascopy correctly marked as "Stub (Phase 0)" per actual implementation |
+
 ---
 
 ## Data/ML
@@ -263,6 +287,30 @@ Each entry contains:
 
 ## Security
 
+### security-jwt-default {#security-jwt-default}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/dependencies.py:39-50` |
+| **Severity** | High |
+| **Description** | JWT secret fail-closed in production - raises RuntimeError with default secret |
+| **Status** | Closed |
+| **Control Artifact** | Code check at module load; `docs/security/PRODUCTION_CHECKLIST.md` |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Fail-closed implementation: app refuses to start in production with default secret |
+
+### security-signature-bypass-ci {#security-signature-bypass-ci}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `.github/workflows/security-sast.yml:299-354` |
+| **Severity** | Medium |
+| **Description** | CI job blocks forbidden bypass flags in production configs |
+| **Status** | Closed |
+| **Control Artifact** | CI workflow `production-security-flags` job |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Checks for CCEA_SKIP_SIGNATURE_VERIFICATION, ALLOW_UNSAFE_MODEL_LOAD, default secrets in production configs |
+
 ### security-external-audits {#security-external-audits}
 
 | Field | Value |
@@ -401,6 +449,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Verification report created with implementation evidence, compliance mapping, and gap analysis |
 
+### governance-registry-ci {#governance-registry-ci}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `.github/workflows/docs-quality.yml:115-159` |
+| **Severity** | Low |
+| **Description** | Tech Debt Registry sync check added to CI |
+| **Status** | Closed |
+| **Control Artifact** | CI workflow `tech-debt-registry-sync` job |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Checks registry has required sections and controlled items; prevents registry drift |
+
 ---
 
 ## Reproducibility/Build
@@ -416,6 +476,34 @@ Each entry contains:
 | **Control Artifact** | `requirements-cpu.lock.txt`, `requirements-gpu.lock.txt`, `make verify-hash` in CI |
 | **Closure Date** | 2025-12-20 |
 | **Note** | Lockfiles with exact versions provided; CI verifies build hash; BUILD_INSTRUCTIONS.md documents procedure |
+
+### reproducibility-hash-scope {#reproducibility-hash-scope}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tools/verify_hash_report.py`, `Makefile:verify-hash` |
+| **Severity** | Medium |
+| **Description** | Hash verification scope documented (extensions only, not Python deps) |
+| **Status** | Closed |
+| **Control Artifact** | `docs/BUILD_REPRODUCIBILITY.md` |
+| **Closure Date** | 2025-12-21 |
+| **Note** | Comprehensive documentation of what is/isn't verified; lockfiles address Python deps |
+
+---
+
+## Dependency/Supply-chain
+
+### dependency-optional-fallbacks {#dependency-optional-fallbacks}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `scripts/doctor.py:68-73`, `adapters/binance_spot_private.py:12-15` |
+| **Severity** | Medium |
+| **Description** | Optional dependencies with silent fallbacks now documented and checked |
+| **Status** | Closed |
+| **Control Artifact** | `scripts/doctor.py` check_optional_packages(), OPTIONAL_PACKAGES constant |
+| **Closure Date** | 2025-12-21 |
+| **Note** | doctor.py now checks pyotp, argon2, cryptography, requests and reports fallback behavior |
 
 ---
 
@@ -436,24 +524,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-20 after 13-item tech debt closure batch (CTO-level audit)*
+*Updated 2025-12-21 after comprehensive tech debt closure batch (CTO-level due diligence audit)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
-| Architecture | 1 | 1 | 0 | 2 | 2 | 0 |
+| Architecture | 1 | 3 | 0 | 4 | 1 | 3 |
 | Data/ML | 3 | 4 | 0 | 7 | 5 | 2 |
 | Testing/Quality | 1 | 3 | 1 | 5 | 2 | 3 |
 | Reliability/Operations | 2 | 3 | 0 | 5 | 4 | 1 |
-| Security | 3 | 4 | 0 | 7 | 3 | 4 |
+| Security | 3 | 5 | 0 | 8 | 2 | 6 |
 | Docs/Drift | 0 | 2 | 1 | 3 | 1 | 2 |
-| Process/Governance | 0 | 0 | 1 | 1 | 0 | 1 |
-| Reproducibility/Build | 0 | 1 | 0 | 1 | 0 | 1 |
+| Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
+| Reproducibility/Build | 0 | 2 | 0 | 2 | 0 | 2 |
+| Dependency/Supply-chain | 0 | 1 | 0 | 1 | 0 | 1 |
 | Other | 0 | 0 | 1 | 1 | 1 | 0 |
-| **TOTAL** | **10** | **18** | **4** | **32** | **18** | **14** |
+| **TOTAL** | **10** | **23** | **5** | **38** | **16** | **22** |
 
 **Status Summary**:
-- 18 items Controlled (with active monitoring/artifacts)
-- 14 items Closed (resolved)
+- 16 items Controlled (with active monitoring/artifacts)
+- 22 items Closed (resolved)
 
 ---
 
@@ -469,6 +558,7 @@ Each entry contains:
 | 1.5 | 2025-12-20 | Added arch-binance-spot-stub entry with BINANCE_CONFORMANCE.md control artifact; all 19 requested items verified |
 | 1.6 | 2025-12-20 | CTO-level audit batch: Added security-legacy-models (controlled with LEGACY_MODEL_REGISTRY.md), docs-dora-test-claim (closed with CI reference). All 13 audit items verified. |
 | 1.7 | 2025-12-20 | Final verification of 14-item tech debt batch. All items verified as Controlled or Closed with artifacts. See docs/reports/TECH_DEBT_CLOSURE_2025-12-20.md |
+| 1.8 | 2025-12-21 | CTO due diligence closure batch: Added 8 new entries (security-jwt-default, security-signature-bypass-ci, arch-deprecated-modules, arch-adapter-status-sync, reproducibility-hash-scope, dependency-optional-fallbacks, governance-registry-ci). Total: 38 items (16 Controlled, 22 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

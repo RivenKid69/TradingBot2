@@ -220,7 +220,8 @@ def _get_client_ip(request: Request) -> str:
 # MFA token storage
 # SECURITY: In-memory storage is acceptable for single-instance deployments.
 # For multi-instance/production deployments, use Redis or database storage.
-# Control artifact: docs/security/MFA_STORAGE_REQUIREMENTS.md
+# Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#security-distributed-state
+# Control Artifact: docs/security/DISTRIBUTED_SECURITY_REQUIREMENTS.md
 # Metrics: mfa_pending_token_count, mfa_token_issued, mfa_token_redeemed
 _mfa_pending_tokens: dict[str, dict] = {}
 

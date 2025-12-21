@@ -36,7 +36,20 @@ from .models import Agent, Permission, Role, TrustState, User, Workspace
 
 
 # JWT Configuration
-JWT_SECRET = os.getenv("CCEA_JWT_SECRET", "dev-secret-change-in-production")
+# SECURITY: Fail-closed in production - JWT_SECRET must be explicitly set
+_JWT_DEFAULT_SECRET = "dev-secret-change-in-production"
+_jwt_secret_from_env = os.getenv("CCEA_JWT_SECRET", _JWT_DEFAULT_SECRET)
+_is_production = os.getenv("CCEA_ENV", "development").lower() == "production"
+
+if _is_production and _jwt_secret_from_env == _JWT_DEFAULT_SECRET:
+    raise RuntimeError(
+        "SECURITY VIOLATION: CCEA_JWT_SECRET must be explicitly set in production. "
+        "Using default secret in production is not allowed. "
+        "Set CCEA_JWT_SECRET environment variable to a secure random value (min 32 bytes). "
+        "Control artifact: docs/security/PRODUCTION_CHECKLIST.md"
+    )
+
+JWT_SECRET = _jwt_secret_from_env
 JWT_ALGORITHM = os.getenv("CCEA_JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_HOURS = int(os.getenv("CCEA_JWT_EXPIRATION_HOURS", "24"))
 
