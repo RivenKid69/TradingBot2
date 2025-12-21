@@ -12,7 +12,7 @@
 
 ## Architecture Innovation: CCEA (Cloud-Controlled Execution Architecture)
 
-> **Foundational Innovation**: Beyond algorithmic innovations, our platform implements a **novel architectural pattern** that separates research/monitoring (Cloud) from execution (Agent), enabling:
+> **Foundational Innovation**: Beyond algorithmic innovations, our platform implements an **architectural pattern (CCEA)** that separates research/monitoring (Cloud) from execution (Agent), enabling:
 > - **Regulatory clarity**: Clear "Software Provider" positioning (not execution service)
 > - **Security**: Secrets designed to stay in customer environment (by architecture)
 > - **Governance**: evidence exports designed to support client procurement and operational reviews
@@ -79,7 +79,7 @@ Our Approach:   Optimize π* = argmax E[V] subject to CVaR₀.₀₅[V] ≥ thre
 | Stable-Baselines3 | Single-point estimate | None |
 | **Our Platform** | 21-51 quantile distribution + CVaR | Explicit optimization |
 
-**Proprietary Element**: The integration of Twin Critics (Section 1.2) with distributional value heads and CVaR weighting is novel and not available in any open-source or commercial platform.
+**Proprietary Element**: The integration of Twin Critics (Section 1.2) with distributional value heads and CVaR weighting differentiates our approach; to our knowledge, this combination is not commonly found in open-source or commercial platforms we have reviewed (as of December 2025).
 
 ---
 
@@ -112,13 +112,13 @@ While Twin Critics exist in TD3/SAC, combining them with:
 2. CVaR risk constraints
 3. LSTM recurrent policy (for temporal patterns)
 
-...is a **novel architectural contribution** not found in literature or commercial platforms.
+...is, to our knowledge, a novel architectural contribution not commonly found in the literature or commercial platforms we have reviewed.
 
 ---
 
 ### 1.3 UPGD: Utility-Preserving Gradient Descent for Continual Learning
 
-**Innovation**: Among the first applications of continual learning techniques to financial reinforcement learning.
+**Innovation**: To our knowledge, among early applications of continual learning techniques to financial reinforcement learning.
 
 **Academic Foundation**:
 - Kirkpatrick et al. (2017), "Overcoming Catastrophic Forgetting in Neural Networks" (EWC)
@@ -150,7 +150,7 @@ utility(θ) = -∇L · θ  # Loss reduction per unit parameter change
 |--------|-------------|--------|---------------|
 | EWC (Kirkpatrick) | O(n²) Hessian | O(n²) Fisher matrix | 100x faster |
 | SI (Zenke) | O(n) | O(n) | Similar |
-| **UPGD (Ours)** | O(n) first-order | O(n) utility scores | First for trading |
+| **UPGD (Ours)** | O(n) first-order | O(n) utility scores | Designed for trading applications |
 
 **Proprietary Element**: AdaptiveUPGD with VGS coupling (Section 1.4) is our novel contribution.
 
@@ -189,13 +189,13 @@ gᵢ_scaled = gᵢ / (1 + α × Var[gᵢ])
 - Automatic adaptation to different market regimes
 - No manual hyperparameter tuning for gradient scaling
 
-**Not available in**: PyTorch, TensorFlow, JAX, SB3, or any commercial platform.
+**Not natively available in** (as of December 2025): standard distributions of PyTorch, TensorFlow, JAX, or Stable-Baselines3, based on our review of public documentation.
 
 ---
 
 ### 1.5 Conformal Prediction for Distribution-Free Uncertainty
 
-**Innovation**: Among the first applications of conformal prediction to algorithmic trading risk management.
+**Innovation**: To our knowledge, among early applications of conformal prediction to algorithmic trading risk management.
 
 **Academic Foundation**:
 - Romano et al. (2019), "Conformalized Quantile Regression", NeurIPS

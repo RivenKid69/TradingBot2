@@ -8,24 +8,26 @@ Contains components for:
 - Control plane (deployment, commands, telemetry)
 - Governance (RBAC, retention, residency)
 
-This package contains NO trading code.
+This package is designed to contain NO trading code.
 NO order execution, NO broker credentials, NO live trading.
 
 Key Principle:
     Cloud = research/build/monitoring/control plane (lifecycle requests)
 
-Cloud NEVER:
-    - Stores broker API keys
-    - Generates or sends orders
-    - Has access to trading endpoints
-    - Contains order-like payloads in protocol
-    - Can raise Agent's risk limits
+Cloud is designed to NOT (enforced via CI guardrails and schema validation):
+    - Store broker API keys
+    - Generate or send orders
+    - Have access to trading endpoints
+    - Contain order-like payloads in protocol
+    - Raise Agent's risk limits
 
 Security Design Commitments:
     - No trading client libraries
     - No order execution code
     - No access to broker APIs
-    - Protocol enforces no order-like payloads
+    - Protocol designed to enforce no order-like payloads
+
+Note: Design intent enforcement depends on CI tests and deployment validation.
 """
 
 from typing import Final, List

@@ -6,6 +6,13 @@
 # best practices to support our B2B Financial Entity clients, but we are
 # NOT subject to the full FE DORA framework.
 #
+# IMPORTANT: All KPIs, RTO/RPO values, uptime targets, and tolerance thresholds
+# in this configuration are ILLUSTRATIVE DESIGN GOALS for client Financial Entity
+# configurations — NOT contractual SLA commitments by CustodiaCloud. Actual
+# operational targets are defined in executed service agreements after operational
+# validation. CustodiaCloud is a pre-revenue company with no production uptime
+# history; these values serve as planning references only.
+#
 # This configuration defines the strategic approach to digital operational resilience
 # as required by Regulation (EU) 2022/2554 (DORA).
 #
@@ -65,7 +72,7 @@ objectives:
       name: "Incident Response Readiness"
       description: "Maintain effective incident response and recovery capabilities"
       target_date: ""
-      kpi: "Recovery within RTO for 99.9% of incidents"
+      kpi: "Recovery within RTO for 99.9% of incidents (design goal; pending DR validation)"
 
   # Supporting objectives
   supporting:
@@ -94,10 +101,13 @@ objectives:
 
 ict_systems:
   # Critical function mapping
+  # NOTE: RTO/RPO values below are illustrative design goals for client FE configurations,
+  # NOT operational commitments by CustodiaCloud. Actual recovery targets require DR
+  # testing validation and are defined in executed service agreements.
   critical_functions:
     - function: "Trading Execution"
-      rto_hours: 4
-      rpo_hours: 0.25
+      rto_hours: 4   # Design goal; pending DR test validation
+      rpo_hours: 0.25  # Design goal; pending DR test validation
       systems:
         - name: "Order Management System"
           criticality: "critical"
@@ -151,10 +161,12 @@ risk_appetite:
     moderate risk in pursuit of innovation where appropriate controls are in place.
 
   # Quantitative tolerances
+  # NOTE: All tolerance values are illustrative design goals, NOT operational
+  # commitments. Actual SLA targets are contract-specific and require operational validation.
   tolerances:
-    # Availability
-    critical_system_uptime_target_pct: 99.95
-    important_system_uptime_target_pct: 99.9
+    # Availability (design goals; actual SLA per executed agreement)
+    critical_system_uptime_target_pct: 99.95  # Design goal; no production uptime history
+    important_system_uptime_target_pct: 99.9  # Design goal; no production uptime history
 
     # Incidents
     max_critical_incidents_per_year: 0

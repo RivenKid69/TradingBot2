@@ -3,13 +3,15 @@
 CCEA Telemetry Redaction.
 
 MANDATORY redaction middleware for all telemetry.
-This module CANNOT be bypassed - redaction is always active.
+This module is designed to be non-bypassable - redaction is always active.
 
-Security:
-- Secrets are ALWAYS redacted
+Security (design intent):
+- Secrets are designed to be redacted on all telemetry paths
 - Account identifiers are masked
 - IP addresses are anonymized
 - Environment variables filtered
+
+Note: Enforcement correctness depends on CI tests and deployment validation.
 """
 
 from __future__ import annotations
