@@ -94,22 +94,42 @@ Operators deploying live strategies must complete these validation steps before 
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L2-fill
 **Status**: Controlled - limitations documented, OHLCV fallback provides conservative baseline
 
-### L3: Market Impact (Not Implemented)
+### L3: Market Impact (Implemented)
 
-**Status**: Not implemented
+**Status**: Implemented in `lob/market_impact.py`
 
-**Missing Features**:
-- Permanent vs temporary impact decomposition
-- Impact decay modeling
-- Cross-asset impact correlation
+**Implemented Models**:
+- **KyleLambdaModel**: Kyle (1985) linear price impact with configurable permanent/temporary split
+- **AlmgrenChrissModel**: Almgren-Chriss (2001) square-root model with permanent/temporary decomposition
+- **GatheralModel**: Gatheral (2010) transient impact with power-law decay
+- **CompositeImpactModel**: Weighted ensemble of multiple models
+- **ImpactTracker**: Cumulative impact state tracking with decay
 
-**Mitigation**:
-- Use conservative slippage estimates that implicitly include impact
-- Limit order sizes relative to ADV (e.g., <1% of daily volume)
+**Available Features**:
+- Permanent vs temporary impact decomposition (compute_temporary_impact, compute_permanent_impact)
+- Impact decay modeling (exponential, power-law, linear decay types)
+- Configurable parameters per asset class (ImpactParameters.for_equity(), for_crypto())
+- Optimal execution time computation (AlmgrenChrissModel.compute_optimal_execution_time)
 
-**Control Artifact**: Market impact validation report required for institutional-size orders.
+**Integration Status**:
+- Models available for L3 providers via `create_impact_model()` factory
+- Per-client calibration required before production use
+
+**Remaining Gaps**:
+- Cross-asset impact correlation (not yet implemented)
+- Live calibration workflow documentation
+
+**Deployment-Time Validation** (per-client responsibility):
+
+| Step | Description | Owner |
+|------|-------------|-------|
+| Model selection | Choose appropriate impact model for asset class | Client quant team |
+| Parameter calibration | Calibrate eta/gamma/tau parameters against execution data | Client quant team |
+| Validation report | Document calibrated parameters and validation results | Client risk team |
+
+**Control Artifact**: Calibrated impact model parameters with validation report required before live deployment.
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L3-impact
-**Status**: Controlled - limitation documented, conservative slippage mitigates; formal model is roadmap item
+**Status**: Implemented - models available; per-client calibration required
 
 ### L4: TIF-Conformance (IOC Not Implemented) {#TIF-Conformance}
 

@@ -82,21 +82,31 @@ configuration if you need a subset.
 
 Use this checklist when touching ``services.universe`` or its consumers.
 
+**Test Coverage**: `tests/test_universe_comprehensive.py` (549 lines, 23 tests)
+
 ### Unit tests
 
-- [ ] Cover ``_is_stale`` so missing files and TTL-expired caches are detected
+- [x] Cover ``_is_stale`` so missing files and TTL-expired caches are detected
       as stale while fresh caches are accepted.
-- [ ] Exercise ``get_symbols`` with combinations of ``ttl`` and ``force`` to
+      *Implemented*: `TestIsStale.test_is_stale_missing_file`, `test_is_stale_fresh_file`, `test_is_stale_old_file`
+- [x] Exercise ``get_symbols`` with combinations of ``ttl`` and ``force`` to
       ensure refreshes occur only when appropriate (file freshness).
-- [ ] Validate ``run`` filters tickers below ``liquidity_threshold`` and sorts
+      *Implemented*: `TestGetSymbolsFunction.test_get_symbols_returns_cached`, `test_get_symbols_refreshes_stale_cache`, `test_get_symbols_force_refresh`
+- [x] Validate ``run`` filters tickers below ``liquidity_threshold`` and sorts
       the output.
+      *Implemented*: `TestRunFunction.test_run_with_liquidity_threshold`, `test_run_sorts_symbols`
 
 ### Integration tests
 
-- [ ] Invoke ``python -m services.universe`` in an isolated workspace and
+- [x] Invoke ``python -m services.universe`` in an isolated workspace and
       assert the cache modification time advances (file freshness).
-- [ ] Load a runner configuration via ``core_config.load_config`` and confirm
+      *Implemented*: `TestIntegration.test_full_workflow_no_threshold`, `test_full_workflow_with_threshold`
+- [x] Load a runner configuration via ``core_config.load_config`` and confirm
       the resolved symbols match the refreshed JSON (symbol list usage).
-- [ ] Exercise a runner path (e.g. ``script_live`` with a temporary universe)
+      *Implemented*: `TestGetSymbolsFunction.test_get_symbols_with_liquidity_threshold` (verifies run() called with correct params)
+- [x] Exercise a runner path (e.g. ``script_live`` with a temporary universe)
       to confirm low-liquidity symbols are excluded when
       ``--liquidity-threshold`` is set (liquidity threshold enforcement).
+      *Implemented*: `TestIntegration.test_full_workflow_with_threshold`
+
+**Control Artifact**: CI pytest run (`tests/test_universe_comprehensive.py`) - all 23 tests passing.

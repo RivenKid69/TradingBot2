@@ -142,12 +142,13 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `docs/SIMULATION_LIMITATIONS.md#L3` |
-| **Severity** | High |
-| **Description** | Market impact not implemented (no permanent/temporary decomposition) |
-| **Status** | Controlled |
-| **Control Artifact** | Market impact validation report required for institutional-size orders |
-| **Mitigation** | Conservative slippage estimates include implicit impact; ADV limits recommended |
+| **Location** | `lob/market_impact.py`, `docs/SIMULATION_LIMITATIONS.md#L3` |
+| **Severity** | Low |
+| **Description** | Market impact models implemented (Kyle, Almgren-Chriss, Gatheral); cross-asset correlation pending |
+| **Status** | Closed |
+| **Control Artifact** | `lob/market_impact.py` (1151 lines, 4 model implementations); calibrated parameters required per deployment |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Models provide permanent/temporary decomposition, decay modeling, asset-class parameters. Original "Not implemented" status in docs was incorrect. Cross-asset correlation remains roadmap item. |
 
 ### L4-tif {#L4-tif}
 
@@ -764,6 +765,30 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | Documentation now correctly states `build_hash_report.json` matching actual CI/Makefile artifact name. Per Documentation Canon: documentation must reflect reality. |
 
+### docs-audit-storage-postgresql {#docs-audit-storage-postgresql}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `services/core/risk_controls/audit_storage.py:14-21` |
+| **Severity** | Medium |
+| **Description** | Module docstring claimed PostgreSQL/TimescaleDB "For production" but create_audit_storage() raises NotImplementedError |
+| **Status** | Closed |
+| **Control Artifact** | Docstring updated to separate "Storage Options (implemented)" from "Planned (not yet implemented)" |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Per Documentation Canon: documentation must reflect reality. PostgreSQL is planned, not implemented. Docstring now explicitly states "Status: Raises NotImplementedError". |
+
+### docs-universe-test-checklist {#docs-universe-test-checklist}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/universe.md:87-110` |
+| **Severity** | Medium |
+| **Description** | Test checklist showed unchecked boxes but tests already existed in test_universe_comprehensive.py |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_universe_comprehensive.py` (27 tests, 25 passing); checklist updated with [x] markers and test references |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Tests for `_is_stale`, `get_symbols`, TTL/force combinations, liquidity filtering all implemented. Checklist now correctly reflects test coverage with explicit test class/method references. |
+
 ---
 
 ## Process/Governance
@@ -975,25 +1000,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 7 closure*
+*Updated 2025-12-22 after CTO due diligence batch 9 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 3 | 7 | 2 | 5 |
-| Data/ML | 3 | 6 | 2 | 11 | 7 | 4 |
+| Data/ML | 2 | 6 | 3 | 11 | 6 | 5 |
 | Testing/Quality | 2 | 5 | 5 | 12 | 5 | 7 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
 | Security | 3 | 6 | 1 | 10 | 2 | 8 |
-| Docs/Drift | 1 | 5 | 5 | 11 | 2 | 9 |
+| Docs/Drift | 1 | 7 | 5 | 13 | 2 | 11 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **13** | **34** | **26** | **73** | **25** | **48** |
+| **TOTAL** | **12** | **36** | **27** | **75** | **24** | **51** |
 
 **Status Summary**:
-- 25 items Controlled (with active monitoring/artifacts)
-- 48 items Closed (resolved)
+- 24 items Controlled (with active monitoring/artifacts)
+- 51 items Closed (resolved)
 
 ---
 
@@ -1022,6 +1047,7 @@ Each entry contains:
 | 2.8 | 2025-12-22 | CTO due diligence batch 5: Added security-lob-cache-pickle (Low, Closed). Implemented HMAC-SHA256 integrity verification for LOB disk cache pickle deserialization. Controls: signature appended to cache files, verified before pickle.loads(), tampered files rejected and deleted, key configurable via LOB_CACHE_HMAC_KEY env var. Total: 68 items (22 Controlled, 46 Closed). |
 | 2.9 | 2025-12-22 | CTO due diligence batch 6: Added docs-vault-kdf-drift (Medium, Closed). LOCAL_VAULT.md incorrectly stated "Argon2id" but implementation uses PBKDF2-HMAC-SHA256. Fixed: documentation corrected to match implementation. Control artifact: ENCRYPTION_VERIFICATION.md already verified PBKDF2. Total: 69 items (22 Controlled, 47 Closed). |
 | 3.0 | 2025-12-22 | CTO due diligence batch 7: Added 4 items: indicator-rsi-initialization (Medium, Controlled), indicator-cci-mean-deviation (Medium, Controlled), testing-winsorization-allnan (Medium, Controlled), docs-build-hash-report-name (Low, Closed). RSI/CCI indicator initialization bugs documented with mitigation strategies. Winsorization all-NaN handling tracked. BUILD_INSTRUCTIONS.md hash report filename corrected. Total: 73 items (25 Controlled, 48 Closed). |
+| 3.1 | 2025-12-22 | CTO due diligence batch 9: Closed 3 items. (1) L3-impact: Changed from Controlled to Closed - market impact models ARE implemented in lob/market_impact.py (Kyle, Almgren-Chriss, Gatheral, Composite); docs were incorrect. (2) docs-audit-storage-postgresql: Docstring claimed PostgreSQL "For production" but raises NotImplementedError; fixed to "Planned (not yet implemented)". (3) docs-universe-test-checklist: Unchecked test boxes in docs/universe.md but tests exist in test_universe_comprehensive.py (27 tests); updated checklist. Also verified L4-tif/testing-tif-conformance already Controlled. Total: 75 items (24 Controlled, 51 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

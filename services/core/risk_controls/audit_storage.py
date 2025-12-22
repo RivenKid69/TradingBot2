@@ -11,11 +11,14 @@ per MiFIR Article 25 requirements:
 - Chain integrity verification
 - Export capabilities for NCA requests
 
-Storage Options:
+Storage Options (implemented):
     - SQLiteAuditStorage: For development and small deployments
     - FileAuditStorage: JSON Lines format for simple deployments
-    - MemoryAuditStorage: For testing
-    - PostgreSQL/TimescaleDB: For production (via configuration)
+    - MemoryAuditStorage: For testing (not persistent)
+
+Planned (not yet implemented):
+    - PostgreSQL/TimescaleDB: Planned for enterprise multi-node deployments.
+      Status: Raises NotImplementedError. See create_audit_storage() for details.
 
 References:
     - MiFIR Article 25: Obligation to maintain records
