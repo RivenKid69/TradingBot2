@@ -88,6 +88,21 @@ Each entry contains:
 | **Added** | 2025-12-21 |
 | **Note** | Per CCEA Design Doc Section 4.2: Broker Connectors are AGENT ZONE ONLY. Stub is fail-safe (returns empty chain with warning). API integration pending Alpaca options API availability. |
 
+### arch-options-contract-spec {#arch-options-contract-spec}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/polygon/options.py:115-131`, `tests/test_options_adapters.py:1925-1943` |
+| **Severity** | Medium |
+| **Description** | PolygonOptionsContract.to_contract_spec() was missing required `symbol` parameter for OptionsContractSpec |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_options_adapters.py::TestAdditionalPolygon::test_polygon_contract_to_spec` (passing, no skip) |
+| **Problem** | Method created OptionsContractSpec without `symbol` field, causing TypeError |
+| **Resolution** | Added `symbol=self.to_occ_symbol()` to to_contract_spec() method; test updated with full field validation |
+| **Added** | 2025-12-22 |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Test now validates symbol (OCC format), underlying, strike, expiration, option_type, multiplier. No pytest.skip. |
+
 ### adapter-forex-stubs {#adapter-forex-stubs}
 
 | Field | Value |
@@ -124,8 +139,9 @@ Each entry contains:
 | **Severity** | High |
 | **Description** | LOB slippage estimation uses spread-based stub, not order book depth |
 | **Status** | Controlled |
-| **Control Artifact** | TCA calibration report required before live deployment |
+| **Control Artifact** | TCA calibration report required before live deployment; `docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md` |
 | **Mitigation** | StatisticalSlippageProvider available; conservative multipliers recommended |
+| **Updated** | 2025-12-22 - Added TCA report template for client-side validation |
 
 ### L2-fill {#L2-fill}
 
@@ -135,8 +151,9 @@ Each entry contains:
 | **Severity** | High |
 | **Description** | LOB fill simulation uses OHLCV fallback, no queue position modeling |
 | **Status** | Controlled |
-| **Control Artifact** | Fill-rate comparison report required before live deployment |
+| **Control Artifact** | Fill-rate comparison report required before live deployment; `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md` |
 | **Mitigation** | OHLCV fallback provides conservative baseline |
+| **Updated** | 2025-12-22 - Added fill-rate report template for client-side validation |
 
 ### L3-impact {#L3-impact}
 
@@ -1013,11 +1030,11 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 12 closure*
+*Updated 2025-12-22 after CTO due diligence batch 14 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
-| Architecture | 1 | 3 | 3 | 7 | 2 | 5 |
+| Architecture | 1 | 4 | 3 | 8 | 2 | 6 |
 | Data/ML | 2 | 6 | 3 | 11 | 4 | 7 |
 | Testing/Quality | 2 | 5 | 5 | 12 | 4 | 8 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
@@ -1027,11 +1044,11 @@ Each entry contains:
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **12** | **36** | **28** | **76** | **21** | **55** |
+| **TOTAL** | **12** | **37** | **28** | **77** | **21** | **56** |
 
 **Status Summary**:
 - 21 items Controlled (with active monitoring/artifacts)
-- 55 items Closed (resolved)
+- 56 items Closed (resolved)
 
 ---
 
@@ -1064,6 +1081,7 @@ Each entry contains:
 | 3.2 | 2025-12-22 | CTO due diligence batch 10: Verified 6 pre-existing Controlled items remain valid. (1) L1-slippage: Spread-based slippage stub with TCA calibration requirement - SIMULATION_LIMITATIONS.md documents mitigation. (2) L2-fill: OHLCV fallback for LOB fill with fill-rate comparison requirement - SIMULATION_LIMITATIONS.md updated. (3) L4-tif: IOC behaves as GTC with T2b milestone tracking - conformance tests stubbed. (4) ops-dr-testing: DR testing pending infrastructure with DR_DRILL.md runbook. (5) ops-metrics-baseline: Operational metrics pending deployment with SLO/SLI dashboard planned. (6) security-external-audits: Pentest/SOC2 on roadmap with SECURITY_ROADMAP.md tracking. All items have valid control artifacts and honest disclosure per Documentation Canon. No status changes required. Total: 75 items (24 Controlled, 51 Closed). |
 | 3.3 | 2025-12-22 | CTO due diligence batch 11: Verified and closed 7 tech debt items. (1) OrderBook.cpp IOC limitation - already Controlled with TIF conformance tests (L4-tif). (2) execution_providers.py L3-slippage stub - already Controlled with SIMULATION_LIMITATIONS.md (L1-slippage). (3) LOBFillProvider stub - enhanced docstring with limitation disclosure and TECH_DEBT references (L2-fill already Controlled). (4) DR_DRILL.md RTO/RPO - already Controlled with explicit "design targets" disclosure (ops-dr-drill-rto-rpo). (5) ON_CALL_CAPACITY_VALIDATION.md - added Tech Debt reference header linking to ops-incident-response. (6) TRUST_CENTER.md security audits - already Controlled with SECURITY_ROADMAP.md (security-external-audits). (7) PRODUCTION_CHECKLIST.md make targets - Closed: updated commands to reference CI workflow and local equivalents. Total: 76 items (24 Controlled, 52 Closed). |
 | 3.4 | 2025-12-22 | CTO due diligence batch 12: Closed 3 items with code fixes. (1) testing-winsorization-allnan: Fix already implemented in features_pipeline.py (all-NaN detection, is_all_nan flag, NaN preservation in transform). Test skip removed, all tests pass. (2) indicator-rsi-initialization: Fix implemented in transformers.py - RSI now uses SMA(14) for initialization instead of single value. Test skip removed, all 4 RSI tests pass. (3) indicator-cci-mean-deviation: Fix already in MarketSimulator.cpp - CCI uses SMA(TP) not SMA(close). Test skip removed, all 3 CCI tests pass. Total: 76 items (21 Controlled, 55 Closed). |
+| 3.5 | 2025-12-22 | CTO due diligence batch 14: (1) arch-options-contract-spec (Medium, Closed): Fixed PolygonOptionsContract.to_contract_spec() missing required `symbol` parameter; test updated without pytest.skip. (2) L1-slippage, L2-fill: Enhanced control artifacts with report templates (`docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md`, `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md`). (3) SIMULATION_LIMITATIONS.md updated with template references. (4) L4-tif/testing-tif-conformance verified as Controlled (T2b milestone). Total: 77 items (21 Controlled, 56 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

@@ -113,8 +113,15 @@ class PolygonOptionsContract:
         return f"{underlying_padded}{date_str}{opt_char}{strike_str}"
 
     def to_contract_spec(self) -> OptionsContractSpec:
-        """Convert to OptionsContractSpec."""
+        """
+        Convert to OptionsContractSpec.
+
+        Returns:
+            OptionsContractSpec with all required fields populated.
+            symbol is set to standard OCC format (e.g., "AAPL  241220C00200000").
+        """
         return OptionsContractSpec(
+            symbol=self.to_occ_symbol(),
             underlying=self.underlying,
             strike=self.strike,
             expiration=self.expiration,

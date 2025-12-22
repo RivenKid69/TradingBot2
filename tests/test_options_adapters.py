@@ -1933,17 +1933,14 @@ class TestAdditionalPolygon:
             strike=Decimal("200"),
             option_type=OptionType.CALL,
         )
-        # Note: to_contract_spec() implementation may be incomplete
-        # if OptionsContractSpec requires symbol. Test the actual behavior.
-        try:
-            spec = contract.to_contract_spec()
-            # If it succeeds, verify the fields we know are set
-            assert spec.underlying == "AAPL"
-            assert spec.strike == Decimal("200")
-            assert spec.expiration == date(2024, 12, 20)
-        except TypeError:
-            # If it fails due to missing 'symbol', that's a known limitation
-            pytest.skip("to_contract_spec() missing symbol parameter - implementation incomplete")
+        spec = contract.to_contract_spec()
+        # Verify all required fields are populated correctly
+        assert spec.symbol == "AAPL  241220C00200000"  # OCC format with padded underlying
+        assert spec.underlying == "AAPL"
+        assert spec.strike == Decimal("200")
+        assert spec.expiration == date(2024, 12, 20)
+        assert spec.option_type == OptionType.CALL
+        assert spec.multiplier == 100  # Default shares_per_contract
 
     def test_polygon_snapshot_to_dataframe(self):
         """Test PolygonOptionsSnapshot to DataFrame."""

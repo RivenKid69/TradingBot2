@@ -66,8 +66,9 @@ Operators deploying live strategies must complete these validation steps before 
 | Threshold documentation | Document acceptable slippage divergence thresholds for strategy | Client risk team |
 
 **Control Artifact**: TCA (Transaction Cost Analysis) calibration report required before live deployment.
+**Report Template**: `docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md`
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L1-slippage
-**Status**: Controlled - limitations documented, mitigations specified, calibration required per deployment
+**Status**: Controlled - limitations documented, mitigations specified, template provided, calibration required per deployment
 
 ### L2: LOB Fill Simulation (STUB)
 
@@ -91,8 +92,9 @@ Operators deploying live strategies must complete these validation steps before 
 3. Test with various fill delay assumptions
 
 **Control Artifact**: Fill-rate comparison report (sim vs paper/live) required before live deployment.
+**Report Template**: `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md`
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#L2-fill
-**Status**: Controlled - limitations documented, OHLCV fallback provides conservative baseline
+**Status**: Controlled - limitations documented, OHLCV fallback provides conservative baseline, template provided
 
 ### L3: Market Impact (Implemented)
 
