@@ -122,6 +122,19 @@ test: build
 	$(PYTHON) -m pytest tests/ -v --tb=short
 	@echo "$(GREEN)[OK] Tests complete.$(NC)"
 
+# Run tests with coverage tracking (PM-005 support)
+# Generates coverage.xml for CI artifact upload and threshold enforcement
+test-coverage: build
+	@echo "$(GREEN)Running tests with coverage...$(NC)"
+	$(PYTHON) -m pytest tests/ -v --tb=short \
+		--cov=. \
+		--cov-report=xml:coverage.xml \
+		--cov-report=html:htmlcov \
+		--cov-report=term-missing \
+		--cov-fail-under=0
+	@echo "$(GREEN)[OK] Tests with coverage complete.$(NC)"
+	@echo "$(GREEN)Coverage report: coverage.xml, htmlcov/index.html$(NC)"
+
 # ============================================================================
 # Phase 9 (P1) - Zone-separated distributions + artifact content checks
 # ============================================================================

@@ -163,21 +163,44 @@ async def lifespan(app: FastAPI):
         )
 
         if is_production:
+            # SECURITY: Strict production checks for tenant isolation
+            # Set CCEA_ALLOW_INSECURE_PRODUCTION=true to bypass (NOT RECOMMENDED)
+            allow_insecure = os.environ.get("CCEA_ALLOW_INSECURE_PRODUCTION", "").lower() == "true"
+
             if migration_status["using_default_sqlite"]:
-                logger.warning(
-                    "PRODUCTION WARNING: Using default SQLite database. "
+                msg = (
+                    "PRODUCTION SECURITY ERROR: Using default SQLite database. "
                     "Set CCEA_DATABASE_URL to a PostgreSQL connection for production. "
-                    "SQLite does not support Row Level Security or concurrent access."
+                    "SQLite does not support Row Level Security (RLS) or concurrent access. "
+                    "This is a critical security requirement for tenant isolation."
                 )
+                if allow_insecure:
+                    logger.warning(f"{msg} (BYPASSED via CCEA_ALLOW_INSECURE_PRODUCTION)")
+                else:
+                    logger.critical(msg)
+                    raise RuntimeError(
+                        "Production startup blocked: SQLite not allowed in production. "
+                        "Set CCEA_DATABASE_URL to PostgreSQL or set CCEA_ALLOW_INSECURE_PRODUCTION=true to bypass."
+                    )
+
             if not migration_status["has_alembic_table"]:
-                logger.warning(
-                    "PRODUCTION WARNING: No Alembic migrations detected. "
+                msg = (
+                    "PRODUCTION SECURITY WARNING: No Alembic migrations detected. "
                     "Run 'alembic upgrade head' to apply migrations and enable RLS. "
-                    "Using init_db() only creates tables without policies."
+                    "Using init_db() only creates tables without RLS policies. "
+                    "Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#security-rls-migration-check"
                 )
+                if allow_insecure:
+                    logger.warning(f"{msg} (BYPASSED via CCEA_ALLOW_INSECURE_PRODUCTION)")
+                else:
+                    logger.critical(msg)
+                    raise RuntimeError(
+                        "Production startup blocked: Alembic migrations required for RLS. "
+                        "Run 'alembic upgrade head' or set CCEA_ALLOW_INSECURE_PRODUCTION=true to bypass."
+                    )
             elif migration_status["current_revision"]:
                 logger.info(
-                    f"Alembic migration verified: {migration_status['current_revision']}"
+                    f"Alembic migration verified: {migration_status['current_revision']} (RLS enabled)"
                 )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")

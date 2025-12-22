@@ -170,6 +170,84 @@ jobs:
         run: make test
 
       # ========================================================================
+      # Coverage Tracking (PM-005: test-coverage guardrail)
+      # Tech Debt: docs-ci-coverage-gate - generates CI artifact for verification
+      # ========================================================================
+      - name: Run coverage analysis
+        if: always() && matrix.os == 'ubuntu-latest'
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          echo "=== Coverage Analysis (PM-005) ==="
+          python -m pip install pytest-cov coverage
+          python -m pytest tests/ -v --tb=short \
+            --cov=. \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html:htmlcov \
+            --cov-report=term \
+            --cov-fail-under=0 \
+            --ignore=sandbox || true
+          echo ""
+          echo "=== Coverage Summary ==="
+          python -m coverage report --include="packages/*,ccea/*,adapters/*,*.py" --omit="tests/*,sandbox/*,setup.py" 2>/dev/null || echo "Coverage report generated"
+
+      - name: Generate coverage delta report
+        if: always() && matrix.os == 'ubuntu-latest'
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          python - <<'PY'
+          import json
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          from datetime import datetime
+
+          report = {
+              "timestamp": datetime.utcnow().isoformat() + "Z",
+              "status": "TRACKED",
+              "pm005_enforced": False,
+              "pm005_note": "Coverage is tracked but threshold not enforced (TARGET per CI_GUARDRAILS.md)",
+              "coverage_percent": None,
+              "files_covered": 0,
+              "lines_covered": 0,
+              "lines_total": 0,
+          }
+
+          try:
+              tree = ET.parse("coverage.xml")
+              root = tree.getroot()
+              line_rate = float(root.get("line-rate", 0))
+              report["coverage_percent"] = round(line_rate * 100, 2)
+              report["files_covered"] = len(root.findall(".//class"))
+              # Extract line counts
+              lines_valid = int(root.get("lines-valid", 0))
+              lines_covered = int(root.get("lines-covered", 0))
+              report["lines_total"] = lines_valid
+              report["lines_covered"] = lines_covered
+              print(f"Overall coverage: {report['coverage_percent']}%")
+              print(f"Lines: {lines_covered}/{lines_valid}")
+              print(f"Files: {report['files_covered']}")
+          except Exception as e:
+              report["error"] = str(e)
+              print(f"Could not parse coverage.xml: {e}")
+
+          Path("coverage-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+          print("\nCoverage report written to coverage-report.json")
+          PY
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.os == 'ubuntu-latest'
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage-report.json
+            htmlcov/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # ========================================================================
       # Test Skip Count Tracking (Tech Debt: testing-skipif-tracking)
       # ========================================================================
       - name: Track skipped tests

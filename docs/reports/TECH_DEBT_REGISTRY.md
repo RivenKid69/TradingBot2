@@ -648,6 +648,34 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | HMAC-SHA256 integrity verification implemented: (1) Each cache file includes 32-byte signature, (2) Signature verified BEFORE pickle.loads(), (3) Tampered files rejected and deleted, (4) Key configurable via LOB_CACHE_HMAC_KEY env var. Threat model: local cache only, production requires key rotation. |
 
+### security-rls-migration-check {#security-rls-migration-check}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/app.py:165-204` |
+| **Severity** | High |
+| **Description** | Production startup now blocked if Alembic migrations not applied (RLS not enabled) |
+| **Status** | Closed |
+| **Control Artifact** | Code raises RuntimeError in production when has_alembic_table=False; CCEA_ALLOW_INSECURE_PRODUCTION for emergency bypass |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Per Design Doc Section 3.1 (tenant isolation): production MUST have RLS policies via Alembic migrations. Enforcement: (1) RuntimeError on startup if no migrations, (2) RuntimeError if using SQLite in production, (3) CCEA_ALLOW_INSECURE_PRODUCTION=true for explicit bypass (NOT RECOMMENDED). |
+
+---
+
+## Reliability/Operations
+
+### ops-database-production-check {#ops-database-production-check}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/database.py:28-44, 343-425` |
+| **Severity** | Medium |
+| **Description** | SQLite default now has technical enforcement in production via app.py lifespan checks |
+| **Status** | Closed |
+| **Control Artifact** | `check_migration_status()` returns `production_ready` flag; `get_db_backend_metric()` for telemetry; startup enforcement in app.py |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Production checks: (1) database.py documents PRODUCTION REQUIREMENTS, (2) check_migration_status() returns production_ready=True only when PostgreSQL + migrations applied, (3) get_db_backend_metric() for monitoring, (4) app.py blocks startup if SQLite in production. Telemetry: db_backend metric available for dashboards. |
+
 ---
 
 ## Docs/Drift
@@ -656,12 +684,13 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md:30-35` |
+| **Location** | `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md:30-36`, `docs/testing/TESTING_POLICY.md:110-123` |
 | **Severity** | Medium |
-| **Description** | PM-005 coverage gate at 80% is a target, not currently enforced |
+| **Description** | PM-005 coverage gate at 80% is a target, not currently enforced as merge-blocking |
 | **Status** | Controlled |
-| **Control Artifact** | CI_GUARDRAILS.md now accurately reflects target vs implemented |
-| **Note** | Docs corrected to state "TARGET" per Documentation Canon |
+| **Control Artifact** | `.github/workflows/build-and-test.yml` (coverage tracking with artifact upload), `coverage.xml`, `coverage-report.json` |
+| **Updated** | 2025-12-22 - CI now generates coverage artifacts; threshold enforcement planned when baseline > 70% |
+| **Note** | Coverage is tracked via `pytest --cov` with artifacts (`coverage.xml`, `coverage-report.json`, `htmlcov/`). Docs updated: CI_GUARDRAILS.md header changed to "Core Guardrails Implemented", PM-005 note updated with artifact references, TESTING_POLICY.md table has Status column. INNOVATION_STATEMENT.md references artifact availability. |
 
 ### docs-ci-workflow-existence {#docs-ci-workflow-existence}
 

@@ -29,6 +29,13 @@ from sqlalchemy.pool import NullPool, QueuePool
 # WI-DEPS-01: For dev/test, default to SQLite to avoid requiring PostgreSQL.
 # Production MUST set CCEA_DATABASE_URL to a real PostgreSQL connection.
 #
+# PRODUCTION REQUIREMENTS (ENFORCED in app.py lifespan):
+#   1. CCEA_DATABASE_URL must be PostgreSQL (not SQLite)
+#   2. Alembic migrations must be applied (`alembic upgrade head`)
+#   3. RLS policies must be active for tenant isolation
+#   See: packages/cloud/control_plane/app.py for startup enforcement
+#   Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#ops-database-production-check
+#
 # Valid URL formats:
 #   - SQLite (dev/test): sqlite+aiosqlite:///./ccea_control_plane.db
 #   - PostgreSQL (prod): postgresql+asyncpg://user:pass@host:5432/ccea_control_plane
@@ -342,23 +349,36 @@ async def check_db_health() -> bool:
 
 async def check_migration_status() -> dict:
     """
-    Check Alembic migration status.
+    Check Alembic migration status and database backend configuration.
 
     Returns a dict with:
         - is_postgresql: Whether using PostgreSQL (required for production)
         - current_revision: Current applied revision (None if no table)
         - has_alembic_table: Whether alembic_version table exists
         - using_default_sqlite: Whether falling back to SQLite default
+        - db_backend: Database backend type for telemetry ("postgresql" or "sqlite")
+        - production_ready: Whether configuration meets production requirements
 
     Note:
-        This check is advisory. Production deployments should always
-        run `alembic upgrade head` before starting the application.
+        Production deployments MUST:
+        1. Set CCEA_DATABASE_URL to PostgreSQL connection
+        2. Run `alembic upgrade head` to apply migrations and enable RLS
+        See Design Doc Section 3.1 for tenant isolation requirements.
+
+    Tech Debt Tracking:
+        docs/reports/TECH_DEBT_REGISTRY.md#ops-database-production-check
     """
+    is_postgresql = DATABASE_URL.startswith("postgresql")
+    is_default_sqlite = DATABASE_URL == _DEFAULT_DATABASE_URL
+
     result = {
-        "is_postgresql": DATABASE_URL.startswith("postgresql"),
+        "is_postgresql": is_postgresql,
         "current_revision": None,
         "has_alembic_table": False,
-        "using_default_sqlite": DATABASE_URL == _DEFAULT_DATABASE_URL,
+        "using_default_sqlite": is_default_sqlite,
+        # Telemetry fields for production monitoring
+        "db_backend": "postgresql" if is_postgresql else "sqlite",
+        "production_ready": False,  # Set to True only when all checks pass
     }
 
     try:
@@ -386,4 +406,27 @@ async def check_migration_status() -> dict:
         # Table doesn't exist or other error
         pass
 
+    # Production readiness check: PostgreSQL + Alembic migrations
+    result["production_ready"] = (
+        is_postgresql
+        and result["has_alembic_table"]
+        and result["current_revision"] is not None
+    )
+
     return result
+
+
+def get_db_backend_metric() -> str:
+    """
+    Return database backend type for telemetry/metrics.
+
+    This metric should be emitted to monitoring systems to ensure
+    production environments are using PostgreSQL.
+
+    Returns:
+        "postgresql" or "sqlite"
+
+    Example usage in metrics:
+        metrics.gauge("ccea.db.backend", 1, tags={"backend": get_db_backend_metric()})
+    """
+    return "postgresql" if DATABASE_URL.startswith("postgresql") else "sqlite"

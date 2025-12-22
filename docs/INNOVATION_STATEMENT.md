@@ -42,7 +42,7 @@
 | **Learning Stability** | Prone to catastrophic forgetting | Utility-weighted continual learning (UPGD) |
 | **Uncertainty** | Assumed known | Distribution-free conformal prediction bounds |
 
-**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + extensive automated test coverage on core ML components (CI-verified; test output available on request).
+**Differentiation (committee-safe)**: CCEA architecture (Cloud research/monitoring + customer-controlled Agent execution) + risk-first ML posture + governance/evidence exports by design + automated test coverage on core ML components (CI-tracked via `coverage.xml` artifact; test reports available on request; see `docs/testing/TESTING_POLICY.md` for coverage status).
 
 ---
 

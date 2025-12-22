@@ -1,8 +1,8 @@
 # CCEA CI Guardrails
 
-> **Version**: 2.0.0
-> **Date**: 2025-12-16
-> **Status**: APPROVED | **All Guardrails Implemented**
+> **Version**: 2.1.0
+> **Date**: 2025-12-22
+> **Status**: APPROVED | **Core Guardrails Implemented** (PM-005 coverage gate: TRACKED, not enforced)
 
 Этот документ определяет CI/CD guardrails для обеспечения архитектурной целостности CCEA.
 
@@ -29,10 +29,11 @@
 | PM-004 | `secret-scan` | All files | Block merge |
 | PM-005 | `test-coverage` | All code | **TARGET**: Block if < 80% (see note) |
 
-> **PM-005 Implementation Note**: Test coverage enforcement is a target goal. Current CI runs tests via `make test` but does not enforce the 80% threshold as a merge gate. Coverage is tracked via `pytest --cov` and reported in `tests/COMPREHENSIVE_TEST_REPORT.md`. Threshold enforcement is planned for implementation when coverage baseline reaches 70%+.
+> **PM-005 Implementation Note**: Test coverage is now tracked in CI with artifact upload (`coverage.xml`, `coverage-report.json`, `htmlcov/`). The 80% threshold is a target goal; enforcement as a merge-blocking gate is planned when baseline coverage stabilizes above 70%. Coverage metrics are generated via `pytest --cov` in `.github/workflows/build-and-test.yml` and available as downloadable CI artifacts.
 >
+> **Control Artifacts**: `coverage.xml` (Cobertura format), `coverage-report.json` (summary with timestamp)
 > **Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#docs-ci-coverage-gate`
-> **Status**: Docs accurately reflect target vs implemented state per Documentation Canon
+> **Status**: Coverage TRACKED (artifact generated); threshold enforcement is TARGET per Documentation Canon
 
 ### 1.3 Runtime Guardrails (Agent)
 

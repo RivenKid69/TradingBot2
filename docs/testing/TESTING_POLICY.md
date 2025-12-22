@@ -107,18 +107,20 @@ grep -r "mock\|patch\|MagicMock" tests/ | wc -l
 
 ### Tracked in CI
 
-| Metric | Target | Artifact |
-|--------|--------|----------|
-| Test pass rate | 100% | pytest results |
-| Skip count | < 100 | `skip-report.json` |
-| Coverage (critical) | > 80% | pytest-cov |
-| Mock density | Stable | Code analysis |
+| Metric | Target | Status | Artifact |
+|--------|--------|--------|----------|
+| Test pass rate | 100% | Enforced | pytest results |
+| Skip count | < 100 | Tracked | `skip-report.json` |
+| Coverage (critical) | > 80% | Tracked (see note) | `coverage.xml`, `coverage-report.json` |
+| Mock density | Stable | Manual review | Code analysis |
+
+> **Coverage Gate Status (PM-005)**: Coverage is tracked and reported as CI artifacts (`coverage.xml`, `coverage-report.json`). The 80% threshold is a target goal; enforcement as a merge-blocking gate is planned when baseline coverage stabilizes above 70%. See `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md` for implementation status. Tech Debt: `docs/reports/TECH_DEBT_REGISTRY.md#docs-ci-coverage-gate`
 
 ### Review Triggers
 
 - Skip count > 100: Review and document reasons
 - New test file with > 30 mocks: Requires review comment
-- Coverage drop > 5%: Block PR until addressed
+- Coverage drop > 5%: Review required (automated gate planned per PM-005)
 
 ---
 
