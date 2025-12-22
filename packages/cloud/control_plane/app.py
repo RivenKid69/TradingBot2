@@ -26,7 +26,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .database import check_db_health, close_engine, init_db
+from .database import check_db_health, check_migration_status, close_engine, init_db
 from .middleware.audit_middleware import AuditMiddleware, AuditConfig
 from .middleware.agent_signature import (
     AgentSignatureMiddleware,
@@ -143,13 +143,42 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
 
     Initializes database on startup and closes connections on shutdown.
+    Production deployments should use Alembic migrations instead of init_db().
     """
     logger.info("Starting Cloud Control Plane...")
+    is_production = os.environ.get("CCEA_ENV", "development") == "production"
 
-    # Initialize database (in production, use migrations)
+    # Initialize database
     try:
         await init_db()
-        logger.info("Database initialized successfully")
+        logger.info("Database tables initialized successfully")
+
+        # Check migration status and log warnings for production
+        # This provides visibility into whether migrations are properly applied
+        migration_status = await check_migration_status()
+        logger.info(
+            f"Migration status: revision={migration_status['current_revision']}, "
+            f"postgresql={migration_status['is_postgresql']}, "
+            f"has_alembic_table={migration_status['has_alembic_table']}"
+        )
+
+        if is_production:
+            if migration_status["using_default_sqlite"]:
+                logger.warning(
+                    "PRODUCTION WARNING: Using default SQLite database. "
+                    "Set CCEA_DATABASE_URL to a PostgreSQL connection for production. "
+                    "SQLite does not support Row Level Security or concurrent access."
+                )
+            if not migration_status["has_alembic_table"]:
+                logger.warning(
+                    "PRODUCTION WARNING: No Alembic migrations detected. "
+                    "Run 'alembic upgrade head' to apply migrations and enable RLS. "
+                    "Using init_db() only creates tables without policies."
+                )
+            elif migration_status["current_revision"]:
+                logger.info(
+                    f"Alembic migration verified: {migration_status['current_revision']}"
+                )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         raise

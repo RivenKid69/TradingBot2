@@ -338,3 +338,52 @@ async def check_db_health() -> bool:
         return True
     except Exception:
         return False
+
+
+async def check_migration_status() -> dict:
+    """
+    Check Alembic migration status.
+
+    Returns a dict with:
+        - is_postgresql: Whether using PostgreSQL (required for production)
+        - current_revision: Current applied revision (None if no table)
+        - has_alembic_table: Whether alembic_version table exists
+        - using_default_sqlite: Whether falling back to SQLite default
+
+    Note:
+        This check is advisory. Production deployments should always
+        run `alembic upgrade head` before starting the application.
+    """
+    result = {
+        "is_postgresql": DATABASE_URL.startswith("postgresql"),
+        "current_revision": None,
+        "has_alembic_table": False,
+        "using_default_sqlite": DATABASE_URL == _DEFAULT_DATABASE_URL,
+    }
+
+    try:
+        async with get_session() as session:
+            # Check if alembic_version table exists
+            if DATABASE_URL.startswith("sqlite"):
+                check_table = text(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='alembic_version'"
+                )
+            else:
+                check_table = text(
+                    "SELECT tablename FROM pg_tables WHERE tablename='alembic_version'"
+                )
+
+            table_result = await session.execute(check_table)
+            if table_result.scalar():
+                result["has_alembic_table"] = True
+                # Get current revision
+                rev_result = await session.execute(
+                    text("SELECT version_num FROM alembic_version LIMIT 1")
+                )
+                revision = rev_result.scalar()
+                result["current_revision"] = revision
+    except Exception:
+        # Table doesn't exist or other error
+        pass
+
+    return result

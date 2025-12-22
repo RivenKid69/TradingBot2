@@ -127,8 +127,8 @@ source .venv/bin/activate
 # Install Cloud artifact ONLY
 pip install dist/ccea_cloud-<version>-py3-none-any.whl
 
-# Set environment variables
-export DATABASE_URL="postgresql://user:pass@host:5432/ccea"
+# Set environment variables (CCEA_DATABASE_URL is required for production)
+export CCEA_DATABASE_URL="postgresql+asyncpg://user:pass@host:5432/ccea"
 export SECRET_KEY="<generate-secure-key>"
 export CCEA_ENVIRONMENT="production"
 
@@ -146,13 +146,17 @@ uvicorn packages.cloud.control_plane.app:app \
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `CCEA_DATABASE_URL` | Yes (prod) | PostgreSQL connection string (format: `postgresql+asyncpg://user:pass@host:5432/db`). If not set, defaults to SQLite for dev/test. |
 | `SECRET_KEY` | Yes | JWT signing key (min 32 chars) |
 | `CCEA_ENVIRONMENT` | No | `development`, `staging`, `production` |
+| `CCEA_DB_POOL_SIZE` | No | Connection pool size (default: 10) |
+| `CCEA_DB_MAX_OVERFLOW` | No | Max overflow connections (default: 20) |
 | `REDIS_URL` | No | Redis connection for caching |
 | `SENTRY_DSN` | No | Sentry error tracking |
 | `LOG_LEVEL` | No | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `CORS_ORIGINS` | No | Allowed CORS origins (comma-separated) |
+
+**Important**: Production deployments MUST set `CCEA_DATABASE_URL` to a PostgreSQL connection. Without this variable, the application falls back to SQLite which is unsuitable for production (no RLS, no concurrent access guarantees).
 
 ## Database Migrations
 
@@ -268,9 +272,10 @@ Import dashboards from `deploy/grafana/`:
 - Check command approval status
 
 **Database connection errors:**
-- Verify `DATABASE_URL` is correct
+- Verify `CCEA_DATABASE_URL` is set and correct (format: `postgresql+asyncpg://user:pass@host:5432/db`)
 - Check PostgreSQL is accessible
-- Run migrations: `alembic upgrade head`
+- Run migrations: `alembic -c packages/cloud/control_plane/alembic.ini upgrade head`
+- Verify migration status: `alembic -c packages/cloud/control_plane/alembic.ini current`
 
 ### Logs
 

@@ -10,8 +10,10 @@
 This report serves as the official test coverage control artifact for `distributional_ppo.py`.
 
 **Tech Debt Tracking**: docs/reports/TECH_DEBT_REGISTRY.md#testing-ppo-coverage
-**CI Reference**: Run `pytest --cov=distributional_ppo tests/test_distributional_ppo_* --cov-report=term`
-**Verification**: Coverage metrics validated via pytest-cov during CI runs
+**Local Coverage Command**: `pytest --cov=distributional_ppo tests/test_distributional_ppo_* --cov-report=term --cov-report=html:htmlcov`
+**Verification Status**: Coverage metrics are validated manually via local pytest-cov runs. CI runs tests but does not currently generate coverage artifacts.
+
+> **Note**: To add CI coverage validation, enable pytest-cov in CI workflow and upload coverage.xml/html as build artifacts. See docs/reports/TECH_DEBT_REGISTRY.md for tracking.
 
 ---
 
