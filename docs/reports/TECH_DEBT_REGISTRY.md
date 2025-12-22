@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 2.9
+**Version**: 3.0
 **Date**: 2025-12-22
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -207,6 +207,34 @@ Each entry contains:
 | **Closure Date** | 2025-12-21 |
 | **Note** | Three-tier fallback cascade (GARCH → EWMA → Historical) is intentional. OHLCV parsing continues with available data. Patterns documented in module header per defensive programming policy. |
 
+### indicator-rsi-initialization {#indicator-rsi-initialization}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_indicator_initialization_bugs.py:128-130` |
+| **Severity** | Medium |
+| **Description** | RSI initialization uses single value instead of SMA(14) seed, causing early RSI values to be skewed |
+| **Status** | Controlled |
+| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (bug verification + expected behavior tests), `INDICATOR_INITIALIZATION_BUGS_REPORT.md` |
+| **Impact** | Early RSI values (first ~30 bars) may differ from reference implementations (e.g., TradingView). Error decays exponentially with Wilder smoothing. |
+| **Mitigation** | (1) Use warmup period of 2x RSI period before trusting values, (2) Apply comparison test against reference implementation, (3) Document warmup requirements in strategy backtests |
+| **Added** | 2025-12-22 |
+| **Note** | Per Documentation Canon: honest disclosure of limitation. Test file documents both buggy and expected behavior. Fix requires MarketSimulator.cpp update (roadmap item). |
+
+### indicator-cci-mean-deviation {#indicator-cci-mean-deviation}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_indicator_initialization_bugs.py:433-438` |
+| **Severity** | Medium |
+| **Description** | CCI calculation uses SMA(close) instead of SMA(TP) for mean deviation, causing systematic bias |
+| **Status** | Controlled |
+| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (bug verification + expected behavior tests) |
+| **Impact** | CCI values may have systematic offset from reference implementations. Impact on signals depends on strategy threshold sensitivity. |
+| **Mitigation** | (1) Use CCI for relative comparisons rather than absolute thresholds, (2) Calibrate CCI thresholds against historical signals, (3) Document CCI baseline assumptions in strategy |
+| **Added** | 2025-12-22 |
+| **Note** | Fix requires MarketSimulator.cpp update (roadmap item). Test documents expected behavior for post-fix validation. |
+
 ---
 
 ## Testing/Quality
@@ -341,6 +369,21 @@ Each entry contains:
 | **Control Artifact** | Module docstring documents OPTIONAL DEPENDENCY PATTERN as intentional feature |
 | **Closure Date** | 2025-12-21 |
 | **Note** | NOT tech debt - this is a FEATURE enabling flexible test execution: (1) Minimal CI runs without ML deps, (2) Full CI runs with complete stack, (3) Local development with subset. Patterns cached at module load. Related: docs/testing/TESTING_POLICY.md |
+
+### testing-winsorization-allnan {#testing-winsorization-allnan}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_winsorization_all_nan_fix.py:133-134` |
+| **Severity** | Medium |
+| **Description** | Test for all-NaN column handling in winsorization skipped pending fix implementation |
+| **Status** | Controlled |
+| **Control Artifact** | `tests/test_winsorization_all_nan_fix.py` (comprehensive test suite with expected behavior documentation) |
+| **Problem** | When a feature column is entirely NaN, winsorization bounds become (nan, nan), leading to silent NaN->0.0 conversion |
+| **Impact** | Model cannot distinguish "missing data" from "zero value", creating semantic ambiguity |
+| **Mitigation** | (1) Pre-filter all-NaN columns before winsorization, (2) Log warnings for all-NaN columns during data validation, (3) Use explicit NaN markers in feature engineering |
+| **Added** | 2025-12-22 |
+| **Note** | Test file documents expected behavior: detect all-NaN during fit(), log warning, mark column as invalid, skip winsorization, output explicit NaN. Fix in features_pipeline.py is roadmap item. |
 
 ---
 
@@ -709,6 +752,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | Documentation corrected from "Argon2id" to "PBKDF2-HMAC-SHA256 (100,000 iterations)". PBKDF2-HMAC-SHA256 with 100,000 iterations is NIST-approved and meets security requirements per OWASP Password Storage Cheat Sheet. ENCRYPTION_VERIFICATION.md already correctly documented the actual implementation. Per Documentation Canon: documentation must reflect reality. |
 
+### docs-build-hash-report-name {#docs-build-hash-report-name}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `BUILD_INSTRUCTIONS.md:353` |
+| **Severity** | Low |
+| **Description** | Documentation stated "BUILD_HASH_REPORT.txt" but tooling uses "build_hash_report.json" |
+| **Status** | Closed |
+| **Control Artifact** | `BUILD_INSTRUCTIONS.md` corrected to match `Makefile:40` (HASH_REPORT := build_hash_report.json) |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Documentation now correctly states `build_hash_report.json` matching actual CI/Makefile artifact name. Per Documentation Canon: documentation must reflect reality. |
+
 ---
 
 ## Process/Governance
@@ -920,25 +975,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after docs-vault-kdf-drift closure*
+*Updated 2025-12-22 after CTO due diligence batch 7 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 3 | 7 | 2 | 5 |
-| Data/ML | 3 | 4 | 2 | 9 | 5 | 4 |
-| Testing/Quality | 2 | 4 | 5 | 11 | 4 | 7 |
+| Data/ML | 3 | 6 | 2 | 11 | 7 | 4 |
+| Testing/Quality | 2 | 5 | 5 | 12 | 5 | 7 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
 | Security | 3 | 6 | 1 | 10 | 2 | 8 |
-| Docs/Drift | 1 | 5 | 4 | 10 | 2 | 8 |
+| Docs/Drift | 1 | 5 | 5 | 11 | 2 | 9 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **13** | **31** | **25** | **69** | **22** | **47** |
+| **TOTAL** | **13** | **34** | **26** | **73** | **25** | **48** |
 
 **Status Summary**:
-- 22 items Controlled (with active monitoring/artifacts)
-- 47 items Closed (resolved)
+- 25 items Controlled (with active monitoring/artifacts)
+- 48 items Closed (resolved)
 
 ---
 
@@ -966,6 +1021,7 @@ Each entry contains:
 | 2.7 | 2025-12-21 | CTO due diligence batch 4: Added 6 items (arch-defensive-exception-sandbox [Closed], adapter-polygon-tick-streaming [Closed], adapter-deribit-rest-only [Closed], docs-forex-integration-roadmap [Closed], testing-optional-deps-pattern [Closed], perf-reward-cap [Closed]). Module docstrings added to sandbox/*.py, adapters/polygon/market_data.py, adapters/deribit/options.py. FOREX_INTEGRATION.md checkboxes clarified. tests/conftest.py pattern documented. reward.pyx comment updated. Total: 67 items (22 Controlled, 45 Closed). |
 | 2.8 | 2025-12-22 | CTO due diligence batch 5: Added security-lob-cache-pickle (Low, Closed). Implemented HMAC-SHA256 integrity verification for LOB disk cache pickle deserialization. Controls: signature appended to cache files, verified before pickle.loads(), tampered files rejected and deleted, key configurable via LOB_CACHE_HMAC_KEY env var. Total: 68 items (22 Controlled, 46 Closed). |
 | 2.9 | 2025-12-22 | CTO due diligence batch 6: Added docs-vault-kdf-drift (Medium, Closed). LOCAL_VAULT.md incorrectly stated "Argon2id" but implementation uses PBKDF2-HMAC-SHA256. Fixed: documentation corrected to match implementation. Control artifact: ENCRYPTION_VERIFICATION.md already verified PBKDF2. Total: 69 items (22 Controlled, 47 Closed). |
+| 3.0 | 2025-12-22 | CTO due diligence batch 7: Added 4 items: indicator-rsi-initialization (Medium, Controlled), indicator-cci-mean-deviation (Medium, Controlled), testing-winsorization-allnan (Medium, Controlled), docs-build-hash-report-name (Low, Closed). RSI/CCI indicator initialization bugs documented with mitigation strategies. Winsorization all-NaN handling tracked. BUILD_INSTRUCTIONS.md hash report filename corrected. Total: 73 items (25 Controlled, 48 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

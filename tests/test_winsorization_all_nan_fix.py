@@ -21,6 +21,12 @@ References:
 - Verification script: verify_issues_simple.py
 - Related: NaN handling external features (mediator.py)
 - Best practices: Scikit-learn's handling of all-constant features
+
+Tech Debt Tracking:
+- docs/reports/TECH_DEBT_REGISTRY.md#testing-winsorization-allnan
+
+Status: Test documents expected behavior. Fix pending in features_pipeline.py.
+Mitigation: Pre-filter all-NaN columns before winsorization; use explicit NaN markers.
 """
 
 import pytest

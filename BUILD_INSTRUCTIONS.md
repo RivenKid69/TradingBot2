@@ -350,7 +350,7 @@ The build system includes automated verification:
 After building, check the hash report:
 ```bash
 make verify-hash
-# Outputs: BUILD_HASH_REPORT.txt with SHA-256 hashes of all compiled artifacts
+# Outputs: build_hash_report.json with SHA-256 hashes of all compiled artifacts
 ```
 
 The hash report contains:

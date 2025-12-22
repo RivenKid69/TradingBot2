@@ -6,6 +6,13 @@ This module verifies three reported bugs:
 3. CCI mean deviation (MEDIUM) - uses SMA(close) instead of SMA(TP)
 
 Reference: INDICATOR_INITIALIZATION_BUGS_REPORT.md
+
+Tech Debt Tracking:
+- RSI bug: docs/reports/TECH_DEBT_REGISTRY.md#indicator-rsi-initialization
+- CCI bug: docs/reports/TECH_DEBT_REGISTRY.md#indicator-cci-mean-deviation
+
+Status: Tests document both buggy and expected behavior. Fixes pending in MarketSimulator.cpp.
+Mitigation: Use warmup periods and relative thresholds until fix is implemented.
 """
 
 import pytest
