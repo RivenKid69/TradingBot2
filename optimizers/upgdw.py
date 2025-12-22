@@ -37,7 +37,13 @@ class UPGDW(torch.optim.Optimizer):
         eps: Term added to denominator for numerical stability (default: 1e-8)
         weight_decay: Decoupled weight decay coefficient (default: 0.01)
         sigma: Standard deviation of perturbation noise (default: 0.001)
-        amsgrad: Whether to use AMSGrad variant (not implemented, for compatibility)
+        amsgrad: AMSGrad variant flag. Must be False - AMSGrad is not supported
+                 for UPGDW due to incompatibility with utility-based weight protection.
+                 Parameter retained for AdamW API compatibility. Raises NotImplementedError
+                 if set to True.
+
+    Raises:
+        NotImplementedError: If amsgrad=True is requested (not supported in UPGDW)
 
     Example:
         >>> # Drop-in replacement for AdamW
@@ -71,7 +77,12 @@ class UPGDW(torch.optim.Optimizer):
             raise ValueError(f"Invalid sigma value: {sigma}")
 
         if amsgrad:
-            raise NotImplementedError("AMSGrad variant is not implemented for UPGDW")
+            raise NotImplementedError(
+                "AMSGrad variant is not supported for UPGDW. "
+                "AMSGrad's max(v_t) tracking is incompatible with UPGDW's utility-based "
+                "weight protection mechanism. Use amsgrad=False (default) or consider "
+                "torch.optim.AdamW with amsgrad=True if AMSGrad is required."
+            )
 
         defaults = dict(
             lr=lr,

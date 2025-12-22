@@ -63,11 +63,23 @@ logger = logging.getLogger(__name__)
 
 
 class StorageBackendType(Enum):
-    """Types of audit storage backends."""
+    """Types of audit storage backends.
+
+    Currently implemented backends:
+        - MEMORY: In-memory storage (development/testing only, not persistent)
+        - SQLITE: SQLite file-based storage (single-node deployments)
+        - FILE: JSON file-based storage (simple deployments)
+
+    Planned backends (not yet implemented):
+        - POSTGRESQL: PostgreSQL storage (enterprise multi-node deployments)
+          Requires: psycopg2 or asyncpg. See docs for installation.
+    """
 
     MEMORY = "memory"
     SQLITE = "sqlite"
     FILE = "file"
+    # Planned: PostgreSQL for enterprise scalable deployments.
+    # See create_audit_storage() for status.
     POSTGRESQL = "postgresql"
 
 
@@ -1708,12 +1720,27 @@ def create_audit_storage(
     """
     Factory function to create audit storage backend.
 
+    Currently supported backends:
+        - StorageBackendType.MEMORY: In-memory (development/testing)
+        - StorageBackendType.SQLITE: SQLite file-based (production single-node)
+        - StorageBackendType.FILE: JSON file-based (simple deployments)
+
+    Planned backends (raise NotImplementedError):
+        - StorageBackendType.POSTGRESQL: Enterprise multi-node deployments.
+          Status: Planned for future release. Requires psycopg2 or asyncpg.
+          For enterprise PostgreSQL audit storage needs, contact support or
+          use SQLite with external replication.
+
     Args:
         config: Storage configuration.
         backend_type: Override backend type from config.
 
     Returns:
         Configured AuditStorageBackend instance.
+
+    Raises:
+        NotImplementedError: If POSTGRESQL backend is requested (planned feature).
+        ValueError: If unknown backend type is requested.
     """
     if config is None:
         config = AuditStorageConfig()
@@ -1727,8 +1754,15 @@ def create_audit_storage(
     elif actual_type == StorageBackendType.FILE:
         return FileAuditStorage(config)
     elif actual_type == StorageBackendType.POSTGRESQL:
-        # PostgreSQL support would require psycopg2 or asyncpg
-        raise NotImplementedError("PostgreSQL storage requires additional dependencies")
+        # PostgreSQL backend is planned for enterprise deployments.
+        # Implementation requires psycopg2 or asyncpg dependencies.
+        # For current enterprise needs, use SQLite with external backup/replication.
+        raise NotImplementedError(
+            "PostgreSQL audit storage is a planned feature (not yet implemented). "
+            "Requires psycopg2 or asyncpg. For enterprise deployments, use "
+            "StorageBackendType.SQLITE with external backup/replication, or "
+            "contact support for roadmap timeline."
+        )
     else:
         raise ValueError(f"Unknown storage backend type: {actual_type}")
 

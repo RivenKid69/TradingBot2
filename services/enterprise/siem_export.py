@@ -354,12 +354,25 @@ class BaseSIEMExporter:
 
 
 class SplunkExporter(BaseSIEMExporter):
-    """Splunk HTTP Event Collector exporter."""
+    """Splunk HTTP Event Collector (HEC) exporter with real HTTP delivery.
+
+    Supports both production mode (real HTTP POST to Splunk HEC) and
+    simulation mode (logging only, for testing/development).
+
+    Args:
+        config: SIEM configuration with endpoint and api_key.
+        simulation_mode: If True, logs events instead of sending. Defaults to False.
+    """
+
+    def __init__(self, config: SIEMConfig, simulation_mode: bool = False) -> None:
+        """Initialize Splunk exporter."""
+        super().__init__(config)
+        self.simulation_mode = simulation_mode
+        import logging
+        self._logger = logging.getLogger(__name__)
 
     def export_event(self, event: SecurityEvent) -> bool:
         """Export a single event to Splunk."""
-        # In production, this would use requests library
-        # Simulating export for now
         hec_data = event.to_splunk_hec()
         return self._send_to_hec([hec_data])
 
@@ -415,19 +428,124 @@ class SplunkExporter(BaseSIEMExporter):
             )
 
     def _send_to_hec(self, events: list[dict[str, Any]]) -> bool:
-        """Send events to Splunk HEC endpoint."""
-        # In production, this would use HTTP POST to HEC endpoint
-        # Simulating successful export
-        return True
+        """Send events to Splunk HEC endpoint.
+
+        In production mode, performs HTTP POST to Splunk HEC.
+        In simulation mode, logs events for testing purposes.
+
+        Args:
+            events: List of HEC-formatted event dictionaries.
+
+        Returns:
+            True if all events sent successfully, False otherwise.
+        """
+        if self.simulation_mode:
+            self._logger.info(f"[SIMULATION] Splunk HEC export: {len(events)} events to {self.config.endpoint}")
+            return True
+
+        # Production mode: send real HTTP POST to Splunk HEC
+        if not self.config.endpoint:
+            self._logger.error("Splunk HEC endpoint not configured")
+            return False
+
+        if not self.config.api_key:
+            self._logger.error("Splunk HEC token (api_key) not configured")
+            return False
+
+        try:
+            import requests
+
+            # Splunk HEC expects newline-delimited JSON for batch events
+            payload = "\n".join(json.dumps(event) for event in events)
+
+            response = requests.post(
+                f"{self.config.endpoint}/services/collector/event",
+                data=payload,
+                headers={
+                    "Authorization": f"Splunk {self.config.api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=self.config.timeout_seconds,
+                verify=self.config.ssl_verify,
+            )
+
+            if response.status_code == 200:
+                self._logger.info(f"Splunk HEC export successful: {len(events)} events")
+                return True
+            else:
+                self._logger.error(
+                    f"Splunk HEC export failed: {response.status_code} - {response.text[:200]}"
+                )
+                return False
+        except requests.exceptions.Timeout:
+            self._logger.error(f"Splunk HEC request timed out after {self.config.timeout_seconds}s")
+            return False
+        except requests.exceptions.RequestException as e:
+            self._logger.error(f"Splunk HEC request failed: {str(e)}")
+            return False
 
     def test_connection(self) -> bool:
-        """Test connection to Splunk."""
-        # In production, this would send a test event
-        return True
+        """Test connection to Splunk HEC.
+
+        In production mode, sends a health check request.
+        In simulation mode, returns True for testing purposes.
+        """
+        if self.simulation_mode:
+            self._logger.info(f"[SIMULATION] Splunk connection test: {self.config.endpoint}")
+            return True
+
+        if not self.config.endpoint or not self.config.api_key:
+            return False
+
+        try:
+            import requests
+
+            # Send a health check event
+            test_event = {
+                "event": "connection_test",
+                "source": self.config.source,
+                "sourcetype": self.config.sourcetype,
+            }
+
+            response = requests.post(
+                f"{self.config.endpoint}/services/collector/event",
+                json=test_event,
+                headers={
+                    "Authorization": f"Splunk {self.config.api_key}",
+                    "Content-Type": "application/json",
+                },
+                timeout=self.config.timeout_seconds,
+                verify=self.config.ssl_verify,
+            )
+
+            success = response.status_code == 200
+            if success:
+                self._logger.info("Splunk HEC connection test successful")
+            else:
+                self._logger.warning(f"Splunk HEC connection test failed: {response.status_code}")
+            return success
+        except Exception as e:
+            self._logger.error(f"Splunk connection test failed: {str(e)}")
+            return False
 
 
 class ElasticsearchExporter(BaseSIEMExporter):
-    """Elasticsearch/ELK Stack exporter."""
+    """Elasticsearch/ELK Stack exporter with real HTTP delivery.
+
+    Supports both production mode (real HTTP requests to Elasticsearch) and
+    simulation mode (logging only, for testing/development).
+
+    Args:
+        config: SIEM configuration with endpoint and credentials.
+        simulation_mode: If True, logs events instead of sending. Defaults to False.
+    """
+
+    def __init__(self, config: SIEMConfig, simulation_mode: bool = False) -> None:
+        """Initialize Elasticsearch exporter."""
+        super().__init__(config)
+        self.simulation_mode = simulation_mode
+        import logging
+        self._logger = logging.getLogger(__name__)
 
     def export_event(self, event: SecurityEvent) -> bool:
         """Export a single event to Elasticsearch."""
@@ -478,19 +596,147 @@ class ElasticsearchExporter(BaseSIEMExporter):
             )
 
     def _index_document(self, doc: dict[str, Any]) -> bool:
-        """Index a single document."""
-        # In production, this would use Elasticsearch client
-        return True
+        """Index a single document to Elasticsearch.
+
+        In production mode, performs HTTP POST to Elasticsearch.
+        In simulation mode, logs the document for testing purposes.
+        """
+        if self.simulation_mode:
+            self._logger.info(f"[SIMULATION] Elasticsearch index: 1 document to {self.config.index}")
+            return True
+
+        if not self.config.endpoint:
+            self._logger.error("Elasticsearch endpoint not configured")
+            return False
+
+        try:
+            import requests
+            from uuid import uuid4
+
+            doc_id = str(uuid4())
+            url = f"{self.config.endpoint}/{self.config.index}/_doc/{doc_id}"
+
+            auth = None
+            if self.config.username and self.config.password:
+                auth = (self.config.username, self.config.password)
+
+            response = requests.post(
+                url,
+                json=doc,
+                auth=auth,
+                headers={"Content-Type": "application/json"},
+                timeout=self.config.timeout_seconds,
+                verify=self.config.ssl_verify,
+            )
+
+            success = response.status_code in (200, 201)
+            if success:
+                self._logger.info(f"Elasticsearch document indexed: {doc_id}")
+            else:
+                self._logger.error(f"Elasticsearch index failed: {response.status_code} - {response.text[:200]}")
+            return success
+        except Exception as e:
+            self._logger.error(f"Elasticsearch index failed: {str(e)}")
+            return False
 
     def _bulk_index(self, docs: list[dict[str, Any]]) -> tuple[int, int]:
-        """Bulk index documents."""
-        # In production, this would use Elasticsearch bulk API
-        return len(docs), 0
+        """Bulk index documents to Elasticsearch.
+
+        In production mode, uses Elasticsearch bulk API.
+        In simulation mode, returns success for testing purposes.
+
+        Returns:
+            Tuple of (success_count, failure_count).
+        """
+        if self.simulation_mode:
+            self._logger.info(f"[SIMULATION] Elasticsearch bulk index: {len(docs)} documents to {self.config.index}")
+            return len(docs), 0
+
+        if not self.config.endpoint:
+            self._logger.error("Elasticsearch endpoint not configured")
+            return 0, len(docs)
+
+        try:
+            import requests
+            from uuid import uuid4
+
+            # Build bulk request body (NDJSON format)
+            bulk_body_lines = []
+            for doc in docs:
+                action = {"index": {"_index": self.config.index, "_id": str(uuid4())}}
+                bulk_body_lines.append(json.dumps(action))
+                bulk_body_lines.append(json.dumps(doc))
+            bulk_body = "\n".join(bulk_body_lines) + "\n"
+
+            auth = None
+            if self.config.username and self.config.password:
+                auth = (self.config.username, self.config.password)
+
+            response = requests.post(
+                f"{self.config.endpoint}/_bulk",
+                data=bulk_body,
+                auth=auth,
+                headers={"Content-Type": "application/x-ndjson"},
+                timeout=self.config.timeout_seconds,
+                verify=self.config.ssl_verify,
+            )
+
+            if response.status_code not in (200, 201):
+                self._logger.error(f"Elasticsearch bulk index failed: {response.status_code}")
+                return 0, len(docs)
+
+            result = response.json()
+            if result.get("errors", False):
+                # Count failures
+                fail_count = sum(1 for item in result.get("items", [])
+                               if item.get("index", {}).get("error"))
+                success_count = len(docs) - fail_count
+                self._logger.warning(f"Elasticsearch bulk index partial: {success_count} success, {fail_count} failed")
+                return success_count, fail_count
+            else:
+                self._logger.info(f"Elasticsearch bulk index successful: {len(docs)} documents")
+                return len(docs), 0
+        except Exception as e:
+            self._logger.error(f"Elasticsearch bulk index failed: {str(e)}")
+            return 0, len(docs)
 
     def test_connection(self) -> bool:
-        """Test connection to Elasticsearch."""
-        # In production, this would ping the cluster
-        return True
+        """Test connection to Elasticsearch cluster.
+
+        In production mode, pings the cluster health endpoint.
+        In simulation mode, returns True for testing purposes.
+        """
+        if self.simulation_mode:
+            self._logger.info(f"[SIMULATION] Elasticsearch connection test: {self.config.endpoint}")
+            return True
+
+        if not self.config.endpoint:
+            return False
+
+        try:
+            import requests
+
+            auth = None
+            if self.config.username and self.config.password:
+                auth = (self.config.username, self.config.password)
+
+            response = requests.get(
+                f"{self.config.endpoint}/_cluster/health",
+                auth=auth,
+                timeout=self.config.timeout_seconds,
+                verify=self.config.ssl_verify,
+            )
+
+            success = response.status_code == 200
+            if success:
+                health = response.json()
+                self._logger.info(f"Elasticsearch connection test successful: cluster status = {health.get('status', 'unknown')}")
+            else:
+                self._logger.warning(f"Elasticsearch connection test failed: {response.status_code}")
+            return success
+        except Exception as e:
+            self._logger.error(f"Elasticsearch connection test failed: {str(e)}")
+            return False
 
 
 # =============================================================================
@@ -503,28 +749,40 @@ class SIEMExportService:
     SIEM Integration Service.
 
     Provides enterprise SIEM integration capabilities per DORA Art. 10.
+
+    Supports both production mode (real HTTP delivery to SIEM endpoints) and
+    simulation mode (logging only, for testing/development).
+
+    Args:
+        simulation_mode: If True, exporters log events instead of sending HTTP requests.
+            Defaults to False (production mode).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, simulation_mode: bool = False) -> None:
         """Initialize SIEM export service."""
         self._connections: dict[str, SIEMConnection] = {}
         self._exporters: dict[str, BaseSIEMExporter] = {}
         self._events: list[SecurityEvent] = []
         self._batches: dict[str, EventBatch] = {}
         self._export_results: list[ExportResult] = []
+        self._simulation_mode = simulation_mode
 
     def add_connection(self, config: SIEMConfig) -> SIEMConnection:
-        """Add a SIEM connection."""
+        """Add a SIEM connection.
+
+        Creates an appropriate exporter based on the provider type.
+        Exporter runs in simulation or production mode based on service configuration.
+        """
         connection_id = str(uuid4())
         connection = SIEMConnection(connection_id=connection_id, config=config)
 
-        # Create appropriate exporter
+        # Create appropriate exporter with simulation mode from service
         if config.provider == SIEMProvider.SPLUNK:
-            self._exporters[connection_id] = SplunkExporter(config)
+            self._exporters[connection_id] = SplunkExporter(config, simulation_mode=self._simulation_mode)
         elif config.provider in (SIEMProvider.ELASTICSEARCH, SIEMProvider.ELK, SIEMProvider.OPENSEARCH):
-            self._exporters[connection_id] = ElasticsearchExporter(config)
+            self._exporters[connection_id] = ElasticsearchExporter(config, simulation_mode=self._simulation_mode)
         else:
-            self._exporters[connection_id] = ElasticsearchExporter(config)  # Default to ES
+            self._exporters[connection_id] = ElasticsearchExporter(config, simulation_mode=self._simulation_mode)  # Default to ES
 
         self._connections[connection_id] = connection
         return connection

@@ -4,9 +4,9 @@
 
 Phase 1 of the Options Integration implements the foundational pricing models, Greeks calculations, and risk analytics for options trading. This module provides deployment-ready implementations based on established academic research and industry best practices.
 
-**Status**: ✅ Tested and operational
-**Tests**: 200+ tests (100% coverage)
-**Benchmarks**: All latency targets met
+**Status**: Tested and operational (see test suite below)
+**Tests**: Comprehensive test suite in `tests/test_options_core.py` (coverage tracked via CI)
+**Benchmarks**: Performance benchmarks in `benchmarks/bench_options_greeks.py` (results vary by hardware)
 
 ---
 

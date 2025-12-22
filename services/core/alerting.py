@@ -298,13 +298,34 @@ class LogNotificationHandler(NotificationHandler):
 
 
 class SlackNotificationHandler(NotificationHandler):
-    """Slack notification handler."""
+    """Slack notification handler with real webhook delivery.
 
-    def __init__(self, webhook_url: str):
+    Supports both production mode (real HTTP POST to Slack webhook) and
+    simulation mode (logging only, for testing/development).
+
+    Args:
+        webhook_url: Slack Incoming Webhook URL.
+        simulation_mode: If True, logs messages instead of sending HTTP requests.
+            Defaults to False (production mode).
+        timeout_seconds: HTTP request timeout. Defaults to 10 seconds.
+    """
+
+    def __init__(
+        self,
+        webhook_url: str,
+        simulation_mode: bool = False,
+        timeout_seconds: float = 10.0,
+    ):
         self.webhook_url = webhook_url
+        self.simulation_mode = simulation_mode
+        self.timeout_seconds = timeout_seconds
 
     def send(self, alert: Alert, target: str = "") -> NotificationResult:
-        # In production, this would send to Slack webhook
+        """Send alert to Slack webhook.
+
+        In production mode, performs HTTP POST to webhook URL.
+        In simulation mode, logs the message for testing purposes.
+        """
         severity_emoji = {
             AlertSeverity.CRITICAL: ":rotating_light:",
             AlertSeverity.HIGH: ":warning:",
@@ -335,58 +356,221 @@ class SlackNotificationHandler(NotificationHandler):
             ],
         }
 
-        # Simulate sending
-        logger.info(f"Slack notification: {message['text']}")
+        webhook_target = target or self.webhook_url
 
-        return NotificationResult(
-            alert_id=alert.alert_id,
-            channel=AlertChannel.SLACK,
-            target=target or self.webhook_url,
-            success=True,
-        )
+        if self.simulation_mode:
+            logger.info(f"[SIMULATION] Slack notification to {webhook_target}: {message['text']}")
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.SLACK,
+                target=webhook_target,
+                success=True,
+            )
+
+        # Production mode: send real HTTP POST to Slack webhook
+        try:
+            import requests
+
+            response = requests.post(
+                webhook_target,
+                json=message,
+                timeout=self.timeout_seconds,
+                headers={"Content-Type": "application/json"},
+            )
+
+            success = response.status_code == 200
+            error_msg = None if success else f"Slack API returned {response.status_code}: {response.text[:200]}"
+
+            if success:
+                logger.info(f"Slack notification sent successfully: {alert.alert_id}")
+            else:
+                logger.error(f"Slack notification failed: {error_msg}")
+
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.SLACK,
+                target=webhook_target,
+                success=success,
+                error=error_msg,
+            )
+        except requests.exceptions.Timeout:
+            error_msg = f"Slack webhook request timed out after {self.timeout_seconds}s"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.SLACK,
+                target=webhook_target,
+                success=False,
+                error=error_msg,
+            )
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Slack webhook request failed: {str(e)}"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.SLACK,
+                target=webhook_target,
+                success=False,
+                error=error_msg,
+            )
 
 
 class EmailNotificationHandler(NotificationHandler):
-    """Email notification handler."""
+    """Email notification handler with SMTP delivery.
 
-    def __init__(self, smtp_host: str = "", from_addr: str = ""):
+    Supports both production mode (real SMTP sending) and simulation mode
+    (logging only, for testing/development).
+
+    Args:
+        smtp_host: SMTP server hostname.
+        smtp_port: SMTP server port. Defaults to 587 (TLS).
+        from_addr: Sender email address.
+        username: SMTP authentication username (optional).
+        password: SMTP authentication password (optional).
+        use_tls: Whether to use TLS. Defaults to True.
+        simulation_mode: If True, logs messages instead of sending. Defaults to False.
+        timeout_seconds: SMTP connection timeout. Defaults to 30 seconds.
+    """
+
+    def __init__(
+        self,
+        smtp_host: str = "",
+        smtp_port: int = 587,
+        from_addr: str = "",
+        username: str = "",
+        password: str = "",
+        use_tls: bool = True,
+        simulation_mode: bool = False,
+        timeout_seconds: float = 30.0,
+    ):
         self.smtp_host = smtp_host
+        self.smtp_port = smtp_port
         self.from_addr = from_addr
+        self.username = username
+        self.password = password
+        self.use_tls = use_tls
+        self.simulation_mode = simulation_mode
+        self.timeout_seconds = timeout_seconds
 
     def send(self, alert: Alert, target: str = "") -> NotificationResult:
-        # In production, this would send email
-        subject = f"[{alert.severity.value.upper()}] Alert: {alert.name}"
-        body = f"""
-        Alert: {alert.name}
-        Severity: {alert.severity.value}
-        Source: {alert.source}
+        """Send alert via email.
 
-        {alert.description}
-
-        Metric: {alert.metric_name} = {alert.metric_value} (threshold: {alert.threshold})
-
-        Triggered at: {alert.triggered_at}
+        In production mode, sends via SMTP.
+        In simulation mode, logs the message for testing purposes.
         """
+        subject = f"[{alert.severity.value.upper()}] Alert: {alert.name}"
+        body = f"""Alert: {alert.name}
+Severity: {alert.severity.value}
+Source: {alert.source}
 
-        logger.info(f"Email notification to {target}: {subject}")
+{alert.description}
 
-        return NotificationResult(
-            alert_id=alert.alert_id,
-            channel=AlertChannel.EMAIL,
-            target=target,
-            success=True,
-        )
+Metric: {alert.metric_name} = {alert.metric_value} (threshold: {alert.threshold})
+
+Triggered at: {alert.triggered_at}
+"""
+
+        if self.simulation_mode:
+            logger.info(f"[SIMULATION] Email notification to {target}: {subject}")
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.EMAIL,
+                target=target,
+                success=True,
+            )
+
+        # Production mode: send real email via SMTP
+        if not self.smtp_host or not self.from_addr:
+            error_msg = "SMTP host and from_addr must be configured for production mode"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.EMAIL,
+                target=target,
+                success=False,
+                error=error_msg,
+            )
+
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+
+            msg = MIMEMultipart()
+            msg["From"] = self.from_addr
+            msg["To"] = target
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "plain"))
+
+            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=self.timeout_seconds) as server:
+                if self.use_tls:
+                    server.starttls()
+                if self.username and self.password:
+                    server.login(self.username, self.password)
+                server.sendmail(self.from_addr, target, msg.as_string())
+
+            logger.info(f"Email notification sent successfully to {target}: {alert.alert_id}")
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.EMAIL,
+                target=target,
+                success=True,
+            )
+        except smtplib.SMTPException as e:
+            error_msg = f"SMTP error sending email: {str(e)}"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.EMAIL,
+                target=target,
+                success=False,
+                error=error_msg,
+            )
+        except Exception as e:
+            error_msg = f"Failed to send email: {str(e)}"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.EMAIL,
+                target=target,
+                success=False,
+                error=error_msg,
+            )
 
 
 class PagerDutyNotificationHandler(NotificationHandler):
-    """PagerDuty notification handler."""
+    """PagerDuty notification handler with Events API v2 delivery.
 
-    def __init__(self, api_key: str, service_id: str):
+    Supports both production mode (real HTTP POST to PagerDuty Events API)
+    and simulation mode (logging only, for testing/development).
+
+    Args:
+        api_key: PagerDuty Integration/Routing Key.
+        service_id: PagerDuty Service ID for reference.
+        simulation_mode: If True, logs messages instead of sending. Defaults to False.
+        timeout_seconds: HTTP request timeout. Defaults to 10 seconds.
+    """
+
+    PAGERDUTY_EVENTS_URL = "https://events.pagerduty.com/v2/enqueue"
+
+    def __init__(
+        self,
+        api_key: str,
+        service_id: str,
+        simulation_mode: bool = False,
+        timeout_seconds: float = 10.0,
+    ):
         self.api_key = api_key
         self.service_id = service_id
+        self.simulation_mode = simulation_mode
+        self.timeout_seconds = timeout_seconds
 
     def send(self, alert: Alert, target: str = "") -> NotificationResult:
-        # In production, this would call PagerDuty API
+        """Send alert to PagerDuty Events API v2.
+
+        In production mode, sends HTTP POST to PagerDuty.
+        In simulation mode, logs the event for testing purposes.
+        """
         event = {
             "routing_key": self.api_key,
             "event_action": "trigger",
@@ -399,18 +583,67 @@ class PagerDutyNotificationHandler(NotificationHandler):
                     "metric": alert.metric_name,
                     "value": alert.metric_value,
                     "threshold": alert.threshold,
+                    "alert_id": alert.alert_id,
                 },
             },
         }
 
-        logger.info(f"PagerDuty notification: {event['payload']['summary']}")
+        if self.simulation_mode:
+            logger.info(f"[SIMULATION] PagerDuty notification: {event['payload']['summary']}")
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.PAGERDUTY,
+                target=self.service_id,
+                success=True,
+            )
 
-        return NotificationResult(
-            alert_id=alert.alert_id,
-            channel=AlertChannel.PAGERDUTY,
-            target=self.service_id,
-            success=True,
-        )
+        # Production mode: send real HTTP POST to PagerDuty Events API v2
+        try:
+            import requests
+
+            response = requests.post(
+                self.PAGERDUTY_EVENTS_URL,
+                json=event,
+                timeout=self.timeout_seconds,
+                headers={"Content-Type": "application/json"},
+            )
+
+            # PagerDuty returns 202 Accepted for successful events
+            success = response.status_code in (200, 202)
+            error_msg = None if success else f"PagerDuty API returned {response.status_code}: {response.text[:200]}"
+
+            if success:
+                logger.info(f"PagerDuty notification sent successfully: {alert.alert_id}")
+            else:
+                logger.error(f"PagerDuty notification failed: {error_msg}")
+
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.PAGERDUTY,
+                target=self.service_id,
+                success=success,
+                error=error_msg,
+            )
+        except requests.exceptions.Timeout:
+            error_msg = f"PagerDuty request timed out after {self.timeout_seconds}s"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.PAGERDUTY,
+                target=self.service_id,
+                success=False,
+                error=error_msg,
+            )
+        except requests.exceptions.RequestException as e:
+            error_msg = f"PagerDuty request failed: {str(e)}"
+            logger.error(error_msg)
+            return NotificationResult(
+                alert_id=alert.alert_id,
+                channel=AlertChannel.PAGERDUTY,
+                target=self.service_id,
+                success=False,
+                error=error_msg,
+            )
 
     def _map_severity(self, severity: AlertSeverity) -> str:
         mapping = {
