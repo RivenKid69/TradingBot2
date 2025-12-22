@@ -212,29 +212,29 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `tests/test_indicator_initialization_bugs.py:128-130` |
+| **Location** | `transformers.py:939-1037`, `MarketSimulator.cpp:315-352` |
 | **Severity** | Medium |
-| **Description** | RSI initialization uses single value instead of SMA(14) seed, causing early RSI values to be skewed |
-| **Status** | Controlled |
-| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (bug verification + expected behavior tests), `INDICATOR_INITIALIZATION_BUGS_REPORT.md` |
-| **Impact** | Early RSI values (first ~30 bars) may differ from reference implementations (e.g., TradingView). Error decays exponentially with Wilder smoothing. |
-| **Mitigation** | (1) Use warmup period of 2x RSI period before trusting values, (2) Apply comparison test against reference implementation, (3) Document warmup requirements in strategy backtests |
+| **Description** | RSI initialization now uses SMA(14) seed instead of single value |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (all 9 tests pass without skip markers) |
+| **Resolution** | Fix implemented in both Python (transformers.py) and C++ (MarketSimulator.cpp): (1) Collect first rsi_period gain/loss values, (2) Initialize avg_gain/avg_loss with SMA, (3) Then apply Wilder smoothing |
 | **Added** | 2025-12-22 |
-| **Note** | Per Documentation Canon: honest disclosure of limitation. Test file documents both buggy and expected behavior. Fix requires MarketSimulator.cpp update (roadmap item). |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Fix verified via pytest. Reference: Wilder (1978), "New Concepts in Technical Trading Systems". |
 
 ### indicator-cci-mean-deviation {#indicator-cci-mean-deviation}
 
 | Field | Value |
 |-------|-------|
-| **Location** | `tests/test_indicator_initialization_bugs.py:433-438` |
+| **Location** | `MarketSimulator.cpp:370-387` |
 | **Severity** | Medium |
-| **Description** | CCI calculation uses SMA(close) instead of SMA(TP) for mean deviation, causing systematic bias |
-| **Status** | Controlled |
-| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (bug verification + expected behavior tests) |
-| **Impact** | CCI values may have systematic offset from reference implementations. Impact on signals depends on strategy threshold sensitivity. |
-| **Mitigation** | (1) Use CCI for relative comparisons rather than absolute thresholds, (2) Calibrate CCI thresholds against historical signals, (3) Document CCI baseline assumptions in strategy |
+| **Description** | CCI calculation now uses SMA(TP) instead of SMA(close) for mean deviation |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_indicator_initialization_bugs.py` (all 9 tests pass without skip markers) |
+| **Resolution** | Fix implemented in MarketSimulator.cpp: (1) Uses w_tp20 deque for TP values, (2) Computes SMA of TP (not close), (3) Mean deviation calculated from SMA_TP |
 | **Added** | 2025-12-22 |
-| **Note** | Fix requires MarketSimulator.cpp update (roadmap item). Test documents expected behavior for post-fix validation. |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Fix verified via pytest. Reference: Lambert (1980), "Commodity Channel Index: Tool for Trading Cyclic Trends". |
 
 ---
 
@@ -375,16 +375,17 @@ Each entry contains:
 
 | Field | Value |
 |-------|-------|
-| **Location** | `tests/test_winsorization_all_nan_fix.py:133-134` |
+| **Location** | `tests/test_winsorization_all_nan_fix.py`, `features_pipeline.py:536-604` |
 | **Severity** | Medium |
-| **Description** | Test for all-NaN column handling in winsorization skipped pending fix implementation |
-| **Status** | Controlled |
-| **Control Artifact** | `tests/test_winsorization_all_nan_fix.py` (comprehensive test suite with expected behavior documentation) |
+| **Description** | All-NaN column handling in winsorization |
+| **Status** | Closed |
+| **Control Artifact** | `tests/test_winsorization_all_nan_fix.py` (all tests pass without skip markers) |
 | **Problem** | When a feature column is entirely NaN, winsorization bounds become (nan, nan), leading to silent NaN->0.0 conversion |
 | **Impact** | Model cannot distinguish "missing data" from "zero value", creating semantic ambiguity |
-| **Mitigation** | (1) Pre-filter all-NaN columns before winsorization, (2) Log warnings for all-NaN columns during data validation, (3) Use explicit NaN markers in feature engineering |
+| **Resolution** | Fix implemented in features_pipeline.py: (1) fit() detects all-NaN via np.isnan().all(), (2) Marks with is_all_nan=True, (3) Logs warning, (4) transform() preserves NaN (not zeros) |
 | **Added** | 2025-12-22 |
-| **Note** | Test file documents expected behavior: detect all-NaN during fit(), log warning, mark column as invalid, skip winsorization, output explicit NaN. Fix in features_pipeline.py is roadmap item. |
+| **Closure Date** | 2025-12-22 |
+| **Note** | All tests in test_winsorization_all_nan_fix.py pass. Skip markers removed. Fix verified via pytest. |
 
 ---
 
@@ -1012,13 +1013,13 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 11 closure*
+*Updated 2025-12-22 after CTO due diligence batch 12 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 3 | 3 | 7 | 2 | 5 |
-| Data/ML | 2 | 6 | 3 | 11 | 6 | 5 |
-| Testing/Quality | 2 | 5 | 5 | 12 | 5 | 7 |
+| Data/ML | 2 | 6 | 3 | 11 | 4 | 7 |
+| Testing/Quality | 2 | 5 | 5 | 12 | 4 | 8 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
 | Security | 3 | 6 | 1 | 10 | 2 | 8 |
 | Docs/Drift | 1 | 7 | 6 | 14 | 2 | 12 |
@@ -1026,11 +1027,11 @@ Each entry contains:
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **12** | **36** | **28** | **76** | **24** | **52** |
+| **TOTAL** | **12** | **36** | **28** | **76** | **21** | **55** |
 
 **Status Summary**:
-- 24 items Controlled (with active monitoring/artifacts)
-- 52 items Closed (resolved)
+- 21 items Controlled (with active monitoring/artifacts)
+- 55 items Closed (resolved)
 
 ---
 
@@ -1062,6 +1063,7 @@ Each entry contains:
 | 3.1 | 2025-12-22 | CTO due diligence batch 9: Closed 3 items. (1) L3-impact: Changed from Controlled to Closed - market impact models ARE implemented in lob/market_impact.py (Kyle, Almgren-Chriss, Gatheral, Composite); docs were incorrect. (2) docs-audit-storage-postgresql: Docstring claimed PostgreSQL "For production" but raises NotImplementedError; fixed to "Planned (not yet implemented)". (3) docs-universe-test-checklist: Unchecked test boxes in docs/universe.md but tests exist in test_universe_comprehensive.py (27 tests); updated checklist. Also verified L4-tif/testing-tif-conformance already Controlled. Total: 75 items (24 Controlled, 51 Closed). |
 | 3.2 | 2025-12-22 | CTO due diligence batch 10: Verified 6 pre-existing Controlled items remain valid. (1) L1-slippage: Spread-based slippage stub with TCA calibration requirement - SIMULATION_LIMITATIONS.md documents mitigation. (2) L2-fill: OHLCV fallback for LOB fill with fill-rate comparison requirement - SIMULATION_LIMITATIONS.md updated. (3) L4-tif: IOC behaves as GTC with T2b milestone tracking - conformance tests stubbed. (4) ops-dr-testing: DR testing pending infrastructure with DR_DRILL.md runbook. (5) ops-metrics-baseline: Operational metrics pending deployment with SLO/SLI dashboard planned. (6) security-external-audits: Pentest/SOC2 on roadmap with SECURITY_ROADMAP.md tracking. All items have valid control artifacts and honest disclosure per Documentation Canon. No status changes required. Total: 75 items (24 Controlled, 51 Closed). |
 | 3.3 | 2025-12-22 | CTO due diligence batch 11: Verified and closed 7 tech debt items. (1) OrderBook.cpp IOC limitation - already Controlled with TIF conformance tests (L4-tif). (2) execution_providers.py L3-slippage stub - already Controlled with SIMULATION_LIMITATIONS.md (L1-slippage). (3) LOBFillProvider stub - enhanced docstring with limitation disclosure and TECH_DEBT references (L2-fill already Controlled). (4) DR_DRILL.md RTO/RPO - already Controlled with explicit "design targets" disclosure (ops-dr-drill-rto-rpo). (5) ON_CALL_CAPACITY_VALIDATION.md - added Tech Debt reference header linking to ops-incident-response. (6) TRUST_CENTER.md security audits - already Controlled with SECURITY_ROADMAP.md (security-external-audits). (7) PRODUCTION_CHECKLIST.md make targets - Closed: updated commands to reference CI workflow and local equivalents. Total: 76 items (24 Controlled, 52 Closed). |
+| 3.4 | 2025-12-22 | CTO due diligence batch 12: Closed 3 items with code fixes. (1) testing-winsorization-allnan: Fix already implemented in features_pipeline.py (all-NaN detection, is_all_nan flag, NaN preservation in transform). Test skip removed, all tests pass. (2) indicator-rsi-initialization: Fix implemented in transformers.py - RSI now uses SMA(14) for initialization instead of single value. Test skip removed, all 4 RSI tests pass. (3) indicator-cci-mean-deviation: Fix already in MarketSimulator.cpp - CCI uses SMA(TP) not SMA(close). Test skip removed, all 3 CCI tests pass. Total: 76 items (21 Controlled, 55 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

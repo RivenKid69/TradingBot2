@@ -936,6 +936,13 @@ class OnlineFeatureTransformer:
                 "avg_gain": None,  # type: Optional[float]
                 "avg_loss": None,  # type: Optional[float]
                 "last_close": None,  # type: Optional[float]
+                # RSI initialization fix: collect first rsi_period gains/losses for SMA init
+                # Reference: Wilder (1978), "New Concepts in Technical Trading Systems"
+                # Previous bug: Initialized with SINGLE value -> bias for first ~30 bars
+                # Now: Collect first rsi_period values, then compute SMA (like MarketSimulator.cpp)
+                "gain_history": deque(maxlen=self.spec.rsi_period),  # type: deque[float]
+                "loss_history": deque(maxlen=self.spec.rsi_period),  # type: deque[float]
+                "rsi_initialized": False,  # type: bool
                 # Для Yang-Zhang волатильности нужны OHLC
                 "ohlc_bars": deque(maxlen=maxlen),  # type: deque[Dict[str, float]]
                 # Для Taker Buy Ratio нужны значения ratio
@@ -1009,11 +1016,23 @@ class OnlineFeatureTransformer:
             delta = price - float(last)
             gain = max(delta, 0.0)
             loss = max(-delta, 0.0)
-            if st["avg_gain"] is None or st["avg_loss"] is None:
-                st["avg_gain"] = float(gain)
-                st["avg_loss"] = float(loss)
+
+            p = self.spec.rsi_period
+
+            # RSI initialization fix: use SMA of first rsi_period values
+            # Reference: Wilder (1978), "New Concepts in Technical Trading Systems"
+            if not st["rsi_initialized"]:
+                # Accumulate gains/losses until we have rsi_period values
+                st["gain_history"].append(gain)
+                st["loss_history"].append(loss)
+
+                if len(st["gain_history"]) == p:
+                    # Initialize with SMA (not single value!)
+                    st["avg_gain"] = sum(st["gain_history"]) / p
+                    st["avg_loss"] = sum(st["loss_history"]) / p
+                    st["rsi_initialized"] = True
             else:
-                p = self.spec.rsi_period
+                # Normal Wilder smoothing: (prev * (p-1) + new) / p
                 st["avg_gain"] = ((float(st["avg_gain"]) * (p - 1)) + gain) / p
                 st["avg_loss"] = ((float(st["avg_loss"]) * (p - 1)) + loss) / p
         st["last_close"] = price
