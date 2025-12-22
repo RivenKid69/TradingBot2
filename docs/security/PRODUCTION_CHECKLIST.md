@@ -114,11 +114,19 @@ grep -r "dev-secret-change" . --include="*.py" --include="*.yaml" --include="*.y
 # Verify no bypass flags in production configs
 grep -r "CCEA_SKIP_SIGNATURE" deploy/production/
 
-# Run security scan
-make security-scan
+# Run security scans (via CI: .github/workflows/security-sast.yml)
+# Local equivalents:
+python -m bandit -r . -c .bandit -f txt
+# Or run full CI workflow locally via act (if installed)
 
-# Verify SBOM generated
-make sbom-check
+# Verify SBOM generated (via CI: security-sast.yml uses cyclonedx-py)
+# Local equivalent (generates sbom.json from lockfiles):
+cyclonedx-py --format json --output sbom.json --requirements requirements-cpu.lock.txt
+
+# CI artifacts available after workflow run:
+# - bandit-results.json, semgrep-results.json (security scans)
+# - sbom.json, sbom-verification.json (SBOM with hash)
+# See: .github/workflows/security-sast.yml for full pipeline
 ```
 
 ---

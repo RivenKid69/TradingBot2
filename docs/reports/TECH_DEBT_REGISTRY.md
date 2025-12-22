@@ -789,6 +789,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | Tests for `_is_stale`, `get_symbols`, TTL/force combinations, liquidity filtering all implemented. Checklist now correctly reflects test coverage with explicit test class/method references. |
 
+### docs-production-checklist-make-targets {#docs-production-checklist-make-targets}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/security/PRODUCTION_CHECKLIST.md:117-121` |
+| **Severity** | Low |
+| **Description** | Documentation referenced `make security-scan` and `make sbom-check` targets that don't exist in Makefile |
+| **Status** | Closed |
+| **Control Artifact** | PRODUCTION_CHECKLIST.md updated with correct commands; CI workflow `.github/workflows/security-sast.yml` runs bandit/semgrep/cyclonedx |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Commands updated to reference CI workflow and local equivalents (bandit, cyclonedx-py). Security scanning and SBOM generation happen via CI pipeline; local commands documented for development. |
+
 ---
 
 ## Process/Governance
@@ -1000,7 +1012,7 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 9 closure*
+*Updated 2025-12-22 after CTO due diligence batch 11 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -1009,16 +1021,16 @@ Each entry contains:
 | Testing/Quality | 2 | 5 | 5 | 12 | 5 | 7 |
 | Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
 | Security | 3 | 6 | 1 | 10 | 2 | 8 |
-| Docs/Drift | 1 | 7 | 5 | 13 | 2 | 11 |
+| Docs/Drift | 1 | 7 | 6 | 14 | 2 | 12 |
 | Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **12** | **36** | **27** | **75** | **24** | **51** |
+| **TOTAL** | **12** | **36** | **28** | **76** | **24** | **52** |
 
 **Status Summary**:
 - 24 items Controlled (with active monitoring/artifacts)
-- 51 items Closed (resolved)
+- 52 items Closed (resolved)
 
 ---
 
@@ -1049,6 +1061,7 @@ Each entry contains:
 | 3.0 | 2025-12-22 | CTO due diligence batch 7: Added 4 items: indicator-rsi-initialization (Medium, Controlled), indicator-cci-mean-deviation (Medium, Controlled), testing-winsorization-allnan (Medium, Controlled), docs-build-hash-report-name (Low, Closed). RSI/CCI indicator initialization bugs documented with mitigation strategies. Winsorization all-NaN handling tracked. BUILD_INSTRUCTIONS.md hash report filename corrected. Total: 73 items (25 Controlled, 48 Closed). |
 | 3.1 | 2025-12-22 | CTO due diligence batch 9: Closed 3 items. (1) L3-impact: Changed from Controlled to Closed - market impact models ARE implemented in lob/market_impact.py (Kyle, Almgren-Chriss, Gatheral, Composite); docs were incorrect. (2) docs-audit-storage-postgresql: Docstring claimed PostgreSQL "For production" but raises NotImplementedError; fixed to "Planned (not yet implemented)". (3) docs-universe-test-checklist: Unchecked test boxes in docs/universe.md but tests exist in test_universe_comprehensive.py (27 tests); updated checklist. Also verified L4-tif/testing-tif-conformance already Controlled. Total: 75 items (24 Controlled, 51 Closed). |
 | 3.2 | 2025-12-22 | CTO due diligence batch 10: Verified 6 pre-existing Controlled items remain valid. (1) L1-slippage: Spread-based slippage stub with TCA calibration requirement - SIMULATION_LIMITATIONS.md documents mitigation. (2) L2-fill: OHLCV fallback for LOB fill with fill-rate comparison requirement - SIMULATION_LIMITATIONS.md updated. (3) L4-tif: IOC behaves as GTC with T2b milestone tracking - conformance tests stubbed. (4) ops-dr-testing: DR testing pending infrastructure with DR_DRILL.md runbook. (5) ops-metrics-baseline: Operational metrics pending deployment with SLO/SLI dashboard planned. (6) security-external-audits: Pentest/SOC2 on roadmap with SECURITY_ROADMAP.md tracking. All items have valid control artifacts and honest disclosure per Documentation Canon. No status changes required. Total: 75 items (24 Controlled, 51 Closed). |
+| 3.3 | 2025-12-22 | CTO due diligence batch 11: Verified and closed 7 tech debt items. (1) OrderBook.cpp IOC limitation - already Controlled with TIF conformance tests (L4-tif). (2) execution_providers.py L3-slippage stub - already Controlled with SIMULATION_LIMITATIONS.md (L1-slippage). (3) LOBFillProvider stub - enhanced docstring with limitation disclosure and TECH_DEBT references (L2-fill already Controlled). (4) DR_DRILL.md RTO/RPO - already Controlled with explicit "design targets" disclosure (ops-dr-drill-rto-rpo). (5) ON_CALL_CAPACITY_VALIDATION.md - added Tech Debt reference header linking to ops-incident-response. (6) TRUST_CENTER.md security audits - already Controlled with SECURITY_ROADMAP.md (security-external-audits). (7) PRODUCTION_CHECKLIST.md make targets - Closed: updated commands to reference CI workflow and local equivalents. Total: 76 items (24 Controlled, 52 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

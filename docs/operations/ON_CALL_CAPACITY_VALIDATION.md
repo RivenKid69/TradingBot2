@@ -1,10 +1,12 @@
 # On-Call Capacity Validation
 ## SLA Notification Tier Assessment
 
-**Version**: 1.0
-**Date**: 2025-01-17
+**Version**: 1.1
+**Date**: 2025-12-22
 **Status**: Validated
 **Reference**: DORA Article 30(2)(f), DORA_OPERATIONAL_RESILIENCE_PLAN.md Section 5.4.5
+**Tech Debt Tracking**: `docs/reports/TECH_DEBT_REGISTRY.md#ops-incident-response`
+**Control Status**: Controlled - capacity limitations honestly disclosed; expansion requires funding
 
 ---
 

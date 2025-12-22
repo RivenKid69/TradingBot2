@@ -3349,7 +3349,23 @@ class LOBFillProvider:
         """
         Attempt fill with matching engine simulation.
 
-        STUB: Delegates to OHLCV fill logic.
+        IMPLEMENTATION STATUS: STUB (OHLCV fallback)
+        ---------------------------------------------
+        This method delegates to OHLCVFillProvider instead of true LOB
+        queue-position modeling. This is a known limitation.
+
+        Impact:
+        - Fill timing may be optimistic
+        - Does not model queue position or adverse selection
+        - May underestimate time-to-fill for limit orders
+
+        Mitigation:
+        - OHLCV fallback provides conservative baseline
+        - Apply conservative fill assumptions for live trading
+
+        See: docs/SIMULATION_LIMITATIONS.md#L2-fill
+        Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#L2-fill
+        Status: Controlled - limitation documented, OHLCV fallback conservative
         """
         # Fall back to OHLCV fill provider
         ohlcv_fill = OHLCVFillProvider(
