@@ -1200,9 +1200,26 @@ Each entry contains:
 
 ---
 
+## Reviewed - Not Debt
+
+*Items reviewed during due diligence that were determined to be standard patterns, not technical debt.*
+
+### arch-adapters-registry-singleton {#arch-adapters-registry-singleton}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `adapters/registry.py:166-172, 411-419` |
+| **Initial Finding** | Global `_registry` variable with `get_registry()` accessor |
+| **Review Date** | 2025-12-22 |
+| **Determination** | **Not Debt** - Standard Service Locator / Singleton pattern |
+| **Rationale** | (1) Singleton via `__new__` ensures single registration point. (2) Lazy loading via `_ensure_loaded()`. (3) Thread-safe initialization. (4) Module docstring documents design (lines 1-34). (5) Per CCEA Design Doc, Broker Connectors are Agent-side only - no Cloud boundary violation. |
+| **CCEA Compliance** | Verified - adapters are Agent Zone components per Design Doc section 4.2 |
+
+---
+
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 16 closure*
+*Updated 2025-12-22 after CTO due diligence batch 17 (false positive review)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
@@ -1255,6 +1272,7 @@ Each entry contains:
 | 3.4 | 2025-12-22 | CTO due diligence batch 12: Closed 3 items with code fixes. (1) testing-winsorization-allnan: Fix already implemented in features_pipeline.py (all-NaN detection, is_all_nan flag, NaN preservation in transform). Test skip removed, all tests pass. (2) indicator-rsi-initialization: Fix implemented in transformers.py - RSI now uses SMA(14) for initialization instead of single value. Test skip removed, all 4 RSI tests pass. (3) indicator-cci-mean-deviation: Fix already in MarketSimulator.cpp - CCI uses SMA(TP) not SMA(close). Test skip removed, all 3 CCI tests pass. Total: 76 items (21 Controlled, 55 Closed). |
 | 3.5 | 2025-12-22 | CTO due diligence batch 14: (1) arch-options-contract-spec (Medium, Closed): Fixed PolygonOptionsContract.to_contract_spec() missing required `symbol` parameter; test updated without pytest.skip. (2) L1-slippage, L2-fill: Enhanced control artifacts with report templates (`docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md`, `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md`). (3) SIMULATION_LIMITATIONS.md updated with template references. (4) L4-tif/testing-tif-conformance verified as Controlled (T2b milestone). Total: 77 items (21 Controlled, 56 Closed). |
 | 3.6 | 2025-12-22 | CTO due diligence batch 16: 13 items verified/closed. Security: (1) registry_mirror.py fail-closed verified, (2) tuf_repository.py production guard added, (3) enterprise.py fallback removed (fail-closed), (4) enterprise_posture.py documented. Reliability: (5) commands.py CCEA polling model documented, (6) research_jobs.py stub documented, (7) IOC tests tracking enhanced. Data/ML: (8) backtest mock results flagged. Process: (9-11) DSAR/copyright/evidence stubs documented. Docs: (12-13) CI guardrails workflow notes added. Total: 88 items (28 Controlled, 60 Closed). |
+| 3.7 | 2025-12-22 | CTO due diligence batch 17: Added "Reviewed - Not Debt" section. arch-adapters-registry-singleton reviewed and determined to be standard Service Locator pattern, not tech debt. CCEA Design Doc compliance verified (Agent Zone components). Total: 88 items (28 Controlled, 60 Closed) + 1 Not Debt. |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering
