@@ -333,20 +333,38 @@ class CommandDispatcher:
         """
         Dispatch command to agent.
 
-        In real implementation, this would send via message queue.
+        RELIABILITY: Tech Debt Tracking CCEA-OPS-001
+        Status: CONTROLLED - follows CCEA polling architecture
+
+        Per CCEA Design Doc Section 10.1, agents use outbound polling
+        (HTTPS long-poll or WebSocket) to fetch commands. Cloud stores
+        commands with PENDING status; agents poll via POLL_COMMANDS.
+
+        Current implementation:
+        - Marks command as SENT (ready for agent pickup)
+        - Agent polls /api/v1/commands endpoint to retrieve
+        - Actual delivery confirmed via agent ACK
+
+        Production metrics required:
+        - command_dispatch_latency: time from SENT to ACKED
+        - command_delivery_rate: % commands successfully delivered
+        - command_expiry_rate: % commands that expired undelivered
 
         Args:
             command: Command to dispatch
 
         Returns:
-            True if dispatched successfully
+            True if marked for dispatch successfully
         """
         # Re-validate before dispatch
         command._validate()
 
-        # Update status
+        # Update status - command now available for agent polling
         command.status = CommandStatus.SENT
         command.sent_at = datetime.utcnow()
+
+        # Note: Actual delivery occurs when agent polls and ACKs
+        # This follows CCEA outbound-connection model (no inbound to agent)
 
         return True
 

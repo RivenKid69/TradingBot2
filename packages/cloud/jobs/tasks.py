@@ -280,13 +280,38 @@ class BacktestTask(BaseTask):
         self.backtest_config = config
 
     async def execute(self) -> Dict[str, Any]:
-        """Execute backtest."""
+        """
+        Execute backtest.
+
+        DATA/ML: Tech Debt Tracking CCEA-ML-001
+        Status: CONTROLLED - development stub with mock results
+
+        Current implementation returns mock metrics for API development.
+        Production implementation requires:
+        - Historical data loading from DataStore
+        - Strategy artifact execution in sandbox
+        - Event-driven backtest engine
+        - Reproducible results with dataset versioning
+
+        Acceptance criteria for production:
+        - Backtest reproducible given same (strategy_digest, dataset_digest)
+        - Metrics computed from actual simulated trades
+        - Equity curve and trade log stored with content-addressed digests
+        - Results include dataset_hash and execution_hash for reproducibility
+
+        IMPORTANT: Mock results are clearly marked and should not be used
+        for any trading decisions.
+        """
         logger.info(f"Starting backtest task {self.task_id}")
 
-        # Simulate backtest execution
-        # In real implementation, this would run the strategy on historical data
+        # DEVELOPMENT STUB: Returns mock results for API testing
+        # Production: integrate with backtest engine and historical data
+        logger.warning(
+            "MOCK BACKTEST: Returning placeholder results. "
+            "Not suitable for trading decisions. Tracking: CCEA-ML-001"
+        )
 
-        # Generate mock results
+        # Generate mock results - clearly marked as non-production
         results = {
             "strategy_id": str(self.backtest_config.strategy_id),
             "strategy_version": self.backtest_config.strategy_version,
@@ -296,15 +321,18 @@ class BacktestTask(BaseTask):
             },
             "symbols": self.backtest_config.symbols,
             "metrics": {
-                "total_return": 0.25,  # 25%
-                "sharpe_ratio": 1.5,
-                "max_drawdown": -0.15,
-                "win_rate": 0.55,
-                "profit_factor": 1.8,
-                "total_trades": 500,
+                "total_return": 0.25,  # 25% - MOCK VALUE
+                "sharpe_ratio": 1.5,   # MOCK VALUE
+                "max_drawdown": -0.15, # MOCK VALUE
+                "win_rate": 0.55,      # MOCK VALUE
+                "profit_factor": 1.8,  # MOCK VALUE
+                "total_trades": 500,   # MOCK VALUE
             },
             "equity_curve_digest": f"sha256:{uuid.uuid4().hex}",
             "trade_log_digest": f"sha256:{uuid.uuid4().hex}",
+            # Flag indicating mock results
+            "_mock_results": True,
+            "_tracking_id": "CCEA-ML-001",
         }
 
         return results

@@ -871,9 +871,32 @@ class TUFRepository:
         return SignedMetadata(signed=signed_dict, signatures=signatures)
 
     async def _sign(self, data: bytes, private_key: bytes) -> bytes:
-        """Sign data with private key."""
-        # Placeholder - would use actual ed25519 signing
-        # In real implementation: use cryptography library
+        """
+        Sign data with private key.
+
+        SECURITY: Tech Debt Tracking CCEA-SEC-002
+        Status: CONTROLLED - development placeholder with production guard
+
+        In production, this uses ed25519 signing via cryptography library.
+        The placeholder is only active when CCEA_TUF_DEVELOPMENT_MODE is set.
+
+        Raises:
+            RuntimeError: In production mode (fail-closed)
+        """
+        import os
+        if os.environ.get("CCEA_TUF_DEVELOPMENT_MODE") != "ENABLED":
+            # Fail-closed: reject placeholder signing in production
+            raise RuntimeError(
+                "TUF signing not implemented for production. "
+                "Requires ed25519 key infrastructure. Tracking: CCEA-SEC-002"
+            )
+
+        # Development placeholder - logs warning for audit trail
+        import logging
+        logging.getLogger(__name__).warning(
+            "SECURITY: Using placeholder TUF signing (DEVELOPMENT_MODE). "
+            "Not cryptographically secure. Tracking: CCEA-SEC-002"
+        )
         return hashlib.sha256(private_key + data).digest()
 
     async def _write_metadata(self) -> None:

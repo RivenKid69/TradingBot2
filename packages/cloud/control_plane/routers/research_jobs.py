@@ -252,8 +252,24 @@ async def submit_job(
         create_research_job,
     )
 
-    # Check quota (would be done via quota_manager in real implementation)
-    # For now, create job record
+    # RELIABILITY: Tech Debt Tracking CCEA-OPS-002
+    # Status: CONTROLLED - development stub with documented limitations
+    #
+    # Production implementation requires:
+    # - QuotaManager integration for workspace/user resource limits
+    # - Job queue (Redis/RabbitMQ) for distributed execution
+    # - Database persistence for job state
+    #
+    # Current behavior: jobs are created in-memory only
+    # Acceptance criteria for production:
+    # - Quota checks enforce CPU/memory/concurrent job limits
+    # - Jobs persisted to database before execution
+    # - Async queue ensures reliable execution
+    #
+    # Metrics required:
+    # - job_quota_rejection_rate
+    # - job_queue_depth
+    # - job_execution_latency
 
     job = create_research_job(
         workspace_id=workspace.id,

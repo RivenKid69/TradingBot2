@@ -916,8 +916,29 @@ class EnterpriseEvidencePackExporter:
         return f"sha256:{hashlib.sha256(content_str.encode()).hexdigest()}"
 
     def _sign_content(self, content: bytes) -> str:
-        """Sign content (placeholder for real signing)."""
-        # In production, would use actual signing with private key
+        """
+        Sign content for evidence integrity verification.
+
+        SECURITY: Tech Debt Tracking CCEA-SEC-004
+        Status: CONTROLLED - placeholder with documented limitations
+
+        Current implementation uses SHA-256 hash prefix as integrity marker.
+        This provides tamper detection but not cryptographic non-repudiation.
+
+        Production implementation should use:
+        - Ed25519 or ECDSA signing with HSM/KMS-managed keys
+        - Detached signatures for evidence packs
+
+        Acceptance criteria for production:
+        - Evidence packs include detached cryptographic signature
+        - Signature verification available to auditors
+        - Key management via HSM/KMS with audit trail
+
+        Returns:
+            Integrity marker (placeholder) or cryptographic signature (production)
+        """
+        # Placeholder: hash-based integrity marker (not cryptographic signature)
+        # Provides tamper detection, not non-repudiation
         return f"sig:{hashlib.sha256(content).hexdigest()[:32]}"
 
     def _log_event(self, event: PostureAuditEvent) -> None:

@@ -758,11 +758,18 @@ class RegistryMirror:
             self._emit_signature_skip_metric(digest)
             return True
 
-        # Fail-closed: signature verification is mandatory
-        # Production implementation should use cosign/sigstore
+        # SECURITY: Fail-closed signature verification per CCEA Design Doc Section 8.3
+        # Tech Debt Tracking: CCEA-SEC-001
+        # Status: CONTROLLED - fail-closed rejects unsigned artifacts
+        # Production implementation requires cosign/sigstore integration
+        # Acceptance criteria:
+        #   - All artifacts rejected until signing infrastructure deployed
+        #   - Metrics emitted for security alerting (signature_verification_failed)
+        #   - Development bypass requires explicit env var (auditable)
         logger.error(
             "SECURITY: Signature verification not implemented. "
-            "Artifact rejected per fail-closed policy. Digest: %s",
+            "Artifact rejected per fail-closed policy. Digest: %s. "
+            "Tracking: CCEA-SEC-001",
             digest,
         )
         # Emit metric for security alerting

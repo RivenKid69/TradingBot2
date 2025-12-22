@@ -156,11 +156,26 @@ TEST_F(TIFConformanceTest, PostOnlyAcceptsNonCrossingOrder) {
 
 /**
  * @brief Verify IOC orders execute immediately available quantity
- * STATUS: CRITICAL - IOC currently behaves as GTC (tech debt)
+ *
+ * RELIABILITY: Tech Debt Tracking CCEA-OPS-003
+ * STATUS: CONTROLLED - explicitly skipped with documented milestone
+ *
+ * IOC (Immediate-Or-Cancel) currently behaves as GTC in simulation.
+ * This is tracked for T2b milestone implementation.
+ *
+ * Acceptance criteria:
+ * - IOC order executes against immediately available liquidity
+ * - Unfilled remainder is cancelled (not left on book)
+ * - Conformance test passes when implemented
+ *
+ * Risk mitigation:
+ * - Live trading uses broker's native TIF handling
+ * - Simulation results marked with TIF_CONFORMANCE_LIMITED flag
+ *
  * Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#L4-tif
  */
 TEST_F(TIFConformanceTest, IOCExecutesImmediateMatch) {
-    GTEST_SKIP() << "T2b milestone: IOC not yet implemented - behaves as GTC";
+    GTEST_SKIP() << "T2b milestone: IOC not yet implemented - behaves as GTC. Tracking: CCEA-OPS-003";
     // TODO(T2b): Implement IOC and add test
     // Expected: IOC order matches immediately available liquidity
 }

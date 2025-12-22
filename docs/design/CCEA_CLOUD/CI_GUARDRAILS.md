@@ -447,8 +447,12 @@ class RedactionMiddleware:
 
 ### 3.1 GitHub Actions Workflow
 
+> **DOCS/DRIFT Note (CCEA-DOC-002):** The workflow below is a *recommended* configuration.
+> Current CI uses `security-sast.yml` and `build-and-test.yml` for checks.
+> Dedicated guardrails workflow to be created per this specification.
+
 ```yaml
-# .github/workflows/ccea-guardrails.yml
+# .github/workflows/ccea-guardrails.yml (RECOMMENDED - to be created)
 name: CCEA Guardrails
 
 on:

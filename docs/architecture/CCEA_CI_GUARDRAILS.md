@@ -20,8 +20,12 @@ This document defines the CI/CD guardrails that enforce the CCEA security model 
 
 **Implementation:**
 
+> **DOCS/DRIFT Note (CCEA-DOC-001):** The workflow below is a *recommended* configuration.
+> Current CI uses `security-sast.yml` for security checks. Full guardrails workflow
+> to be created per this specification.
+
 ```yaml
-# .github/workflows/guardrails.yml
+# .github/workflows/guardrails.yml (RECOMMENDED - to be created)
 name: CCEA Guardrails
 
 on: [push, pull_request]

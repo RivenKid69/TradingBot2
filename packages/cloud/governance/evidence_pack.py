@@ -883,13 +883,35 @@ class EvidencePackService:
         pack_id: str,
         expires_in_hours: int = 24,
     ) -> EvidencePack:
-        """Generate a download URL for a pack (placeholder for actual storage integration)."""
+        """
+        Generate a download URL for an evidence pack.
+
+        PROCESS/GOVERNANCE: Tech Debt Tracking CCEA-GOV-004
+        Status: CONTROLLED - local API endpoint for development
+
+        Current implementation:
+        - Returns local API endpoint for development/testing
+        - Pack served directly from API server
+
+        Production implementation requires:
+        - Upload to secure object storage (S3/GCS/Azure Blob)
+        - Pre-signed URL with time-limited access
+        - Audit trail of URL generation and access
+        - Geographic data residency compliance
+
+        Acceptance criteria:
+        - Evidence packs stored in customer-specified region
+        - Signed URLs expire after configured period
+        - All download events logged with accessor identity
+        - Integrity verification via content hash
+        """
         with self._lock:
             pack = self._packs.get(pack_id)
             if not pack:
                 raise ValueError(f"Pack {pack_id} not found")
 
-            # In production, this would upload to secure storage and generate signed URL
+            # Development: local API endpoint
+            # Production: pre-signed URL from object storage
             pack.download_url = f"/api/v1/evidence/packs/{pack_id}/download"
             pack.download_expires_at = datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
 

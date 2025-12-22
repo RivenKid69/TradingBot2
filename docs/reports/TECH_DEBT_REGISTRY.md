@@ -1,6 +1,6 @@
 # Technical Debt Registry
 
-**Version**: 3.0
+**Version**: 3.1
 **Date**: 2025-12-22
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
@@ -238,6 +238,19 @@ Each entry contains:
 | **Added** | 2025-12-22 |
 | **Closure Date** | 2025-12-22 |
 | **Note** | Fix verified via pytest. Reference: Wilder (1978), "New Concepts in Technical Trading Systems". |
+
+### ml-backtest-mock-results {#ml-backtest-mock-results}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/jobs/tasks.py:282-338` |
+| **Severity** | Medium |
+| **Description** | Backtest task returns mock metrics instead of actual simulation results |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation; `_mock_results: True` flag in output; warning logs |
+| **Tracking** | CCEA-ML-001 |
+| **Added** | 2025-12-22 |
+| **Note** | Mock results clearly flagged. Production requires: historical data loading, strategy sandbox execution, event-driven backtest engine. |
 
 ### indicator-cci-mean-deviation {#indicator-cci-mean-deviation}
 
@@ -576,6 +589,45 @@ Each entry contains:
 | **Closure Date** | 2025-12-20 |
 | **Note** | Per CCEA Design Doc Section 15.2; no placeholder signatures allowed |
 
+### security-tuf-signing-placeholder {#security-tuf-signing-placeholder}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/enterprise/tuf_repository.py:873-900` |
+| **Severity** | High |
+| **Description** | TUF metadata signing uses placeholder SHA256 hash instead of Ed25519 |
+| **Status** | Closed |
+| **Control Artifact** | Code: Production guard raises RuntimeError unless CCEA_TUF_DEVELOPMENT_MODE=ENABLED |
+| **Tracking** | CCEA-SEC-002 |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Fail-closed: production mode rejects placeholder signing. Development mode logs warning for audit trail. |
+
+### security-enterprise-signing-fallback {#security-enterprise-signing-fallback}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/routers/enterprise.py:643-658` |
+| **Severity** | High |
+| **Description** | Agent update signing was falling back to placeholder signature on exception |
+| **Status** | Closed |
+| **Control Artifact** | Code: Now raises HTTPException 500 instead of using placeholder |
+| **Tracking** | CCEA-SEC-003 |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Fail-closed: updates cannot be released without valid cryptographic signature. |
+
+### security-posture-evidence-signing {#security-posture-evidence-signing}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/governance/enterprise_posture.py:918-942` |
+| **Severity** | Medium |
+| **Description** | Enterprise posture evidence uses SHA256 hash prefix as integrity marker, not cryptographic signature |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation with acceptance criteria for production |
+| **Tracking** | CCEA-SEC-004 |
+| **Added** | 2025-12-22 |
+| **Note** | Provides tamper detection but not non-repudiation. Production requires Ed25519/ECDSA with HSM/KMS. |
+
 ### security-mfa-bypass {#security-mfa-bypass}
 
 | Field | Value |
@@ -663,6 +715,45 @@ Each entry contains:
 ---
 
 ## Reliability/Operations
+
+### ops-command-dispatch-architecture {#ops-command-dispatch-architecture}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/commands.py:332-369` |
+| **Severity** | Medium |
+| **Description** | Command dispatch documented as "message queue" but uses CCEA polling model |
+| **Status** | Closed |
+| **Control Artifact** | In-code documentation explaining CCEA Design Doc Section 10.1 polling architecture |
+| **Tracking** | CCEA-OPS-001 |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Not a bug - follows CCEA outbound polling model. Agents poll /api/v1/commands endpoint. |
+
+### ops-research-jobs-quota-stub {#ops-research-jobs-quota-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/control_plane/routers/research_jobs.py:255-272` |
+| **Severity** | High |
+| **Description** | Research job quota checking and queue not implemented |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation with production requirements |
+| **Tracking** | CCEA-OPS-002 |
+| **Added** | 2025-12-22 |
+| **Note** | Development stub: jobs created in-memory only. Production requires QuotaManager, job queue, database persistence. |
+
+### ops-ioc-conformance-tests {#ops-ioc-conformance-tests}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/cpp/test_orderbook_tif_conformance.cpp:162-185` |
+| **Severity** | High |
+| **Description** | IOC (Immediate-Or-Cancel) tests skipped pending T2b implementation |
+| **Status** | Controlled |
+| **Control Artifact** | GTEST_SKIP with T2b milestone tracking; docs/reports/TECH_DEBT_REGISTRY.md#L4-tif |
+| **Tracking** | CCEA-OPS-003 |
+| **Updated** | 2025-12-22 - Enhanced tracking with risk mitigation documentation |
+| **Note** | IOC behaves as GTC in simulation. Live trading uses broker's native TIF. Results marked with TIF_CONFORMANCE_LIMITED. |
 
 ### ops-database-production-check {#ops-database-production-check}
 
@@ -836,6 +927,19 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | Tests for `_is_stale`, `get_symbols`, TTL/force combinations, liquidity filtering all implemented. Checklist now correctly reflects test coverage with explicit test class/method references. |
 
+### docs-ci-guardrails-workflow-drift {#docs-ci-guardrails-workflow-drift}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `docs/architecture/CCEA_CI_GUARDRAILS.md:24-28`, `docs/design/CCEA_CLOUD/CI_GUARDRAILS.md:450-456` |
+| **Severity** | Low |
+| **Description** | Documentation references guardrails.yml / ccea-guardrails.yml which don't exist in .github/workflows/ |
+| **Status** | Closed |
+| **Control Artifact** | Notes added to docs: "RECOMMENDED - to be created" |
+| **Tracking** | CCEA-DOC-001, CCEA-DOC-002 |
+| **Closure Date** | 2025-12-22 |
+| **Note** | Workflow specifications are recommendations for future implementation. Current CI uses security-sast.yml and build-and-test.yml. |
+
 ### docs-production-checklist-make-targets {#docs-production-checklist-make-targets}
 
 | Field | Value |
@@ -851,6 +955,45 @@ Each entry contains:
 ---
 
 ## Process/Governance
+
+### governance-dsar-rectification-stub {#governance-dsar-rectification-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/governance/dsar_phase5.py:1471-1505` |
+| **Severity** | High |
+| **Description** | DSAR rectification/restriction returns IN_PROGRESS, requires manual workflow |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation per GDPR Articles 16/18; notes field in DSARResult |
+| **Tracking** | CCEA-GOV-001, CCEA-GOV-002 |
+| **Added** | 2025-12-22 |
+| **Note** | Returns IN_PROGRESS (not COMPLETED) requiring human operator. Prevents false completion assertions. |
+
+### governance-copyright-optout-stub {#governance-copyright-optout-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `services/ai_act/copyright_compliance.py:425-459` |
+| **Severity** | Medium |
+| **Description** | Opt-out check differentiates by source type; non-market data returns "check_required" |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation per AI Act Article 4; source type differentiation |
+| **Tracking** | CCEA-GOV-003 |
+| **Added** | 2025-12-22 |
+| **Note** | Market data and synthetic sources exempt. Web sources require manual robots.txt/ai.txt/header checking. |
+
+### governance-evidence-pack-download-stub {#governance-evidence-pack-download-stub}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/governance/evidence_pack.py:881-916` |
+| **Severity** | Medium |
+| **Description** | Evidence pack download URL returns local API endpoint, not pre-signed storage URL |
+| **Status** | Controlled |
+| **Control Artifact** | In-code documentation with production requirements |
+| **Tracking** | CCEA-GOV-004 |
+| **Added** | 2025-12-22 |
+| **Note** | Development: local API endpoint. Production requires: secure object storage, pre-signed URLs, audit trail, data residency. |
 
 ### governance-encryption-verification {#governance-encryption-verification}
 
@@ -1059,25 +1202,25 @@ Each entry contains:
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 14 closure*
+*Updated 2025-12-22 after CTO due diligence batch 16 closure*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 4 | 3 | 8 | 2 | 6 |
-| Data/ML | 2 | 6 | 3 | 11 | 4 | 7 |
+| Data/ML | 2 | 7 | 3 | 12 | 5 | 7 |
 | Testing/Quality | 2 | 5 | 5 | 12 | 4 | 8 |
-| Reliability/Operations | 3 | 5 | 2 | 10 | 6 | 4 |
-| Security | 3 | 6 | 1 | 10 | 2 | 8 |
-| Docs/Drift | 1 | 7 | 6 | 14 | 2 | 12 |
-| Process/Governance | 0 | 0 | 2 | 2 | 0 | 2 |
+| Reliability/Operations | 5 | 6 | 2 | 13 | 8 | 5 |
+| Security | 5 | 7 | 1 | 13 | 3 | 10 |
+| Docs/Drift | 1 | 7 | 7 | 15 | 2 | 13 |
+| Process/Governance | 1 | 2 | 2 | 5 | 3 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **12** | **37** | **28** | **77** | **21** | **56** |
+| **TOTAL** | **17** | **42** | **29** | **88** | **28** | **60** |
 
 **Status Summary**:
-- 21 items Controlled (with active monitoring/artifacts)
-- 56 items Closed (resolved)
+- 28 items Controlled (with active monitoring/artifacts)
+- 60 items Closed (resolved)
 
 ---
 
@@ -1111,6 +1254,7 @@ Each entry contains:
 | 3.3 | 2025-12-22 | CTO due diligence batch 11: Verified and closed 7 tech debt items. (1) OrderBook.cpp IOC limitation - already Controlled with TIF conformance tests (L4-tif). (2) execution_providers.py L3-slippage stub - already Controlled with SIMULATION_LIMITATIONS.md (L1-slippage). (3) LOBFillProvider stub - enhanced docstring with limitation disclosure and TECH_DEBT references (L2-fill already Controlled). (4) DR_DRILL.md RTO/RPO - already Controlled with explicit "design targets" disclosure (ops-dr-drill-rto-rpo). (5) ON_CALL_CAPACITY_VALIDATION.md - added Tech Debt reference header linking to ops-incident-response. (6) TRUST_CENTER.md security audits - already Controlled with SECURITY_ROADMAP.md (security-external-audits). (7) PRODUCTION_CHECKLIST.md make targets - Closed: updated commands to reference CI workflow and local equivalents. Total: 76 items (24 Controlled, 52 Closed). |
 | 3.4 | 2025-12-22 | CTO due diligence batch 12: Closed 3 items with code fixes. (1) testing-winsorization-allnan: Fix already implemented in features_pipeline.py (all-NaN detection, is_all_nan flag, NaN preservation in transform). Test skip removed, all tests pass. (2) indicator-rsi-initialization: Fix implemented in transformers.py - RSI now uses SMA(14) for initialization instead of single value. Test skip removed, all 4 RSI tests pass. (3) indicator-cci-mean-deviation: Fix already in MarketSimulator.cpp - CCI uses SMA(TP) not SMA(close). Test skip removed, all 3 CCI tests pass. Total: 76 items (21 Controlled, 55 Closed). |
 | 3.5 | 2025-12-22 | CTO due diligence batch 14: (1) arch-options-contract-spec (Medium, Closed): Fixed PolygonOptionsContract.to_contract_spec() missing required `symbol` parameter; test updated without pytest.skip. (2) L1-slippage, L2-fill: Enhanced control artifacts with report templates (`docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md`, `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md`). (3) SIMULATION_LIMITATIONS.md updated with template references. (4) L4-tif/testing-tif-conformance verified as Controlled (T2b milestone). Total: 77 items (21 Controlled, 56 Closed). |
+| 3.6 | 2025-12-22 | CTO due diligence batch 16: 13 items verified/closed. Security: (1) registry_mirror.py fail-closed verified, (2) tuf_repository.py production guard added, (3) enterprise.py fallback removed (fail-closed), (4) enterprise_posture.py documented. Reliability: (5) commands.py CCEA polling model documented, (6) research_jobs.py stub documented, (7) IOC tests tracking enhanced. Data/ML: (8) backtest mock results flagged. Process: (9-11) DSAR/copyright/evidence stubs documented. Docs: (12-13) CI guardrails workflow notes added. Total: 88 items (28 Controlled, 60 Closed). |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

@@ -641,11 +641,21 @@ async def sign_agent_update(update_id: UUID) -> AgentUpdateResponse:
                 update["signed_at"] = managed_update.signed_at
 
     except Exception as e:
-        logger.warning(f"Signing failed, using placeholder: {e}")
-        now = datetime.now(timezone.utc)
-        update["signature"] = f"sig-{update_id}-{now.timestamp()}"
-        update["signed_by"] = "ccea-update-signer"
-        update["signed_at"] = now
+        # SECURITY: Fail-closed - do not use placeholder signatures
+        # Tech Debt Tracking: CCEA-SEC-003
+        # Per CCEA Design Doc Section 15.2: agent updates must be signed
+        logger.error(
+            f"SECURITY: Agent update signing failed (fail-closed). "
+            f"Update {update_id} cannot be released without valid signature. "
+            f"Error: {e}. Tracking: CCEA-SEC-003"
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Agent update signing failed. Updates cannot be released "
+                "without cryptographic signature. Contact platform administrator."
+            ),
+        )
 
     logger.info(f"Agent update signed: {update_id}")
 

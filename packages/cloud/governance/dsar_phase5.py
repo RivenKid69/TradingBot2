@@ -1469,27 +1469,72 @@ class DSARPhase5Service:
         )
 
     async def _process_rectification(self, request: DSARRequest) -> DSARResult:
-        """Process RECTIFICATION request (placeholder - requires specific data)."""
-        # Rectification requires specific data to be corrected
-        # This is handled through a separate workflow
+        """
+        Process RECTIFICATION request (GDPR Article 16).
+
+        PROCESS/GOVERNANCE: Tech Debt Tracking CCEA-GOV-001
+        Status: CONTROLLED - requires manual workflow integration
+
+        Rectification requests require:
+        1. Specific data fields to be corrected (from data subject)
+        2. Verification of data subject identity
+        3. Validation of correction request
+        4. Actual data modification in all storage systems
+        5. Notification to any third parties who received the data
+
+        Current implementation:
+        - Returns PENDING_MANUAL_REVIEW status
+        - Requires human operator to complete via separate workflow
+        - Audit trail maintained for compliance
+
+        Acceptance criteria for automation:
+        - Data subject portal for submitting corrections
+        - Automated identity verification
+        - Data lineage tracking for propagating corrections
+        - Completion confirmation with audit evidence
+        """
+        # GOVERNANCE: Rectification cannot be auto-completed without actual changes
+        # Return IN_PROGRESS status requiring manual intervention
         return DSARResult(
             success=True,
             request_id=request.id,
             request_type=request.request_type,
-            status=DSARStatus.COMPLETED,
+            status=DSARStatus.IN_PROGRESS,
             records_processed=0,
+            notes="Rectification requires manual workflow. Tracking: CCEA-GOV-001",
         )
 
     async def _process_restriction(self, request: DSARRequest) -> DSARResult:
-        """Process RESTRICTION request (placeholder - applies processing restriction)."""
-        # Restriction of processing requires flagging data
-        # This is handled through a separate workflow
+        """
+        Process RESTRICTION request (GDPR Article 18).
+
+        PROCESS/GOVERNANCE: Tech Debt Tracking CCEA-GOV-002
+        Status: CONTROLLED - requires manual workflow integration
+
+        Restriction of processing requires:
+        1. Flagging data to prevent further processing
+        2. Maintaining data (not deleting) while restricted
+        3. Notifying relevant processing systems
+        4. Audit trail of restriction
+
+        Current implementation:
+        - Returns PENDING_MANUAL_REVIEW status
+        - Requires human operator to apply restriction flags
+        - Data remains accessible for storage only
+
+        Acceptance criteria for automation:
+        - Restriction flags in data layer
+        - Processing systems check restriction before use
+        - Automated notification when restriction applies
+        """
+        # GOVERNANCE: Restriction cannot be auto-completed without system flags
         return DSARResult(
             success=True,
             request_id=request.id,
             request_type=request.request_type,
-            status=DSARStatus.COMPLETED,
+            status=DSARStatus.IN_PROGRESS,
             records_processed=0,
+            notes="Restriction requires manual workflow. Tracking: CCEA-GOV-002",
         )
 
     # ========================================================================

@@ -422,18 +422,41 @@ class CopyrightComplianceManager:
             f"{source_id}:{mechanism}:{datetime.utcnow().isoformat()}".encode()
         ).hexdigest()[:16]
 
-        # Determine if opt-out was found (placeholder - real implementation
-        # would actually check robots.txt, headers, etc.)
+        # PROCESS/GOVERNANCE: Tech Debt Tracking CCEA-GOV-003
+        # Status: CONTROLLED - market data sources exempt, web sources require implementation
+        #
+        # Opt-out detection for AI Act Article 4 compliance:
+        # - PUBLIC_MARKET_DATA: Opt-out not applicable (licensed market data)
+        # - SYNTHETIC: Opt-out not applicable (generated data)
+        # - WEB_SCRAPED: Requires actual robots.txt/ai.txt/header checking
+        #
+        # Current implementation:
+        # - Returns not_applicable for market data and synthetic sources
+        # - Returns "check_required" for web sources (requires manual review)
+        #
+        # Production implementation for web sources:
+        # - Fetch and parse robots.txt
+        # - Check for X-Robots-Tag headers
+        # - Check for ai.txt machine-readable opt-out
+        # - Cache results with TTL
+
         opt_out_found = False
         action_taken = "not_applicable"
+        check_notes = None
 
-        # For market data, opt-out typically doesn't apply
+        # Determine opt-out applicability by source type
         if source_id in self.data_sources:
             source = self.data_sources[source_id]
             if source.source_type == DataSourceType.PUBLIC_MARKET_DATA:
                 action_taken = "not_applicable"
+                check_notes = "Licensed market data - opt-out not applicable"
             elif source.source_type == DataSourceType.SYNTHETIC:
                 action_taken = "not_applicable"
+                check_notes = "Synthetic/generated data - opt-out not applicable"
+            else:
+                # Web or other sources require actual checking
+                action_taken = "check_required"
+                check_notes = "Manual review required. Tracking: CCEA-GOV-003"
 
         check = OptOutCheck(
             check_id=check_id,
