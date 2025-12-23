@@ -1,234 +1,233 @@
-# CustodiaCloud — Quantitative Research & Deployment Platform
+# Cloud Zone Documentation
 
-CustodiaCloud is a **B2B** risk-first quantitative **research and deployment platform** with an **equities-first** go-to-market. This repository contains its research/simulation stack and the Cloud/Agent boundary (CCEA) used for customer-controlled execution.
-
-**Canonical positioning / naming / legally safe wording**: `docs/DOCUMENTATION_CANON_DESIGN.md`.
-
-## Licensing
-
-This monorepo is **proprietary**. For the open-core split plan (public `ccea-sdk` + `ccea-agent`, private `ccea-cloud`), see `LICENSING.md`.
-
-## Architecture: Cloud-Controlled Execution Architecture (CCEA)
-
-> **Technical reference**: `archive/root_files/Design Doc CCEA Cloud.txt` | Additional overview: `docs/CCEA_OVERVIEW.md`
-
-CustodiaCloud implements **CCEA** — a strict separation between Cloud (research/monitoring/lifecycle) and Agent (execution/secrets/risk):
-
-| Component | Responsibility | Secrets Access | Order Execution |
-|-----------|---------------|----------------|-----------------|
-| **Cloud** | Research, backtesting, monitoring, lifecycle management | **None** (by design) | **None** (by design) |
-| **Agent** | Live execution, risk enforcement, local vault, order creation | **Local only** | **Yes** (customer-controlled) |
-
-**Key Security Design Commitments:**
-- Cloud is designed not to store customer broker API keys or credentials (secrets are intended to stay in the customer-controlled Agent)
-- Cloud is designed not to generate, transmit, or execute live trading instructions (orders/targets/signals)
-- Cloud may send lifecycle commands and signed artifacts to the Agent; the Agent performs any live execution via customer accounts
-- Telemetry redaction is mandatory by design; default telemetry is **AGGREGATED** and RAW order events are enterprise-only with explicit opt-in (deployment- and customer-dependent)
-
-**Deployment Modes (B2B):**
-1. **Cloud + BYO Agent**: Cloud research/simulation/monitoring + customer-controlled Agent execution
-2. **Enterprise on‑prem/VPC**: customer-hosted deployments (where required by procurement/security)
-
-**CCEA Terminology:**
-- **Intent**: High-level trading intention (target exposure), produced by Strategy
-- **Order**: Concrete broker instruction, created ONLY in Agent from Intent
-- **Command**: Lifecycle request (REQUEST_START, REQUEST_STOP, etc.) - NOT an order
-- **TRADING_IMPACTING**: Changes requiring local approval (new version, risk limits)
-- **NON_IMPACTING**: Changes that auto-apply (log level, telemetry verbosity)
+> **Version**: 1.1.0 | **Last Updated**: 2025-12-16
+>
+> **Reference**: This document aligns with `Design Doc CCEA Cloud.txt` (canonical source)
 
 ## Overview
-- Distributional PPO with twin critics, adaptive UPGD optimizer, and population-based tuning for robust policies.
-- Market-structure-aware execution: limit/market routing, TWAP/POV, slippage and fee modeling, and risk guards.
-- Multi-asset adapters (equities/options/futures/FX; optional digital assets) behind a unified YAML configuration and dependency injection registry.
-- Shared pipeline for training, backtesting, paper trading, and live execution with reproducible artifacts.
-- Observability and safety: structured logs, KPI benchmarks, sanity checks, and doctor tooling.
-- **Strict zone separation**: Cloud/Agent/Shared packages with CI-enforced import boundaries.
 
-## Installation
-1. Prerequisites: Python 3.12+, git, compiler toolchain for C++/Cython extensions (see `SYSTEM_REQUIREMENTS.md`).
-2. Create a virtual environment and install dependencies (PowerShell example):
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -U pip wheel
-pip install -r requirements-dev.txt
+The Cloud Zone provides research, backtesting, monitoring, and lifecycle management capabilities. It is designed with strict security boundaries: Cloud **does not** have access to trading credentials or order execution capabilities.
+
+### Design Doc Reference (§4.1)
+
+Cloud components per Design Doc:
+- **Control Plane** - Deployment/Run lifecycle, Command queue, Telemetry receiver
+- **Artifact Registry** - Immutable builds, signed, with SBOM
+- **Governance** - RBAC, multi-tenancy, data residency, retention policies
+- **Research Environment** - Backtest runner, sandbox isolation
+
+## Security Design Commitments
+
 ```
-   - GPU build: `pip install -r requirements-gpu.lock.txt`
-   - CPU-only runtime: `pip install -r requirements-cpu.lock.txt`
-3. Optional: build native extensions for maximum performance:
-```powershell
-python setup.py build_ext --inplace
+Cloud Zone DESIGN COMMITMENTS (by architecture):
+  - Does NOT store broker API keys or trading credentials
+  - Does NOT generate, transmit, or execute trading orders
+  - Does NOT have access to exchange trading endpoints
+  - Does NOT send order-like payloads (side/qty/price)
+  - Telemetry redaction on by default; raw order events require opt-in
+  - Signature verification required for artifacts (by default)
 ```
+
+## Protocol: Allowed Commands (Design Doc §10)
+
+Cloud can ONLY send these commands to Agent:
+
+| Command | Purpose | Requires Local Approval |
+|---------|---------|------------------------|
+| `REQUEST_START_RUN` | Start strategy execution | YES |
+| `REQUEST_STOP_RUN` | Stop execution | NO (safety) |
+| `REQUEST_PAUSE_RUN` | Pause execution | NO (safety) |
+| `REQUEST_UPGRADE_ARTIFACT` | Deploy new version | YES |
+| `REQUEST_UPDATE_CONFIG` | Update configuration | YES (if TRADING_IMPACTING) |
+| `REQUEST_ROTATE_AGENT_SESSION` | Rotate session keys | YES |
+| `REQUEST_EXPORT_LOGS` | Export logs | YES (data_sensitive) |
+
+**Cloud does NOT send**: `side`, `qty`, `price`, `order_type`, `target_position` fields (protocol prohibition).
+
+---
+
+## Components
+
+### Control Plane (`packages/cloud/control_plane/`)
+
+The Control Plane manages the lifecycle of deployments and agents:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/api/v1/enrollment/token` | Generate enrollment tokens (TTL) |
+| `/api/v1/agents/enroll` | Register new agents |
+| `/api/v1/agents/{id}/heartbeat` | Agent health reporting |
+| `/api/v1/agents/{id}/commands` | Long-poll for commands |
+| `/api/v1/deployments/` | Manage deployments |
+| `/api/v1/strategies/` | Strategy management |
+| `/api/v1/telemetry/` | Telemetry ingestion |
+
+See: [CONTROL_PLANE_API.md](./CONTROL_PLANE_API.md)
+
+### Artifact Builder (`packages/cloud/builder/`)
+
+The Builder creates immutable, signed artifacts for deployment:
+
+- OCI images (preferred) or ZIP bundles
+- Digest-pinned dependencies
+- SBOM generation (CycloneDX/SPDX)
+- Cosign/GPG signatures
+- Manifest with schema versioning
+
+See: [ARTIFACT_BUILDER.md](./ARTIFACT_BUILDER.md)
+
+### Governance (`packages/cloud/governance/`)
+
+Governance provides multi-tenant data management:
+
+- RBAC (Role-Based Access Control)
+- Data retention policies
+- EU data residency
+- Access audit logging
+- Break-glass procedures
+
+See: [GOVERNANCE.md](./GOVERNANCE.md)
+
+### Research Job Isolation (`packages/cloud/research/`)
+
+Research jobs (backtests, simulations) run in isolated sandboxes:
+
+- Container/VM isolation
+- CPU/RAM/time quotas
+- Egress allowlist
+- Abuse detection
+
+See: [RESEARCH_JOB_ISOLATION.md](./RESEARCH_JOB_ISOLATION.md)
+
+### Enterprise Features (`packages/cloud/enterprise/`)
+
+Enterprise-specific capabilities:
+
+- On-premises deployment
+- Air-gapped support
+- Evidence pack export
+- Custom SLAs
+
+See: [ENTERPRISE.md](./ENTERPRISE.md)
+
+## Architecture
+
+```
+packages/cloud/
+├── __init__.py              # Security design commitments documented
+├── control_plane/           # API and lifecycle management
+│   ├── routers/             # FastAPI routers
+│   │   ├── deployments.py
+│   │   ├── strategies.py
+│   │   ├── agents.py
+│   │   ├── commands.py
+│   │   └── telemetry.py
+│   ├── services/            # Business logic
+│   ├── boundary.py          # Protocol boundary enforcement
+│   └── models.py            # Database models
+├── builder/                 # Artifact building
+│   ├── manifest.py          # Manifest generation
+│   ├── signing.py           # Artifact signing
+│   ├── sbom.py             # SBOM generation
+│   └── registry.py          # Registry publishing
+├── governance/              # Tenant management
+│   ├── rbac.py             # Role-based access
+│   ├── retention.py        # Data retention
+│   ├── residency.py        # Data residency
+│   └── audit.py            # Access audit
+├── research/                # Research job execution
+│   ├── sandbox.py          # Job isolation
+│   ├── quotas.py           # Resource quotas
+│   └── abuse_detection.py  # Anti-abuse
+└── enterprise/              # Enterprise features
+    ├── evidence_pack.py    # Compliance export
+    ├── deployment.py       # On-prem deployment
+    └── air_gap.py          # Air-gapped support
+```
+
+## Data Model
+
+### Core Entities
+
+| Entity | Description |
+|--------|-------------|
+| `Organization` | Top-level tenant |
+| `Workspace` | Isolated workspace within org |
+| `User` | Platform user with roles |
+| `Strategy` | Trading strategy definition |
+| `StrategyVersion` | Versioned strategy code |
+| `Build` | Artifact build record |
+| `Agent` | Registered agent instance |
+| `Deployment` | Strategy deployment to agent |
+| `Run` | Execution instance |
+| `Command` | Cloud→Agent command |
+| `ApprovalRecord` | Local approval evidence |
+| `TelemetryEvent` | Agent telemetry |
+
+### Tenant Isolation
+
+- All queries include `workspace_id`
+- Postgres Row-Level Security (RLS) enabled (verify via migration scripts and DB configuration audit)
+- Cross-tenant access blocked at database level (design; verify via security review)
+
+## CI Guardrails
+
+The Cloud Zone enforces these build-time checks:
+
+| Check | Description |
+|-------|-------------|
+| `no-trading-libs-in-cloud` | No order_execution modules in Cloud build |
+| `no-broker-clients-in-cloud` | No private trading clients |
+| `no-order-payloads-in-schema` | Schema prohibits side/qty/price |
+| `artifact-signature-required` | All artifacts must be signed |
+| `redaction-enabled` | Telemetry redaction mandatory |
 
 ## Quick Start
-Configuration examples live in `configs/examples/README.md`.
 
-- Train (example config; equities-first beachhead):
+### Running Cloud Stack Locally
+
 ```bash
-cp configs/examples/example_train_stocks.yaml configs/my_train.yaml
-python train_model_multi_patch.py --config configs/my_train.yaml
+# Docker Compose
+docker-compose -f docker/cloud-stack.yml up
+
+# Or with Kubernetes
+helm install ccea-cloud ./helm/cloud
 ```
 
-- Backtest / simulation:
-```bash
-cp configs/examples/example_backtest_crypto.yaml configs/my_backtest.yaml
-python script_backtest.py --config configs/my_backtest.yaml --offline-config configs/offline.yaml --dataset-split val
+### Configuration
+
+```yaml
+# cloud-config.yaml
+cloud:
+  region: eu-central-1
+  database:
+    host: postgres
+    port: 5432
+    database: ccea_cloud
+  redis:
+    host: redis
+    port: 6379
+  security:
+    require_signatures: true
+    min_schema_version: "1.0.0"
+  governance:
+    default_retention_days: 90
+    eu_residency_default: true
 ```
 
-- Live execution via local Agent (CCEA architecture):
-```bash
-# 1. Deploy Agent locally (credentials stay on YOUR machine; architecture designed so they are not sent to cloud)
-#    See docs/agent/INSTALLATION.md for full setup
-python -m packages.agent.daemon.agentd --config configs/agent.yaml
+## Document Index
 
-# 2. (Optional) Use Cloud control plane to manage runs
-#    Cloud sends lifecycle commands only - designed not to trade or store keys
-```
-**Important**: Live execution runs only in your local Agent. Cloud manages lifecycle (start/stop/deploy) and is designed so it does not execute orders or store your credentials. See [CCEA Overview](docs/CCEA_OVERVIEW.md).
+| Document | Description |
+|----------|-------------|
+| [CONTROL_PLANE_API.md](./CONTROL_PLANE_API.md) | REST API reference |
+| [ARTIFACT_BUILDER.md](./ARTIFACT_BUILDER.md) | Build and signing guide |
+| [GOVERNANCE.md](./GOVERNANCE.md) | RBAC, retention, residency |
+| [RESEARCH_JOB_ISOLATION.md](./RESEARCH_JOB_ISOLATION.md) | Sandbox isolation |
+| [ENTERPRISE.md](./ENTERPRISE.md) | Enterprise deployment |
 
-For legacy/development dry-run testing:
-```bash
-# Development/testing only (not production CCEA architecture)
-python script_live.py --config configs/my_live.yaml --dry-run
-```
+---
 
-Run `python scripts/doctor.py --verbose` before the first training or trading run.
-
-## Status
-
-**Automated test suite** (verify via `pytest`) | **CCEA implemented** | **Evidence exports & alignment tooling** (designed to support customer procurement/operational reviews; not audited or certified)
-
-## CI Status
-[![Docs quality](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/docs-quality.yml)
-[![Security SAST](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/security-sast.yml/badge.svg)](https://github.com/RivenKid69/AI-Powered-Quantitative-Research-Platform/actions/workflows/security-sast.yml)
-
-- Docs quality: markdown lint/render checks for user-facing docs.
-- Security SAST: static analysis of adapters/core for regressions.
-
-## Module Architecture
-
-### ICT Provider Positioning (CCEA Architecture)
-
-CustodiaCloud is designed to support a **software / ICT provider** posture (classification depends on activities and jurisdiction):
-- We provide quantitative research, simulation, deployment, and governance tooling
-- Customers execute via **their own broker accounts** through the customer-controlled **Agent**
-- Cloud does not hold customer broker credentials and does not execute orders
-
-**Legal Position:**
-- **NOT** investment advice / portfolio management / trade recommendations
-- **NOT** an execution service: Cloud does not execute orders or hold credentials/assets
-- B2B software platform for professional trading organizations
-
-See: `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical wording.
-
-### Module Structure (Post-Migration v2.0)
-
-| Package | Purpose | Load |
-|---------|---------|------|
-| `services.core.risk_controls` | Universal risk controls (kill switch, pre-trade, audit) | Always |
-| `services.algo_integration` | Alignment/evidence tooling for regulated clients | Enterprise tier (target segment) |
-| `services.archive.mifid_financial_entity` | Investment Firm modules | Archived (not loaded) |
-
-#### For ICT Providers (Default)
-```python
-from services.core.risk_controls import (
-    EnhancedKillSwitch, PreTradeControls, AuditTrailWriter,
-    RealTimeMonitor, BusinessContinuityPlan
-)
-```
-
-#### Migration Note
-The legacy `services.compliance` module has been removed. Use the new modular structure:
-```python
-# Current (canonical import path)
-from services.core.risk_controls import EnhancedKillSwitch
-
-# The old services.compliance path is no longer supported
-```
-
-## Regulatory Compliance
-
-CustodiaCloud includes documentation, controls, and evidence export patterns intended to **support** customer procurement and operational reviews (jurisdiction- and customer-dependent; not a certification claim).
-
-**CCEA Privacy Design Goals:**
-- Cloud **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
-- Cloud **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
-- Telemetry redaction is mandatory by design; default telemetry is **AGGREGATED** and RAW order events are enterprise-only with explicit opt-in
-- EU data residency **by design** for EU customers (design target; deployment- and contract-specific; enterprise: on-prem/customer-managed options available)
-- DSAR scope is Cloud-only (by design); Agent data is customer-controlled
-
-Details: `docs/compliance/GDPR_CCEA_IMPLEMENTATION_PLAN.md`
-
-## Supported Exchanges
-| Asset class | Vendor(s) | Path | Modes | Status |
-| --- | --- | --- | --- | --- |
-| Equities execution (MVP/beachhead) | Alpaca | adapters/alpaca/ | sim, paper, live | Implemented |
-| Equities data | Polygon, Yahoo | adapters/polygon/, adapters/yahoo/ | data, sim | Implemented |
-| FX | OANDA | adapters/oanda/ | sim, live | Implemented (beta) |
-| FX (historical) | Dukascopy | adapters/dukascopy/ | historical data only | Stub (Phase 0) |
-| Listed options / futures (optional) | Interactive Brokers, ThetaData | adapters/ib/, adapters/theta_data/ | paper/sim, live | Experimental |
-| Digital assets (optional) | Binance, Deribit | adapters/binance/, adapters/deribit/ | sim, live | Implemented (beta) |
-
-> **Note**: Status reflects current implementation state. Stubs indicate interface definition without full integration. See individual adapter READMEs for details.
-
-## Guides
-
-### CCEA Architecture Documentation
-- `docs/CCEA_OVERVIEW.md` — Cloud/Agent boundary, threat model, legal posture
-- `docs/cloud/README.md` — Control plane API, builder, governance
-- `docs/agent/README.md` — Installation, vault, approvals, risk controls
-- `docs/schemas/README.md` — JSON schemas with versioning guide
-- `docs/runbooks/` — Incident response, kill-switch, recovery procedures
-
-### Business & Legal Documentation
-- `docs/business/CCEA_MARKETING_GUIDELINES.md` — Approved language and disclaimers (CustodiaCloud/CCEA-safe)
-- `docs/business/CCEA_TERMS_OF_SERVICE_GUIDELINES.md` — ToS requirements, liability
-- `docs/business/PRICING_DIFFERENTIATION_STRATEGY.md` — Product modes, pricing tiers
-- `docs/business/OPEN_CORE_BUSINESS_MODEL.md` — Open-source strategy, licensing
-- `docs/business/COMPETITIVE_MOAT.md` — Competitive advantage analysis
-
-### General Documentation
-- `claude.md` — complete project guide (RU).
-- `ARCHITECTURE.md` — system architecture and module map.
-- `DOCS_INDEX.md` — documentation hub.
-- `QUICK_START.md` — command cheat sheet.
-- `configs/examples/README.md` — ready-to-copy configs for train/backtest/live.
-- `BUILD_INSTRUCTIONS.md` — native build notes.
-- `docs/AI_GUIDE.md` — AI-assistant instructions.
-
-## Runbooks
-### Simulation / backtest
-1. Copy an example config and set dataset paths (`offline-config`, `dataset-split`).
-2. Run doctor without network if needed: `python scripts/doctor.py --skip-network`.
-3. Execute `python script_backtest.py --config <cfg> --offline-config configs/offline.yaml --dataset-split val`.
-4. Validate outputs: compare KPI to `benchmarks/sim_kpi_thresholds.json`, review reports in `artifacts/` and logs in `logs/`.
-
-### Live execution (CCEA Architecture)
-**Production: Via Local Agent**
-1. **Agent Setup**: Install and configure Agent locally (`docs/agent/INSTALLATION.md`).
-2. **Credentials**: Store broker API keys in Agent's local vault (designed not to be uploaded to Cloud).
-3. **Deploy Strategy**: Use Cloud control plane to deploy strategy artifact to Agent.
-4. **Start Run**: Cloud sends `REQUEST_START_RUN`; Agent executes locally with your credentials.
-5. **Monitor**: Cloud receives redacted telemetry; full position data stays in Agent.
-6. **Safety**: Agent enforces local hard caps; kill switch available in `docs/runbooks/KILL_SWITCH.md`.
-
-**Development/Testing Only**:
-```bash
-# For local testing without full Agent setup
-python script_live.py --config <cfg> --dry-run
-```
-
-See `docs/runbooks/` for full operational procedures.
-
-### Adapter debugging
-1. Validate configuration: `python -m pytest tests/test_adapters_config_validation.py -k <vendor>` and align YAML with `configs/examples`.
-2. Run vendor smoke tests: e.g., `python -m pytest tests/test_alpaca_adapters.py` or `python -m pytest tests/test_deribit_options.py`.
-3. Reproduce with the live runner in dry-run mode: `python script_live.py --config <cfg> --dry-run --asset-class <equity|forex|crypto>` and watch `logs/` for adapter traces.
-4. Refresh exchange metadata when applicable (for Binance: `python scripts/fetch_binance_filters.py`) and re-run doctor to confirm connectivity.
-
-### Pre-release checklist
-- [ ] `python scripts/doctor.py --verbose` (environment, credentials, clocks).
-- [ ] `python -m pytest tests/test_service_mode_smoke.py tests/test_dry_run_executor.py` (or targeted smoke tests relevant to the change).
-- [ ] `bash tools/test_markdown_render.sh` (pandoc render check).
-- [ ] Verify configs referenced in README/Quick Start exist and secrets are environment-backed.
-- [ ] Confirm supported exchange table and badges reflect current coverage.
+**Related Documentation:**
+- [CCEA Overview](../CCEA_OVERVIEW.md)
+- [Agent Documentation](../agent/README.md)
+- [Protocol Schemas](../schemas/README.md)
