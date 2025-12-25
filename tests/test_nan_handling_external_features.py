@@ -267,7 +267,13 @@ def test_future_enhancement_roadmap():
     # Impact: Models trained before validity flags will be incompatible
     # Control artifact: Model versioning with compatibility metadata in model manifest
     # See: docs/SIMULATION_LIMITATIONS.md for simulation accuracy tracking
-    assert True, "Future enhancement documented - validity flags for robust NaN handling"
+
+    # Verify tech debt is documented in registry
+    import os
+    registry_path = "docs/reports/TECH_DEBT_REGISTRY.md"
+    assert os.path.exists(registry_path), (
+        f"Tech debt registry should exist at {registry_path}"
+    )
 
 
 if __name__ == "__main__":

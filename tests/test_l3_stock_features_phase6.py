@@ -628,7 +628,12 @@ class TestBackwardCompatibilityCrypto:
 
         # The guard itself doesn't distinguish asset class,
         # but it should only be applied in equity trading paths
-        assert True  # Placeholder - actual integration test needed
+        # Verify PDTGuard exists and has expected interface
+        assert hasattr(guard, 'check_trade_allowed') or hasattr(guard, 'can_trade'), (
+            "PDTGuard should have trade check method"
+        )
+        # Note: Full integration test requires trading path setup
+        # Tech Debt: docs/reports/TECH_DEBT_REGISTRY.md#testing-pdt-integration
 
     def test_ext_norm_dim_backward_compatible(self):
         """Test EXT_NORM_DIM expansion is backward compatible."""

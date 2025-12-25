@@ -155,9 +155,12 @@ class TestIBOptionsRateLimiter:
         """Test order request tracking."""
         from adapters.ib.options_rate_limiter import IBOptionsRateLimitManager
         limiter = IBOptionsRateLimitManager()
+        initial_count = limiter._order_requests_this_second
         limiter.record_order_request()
-        # Should not raise
-        assert True
+        # Verify order request was recorded (counter incremented)
+        assert limiter._order_requests_this_second == initial_count + 1, (
+            "Order request counter should increment after record_order_request()"
+        )
 
     def test_rate_limiter_can_submit_order_initially(self):
         """Test can submit order initially."""

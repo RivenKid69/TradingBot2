@@ -191,9 +191,12 @@ class TestMaskedKLComputation:
                     kl_with_mask = ppo_model.logger.name_to_value['train/approx_kl']
 
         # We expect the KL values to be different (mask affects computation)
-        # Note: This test may pass trivially if KL is always None, but that's OK
-        # The real validation is that the code runs without errors
-        assert True, "Masked KL computation should run without errors"
+        # Verify learn() completed and logger state is valid
+        assert hasattr(ppo_model, 'logger'), "PPO model should have logger after learn()"
+        # kl_with_mask may be None or a number - both are valid outcomes
+        assert kl_with_mask is None or isinstance(kl_with_mask, (int, float)), (
+            "KL value should be None or numeric"
+        )
 
     def test_kl_computation_with_zero_valid_samples(self, ppo_model):
         """
@@ -224,11 +227,14 @@ class TestMaskedKLComputation:
             try:
                 ppo_model.learn(total_timesteps=128)
                 # If we reach here, the code handled zero samples correctly
-                assert True
+                # Verify model is still in valid state
+                assert ppo_model.policy is not None, "Policy should exist after handling zero samples"
             except Exception as e:
                 # If an exception is raised, it should be a specific expected one
                 # (e.g., "No valid samples"), not a crash
-                assert "valid" in str(e).lower() or "empty" in str(e).lower()
+                assert "valid" in str(e).lower() or "empty" in str(e).lower(), (
+                    f"Expected graceful handling of zero samples, got: {e}"
+                )
 
     def test_kl_values_are_finite(self, ppo_model):
         """
@@ -365,8 +371,9 @@ class TestKLImpactOnEarlyStopping:
                 ppo_model.n_epochs = original_n_epochs
 
         # We can't reliably assert early stopping was triggered (depends on KL),
-        # but we can verify the code ran without errors
-        assert True, "Early stopping logic should run without errors with masked KL"
+        # but we can verify the model is in valid state after running
+        assert ppo_model.policy is not None, "Policy should exist after early stopping test"
+        assert ppo_model.n_epochs == original_n_epochs, "n_epochs should be restored"
 
 
 class TestMaskConsistency:

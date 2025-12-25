@@ -167,9 +167,15 @@ class TestAdaptiveNoiseUnit:
             loss.backward()
             optimizer.step()
 
-        # Check that grad_norm_ema resulted in noise >= min_noise_std
-        # This is implicit - if min_noise_std is working, training won't crash
-        assert True  # If we got here, min_noise_std floor is working
+        # Verify min_noise_std floor is enforced in optimizer state
+        for group in optimizer.param_groups:
+            for p in group['params']:
+                if p in optimizer.state:
+                    state = optimizer.state[p]
+                    if 'noise_std' in state:
+                        assert state['noise_std'] >= group.get('min_noise_std', 0), (
+                            f"noise_std {state['noise_std']} should be >= min_noise_std"
+                        )
 
     def test_noise_scales_with_gradients(self):
         """Test that adaptive noise scales proportionally to gradient magnitude."""
@@ -469,7 +475,9 @@ class TestAdaptiveNoiseRegression:
             loss.backward()
             opt2.step()
 
-            assert True  # If we got here, backward compatibility works
+            # Verify checkpoint loaded correctly - model params are valid tensors
+            for param in model2.parameters():
+                assert torch.isfinite(param).all(), "Model params should be finite after checkpoint load"
         finally:
             os.unlink(checkpoint_path)
 

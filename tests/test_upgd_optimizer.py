@@ -630,8 +630,10 @@ class TestOptimizerComparison:
                 eps=1e-8,
                 weight_decay=0.01,
             )
-            # If initialization succeeds, test passed
-            assert True
+            # Verify optimizer was created with expected interface
+            assert hasattr(optimizer, 'step'), "UPGDW must have step() method"
+            assert hasattr(optimizer, 'zero_grad'), "UPGDW must have zero_grad() method"
+            assert hasattr(optimizer, 'param_groups'), "UPGDW must have param_groups"
         except TypeError:
             pytest.fail("UPGDW should accept AdamW-style parameters")
 

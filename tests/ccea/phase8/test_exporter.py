@@ -549,6 +549,7 @@ class TestAnonymizationMapping:
         # Clear
         exporter.clear_anonymization_mapping()
 
-        # Verify cleared (new export would have different anon ID)
-        # This is internal state, so we just verify no error
-        assert True
+        # Verify mapping was cleared by checking internal state
+        assert len(exporter._id_mapping) == 0, (
+            "ID anonymization mapping should be empty after clear()"
+        )

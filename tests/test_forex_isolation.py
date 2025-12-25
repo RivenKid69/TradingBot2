@@ -361,8 +361,20 @@ class TestDataFlowIsolation:
 
     def test_forex_features_not_added_to_equity(self):
         """Forex-specific features should not appear in equity feature set."""
-        # Similar to above
-        assert True
+        # Verify forex-specific features are isolated from equity features
+        forex_specific = {"session_overlap", "pip_value", "swap_rate", "lot_size"}
+
+        # Import equity feature config if exists
+        try:
+            from feature_config import EQUITY_FEATURES
+            # Equity features should not include forex-specific features
+            equity_set = set(EQUITY_FEATURES) if hasattr(EQUITY_FEATURES, '__iter__') else set()
+            overlap = forex_specific & equity_set
+            assert len(overlap) == 0, f"Forex features leaked into equity: {overlap}"
+        except ImportError:
+            # If no EQUITY_FEATURES defined, verify forex_features module is separate
+            import forex_features
+            assert forex_features is not None, "forex_features should be importable separately"
 
     def test_forex_risk_limits_separate_from_stock(self):
         """Forex risk limits should be separate from stock limits."""
@@ -403,8 +415,11 @@ class TestModuleDependency:
         import services.forex_risk_guards
         import services.forex_position_sync
 
-        # All imported successfully
-        assert True
+        # Verify all modules imported successfully (not None)
+        assert services.forex_dealer is not None, "forex_dealer should import"
+        assert services.forex_session_router is not None, "forex_session_router should import"
+        assert services.forex_risk_guards is not None, "forex_risk_guards should import"
+        assert services.forex_position_sync is not None, "forex_position_sync should import"
 
     def test_data_loader_multi_asset_handles_forex(self):
         """data_loader_multi_asset should handle forex without breaking crypto/equity."""

@@ -1112,8 +1112,13 @@ class TestExports:
             ContinuityStatus,
             EntitySize,
         )
-        # Just verify they can be imported
-        assert True
+        # Verify all enums are valid enum types
+        from enum import Enum
+        for enum_cls in [GovernanceRole, DefenceLine, PolicyCategory, ControlDomain,
+                         SystemCriticality, AssetType, SecurityControlCategory,
+                         AnomalyType, IncidentSeverity, BackupType, ReviewType,
+                         CommunicationType, ContinuityStatus, EntitySize]:
+            assert issubclass(enum_cls, Enum), f"{enum_cls.__name__} should be an Enum"
 
     def test_all_dataclasses_exported(self):
         """Test all dataclasses are exported."""
@@ -1131,8 +1136,13 @@ class TestExports:
             ContinuityPlan,
             EligibilityCriteria,
         )
-        # Just verify they can be imported
-        assert True
+        # Verify all are dataclasses
+        from dataclasses import is_dataclass
+        for dc_cls in [GovernanceRoleAssignment, RiskPolicy, ICTSystem, ICTAsset,
+                       SecurityControl, DetectionRule, ICTIncident, BackupPolicy,
+                       PostIncidentReview, CommunicationPolicy, ContinuityPlan,
+                       EligibilityCriteria]:
+            assert is_dataclass(dc_cls), f"{dc_cls.__name__} should be a dataclass"
 
 
 if __name__ == "__main__":

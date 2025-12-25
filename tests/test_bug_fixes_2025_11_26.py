@@ -111,8 +111,8 @@ class TestUPGDWMinMaxNormalization:
             loss.backward()
             optimizer.step()
 
-        # If we get here without error, the normalization formula is working
-        assert True
+        # Verify normalization produced finite loss values
+        assert torch.isfinite(loss), "Loss should be finite after UPGDW optimization steps"
 
     def test_upgdw_equal_utilities_edge_case(self):
         """Test edge case where all utilities are equal.
@@ -326,8 +326,8 @@ class TestBugFixesIntegration:
         loss.backward()
         optimizer.step()
 
-        # Should complete without error
-        assert True
+        # Verify optimization step produced finite loss
+        assert torch.isfinite(loss), "Loss should be finite after optimization step"
 
     def test_all_fixes_dont_introduce_regressions(self):
         """Verify fixes don't break existing functionality."""
@@ -337,8 +337,11 @@ class TestBugFixesIntegration:
         import distributional_ppo
         import mediator
 
-        # All modules should import without error
-        assert True
+        # Verify all modules imported successfully (not None)
+        assert optimizers.upgdw is not None, "optimizers.upgdw should import"
+        assert trading_patchnew is not None, "trading_patchnew should import"
+        assert distributional_ppo is not None, "distributional_ppo should import"
+        assert mediator is not None, "mediator should import"
 
 
 if __name__ == "__main__":

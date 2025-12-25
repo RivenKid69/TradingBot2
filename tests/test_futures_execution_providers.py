@@ -797,8 +797,10 @@ class TestIntegration:
         )
 
         # Fill should be returned (may be None if not filled)
-        # Just check no crash
-        assert True  # Test passes if no exception
+        # Verify result is valid type (None or has expected attributes)
+        assert fill is None or hasattr(fill, 'price'), (
+            "Fill result should be None or have price attribute"
+        )
 
 
 class TestEdgeCases:
