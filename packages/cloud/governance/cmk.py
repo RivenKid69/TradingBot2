@@ -113,7 +113,19 @@ class KeyInfo:
     last_used_at: Optional[datetime] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary (safe, no key material)."""
+        """Convert to dictionary (safe, no key material).
+
+        Note: key_hash is truncated to first 16 characters for UI/logging.
+        For security incident response requiring full hash correlation,
+        use to_audit_dict() which includes the complete key_hash.
+
+        Hash Truncation Policy:
+            - UI/API responses: 16 chars (sufficient for visual identification)
+            - Audit logs: Full hash (via to_audit_dict)
+            - Incident response: Full hash available in CMKService audit trail
+
+        Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#security-cmk-hash-truncation
+        """
         return {
             "id": self.id,
             "workspace_id": self.workspace_id,
@@ -123,13 +135,28 @@ class KeyInfo:
             "status": self.status.value,
             "algorithm": self.algorithm,
             "key_version": self.key_version,
-            "key_hash": self.key_hash[:16] + "...",  # Truncated hash
+            "key_hash": self.key_hash[:16] + "..." if self.key_hash else "",  # Truncated for UI
             "created_at": self.created_at.isoformat(),
             "rotated_at": self.rotated_at.isoformat() if self.rotated_at else None,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "rotation_policy_days": self.rotation_policy_days,
             "usage_count": self.usage_count,
         }
+
+    def to_audit_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary with full key_hash for audit/security purposes.
+
+        Use this method for:
+            - Security incident investigation
+            - Compliance audit trails
+            - Key correlation during forensic analysis
+
+        WARNING: Contains full key_hash. Do not expose via public APIs.
+        """
+        result = self.to_dict()
+        result["key_hash"] = self.key_hash  # Full hash for audit
+        result["_audit_context"] = True
+        return result
 
     @property
     def is_expired(self) -> bool:

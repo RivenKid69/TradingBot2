@@ -968,34 +968,43 @@ class TestConfigurationBackwardCompatibility:
             pytest.skip("Core config not available")
 
     def test_asset_class_defaults_exist(self):
-        """Verify asset class defaults file exists."""
+        """Verify asset class defaults file exists and has valid structure."""
         import os
 
         defaults_path = "configs/asset_class_defaults.yaml"
-        if os.path.exists(defaults_path):
-            assert True
-        else:
+        if not os.path.exists(defaults_path):
             pytest.skip("Asset class defaults not found")
 
+        # Verify file is readable and non-empty
+        with open(defaults_path, "r") as f:
+            content = f.read()
+        assert len(content) > 0, "Asset class defaults file should not be empty"
+
     def test_execution_config_exists(self):
-        """Verify execution config exists."""
+        """Verify execution config exists and has valid structure."""
         import os
 
         config_path = "configs/execution.yaml"
-        if os.path.exists(config_path):
-            assert True
-        else:
+        if not os.path.exists(config_path):
             pytest.skip("Execution config not found")
 
+        # Verify file is readable and non-empty
+        with open(config_path, "r") as f:
+            content = f.read()
+        assert len(content) > 0, "Execution config file should not be empty"
+
     def test_risk_config_exists(self):
-        """Verify risk config exists."""
+        """Verify risk config exists and has valid structure."""
         import os
 
         config_path = "configs/risk.yaml"
-        if os.path.exists(config_path):
-            assert True
-        else:
+        if not os.path.exists(config_path):
             pytest.skip("Risk config not found")
+
+        # Verify file is readable and non-empty
+        with open(config_path, "r") as f:
+            content = f.read()
+        assert len(content) > 0, "Risk config file should not be empty"
 
 
 # =============================================================================

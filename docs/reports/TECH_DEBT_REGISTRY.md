@@ -1,7 +1,7 @@
 # Technical Debt Registry
 
-**Version**: 3.1
-**Date**: 2025-12-22
+**Version**: 3.8
+**Date**: 2025-12-25
 **Status**: Active
 **Canon Reference**: `docs/DOCUMENTATION_CANON_DESIGN.md`
 
@@ -712,6 +712,18 @@ Each entry contains:
 | **Closure Date** | 2025-12-22 |
 | **Note** | Per Design Doc Section 3.1 (tenant isolation): production MUST have RLS policies via Alembic migrations. Enforcement: (1) RuntimeError on startup if no migrations, (2) RuntimeError if using SQLite in production, (3) CCEA_ALLOW_INSECURE_PRODUCTION=true for explicit bypass (NOT RECOMMENDED). |
 
+### security-cmk-hash-truncation {#security-cmk-hash-truncation}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `packages/cloud/governance/cmk.py:115-159` |
+| **Severity** | Low |
+| **Description** | KeyInfo.to_dict() truncates key_hash to first 16 characters for UI/logging |
+| **Status** | Closed |
+| **Control Artifact** | (1) Docstring documents "Hash Truncation Policy" with use cases, (2) to_audit_dict() method added for full hash in security contexts |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Truncation is intentional for UI/API display (visual identification). For incident response and forensic analysis, use to_audit_dict() which returns full key_hash with _audit_context flag. Full hash also available in CMKService audit trail. Per Documentation Canon: limitation documented with control artifact. |
+
 ---
 
 ## Reliability/Operations
@@ -1139,6 +1151,42 @@ Each entry contains:
 | **Note** | Mock density is intentional for external API testing (Binance, Alpaca, IB, OANDA). Policy documents acceptable vs unacceptable mock usage. Integration tests exist for critical paths. |
 | **Added** | 2025-12-21 |
 
+### testing-futures-config-assertions {#testing-futures-config-assertions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_futures_backward_compatibility.py:970-1007` |
+| **Severity** | Medium |
+| **Description** | Config existence tests had empty `assert True` after file existence check |
+| **Status** | Closed |
+| **Control Artifact** | Code fix: replaced `assert True` with actual file content validation (`len(content) > 0`) |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Three tests fixed: test_asset_class_defaults_exist, test_execution_config_exists, test_risk_config_exists. Now verify files are readable and non-empty. |
+
+### testing-forex-observation-assertion {#testing-forex-observation-assertion}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_forex_backward_compat.py:308-325` |
+| **Severity** | Medium |
+| **Description** | test_observation_space_dimensions_unchanged had placeholder `assert True` |
+| **Status** | Closed |
+| **Control Artifact** | Code fix: added real assertion (`hasattr(ForexParametric, "asset_class")`) verifying feature isolation |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Configuration-level test now validates that ForexParametric has asset_class attribute for feature isolation. Docstring expanded with architecture reference. |
+
+### testing-integration-placeholder {#testing-integration-placeholder}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `tests/test_bug_fixes_final_audit.py:456-484` |
+| **Severity** | Low |
+| **Description** | Integration test had `assert True` placeholder instead of real validation |
+| **Status** | Closed |
+| **Control Artifact** | Code fix: added component compatibility checks (DistributionalPPO method existence, torch.isfinite for infinite cost handling) |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Full GPU integration testing is a deployment-time responsibility per SIMULATION_LIMITATIONS.md. This test now validates component compatibility as a prerequisite. Tech Debt reference added to docstring. |
+
 ---
 
 ## Reliability/Operations
@@ -1154,6 +1202,30 @@ Each entry contains:
 | **Control Artifact** | Module docstring documents pattern; this registry entry |
 | **Note** | Two categories: (1) Monitoring updates - failures must not interrupt trading flow; (2) Type coercion with safe defaults. Pattern is INTENTIONAL per CCEA Design Doc: trading continuity takes precedence over logging failures. |
 | **Added** | 2025-12-21 |
+
+### ops-execution-sim-exceptions {#ops-execution-sim-exceptions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `execution_sim.py:24-40` (header docstring) |
+| **Severity** | Medium |
+| **Description** | Defensive exception handlers (~170 `except Exception:` blocks) in execution simulator |
+| **Status** | Closed |
+| **Control Artifact** | Module docstring with "DEFENSIVE EXCEPTION HANDLING PATTERN" section documenting design rationale |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Four categories documented: (1) Optional dependency imports with fallbacks, (2) Price/quantity parsing returning safe defaults, (3) Seasonality lookups with neutral multipliers, (4) Metrics emission - silent failures. Per CCEA Design Doc Section 8.2: simulation continuity > logging failures. |
+
+### ops-monitoring-exceptions {#ops-monitoring-exceptions}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `services/monitoring.py:9-26` (header docstring) |
+| **Severity** | Low |
+| **Description** | Defensive exception handlers (~54 `except Exception:` blocks) in monitoring module |
+| **Status** | Closed |
+| **Control Artifact** | Module docstring with "DEFENSIVE EXCEPTION HANDLING PATTERN" section documenting design rationale |
+| **Closure Date** | 2025-12-25 |
+| **Note** | Per CCEA Design Doc Section 7.3 (Observability): monitoring failures are NON-CRITICAL. Trading must continue even if metrics collection fails. "Observability should not affect observed system" principle. Four design rationale points documented. |
 
 ---
 
@@ -1215,29 +1287,41 @@ Each entry contains:
 | **Rationale** | (1) Singleton via `__new__` ensures single registration point. (2) Lazy loading via `_ensure_loaded()`. (3) Thread-safe initialization. (4) Module docstring documents design (lines 1-34). (5) Per CCEA Design Doc, Broker Connectors are Agent-side only - no Cloud boundary violation. |
 | **CCEA Compliance** | Verified - adapters are Agent Zone components per Design Doc section 4.2 |
 
+### ml-calibration-abc-pattern {#ml-calibration-abc-pattern}
+
+| Field | Value |
+|-------|-------|
+| **Location** | `calibration.py:99-111` |
+| **Initial Finding** | BaseCalibrator has 4 methods raising NotImplementedError (fit, predict_proba, to_dict, from_dict) |
+| **Review Date** | 2025-12-25 |
+| **Determination** | **Not Debt** - Standard Abstract Base Class (ABC) pattern |
+| **Rationale** | (1) BaseCalibrator is an ABC defining calibration interface. (2) Concrete implementations exist: PlattCalibrator (lines 133-199), IsotonicCalibrator (lines 202+). (3) load_json() factory dispatches to concrete classes by type field. (4) NotImplementedError is the Python-standard way to define abstract methods without using abc module. |
+| **Implementation Status** | Two calibrators fully implemented: PlattCalibrator (Platt scaling with Newton-Raphson), IsotonicCalibrator (isotonic regression). |
+
 ---
 
 ## Summary Statistics
 
-*Updated 2025-12-22 after CTO due diligence batch 17 (false positive review)*
+*Updated 2025-12-25 after CTO due diligence batch 18 (test placeholders and exception handlers)*
 
 | Category | High | Medium | Low | Total | Controlled | Closed |
 |----------|------|--------|-----|-------|------------|--------|
 | Architecture | 1 | 4 | 3 | 8 | 2 | 6 |
 | Data/ML | 2 | 7 | 3 | 12 | 5 | 7 |
-| Testing/Quality | 2 | 5 | 5 | 12 | 4 | 8 |
-| Reliability/Operations | 5 | 6 | 2 | 13 | 8 | 5 |
-| Security | 5 | 7 | 1 | 13 | 3 | 10 |
+| Testing/Quality | 2 | 7 | 6 | 15 | 4 | 11 |
+| Reliability/Operations | 5 | 7 | 3 | 15 | 8 | 7 |
+| Security | 5 | 7 | 2 | 14 | 3 | 11 |
 | Docs/Drift | 1 | 7 | 7 | 15 | 2 | 13 |
 | Process/Governance | 1 | 2 | 2 | 5 | 3 | 2 |
 | Reproducibility/Build | 0 | 2 | 3 | 5 | 0 | 5 |
 | Dependency/Supply-chain | 0 | 2 | 1 | 3 | 0 | 3 |
 | Other | 0 | 0 | 2 | 2 | 1 | 1 |
-| **TOTAL** | **17** | **42** | **29** | **88** | **28** | **60** |
+| **TOTAL** | **17** | **45** | **32** | **94** | **28** | **66** |
 
 **Status Summary**:
 - 28 items Controlled (with active monitoring/artifacts)
-- 60 items Closed (resolved)
+- 66 items Closed (resolved)
+- 2 items Reviewed - Not Debt (standard patterns)
 
 ---
 
@@ -1273,6 +1357,7 @@ Each entry contains:
 | 3.5 | 2025-12-22 | CTO due diligence batch 14: (1) arch-options-contract-spec (Medium, Closed): Fixed PolygonOptionsContract.to_contract_spec() missing required `symbol` parameter; test updated without pytest.skip. (2) L1-slippage, L2-fill: Enhanced control artifacts with report templates (`docs/templates/TCA_CALIBRATION_REPORT_TEMPLATE.md`, `docs/templates/FILL_RATE_VALIDATION_REPORT_TEMPLATE.md`). (3) SIMULATION_LIMITATIONS.md updated with template references. (4) L4-tif/testing-tif-conformance verified as Controlled (T2b milestone). Total: 77 items (21 Controlled, 56 Closed). |
 | 3.6 | 2025-12-22 | CTO due diligence batch 16: 13 items verified/closed. Security: (1) registry_mirror.py fail-closed verified, (2) tuf_repository.py production guard added, (3) enterprise.py fallback removed (fail-closed), (4) enterprise_posture.py documented. Reliability: (5) commands.py CCEA polling model documented, (6) research_jobs.py stub documented, (7) IOC tests tracking enhanced. Data/ML: (8) backtest mock results flagged. Process: (9-11) DSAR/copyright/evidence stubs documented. Docs: (12-13) CI guardrails workflow notes added. Total: 88 items (28 Controlled, 60 Closed). |
 | 3.7 | 2025-12-22 | CTO due diligence batch 17: Added "Reviewed - Not Debt" section. arch-adapters-registry-singleton reviewed and determined to be standard Service Locator pattern, not tech debt. CCEA Design Doc compliance verified (Agent Zone components). Total: 88 items (28 Controlled, 60 Closed) + 1 Not Debt. |
+| 3.8 | 2025-12-25 | CTO due diligence batch 18: Closed 6 items from new findings. Testing/Quality: (1) testing-futures-config-assertions - replaced `assert True` with file content validation, (2) testing-forex-observation-assertion - added ForexParametric.asset_class check, (3) testing-integration-placeholder - added component compatibility checks. Reliability/Operations: (4) ops-execution-sim-exceptions - docstring with defensive pattern rationale, (5) ops-monitoring-exceptions - docstring with observability design. Security: (6) security-cmk-hash-truncation - documented truncation policy, added to_audit_dict() for full hash. Also added ml-calibration-abc-pattern to "Reviewed - Not Debt" (standard ABC pattern with PlattCalibrator/IsotonicCalibrator implementations). Total: 94 items (28 Controlled, 66 Closed) + 2 Not Debt. |
 
 **Review Frequency**: Monthly or upon significant changes
 **Owner**: Engineering

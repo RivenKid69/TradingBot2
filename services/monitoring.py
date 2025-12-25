@@ -5,6 +5,25 @@ basic statistics remain available even if the ``prometheus_client`` package is
 missing.  In addition to individual counters and gauges, a helper
 ``snapshot_metrics`` function summarises the most problematic trading symbols
 based on feed lag, websocket failures and signal error rates.
+
+DEFENSIVE EXCEPTION HANDLING PATTERN:
+    This module uses broad exception handlers (`except Exception:`) intentionally.
+    The monitoring subsystem must never crash the main trading/simulation loop:
+
+    Design Rationale (per CCEA Design Doc Section 7.3 - Observability):
+    1. Monitoring failures are NON-CRITICAL: Trading must continue even if
+       metrics collection fails. This is the "observability should not affect
+       observed system" principle.
+    2. Optional dependencies: prometheus_client may not be installed in all
+       environments (dev, testing, stripped production). Fallback to no-op stubs.
+    3. File I/O resilience: Metric snapshots may fail due to disk issues;
+       trading should not be blocked.
+    4. Alert delivery: If AlertManager fails, log and continue - don't propagate.
+
+    All exceptions are logged via standard logging or silently ignored
+    (for non-critical metrics). The trading loop never sees monitoring exceptions.
+
+    Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#ops-monitoring-exceptions
 """
 from __future__ import annotations
 

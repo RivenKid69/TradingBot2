@@ -20,6 +20,24 @@ ExecutionSimulator v2
 - Если action_proto сломан/недоступен, используется локальная «минимальная» замена.
 
 Важно: этот модуль НЕ добавляет комиссии и слиппедж — они будут подключены отдельными шагами.
+
+DEFENSIVE EXCEPTION HANDLING PATTERN:
+    This module uses broad exception handlers (`except Exception:`) intentionally
+    per CCEA Design Doc Section 8.2 (Fault Tolerance). The simulation engine must
+    continue operation even when individual components fail:
+
+    Categories of defensive exception handling in this module:
+    1. Optional dependency imports: Fallback to stub implementations when
+       dependencies (seasonality, latency cache, costs) are unavailable.
+    2. Price/quantity parsing: Return safe defaults (0, NaN) on malformed data
+       to prevent simulation crashes mid-episode.
+    3. Seasonality lookups: Fall back to neutral multipliers (1.0) on errors.
+    4. Metrics emission: Silent failure - monitoring should not crash simulation.
+
+    This is INTENTIONAL: simulation continuity > logging failures.
+    All exceptions are either logged or return documented safe defaults.
+
+    Tech Debt Tracking: docs/reports/TECH_DEBT_REGISTRY.md#ops-execution-sim-exceptions
 """
 
 import bisect
