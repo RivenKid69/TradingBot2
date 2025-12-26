@@ -64,11 +64,11 @@ Based on capacity assessment, the following notification SLA targets are defined
 | Coverage Hours | 9am-6pm CET Mon-Fri | Target model (scaling in progress) |
 | After-hours for Critical | Best effort (next morning) | Pager for escalation (when available) |
 
-**Capacity Validation**:
-- [x] 2+ engineers during business hours
-- [x] Monitoring alerts configured
-- [x] Escalation procedures documented
-- [x] Client contact list maintained
+**Capacity Validation (Target State)**:
+- [ ] 2+ engineers during business hours (target; current team scaling in progress)
+- [ ] Monitoring alerts configured (target; tooling deployment in progress)
+- [ ] Escalation procedures documented (documented; validation pending)
+- [ ] Client contact list maintained (to be established with first customers)
 
 ### 3.2 Professional Tier (Requires Enhancement)
 

@@ -2,7 +2,7 @@
 
 **Date**: 2025-12-08
 **Phase**: 1 - Foundation & Risk Management System
-**Status**: **IMPLEMENTED (tooling)**
+**Status**: **Tooling present in codebase (not a compliance/certification claim)**
 
 ---
 

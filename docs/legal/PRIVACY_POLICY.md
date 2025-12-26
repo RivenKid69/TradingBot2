@@ -62,8 +62,8 @@ Data processed in our Cloud infrastructure:
 | Aggregated telemetry | Cloud (EU region by design) | 90 days (target) |
 | Audit logs | Cloud (EU region by design) | 5 years (target) |
 
-**Cloud is designed not to receive or process (enforced via CCEA architecture):**
-- Broker API keys or secrets (secrets stay in customer-controlled Agent)
+**Cloud is designed not to receive or process (design goal enforced via CCEA architecture; verify via architecture review and CI guardrails):**
+- Broker API keys or secrets (secrets designed to stay in customer-controlled Agent)
 - Trading credentials of any kind
 - Order details (side, quantity, price)
 - Real-time position data (only aggregated metrics)
@@ -210,7 +210,7 @@ We process data for our legitimate business interests:
 - **Service improvement**: Analyzing usage patterns to improve functionality
 - **Communication**: Sending service-related notifications
 
-**Balancing Test:** We have conducted legitimate interest assessments intended to ensure our interests do not override your rights and freedoms (assessment documentation available upon request).
+**Balancing Test:** We have prepared legitimate interest assessment documentation intended to ensure our interests do not override your rights and freedoms (documentation available upon request; assessments are reviewed as processing activities evolve).
 
 ### 3.3 Consent (Article 6(1)(a))
 
@@ -641,7 +641,7 @@ With your consent, we may use analytics cookies:
 
 ### 8.3 No Third-Party Advertising
 
-We do not use advertising cookies or allow third-party advertising trackers (verify via cookie scan and tag audit).
+We do not intend to use advertising cookies or allow third-party advertising trackers (verify via cookie scan and tag audit; policy subject to review as third-party integrations evolve).
 
 ---
 

@@ -9,8 +9,8 @@
 
 ## Overview
 
-This document provides verification evidence for encryption controls implemented
-in the CustodiaCloud platform per SOC2 requirements and security best practices.
+This document provides verification evidence for encryption controls designed to support
+the CustodiaCloud platform security posture and vendor due diligence requirements.
 
 **Tech Debt Closure**: Process/Governance - COMPLETED (2025-12-20)
 **Tech Debt Reference**: `docs/reports/TECH_DEBT_REGISTRY.md#governance-encryption-verification`
@@ -61,7 +61,7 @@ kdf = PBKDF2HMAC(
 - Data is ephemeral by design (auto-cleanup after configurable retention period)
 
 **Security Controls in Place**:
-- Sensitive field redaction (API keys, secrets, tokens) - enforced, cannot be disabled
+- Sensitive field redaction (API keys, secrets, tokens) - enforced by design (verify via redaction tests in CI; no disable flag exposed by design)
 - Restrictive file permissions on database file
 - Aggregated telemetry by default (RAW_ORDER_EVENTS requires explicit enterprise opt-in)
 
@@ -94,10 +94,10 @@ kdf = PBKDF2HMAC(
 
 **Location**: `packages/agent/cloud/client.py`, `packages/cloud/api/`
 
-**Implementation**:
+**Implementation (design target; verify via deployment configuration and TLS scans)**:
 - TLS 1.3 (minimum TLS 1.2)
 - Certificate pinning (optional, configurable)
-- mTLS for agent authentication
+- mTLS for agent authentication (design goal; implementation dependent on deployment)
 
 **Verification**:
 ```python

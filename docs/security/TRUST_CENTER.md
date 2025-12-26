@@ -46,7 +46,7 @@ This document provides pre-contractual security information designed to support 
 | Security Activity | Target Frequency | Status | Availability |
 |-------------------|------------------|--------|--------------|
 | Penetration Testing | Annual (roadmap) | Roadmap item (no vendor contract) | Not yet conducted |
-| Vulnerability Assessment | Quarterly | Internal scans (ongoing) | Summary on request |
+| Vulnerability Assessment | Quarterly (target) | Internal scans (planned/ongoing where tooling deployed) | Summary on request |
 | SOC2 Audit (Type I) | Annual (roadmap) | Roadmap item (no auditor engagement) | Not yet conducted |
 | SOC2 Audit (Type II) | Annual (roadmap) | Roadmap item (no auditor engagement) | Not yet conducted |
 | Code Security Review | Per major release | Internal review active | Summary on request |
@@ -175,15 +175,17 @@ This document provides pre-contractual security information designed to support 
 | Separation of Duties | Critical operations | Enforced |
 | Privileged Access Management | Just-in-time access | Per request |
 
-### 5.3 Personnel Security
+### 5.3 Personnel Security (Policy Goals)
 
-| Control | Requirement |
+> **Note**: This table describes intended personnel security policies. As a pre-seed company with a small team, formal HR processes are being established. Policy implementation scales with team growth.
+
+| Control | Policy Goal |
 |---------|-------------|
-| Background Checks | All employees with data access |
-| Security Training | Annual + on hire |
-| Confidentiality Agreements | All employees and contractors |
-| Access Reviews | Quarterly |
-| Offboarding | Same-day access revocation |
+| Background Checks | All employees with data access (policy; implementation scales with hiring) |
+| Security Training | Annual + on hire (intended practice) |
+| Confidentiality Agreements | All employees and contractors (required upon engagement) |
+| Access Reviews | Quarterly (target frequency) |
+| Offboarding | Same-day access revocation (target SOP) |
 
 ---
 
