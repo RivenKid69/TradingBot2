@@ -69,7 +69,7 @@ kdf = PBKDF2HMAC(
 - Current state: telemetry stored in plaintext SQLite with mandatory redaction
 - Roadmap: SQLCipher integration for at-rest encryption (Low priority per Gaps table)
 
-**Rationale**: Telemetry data is intentionally redacted before storage. Sensitive credentials are never written to telemetry. SQLCipher remains a defense-in-depth option for future hardening.
+**Rationale**: Telemetry data is intentionally redacted before storage. The system is designed so that sensitive credentials are not written to telemetry (enforced via mandatory redaction middleware; verify via redaction tests in CI). SQLCipher remains a defense-in-depth option for future hardening.
 
 **Status**: Implemented (plaintext with mandatory redaction; SQLCipher is roadmap item)
 

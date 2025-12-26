@@ -647,12 +647,18 @@ governance:
 | Weekly | Full evidence pack | 1 year |
 | Monthly | Compliance snapshot | 7 years |
 
-### Regulatory Compliance
+### Regulatory Compliance Readiness *(design posture; not certification claims)*
 
-- **SOC 2 Type II**: Audit logs, access controls, encryption
-- **GDPR**: Data residency, DSAR support, retention policies
-- **MiFID II**: Transaction records, best execution evidence
-- **ISO 27001**: Information security controls
+The platform is designed to support client compliance obligations. **We do not claim SOC 2 Type II, ISO 27001 certification, or GDPR/MiFID II compliance**—clients run their own compliance and legal review.
+
+| Area | Design Posture | Evidence Available |
+|------|----------------|-------------------|
+| **Audit & Access** | Audit logs, access controls, encryption—designed to support SOC 2 Type II readiness | Evidence exports (verify via pack) |
+| **Data Protection** | Data residency, DSAR support, retention policies—designed to support client GDPR obligations | Privacy-by-design artifacts |
+| **Transaction Records** | Transaction records, execution logs—designed to support client MiFID II evidence requirements | Evidence pack exports |
+| **InfoSec Controls** | Security controls—designed to support ISO 27001-aligned posture | Security policy docs |
+
+*For certification/audit support, see vendor due diligence pack (available under NDA).*
 
 ---
 

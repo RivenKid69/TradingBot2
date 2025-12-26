@@ -42,8 +42,8 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 
 | ID | Control | Implementation | Status | Evidence |
 |----|---------|----------------|--------|----------|
-| **ENC-001** | Encryption at rest for all personal data | AES-256-GCM via `SecurityBaselineService.create_key()` | ✅ Implemented | `security_baseline.py:140-180` |
-| **ENC-002** | Encryption in transit for all data transfers | TLS 1.3 minimum enforced via `EncryptionConfig.transit_algorithm` | ✅ Implemented | `security_baseline.py:45-55` |
+| **ENC-001** | Encryption at rest for personal data (Cloud-zone) | AES-256-GCM via `SecurityBaselineService.create_key()` | ✅ Implemented | `security_baseline.py:140-180` (verify via tests) |
+| **ENC-002** | Encryption in transit for data transfers (Cloud-zone) | TLS 1.3 minimum enforced via `EncryptionConfig.transit_algorithm` | ✅ Implemented | `security_baseline.py:45-55` (verify via tests) |
 | **ENC-003** | Cryptographic key management | `KeyMetadata` with rotation tracking, HSM integration | ✅ Implemented | `security_baseline.py:60-90` |
 | **ENC-004** | Key rotation schedule (90 days) | Automated rotation via `rotate_key()`, configurable schedule | ✅ Implemented | `security_baseline.py:185-230` |
 | **ENC-005** | Encryption key access logging | All key operations logged to audit trail | ✅ Implemented | `security_baseline.py:175-180` |
@@ -59,7 +59,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 | **CIA-C02** | Multi-factor authentication | `MFAConfig` with TOTP/WebAuthn/SMS support | ✅ Implemented | `security_baseline.py:95-125` |
 | **CIA-C03** | MFA enforcement by data sensitivity | `MFAEnforcementPolicy` per classification level | ✅ Implemented | `security_baseline.py:115-135` |
 | **CIA-C04** | Session management | Token-based sessions with configurable expiry | ✅ Implemented | `security_baseline.py:390-420` |
-| **CIA-C05** | Access audit logging | `AccessAuditService` logs all data access | ✅ Implemented | `access_audit.py` |
+| **CIA-C05** | Access audit logging | `AccessAuditService` logs data access (coverage per audit scope) | ✅ Implemented | `access_audit.py` (verify via audit logs) |
 | **CIA-C06** | Break-glass emergency access | `BreakGlassService` with justification, logging, auto-expiry | ✅ Implemented | `break_glass.py` |
 | **CIA-C07** | Secrets management | `SecretMetadata` with rotation, access logging | ✅ Implemented | `security_baseline.py:140-200` |
 | **CIA-C08** | Least privilege enforcement | Role assignment validation, permission checks | ✅ Implemented | `rbac.py:200-250` |
@@ -70,7 +70,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 
 | ID | Control | Implementation | Status | Evidence |
 |----|---------|----------------|--------|----------|
-| **CIA-I01** | Hash chain audit trails | SHA-256 linked records in all governance services | ✅ Implemented | All governance modules |
+| **CIA-I01** | Hash chain audit trails | SHA-256 linked records in governance services (scope per module) | ✅ Implemented | Governance modules (verify via integrity tests) |
 | **CIA-I02** | Signed artifacts | `SignedArtifact` with multiple algorithm support | ✅ Implemented | `supply_chain.py:45-80` |
 | **CIA-I03** | Digest pinning | `DigestPin` for immutable artifact verification | ✅ Implemented | `supply_chain.py:100-130` |
 | **CIA-I04** | SBOM (Software Bill of Materials) | `SBOM` with component tracking, vulnerability scanning | ✅ Implemented | `supply_chain.py:165-230` |
@@ -119,7 +119,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 |----|---------|----------------|--------|----------|
 | **TST-001** | Security baseline evaluation | `evaluate_security_baseline()` compliance check | ✅ Implemented | `security_baseline.py:450-520` |
 | **TST-002** | Tabletop exercises | `TabletopExercise` with quarterly schedule | ✅ Implemented | `breach_workflow.py:200-260` |
-| **TST-003** | Penetration testing | External testing schedule (annual) | ✅ Documented | Security policy |
+| **TST-003** | Penetration testing | External testing schedule (target: annual; pending first engagement) | 📋 Planned | Security policy (verify via pen test reports when available) |
 | **TST-004** | Vulnerability scanning | SBOM-based vulnerability detection | ✅ Implemented | `supply_chain.py:185-210` |
 | **TST-005** | Compliance reporting | `ComplianceCheckResult` with gap analysis | ✅ Implemented | `security_baseline.py:280-320` |
 | **TST-006** | Audit trail verification | Hash chain integrity checks | ✅ Implemented | All governance modules |

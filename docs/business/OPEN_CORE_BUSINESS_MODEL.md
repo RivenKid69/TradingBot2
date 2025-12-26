@@ -391,10 +391,12 @@ ORGANIZATION: ccea-platform
 | Cloud Pro → Team | 20% upgrade rate |
 | Team → Enterprise | 10% escalation rate |
 
-### 7.3 Revenue Metrics
+### 7.3 Revenue Metrics *(illustrative projections, not commitments)*
 
-| Metric | Y1 | Y2 | Y3 |
-|--------|-------|-------|-------|
+> **Note**: The figures below are **illustrative planning targets**, not actual revenue, customer counts, or commitments. Actual results depend on market conditions, execution, and go-to-market success.
+
+| Metric | Y1 (target) | Y2 (target) | Y3 (target) |
+|--------|-------------|-------------|-------------|
 | ARR | $300K | $1.5M | $5M |
 | Customers | 50 | 200 | 500 |
 | Enterprise Deals | 5 | 15 | 40 |

@@ -503,7 +503,7 @@ You have the right to lodge a complaint with your local data protection supervis
 - Support interaction records
 
 **OUT OF SCOPE (Agent-controlled, customer responsibility):**
-- Broker credentials (never in Cloud)
+- Broker credentials (designed to stay in customer-controlled Agent; protocol and CI guardrails enforce this boundary)
 - Local execution logs (unless exported via REQUEST_EXPORT_LOGS)
 - Order/fill data (unless RAW_ORDER_EVENTS enabled and transmitted)
 - Local vault contents
