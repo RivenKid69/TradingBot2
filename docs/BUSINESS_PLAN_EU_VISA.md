@@ -371,8 +371,8 @@ Our platform implements a **Cloud-Controlled Execution Architecture (CCEA)** tha
 
 This architecture provides clear regulatory benefits:
 
-1. **Not an Execution Venue**: Cloud never executes or transmits orders
-2. **No credential/asset holding in Cloud**: Cloud never holds or accesses customer trading credentials
+1. **Not an Execution Venue**: Cloud is designed not to execute or transmit orders (verify via protocol schema and CI guardrails)
+2. **No credential/asset holding in Cloud**: Cloud is designed not to hold or access customer trading credentials (verify via architecture review)
 3. **Software Tool Classification**: Analogous to Bloomberg Terminal, QuantConnect
 4. **Client Control**: Users retain full control over execution decisions
 5. **Audit Trail**: Complete separation enables clear compliance documentation

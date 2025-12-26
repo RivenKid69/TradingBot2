@@ -572,7 +572,7 @@ This section provides an explicit checklist of privacy design commitments for th
 
 ### 7B.1 Support Data Access Policy
 
-Support staff access to customer data requires **explicit consent** with auditable records.
+Support staff access to customer data is designed to require **explicit consent** with auditable records (verify via consent record audit and access logs).
 
 **Consent requirements:**
 - **Who:** Identity of the user granting consent
@@ -609,7 +609,7 @@ You can revoke support consent at any time:
 
 ### 7B.4 Auditable Evidence
 
-All support access is logged in the governance audit trail:
+Support access is designed to be logged in the governance audit trail (verify via audit log exports):
 - Every data access during support session
 - Every export generated
 - Support session start/end timestamps
@@ -643,7 +643,7 @@ With your consent, we may use analytics cookies:
 
 ### 8.3 No Third-Party Advertising
 
-We do not use advertising cookies or allow third-party advertising trackers.
+We do not use advertising cookies or allow third-party advertising trackers (verify via cookie scan and tag audit).
 
 ---
 

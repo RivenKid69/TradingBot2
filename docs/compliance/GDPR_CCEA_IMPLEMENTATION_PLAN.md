@@ -150,7 +150,7 @@ Deliverables:
 DoD:
 - Public/legal docs and engineering reality are consistent (no contradictions about credentials, order data, telemetry levels, EU-only residency, DSAR boundaries).
 - "CCEA privacy design commitments" checklist is explicitly stated:
-  - Cloud never receives secrets/credentials/env vars
+  - Cloud is designed not to receive secrets/credentials/env vars (verify via protocol schema, CI guardrails, and security review)
   - No order-like payloads exist in Cloud→Agent protocol commands
   - Telemetry is redacted; defaults to `AGGREGATED`; `DETAILED_NON_SENSITIVE` is opt-in; `RAW_ORDER_EVENTS` is enterprise-only + explicit opt-in (and may be “telemetry stays local” instead)
   - EU-only residency for all data systems and subprocessors

@@ -572,8 +572,8 @@ The platform includes alignment/evidence tooling designed to support customer pr
 **Privacy by Design (CCEA Architecture):**
 - Your broker credentials stay in your local Agent (Cloud does not store or receive them)
 - Cloud does not execute trades or store API keys
-- Telemetry designed to be redacted before transmission; raw order events require explicit opt-in
-- EU data residency by default (enterprise: customer-managed options available)
+- Telemetry designed to be redacted before transmission (verify via CI tests); raw order events require explicit opt-in
+- EU data residency by design for EU customers (design target; deployment- and contract-specific; enterprise: on-prem/customer-managed options available)
 
 For details, see:
 - [Privacy Policy](legal/PRIVACY_POLICY.md)

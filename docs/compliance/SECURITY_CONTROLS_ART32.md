@@ -46,7 +46,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 | **ENC-002** | Encryption in transit for data transfers (Cloud-zone) | TLS 1.3 minimum enforced via `EncryptionConfig.transit_algorithm` | ✅ Implemented | `security_baseline.py:45-55` (verify via tests) |
 | **ENC-003** | Cryptographic key management | `KeyMetadata` with rotation tracking, HSM integration | ✅ Implemented | `security_baseline.py:60-90` |
 | **ENC-004** | Key rotation schedule (90 days) | Automated rotation via `rotate_key()`, configurable schedule | ✅ Implemented | `security_baseline.py:185-230` |
-| **ENC-005** | Encryption key access logging | All key operations logged to audit trail | ✅ Implemented | `security_baseline.py:175-180` |
+| **ENC-005** | Encryption key access logging | Key operations designed to be logged to audit trail (verify via audit logs) | ✅ Implemented | `security_baseline.py:175-180` (verify via tests) |
 | **ENC-006** | Pseudonymisation of identifiers | Consent IDs, subject IDs hashed with tenant salt | ✅ Implemented | `consent.py`, `dsar.py` |
 | **ENC-007** | Hardware Security Module (HSM) support | `KeyMetadata.stored_in_hsm` flag, HSM integration ready | ✅ Implemented | `security_baseline.py:75-80` |
 | **ENC-008** | Algorithm agility | Configurable algorithms via `EncryptionConfig` | ✅ Implemented | `security_baseline.py:40-60` |
@@ -59,7 +59,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 | **CIA-C02** | Multi-factor authentication | `MFAConfig` with TOTP/WebAuthn/SMS support | ✅ Implemented | `security_baseline.py:95-125` |
 | **CIA-C03** | MFA enforcement by data sensitivity | `MFAEnforcementPolicy` per classification level | ✅ Implemented | `security_baseline.py:115-135` |
 | **CIA-C04** | Session management | Token-based sessions with configurable expiry | ✅ Implemented | `security_baseline.py:390-420` |
-| **CIA-C05** | Access audit logging | `AccessAuditService` logs data access (coverage per audit scope) | ✅ Implemented | `access_audit.py` (verify via audit logs) |
+| **CIA-C05** | Access audit logging | `AccessAuditService` designed to log data access (coverage per audit scope; verify via coverage report) | ✅ Implemented | `access_audit.py` (verify via audit logs) |
 | **CIA-C06** | Break-glass emergency access | `BreakGlassService` with justification, logging, auto-expiry | ✅ Implemented | `break_glass.py` |
 | **CIA-C07** | Secrets management | `SecretMetadata` with rotation, access logging | ✅ Implemented | `security_baseline.py:140-200` |
 | **CIA-C08** | Least privilege enforcement | Role assignment validation, permission checks | ✅ Implemented | `rbac.py:200-250` |

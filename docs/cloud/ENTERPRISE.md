@@ -460,7 +460,7 @@ agent_updates:
 ### 7.4 Signed Updates (TUF)
 
 ```bash
-# Update metadata is signed using TUF framework
+# Update metadata is designed to be signed using TUF framework (verify via release pipeline)
 ccea-agent update \
   --verify-signatures \
   --trust-root /etc/ccea/trust-root.json

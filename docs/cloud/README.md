@@ -167,7 +167,7 @@ packages/cloud/
 ### Tenant Isolation
 
 - All queries include `workspace_id`
-- Postgres Row-Level Security (RLS) enabled (verify via migration scripts and DB configuration audit)
+- Postgres Row-Level Security (RLS) designed to be enabled (verify via migration scripts and DB configuration audit)
 - Cross-tenant access blocked at database level (design; verify via security review)
 
 ## CI Guardrails
