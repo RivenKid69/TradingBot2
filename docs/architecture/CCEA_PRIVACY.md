@@ -521,7 +521,7 @@ privacy:
 - [x] DPA template available
 - [x] DSAR process implemented
 - [x] Data retention automated
-- [x] EU data residency available
+- [x] EU data residency available (design target; verify via deployment audit)
 - [x] Sub-processor list maintained
 - [x] Breach notification procedure
 - [x] DPO contact published

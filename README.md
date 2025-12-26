@@ -112,11 +112,11 @@ Run `python scripts/doctor.py --verbose` before the first training or trading ru
 CustodiaCloud is designed to support a **software / ICT provider** posture (classification depends on activities and jurisdiction):
 - We provide quantitative research, simulation, deployment, and governance tooling
 - Customers execute via **their own broker accounts** through the customer-controlled **Agent**
-- Cloud does not hold customer broker credentials and does not execute orders
+- Cloud is designed not to hold customer broker credentials and does not execute orders (verify via architecture review)
 
 **Legal Position:**
 - **NOT** investment advice / portfolio management / trade recommendations
-- **NOT** an execution service: Cloud does not execute orders or hold credentials/assets
+- **NOT** an execution service: Cloud is designed not to execute orders or hold credentials/assets
 - B2B software platform for professional trading organizations
 
 See: `docs/DOCUMENTATION_CANON_DESIGN.md` for canonical wording.

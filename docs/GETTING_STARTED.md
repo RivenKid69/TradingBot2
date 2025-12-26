@@ -570,8 +570,8 @@ The platform includes alignment/evidence tooling designed to support customer pr
 > **Note**: "Toolkit Ready" means compliance tools have been implemented and designed to help align with regulatory requirements. Independent certification or audit has not been performed. Consult qualified legal/compliance advisors for compliance assessment.
 
 **Privacy by Design (CCEA Architecture):**
-- Your broker credentials stay in your local Agent (Cloud does not store or receive them)
-- Cloud does not execute trades or store API keys
+- Your broker credentials stay in your local Agent (Cloud is designed not to store or receive them; verify via architecture review)
+- Cloud is designed not to execute trades or store API keys (verify via CI guardrails)
 - Telemetry designed to be redacted before transmission (verify via CI tests); raw order events require explicit opt-in
 - EU data residency by design for EU customers (design target; deployment- and contract-specific; enterprise: on-prem/customer-managed options available)
 

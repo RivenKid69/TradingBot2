@@ -1522,14 +1522,16 @@ class DisasterRecovery:
         pass
 ```
 
-### RTO/RPO Targets
+### RTO/RPO Targets (Design Goals)
 
-| Scenario | RTO | RPO | Notes |
+> **Note**: Values below are design targets, not SLA guarantees. Actual performance depends on deployment configuration, infrastructure, and DR testing validation.
+
+| Scenario | RTO (Target) | RPO (Target) | Notes |
 |----------|-----|-----|-------|
-| **Database Failure** | 15 min | 0 (continuous) | Automatic failover |
-| **Region Outage** | 1 hour | 5 min | Cross-region replica |
+| **Database Failure** | 15 min | 0 (continuous) | Automatic failover (design) |
+| **Region Outage** | 1 hour | 5 min | Cross-region replica (design) |
 | **Data Corruption** | 2 hours | Point-in-time | Manual recovery |
-| **Full DR Test** | 4 hours | N/A | Quarterly testing |
+| **Full DR Test** | 4 hours | N/A | Quarterly testing (target) |
 
 ---
 

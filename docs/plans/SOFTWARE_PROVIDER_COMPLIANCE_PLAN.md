@@ -126,7 +126,7 @@ class TestTermsOfService:
    - Sub-processors list
 
 6. INTERNATIONAL TRANSFERS
-   - EU-only storage (AWS eu-central-1)
+   - EU-only storage design target (AWS eu-central-1; verify via deployment config)
    - If non-EU: SCCs or adequacy decision
 
 7. USER RIGHTS (GDPR Art. 15-22)

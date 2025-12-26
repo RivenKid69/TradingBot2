@@ -4623,7 +4623,7 @@ pooled_audit_framework:
       april: "Select audit firm (if client-led)"
       may_june: "Conduct audit"
       july: "Report distribution"
-      ongoing: "SOC2 report available upon request"
+      ongoing: "SOC2 report available upon request (planned; verify actual audit status with vendor pack)"
 
     scope_options:
       standard_scope:

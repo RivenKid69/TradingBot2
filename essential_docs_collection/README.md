@@ -179,8 +179,8 @@ The Cloud Zone enforces these build-time checks:
 | `no-trading-libs-in-cloud` | No order_execution modules in Cloud build |
 | `no-broker-clients-in-cloud` | No private trading clients |
 | `no-order-payloads-in-schema` | Schema prohibits side/qty/price |
-| `artifact-signature-required` | All artifacts must be signed |
-| `redaction-enabled` | Telemetry redaction mandatory |
+| `artifact-signature-required` | All artifacts designed to be signed (verify via CI) |
+| `redaction-enabled` | Telemetry redaction designed as mandatory (verify via CI) |
 
 ## Quick Start
 

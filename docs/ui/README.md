@@ -34,7 +34,7 @@ All critical actions require explicit acknowledgment:
 
 CCEA architecture must be clearly explained:
 - Credentials stay local (Agent)
-- Cloud never executes orders
+- Cloud is designed not to execute orders
 - Hard caps cannot be overridden
 - User maintains control
 

@@ -555,7 +555,7 @@ For **Agent Zone data**, the customer is the sole Controller:
 │                                                                              │
 │  OUT OF SCOPE (Agent-controlled, customer responsibility):                  │
 │  ────────────────────────────────────────────────────                       │
-│  • Broker credentials (never in Cloud)                                      │
+│  • Broker credentials (designed not to be in Cloud; verify via data flow)   │
 │  • Local execution logs (unless exported via REQUEST_EXPORT_LOGS)           │
 │  • Order/fill data (unless RAW_ORDER_EVENTS enabled and transmitted)        │
 │  • Local vault contents                                                     │

@@ -52,7 +52,7 @@ This document validates our current on-call capacity and sets achievable notific
 
 ## 3. Validated SLA Tiers
 
-Based on capacity assessment, the following notification SLAs are validated:
+Based on capacity assessment, the following notification SLA targets are defined (actual enforcement requires contractual agreement; values are operational targets):
 
 ### 3.1 Standard Tier (Available Now)
 

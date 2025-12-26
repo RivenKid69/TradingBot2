@@ -354,7 +354,7 @@ ORGANIZATION: ccea-platform
 1. Trade secrets protect core differentiation
 2. Patent strategy (optional, counsel-led; no public claim of "patent pending" without verified filing)
 3. Specialized domain expertise hard to replicate
-4. Existing customer relationships and trust
+4. Customer relationships and trust (target; builds with pilot cohort)
 
 **Historical Example:** MongoDB vs AWS DocumentDB
 - MongoDB's SSPL license response
@@ -365,7 +365,7 @@ ORGANIZATION: ccea-platform
 
 **Mitigation:**
 1. 18-24 month head start
-2. Established customer base
+2. Customer base development (pilot cohort in progress)
 3. Trained models and calibrations
 4. Extensive automated tests as quality moat (verify in repo)
 

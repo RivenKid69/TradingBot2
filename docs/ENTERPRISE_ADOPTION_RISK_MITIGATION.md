@@ -625,7 +625,7 @@ For firms using industry-standard FIX/OMS/EMS connectivity:
 Client-side execution integrations (via Agent):
 ├── Publish monitoring/audit events into the firm's message bus
 ├── Consume firm-approved lifecycle requests (start/stop/deploy), subject to local approvals
-└── No CustodiaCloud-operated broker/execution venue; Cloud never routes orders
+└── No CustodiaCloud-operated broker/execution venue; Cloud is designed not to route orders
 ```
 
 ---

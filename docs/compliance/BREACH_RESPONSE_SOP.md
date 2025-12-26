@@ -19,7 +19,7 @@ This SOP applies to:
 
 **Out of Scope** (CCEA Boundary):
 - Data stored exclusively in the customer-operated Agent zone
-- Broker credentials, API keys, and secrets (never processed by Cloud)
+- Broker credentials, API keys, and secrets (designed not to be processed by Cloud; verify via architecture review)
 - Order/trade execution data (customer-controlled)
 
 ## 3. Definitions
