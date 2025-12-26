@@ -54,10 +54,10 @@ The Platform implements **CCEA (Cloud-Controlled Execution Architecture)**, a st
 
 **Security Design Commitments** (architectural design goals, enforced via CI guardrails and protocol schema):
 
-1. **Cloud does not store your broker API keys or credentials** - All credentials are designed to be stored locally in your Agent's encrypted vault
-2. **Cloud does not generate, transmit, or execute trading orders** - All trading operations are designed to occur exclusively in your local Agent
-3. **Cloud does not have access to exchange trading endpoints** - Cloud is not designed to connect to brokers on your behalf
-4. **Cloud does not send order-like payloads** - The protocol schema is designed to prohibit side/quantity/price fields
+1. **Cloud is designed not to store your broker API keys or credentials** - All credentials are designed to be stored locally in your Agent's encrypted vault (verify via data flow documentation and security audits)
+2. **Cloud is designed not to generate, transmit, or execute trading orders** - All trading operations are designed to occur exclusively in your local Agent (verify via protocol schema and CI guardrails)
+3. **Cloud is designed not to have access to exchange trading endpoints** - Cloud is not designed to connect to brokers on your behalf (verify via network egress controls)
+4. **Cloud is designed not to send order-like payloads** - The protocol schema is designed to prohibit side/quantity/price fields (enforced via CI guardrails; verify via schema review)
 5. **Telemetry is redacted by design** - Sensitive data is intended to be removed/bucketed before transmission; higher-sensitivity telemetry requires explicit opt-in
 
 **Product Modes:**
@@ -97,11 +97,11 @@ The Platform implements three telemetry levels with strict controls:
 | **DETAILED_NON_SENSITIVE** | Technical debugging | Yes | Forbidden |
 | **RAW_ORDER_EVENTS** | Enterprise-only | Enterprise + Explicit | Allowed (masked) |
 
-- Telemetry redaction is mandatory for data transmitted to Cloud
+- Telemetry redaction is mandatory by design for data transmitted to Cloud (enforced via redaction middleware; verify via telemetry audit)
 - `RAW_ORDER_EVENTS` is available only with explicit opt-in and enterprise controls, and must be masked/redacted per the Platform's telemetry controls
 
 **D. EU-Priority Data Residency**
-- Primary data storage, backups, logs, and core processing are in EU (eu-central-1, eu-west-1)
+- Primary data storage, backups, logs, and core processing are designed for EU regions (eu-central-1, eu-west-1); verify via deployment configuration and residency audits
 - Sub-processors requiring non-EU processing (e.g., payment, email, error monitoring) operate under Standard Contractual Clauses (SCCs) and/or Data Privacy Framework (DPF)
 - EU residency for core platform data is a design goal, enforced by configuration and drift monitoring
 

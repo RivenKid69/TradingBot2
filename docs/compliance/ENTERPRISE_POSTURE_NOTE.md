@@ -104,7 +104,7 @@ This document applies to:
 | Telemetry Storage | EU regions | Local (EU infrastructure) |
 | Backups | EU regions | Customer EU infrastructure |
 | Logs | EU regions | Customer EU infrastructure |
-| Support Data | EU regions (with consent) | Never transmitted |
+| Support Data | EU regions (with consent) | Not transmitted by design (verify via support tooling configuration) |
 
 ### 3.3 Support and Maintenance Boundaries
 

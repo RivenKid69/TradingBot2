@@ -1137,7 +1137,7 @@ log_retention_implementation:
     hot_tier: "Immediate (seconds)"
     warm_tier: "Minutes"
     cold_tier: "12-48 hours (Glacier restore)"
-    audit_request_sla: "Evidence available within 24 hours"
+    audit_request_sla: "Evidence target: available within 24 hours (actual SLA is contract-specific and subject to operational capacity)"
 
   cost_estimate_7_years:
     assumptions:

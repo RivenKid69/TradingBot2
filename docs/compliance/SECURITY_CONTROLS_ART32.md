@@ -42,8 +42,8 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 
 | ID | Control | Implementation | Status | Evidence |
 |----|---------|----------------|--------|----------|
-| **ENC-001** | Encryption at rest for personal data (Cloud-zone) | AES-256-GCM via `SecurityBaselineService.create_key()` | ✅ Implemented | `security_baseline.py:140-180` (verify via tests) |
-| **ENC-002** | Encryption in transit for data transfers (Cloud-zone) | TLS 1.3 minimum enforced via `EncryptionConfig.transit_algorithm` | ✅ Implemented | `security_baseline.py:45-55` (verify via tests) |
+| **ENC-001** | Encryption at rest for personal data (Cloud-zone) | AES-256-GCM via `SecurityBaselineService.create_key()` | ✅ Design Implemented | `security_baseline.py:140-180` (verify via tests; actual encryption depends on deployment configuration) |
+| **ENC-002** | Encryption in transit for data transfers (Cloud-zone) | TLS 1.3 minimum designed via `EncryptionConfig.transit_algorithm` | ✅ Design Implemented | `security_baseline.py:45-55` (verify via tests and deployment TLS config) |
 | **ENC-003** | Cryptographic key management | `KeyMetadata` with rotation tracking, HSM integration | ✅ Implemented | `security_baseline.py:60-90` |
 | **ENC-004** | Key rotation schedule (90 days) | Automated rotation via `rotate_key()`, configurable schedule | ✅ Implemented | `security_baseline.py:185-230` |
 | **ENC-005** | Encryption key access logging | Key operations designed to be logged to audit trail (verify via audit logs) | ✅ Implemented | `security_baseline.py:175-180` (verify via tests) |

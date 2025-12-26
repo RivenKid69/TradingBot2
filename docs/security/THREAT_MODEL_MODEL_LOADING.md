@@ -93,9 +93,9 @@ Per CCEA architecture:
 
 ## 3. Security Controls
 
-### C1: Fail-Closed Model Loading (IMPLEMENTED)
+### C1: Fail-Closed Model Loading (Design Goal)
 
-**Control**: `infer_signals.py` and `adversarial/pbt_scheduler.py` reject models that cannot be loaded with `weights_only=True` by default.
+**Control**: `infer_signals.py` and `adversarial/pbt_scheduler.py` are designed to reject models that cannot be loaded with `weights_only=True` by default. Verify implementation status via tests and code review.
 
 **Implementation**:
 ```python
@@ -111,7 +111,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 
 **Residual Risk**: Operators may enable unsafe loading for convenience
 
-### C2: Explicit Opt-In for Unsafe Loading (IMPLEMENTED)
+### C2: Explicit Opt-In for Unsafe Loading (Design Goal)
 
 **Control**: Unsafe loading requires explicit environment variable `ALLOW_UNSAFE_MODEL_LOAD=1`.
 
@@ -121,7 +121,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 
 **Residual Risk**: Misconfiguration, permanent enablement in production
 
-### C3: Model Conversion Utility (IMPLEMENTED)
+### C3: Model Conversion Utility (Available)
 
 **Control**: `tools/convert_legacy_models.py` converts legacy models to secure format.
 
