@@ -168,8 +168,8 @@ This document outlines an **illustrative roadmap** toward SOC 2 Type II readines
 | Control | Current | Target | Priority |
 |---------|---------|--------|----------|
 | Data classification | Informal | Formal policy | High |
-| Encryption at rest | Implemented | Verified (see ENCRYPTION_VERIFICATION.md) | Low |
-| Encryption in transit | Implemented | Verified (see ENCRYPTION_VERIFICATION.md) | Low |
+| Encryption at rest | Implemented | Internal review completed (see ENCRYPTION_VERIFICATION.md; not independently audited) | Low |
+| Encryption in transit | Implemented | Internal review completed (see ENCRYPTION_VERIFICATION.md; not independently audited) | Low |
 | DLP controls | None | Basic | Medium |
 | Secure disposal | Basic | Documented | Medium |
 

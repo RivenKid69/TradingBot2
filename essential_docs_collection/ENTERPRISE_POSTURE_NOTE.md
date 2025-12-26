@@ -60,7 +60,7 @@ This document applies to:
 
 #### 2.2.3 On-Prem Full
 - Complete on-premises deployment
-- No data leaves customer infrastructure
+- Designed so data remains within customer infrastructure (verify via deployment configuration and network egress controls)
 - Telemetry stays local by default
 - Offline evidence pack generation
 - Customer manages all infrastructure
@@ -94,7 +94,7 @@ This document applies to:
 
 ### 3.2 Data Residency Commitments
 
-**All deployment modes are designed to enforce EU-only data residency (verify via deployment configuration and audits):**
+**All deployment modes are designed with EU-priority data residency as the default (verify via deployment configuration and audits). Some sub-processors may process limited data outside the EU under Standard Contractual Clauses (SCCs) or Data Privacy Framework (DPF):**
 
 | Component | SaaS/Enterprise Cloud | On-Prem/VPC/Air-Gapped |
 |-----------|----------------------|------------------------|

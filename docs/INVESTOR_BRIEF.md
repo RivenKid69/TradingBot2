@@ -69,14 +69,14 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 
 | Benefit | Description |
 |---------|-------------|
-| **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; Cloud does not execute orders or hold credentials/assets) |
+| **Regulatory Clarity** | Software / ICT provider posture under MiFID II (licensing depends on activities; Cloud is designed not to execute orders or hold credentials/assets—verify via architecture review) |
 | **Enterprise-Grade Design** | Designed to satisfy institutional security requirements (secrets designed to stay in user infra) |
 | **Defensible Moat** | Complex architecture that competitors cannot easily replicate |
 | **Multiple Revenue Streams** | B2B SaaS + Enterprise deployments (on-prem/VPC) |
 
 **Legal positioning (design intent):**
 - B2B software/ICT product; **not** investment advice, portfolio management, or trade recommendations
-- **Not** an execution service: Cloud does not execute orders and does not send live trading instructions (orders/targets/signals); execution remains customer-controlled via the Agent
+- **Not** an execution service: Cloud is designed not to execute orders and not to send live trading instructions (orders/targets/signals); execution is designed to remain customer-controlled via the Agent (verify via architecture review and CI tests)
 - Designed for a software/ICT provider posture: Cloud has **no secrets** and **no live trading instructions** (orders/targets/signals)
 - Enterprise posture: auditability, change control, evidence exports (DORA-aware vendor requirements)
 - Customers remain responsible for market data licensing/terms (bring-your-own data providers)
@@ -92,7 +92,7 @@ Our platform implements **CCEA** - a strict architectural separation designed to
 | Framework | What customers need | How CustodiaCloud supports | What we do not do |
 |----------|----------------------|----------------------------|-------------------|
 | **MiFID II** (and EU algo trading expectations) | Controls + governance + testing evidence | CCEA separation, local approvals for trading-impacting changes, risk controls/kill switch, audit trails & exports | No client secrets/assets held in Cloud, no Cloud live trading instructions, execution remains customer-controlled via the Agent |
-| **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | No collection of unnecessary personal data; no secrets in telemetry |
+| **GDPR** | Privacy-by-design, minimization, retention, EU residency | Telemetry sensitivity levels, redaction, tenant isolation, retention/DSAR hooks, EU-region defaults | Designed to minimize personal data collection; secrets designed to be blocked from telemetry (verify via schema tests and redaction audit) |
 | **DORA** | Vendor risk assessment, operational resilience evidence | Evidence exports, change control posture, incident/runbook documentation, roadmap for enterprise controls | Not claiming certification; clients run their vendor due diligence |
 | **EU AI Act** | AI governance & transparency posture | Model/version provenance, logging/auditability, human control via local approvals, avoid “personalized recommendations” posture | Not positioning as an AI adviser; no claims about risk classification without legal review |
 

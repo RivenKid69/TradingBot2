@@ -261,7 +261,7 @@ When you delete data or your account:
 
 ### 5.1 Third-Party Brokers (CCEA Architecture)
 
-**IMPORTANT: Under CCEA architecture, WE do not share data with brokers - YOUR Agent does.**
+**IMPORTANT: Under CCEA architecture, data sharing with brokers is designed to occur directly between YOUR Agent and the broker—Cloud is designed not to be involved in this data flow (verify via architecture review and network flow documentation).**
 
 | Operation | Who Sends | What is Sent | Our Involvement |
 |-----------|----------|--------------|-----------------|
@@ -273,7 +273,7 @@ When you delete data or your account:
 ```
 Your Agent (local) → Broker API (direct connection)
      ↓
-Cloud receives ONLY redacted telemetry (no order details)
+Cloud is designed to receive redacted/aggregated telemetry only (order details are designed to be blocked at the protocol level; verify via schema tests)
 ```
 
 Our architecture is designed so that Cloud does NOT:
@@ -284,13 +284,11 @@ Our architecture is designed so that Cloud does NOT:
 
 ### 5.2 No Sale of Data
 
-**We are not in the business of selling your personal data.**
+**Our policy is designed so that we do not sell, rent, or trade your personal data to third parties for marketing purposes.** This commitment is subject to our sub-processor agreements and applicable law. If you have questions about specific data flows, please contact our DPO.
 
-Our policy is designed not to sell, rent, or trade your personal information to third parties for marketing purposes. This commitment is subject to our sub-processor agreements and applicable law.
+### 5.3 Sub-Processors (EU-priority)
 
-### 5.3 Sub-Processors (EU-only)
-
-**Planned sub-processor configuration: EU-only.** Our current infrastructure design specifies EU-region sub-processors. Actual sub-processor list is maintained at [docs/compliance/SUBPROCESSORS_REGISTER.md](../compliance/SUBPROCESSORS_REGISTER.md).
+**Our current infrastructure design prioritizes EU-region sub-processors.** Some sub-processors (e.g., market data providers) may process limited data outside the EU under Standard Contractual Clauses (SCCs) or Data Privacy Framework (DPF). The actual sub-processor list is maintained at [docs/compliance/SUBPROCESSORS_REGISTER.md](../compliance/SUBPROCESSORS_REGISTER.md).
 
 | Provider | Purpose | Region (EU-only) | DPA Status | Notes |
 |----------|---------|------------------|------------|-------|

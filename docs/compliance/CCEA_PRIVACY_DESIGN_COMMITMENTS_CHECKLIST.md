@@ -326,16 +326,16 @@ The following roles must sign off quarterly:
 | Test ID | Description | Category | Automated | Manual |
 |---------|-------------|----------|-----------|--------|
 | CT-001 | Secrets rejected in telemetry | Secrets | Yes | No |
-| CT-002 | Redaction always enabled | Secrets | Yes | No |
+| CT-002 | Redaction enabled by design (no disable flag) | Secrets | Yes | No |
 | CT-003 | Order fields rejected in commands | Orders | Yes | No |
 | CT-004 | Forbidden command types blocked | Orders | Yes | No |
 | CT-005 | AGGREGATED is default | Telemetry | Yes | No |
 | CT-006 | DETAILED requires opt-in | Telemetry | Yes | No |
 | CT-007 | RAW requires enterprise + opt-in | Telemetry | Yes | No |
 | CT-008 | Order data rejected in non-RAW | Telemetry | Yes | No |
-| CT-009 | All regions are EU | Residency | Yes | No |
+| CT-009 | Core storage designed for EU regions (verify via drift check) | Residency | Yes | No |
 | CT-010 | Drift check fails non-EU | Residency | Yes | No |
-| CT-011 | Sub-processors are EU-only | Residency | No | Yes |
+| CT-011 | Sub-processors EU-priority; non-EU under SCCs/DPF | Residency | No | Yes |
 | CT-012 | DSAR export excludes Agent data | DSAR | Yes | Yes |
 | CT-013 | DSAR response has boundary text | DSAR | Yes | Yes |
 | CT-014 | Support access requires consent | Consent | Yes | No |

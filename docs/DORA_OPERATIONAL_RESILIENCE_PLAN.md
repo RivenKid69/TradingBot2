@@ -3136,7 +3136,7 @@ data_residency_configuration:
     aws:
       eu_only_possible: true
       regions_used: ["eu-west-1", "eu-central-1"]
-      compliance: "SOC2, ISO27001, C5"
+      compliance_reported: "SOC2, ISO27001, C5 (per AWS Trust Center; verify current status at https://aws.amazon.com/compliance/)"
 
     datadog:
       eu_only_possible: true
