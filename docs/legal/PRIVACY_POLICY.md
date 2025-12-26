@@ -545,7 +545,7 @@ This section provides an explicit checklist of privacy design commitments for th
 | **DETAILED_NON_SENSITIVE requires opt-in** | Explicit configuration | Audit event |
 | **RAW_ORDER_EVENTS requires enterprise + opt-in** | Tier check + consent record | Audit trail |
 | **Redaction mandatory by design** | No disable flag by design | CI test + runtime (verify via test reports) |
-| **Order data forbidden in non-RAW** | Schema validation | Runtime rejection |
+| **Order data designed to be rejected in non-RAW** | Schema validation | Runtime rejection (verify via schema tests) |
 
 ### 7A.4 EU-Priority Data Residency
 

@@ -29,7 +29,7 @@ This batch closes 5 tech debt items related to documentation drift and traceabil
 - Disclosed current state: plaintext SQLite with redaction
 - Noted SQLCipher as Low priority roadmap item in Gaps table
 
-**Risk Control**: Telemetry never contains credentials by design (redaction enforced, cannot be disabled per line 232).
+**Risk Control**: Telemetry is designed not to contain credentials (redaction enforced by default; verify via CI tests and telemetry audit samples).
 
 ---
 

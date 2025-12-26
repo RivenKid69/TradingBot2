@@ -529,7 +529,7 @@ CREATE TABLE telemetry_events_2025_12 PARTITION OF telemetry_events
 | Field | Type | Description |
 |-------|------|-------------|
 | `event_id` | UUID | Primary key |
-| `sensitivity` | enum | AGGREGATED / DETAILED (never RAW) |
+| `sensitivity` | enum | AGGREGATED / DETAILED (RAW requires enterprise opt-in) |
 | `event_type` | string | Type of telemetry event |
 | `metrics` | JSONB | Metrics payload (redacted) |
 

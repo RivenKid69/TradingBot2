@@ -137,7 +137,7 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 
 ### C4: Artifact Signing and Verification (CCEA)
 
-**Control**: All model artifacts are signed by Cloud and verified by Agent before loading.
+**Control**: Model artifacts are designed to be signed by Cloud and verified by Agent before loading (verify via `tests/phase3/test_phase3_supply_chain.py`).
 
 **Implementation**:
 - Artifact Builder signs artifacts with platform key
@@ -180,8 +180,8 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 | Control | Verification Method | Frequency | Owner |
 |---------|---------------------|-----------|-------|
 | C1-C3 | Security review of model loading code | Quarterly | Security Team |
-| C4 | Artifact signing key audit | Annually | Security Team |
-| All | Penetration testing (model injection) | Annually | External Auditor |
+| C4 | Artifact signing key audit | Annually (target cadence; verify via audit logs) | Security Team |
+| All | Penetration testing (model injection) | Annually (target cadence; verify via pentest reports) | External Auditor |
 
 ---
 
@@ -207,9 +207,9 @@ except (pickle.UnpicklingError, RuntimeError, AttributeError) as e:
 
 ### Immediate (Completed)
 
-- [x] Implement fail-closed model loading (C1)
-- [x] Create model conversion utility (C3)
-- [x] Document threat model
+- [x] Implement fail-closed model loading (C1) — verify via `tests/test_model_loading_security.py`
+- [x] Create model conversion utility (C3) — verify via `tools/convert_legacy_models.py`
+- [x] Document threat model — this document
 
 ### Short-Term (Next Quarter)
 

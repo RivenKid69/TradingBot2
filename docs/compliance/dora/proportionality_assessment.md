@@ -16,8 +16,9 @@
 > **IMPORTANT: This document is a CLIENT REFERENCE TEMPLATE for Financial Entities (FEs)
 > that use CustodiaCloud as their ICT service provider.**
 >
-> **CustodiaCloud itself is positioned as an ICT Third-Party Provider (CTPP) under DORA
-> Article 30, NOT as a Financial Entity under Article 2.** As such:
+> **CustodiaCloud is designed to be positioned as an ICT Third-Party Provider (CTPP) under DORA
+> Article 30, rather than as a Financial Entity under Article 2. (This positioning depends on actual
+> contractual arrangements and activities; clients should verify with qualified legal counsel.)** As such:
 >
 > - CustodiaCloud does NOT require Article 2 scope verification for itself
 > - CustodiaCloud does NOT require Article 16 simplified framework assessment for itself

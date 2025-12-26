@@ -503,9 +503,9 @@ privacy:
     - symbol_names
     - account_balances
 
-  # Redaction (always enabled)
+  # Redaction (enabled by default; verify via CI tests)
   redaction:
-    enabled: true  # Cannot be set to false
+    enabled: true  # Designed not to be disabled; verify via telemetry tests
     patterns: [default]
 ```
 

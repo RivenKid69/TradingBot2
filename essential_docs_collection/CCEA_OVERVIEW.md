@@ -56,7 +56,7 @@ Agent: keys, live decision loop, risk controls, order creation/sending, local ap
 | **Agent** | Client runtime (daemon) in user's environment |
 | **Strategy** | User code/model that produces Intent |
 | **Intent** | High-level intention (target exposure/position/action), NOT a "ready order" |
-| **Order** | Concrete broker instruction (created ONLY in Agent) |
+| **Order** | Concrete broker instruction (designed to be created only in Agent) |
 | **Deployment** | Link: strategy artifact + configuration + target agent |
 | **Run** | Specific strategy execution on an agent |
 | **Command** | Lifecycle request from Cloud to Agent |

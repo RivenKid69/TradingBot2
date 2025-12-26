@@ -51,7 +51,7 @@ Approved phrasing (canonical):
 
 ## Legal-safe notes (non-legal)
 
-CustodiaCloud is a B2B software/ICT product for professional trading organizations. CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations. Live execution occurs only via the customer-controlled Agent and the customer's own broker accounts; the Cloud does not store credentials and does not send live trading instructions (orders/targets/signals).
+CustodiaCloud is a B2B software/ICT product for professional trading organizations. CustodiaCloud does not provide investment advice, portfolio management, or trade recommendations. Live execution is designed to occur only via the customer-controlled Agent and the customer's own broker accounts; the Cloud is designed not to store credentials and not to send live trading instructions (orders/targets/signals).
 
 Clients remain responsible for their own regulatory obligations and for broker/market-data relationships and licensing.
 

@@ -26,7 +26,7 @@ All other documentation should reference this document for architectural consist
 
 CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative research and execution tools while maintaining:
 
-1. **Regulatory Compliance** - Cloud never touches trading execution
+1. **Regulatory Compliance** - Cloud is designed not to touch trading execution
 2. **Security** - Customer credentials designed to remain in customer environment
 3. **Transparency** - Open-source Agent enables customer audit
 4. **Control** - Customer approves all trading-impacting changes locally
@@ -45,7 +45,7 @@ CCEA is a **two-tier architecture** designed to deliver AI-powered quantitative 
 | **Agent** | Customer-deployed runtime in customer's environment (executes strategies, holds credentials) |
 | **Strategy** | User code/model that produces Intents based on market data |
 | **Intent** | High-level trading intention (e.g., "target 10% BTC allocation") - NOT a ready order |
-| **Order** | Concrete broker instruction - created ONLY in Agent, never in Cloud |
+| **Order** | Concrete broker instruction (designed to be created only in Agent) |
 | **Deployment** | Binding of strategy artifact + configuration + target agent |
 | **Run** | Specific execution instance of a strategy on an agent |
 | **Command** | Lifecycle request from Cloud to Agent (start, stop, pause, upgrade) |
@@ -276,7 +276,7 @@ All TRADING_IMPACTING commands require local approval:
 │   • Market data can come from Cloud (simulation) or direct (live)        │
 │   • Intent is high-level ("target 10% BTC")                              │
 │   • Risk Manager validates against local limits                          │
-│   • Order is created ONLY in Agent, by Broker Connector                  │
+│   • Order is designed to be created only in Agent, by Broker Connector   │
 │   • Cloud does NOT see or create live Orders                             │
 └──────────────────────────────────────────────────────────────────────────┘
 ```

@@ -31,7 +31,7 @@ CustodiaCloud implements **CCEA** — a strict separation between Cloud (researc
 
 **CCEA Terminology:**
 - **Intent**: High-level trading intention (target exposure), produced by Strategy
-- **Order**: Concrete broker instruction, created ONLY in Agent from Intent
+- **Order**: Concrete broker instruction (designed to be created only in Agent, from Intent)
 - **Command**: Lifecycle request (REQUEST_START, REQUEST_STOP, etc.) - NOT an order
 - **TRADING_IMPACTING**: Changes requiring local approval (new version, risk limits)
 - **NON_IMPACTING**: Changes that auto-apply (log level, telemetry verbosity)
