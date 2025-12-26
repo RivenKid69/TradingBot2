@@ -485,7 +485,7 @@ This section covers procedures for EU regulated clients per DORA (Regulation EU 
 | Low | <24 hours | Dashboard | N/A |
 
 **Critical Incident Notification Steps:**
-1. Classify incident severity using `services/dora/incident_classification.py`
+1. Classify incident severity using `services/dora_integration/incident_interface/incident_classification.py`
 2. Identify affected clients (especially EU regulated)
 3. Draft initial notification using template below
 4. Send via established channels (phone for critical)

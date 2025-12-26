@@ -78,8 +78,8 @@
 | 35 | Insurance & indemnification | Industry practice | `docs/contracts/INSURANCE_REQUIREMENTS.md` |
 | 36 | Trust center (pre-contractual) | Art. 28(7) | `docs/security/TRUST_CENTER.md` |
 | 37 | On-call capacity validation | Art. 30(2)(f) | `docs/operations/ON_CALL_CAPACITY_VALIDATION.md` |
-| 38 | SLA guardrails module | Art. 30(3)(a) | `services/dora/sla_guardrails.py` (40 tests) |
-| 39 | Pooled audit support module | Art. 30(4) | `services/dora/pooled_audit_support.py` (41 tests) |
+| 38 | SLA guardrails module | Art. 30(3)(a) | `services/dora_integration/contracts/sla_guardrails.py` (53 tests in `tests/dora_integration/contracts/test_sla_guardrails.py`) |
+| 39 | Pooled audit support module | Art. 30(4) | `services/dora_integration/due_diligence/pooled_audit_support.py` (27 tests in `tests/dora_integration/due_diligence/test_phase1_smoke.py`) |
 | 40 | Archive non-applicable modules | N/A | `services/archive/dora_not_applicable/` |
 
 **Phase 1 Completion Summary:**

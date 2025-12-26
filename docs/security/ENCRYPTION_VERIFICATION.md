@@ -1,7 +1,7 @@
 # Encryption Verification Report
 
 **Document Status**: Active
-**Last Updated**: 2025-12-20
+**Last Updated**: 2025-12-26
 **Owner**: Security/Engineering
 **Review Cycle**: Quarterly
 
@@ -21,26 +21,31 @@ in the CustodiaCloud platform per SOC2 requirements and security best practices.
 
 ### 1. Vault Encryption (Agent)
 
-**Location**: `packages/agent/vault/vault.py`
+**Location**: `packages/agent/vault/local_vault.py`
 
 **Implementation**:
-- Algorithm: AES-256-GCM (via Fernet symmetric encryption)
+- Algorithm: AES-256-GCM (via `cryptography.hazmat.primitives.ciphers.aead.AESGCM`)
 - Key Derivation: PBKDF2 with HMAC-SHA256
-- Key Length: 256 bits
+- Key Length: 256 bits (32 bytes)
+- Nonce: 96 bits (12 bytes) per encryption operation
 
 **Verification**:
 ```python
-# Code excerpt from vault.py
-from cryptography.fernet import Fernet
+# Code excerpt from local_vault.py (lines 29-43)
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-# Key derivation uses PBKDF2 with 100,000 iterations
+KEY_SIZE: Final[int] = 32  # 256 bits
+NONCE_SIZE: Final[int] = 12  # 96 bits for GCM
+PBKDF2_ITERATIONS: Final[int] = 100000
+
+# Key derivation (lines 427-435)
 kdf = PBKDF2HMAC(
     algorithm=hashes.SHA256(),
-    length=32,  # 256 bits
+    length=KEY_SIZE,
     salt=salt,
-    iterations=100000,
+    iterations=self.config.pbkdf2_iterations,
 )
 ```
 
@@ -48,17 +53,25 @@ kdf = PBKDF2HMAC(
 
 ### 2. Telemetry Database (Agent)
 
-**Location**: `packages/agent/telemetry/db.py`
+**Location**: `packages/agent/daemon/telemetry_buffer.py`
 
-**Implementation**:
-- SQLite with optional encryption via SQLCipher (when available)
-- AES-256 encryption when SQLCipher is installed
+**Current Implementation**:
+- SQLite storage for durable telemetry buffering (standard `sqlite3` module)
+- Mandatory redaction of sensitive data before persistence (lines 119-148)
+- Data is ephemeral by design (auto-cleanup after configurable retention period)
 
-**Verification Evidence**:
-- SQLCipher configuration documented in DEPLOYMENT.md
-- Plaintext telemetry is ephemeral (in-memory before sync)
+**Security Controls in Place**:
+- Sensitive field redaction (API keys, secrets, tokens) - enforced, cannot be disabled
+- Restrictive file permissions on database file
+- Aggregated telemetry by default (RAW_ORDER_EVENTS requires explicit enterprise opt-in)
 
-**Status**: Implemented (SQLCipher optional; documented)
+**Encryption Status**: Plaintext SQLite
+- Current state: telemetry stored in plaintext SQLite with mandatory redaction
+- Roadmap: SQLCipher integration for at-rest encryption (Low priority per Gaps table)
+
+**Rationale**: Telemetry data is intentionally redacted before storage. Sensitive credentials are never written to telemetry. SQLCipher remains a defense-in-depth option for future hardening.
+
+**Status**: Implemented (plaintext with mandatory redaction; SQLCipher is roadmap item)
 
 ### 3. Cloud Database
 
@@ -160,9 +173,13 @@ session = httpx.Client(
 
 | Control | Test Location | Frequency |
 |---------|---------------|-----------|
-| TLS configuration | `tests/security/test_tls_config.py` | Every CI run |
-| Vault encryption | `tests/agent/test_vault.py` | Every CI run |
-| Certificate validation | `tests/security/test_cert_validation.py` | Every CI run |
+| Vault encryption (AES-256-GCM) | `tests/test_credential_vault.py` | Every CI run |
+| Agent keychain | `tests/ccea/phase5/test_keychain.py` | Every CI run |
+| Signature verification | `tests/ccea/phase5/test_cloud_signature_verifier.py` | Every CI run |
+| DLP/redaction controls | `tests/cloud/control_plane/security/test_dlp_scanner.py` | Every CI run |
+| Password hashing | `tests/cloud/control_plane/security/test_password_hasher.py` | Every CI run |
+
+**Note**: TLS configuration and certificate validation are verified at deployment time via infrastructure-as-code and monitoring. Dedicated unit tests for TLS/cert validation are roadmap items.
 
 ### Manual Verification
 
@@ -199,6 +216,7 @@ session = httpx.Client(
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2025-12-20 | Engineering | Initial verification report |
+| 1.1 | 2025-12-26 | Engineering | Tech debt closure: corrected vault path (local_vault.py), updated code snippet (AESGCM), honest SQLite/SQLCipher disclosure, corrected test file paths |
 
 ---
 
