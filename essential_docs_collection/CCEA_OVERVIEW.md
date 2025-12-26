@@ -405,9 +405,11 @@ Agent stores local policy that:
 
 ### 9.1 Safe Defaults (Cannot Be Disabled)
 
+*Note: These defaults are enforced by design; verify via CI tests and configuration guardrails.*
+
 | Setting | Default | Can User Override? |
 |---------|---------|-------------------|
-| Telemetry Redaction | ON | NO (mandatory) |
+| Telemetry Redaction | ON | NO (mandatory by design) |
 | Local Approval for Trading-Impacting | REQUIRED | Only stricter (not looser) |
 | RAW Order Telemetry | OFF | Enterprise opt-in only |
 | Remote Flatten Position | DISABLED | Enterprise by contract only |

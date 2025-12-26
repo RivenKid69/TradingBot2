@@ -198,14 +198,14 @@ Data subjects can object to processing based on legitimate interests or for dire
 ### 6.7 Rights Related to Automated Decisions (Art. 22)
 Data subjects can request human review of automated decisions.
 
-**Request Handling**: All requests must be forwarded to dpo@[company].com and handled within 30 days.
+**Request Handling**: All requests must be forwarded to dpo@[company].com and handled within GDPR-specified timeframes (target: 30 days; actual terms per executed agreements and operational capacity).
 
 ---
 
 ## 7. Data Security
 
 ### 7.1 Technical Measures
-- Encryption at rest (AES-256) and in transit (TLS 1.3)
+- Encryption at rest and in transit (target: AES-256 / TLS 1.3; verify actual configuration via infrastructure audit)
 - Access controls and authentication
 - Network security (firewalls, segmentation)
 - Regular security assessments

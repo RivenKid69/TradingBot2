@@ -13,7 +13,7 @@
 This policy defines the consent requirements for support staff access to customer data. It ensures that:
 
 1. Customer data access requires explicit, time-limited consent
-2. All consent is auditable with complete records
+2. Consent is designed to be auditable (verify logging implementation via audit trail review)
 3. Customers can revoke consent at any time
 4. Access is blocked without valid, non-expired consent
 
@@ -189,7 +189,7 @@ REQUEST DETAILS:
 
 If you approve:
 - Access will be limited to the requested scope
-- All access will be logged in your audit trail
+- Access is designed to be logged in your audit trail (verify via audit log review)
 - You can revoke access at any time in Settings > Privacy > Support Access
 - Access will automatically expire after the specified duration
 

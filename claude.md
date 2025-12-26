@@ -7564,9 +7564,11 @@ pytest tests/test_conformal_prediction.py -v
 
 #### Safe Defaults (Design Doc §15)
 
+*Note: Defaults enforced by design; verify via CI tests.*
+
 | Setting | Default | Override |
 |---------|---------|----------|
-| Telemetry Redaction | ON | **NO** |
+| Telemetry Redaction | ON | **NO** (mandatory by design) |
 | Local Approval for Trading-Impacting | REQUIRED | Only stricter |
 | RAW Order Telemetry | OFF | Enterprise opt-in |
 | Artifact Signature Verification | REQUIRED | **NO** |

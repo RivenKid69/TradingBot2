@@ -35,7 +35,7 @@
 
 ## Architecture: Cloud-Controlled Execution Architecture (CCEA)
 
-**Regulatory-First Design**: CustodiaCloud is a **software/ICT provider**. Cloud does not hold secrets and does not send live trading instructions (orders/targets/signals); execution remains customer-controlled via the Agent.
+**Regulatory-First Design**: CustodiaCloud is a **software/ICT provider**. Cloud is designed not to store customer broker credentials and not to send live trading instructions (orders/targets/signals); execution is designed to remain customer-controlled via the Agent. Verify via architecture review and CI tests.
 
 Our platform implements **CCEA** - a strict architectural separation designed to support regulatory clarity:
 

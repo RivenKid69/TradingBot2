@@ -69,7 +69,7 @@ This document defines our cybersecurity framework aligned with NIST CSF 2.0, pro
 | `no-trading-libs-in-cloud` | Cloud build cannot include order_execution modules | Build-time check |
 | `no-broker-clients-in-cloud` | Cloud cannot import private trading clients | Import boundary check |
 | `no-order-payloads-in-schema` | Schema prohibits side/qty/price fields | Schema validation |
-| `artifact-signature-required` | All artifacts must be signed before deployment | Deployment gate |
+| `artifact-signature-required` | Artifacts designed to require signing before deployment (verify via CI pipeline config) | Deployment gate |
 | `redaction-enabled` | Telemetry must have redaction middleware active | Runtime check |
 
 ---

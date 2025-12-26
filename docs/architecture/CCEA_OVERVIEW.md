@@ -345,19 +345,19 @@ All TRADING_IMPACTING commands require local approval:
 | Data minimization (Art. 5) | Telemetry contracts, CI guardrails |
 | Storage limitation (Art. 5) | Auto-purge with legal hold |
 | Purpose limitation (Art. 5) | RoPA documented |
-| Right to access (Art. 15) | DSAR workflow (30-day SLA) |
+| Right to access (Art. 15) | DSAR workflow documented (30-day target per GDPR; actual terms per executed agreements) |
 | Right to erasure (Art. 17) | DSAR with legal hold check |
 | Data portability (Art. 20) | JSON export |
 | Privacy by design (Art. 25) | CCEA architecture |
 | Processor obligations (Art. 28) | DPA template |
 | Security (Art. 32) | Encryption, RBAC, break-glass |
 | Breach notification (Art. 33-34) | 72-hour workflow |
-| EU data residency | By default; drift checks designed to fail closed |
+| EU data residency | By design for EU customers; drift checks designed to fail closed (verify via residency dashboard and CI tests) |
 
-**CCEA Privacy Design Commitments:**
-- Cloud **does not** store or receive broker credentials or API keys (secrets stay in customer-controlled Agent)
-- Cloud **does not** receive order-like payloads in commands (protocol-level prohibition)
-- Telemetry redaction is **on by default**; raw order events require explicit opt-in
+**CCEA Privacy Design Commitments** *(verify via architecture review and CI tests)*:
+- Cloud is **designed not to** store or receive broker credentials or API keys (secrets designed to stay in customer-controlled Agent)
+- Cloud is **designed not to** receive order-like payloads in commands (protocol-level design prohibition)
+- Telemetry redaction is **on by default** (mandatory by design); raw order events require explicit opt-in
 - DSAR scope is Cloud-only; Agent data is customer-controlled
 
 See [CCEA_PRIVACY.md](./CCEA_PRIVACY.md) for full privacy architecture.

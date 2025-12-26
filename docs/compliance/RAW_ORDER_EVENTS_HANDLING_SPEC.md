@@ -18,7 +18,7 @@ This specification defines the handling requirements for `RAW_ORDER_EVENTS` tele
 
 `RAW_ORDER_EVENTS` enables enterprise customers to:
 
-1. **Compliance Audit Trail**: Meet regulatory requirements (MiFID II, SEC, FINRA)
+1. **Compliance Audit Trail**: Designed to support client regulatory requirements (MiFID II, SEC, FINRA); clients must conduct their own compliance assessment with qualified advisors
 2. **Forensic Analysis**: Investigate trading anomalies with full detail
 3. **Latency Analysis**: Measure end-to-end execution timing
 4. **Risk Monitoring**: Real-time position and P&L tracking
@@ -590,7 +590,7 @@ def validate_raw_order_payload(
         4. Validate field types
         5. Return result
 
-    CRITICAL: Credentials are designed to be rejected at all telemetry levels, including RAW (enforced via redaction middleware and schema validation).
+    CRITICAL: Credentials are designed to be rejected at all telemetry levels, including RAW (enforced via redaction middleware and schema validation; verify via CI redaction tests).
     """
     ...
 ```

@@ -96,7 +96,7 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 | **REQUEST_UPGRADE_ARTIFACT** | `packages/agent/daemon/agentd.py:_handle_upgrade_artifact()` | ✅ |
 | **REQUEST_UPDATE_CONFIG** | `packages/agent/daemon/agentd.py:_handle_update_config()` | ✅ |
 | **Manifest format** | JSON canonical (`manifest.json`), YAML legacy supported | ✅ |
-| **Unsigned artifact rejection** | Designed to reject unsigned artifacts with fail-closed behavior; verify via CI/tests and architecture review | ✅ |
+| **Unsigned artifact rejection** | Designed to reject unsigned artifacts with fail-closed behavior (verify via CI tests and architecture review; not independently audited) | ✅ |
 | **ccea/agent/* deprecation** | DeprecationWarning emitted on import | ✅ |
 
 ---

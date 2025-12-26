@@ -168,7 +168,7 @@ This document provides a comprehensive checklist mapping GDPR Article 32 ("Secur
 
 ### 6.1 Automated Evidence Collection
 
-The `EvidencePackService` automatically collects evidence for Art. 32 compliance:
+The `EvidencePackService` is designed to automatically collect evidence supporting Art. 32 compliance (verify via evidence pack exports and CI test reports):
 
 ```python
 # Evidence categories mapped to Art. 32
