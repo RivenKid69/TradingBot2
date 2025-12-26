@@ -352,9 +352,11 @@ def test_vgs_stochastic_variance_computation():
 
 ---
 
-## SUMMARY OF RECENT FIXES (Verified Correct)
+## SUMMARY OF RECENT FIXES (Internal Review)
 
-All recent fixes (2025-11-21 to 2025-11-23) were audited and **verified correct**:
+**Note**: This is an internal self-review, not an independent audit. "Verified" refers to internal code review and test passes, not independent verification.
+
+Recent fixes (2025-11-21 to 2025-11-23) were internally reviewed:
 
 1. ✅ **Advantage Normalization** (2025-11-23): Floor normalization instead of zeroing
 2. ✅ **LSTM State Reset** (2025-11-21): Temporal leakage prevention

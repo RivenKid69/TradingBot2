@@ -70,9 +70,11 @@ Telemetry sent from Agent to Cloud is designed to pass through mandatory redacti
 
 | Level | What's Redacted | When Used | Can Be Disabled |
 |-------|-----------------|-----------|-----------------|
-| **MANDATORY** | API keys, passwords, tokens | Always | ❌ No |
-| **DEFAULT** | + PII, account IDs, order-like payloads (orders/targets/signals) | Production | ❌ No |
+| **MANDATORY** | API keys, passwords, tokens | Designed as always-on | ❌ No (by design) |
+| **DEFAULT** | + PII, account IDs, order-like payloads (orders/targets/signals) | Production | ❌ No (by design) |
 | **HIGHER_SENSITIVITY** | Additional fields (enterprise opt-in) | Enterprise opt-in | N/A (explicit opt-in) |
+
+**Note**: "Cannot be disabled" refers to design intent enforced via code architecture. Verification: review Agent telemetry middleware and CI guardrails.
 
 **Higher-sensitivity telemetry**: Available only via explicit opt-in and enterprise controls. Data transmitted to Cloud remains subject to redaction/telemetry controls; customers should perform their own legal review for deployments that enable additional telemetry fields.
 
@@ -80,11 +82,13 @@ Telemetry sent from Agent to Cloud is designed to pass through mandatory redacti
 
 | GDPR Principle | CCEA Implementation |
 |----------------|---------------------|
-| **Data Minimization** | Cloud does not receive trading credentials |
-| **Storage Limitation** | Secrets stored only in local Agent vault |
+| **Data Minimization** | Cloud designed not to receive trading credentials (CCEA boundary) |
+| **Storage Limitation** | Secrets designed to be stored only in local Agent vault |
 | **Integrity & Confidentiality** | Redaction designed as mandatory to prevent secret exposure |
-| **Privacy by Design** | Architecture enforces data separation |
-| **Accountability** | Audit trail of all data flows |
+| **Privacy by Design** | Architecture designed to enforce data separation |
+| **Accountability** | Audit trail of all data flows (design goal) |
+
+**Note**: These are design commitments per CCEA architecture. Verification via code review, data-flow audits, and protocol inspection is recommended for customer due diligence.
 
 ---
 

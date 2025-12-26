@@ -118,13 +118,13 @@ session = httpx.Client(
 **Implementation**:
 - TLS for all broker API connections
 - WebSocket Secure (WSS) for real-time feeds
-- Broker-provided certificates validated
+- Broker-provided certificates designed to be validated (verify via adapter code review)
 
 **Verification Evidence**:
-- All broker adapters use `https://` and `wss://` endpoints
-- Certificate verification enabled by default
+- All broker adapters use `https://` and `wss://` endpoints (verify in codebase)
+- Certificate verification enabled by default in adapter configuration
 
-**Status**: Implemented
+**Status**: Implemented (design; operational verification requires deployment-time TLS scans)
 
 ### 3. Internal Service Communication
 

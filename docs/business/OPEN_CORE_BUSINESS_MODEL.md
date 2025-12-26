@@ -346,7 +346,7 @@ ORGANIZATION: ccea-platform
 2. Continuous innovation in Agent keeps fork outdated
 3. Brand and community are non-forkable
 4. Cloud services (Training, Backtest, Artifacts) remain proprietary
-5. **Key advantage:** Our trained models and calibration data cannot be forked
+5. **Key advantage:** Our trained models and calibration data are designed to remain proprietary (access-controlled; not distributed in open-source components)
 
 ### 6.2 If Cloud Provider Offers Competing Service
 
@@ -365,7 +365,7 @@ ORGANIZATION: ccea-platform
 
 **Mitigation:**
 1. 18-24 month head start
-2. Customer base development (pilot cohort in progress)
+2. Customer base development (pilot cohort planning; status per executed agreements)
 3. Trained models and calibrations
 4. Extensive automated tests as quality moat (verify in repo)
 

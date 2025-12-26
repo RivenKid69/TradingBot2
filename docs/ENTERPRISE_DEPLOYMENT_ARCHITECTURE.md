@@ -1196,7 +1196,7 @@ cache_security_group:
 │  │   Restriction (18)     │ Processing flag in database               │    │
 │  │   Objection (21)       │ Opt-out mechanism                         │    │
 │  │                                                                      │    │
-│  │   SLA: All requests processed within 30 days                       │    │
+│  │   Design target: 30-day processing (actual SLA contract-specific)  │    │
 │  │                                                                      │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │

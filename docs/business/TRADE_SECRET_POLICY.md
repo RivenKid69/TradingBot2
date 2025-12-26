@@ -47,7 +47,7 @@ Information qualifies as a trade secret if it:
 #### Category B: Algorithms & Methods (High Protection)
 | Asset | Description | Economic Value |
 |-------|-------------|----------------|
-| Feature Engineering Pipeline | 63+ proprietary features | Performance edge 15-25% |
+| Feature Engineering Pipeline | 63+ proprietary features | Competitive differentiator (internal backtest-based; not independently validated) |
 | Market Impact Models | Almgren-Chriss calibration | Competitive moat |
 | CVaR Computation Method | Quantile-based risk estimation | Novel implementation |
 | Adaptive UPGD Optimizer | Continual learning optimizer | Training efficiency |
