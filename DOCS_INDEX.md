@@ -24,6 +24,7 @@
 | [docs/INNOVATION_STATEMENT.md](docs/INNOVATION_STATEMENT.md) | ⭐ **Full innovation documentation** - technical depth, IP, academic references |
 | [docs/INVESTOR_BRIEF.md](docs/INVESTOR_BRIEF.md) | **Investment highlights** - market opportunity, metrics, roadmap |
 | [docs/BUSINESS_PLAN_EU_VISA.md](docs/BUSINESS_PLAN_EU_VISA.md) | **Business plan (visa committees)** - EU establishment plan, hiring, budget, risk analysis |
+| [docs/HIRING_PLAN_STARTUP_VISA_BALTICS.md](docs/HIRING_PLAN_STARTUP_VISA_BALTICS.md) | **Hiring plan (Baltics)** - Latvia/Lithuania/Estonia startup visa-ready headcount, timeline, and budget |
 
 ### For Developers
 | Document | Description |
