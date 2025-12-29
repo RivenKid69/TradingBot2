@@ -1248,22 +1248,23 @@ Series A Prep                                 ████████
 
 ### 10.2 Hiring Plan
 
-#### Year 1 Hires (Priority Order)
+This hiring plan is **milestone-based** and aligned with `docs/HIRING_PLAN_STARTUP_VISA_BALTICS.md` (Baltics startup visa/TRP applications). We prioritize a small local core team in the host country, and we scale headcount only after validated demand and financing.
 
-| Role | Priority | Timing | Salary Range (EUR) | Why Needed |
-|------|----------|--------|-------------------|------------|
-| **Sales Lead** | Critical | Q1 | 80,000-120,000 | Customer acquisition |
-| **DevOps Engineer** | High | Q2 | 70,000-90,000 | Cloud infrastructure |
-| **Customer Success** | High | Q2 | 50,000-70,000 | Pilot support |
-| **Frontend Engineer** | Medium | Q3 | 65,000-85,000 | Dashboard development |
+#### Year 1 Hires (Base Case; pre-revenue → pilots → first revenue)
 
-#### Year 2 Hires (Planned)
+| Role | Priority | Timing (Milestone) | Salary Range (EUR, gross/year) | Why Needed |
+|------|----------|---------------------|--------------------------------|------------|
+| **Platform/DevOps Engineer** | High | Pilot-ready MVP gate | 45,000-75,000 | Repeatable, secure deployments; observability; reliability for pilots |
+| **Product Full-Stack Engineer** | High | Dashboard MVP for pilots | 45,000-75,000 | Pilot portal + onboarding UX; reduce founder bottleneck |
+| **Solutions Engineer / Quant Developer (optional)** | Medium | ≥2 active pilots in parallel | 45,000-80,000 | Customer onboarding, runbooks, integrations; shorten time-to-value |
 
-| Role | Timing | Purpose |
-|------|--------|---------|
-| **Sales Representatives (2)** | Q1-Q2 | Scale customer acquisition |
-| **Quant Researcher** | Q2 | Strategy templates, R&D |
-| **Backend Engineer** | Q3 | Platform scaling |
+#### Year 2 Hires (Planned; funding and traction dependent)
+
+| Role | Priority | Timing (Milestone) | Salary Range (EUR, gross/year) | Purpose |
+|------|----------|---------------------|--------------------------------|---------|
+| **Backend/Cloud Engineer** | Medium | Multi-tenant/entitlements becomes a roadmap bottleneck | 45,000-80,000 | Platform scaling; reliability; billing hooks (no payments “in core”) |
+| **Security/Compliance Ops (part-time / contractor)** | Medium | Enterprise due diligence demand | 6,000-30,000/year (part-time) | Vendor security responses; lightweight controls and evidence exports |
+| **Sales Lead (post-PMF signal)** | Medium | Repeatable ICP + pilot→paid conversion | 45,000-70,000 base + variable | Turn founder-led sales into a repeatable process |
 
 ### 10.3 Advisory Board (Seeking)
 
@@ -1279,17 +1280,19 @@ Series A Prep                                 ████████
 ### 10.4 Organization Chart (Month 12)
 
 ```
-                    ┌─────────────┐
-                    │   Founder   │
-                    │   CEO/CTO   │
-                    └──────┬──────┘
-           ┌───────────────┼───────────────┐
-           │               │               │
-    ┌──────┴──────┐ ┌──────┴──────┐ ┌──────┴──────┐
-    │    Sales    │ │ Engineering │ │  Customer   │
-    │    Lead     │ │   (2 FTE)   │ │  Success    │
-    └─────────────┘ └─────────────┘ └─────────────┘
+	                    ┌─────────────┐
+	                    │   Founder   │
+	                    │   CEO/CTO   │
+	                    └──────┬──────┘
+	           ┌───────────────┼───────────────┐
+	           │               │               │
+	    ┌──────┴──────┐ ┌──────┴──────┐ ┌──────┴──────┐
+	    │  Founder-led│ │ Engineering │ │  Solutions  │
+	    │  GTM (pilot)│ │   (2 FTE)   │ │ (0-1 FTE)*  │
+	    └─────────────┘ └─────────────┘ └─────────────┘
 ```
+
+*Solutions hire is triggered by concurrent pilots and onboarding load.
 
 ### 10.5 Governance
 
@@ -1375,86 +1378,26 @@ PROB Medium    │ API Chg │ Compet.│ Sales    │          │
 
 ### 12.1 Economic Benefit to Host Country
 
-This section details the significant economic contribution our company will make to the European host country, with specific projections aligned with EU startup visa requirements and validated against established economic research.
+This section explains how CustodiaCloud is designed to contribute economically to the host country via **high-skilled job creation** and ecosystem participation. All headcount figures are **scenario-based** and **funding/traction dependent** (planning, not forecasts).
 
 #### 12.1.1 Detailed Job Creation Plan (5-Year Projection)
 
-Our hiring plan is designed to meet and exceed EU startup visa job creation requirements while building a world-class fintech team in Europe.
+We present a conservative “base case” for the first 24 months (the visa/committee-relevant horizon), plus an illustrative longer-term scenario that depends on follow-on funding and market traction.
 
-**Summary: Headcount Growth Trajectory**
+**Base case (committee-focused; first 24 months)**
 
-| Year | Total FTEs | New Hires | Cumulative Investment | Avg. Salary (EUR) |
-|------|------------|-----------|----------------------|-------------------|
-| **Year 1** | 5 | 5 | €375,000 | €75,000 |
-| **Year 2** | 12 | 7 | €930,000 | €77,500 |
-| **Year 3** | 22 | 10 | €1,760,000 | €80,000 |
-| **Year 4** | 35 | 13 | €2,887,500 | €82,500 |
-| **Year 5** | 50 | 15 | €4,250,000 | €85,000 |
+| Period | Total FTEs (range) | New hires (range) | Example roles | Primary trigger |
+|--------|---------------------|-------------------|--------------|-----------------|
+| 0–12 months | 3–4 | 2–3 | Platform/DevOps, Product Full‑Stack, (optional) Solutions | Pilot-ready MVP + active pilots |
+| 12–24 months | 4–8 | 1–4 | Backend/Cloud, part-time Security/Ops, Sales Lead (post-PMF signal) | Repeatable onboarding + pilot→paid conversion |
 
-**Detailed Role Breakdown by Department**
+**Illustrative growth scenario (years 3–5; post follow-on funding)**
 
-**Engineering & R&D (Core Technology)**
-
-| Role | Y1 | Y2 | Y3 | Y4 | Y5 | Salary Range (EUR) | Skill Requirements |
-|------|----|----|----|----|----|--------------------|-------------------|
-| Senior ML Engineer | 1 | 2 | 3 | 4 | 5 | €80,000-110,000 | PyTorch, RL, distributed systems |
-| Backend Engineer | 1 | 2 | 3 | 4 | 5 | €65,000-90,000 | Python, cloud, microservices |
-| Quantitative Developer | 0 | 1 | 2 | 3 | 4 | €75,000-100,000 | Finance, algorithms, C++ |
-| DevOps/SRE | 0 | 1 | 1 | 2 | 3 | €70,000-95,000 | Kubernetes, AWS/GCP, CI/CD |
-| Data Engineer | 0 | 0 | 1 | 2 | 3 | €65,000-85,000 | ETL, real-time, Spark |
-| Security Engineer | 0 | 0 | 1 | 1 | 2 | €75,000-100,000 | AppSec, compliance, pentesting |
-| **Engineering Total** | **2** | **6** | **11** | **16** | **22** | | |
-
-**Sales & Business Development**
-
-| Role | Y1 | Y2 | Y3 | Y4 | Y5 | Salary Range (EUR) | Market Focus |
-|------|----|----|----|----|----|--------------------|--------------|
-| Head of Sales | 1 | 1 | 1 | 1 | 1 | €90,000-130,000 | Enterprise strategy |
-| Enterprise Sales Manager | 0 | 1 | 2 | 3 | 4 | €70,000-100,000 | Banks, asset managers |
-| SMB Sales Representative | 0 | 0 | 1 | 2 | 3 | €50,000-70,000 | Prop firms, family offices |
-| Business Development | 0 | 0 | 1 | 2 | 2 | €60,000-85,000 | Partnerships, channels |
-| **Sales Total** | **1** | **2** | **5** | **8** | **10** | | |
-
-**Customer Success & Support**
-
-| Role | Y1 | Y2 | Y3 | Y4 | Y5 | Salary Range (EUR) | Responsibilities |
-|------|----|----|----|----|----|--------------------|-----------------|
-| Customer Success Manager | 1 | 1 | 2 | 3 | 4 | €55,000-75,000 | Onboarding, retention |
-| Technical Support Engineer | 0 | 1 | 1 | 2 | 3 | €50,000-70,000 | L2/L3 support, integration |
-| Solutions Architect | 0 | 0 | 1 | 1 | 2 | €80,000-110,000 | Custom implementations |
-| **Customer Success Total** | **1** | **2** | **4** | **6** | **9** | | |
-
-**Operations & Administration**
-
-| Role | Y1 | Y2 | Y3 | Y4 | Y5 | Salary Range (EUR) | Function |
-|------|----|----|----|----|----|--------------------|----------|
-| CEO/Founder | 1 | 1 | 1 | 1 | 1 | €100,000-150,000 | Strategy, fundraising |
-| CFO/Finance | 0 | 0 | 1 | 1 | 1 | €90,000-130,000 | Finance, compliance |
-| HR Manager | 0 | 0 | 0 | 1 | 2 | €55,000-75,000 | Talent, culture |
-| Office Manager | 0 | 1 | 1 | 1 | 1 | €40,000-55,000 | Operations |
-| Legal Counsel (Part-time) | 0 | 0 | 0 | 1 | 1 | €80,000-120,000 | Contracts, regulatory |
-| **Operations Total** | **1** | **2** | **3** | **5** | **6** | | |
-
-**Marketing & Product**
-
-| Role | Y1 | Y2 | Y3 | Y4 | Y5 | Salary Range (EUR) | Focus Area |
-|------|----|----|----|----|----|--------------------|------------|
-| Product Manager | 0 | 0 | 1 | 1 | 2 | €70,000-95,000 | Roadmap, customer feedback |
-| Marketing Manager | 0 | 0 | 0 | 1 | 1 | €60,000-80,000 | Brand, demand gen |
-| Content/Technical Writer | 0 | 0 | 0 | 0 | 1 | €45,000-65,000 | Documentation, thought leadership |
-| **Marketing & Product Total** | **0** | **0** | **1** | **2** | **4** | | |
-
-**Quality of Employment**
-
-| Metric | Our Commitment | EU Average* | Premium |
-|--------|----------------|-------------|---------|
-| **Average Salary** | €75,000-85,000 | €55,000-65,000 | +30-35% |
-| **Benefits Package** | Health, pension, equity | Statutory minimum | Enhanced |
-| **Remote Work** | Hybrid (2-3 days office) | Varies | Flexible |
-| **Training Budget** | €3,000/person/year | €500-1,000 | +3x |
-| **Contract Type** | 90%+ permanent | Industry: 75% | Stable |
-
-*Source: Eurostat ICT specialist earnings 2023, PayScale EU tech salary survey*
+| Year | Total FTEs (range) | Focus areas | Funding/traction dependency |
+|------|---------------------|-------------|-----------------------------|
+| Year 3 | 8–12 | Engineering scale + initial GTM team | Requires repeatable sales motion and expanded customer base |
+| Year 4 | 15–25 | Customer Success, Security, Ops maturity | Typically requires a larger funding round and sustained revenue growth |
+| Year 5 | 25–40 | Multi-team organization, stronger support function | Dependent on market demand and multiple growth milestones |
 
 ---
 
