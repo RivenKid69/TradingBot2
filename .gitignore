@@ -10,8 +10,14 @@ __pycache__/
 *.dylib   # macOS dynamic libraries
 
 # Generated Cython C/C++ files
-*.c       # Generated from .pyx
-*.cpp     # Keep only hand-written C++ files (OrderBook.cpp, etc.)
+*.c
+*.cpp
+lob_state_cython.h
+micro_sim.h
+!MarketSimulator.cpp
+!OrderBook.cpp
+!cpp_microstructure_generator.cpp
+!tests/cpp/test_orderbook_tif_conformance.cpp
 
 # Build artifacts
 build_hash_report.json
@@ -149,3 +155,9 @@ state/test_archive/
 
 # Test output files
 test_output.txt
+
+# Local datasets, run states and scratch files
+data/BTCUSDT.csv
+scratch/
+signals.csv
+state/close_state.json

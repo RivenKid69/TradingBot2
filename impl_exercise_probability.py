@@ -772,13 +772,14 @@ def barone_adesi_whaley(
     if is_call and dividend_yield <= 0:
         return european, 0.0
 
-    # Parameters
+    # Parameters - use a safe rate floor to avoid division-by-zero when rate is 0.0
+    rate_safe = max(rate, 1e-10)
     sigma2 = volatility * volatility
-    h = 1.0 - math.exp(-rate * time_to_expiry)
+    h = 1.0 - math.exp(-rate_safe * time_to_expiry)
 
     # M and N parameters
-    M = 2 * rate / sigma2
-    N = 2 * (rate - dividend_yield) / sigma2
+    M = 2 * rate_safe / sigma2
+    N = 2 * (rate_safe - dividend_yield) / sigma2
 
     k = 1.0 - h
     q = 0.5 * (-(N - 1) + math.sqrt((N - 1) ** 2 + 4 * M / h))

@@ -274,7 +274,7 @@ def test_vf_clipping_code_structure():
     import inspect
     import distributional_ppo
 
-    source = inspect.getsource(distributional_ppo.DistributionalPPO._train_step)
+    source = inspect.getsource(distributional_ppo.DistributionalPPO.train)
 
     checks = {
         "Has critic_loss_unclipped for categorical":

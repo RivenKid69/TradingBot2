@@ -932,23 +932,23 @@ class OnlineFeatureTransformer:
                 maxlen = max(maxlen, max_momentum_window + 1)
 
             st = {
-                "prices": deque(maxlen=maxlen),  # type: deque[float]
-                "avg_gain": None,  # type: Optional[float]
-                "avg_loss": None,  # type: Optional[float]
-                "last_close": None,  # type: Optional[float]
+                "prices": deque(maxlen=maxlen),
+                "avg_gain": None,
+                "avg_loss": None,
+                "last_close": None,
                 # RSI initialization fix: collect first rsi_period gains/losses for SMA init
                 # Reference: Wilder (1978), "New Concepts in Technical Trading Systems"
                 # Previous bug: Initialized with SINGLE value -> bias for first ~30 bars
                 # Now: Collect first rsi_period values, then compute SMA (like MarketSimulator.cpp)
-                "gain_history": deque(maxlen=self.spec.rsi_period),  # type: deque[float]
-                "loss_history": deque(maxlen=self.spec.rsi_period),  # type: deque[float]
-                "rsi_initialized": False,  # type: bool
+                "gain_history": deque(maxlen=self.spec.rsi_period),
+                "loss_history": deque(maxlen=self.spec.rsi_period),
+                "rsi_initialized": False,
                 # Для Yang-Zhang волатильности нужны OHLC
-                "ohlc_bars": deque(maxlen=maxlen),  # type: deque[Dict[str, float]]
+                "ohlc_bars": deque(maxlen=maxlen),
                 # Для Taker Buy Ratio нужны значения ratio
-                "taker_buy_ratios": deque(maxlen=maxlen),  # type: deque[float]
+                "taker_buy_ratios": deque(maxlen=maxlen),
                 # Для Cumulative Volume Delta нужны дельты объема
-                "volume_deltas": deque(maxlen=maxlen),  # type: deque[float]
+                "volume_deltas": deque(maxlen=maxlen),
             }
             self._state[symbol] = st
         return st

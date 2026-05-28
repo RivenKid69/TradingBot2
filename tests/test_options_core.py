@@ -79,6 +79,7 @@ from impl_pricing import (
     leisen_reimer_price,
     crr_binomial_price,
     merton_jump_diffusion_price,
+    merton_jump_diffusion_price_vec,
     variance_swap_strike,
     compute_variance_swap_value,
     price_option,
@@ -2326,7 +2327,97 @@ class TestBinomialPricingExtended:
         price = leisen_reimer_price(**params, is_call=True, is_american=True, n_steps=201)
         assert price > 0
         assert np.isfinite(price)
+    def test_binomial_extreme_underflow(self) -> None:
+        """CRR and LR binomial trees should handle extreme low vol/short expiry without ZeroDivisionError."""
+        params = {
+            "spot": 100.0,
+            "strike": 100.0,
+            "time_to_expiry": 1.01e-10,
+            "rate": 0.05,
+            "dividend_yield": 0.02,
+            "volatility": 1.01e-10,
+        }
+        # This would raise ZeroDivisionError before the fix due to u - d underflow to 0.0
+        price_crr = crr_binomial_price(**params, is_call=True, n_steps=200)
+        price_lr = leisen_reimer_price(**params, is_call=True, n_steps=201)
+        
+        # Zero-volatility intrinsic price
+        assert price_crr >= 0.0
+        assert price_lr >= 0.0
+        assert np.isfinite(price_crr)
+        assert np.isfinite(price_lr)
 
+    def test_variance_swap_zero_strike(self) -> None:
+        """variance_swap_strike should ignore strikes <= 0.0 to prevent ZeroDivisionError in integration."""
+        call_prices = np.array([1.5, 0.5])
+        put_prices = np.array([2.5, 1.2])
+        call_strikes = np.array([110.0, 120.0])
+        # Put strikes containing a zero strike
+        put_strikes = np.array([0.0, 90.0])
+        
+        # This would raise ZeroDivisionError before the fix due to division by k^2
+        strike = variance_swap_strike(
+            call_prices=call_prices,
+            put_prices=put_prices,
+            call_strikes=call_strikes,
+            put_strikes=put_strikes,
+            forward=100.0,
+            rate=0.05,
+            time_to_expiry=0.25,
+        )
+        assert strike >= 0.0
+        assert np.isfinite(strike)
+
+    def test_baw_zero_rate(self) -> None:
+        """barone_adesi_whaley should handle rate = 0.0 without ZeroDivisionError."""
+        price, premium = barone_adesi_whaley(
+            spot=100.0,
+            strike=100.0,
+            time_to_expiry=0.25,
+            rate=0.0,
+            dividend_yield=0.02,
+            volatility=0.20,
+            is_call=True
+        )
+        assert price > 0.0
+        assert np.isfinite(price)
+
+    def test_merton_extreme_negative_jump_mean(self) -> None:
+        """merton_jump_diffusion_price should handle extremely negative jump mean without ValueError."""
+        jp = JumpParams(lambda_intensity=1.0, mu_jump=-100.0, sigma_jump=0.1)
+        price = merton_jump_diffusion_price(
+            spot=100.0,
+            strike=100.0,
+            time_to_expiry=0.25,
+            rate=0.05,
+            dividend_yield=0.02,
+            volatility=0.20,
+            is_call=True,
+            jump_params=jp
+        )
+        assert price > 0.0
+        assert np.isfinite(price)
+
+    def test_jump_calibration_safeguards(self) -> None:
+        """Jump calibration functions should validate inputs and raise CalibrationError on invalid values."""
+        # Test time step <= 0
+        with pytest.raises(CalibrationError):
+            calibrate_from_moments(np.array([0.01, -0.02]), dt=0.0)
+        with pytest.raises(CalibrationError):
+            calibrate_from_mle(np.array([0.01, -0.02]), dt=-1.0)
+            
+        # Test option calibration invalid inputs
+        with pytest.raises(CalibrationError):
+            calibrate_from_options(
+                option_prices=np.array([1.0, 2.0, 3.0]),
+                strikes=np.array([90.0, 100.0, 110.0]),
+                maturities=np.array([0.25, 0.25, 0.25]),
+                is_calls=np.array([True, True, True]),
+                spot=0.0,  # invalid spot
+                rate=0.05,
+                dividend_yield=0.02,
+                base_volatility=0.20
+            )
 
 class TestJumpDiffusionExtended:
     """Extended jump-diffusion tests (additional 11 tests)."""
@@ -2508,6 +2599,50 @@ class TestJumpDiffusionExtended:
             max_terms=100,
         )
         assert abs(price_20 - price_100) < 0.01
+
+    def test_merton_vectorized_vs_scalar(self):
+        """Vectorized Merton jump-diffusion pricing should match scalar pricing exactly."""
+        spots = np.array([100.0, 100.0, 95.0, 105.0])
+        strikes = np.array([90.0, 110.0, 100.0, 100.0])
+        times = np.array([0.1, 0.5, 0.25, 1.0])
+        rates = np.array([0.05, 0.05, 0.03, 0.06])
+        divs = np.array([0.0, 0.01, 0.02, 0.0])
+        vols = np.array([0.2, 0.3, 0.25, 0.15])
+        is_calls = np.array([True, False, True, False])
+        
+        jp = JumpParams(lambda_intensity=1.5, mu_jump=-0.1, sigma_jump=0.2)
+        
+        # Calculate scalar values
+        scalar_prices = []
+        for i in range(len(spots)):
+            p = merton_jump_diffusion_price(
+                spot=spots[i],
+                strike=strikes[i],
+                time_to_expiry=times[i],
+                rate=rates[i],
+                dividend_yield=divs[i],
+                volatility=vols[i],
+                is_call=is_calls[i],
+                jump_params=jp,
+            )
+            scalar_prices.append(p)
+            
+        # Calculate vectorized values
+        vec_prices = merton_jump_diffusion_price_vec(
+            spot=spots,
+            strike=strikes,
+            time_to_expiry=times,
+            rate=rates,
+            dividend_yield=divs,
+            volatility=vols,
+            is_call=is_calls,
+            jump_intensity=jp.lambda_intensity,
+            jump_mean=jp.mu_jump,
+            jump_vol=jp.sigma_jump,
+        )
+        
+        # Assert match
+        np.testing.assert_allclose(vec_prices, scalar_prices, rtol=1e-5, atol=1e-5)
 
 
 class TestVarianceSwap:

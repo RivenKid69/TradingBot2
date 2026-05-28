@@ -201,9 +201,11 @@ class TestPopartSerialization:
 
     def test_path_object(self):
         from pathlib import Path
+        import os
 
-        result = _popart_value_to_serializable(Path("/tmp/test"))
-        assert result == "/tmp/test"
+        p = Path("/tmp/test")
+        result = _popart_value_to_serializable(p)
+        assert result == os.fspath(p)
 
     def test_dict_serialization(self):
         result = _popart_value_to_serializable({"a": 1, "b": 2.0})

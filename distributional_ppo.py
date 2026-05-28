@@ -537,9 +537,8 @@ def _weighted_variance_np(values: np.ndarray, weights: Optional[np.ndarray]) -> 
     max_weight = float(np.max(np.abs(weights64)))
     if max_weight > 1e100:  # Conservative threshold to prevent overflow
         # Normalize weights to prevent overflow, then scale variance accordingly
-        scale = 1e50 / max_weight
-        weights64_scaled = weights64 * scale
-        sum_w_sq = float(np.sum(weights64_scaled**2)) / (scale * scale)
+        weights_normalized = weights64 / max_weight
+        sum_w_sq = float(np.sum(weights_normalized**2)) * max_weight * max_weight
     else:
         sum_w_sq = float(np.sum(weights64**2))
 
@@ -10250,6 +10249,9 @@ class DistributionalPPO(RecurrentPPO):
                         old_log_probs_flat = rollout_data.old_log_prob.flatten()
                         advantages_flat = rollout_data.advantages.flatten()
 
+                        # Extract recurrent states for SA-PPO augmentation (prevents get_distribution crash)
+                        actor_states = self._extract_actor_states(rollout_data.lstm_states)
+
                         # Apply adversarial augmentation
                         observations_augmented, sa_ppo_sample_mask, sa_ppo_info = sa_ppo_wrapper.apply_adversarial_augmentation(
                             states=rollout_data.observations,
@@ -10257,6 +10259,8 @@ class DistributionalPPO(RecurrentPPO):
                             advantages=advantages_flat,
                             old_log_probs=old_log_probs_flat,
                             clip_range=clip_range,
+                            lstm_states=actor_states,
+                            episode_starts=rollout_data.episode_starts,
                         )
                         observations_for_training = observations_augmented
 
@@ -10547,10 +10551,21 @@ class DistributionalPPO(RecurrentPPO):
 
                             # Compute robust KL penalty
                             if obs_clean is not None and obs_clean.size(0) > 0:
+                                # Extract clean and adversarial actor LSTM states and episode starts (prevents crash)
+                                actor_states = self._extract_actor_states(rollout_data.lstm_states)
+                                lstm_states_clean = tuple(s[:, ~adv_mask] for s in actor_states) if actor_states is not None else None
+                                lstm_states_adv = tuple(s[:, adv_mask] for s in actor_states) if actor_states is not None else None
+                                episode_starts_clean = rollout_data.episode_starts[~adv_mask] if rollout_data.episode_starts is not None else None
+                                episode_starts_adv = rollout_data.episode_starts[adv_mask] if rollout_data.episode_starts is not None else None
+
                                 robust_kl_value, robust_kl_info = sa_ppo_wrapper.compute_robust_kl_penalty(
                                     states_clean=obs_clean,
                                     states_adv=obs_adv,
                                     actions=actions_for_kl,
+                                    lstm_states_clean=lstm_states_clean,
+                                    lstm_states_adv=lstm_states_adv,
+                                    episode_starts_clean=episode_starts_clean,
+                                    episode_starts_adv=episode_starts_adv,
                                 )
                                 # Add to policy loss as tensor
                                 robust_kl_tensor = policy_loss.new_tensor(robust_kl_value)

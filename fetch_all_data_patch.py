@@ -82,7 +82,7 @@ def _ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["timestamp"]).sort_values("timestamp")
     return df
 
-def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, seed: int = 42) -> Tuple[Dict[str, pd.DataFrame], Dict[str, np.ndarray]]:
+def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, seed: int = 42, *args, **kwargs) -> Tuple[Dict[str, pd.DataFrame], Dict[str, np.ndarray]]:
     """Load all .feather files and perform safe merge with Fear & Greed if available.
     Keys are derived from file stem (e.g., BTCUSDT).
     synthetic_fraction/seed are accepted for compatibility and ignored here.
@@ -93,7 +93,10 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
     fng = _read_fng()
     for p in feather_paths:
         sym = os.path.splitext(os.path.basename(p))[0]
-        df = pd.read_feather(p)
+        if p.endswith(".parquet"):
+            df = pd.read_parquet(p)
+        else:
+            df = pd.read_feather(p)
         # Standardize/ensure columns
         if "symbol" not in df.columns:
             df["symbol"] = sym

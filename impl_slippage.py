@@ -775,8 +775,13 @@ class _DynamicSpreadProfile:
 
     def metadata(self) -> Mapping[str, Any]:
         with self._lock:
-            self._ensure_loaded_locked()
-            return dict(self._meta)
+            return {
+                "base_spread_bps": self._base_spread_bps,
+                "min_spread_bps": self._min_spread_bps,
+                "max_spread_bps": self._max_spread_bps,
+                "smoothing_alpha": self._smoothing_alpha,
+                "multipliers": self._multipliers,
+            }
 
 
 def _calc_dynamic_spread(
@@ -984,6 +989,7 @@ class SlippageImpl:
         self._spread_cost_maker_bps_default: float = 0.0
         self._spread_cost_taker_bps_default: float = 0.0
         self._last_trade_cost_meta: Dict[str, Any] = {}
+        self._last_vol_factor: Optional[float] = None
         self._calibrated_cfg: Optional[Any] = None
         self._calibration_symbols: Dict[str, SymbolCalibratedProfile] = {}
         self._calibration_global_hourly: Optional[CalibratedHourlyProfile] = None
@@ -1099,7 +1105,7 @@ class SlippageImpl:
                 return None
             if cfg_cls is not None and isinstance(block, cfg_cls):
                 try:
-                    payload = block.to_dict()
+                    payload = getattr(block, "to_dict")()
                 except Exception:
                     return None
                 else:
@@ -2256,6 +2262,8 @@ class SlippageImpl:
             vol_factor_val = _safe_float(metrics.get("sigma"))
         if vol_factor_val is None:
             vol_factor_val = _safe_float(self._last_vol_factor)
+        else:
+            self._last_vol_factor = vol_factor_val
 
         calibration_meta: Dict[str, Any] = {}
         total_cost: Optional[float] = None

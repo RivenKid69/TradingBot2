@@ -373,6 +373,9 @@ def calibrate_from_moments(
     returns = np.asarray(returns)
     n = len(returns)
 
+    if dt <= 0:
+        raise CalibrationError(f"Time step dt must be positive, got {dt}")
+
     if n < 30:
         raise CalibrationError("Need at least 30 returns for moment calibration")
 
@@ -474,6 +477,9 @@ def calibrate_from_mle(
 
     returns = np.asarray(returns)
     n = len(returns)
+
+    if dt <= 0:
+        raise CalibrationError(f"Time step dt must be positive, got {dt}")
 
     if n < 50:
         raise CalibrationError("Need at least 50 returns for MLE calibration")
@@ -662,20 +668,37 @@ def calibrate_from_options(
     n_options = len(option_prices)
     if n_options < 3:
         raise CalibrationError("Need at least 3 options for calibration")
+    if spot <= 0:
+        raise CalibrationError(f"Spot must be positive, got {spot}")
+    if base_volatility <= 0:
+        raise CalibrationError(f"Base volatility must be positive, got {base_volatility}")
 
     option_prices = np.asarray(option_prices, dtype=np.float64)
     strikes = np.asarray(strikes, dtype=np.float64)
     maturities = np.asarray(maturities, dtype=np.float64)
     is_calls = np.asarray(is_calls, dtype=bool)
 
+    if np.any(option_prices < 0):
+        raise CalibrationError("Option prices cannot be negative")
+    if np.any(strikes <= 0):
+        raise CalibrationError("Strikes must be positive")
+    if np.any(maturities <= 0):
+        raise CalibrationError("Maturities must be positive")
+
     if weights is None:
         # Vega-weighted by default (ATM options weighted more)
         moneyness = spot / strikes
         weights = np.exp(-0.5 * (np.log(moneyness)) ** 2 / (0.1 ** 2))
-        weights = weights / np.sum(weights)
+        sum_weights = np.sum(weights)
+        if sum_weights <= 0.0:
+            raise CalibrationError("Sum of calculated weights is zero or negative")
+        weights = weights / sum_weights
     else:
         weights = np.asarray(weights, dtype=np.float64)
-        weights = weights / np.sum(weights)
+        sum_weights = np.sum(weights)
+        if sum_weights <= 0.0:
+            raise CalibrationError("Sum of provided weights must be positive")
+        weights = weights / sum_weights
 
     # Initial guess
     if initial_guess is None:

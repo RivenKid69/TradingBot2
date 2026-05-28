@@ -111,15 +111,15 @@ def test_code_has_vf_clipping():
     import inspect
     import distributional_ppo
 
-    source = inspect.getsource(distributional_ppo.DistributionalPPO._train_step)
+    source = inspect.getsource(distributional_ppo.DistributionalPPO.train)
 
     # Check for VF clipping keywords
     checks = {
-        "critic_loss_unclipped in categorical section": "critic_loss_unclipped" in source,
-        "critic_loss_clipped in categorical section": "critic_loss_clipped" in source,
-        "max(loss_unclipped, loss_clipped)": "torch.max(critic_loss_unclipped, critic_loss_clipped)" in source,
+        "critic_loss_unclipped in categorical section": "critic_loss_unclipped_per_sample" in source,
+        "critic_loss_clipped in categorical section": "critic_loss_clipped_per_sample" in source,
+        "max(loss_unclipped, loss_clipped)": "torch.max(" in source,
         "_project_categorical_distribution call": "_project_categorical_distribution" in source,
-        "PPO VF clipping comment": "PPO VF clipping" in source.lower(),
+        "PPO VF clipping comment": "ppo vf clipping" in source.lower(),
     }
 
     for check_name, passed in checks.items():

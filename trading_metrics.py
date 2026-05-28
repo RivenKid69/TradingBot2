@@ -79,19 +79,20 @@ def _safe_divide(numerator: float, denominator: float, default: float = 0.0) -> 
 def _compute_downside_std(returns: np.ndarray, threshold: float = 0.0) -> float:
     """Compute downside standard deviation (semi-deviation).
 
-    Only considers returns below the threshold (default: 0).
+    Considers all returns, treating returns above the threshold as 0.
     Used for Sortino ratio calculation.
     """
     if returns.size == 0:
         return float("nan")
 
-    downside = returns[returns < threshold]
-    if downside.size == 0:
-        # No negative returns - return small positive value to avoid division issues
+    excess_returns = returns - threshold
+    downside = np.minimum(excess_returns, 0.0)
+    downside_var = float(np.mean(downside**2))  # Mean over all N observations
+    
+    if downside_var < 1e-16:
+        # No negative returns (or extremely small) - return small positive value to avoid division issues
         return 1e-8
 
-    # Standard deviation of downside returns
-    downside_var = float(np.mean(downside**2))  # E[(r - 0)^2] for r < 0
     return math.sqrt(max(downside_var, 0.0))
 
 

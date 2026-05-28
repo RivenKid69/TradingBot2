@@ -154,9 +154,11 @@ class TestPopartValueComprehensive:
 
     def test_path_object(self):
         from pathlib import Path
+        import os
 
-        result = _popart_value_to_serializable(Path("/tmp"))
-        assert result == "/tmp"
+        p = Path("/tmp")
+        result = _popart_value_to_serializable(p)
+        assert result == os.fspath(p)
 
     def test_dict(self):
         result = _popart_value_to_serializable({"a": 1, "b": 2})

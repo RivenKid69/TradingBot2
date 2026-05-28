@@ -51,18 +51,28 @@ class DataValidator:
             raise ValueError(f"Обнаружены бесконечные (inf) значения в данных:\n{inf_info}")
 
     def _check_values_are_positive(self, df: pd.DataFrame):
-        """Убеждается, что значения в колонках цен и объёмов строго больше нуля."""
-        positive_columns = ['open', 'high', 'low', 'close', 'quote_asset_volume']
-        # Проверяем только те колонки, которые существуют в df
-        cols_to_check = [col for col in positive_columns if col in df.columns]
+        """Убеждается, что значения в колонках цен строго больше нуля, а объёмы больше или равны нулю."""
+        price_columns = ['open', 'high', 'low', 'close']
+        price_cols_to_check = [col for col in price_columns if col in df.columns]
 
-        # Используем .le() для сравнения <= 0 и находим проблемные места
-        violations = df[cols_to_check].le(0)
-        if violations.any().any():
-            first_violation_idx = violations.any(axis=1).idxmax()
-            violation_details = df.loc[first_violation_idx, cols_to_check]
+        price_violations = df[price_cols_to_check].le(0)
+        if price_violations.any().any():
+            first_violation_idx = price_violations.any(axis=1).idxmax()
+            violation_details = df.loc[first_violation_idx, price_cols_to_check]
             raise ValueError(
-                f"Обнаружены нулевые или отрицательные значения. "
+                f"Обнаружены нулевые или отрицательные цены. "
+                f"Первое нарушение в индексе {first_violation_idx}:\n{violation_details}"
+            )
+
+        vol_columns = ['quote_asset_volume', 'volume']
+        vol_cols_to_check = [col for col in vol_columns if col in df.columns]
+
+        vol_violations = df[vol_cols_to_check].lt(0)
+        if vol_violations.any().any():
+            first_violation_idx = vol_violations.any(axis=1).idxmax()
+            violation_details = df.loc[first_violation_idx, vol_cols_to_check]
+            raise ValueError(
+                f"Обнаружены отрицательные объемы. "
                 f"Первое нарушение в индексе {first_violation_idx}:\n{violation_details}"
             )
 

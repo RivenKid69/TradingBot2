@@ -11,6 +11,12 @@ torch_is_stub = getattr(torch, "__test_stub__", False)
 
 
 def _install_rl_stubs() -> None:
+    try:
+        import sb3_contrib
+        import stable_baselines3
+    except ImportError:
+        pass
+
     if "sb3_contrib" not in sys.modules:
         sb3_contrib = types.ModuleType("sb3_contrib")
 

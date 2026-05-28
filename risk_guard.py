@@ -91,7 +91,7 @@ class RiskConfig:
     bankruptcy_cash_th: float = -1e12     # порог банкротства по кэшу
 
     # Технические опции
-    ts_provider: callable = lambda: now_ms()
+    ts_provider: Callable[[], int] = lambda: now_ms()
 
 
 class RiskGuard:

@@ -1104,6 +1104,7 @@ class LiveConfig(CommonRunConfig):
         default=ExecutionProfile.MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
     )
     execution_params: ExecutionParams = Field(default_factory=ExecutionParams)
+    no_trade: Dict[str, Any] = Field(default_factory=dict)
 
 
 class TrainDataConfig(BaseModel):

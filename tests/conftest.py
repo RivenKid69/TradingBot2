@@ -293,3 +293,27 @@ _requests_stub.Timeout = Timeout
 
 sys.modules.setdefault("requests", _requests_stub)
 sys.modules.setdefault("requests.exceptions", _requests_exceptions_stub)
+
+if sys.platform == "win32":
+    # Mock unix resource module on Windows to allow test collection
+    _resource_stub = types.ModuleType("resource")
+    _resource_stub.RLIMIT_AS = 6
+    _resource_stub.RLIMIT_CPU = 0
+    _resource_stub.RLIMIT_NOFILE = 7
+    _resource_stub.RLIMIT_NPROC = 8
+    _resource_stub.RLIMIT_CORE = 4
+    
+    class ResourceError(Exception):
+        pass
+    _resource_stub.error = ResourceError
+    
+    def _setrlimit(limit, limits):
+        pass
+    _resource_stub.setrlimit = _setrlimit
+    
+    sys.modules["resource"] = _resource_stub
+
+# Re-add tests directory to sys.path to resolve sibling imports in test modules
+if str(TESTS) not in sys.path:
+    sys.path.append(str(TESTS))
+

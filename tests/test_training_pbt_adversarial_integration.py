@@ -391,7 +391,7 @@ class TestPBTTrainingCoordinator:
 
         # Update member
         model_state = {"param": torch.randn(5, 5)}
-        new_state, new_hyperparams = coordinator.on_member_update_end(
+        new_state, new_hyperparams, checkpoint_format = coordinator.on_member_update_end(
             member, performance=0.8, step=1, model_state_dict=model_state
         )
 
@@ -416,7 +416,7 @@ class TestPBTTrainingCoordinator:
         # Now trigger PBT step for worst performer
         worst_member = population[0]
         model_state = {"param": torch.randn(5, 5)}
-        new_state, new_hyperparams = coordinator.on_member_update_end(
+        new_state, new_hyperparams, checkpoint_format = coordinator.on_member_update_end(
             worst_member,
             performance=0.5,
             step=10,  # Another perturbation_interval
@@ -550,7 +550,7 @@ class TestIntegrationScenarios:
                 # End update
                 model_state = {"param": torch.randn(5, 5)}
                 performance = 0.5 + i * 0.1 + step * 0.01
-                new_state, new_hyperparams = coordinator.on_member_update_end(
+                new_state, new_hyperparams, checkpoint_format = coordinator.on_member_update_end(
                     member,
                     performance=performance,
                     step=step,

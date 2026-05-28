@@ -8,7 +8,7 @@ import re
 
 def read_source():
     """Read distributional_ppo.py source code."""
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         return f.read()
 
 

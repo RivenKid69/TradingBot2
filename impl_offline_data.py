@@ -51,9 +51,15 @@ class OfflineCSVConfig:
 class OfflineCSVBarSource(MarketDataSource):
     def __init__(
         self,
-        cfg: OfflineCSVConfig,
+        cfg: OfflineCSVConfig | None = None,
         data_degradation: DataDegradationConfig | None = None,
+        **kwargs,
     ) -> None:
+        if cfg is None:
+            import dataclasses
+            cfg_fields = {f.name for f in dataclasses.fields(OfflineCSVConfig)}
+            cfg_params = {k: v for k, v in kwargs.items() if k in cfg_fields}
+            cfg = OfflineCSVConfig(**cfg_params)
         self.cfg = cfg
         ensure_timeframe(self.cfg.timeframe)
         if data_degradation is None:

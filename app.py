@@ -81,7 +81,11 @@ if API_TOKEN is None:
         "Load it from your secret manager or .env (see .env.example)."
     )
 
-api = FastAPI()
+def _make_api() -> FastAPI:
+    return FastAPI()
+
+api = _make_api()
+
 
 
 def _check_auth(x_api_key: str = Header(..., alias="X-API-Key")) -> None:

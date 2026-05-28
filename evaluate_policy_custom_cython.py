@@ -118,35 +118,47 @@ def evaluate_policy_custom_cython(
             stacklevel=2,
         )
 
-    if _cy_evaluate_episode is not None:
-        try:
-            return _cy_evaluate_episode(
-                model,
-                vec_env,
-                num_episodes=num_episodes,
-                deterministic=deterministic,
-            )
-        except TypeError:
-            warnings.warn(
-                "cy_eval_core.evaluate_episode signature mismatch; falling back to Python implementation.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-        except Exception as exc:  # pragma: no cover - safety net for unexpected C-level failures
-            warnings.warn(
-                f"cy_eval_core evaluation failed ({exc!r}); falling back to Python implementation.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-    episode_rewards: list[float] = []
-    equity_curves: list[list[float]] = []
-
     policy = model.policy
     training_mode = getattr(policy, "training", False)
 
+    policy_cache = {}
+    for attr in [
+        "_last_value_logits",
+        "_last_value_quantiles",
+        "_last_value_logits_2",
+        "_last_value_quantiles_2",
+        "_last_latent_vf",
+        "_last_raw_actions",
+    ]:
+        if hasattr(policy, attr):
+            policy_cache[attr] = getattr(policy, attr)
+
     try:
         policy.set_training_mode(False)
+
+        if _cy_evaluate_episode is not None:
+            try:
+                return _cy_evaluate_episode(
+                    model,
+                    vec_env,
+                    num_episodes=num_episodes,
+                    deterministic=deterministic,
+                )
+            except TypeError:
+                warnings.warn(
+                    "cy_eval_core.evaluate_episode signature mismatch; falling back to Python implementation.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            except Exception as exc:  # pragma: no cover - safety net for unexpected C-level failures
+                warnings.warn(
+                    f"cy_eval_core evaluation failed ({exc!r}); falling back to Python implementation.",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+
+        episode_rewards: list[float] = []
+        equity_curves: list[list[float]] = []
 
         obs_reset = vec_env.reset()
         if isinstance(obs_reset, tuple):
@@ -226,6 +238,8 @@ def evaluate_policy_custom_cython(
 
     finally:
         policy.set_training_mode(training_mode)
+        for attr, val in policy_cache.items():
+            setattr(policy, attr, val)
         if should_close:
             vec_env.close()
 

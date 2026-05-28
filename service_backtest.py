@@ -1130,6 +1130,65 @@ class ServiceBacktest:
         *,
         run_config: CommonRunConfig | None = None,
     ) -> None:
+        from collections.abc import Mapping
+        if not hasattr(cfg, "symbol"):
+            symbol = None
+            if hasattr(cfg, "symbols") and cfg.symbols:
+                symbol = cfg.symbols[0]
+            elif hasattr(cfg, "data") and getattr(cfg.data, "symbols", None):
+                symbol = cfg.data.symbols[0]
+            
+            timeframe = None
+            if hasattr(cfg, "timeframe"):
+                timeframe = cfg.timeframe
+            elif hasattr(cfg, "data") and getattr(cfg.data, "timeframe", None):
+                timeframe = cfg.data.timeframe
+            elif hasattr(cfg, "timing") and getattr(cfg.timing, "timeframe", None):
+                timeframe = cfg.timing.timeframe
+                
+            symbol = symbol or "BTCUSDT"
+            timeframe = timeframe or "4h"
+            
+            dynamic_spread_config = getattr(cfg, "slippage", None)
+            if hasattr(dynamic_spread_config, "dict"):
+                dynamic_spread_config = dynamic_spread_config.dict()
+            elif isinstance(dynamic_spread_config, Mapping):
+                dynamic_spread_config = dict(dynamic_spread_config)
+                
+            guards_config = getattr(cfg, "risk", None)
+            if hasattr(guards_config, "dict"):
+                guards_config = guards_config.dict()
+            elif isinstance(guards_config, Mapping):
+                guards_config = dict(guards_config)
+                
+            no_trade_config = getattr(cfg, "no_trade", None)
+            if hasattr(no_trade_config, "dict"):
+                no_trade_config = no_trade_config.dict()
+            elif isinstance(no_trade_config, Mapping):
+                no_trade_config = dict(no_trade_config)
+                
+            timing_config = getattr(cfg, "timing", None)
+            if hasattr(timing_config, "dict"):
+                timing_config = timing_config.dict()
+            elif isinstance(timing_config, Mapping):
+                timing_config = dict(timing_config)
+                
+            cfg = BacktestConfig(
+                symbol=symbol,
+                timeframe=timeframe,
+                exchange_specs_path=getattr(cfg, "exchange_specs_path", None),
+                dynamic_spread_config=dynamic_spread_config,
+                guards_config=guards_config,
+                signal_cooldown_s=getattr(cfg, "signal_cooldown_s", 0),
+                no_trade_config=no_trade_config,
+                snapshot_config_path=getattr(cfg, "snapshot_config_path", None),
+                artifacts_dir=getattr(cfg, "artifacts_dir", None),
+                logs_dir=getattr(cfg, "logs_dir", None),
+                run_id=getattr(cfg, "run_id", None),
+                bar_report_path=getattr(cfg, "bar_report_path", None),
+                timing_config=timing_config,
+            )
+
         self.policy = policy
         self.sim = sim
         self.cfg = cfg

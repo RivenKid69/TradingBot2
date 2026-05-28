@@ -715,6 +715,14 @@ class TestSimpleMarginCalculatorInit:
         )
         assert calc._max_leverage == 10
 
+    def test_init_zero_or_negative_max_leverage(self):
+        """Should clamp max_leverage to a minimum of 1 during initialization."""
+        calc_zero = SimpleMarginCalculator(max_leverage=0)
+        assert calc_zero._max_leverage == 1
+
+        calc_neg = SimpleMarginCalculator(max_leverage=-5)
+        assert calc_neg._max_leverage == 1
+
 
 class TestSimpleMarginCalculatorBasicOps:
     """Tests for SimpleMarginCalculator basic operations."""
@@ -762,6 +770,38 @@ class TestSimpleMarginCalculatorBasicOps:
     def test_get_max_leverage(self, simple_calculator):
         """Should return configured max leverage."""
         assert simple_calculator.get_max_leverage(Decimal("1000000")) == 20
+
+    def test_calculate_initial_margin_zero_or_negative_leverage(self, simple_calculator):
+        """Should handle leverage <= 0 gracefully by falling back to leverage = 1."""
+        # Test zero leverage
+        im_zero = simple_calculator.calculate_initial_margin(Decimal("100000"), leverage=0)
+        assert im_zero == Decimal("100000")  # 100000 / 1
+
+        # Test negative leverage
+        im_neg = simple_calculator.calculate_initial_margin(Decimal("100000"), leverage=-5)
+        assert im_neg == Decimal("100000")  # 100000 / 1
+
+    def test_calculate_liquidation_price_zero_or_negative_leverage(self, simple_calculator):
+        """Should handle leverage <= 0 gracefully in liquidation price calculation."""
+        # Test zero leverage (should fallback to 1x leverage)
+        liq_price_zero = simple_calculator.calculate_liquidation_price(
+            entry_price=Decimal("100"),
+            qty=Decimal("10"),
+            leverage=0,
+            wallet_balance=Decimal("100"),
+            margin_mode=MarginMode.ISOLATED,
+        )
+        assert liq_price_zero > Decimal("0")
+
+        # Test negative leverage (should fallback to 1x leverage)
+        liq_price_neg = simple_calculator.calculate_liquidation_price(
+            entry_price=Decimal("100"),
+            qty=Decimal("10"),
+            leverage=-5,
+            wallet_balance=Decimal("100"),
+            margin_mode=MarginMode.ISOLATED,
+        )
+        assert liq_price_neg > Decimal("0")
 
 
 # ============================================================================

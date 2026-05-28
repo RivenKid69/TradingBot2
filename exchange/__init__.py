@@ -1,7 +1,7 @@
-# exchange__init__.py
+# exchange/__init__.py
 from __future__ import annotations
 
-from exchangespecs import (
+from exchange.specs import (
     ExchangeRule,
     ExchangeSpecs,
     load_specs,

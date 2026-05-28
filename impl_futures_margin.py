@@ -368,20 +368,14 @@ class TieredMarginCalculator:
         """
         Calculate liquidation price.
 
-        Binance Liquidation Formula (Simplified):
+        Binance Liquidation Formula:
 
         For CROSS margin:
-            Long: LP = (WB + cumPnL + cumFunding - Notional * MMR + cumMaint) /
-                       (Qty * (1 + MMR - LiqFee))
-            Short: LP = (WB + cumPnL + cumFunding + Notional * MMR - cumMaint) /
-                        (Qty * (1 - MMR + LiqFee))
+            Long: LP = (Notional - AvailableMargin - cumMaint) / (Qty * (1 - MMR - LiqFee))
+            Short: LP = (Notional + AvailableMargin + cumMaint) / (abs_qty * (1 + MMR + LiqFee))
 
         For ISOLATED margin:
-            Use isolated_margin instead of wallet_balance
-
-        Simplified formula used here:
-            Long: LP = Entry * (1 - 1/Leverage + MMR)
-            Short: LP = Entry * (1 + 1/Leverage - MMR)
+            Use isolated_margin instead of wallet_balance.
 
         Args:
             entry_price: Position entry price
@@ -406,57 +400,29 @@ class TieredMarginCalculator:
         # Get MMR for position size
         mmr = self.get_maintenance_margin_rate(notional)
 
+        # Get index and bracket info to find cumulative maintenance (cum_maint)
+        idx, _ = self._find_bracket(notional)
+        cum_maint = self._cum_maintenance[idx] if idx < len(self._cum_maintenance) else Decimal("0")
+
         # Determine available margin
         if margin_mode == MarginMode.CROSS:
             available_margin = wallet_balance + cum_pnl + cum_funding
         else:
             available_margin = isolated_margin
 
-        # Initial margin rate
-        imr = Decimal("1") / Decimal(leverage)
-
-        # Calculate liquidation price
-        # Use accurate formula when cum_pnl/funding affect available margin
-        # Simplified formula is only used as fallback when margin equals 1/leverage
-        use_accurate_formula = (cum_pnl != 0) or (cum_funding != 0)
-
+        # Unified mathematically exact formula
         if is_long:
             # Long liquidation: price drops
-            mm = self.calculate_maintenance_margin(notional)
-
-            if use_accurate_formula:
-                # Accurate calculation using actual available margin
-                # LP = Entry - (AvailableMargin - MM) / Qty
-                liq_price = entry_price - (available_margin - mm) / abs_qty
-            else:
-                # Simplified formula (good approximation when margin = 1/leverage)
-                # LP ≈ Entry * (1 - IMR + MMR + LiqFee)
-                adjustment = 1 - float(imr) + float(mmr) + float(self._liquidation_fee_rate)
-                liq_price = entry_price * Decimal(str(adjustment))
-
-                # Also compute accurate formula for comparison
-                liq_price_accurate = entry_price - (available_margin - mm) / abs_qty
-
-                # Use the higher (more conservative) liquidation price
-                liq_price = max(liq_price, liq_price_accurate)
-
+            # LP = (Notional - AvailableMargin - cumMaint) / (Qty * (1 - MMR - LiqFee))
+            denominator = abs_qty * (Decimal("1") - mmr - self._liquidation_fee_rate)
+            if denominator <= 0:
+                return Decimal("0")
+            liq_price = (notional - available_margin - cum_maint) / denominator
         else:
             # Short liquidation: price rises
-            mm = self.calculate_maintenance_margin(notional)
-
-            if use_accurate_formula:
-                # Accurate calculation using actual available margin
-                liq_price = entry_price + (available_margin - mm) / abs_qty
-            else:
-                # Simplified formula
-                adjustment = 1 + float(imr) - float(mmr) - float(self._liquidation_fee_rate)
-                liq_price = entry_price * Decimal(str(adjustment))
-
-                # Also compute accurate formula
-                liq_price_accurate = entry_price + (available_margin - mm) / abs_qty
-
-                # Use the lower (more conservative) liquidation price
-                liq_price = min(liq_price, liq_price_accurate)
+            # LP = (Notional + AvailableMargin + cumMaint) / (abs_qty * (1 + MMR + LiqFee))
+            denominator = abs_qty * (Decimal("1") + mmr + self._liquidation_fee_rate)
+            liq_price = (notional + available_margin + cum_maint) / denominator
 
         # Liquidation price can't be negative
         return max(Decimal("0"), liq_price)
@@ -856,7 +822,7 @@ class SimpleMarginCalculator:
         """
         self._initial_rate = Decimal(str(initial_pct)) / 100
         self._maintenance_rate = Decimal(str(maintenance_pct)) / 100
-        self._max_leverage = max_leverage
+        self._max_leverage = max(1, max_leverage)
         self._liq_fee_rate = Decimal(str(liquidation_fee_pct)) / 100
 
     def calculate_initial_margin(
@@ -865,7 +831,7 @@ class SimpleMarginCalculator:
         leverage: int,
     ) -> Decimal:
         """Calculate initial margin."""
-        effective_leverage = min(leverage, self._max_leverage)
+        effective_leverage = max(1, min(leverage, self._max_leverage))
         return abs(notional) / Decimal(effective_leverage)
 
     def calculate_maintenance_margin(
@@ -889,7 +855,8 @@ class SimpleMarginCalculator:
             return Decimal("0")
 
         is_long = qty > 0
-        imr = Decimal("1") / Decimal(min(leverage, self._max_leverage))
+        effective_leverage = max(1, min(leverage, self._max_leverage))
+        imr = Decimal("1") / Decimal(effective_leverage)
         mmr = self._maintenance_rate
 
         if is_long:

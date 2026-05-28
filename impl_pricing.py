@@ -467,6 +467,18 @@ def crr_binomial_price(
     dt = time_to_expiry / n_steps
     u = math.exp(volatility * math.sqrt(dt))
     d = 1.0 / u
+
+    # CRITICAL FIX: Prevent division by zero if u - d is extremely small
+    # This can occur if volatility is very small (near _MIN_VOLATILITY)
+    # and time step dt is also small, leading to u ≈ d ≈ 1.0.
+    if u - d < 1e-12:
+        forward = spot * math.exp((rate - dividend_yield) * time_to_expiry)
+        df = math.exp(-rate * time_to_expiry)
+        if is_call:
+            return df * max(forward - strike, 0.0)
+        else:
+            return df * max(strike - forward, 0.0)
+
     drift = math.exp((rate - dividend_yield) * dt)
     p = (drift - d) / (u - d)
     discount = math.exp(-rate * dt)
@@ -593,6 +605,18 @@ def merton_jump_diffusion_price(
     # Risk-neutral jump intensity
     lambda_prime = jump_intensity * (1.0 + m)
 
+    # If risk-neutral intensity is effectively zero, reduce to Black-Scholes
+    if lambda_prime < 1e-10:
+        return black_scholes_price(
+            spot=spot,
+            strike=strike,
+            time_to_expiry=time_to_expiry,
+            rate=rate,
+            dividend_yield=dividend_yield,
+            volatility=volatility,
+            is_call=is_call,
+        )
+
     # Sum over Poisson terms
     total_price = 0.0
 
@@ -601,7 +625,7 @@ def merton_jump_diffusion_price(
         if n == 0:
             poisson_weight = math.exp(-lambda_prime * time_to_expiry)
         else:
-            log_weight = -lambda_prime * time_to_expiry + n * math.log(lambda_prime * time_to_expiry)
+            log_weight = -lambda_prime * time_to_expiry + n * math.log(max(lambda_prime * time_to_expiry, 1e-300))
             # Use log of factorial for numerical stability
             log_factorial = sum(math.log(i) for i in range(1, n + 1))
             log_weight -= log_factorial
@@ -664,9 +688,9 @@ def merton_jump_diffusion_price_vec(
     lambda_prime = jump_intensity * (1.0 + m)
 
     for n in range(max_terms):
-        # Poisson weight (scalar)
+        # Poisson weight (vector)
         if n == 0:
-            poisson_weight = math.exp(-lambda_prime * np.max(time_to_expiry))
+            poisson_weight = np.exp(-lambda_prime * time_to_expiry)
         else:
             log_weight = -lambda_prime * time_to_expiry + n * np.log(np.maximum(lambda_prime * time_to_expiry, 1e-300))
             log_factorial = sum(math.log(i) for i in range(1, n + 1))
@@ -748,9 +772,9 @@ def variance_swap_strike(
     call_strikes = call_strikes[call_order]
     call_prices = call_prices[call_order]
 
-    # Filter OTM options
-    put_mask = put_strikes < forward
-    call_mask = call_strikes > forward
+    # Filter OTM options and ensure strikes are positive to avoid division by zero
+    put_mask = (put_strikes < forward) & (put_strikes > 0.0)
+    call_mask = (call_strikes > forward) & (call_strikes > 0.0)
 
     otm_put_strikes = put_strikes[put_mask]
     otm_put_prices = put_prices[put_mask]

@@ -107,6 +107,33 @@ class StateAdversarialPPO:
         self._total_clean_samples = 0
         self._total_robust_kl_penalty = 0.0
 
+    def _get_distribution(
+        self,
+        obs: Tensor,
+        lstm_states: Optional[Any] = None,
+        episode_starts: Optional[Tensor] = None,
+    ) -> Any:
+        """Helper to get distribution from policy, supporting both feedforward and recurrent policies."""
+        if lstm_states is not None and episode_starts is not None:
+            dist_output = self.model.policy.get_distribution(obs, lstm_states, episode_starts)
+        else:
+            dist_output = self.model.policy.get_distribution(obs)
+            
+        if isinstance(dist_output, tuple):
+            return dist_output[0]
+        return dist_output
+
+    def _predict_values(
+        self,
+        obs: Tensor,
+        lstm_states: Optional[Any] = None,
+        episode_starts: Optional[Tensor] = None,
+    ) -> Tensor:
+        """Helper to predict values from policy, supporting both feedforward and recurrent policies."""
+        if lstm_states is not None and episode_starts is not None:
+            return self.model.policy.predict_values(obs, lstm_states, episode_starts)
+        return self.model.policy.predict_values(obs)
+
     @property
     def is_adversarial_enabled(self) -> bool:
         """Check if adversarial training is currently enabled."""
@@ -184,12 +211,15 @@ class StateAdversarialPPO:
             logger.info(f"SA-PPO: Using configured max_updates={self.config.max_updates}")
             return self.config.max_updates
 
+        # Helper to check if a value is a valid numeric type (and not a mock)
+        is_num = lambda x: isinstance(x, (int, float)) and not hasattr(x, "mock_add_spec")
+
         # Priority 2: Compute from total_timesteps and n_steps
         total_timesteps = getattr(self.model, 'total_timesteps', None)
         n_steps = getattr(self.model, 'n_steps', None)
 
-        if total_timesteps is not None and n_steps is not None and n_steps > 0:
-            max_updates = total_timesteps // n_steps
+        if is_num(total_timesteps) and is_num(n_steps) and n_steps > 0:
+            max_updates = int(total_timesteps // n_steps)
             logger.info(
                 f"SA-PPO: Computed max_updates={max_updates} from "
                 f"total_timesteps={total_timesteps}, n_steps={n_steps}"
@@ -198,8 +228,8 @@ class StateAdversarialPPO:
 
         # Priority 3: Infer from current progress (assume halfway through training)
         num_timesteps = getattr(self.model, 'num_timesteps', 0)
-        if num_timesteps > 0 and n_steps is not None and n_steps > 0:
-            estimated_max = (num_timesteps * 2) // n_steps
+        if is_num(num_timesteps) and num_timesteps > 0 and is_num(n_steps) and n_steps > 0:
+            estimated_max = int((num_timesteps * 2) // n_steps)
             logger.warning(
                 f"SA-PPO: Cannot determine total_timesteps. "
                 f"Estimating max_updates={estimated_max} from current progress "
@@ -226,6 +256,8 @@ class StateAdversarialPPO:
         clip_range: float = 0.2,
         ent_coef: float = 0.01,
         vf_coef: float = 0.5,
+        lstm_states: Optional[Any] = None,
+        episode_starts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Dict[str, float]]:
         """Compute adversarial loss with robust training.
 
@@ -246,6 +278,8 @@ class StateAdversarialPPO:
             clip_range: PPO clip range
             ent_coef: Entropy coefficient for exploration
             vf_coef: Value function coefficient
+            lstm_states: LSTM states from rollout buffer
+            episode_starts: Episode starts tensor
 
         Returns:
             Tuple of (total_loss, info_dict)
@@ -256,7 +290,7 @@ class StateAdversarialPPO:
         if not self.is_adversarial_enabled:
             # Fall back to standard training
             return self._compute_standard_loss(
-                states, actions, advantages, returns, old_log_probs, old_values, clip_range, ent_coef, vf_coef
+                states, actions, advantages, returns, old_log_probs, old_values, clip_range, ent_coef, vf_coef, lstm_states, episode_starts
             )
 
         batch_size = states.size(0)
@@ -284,12 +318,24 @@ class StateAdversarialPPO:
         old_log_probs_clean = old_log_probs[:num_clean]
         old_log_probs_adv = old_log_probs[num_clean:]
 
+        # Split recurrent states if present
+        lstm_states_clean = None
+        lstm_states_adv = None
+        episode_starts_clean = None
+        episode_starts_adv = None
+        if lstm_states is not None:
+            lstm_states_clean = tuple(s[:, :num_clean] for s in lstm_states)
+            lstm_states_adv = tuple(s[:, num_clean:] for s in lstm_states)
+        if episode_starts is not None:
+            episode_starts_clean = episode_starts[:num_clean]
+            episode_starts_adv = episode_starts[num_clean:]
+
         # Generate adversarial perturbations for policy
         states_adv_perturbed = states_adv_base
         if self.config.attack_policy and num_adversarial > 0:
             # Create policy loss function for attack
             def policy_loss_fn(s_perturbed: Tensor) -> Tensor:
-                dist = self.model.policy.get_distribution(s_perturbed)
+                dist = self._get_distribution(s_perturbed, lstm_states_adv, episode_starts_adv)
                 log_probs = dist.log_prob(actions_adv)
                 ratio = torch.exp(log_probs - old_log_probs_adv)
                 clipped_ratio = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range)
@@ -308,7 +354,7 @@ class StateAdversarialPPO:
         old_log_probs_combined = torch.cat([old_log_probs_clean, old_log_probs_adv], dim=0)
 
         # Compute policy loss
-        dist = self.model.policy.get_distribution(states_combined)
+        dist = self._get_distribution(states_combined, lstm_states, episode_starts)
         log_probs = dist.log_prob(actions_combined)
         ratio = torch.exp(log_probs - old_log_probs_combined)
         clipped_ratio = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range)
@@ -324,8 +370,8 @@ class StateAdversarialPPO:
         if self.config.attack_value and num_adversarial > 0:
             # Generate perturbations for value function
             def value_loss_fn(s_perturbed: Tensor) -> Tensor:
-                values = self.model.policy.predict_values(s_perturbed)
-                return nn.functional.mse_loss(values, returns_adv)
+                values = self._predict_values(s_perturbed, lstm_states_adv, episode_starts_adv)
+                return nn.functional.mse_loss(values, returns_adv.view_as(values))
 
             delta_value = self.perturbation_gen.generate_perturbation(states_adv_base, value_loss_fn)
             states_adv_value = states_adv_base + delta_value
@@ -335,8 +381,8 @@ class StateAdversarialPPO:
         else:
             states_value_combined = states_combined
 
-        values = self.model.policy.predict_values(states_value_combined)
-        value_loss = nn.functional.mse_loss(values, returns_combined)
+        values = self._predict_values(states_value_combined, lstm_states, episode_starts)
+        value_loss = nn.functional.mse_loss(values, returns_combined.view_as(values))
 
         # Compute robust KL regularization
         robust_kl_penalty = 0.0
@@ -344,9 +390,9 @@ class StateAdversarialPPO:
         if self.config.robust_kl_coef > 0 and num_adversarial > 0:
             # Get distributions from clean and adversarial states
             with torch.no_grad():
-                dist_clean = self.model.policy.get_distribution(states_adv_base)
+                dist_clean = self._get_distribution(states_adv_base, lstm_states_adv, episode_starts_adv)
 
-            dist_adv = self.model.policy.get_distribution(states_adv_perturbed)
+            dist_adv = self._get_distribution(states_adv_perturbed, lstm_states_adv, episode_starts_adv)
 
             # Compute KL divergence: KL(clean || adversarial)
             # Use analytical KL divergence when available (exact for Gaussian)
@@ -397,6 +443,8 @@ class StateAdversarialPPO:
         clip_range: float,
         ent_coef: float = 0.01,
         vf_coef: float = 0.5,
+        lstm_states: Optional[Any] = None,
+        episode_starts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Dict[str, float]]:
         """Compute standard PPO loss without adversarial training.
 
@@ -410,12 +458,14 @@ class StateAdversarialPPO:
             clip_range: PPO clip range
             ent_coef: Entropy coefficient for exploration
             vf_coef: Value function coefficient
+            lstm_states: LSTM states from rollout buffer
+            episode_starts: Episode starts tensor
 
         Returns:
             Tuple of (total_loss, info_dict)
         """
         # Standard PPO policy loss
-        dist = self.model.policy.get_distribution(states)
+        dist = self._get_distribution(states, lstm_states, episode_starts)
         log_probs = dist.log_prob(actions)
         ratio = torch.exp(log_probs - old_log_probs)
         clipped_ratio = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range)
@@ -428,8 +478,8 @@ class StateAdversarialPPO:
         entropy_loss = -torch.mean(entropy)
 
         # Standard value loss
-        values = self.model.policy.predict_values(states)
-        value_loss = nn.functional.mse_loss(values, returns)
+        values = self._predict_values(states, lstm_states, episode_starts)
+        value_loss = nn.functional.mse_loss(values, returns.view_as(values))
 
         # Total loss with entropy regularization (CRITICAL FIX)
         # Standard PPO loss includes entropy to encourage exploration and prevent policy collapse
@@ -482,6 +532,8 @@ class StateAdversarialPPO:
         advantages: Tensor,
         old_log_probs: Tensor,
         clip_range: float,
+        lstm_states: Optional[Any] = None,
+        episode_starts: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Tensor, Dict[str, float]]:
         """Apply adversarial augmentation to a batch of states.
 
@@ -494,6 +546,8 @@ class StateAdversarialPPO:
             advantages: Advantage estimates [batch_size]
             old_log_probs: Log probs from old policy [batch_size]
             clip_range: PPO clip range
+            lstm_states: LSTM states from rollout buffer
+            episode_starts: Episode starts tensor
 
         Returns:
             Tuple of (augmented_states, sample_mask, info_dict)
@@ -529,12 +583,20 @@ class StateAdversarialPPO:
         advantages_adv = advantages[num_clean:]
         old_log_probs_adv = old_log_probs[num_clean:]
 
+        # Split recurrent states if present
+        lstm_states_adv = None
+        episode_starts_adv = None
+        if lstm_states is not None:
+            lstm_states_adv = tuple(s[:, num_clean:] for s in lstm_states)
+        if episode_starts is not None:
+            episode_starts_adv = episode_starts[num_clean:]
+
         # Generate adversarial perturbations for policy
         states_adv_perturbed = states_adv_base
         if self.config.attack_policy and num_adversarial > 0:
             # Create policy loss function for attack
             def policy_loss_fn(s_perturbed: Tensor) -> Tensor:
-                dist = self.model.policy.get_distribution(s_perturbed)
+                dist = self._get_distribution(s_perturbed, lstm_states_adv, episode_starts_adv)
                 log_probs = dist.log_prob(actions_adv)
                 ratio = torch.exp(log_probs - old_log_probs_adv)
                 clipped_ratio = torch.clamp(ratio, 1.0 - clip_range, 1.0 + clip_range)
@@ -567,6 +629,10 @@ class StateAdversarialPPO:
         states_clean: Tensor,
         states_adv: Tensor,
         actions: Tensor,
+        lstm_states_clean: Optional[Any] = None,
+        lstm_states_adv: Optional[Any] = None,
+        episode_starts_clean: Optional[Tensor] = None,
+        episode_starts_adv: Optional[Tensor] = None,
     ) -> Tuple[float, Dict[str, float]]:
         """Compute robust KL regularization between clean and adversarial policies.
 
@@ -576,6 +642,10 @@ class StateAdversarialPPO:
             states_clean: Clean state observations [batch_size, ...]
             states_adv: Adversarial (perturbed) state observations [batch_size, ...]
             actions: Actions to evaluate [batch_size, ...]
+            lstm_states_clean: Clean LSTM states
+            lstm_states_adv: Adversarial LSTM states
+            episode_starts_clean: Clean episode starts
+            episode_starts_adv: Adversarial episode starts
 
         Returns:
             Tuple of (robust_kl_penalty, info_dict)
@@ -591,9 +661,9 @@ class StateAdversarialPPO:
 
         # Get distributions from clean and adversarial states
         with torch.no_grad():
-            dist_clean = self.model.policy.get_distribution(states_clean)
+            dist_clean = self._get_distribution(states_clean, lstm_states_clean, episode_starts_clean)
 
-        dist_adv = self.model.policy.get_distribution(states_adv)
+        dist_adv = self._get_distribution(states_adv, lstm_states_adv, episode_starts_adv)
 
         # Compute KL divergence: KL(clean || adversarial)
         # Prefer analytical KL divergence for better accuracy and efficiency

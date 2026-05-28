@@ -1811,7 +1811,7 @@ class TestLiquidationEngineValidation:
             leverage=10,
             wallet_balance=wallet_balance,
             margin_mode=MarginMode.ISOLATED,
-            isolated_margin=wallet_balance,  # For ISOLATED mode
+            isolated_margin=Decimal("5000"),  # $50000 / 10
         )
 
         liq_20x = tiered_margin_calc.calculate_liquidation_price(
@@ -1820,7 +1820,7 @@ class TestLiquidationEngineValidation:
             leverage=20,
             wallet_balance=wallet_balance,
             margin_mode=MarginMode.ISOLATED,
-            isolated_margin=wallet_balance,  # For ISOLATED mode
+            isolated_margin=Decimal("2500"),  # $50000 / 20
         )
 
         # Higher leverage = closer to entry price

@@ -42,7 +42,12 @@ class RiskBasicCfg:
 
 
 class RiskBasicImpl:
-    def __init__(self, cfg: RiskBasicCfg) -> None:
+    def __init__(self, cfg: RiskBasicCfg | None = None, **kwargs) -> None:
+        if cfg is None:
+            import dataclasses
+            cfg_fields = {f.name for f in dataclasses.fields(RiskBasicCfg)}
+            cfg_params = {k: v for k, v in kwargs.items() if k in cfg_fields}
+            cfg = RiskBasicCfg(**cfg_params)
         self.cfg = cfg
         payload = {
             "enabled": bool(cfg.enabled),

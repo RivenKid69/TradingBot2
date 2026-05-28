@@ -58,11 +58,19 @@ def compute_noise_to_signal_ratio(
                 continue
 
             state = optimizer.state.get(p, {})
-            if group["adaptive_noise"] and "grad_norm_ema" in state:
-                # Adaptive noise: scaled by gradient norm
-                grad_norm_ema = state["grad_norm_ema"]
+            if group["adaptive_noise"]:
+                if group.get("instant_noise_scale", True):
+                    # Use current gradient norm directly
+                    grad_norm_for_noise = p.grad.data.norm().item()
+                elif "grad_norm_ema" in state:
+                    # Use EMA
+                    bias_correction_noise = 1 - group["noise_beta"] ** state.get("step", 1)
+                    grad_norm_for_noise = state["grad_norm_ema"] / bias_correction_noise
+                else:
+                    grad_norm_for_noise = 1.0
+
                 adaptive_sigma = max(
-                    group["sigma"] * grad_norm_ema,
+                    group["sigma"] * grad_norm_for_noise,
                     group["min_noise_std"]
                 )
                 # Approximate noise variance per parameter
@@ -121,12 +129,11 @@ class TestVGSUPGDNoiseInteraction:
             optimizer.zero_grad()
             loss.backward()
 
-            # Inject large variance in gradients to trigger VGS scaling
+            # Simulate VGS scaling gradients down severely
             if step >= 10:
                 for param in model.parameters():
                     if param.grad is not None:
-                        # Add high-variance noise to gradients
-                        param.grad.data += torch.randn_like(param.grad) * 0.5
+                        param.grad.data *= 0.05
 
             # Get gradient norm before VGS
             grad_norm_before = compute_gradient_norm(model)
@@ -195,11 +202,11 @@ class TestVGSUPGDNoiseInteraction:
             optimizer.zero_grad()
             loss.backward()
 
-            # Inject high variance after step 10
+            # Simulate VGS scaling gradients down severely
             if step >= 10:
                 for param in model.parameters():
                     if param.grad is not None:
-                        param.grad.data += torch.randn_like(param.grad) * 0.5
+                        param.grad.data *= 0.05
 
             grad_norm_before = compute_gradient_norm(model)
             vgs.update_statistics()
@@ -258,6 +265,7 @@ class TestVGSUPGDNoiseInteraction:
         loss.backward()
 
         grad_norm_large = compute_gradient_norm(model)
+        optimizer.step()
 
         # Check adaptive noise in optimizer state
         noise_std_large = []
@@ -266,12 +274,15 @@ class TestVGSUPGDNoiseInteraction:
                 if p.grad is None:
                     continue
                 state = optimizer.state[p]
-                if "grad_norm_ema" in state:
-                    adaptive_sigma = max(
-                        group["sigma"] * state["grad_norm_ema"],
-                        group["min_noise_std"]
-                    )
-                    noise_std_large.append(adaptive_sigma)
+                if group.get("instant_noise_scale", True):
+                    grad_norm_for_noise = p.grad.data.norm().item()
+                else:
+                    grad_norm_for_noise = state.get("grad_norm_ema", 1.0)
+                adaptive_sigma = max(
+                    group["sigma"] * grad_norm_for_noise,
+                    group["min_noise_std"]
+                )
+                noise_std_large.append(adaptive_sigma)
 
         avg_noise_large = np.mean(noise_std_large)
 
@@ -283,6 +294,7 @@ class TestVGSUPGDNoiseInteraction:
         loss.backward()
 
         grad_norm_small = compute_gradient_norm(model)
+        optimizer.step()
 
         noise_std_small = []
         for group in optimizer.param_groups:
@@ -290,12 +302,15 @@ class TestVGSUPGDNoiseInteraction:
                 if p.grad is None:
                     continue
                 state = optimizer.state[p]
-                if "grad_norm_ema" in state:
-                    adaptive_sigma = max(
-                        group["sigma"] * state["grad_norm_ema"],
-                        group["min_noise_std"]
-                    )
-                    noise_std_small.append(adaptive_sigma)
+                if group.get("instant_noise_scale", True):
+                    grad_norm_for_noise = p.grad.data.norm().item()
+                else:
+                    grad_norm_for_noise = state.get("grad_norm_ema", 1.0)
+                adaptive_sigma = max(
+                    group["sigma"] * grad_norm_for_noise,
+                    group["min_noise_std"]
+                )
+                noise_std_small.append(adaptive_sigma)
 
         avg_noise_small = np.mean(noise_std_small)
 

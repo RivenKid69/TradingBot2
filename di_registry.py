@@ -133,6 +133,9 @@ def _instantiate(target_cls, params: Dict[str, Any], container: Mapping[Any, Any
     except Exception:
         hints = {}
     kwargs: Dict[str, Any] = {}
+    
+    has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+    
     for name, p in sig.parameters.items():
         if name == "self":
             continue
@@ -151,6 +154,12 @@ def _instantiate(target_cls, params: Dict[str, Any], container: Mapping[Any, Any
                 ):
                     continue
                 # оставляем незаполненным — конструктор может это принять
+                
+    if has_var_keyword:
+        for k, v in params.items():
+            if k not in kwargs and k not in sig.parameters:
+                kwargs[k] = v
+                
     return target_cls(**kwargs)
 
 
@@ -240,6 +249,16 @@ def build_graph(components: Components, run_config: Optional[CommonRunConfig] = 
                 )
 
     build_component("executor", executor_spec, container)
+    if "executor" in container:
+        sim_obj = container["executor"]
+        if type(sim_obj).__name__ != "ExecutionSimulator":
+            if hasattr(sim_obj, "_sim"):
+                sim_obj = getattr(sim_obj, "_sim")
+            elif hasattr(sim_obj, "sim"):
+                sim_obj = getattr(sim_obj, "sim")
+        container["sim"] = sim_obj
+    if "run_config" in container:
+        container["cfg"] = container["run_config"]
     if components.backtest_engine:
         build_component("backtest_engine", components.backtest_engine, container)
     global _GLOBAL_CONTAINER

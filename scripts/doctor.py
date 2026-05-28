@@ -43,11 +43,11 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 REQUIRED_PYTHON = (3, 12)
 
 CORE_PACKAGES = [
-    "numpy",
-    "pandas",
-    "pydantic",
-    "pyyaml",
-    "gymnasium",
+    ("numpy", "numpy"),
+    ("pandas", "pandas"),
+    ("pydantic", "pydantic"),
+    ("yaml", "pyyaml"),
+    ("gymnasium", "gymnasium"),
 ]
 
 ML_PACKAGES = [
@@ -211,6 +211,13 @@ def check_package_installed(package_name: str, import_name: Optional[str] = None
     try:
         module = __import__(import_name.split(".")[0])
         version = getattr(module, "__version__", "unknown")
+        if callable(version):
+            try:
+                version = version()
+            except Exception:
+                version = str(version)
+        if not isinstance(version, str):
+            version = str(version)
         return True, version
     except ImportError:
         return False, None
@@ -221,12 +228,12 @@ def check_core_packages() -> CheckResult:
     missing = []
     installed = []
 
-    for pkg in CORE_PACKAGES:
-        is_installed, version = check_package_installed(pkg)
+    for import_name, pip_name in CORE_PACKAGES:
+        is_installed, version = check_package_installed(import_name)
         if is_installed:
-            installed.append(f"{pkg}=={version}")
+            installed.append(f"{pip_name}=={version}")
         else:
-            missing.append(pkg)
+            missing.append(pip_name)
 
     passed = len(missing) == 0
 

@@ -21,6 +21,12 @@ def _ensure_module(name: str) -> types.ModuleType:
 
 
 def _install_rl_stubs() -> None:
+    try:
+        import sb3_contrib
+        import stable_baselines3
+    except ImportError:
+        pass
+
     if "sb3_contrib" not in sys.modules:
         sb3_contrib = _ensure_module("sb3_contrib")
         sb3_contrib.RecurrentPPO = object

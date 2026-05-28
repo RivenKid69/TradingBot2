@@ -6,7 +6,9 @@ Runs without pytest dependency - suitable for CI/CD environments.
 Tests the full integration of all advanced optimization components.
 """
 
+import os
 import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import traceback
 import warnings
 
@@ -19,33 +21,34 @@ def check_dependencies():
 
     try:
         import torch
-        print(f"✓ PyTorch {torch.__version__}")
+        print(f"[OK] PyTorch {torch.__version__}")
     except ImportError:
         missing.append("torch")
 
     try:
         import numpy
-        print(f"✓ NumPy {numpy.__version__}")
+        print(f"[OK] NumPy {numpy.__version__}")
     except ImportError:
         missing.append("numpy")
 
     try:
-        print(f"✓ Gymnasium {gymnasium.__version__}")
+        import gymnasium as gym
+        print(f"[OK] Gymnasium {gym.__version__}")
     except ImportError:
         missing.append("gymnasium")
 
     try:
         import stable_baselines3
-        print(f"✓ Stable-Baselines3 {stable_baselines3.__version__}")
+        print(f"[OK] Stable-Baselines3 {stable_baselines3.__version__}")
     except ImportError:
         missing.append("stable-baselines3")
 
     if missing:
-        print(f"\n✗ Missing dependencies: {', '.join(missing)}")
+        print(f"\n[FAIL] Missing dependencies: {', '.join(missing)}")
         print("Cannot run tests without required packages.")
         return False
 
-    print("✓ All dependencies available\n")
+    print("[OK] All dependencies available\n")
     return True
 
 
@@ -57,15 +60,15 @@ def run_test(test_name, test_func):
 
     try:
         test_func()
-        print(f"✓ PASSED: {test_name}\n")
+        print(f"[OK] PASSED: {test_name}\n")
         return True
     except AssertionError as e:
-        print(f"✗ FAILED: {test_name}")
+        print(f"[FAIL] FAILED: {test_name}")
         print(f"  Assertion Error: {e}\n")
         traceback.print_exc()
         return False
     except Exception as e:
-        print(f"✗ ERROR: {test_name}")
+        print(f"[FAIL] ERROR: {test_name}")
         print(f"  Exception: {e}\n")
         traceback.print_exc()
         return False
@@ -104,8 +107,8 @@ def test_01_upgd_basic():
     assert 'avg_utility' in state, "Should track utility"
     assert state['step'] == 1, "Step count should be 1"
 
-    print("  ✓ UPGD optimizer initialized and step completed")
-    print(f"  ✓ Optimizer state created for {len(optimizer.state)} parameters")
+    print("  [OK] UPGD optimizer initialized and step completed")
+    print(f"  [OK] Optimizer state created for {len(optimizer.state)} parameters")
 
 
 def test_02_adaptive_upgd():
@@ -150,8 +153,8 @@ def test_02_adaptive_upgd():
             has_moments = True
 
     assert has_moments, "At least some parameters should have moment statistics"
-    print("  ✓ AdaptiveUPGD moments tracked correctly")
-    print(f"  ✓ Trained for 10 steps without errors")
+    print("  [OK] AdaptiveUPGD moments tracked correctly")
+    print(f"  [OK] Trained for 10 steps without errors")
 
 
 def test_03_variance_gradient_scaler():
@@ -197,9 +200,9 @@ def test_03_variance_gradient_scaler():
     assert vgs._grad_mean_ema is not None, "Should track gradient mean"
     assert vgs._grad_var_ema is not None, "Should track gradient variance"
 
-    print("  ✓ VGS warmup behavior correct (first 5 steps unscaled)")
-    print("  ✓ VGS statistics tracked over 15 steps")
-    print(f"  ✓ Final scaling factor: {scaling_factors[-1]:.4f}")
+    print("  [OK] VGS warmup behavior correct (first 5 steps unscaled)")
+    print("  [OK] VGS statistics tracked over 15 steps")
+    print(f"  [OK] Final scaling factor: {scaling_factors[-1]:.4f}")
 
 
 def test_04_upgd_numerical_stability():
@@ -240,8 +243,8 @@ def test_04_upgd_numerical_stability():
             if isinstance(value, torch.Tensor):
                 assert torch.all(torch.isfinite(value)), f"NaN/Inf in optimizer state '{key}'"
 
-    print("  ✓ No NaN/Inf in parameters after 100 steps")
-    print("  ✓ Optimizer state remained stable")
+    print("  [OK] No NaN/Inf in parameters after 100 steps")
+    print("  [OK] Optimizer state remained stable")
 
 
 def test_05_pbt_scheduler():
@@ -294,15 +297,15 @@ def test_05_pbt_scheduler():
     worst_member = population[0]
     worst_member.step = 10
 
-    new_state, new_params = scheduler.exploit_and_explore(
+    new_state, new_params, _ = scheduler.exploit_and_explore(
         worst_member,
         model_state_dict={"dummy": torch.randn(2, 2)}
     )
 
     assert "lr" in new_params, "Should return new hyperparameters"
-    print(f"  ✓ PBT scheduler initialized with {len(population)} members")
-    print(f"  ✓ Exploit/explore completed")
-    print(f"  ✓ New lr: {new_params['lr']:.6f}, sigma: {new_params['sigma']:.6f}")
+    print(f"  [OK] PBT scheduler initialized with {len(population)} members")
+    print(f"  [OK] Exploit/explore completed")
+    print(f"  [OK] New lr: {new_params['lr']:.6f}, sigma: {new_params['sigma']:.6f}")
 
 
 def test_06_upgd_with_ppo():
@@ -313,10 +316,11 @@ def test_06_upgd_with_ppo():
     from distributional_ppo import DistributionalPPO
     from optimizers import AdaptiveUPGD
 
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    env = DummyVecEnv([lambda: gym.make("Pendulum-v1")])
 
+    # We must use "DistributionalPolicy" alias which maps to DistributionalActorCriticPolicy
     model = DistributionalPPO(
-        "MlpPolicy",
+        "DistributionalPolicy",
         env,
         optimizer_class="adaptive_upgd",
         optimizer_kwargs={"lr": 3e-4, "sigma": 0.01},
@@ -340,24 +344,31 @@ def test_06_upgd_with_ppo():
         assert torch.all(torch.isfinite(param)), "Parameters should be finite"
 
     env.close()
-    print("  ✓ UPGD integrated with PPO successfully")
-    print("  ✓ Training completed without errors")
+    print("  [OK] UPGD integrated with PPO successfully")
+    print("  [OK] Training completed without errors")
 
 
 def test_07_twin_critics_with_upgd():
     """Test Twin Critics with UPGD optimizer."""
     import torch
+    import gymnasium as gym
     from stable_baselines3.common.vec_env import DummyVecEnv
     from distributional_ppo import DistributionalPPO
 
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    env = DummyVecEnv([lambda: gym.make("Pendulum-v1")])
 
+    # We must use "DistributionalPolicy" alias
     model = DistributionalPPO(
-        "MlpPolicy",
+        "DistributionalPolicy",
         env,
         optimizer_class="adaptive_upgd",
-        use_twin_critics=True,
-        adversarial_training=True,
+        policy_kwargs={
+            'arch_params': {
+                'critic': {
+                    'use_twin_critics': True
+                }
+            }
+        },
         n_steps=64,
         n_epochs=2,
         value_scale_max_rel_step=0.1,  # Required parameter
@@ -365,8 +376,8 @@ def test_07_twin_critics_with_upgd():
     )
 
     # Verify Twin Critics is active
-    assert hasattr(model.policy, 'critics'), "Should have critics"
-    assert len(model.policy.critics) == 2, "Should have 2 critics"
+    assert getattr(model.policy, '_use_twin_critics', False) is True, "Twin critics should be enabled"
+    assert (model.policy.dist_head_2 is not None) or (model.policy.quantile_head_2 is not None), "Second critic head should exist"
 
     # Train
     model.learn(total_timesteps=256)
@@ -376,26 +387,33 @@ def test_07_twin_critics_with_upgd():
         assert torch.all(torch.isfinite(param)), "Parameters should be finite"
 
     env.close()
-    print("  ✓ Twin Critics initialized correctly")
-    print("  ✓ Training with adversarial critics successful")
+    print("  [OK] Twin Critics initialized correctly")
+    print("  [OK] Training with adversarial critics successful")
 
 
 def test_08_full_integration():
     """Test full integration: UPGD + Twin Critics + VGS."""
     import torch
+    import gymnasium as gym
     from stable_baselines3.common.vec_env import DummyVecEnv
     from distributional_ppo import DistributionalPPO
 
-    env = DummyVecEnv([lambda: gym.make("CartPole-v1")])
+    env = DummyVecEnv([lambda: gym.make("Pendulum-v1")])
 
+    # We must use "DistributionalPolicy" alias
     model = DistributionalPPO(
-        "MlpPolicy",
+        "DistributionalPolicy",
         env,
         optimizer_class="adaptive_upgd",
         optimizer_kwargs={"lr": 3e-4, "sigma": 0.01, "beta_utility": 0.999},
-        use_twin_critics=True,
-        adversarial_training=True,
-        vgs_enabled=True,
+        policy_kwargs={
+            'arch_params': {
+                'critic': {
+                    'use_twin_critics': True
+                }
+            }
+        },
+        variance_gradient_scaling=True,
         vgs_alpha=0.15,
         vgs_warmup_steps=30,
         n_steps=128,
@@ -426,10 +444,10 @@ def test_08_full_integration():
         state_count += 1
 
     env.close()
-    print(f"  ✓ Full integration successful")
-    print(f"  ✓ Checked {param_count} parameters - all finite")
-    print(f"  ✓ Checked {state_count} optimizer states - all finite")
-    print(f"  ✓ UPGD + Twin Critics + VGS working together")
+    print(f"  [OK] Full integration successful")
+    print(f"  [OK] Checked {param_count} parameters - all finite")
+    print(f"  [OK] Checked {state_count} optimizer states - all finite")
+    print(f"  [OK] UPGD + Twin Critics + VGS working together")
 
 
 # ===========================================================================
@@ -476,7 +494,7 @@ def main():
     total = len(results)
 
     for test_name, success in results:
-        status = "✓ PASS" if success else "✗ FAIL"
+        status = "[OK] PASS" if success else "[FAIL] FAIL"
         print(f"{status}: {test_name}")
 
     print()
@@ -487,21 +505,21 @@ def main():
 
     if failed == 0:
         print()
-        print("🎉 ALL TESTS PASSED! 🎉")
+        print("ALL TESTS PASSED!")
         print()
         print("Summary of validated features:")
-        print("  ✓ UPGD optimizer (utility-based weight protection)")
-        print("  ✓ AdaptiveUPGD (UPGD + Adam moments)")
-        print("  ✓ Variance Gradient Scaling (adaptive gradient scaling)")
-        print("  ✓ Population-Based Training (hyperparameter optimization)")
-        print("  ✓ Twin Critics (adversarial value functions)")
-        print("  ✓ Full integration (all components working together)")
-        print("  ✓ Numerical stability over extended training")
+        print("  - UPGD optimizer (utility-based weight protection)")
+        print("  - AdaptiveUPGD (UPGD + Adam moments)")
+        print("  - Variance Gradient Scaling (adaptive gradient scaling)")
+        print("  - Population-Based Training (hyperparameter optimization)")
+        print("  - Twin Critics (adversarial value functions)")
+        print("  - Full integration (all components working together)")
+        print("  - Numerical stability over extended training")
         print()
         return 0
     else:
         print()
-        print(f"❌ {failed} TEST(S) FAILED")
+        print(f"{failed} TEST(S) FAILED")
         print()
         return 1
 

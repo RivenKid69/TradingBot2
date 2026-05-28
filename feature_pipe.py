@@ -264,7 +264,7 @@ class FeaturePipe:
         present in the dataframe.
     """
 
-    spec: FeatureSpec
+    spec: Optional[FeatureSpec] = None
     price_col: str = "price"
     label_col: Optional[str] = None
     metrics: Optional[SignalQualityMetrics] = None
@@ -281,6 +281,8 @@ class FeaturePipe:
     )
 
     def __post_init__(self) -> None:
+        if self.spec is None:
+            self.spec = FeatureSpec()
         # Initialize transformer for online mode.
         self._tr = OnlineFeatureTransformer(self.spec)
         self._read_only = False

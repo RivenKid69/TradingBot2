@@ -420,8 +420,9 @@ class TestHelperFunctions:
     def test_popart_value_to_serializable_path(self):
         """Test serialization of Path objects."""
         from pathlib import Path
+        import os
         p = Path("/tmp/test")
-        assert _popart_value_to_serializable(p) == "/tmp/test"
+        assert _popart_value_to_serializable(p) == os.fspath(p)
 
     def test_popart_value_to_serializable_dict(self):
         """Test serialization of dicts."""
@@ -675,6 +676,14 @@ class TestVarianceFunctions:
         result = _weighted_variance_np(values, weights)
         # Should handle without overflow
         assert math.isfinite(result) or math.isnan(result)
+
+    def test_weighted_variance_np_extreme_underflow(self):
+        """Test with extreme weights (1e250) that would previously trigger scale * scale underflow to 0.0."""
+        values = np.array([1.0, 2.0, 3.0])
+        weights = np.array([1e250, 1e250, 1e250])
+        result = _weighted_variance_np(values, weights)
+        # Should return nan safely without raising ZeroDivisionError
+        assert math.isnan(result)
 
     def test_safe_explained_variance_basic(self):
         """Test basic explained variance."""

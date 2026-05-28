@@ -1915,46 +1915,6 @@ class _Worker:
         except Exception:
             return str(value)
 
-    def _build_config_snapshot(self) -> Dict[str, Any]:
-        try:
-            raw = asdict(self.cfg)
-        except Exception:
-            try:
-                raw = dict(vars(self.cfg))
-            except Exception:
-                return {}
-        snapshot = self._sanitize_snapshot_value(raw)
-        return snapshot if isinstance(snapshot, dict) else {}
-
-    def _read_git_hash(self) -> str | None:
-        if self._git_hash is not None:
-            return self._git_hash
-        try:
-            output = subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
-            )
-            self._git_hash = output.decode("utf-8").strip() or None
-        except Exception:
-            self._git_hash = None
-        return self._git_hash
-
-    def _persist_run_metadata(self) -> None:
-        if self._metadata_persisted or not self.cfg.state.enabled:
-            return
-        updates: Dict[str, Any] = {}
-        snapshot = self._build_config_snapshot()
-        if snapshot:
-            updates["config_snapshot"] = snapshot
-        git_hash = self._read_git_hash()
-        if git_hash:
-            updates["git_hash"] = git_hash
-        if updates:
-            try:
-                state_storage.update_state(**updates)
-            except Exception:
-                self.logger.exception("failed to persist run metadata")
-                return
-        self._metadata_persisted = True
 
     def _set_last_price(self, symbol: str, price: Any) -> None:
         sym = str(symbol).upper()
@@ -7608,76 +7568,46 @@ class ServiceSignalRunner:
             event["errors"] = errors
         return event
 
-def clear_dirty_restart(
-    marker_path: str | Path,
-    state_cfg: StateConfig,
-    *,
-    runner_status_path: str | Path | None = None,
-) -> Dict[str, Any]:
-    """Remove dirty restart marker and wipe persistent state."""
-
-    result: Dict[str, Any] = {
-        "marker_removed": False,
-        "state_cleared": False,
-        "status_updated": False,
-        "errors": [],
-    }
-
-    marker = Path(marker_path)
-    try:
-        marker.unlink()
-    except FileNotFoundError:
-        pass
-    except Exception as exc:
-        result["errors"].append(str(exc))
-    else:
-        result["marker_removed"] = True
-
-    if getattr(state_cfg, "enabled", False) and getattr(state_cfg, "path", None):
+    def _build_config_snapshot(self) -> Dict[str, Any]:
         try:
-            state_storage.clear_state(
-                state_cfg.path,
-                backend=getattr(state_cfg, "backend", "json"),
-                lock_path=getattr(state_cfg, "lock_path", None),
-                backup_keep=getattr(state_cfg, "backup_keep", 0),
-            )
-        except Exception as exc:
-            result["errors"].append(str(exc))
-        else:
-            result["state_cleared"] = True
+            raw = asdict(self.cfg)
+        except Exception:
+            try:
+                raw = dict(vars(self.cfg))
+            except Exception:
+                return {}
+        snapshot = self._sanitize_snapshot_value(raw)
+        return snapshot if isinstance(snapshot, dict) else {}
 
-    if runner_status_path:
-        status_path = Path(runner_status_path)
+    def _read_git_hash(self) -> str | None:
+        if self._git_hash is not None:
+            return self._git_hash
         try:
-            current_status: Dict[str, Any] = {}
-            if status_path.exists():
-                with status_path.open("r", encoding="utf-8") as fh:
-                    payload = json.load(fh) or {}
-                if isinstance(payload, MappingABC):
-                    current_status = dict(payload)
-            dirty_payload = current_status.get("dirty_restart")
-            update = {
-                "active": False,
-                "cleared_at_ms": clock.now_ms(),
-            }
-            if isinstance(dirty_payload, MappingABC):
-                dirty_payload = dict(dirty_payload)
-                dirty_payload.update(update)
-                current_status["dirty_restart"] = dirty_payload
-            else:
-                current_status["dirty_restart"] = update
-            atomic_write_with_retry(
-                status_path,
-                json.dumps(current_status, ensure_ascii=False),
-                retries=3,
-                backoff=0.1,
+            output = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
             )
-        except Exception as exc:
-            result["errors"].append(str(exc))
-        else:
-            result["status_updated"] = True
-    return result
+            self._git_hash = output.decode("utf-8").strip() or None
+        except Exception:
+            self._git_hash = None
+        return self._git_hash
 
+    def _persist_run_metadata(self) -> None:
+        if self._metadata_persisted or not self.cfg.state.enabled:
+            return
+        updates: Dict[str, Any] = {}
+        snapshot = self._build_config_snapshot()
+        if snapshot:
+            updates["config_snapshot"] = snapshot
+        git_hash = self._read_git_hash()
+        if git_hash:
+            updates["git_hash"] = git_hash
+        if updates:
+            try:
+                state_storage.update_state(**updates)
+            except Exception:
+                self.logger.exception("failed to persist run metadata")
+                return
+        self._metadata_persisted = True
 
     def _reload_runtime_config(self, path: Path) -> tuple[bool, str | None]:
         try:
@@ -9612,6 +9542,77 @@ def from_config(
         run_config=cfg,
     )
     return service.run()
+
+
+def clear_dirty_restart(
+    marker_path: str | Path,
+    state_cfg: StateConfig,
+    *,
+    runner_status_path: str | Path | None = None,
+) -> Dict[str, Any]:
+    """Remove dirty restart marker and wipe persistent state."""
+
+    result: Dict[str, Any] = {
+        "marker_removed": False,
+        "state_cleared": False,
+        "status_updated": False,
+        "errors": [],
+    }
+
+    marker = Path(marker_path)
+    try:
+        marker.unlink()
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        result["errors"].append(str(exc))
+    else:
+        result["marker_removed"] = True
+
+    if getattr(state_cfg, "enabled", False) and getattr(state_cfg, "path", None):
+        try:
+            state_storage.clear_state(
+                state_cfg.path,
+                backend=getattr(state_cfg, "backend", "json"),
+                lock_path=getattr(state_cfg, "lock_path", None),
+                backup_keep=getattr(state_cfg, "backup_keep", 0),
+            )
+        except Exception as exc:
+            result["errors"].append(str(exc))
+        else:
+            result["state_cleared"] = True
+
+    if runner_status_path:
+        status_path = Path(runner_status_path)
+        try:
+            current_status: Dict[str, Any] = {}
+            if status_path.exists():
+                with status_path.open("r", encoding="utf-8") as fh:
+                    payload = json.load(fh) or {}
+                if isinstance(payload, MappingABC):
+                    current_status = dict(payload)
+            dirty_payload = current_status.get("dirty_restart")
+            update = {
+                "active": False,
+                "cleared_at_ms": clock.now_ms(),
+            }
+            if isinstance(dirty_payload, MappingABC):
+                dirty_payload = dict(dirty_payload)
+                dirty_payload.update(update)
+                current_status["dirty_restart"] = dirty_payload
+            else:
+                current_status["dirty_restart"] = update
+            atomic_write_with_retry(
+                status_path,
+                json.dumps(current_status, ensure_ascii=False),
+                retries=3,
+                backoff=0.1,
+            )
+        except Exception as exc:
+            result["errors"].append(str(exc))
+        else:
+            result["status_updated"] = True
+    return result
 
 
 __all__ = [

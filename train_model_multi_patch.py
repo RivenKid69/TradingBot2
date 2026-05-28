@@ -4086,7 +4086,7 @@ def objective(trial: optuna.Trial,
         model.learn(
             total_timesteps=total_timesteps,
             callback=all_callbacks,
-            progress_bar=True,
+            progress_bar=False,
             tb_log_name=f"trial_{trial.number:03d}" if tb_log_path is not None else "run"
         )
         ev_metrics = getattr(model, "_last_ev_metrics", None)  # FIX

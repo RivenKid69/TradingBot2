@@ -29,6 +29,12 @@ def _ensure_module(name: str) -> types.ModuleType:
 
 
 def _install_rl_stubs() -> None:
+    try:
+        import sb3_contrib
+        import stable_baselines3
+    except ImportError:
+        pass
+
     if "sb3_contrib" not in sys.modules:
         sb3_contrib = _ensure_module("sb3_contrib")
         sb3_contrib.RecurrentPPO = object
@@ -115,6 +121,14 @@ class DummyModule:
 
     def _to_raw_returns(self, tensor: torch.Tensor) -> torch.Tensor:
         return tensor * self._raw_scale + self._raw_shift
+
+    @staticmethod
+    def _concat_tensor_batches(batches):
+        return MODULE.DistributionalPPO._concat_tensor_batches(batches)
+
+    @staticmethod
+    def _concat_string_keys(keys_batches):
+        return MODULE.DistributionalPPO._concat_string_keys(keys_batches)
 
 
 def _call_compute_ev(

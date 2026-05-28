@@ -173,8 +173,13 @@ class AdaptiveUPGD(torch.optim.Optimizer):
                 sec_moment.mul_(group["beta2"]).add_(p.grad.data ** 2, alpha=1 - group["beta2"])
 
                 # Track global min/max utility for normalization
-                current_util_min = avg_utility.min()
-                current_util_max = avg_utility.max()
+                # FIX (2026-05-27): Track min/max on BIAS-CORRECTED utility
+                # to prevent early-training scaling collapse where everything is clamped to 1.0 or 0.0
+                bias_correction = 1.0 - group["beta_utility"] ** state["step"]
+                bias_corrected_utility = avg_utility / bias_correction
+
+                current_util_min = bias_corrected_utility.min()
+                current_util_max = bias_corrected_utility.max()
 
                 if current_util_min < global_min_util:
                     global_min_util = current_util_min.cpu()

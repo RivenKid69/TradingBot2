@@ -382,10 +382,16 @@ class TestVarianceGradientScalerStatePersistence:
             "eps",
             "warmup_steps",
             "step_count",
+            "min_scaling_factor",
+            "variance_cap",
+            "param_grad_mean_ema",
+            "param_grad_sq_ema",
+            "param_numel",
             "grad_mean_ema",
             "grad_var_ema",
             "grad_norm_ema",
             "grad_max_ema",
+            "vgs_version",
         }
         assert set(state.keys()) == expected_keys
 

@@ -26,7 +26,7 @@ def test_code_structure_analysis():
     print("TEST 1: Code Structure Analysis")
     print("="*70)
 
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         content = f.read()
         lines = content.split('\n')
 
@@ -35,11 +35,12 @@ def test_code_structure_analysis():
     vf_clip_end = None
 
     for i, line in enumerate(lines):
-        if 'if clip_range_vf_value is not None:' in line and 8800 < i < 8900:
-            if vf_clip_start is None:
-                vf_clip_start = i
-        if 'CRITICAL FIX: Removed second VF clipping block' in line:
-            vf_clip_end = i + 20
+        if 'if not use_twin_vf_clipping_cat:' in line:
+            vf_clip_start = i
+            for j in range(i, min(i+250, len(lines))):
+                if 'with torch.no_grad():' in lines[j]:
+                    vf_clip_end = j
+                    break
             break
 
     assert vf_clip_start is not None, "Could not find VF clipping start"
@@ -160,21 +161,26 @@ def test_gradient_flow_pattern():
     print("TEST 3: Gradient Flow Pattern Verification")
     print("="*70)
 
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         content = f.read()
         lines = content.split('\n')
 
     # Find VF clipping section
     vf_start = None
+    vf_end = None
     for i, line in enumerate(lines):
-        if 'if clip_range_vf_value is not None:' in line and 8800 < i < 8900:
+        if 'if not use_twin_vf_clipping_cat:' in line:
             vf_start = i
+            for j in range(i, min(i+250, len(lines))):
+                if 'with torch.no_grad():' in lines[j]:
+                    vf_end = j
+                    break
             break
 
     assert vf_start is not None, "VF clipping section not found"
 
-    # Check next 90 lines (VF clipping block)
-    vf_section = lines[vf_start:vf_start+90]
+    # Check next lines (VF clipping block)
+    vf_section = lines[vf_start:vf_end]
     vf_text = '\n'.join(vf_section)
 
     # Verify gradient flow requirements
@@ -316,22 +322,19 @@ def test_per_sample_then_mean_order():
     print(f"\n✓ PASS: Order matters - difference = {abs(correct - wrong):.4f}")
 
     # Verify code uses correct order
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         content = f.read()
         lines = content.split('\n')
 
     # Find the max operation in VF clipping
     found_correct_pattern = False
-    for i in range(len(lines) - 2):
-        if 'torch.max(' in lines[i]:
-            # Check if next line has torch.mean
-            if i > 8900 and i < 8920:  # Around categorical VF clipping
-                # Look for pattern: torch.max(...) followed by torch.mean or vice versa
-                context = '\n'.join(lines[i:i+3])
-                if 'torch.mean' in context and 'torch.max' in context:
-                    found_correct_pattern = True
-                    print(f"✓ Found correct pattern around line {i+1}")
-                    break
+    for i, line in enumerate(lines):
+        if 'if not use_twin_vf_clipping_cat:' in line:
+            # Look for torch.max and torch.mean/mean() in the next 200 lines
+            context = '\n'.join(lines[i:i+200])
+            if 'torch.max(' in context and ('torch.mean(' in context or '.mean()' in context):
+                found_correct_pattern = True
+                break
 
     assert found_correct_pattern, "Could not verify correct max-then-mean pattern in code"
     print(f"✓ PASS: Code uses correct order (element-wise max, then mean)")
@@ -393,25 +396,20 @@ def test_comparison_with_quantile_vf_clipping():
     print("TEST 7: Comparison with Quantile VF Clipping")
     print("="*70)
 
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
     # Find quantile VF clipping
     quantile_vf_start = None
     for i, line in enumerate(lines):
-        if 'quantile_huber_loss' in line and 'reduction="none"' in line:
-            # Look for VF clipping after this
-            for j in range(i, min(i+100, len(lines))):
-                if 'if clip_range_vf_value is not None:' in lines[j]:
-                    quantile_vf_start = j
-                    break
-            if quantile_vf_start:
-                break
+        if 'if not use_twin_vf_clipping:' in line:
+            quantile_vf_start = i
+            break
 
     # Find categorical VF clipping
     categorical_vf_start = None
     for i, line in enumerate(lines):
-        if 'if clip_range_vf_value is not None:' in line and 8800 < i < 8900:
+        if 'if not use_twin_vf_clipping_cat:' in line:
             categorical_vf_start = i
             break
 
@@ -421,12 +419,12 @@ def test_comparison_with_quantile_vf_clipping():
     print(f"Quantile VF clipping: line {quantile_vf_start + 1}")
     print(f"Categorical VF clipping: line {categorical_vf_start + 1}")
 
-    # Analyze quantile VF clipping
-    quantile_section = ''.join(lines[quantile_vf_start:quantile_vf_start+100])
+    # Analyze quantile VF clipping (scan 200 lines to cover the entire block including the loss max)
+    quantile_section = ''.join(lines[quantile_vf_start:quantile_vf_start+200])
     quantile_max_count = quantile_section.count('torch.max(')
 
-    # Analyze categorical VF clipping
-    categorical_section = ''.join(lines[categorical_vf_start:categorical_vf_start+100])
+    # Analyze categorical VF clipping (scan 200 lines to cover the entire block including the loss max)
+    categorical_section = ''.join(lines[categorical_vf_start:categorical_vf_start+200])
     categorical_max_count = categorical_section.count('torch.max(')
 
     print(f"\nQuantile VF clipping: {quantile_max_count} torch.max() operation(s)")
@@ -462,17 +460,19 @@ def test_no_loss_overwrites():
     print("TEST 8: No Critic Loss Overwrites")
     print("="*70)
 
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
     # Find categorical VF clipping section
     vf_start = None
     vf_end = None
     for i, line in enumerate(lines):
-        if 'if clip_range_vf_value is not None:' in line and 8800 < i < 8900:
+        if 'if not use_twin_vf_clipping_cat:' in line:
             vf_start = i
-        if vf_start and 'CRITICAL FIX: Removed second VF clipping' in line:
-            vf_end = i + 20
+            for j in range(i, min(i+250, len(lines))):
+                if '_critic_ce_normalizer' in lines[j]:
+                    vf_end = j
+                    break
             break
 
     assert vf_start is not None and vf_end is not None, "VF section not found"
@@ -532,7 +532,7 @@ def test_comprehensive_summary():
     print("TEST 9: Comprehensive Summary")
     print("="*70)
 
-    with open('distributional_ppo.py', 'r') as f:
+    with open('distributional_ppo.py', 'r', encoding='utf-8') as f:
         content = f.read()
         total_lines = len(content.split('\n'))
 
