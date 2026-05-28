@@ -175,8 +175,8 @@ def main() -> int:
     parser.add_argument(
         "--snapshot",
         type=Path,
-        default=DEFAULT_SNAPSHOT_PATH,
-        help="Path to Design Doc snapshot (.txt)",
+        default=None,
+        help="Path to Design Doc snapshot (.txt) (auto-detects if omitted)",
     )
     parser.add_argument(
         "--rendered",
@@ -192,17 +192,19 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    snapshot_path = args.snapshot if args.snapshot is not None else find_design_doc_path()
+
     print(f"Checking Design Doc SHA256...")
-    print(f"  Snapshot: {args.snapshot}")
+    print(f"  Snapshot: {snapshot_path}")
     print(f"  Rendered: {args.rendered}")
 
     if args.update:
         # Update mode: compute new SHA and update rendered doc
-        if not args.snapshot.exists():
-            print(f"\n[FAIL] Snapshot not found: {args.snapshot}")
+        if snapshot_path is None or not snapshot_path.exists():
+            print(f"\n[FAIL] Snapshot not found: {snapshot_path}")
             return 1
 
-        new_sha = compute_sha256(args.snapshot)
+        new_sha = compute_sha256(snapshot_path)
 
         if not args.rendered.exists():
             print(f"\n[FAIL] Rendered doc not found: {args.rendered}")
@@ -231,7 +233,7 @@ def main() -> int:
         return 0
 
     # Verify mode
-    passed, message = verify_design_doc_sha(args.snapshot, args.rendered)
+    passed, message = verify_design_doc_sha(snapshot_path, args.rendered)
 
     if passed:
         print(f"\n[PASS] {message}")
