@@ -43,7 +43,7 @@ execution_config:
 liquidity_seasonality_path: null  # No crypto-style seasonality
 use_seasonality: false
 
-market: equity
+market: spot
 
 # =============================================================================
 # DATA CONFIGURATION
@@ -55,11 +55,8 @@ data:
   # Data source: local files or API
   source: local  # Options: local, alpaca, polygon
 
-  # Local file paths (for source=local)
   paths:
-    - "data/raw_stocks/*.parquet"
-    - "data/stocks/*.parquet"
-    - "data/stocks/*.feather"
+    - "data/stocks/SPY_features.parquet"
 
   # API configuration (for source=alpaca or polygon)
   api:
@@ -147,7 +144,7 @@ model:
 
     vf_coef: 1.8
     value_clip_limit: null
-    vf_coef_warmup: 0
+    vf_coef_warmup: 1.8
     vf_coef_warmup_updates: 0
     vf_bad_explained_scale: 1.0
     vf_bad_explained_floor: 0.0
@@ -156,8 +153,8 @@ model:
     max_grad_norm: 0.5
     n_steps: 2048
     n_epochs: 4
-    batch_size: 64
-    microbatch_size: 200
+    batch_size: 256
+    microbatch_size: 256
     seed: 20240518
 
     kl_early_stop: true
@@ -332,3 +329,45 @@ training:
   # TensorBoard
   tensorboard: true
   tb_log_name: "stock_ppo"
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/*.csv"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "SPY"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}
+
+algo:
+  actions:
+    long_only: true
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
+    bins_vol: 4
+    max_asset_weight: 1.0
+
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true

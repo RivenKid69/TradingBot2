@@ -202,14 +202,12 @@ elif sys.platform.startswith("darwin"):
     # macOS (clang)
     c_args = [
         "-O3",
-        "-ffast-math",
         "-fvisibility=hidden",
         "-march=native",  # Optimize for this CPU
     ]
     cxx_args = [
         "-O3",
         "-std=c++17",
-        "-ffast-math",
         "-fvisibility=hidden",
         "-march=native",
     ]
@@ -218,7 +216,6 @@ else:
     # Linux (gcc/clang)
     c_args = [
         "-O3",
-        "-ffast-math",
         "-fvisibility=hidden",
         "-march=native",
         "-mtune=native",
@@ -226,7 +223,6 @@ else:
     cxx_args = [
         "-O3",
         "-std=gnu++17",  # gnu++17 for <algorithm>, <random>, etc.
-        "-ffast-math",
         "-fvisibility=hidden",
         "-march=native",
         "-mtune=native",

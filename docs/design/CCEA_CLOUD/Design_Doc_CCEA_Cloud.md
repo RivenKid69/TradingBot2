@@ -3,7 +3,7 @@
 > **Version**: 2.0.0
 > **Date**: 2025-12-16
 > **Status**: APPROVED | **Implementation**: Specification complete (verify via tests/deployment)
-> **SHA256**: 7646249e834cb16c4e9f5d00a5abdb7780989e435fd3526ba4bf327faac019a5
+> **SHA256**: 97ed47324b56658b2d1b9dc40a4553e8676ed1a17de4ab54de0555fd29393eae
 > **Snapshot**: [Design_Doc_CCEA_Cloud.txt](./Design_Doc_CCEA_Cloud.txt)
 
 ## 0. Executive Summary

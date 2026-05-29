@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CustodiaCloud — Платформа количественных исследований и развёртывания с приоритетом риска</title>
+    <meta name="description" content="Институциональная инфраструктура количественного трейдинга и развертывания стратегий с минимизацией рисков. Переходите от идей к продакшену за дни без передачи API ключей в облако.">
+    <meta name="keywords" content="количественный трейдинг, алготрейдинг, бэктестинг, управление рисками, CVaR, распределенный PPO, инфраструктура трейдинга, CustodiaCloud">
+    <meta name="author" content="CustodiaCloud">
+    
+    <!-- OpenGraph Tags -->
+    <meta property="og:title" content="CustodiaCloud — Платформа количественных исследований и развёртывания">
+    <meta property="og:description" content="Институциональная инфраструктура количественного трейдинга и развертывания стратегий с минимизацией рисков.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://custodiacloud.com">
+    
+    <!-- Twitter Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CustodiaCloud — Платформа количественных исследований">
+    <meta name="twitter:description" content="Институциональная инфраструктура количественного трейдинга с минимизацией рисков.">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -382,12 +397,19 @@
             border-radius: 16px;
             padding: 32px;
             backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .solution-card.featured {
             grid-column: span 2;
             background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(9, 132, 227, 0.1) 100%);
             border-color: var(--accent);
+        }
+        
+        .solution-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.15);
         }
 
         .solution-icon {
@@ -425,6 +447,12 @@
             border-radius: 16px;
             padding: 28px;
             backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .tech-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
         }
 
         .tech-card h4 {
@@ -493,11 +521,24 @@
             padding: 32px;
             backdrop-filter: blur(10px);
             text-align: center;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .pricing-card.featured {
             border-color: var(--accent);
             transform: scale(1.05);
+        }
+        
+        .pricing-card:hover:not(.featured) {
+            transform: translateY(-6px);
+            border-color: var(--accent);
+            box-shadow: 0 15px 35px rgba(0, 212, 170, 0.15);
+        }
+        
+        .pricing-card.featured:hover {
+            transform: scale(1.08) translateY(-6px);
+            border-color: var(--accent);
+            box-shadow: 0 15px 35px rgba(0, 212, 170, 0.25);
         }
 
         .pricing-tier {
@@ -563,6 +604,12 @@
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .roadmap-item:hover {
+            transform: translateX(4px);
+            border-color: var(--accent);
         }
 
         .roadmap-item::before {
@@ -707,6 +754,12 @@
             border-radius: 12px;
             padding: 24px;
             text-align: center;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .moat-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
         }
 
         .moat-score {
@@ -1534,7 +1587,7 @@
                         </div>
                         <div class="stat">
                             <div class="stat-value">24+</div>
-                            <div class="stat-label">Месяцев на копирование</div>
+                            <div class="stat-label">Барьер копирования (мес)</div>
                         </div>
                     </div>
                 </div>
@@ -2334,7 +2387,7 @@
                     <div class="milestone-item">
                         <div class="milestone-phase">Техническая глубина</div>
                         <h4>42K+ строк ядра ML</h4>
-                        <p>Ориентировочно 24+ месяцев на копирование. Обширное автоматизированное тестовое покрытие. Реализованы рецензированные исследования.</p>
+                        <p>Ориентировочный барьер для копирования — 24+ месяца. Обширное автоматизированное тестовое покрытие. Реализованы рецензированные исследования.</p>
                     </div>
                     <div class="milestone-item">
                         <div class="milestone-phase">Тайминг рынка</div>

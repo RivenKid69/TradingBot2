@@ -930,6 +930,9 @@ class OnlineFeatureTransformer:
             if self.spec.taker_buy_ratio_momentum:
                 max_momentum_window = max(self.spec.taker_buy_ratio_momentum)
                 maxlen = max(maxlen, max_momentum_window + 1)
+            # Add safety buffer for lagging indicators (like Stochastic %D which requires w + 2)
+            # Awesome Oscillator requires at least 34 bars.
+            maxlen = max(maxlen, 34) + 20
 
             st = {
                 "prices": deque(maxlen=maxlen),
@@ -949,6 +952,8 @@ class OnlineFeatureTransformer:
                 "taker_buy_ratios": deque(maxlen=maxlen),
                 # Для Cumulative Volume Delta нужны дельты объема
                 "volume_deltas": deque(maxlen=maxlen),
+                # Для Price Volume Trend
+                "pvt": 0.0,
             }
             self._state[symbol] = st
         return st
@@ -1039,13 +1044,14 @@ class OnlineFeatureTransformer:
 
         st["prices"].append(price)
 
-        # Сохраняем OHLC данные для Yang-Zhang
+        # Сохраняем OHLC данные для Yang-Zhang и других индикаторов
         if open_price is not None and high is not None and low is not None:
             ohlc_bar = {
                 "open": float(open_price),
                 "high": float(high),
                 "low": float(low),
                 "close": float(close),
+                "volume": float(volume) if volume is not None else 0.0,
             }
             st["ohlc_bars"].append(ohlc_bar)
 
@@ -1142,6 +1148,464 @@ class OnlineFeatureTransformer:
                 feats["rsi"] = float(100.0 - (100.0 / (1.0 + rs)))
         else:
             feats["rsi"] = float("nan")
+
+        # ---------------------------------------------------------
+        # NEW HIGH-QUALITY INDICATORS CALCULATIONS
+        # ---------------------------------------------------------
+        
+        # 1. Bollinger Bands & Volatility Indicators
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            if len(seq) >= lb:
+                window = seq[-lb:]
+                sma = sum(window) / float(lb)
+                variance = sum((x - sma) ** 2 for x in window) / float(lb)
+                std = math.sqrt(variance)
+                
+                feats[f"bollinger_upper_{lb_minutes}"] = float(sma + 2.0 * std)
+                feats[f"bollinger_lower_{lb_minutes}"] = float(sma - 2.0 * std)
+                feats[f"bollinger_bandwidth_{lb_minutes}"] = float((4.0 * std) / sma) if sma > 1e-8 else 0.0
+                feats[f"bollinger_percent_b_{lb_minutes}"] = float((price - (sma - 2.0 * std)) / (4.0 * std)) if std > 1e-8 else 0.5
+            else:
+                feats[f"bollinger_upper_{lb_minutes}"] = float("nan")
+                feats[f"bollinger_lower_{lb_minutes}"] = float("nan")
+                feats[f"bollinger_bandwidth_{lb_minutes}"] = float("nan")
+                feats[f"bollinger_percent_b_{lb_minutes}"] = float("nan")
+
+        # Helper function for EMA
+        def _calc_ema(prices_list, n):
+            if len(prices_list) < n:
+                return None
+            ema = sum(prices_list[:n]) / float(n)
+            multiplier = 2.0 / (n + 1)
+            for p in prices_list[n:]:
+                ema = (p - ema) * multiplier + ema
+            return ema
+
+        # 2. MACD
+        macd_list = []
+        for length in range(26, len(seq) + 1):
+            sub_seq = seq[:length]
+            e12 = _calc_ema(sub_seq, 12)
+            e26 = _calc_ema(sub_seq, 26)
+            if e12 is not None and e26 is not None:
+                macd_list.append(e12 - e26)
+        
+        if len(macd_list) >= 9:
+            macd_sig = _calc_ema(macd_list, 9)
+            if macd_sig is not None:
+                feats["macd"] = float(macd_list[-1])
+                feats["macd_signal"] = float(macd_sig)
+                feats["macd_histogram"] = float(macd_list[-1] - macd_sig)
+            else:
+                feats["macd"] = float("nan")
+                feats["macd_signal"] = float("nan")
+                feats["macd_histogram"] = float("nan")
+        else:
+            feats["macd"] = float("nan")
+            feats["macd_signal"] = float("nan")
+            feats["macd_histogram"] = float("nan")
+
+        # 3. OHLC-dependent indicators (Stochastic, ATR, CCI)
+        ohlc_list = list(st["ohlc_bars"]) if st["ohlc_bars"] else []
+        
+        # Calculate True Range (TR) list for ATR
+        tr_list = []
+        for i in range(len(ohlc_list)):
+            high_val = ohlc_list[i]["high"]
+            low_val = ohlc_list[i]["low"]
+            if i == 0:
+                tr = high_val - low_val
+            else:
+                close_prev = ohlc_list[i-1]["close"]
+                tr = max(high_val - low_val, abs(high_val - close_prev), abs(low_val - close_prev))
+            tr_list.append(tr)
+
+        # Calculate Typical Price (TP) list for CCI
+        tp_list = [(b["high"] + b["low"] + b["close"]) / 3.0 for b in ohlc_list]
+
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            
+            # Stochastic Oscillator (%K, %D)
+            k_history = []
+            for shift in [2, 1, 0]:
+                idx_end = len(ohlc_list) - shift
+                if idx_end >= lb:
+                    window_bars = ohlc_list[idx_end - lb : idx_end]
+                    lw = min(b["low"] for b in window_bars)
+                    hw = max(b["high"] for b in window_bars)
+                    cl = window_bars[-1]["close"]
+                    denom = hw - lw
+                    k_val = (cl - lw) / denom * 100.0 if denom > 1e-8 else 50.0
+                    k_history.append(k_val)
+
+            if len(k_history) == 3:
+                feats[f"stoch_k_{lb_minutes}"] = float(k_history[-1])
+                feats[f"stoch_d_{lb_minutes}"] = float(sum(k_history) / 3.0)
+            else:
+                feats[f"stoch_k_{lb_minutes}"] = float("nan")
+                feats[f"stoch_d_{lb_minutes}"] = float("nan")
+
+            # ATR (Wilder-like simple average)
+            if len(tr_list) >= lb:
+                feats[f"atr_{lb_minutes}"] = float(sum(tr_list[-lb:]) / float(lb))
+            else:
+                feats[f"atr_{lb_minutes}"] = float("nan")
+
+            # CCI
+            if len(tp_list) >= lb:
+                window_tp = tp_list[-lb:]
+                sma_tp = sum(window_tp) / float(lb)
+                mean_dev = sum(abs(x - sma_tp) for x in window_tp) / float(lb)
+                cci = (tp_list[-1] - sma_tp) / (0.015 * mean_dev) if mean_dev > 1e-8 else 0.0
+                feats[f"cci_{lb_minutes}"] = float(cci)
+            else:
+                feats[f"cci_{lb_minutes}"] = float("nan")
+
+        # 4. CMO (Chande Momentum Oscillator)
+        gains = []
+        losses = []
+        for idx in range(1, len(seq)):
+            diff = seq[idx] - seq[idx-1]
+            gains.append(max(diff, 0.0))
+            losses.append(max(-diff, 0.0))
+
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            if len(gains) >= lb:
+                sum_g = sum(gains[-lb:])
+                sum_l = sum(losses[-lb:])
+                total = sum_g + sum_l
+                cmo = 100.0 * (sum_g - sum_l) / total if total > 1e-8 else 0.0
+                feats[f"cmo_{lb_minutes}"] = float(cmo)
+            else:
+                feats[f"cmo_{lb_minutes}"] = float("nan")
+
+        # 5. ROC (Rate of Change)
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            if len(seq) > lb:
+                old_px = float(seq[-(lb + 1)])
+                roc = (price - old_px) / old_px * 100.0 if old_px > 1e-8 else 0.0
+                feats[f"roc_{lb_minutes}"] = float(roc)
+            else:
+                feats[f"roc_{lb_minutes}"] = float("nan")
+
+        # 6. EMA (Exponential Moving Average)
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            if len(seq) >= lb:
+                ema_val = _calc_ema(seq, lb)
+                if ema_val is not None:
+                    feats[f"ema_{lb_minutes}"] = float(ema_val)
+                else:
+                    feats[f"ema_{lb_minutes}"] = float("nan")
+            else:
+                feats[f"ema_{lb_minutes}"] = float("nan")
+
+        # 7. Williams %R
+        if ohlc_list:
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                if len(ohlc_list) >= lb:
+                    window_bars = ohlc_list[-lb:]
+                    highest_high = max(b["high"] for b in window_bars)
+                    lowest_low = min(b["low"] for b in window_bars)
+                    denom = highest_high - lowest_low
+                    williams_r = (highest_high - price) / denom * -100.0 if denom > 1e-8 else -50.0
+                    feats[f"williams_r_{lb_minutes}"] = float(williams_r)
+                else:
+                    feats[f"williams_r_{lb_minutes}"] = float("nan")
+        else:
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                feats[f"williams_r_{lb_minutes}"] = float("nan")
+
+        # 8. Keltner Channels
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            sma_val = feats.get(f"sma_{lb_minutes}")
+            atr_val = feats.get(f"atr_{lb_minutes}")
+            if sma_val is not None and atr_val is not None and not math.isnan(sma_val) and not math.isnan(atr_val):
+                feats[f"keltner_middle_{lb_minutes}"] = float(sma_val)
+                feats[f"keltner_upper_{lb_minutes}"] = float(sma_val + 2.0 * atr_val)
+                feats[f"keltner_lower_{lb_minutes}"] = float(sma_val - 2.0 * atr_val)
+            else:
+                feats[f"keltner_middle_{lb_minutes}"] = float("nan")
+                feats[f"keltner_upper_{lb_minutes}"] = float("nan")
+                feats[f"keltner_lower_{lb_minutes}"] = float("nan")
+
+        # 9. On-Balance Volume (OBV)
+        if volume is not None:
+            prev_obv = st.get("obv", 0.0)
+            if last is not None:
+                if price > last:
+                    current_obv = prev_obv + float(volume)
+                elif price < last:
+                    current_obv = prev_obv - float(volume)
+                else:
+                    current_obv = prev_obv
+            else:
+                current_obv = float(volume)
+            st["obv"] = current_obv
+            feats["obv"] = float(current_obv)
+        else:
+            feats["obv"] = float("nan")
+
+        # 10. Money Flow Index (MFI)
+        if ohlc_list and all("volume" in b for b in ohlc_list):
+            tps = [(b["high"] + b["low"] + b["close"]) / 3.0 for b in ohlc_list]
+            rmfs = [tps[idx] * ohlc_list[idx].get("volume", 0.0) for idx in range(len(ohlc_list))]
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                if len(ohlc_list) > lb:
+                    pmf_sum = 0.0
+                    nmf_sum = 0.0
+                    for idx in range(len(ohlc_list) - lb, len(ohlc_list)):
+                        tp_curr = tps[idx]
+                        tp_prev = tps[idx-1]
+                        rmf = rmfs[idx]
+                        if tp_curr > tp_prev:
+                            pmf_sum += rmf
+                        elif tp_curr < tp_prev:
+                            nmf_sum += rmf
+                    if nmf_sum > 1e-8:
+                        mfr = pmf_sum / nmf_sum
+                        mfi = 100.0 - (100.0 / (1.0 + mfr))
+                    else:
+                        mfi = 100.0 if pmf_sum > 1e-8 else 50.0
+                    feats[f"mfi_{lb_minutes}"] = float(mfi)
+                else:
+                    feats[f"mfi_{lb_minutes}"] = float("nan")
+        else:
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                feats[f"mfi_{lb_minutes}"] = float("nan")
+
+        # 11. Linear Regression Slope
+        def _calc_slope(y):
+            n = len(y)
+            if n < 2:
+                return 0.0
+            x_mean = (n + 1) / 2.0
+            y_mean = sum(y) / float(n)
+            num = sum((idx + 1 - x_mean) * (y[idx] - y_mean) for idx in range(n))
+            den = n * (n**2 - 1) / 12.0
+            return num / den if den > 1e-8 else 0.0
+
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+            if len(seq) >= lb:
+                feats[f"slope_{lb_minutes}"] = float(_calc_slope(seq[-lb:]))
+            else:
+                feats[f"slope_{lb_minutes}"] = float("nan")
+
+        # 12. Average Directional Index (ADX)
+        if len(ohlc_list) >= 2:
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                if len(ohlc_list) >= lb + 1:
+                    tr_w = []
+                    plus_dm_w = []
+                    minus_dm_w = []
+                    window_bars = ohlc_list[-(lb + 1):]
+                    for idx in range(1, len(window_bars)):
+                        h_curr = window_bars[idx]["high"]
+                        l_curr = window_bars[idx]["low"]
+                        c_prev = window_bars[idx-1]["close"]
+                        h_prev = window_bars[idx-1]["high"]
+                        l_prev = window_bars[idx-1]["low"]
+                        
+                        tr = max(h_curr - l_curr, abs(h_curr - c_prev), abs(l_curr - c_prev))
+                        tr_w.append(tr)
+                        
+                        up_move = h_curr - h_prev
+                        down_move = l_prev - l_curr
+                        
+                        if up_move > down_move and up_move > 0:
+                            plus_dm = up_move
+                        else:
+                            plus_dm = 0.0
+                        plus_dm_w.append(plus_dm)
+                        
+                        if down_move > up_move and down_move > 0:
+                            minus_dm = down_move
+                        else:
+                            minus_dm = 0.0
+                        minus_dm_w.append(minus_dm)
+                    
+                    def _smooth_wilder(vals, period):
+                        return sum(vals) / float(period) if period > 0 else 0.0
+                    
+                    smooth_tr = _smooth_wilder(tr_w, lb)
+                    smooth_plus_dm = _smooth_wilder(plus_dm_w, lb)
+                    smooth_minus_dm = _smooth_wilder(minus_dm_w, lb)
+                    
+                    if smooth_tr > 1e-8:
+                        plus_di = 100.0 * (smooth_plus_dm / smooth_tr)
+                        minus_di = 100.0 * (smooth_minus_dm / smooth_tr)
+                        denom_di = plus_di + minus_di
+                        dx = 100.0 * abs(plus_di - minus_di) / denom_di if denom_di > 1e-8 else 0.0
+                    else:
+                        plus_di = 0.0
+                        minus_di = 0.0
+                        dx = 0.0
+                    
+                    if len(ohlc_list) >= 2 * lb:
+                        tr_all = []
+                        plus_dm_all = []
+                        minus_dm_all = []
+                        for idx in range(len(ohlc_list) - 2 * lb + 1, len(ohlc_list)):
+                            h_curr = ohlc_list[idx]["high"]
+                            l_curr = ohlc_list[idx]["low"]
+                            c_prev = ohlc_list[idx-1]["close"]
+                            h_prev = ohlc_list[idx-1]["high"]
+                            l_prev = ohlc_list[idx-1]["low"]
+                            
+                            tr = max(h_curr - l_curr, abs(h_curr - c_prev), abs(l_curr - c_prev))
+                            tr_all.append(tr)
+                            
+                            up_move = h_curr - h_prev
+                            down_move = l_prev - l_curr
+                            
+                            plus_dm = up_move if (up_move > down_move and up_move > 0) else 0.0
+                            plus_dm_all.append(plus_dm)
+                            
+                            minus_dm = down_move if (down_move > up_move and down_move > 0) else 0.0
+                            minus_dm_all.append(minus_dm)
+                        
+                        def _get_wilder_smoothed_list(vals, period):
+                            smoothed = []
+                            curr = sum(vals[:period]) / float(period)
+                            smoothed.append(curr)
+                            for v in vals[period:]:
+                                curr = curr - (curr / float(period)) + v
+                                smoothed.append(curr)
+                            return smoothed
+                        
+                        tr_smooth = _get_wilder_smoothed_list(tr_all, lb)
+                        plus_smooth = _get_wilder_smoothed_list(plus_dm_all, lb)
+                        minus_smooth = _get_wilder_smoothed_list(minus_dm_all, lb)
+                        
+                        dx_history = []
+                        for idx in range(len(tr_smooth)):
+                            t_s = tr_smooth[idx]
+                            p_s = plus_smooth[idx]
+                            m_s = minus_smooth[idx]
+                            if t_s > 1e-8:
+                                p_di = 100.0 * (p_s / t_s)
+                                m_di = 100.0 * (m_s / t_s)
+                                den = p_di + m_di
+                                dx_val = 100.0 * abs(p_di - m_di) / den if den > 1e-8 else 0.0
+                            else:
+                                dx_val = 0.0
+                            dx_history.append(dx_val)
+                        
+                        adx_smooth = _get_wilder_smoothed_list(dx_history, lb)
+                        feats[f"adx_{lb_minutes}"] = float(adx_smooth[-1])
+                        feats[f"plus_di_{lb_minutes}"] = float(100.0 * (plus_smooth[-1] / tr_smooth[-1]) if tr_smooth[-1] > 1e-8 else 0.0)
+                        feats[f"minus_di_{lb_minutes}"] = float(100.0 * (minus_smooth[-1] / tr_smooth[-1]) if tr_smooth[-1] > 1e-8 else 0.0)
+                    else:
+                        feats[f"adx_{lb_minutes}"] = float(dx)
+                        feats[f"plus_di_{lb_minutes}"] = float(plus_di)
+                        feats[f"minus_di_{lb_minutes}"] = float(minus_di)
+                else:
+                    feats[f"adx_{lb_minutes}"] = float("nan")
+                    feats[f"plus_di_{lb_minutes}"] = float("nan")
+                    feats[f"minus_di_{lb_minutes}"] = float("nan")
+        else:
+            for i, lb in enumerate(self.spec.lookbacks_prices):
+                lb_minutes = self.spec._lookbacks_prices_minutes[i]
+                feats[f"adx_{lb_minutes}"] = float("nan")
+                feats[f"plus_di_{lb_minutes}"] = float("nan")
+                feats[f"minus_di_{lb_minutes}"] = float("nan")
+
+        # 13. Awesome Oscillator (AO)
+        if ohlc_list and len(ohlc_list) >= 34:
+            tp_ao = [(b["high"] + b["low"]) / 2.0 for b in ohlc_list]
+            sma_5 = sum(tp_ao[-5:]) / 5.0
+            sma_34 = sum(tp_ao[-34:]) / 34.0
+            feats["ao"] = float(sma_5 - sma_34)
+        else:
+            feats["ao"] = float("nan")
+
+        # 14. Price Volume Trend (PVT)
+        if volume is not None:
+            prev_pvt = st.get("pvt", 0.0)
+            if last is not None and last > 1e-8:
+                pvt_diff = float(volume) * (price - float(last)) / float(last)
+                current_pvt = prev_pvt + pvt_diff
+            else:
+                current_pvt = 0.0
+            st["pvt"] = current_pvt
+            feats["pvt"] = float(current_pvt)
+        else:
+            feats["pvt"] = float("nan")
+
+        # 15. Volatility of Log Returns, Price Momentum, Donchian Channels, Chaikin Money Flow
+        log_rets_1bar = []
+        for idx in range(1, len(seq)):
+            p_curr = seq[idx]
+            p_prev = seq[idx-1]
+            if p_prev > 1e-8 and p_curr > 1e-8:
+                log_rets_1bar.append(math.log(p_curr / p_prev))
+            else:
+                log_rets_1bar.append(0.0)
+
+        cmf_mfvs = []
+        cmf_vols = []
+        if ohlc_list:
+            for b in ohlc_list:
+                h = b["high"]
+                l = b["low"]
+                c = b["close"]
+                v = b.get("volume", 0.0)
+                denom = h - l
+                mfm = ((c - l) - (h - c)) / denom if denom > 1e-8 else 0.0
+                cmf_mfvs.append(mfm * v)
+                cmf_vols.append(v)
+
+        for i, lb in enumerate(self.spec.lookbacks_prices):
+            lb_minutes = self.spec._lookbacks_prices_minutes[i]
+
+            # Std Returns
+            if len(log_rets_1bar) >= lb:
+                window_rets = log_rets_1bar[-lb:]
+                mean_ret = sum(window_rets) / float(lb)
+                var_ret = sum((r - mean_ret) ** 2 for r in window_rets) / float(lb)
+                std_ret = math.sqrt(var_ret)
+                feats[f"std_returns_{lb_minutes}"] = float(std_ret)
+            else:
+                feats[f"std_returns_{lb_minutes}"] = float("nan")
+
+            # Momentum
+            if len(seq) > lb:
+                feats[f"mom_{lb_minutes}"] = float(price - seq[-(lb + 1)])
+            else:
+                feats[f"mom_{lb_minutes}"] = float("nan")
+
+            # Donchian Channels
+            if ohlc_list and len(ohlc_list) >= lb:
+                window_bars = ohlc_list[-lb:]
+                highest_high = max(b["high"] for b in window_bars)
+                lowest_low = min(b["low"] for b in window_bars)
+                feats[f"donchian_upper_{lb_minutes}"] = float(highest_high)
+                feats[f"donchian_lower_{lb_minutes}"] = float(lowest_low)
+                feats[f"donchian_middle_{lb_minutes}"] = float((highest_high + lowest_low) / 2.0)
+            else:
+                feats[f"donchian_upper_{lb_minutes}"] = float("nan")
+                feats[f"donchian_lower_{lb_minutes}"] = float("nan")
+                feats[f"donchian_middle_{lb_minutes}"] = float("nan")
+
+            # Chaikin Money Flow (CMF)
+            if ohlc_list and len(ohlc_list) >= lb:
+                sum_mfv = sum(cmf_mfvs[-lb:])
+                sum_vol = sum(cmf_vols[-lb:])
+                cmf_val = sum_mfv / sum_vol if sum_vol > 1e-8 else 0.0
+                feats[f"cmf_{lb_minutes}"] = float(cmf_val)
+            else:
+                feats[f"cmf_{lb_minutes}"] = float("nan")
 
         # Рассчитываем Yang-Zhang волатильность для каждого окна
         # CRITICAL FIX: Теперь всегда вычисляем, используя fallback к close-to-close если OHLC недоступны
@@ -1327,7 +1791,7 @@ def apply_offline_features(
         taker_buy_base_col: имя колонки taker_buy_base (опционально для Taker Buy Ratio)
     """
     if df is None or df.empty:
-        base_cols = [ts_col, symbol_col, "ref_price", "rsi"]
+        base_cols = [ts_col, symbol_col, "ref_price", "rsi", "macd", "macd_signal", "macd_histogram", "obv", "ao", "pvt"]
         # КРИТИЧНО: используем МИНУТЫ для имен SMA (согласованность с mediator.py и update())
         # Онлайн (update) генерирует: sma_240, sma_720, sma_1200, sma_1440, sma_5040, sma_12000
         # Оффлайн (apply_offline_features) должен генерировать ТЕ ЖЕ имена
@@ -1348,6 +1812,19 @@ def apply_offline_features(
             base_cols += [f"taker_buy_ratio_momentum_{_format_window_name(w)}" for w in spec._taker_buy_ratio_momentum_minutes]
         if spec.cvd_windows:
             base_cols += [f"cvd_{_format_window_name(w)}" for w in spec._cvd_windows_minutes]
+        
+        # High quality indicators from previous/current updates
+        for x in spec._lookbacks_prices_minutes:
+            base_cols.extend([
+                f"bollinger_upper_{x}", f"bollinger_lower_{x}",
+                f"bollinger_bandwidth_{x}", f"bollinger_percent_b_{x}",
+                f"stoch_k_{x}", f"stoch_d_{x}", f"atr_{x}", f"cci_{x}",
+                f"cmo_{x}", f"roc_{x}", f"ema_{x}", f"williams_r_{x}",
+                f"keltner_middle_{x}", f"keltner_upper_{x}", f"keltner_lower_{x}",
+                f"mfi_{x}", f"slope_{x}", f"adx_{x}", f"plus_di_{x}", f"minus_di_{x}",
+                f"std_returns_{x}", f"mom_{x}", f"donchian_upper_{x}",
+                f"donchian_lower_{x}", f"donchian_middle_{x}", f"cmf_{x}"
+            ])
         return pd.DataFrame(columns=base_cols)
 
     d = df.copy()
@@ -1427,6 +1904,8 @@ def apply_offline_features(
         out_rows.append(feats)
 
     out = pd.DataFrame(out_rows)
+    if symbol_col != "symbol" and "symbol" in out.columns:
+        out = out.rename(columns={"symbol": symbol_col})
     out = out.sort_values([symbol_col, ts_col]).reset_index(drop=True)
     return out
 

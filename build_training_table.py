@@ -32,6 +32,23 @@ def main():
     args = p.parse_args()
 
     base = _read_df(args.base)
+    # Auto-normalize timestamp to ts_ms
+    if "ts_ms" not in base.columns:
+        ts_candidate = None
+        for col in ["timestamp", "time", "date"]:
+            if col in base.columns:
+                ts_candidate = col
+                break
+        if ts_candidate is not None:
+            max_val = base[ts_candidate].max()
+            try:
+                if max_val < 1e11:
+                    base["ts_ms"] = base[ts_candidate] * 1000
+                else:
+                    base["ts_ms"] = base[ts_candidate]
+            except Exception:
+                base["ts_ms"] = pd.to_datetime(base[ts_candidate]).astype("int64") // 1000000
+
     if "ts_ms" not in base.columns or "symbol" not in base.columns:
         raise SystemExit("base должен содержать 'ts_ms' и 'symbol'")
 
@@ -61,6 +78,22 @@ def main():
 
     # labels
     prices = _read_df(args.prices)
+    # Auto-normalize timestamp to ts_ms
+    if "ts_ms" not in prices.columns:
+        ts_candidate = None
+        for col in ["timestamp", "time", "date"]:
+            if col in prices.columns:
+                ts_candidate = col
+                break
+        if ts_candidate is not None:
+            max_val = prices[ts_candidate].max()
+            try:
+                if max_val < 1e11:
+                    prices["ts_ms"] = prices[ts_candidate] * 1000
+                else:
+                    prices["ts_ms"] = prices[ts_candidate]
+            except Exception:
+                prices["ts_ms"] = pd.to_datetime(prices[ts_candidate]).astype("int64") // 1000000
     lb = LabelBuilder(LabelConfig(horizon_ms=int(args.label_horizon_ms), price_col=args.price_col, returns=args.label_returns))
     out = lb.build(merged, prices, ts_col="ts_ms", symbol_col="symbol")
 

@@ -22,8 +22,22 @@ class DynSpreadCfg(BaseModel):
 
 
 def load_dyn_spread_config(path: str) -> DynSpreadCfg:
-    cfg = load_sandbox_config(path)
-    return DynSpreadCfg(**(cfg.dynamic_spread or {}))
+    import yaml
+    import os
+    if not path or not os.path.exists(path):
+        return DynSpreadCfg()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        spread_data = data.get("dynamic_spread")
+        if spread_data is None:
+            if "base_bps" in data:
+                spread_data = data
+            else:
+                spread_data = {}
+        return DynSpreadCfg(**spread_data)
+    except Exception:
+        return DynSpreadCfg()
 
 
 def _vol_factor(row: pd.Series, *, ref: float, vol_mode: str, last_ref: Optional[float]) -> Tuple[float, float]:

@@ -134,15 +134,15 @@ model:
     ent_coef_plateau_min_updates: 40
     vf_coef: 1.8
     value_clip_limit: null
-    vf_coef_warmup: 0
+    vf_coef_warmup: 1.8
     vf_coef_warmup_updates: 0
     vf_bad_explained_scale: 1.0
     vf_bad_explained_floor: 0.0
     bad_explained_patience: 2
     max_grad_norm: 0.5
-    n_steps: 2048
+    n_steps: 2000
     n_epochs: 4
-    batch_size: 64
+    batch_size: 200
     microbatch_size: 200               # ✅ FIX (2025-11-24): Increase for CVaR stability (200*0.05=10 tail samples)
     seed: 20240518
     kl_early_stop: true

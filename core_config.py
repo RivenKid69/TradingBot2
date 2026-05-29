@@ -1108,8 +1108,10 @@ class LiveConfig(CommonRunConfig):
 
 
 class TrainDataConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
     symbols: List[str] = Field(default_factory=get_symbols)
     timeframe: str
+    paths: Optional[List[str]] = None
     start_ts: Optional[int] = None
     end_ts: Optional[int] = None
     train_start_ts: Optional[int] = None

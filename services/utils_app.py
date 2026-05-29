@@ -171,6 +171,23 @@ def background_running(pid_file: str) -> bool:
             return str(pid) in (out.stdout or "")
         else:
             os.kill(pid, 0)
+            
+            # Check if process is zombie on Linux
+            try:
+                with open(f"/proc/{pid}/status", "r") as f_proc:
+                    for line in f_proc:
+                        if line.startswith("State:"):
+                            state = line.split()[1]
+                            if state.upper() in ("Z", "ZOMBIE"):
+                                try:
+                                    os.waitpid(pid, os.WNOHANG)
+                                except Exception:
+                                    pass
+                                return False
+                            break
+            except Exception:
+                pass
+                
             return True
     except Exception:
         try:

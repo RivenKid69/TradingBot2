@@ -90,6 +90,7 @@
 | Файл | Описание |
 |------|----------|
 | [claude.md](claude.md) | ⭐ **Master reference** - полная документация (RU) |
+| [MVP_DOCUMENTATION.md](MVP_DOCUMENTATION.md) | 🛠️ **MVP Technical Documentation** - архитектура, контексты и логи (RU) |
 | [docs/AI_GUIDE.md](docs/AI_GUIDE.md) | 🤖 **AI Agent Guide** - context & instructions (EN) |
 | [README.md](README.md) | Обзор, установка, quick start и runbooks (sim/live/debug/release) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Архитектура системы |
