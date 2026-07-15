@@ -55,7 +55,8 @@ def _write_phase_tables(df_out: pd.DataFrame, base: str, ext: str) -> tuple[list
 
 def main():
     ap = argparse.ArgumentParser(description="Сгенерировать walk-forward сплиты с PURGE (горизонт h) и EMBARGO (буфер).")
-    ap.add_argument("--data", required=True, help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC миллисекунды).")
+    ap.add_argument("--config", help="Путь к YAML-файлу конфигурации (из него считывается путь к данным).")
+    ap.add_argument("--data", help="Входной датасет (CSV/Parquet) с колонкой ts_ms (UTC миллисекунды).")
     ap.add_argument("--out", default="", help="Путь к выходному датасету с колонками wf_fold,wf_role. По умолчанию рядом с суффиксом _wf.")
     ap.add_argument("--ts_col", default="ts_ms", help="Имя колонки времени.")
     ap.add_argument("--symbol_col", default="symbol", help="Имя колонки символа (может отсутствовать).")
@@ -101,23 +102,101 @@ def main():
         ),
     )
     ap.add_argument("--manifest_dir", default="logs/walkforward", help="Куда записать манифесты (JSON/YAML).")
+    ap.add_argument(
+        "--n_splits",
+        type=int,
+        default=None,
+        help=(
+            "Простой режим (Lite UI): количество walk-forward сплитов. "
+            "Совместно с --train_size_pct пересчитывается в train/val/step-окна по фактической длине данных."
+        ),
+    )
+    ap.add_argument(
+        "--train_size_pct",
+        type=float,
+        default=None,
+        help="Простой режим (Lite UI): доля train-окна внутри одного сплита, в процентах (например 80).",
+    )
     args = ap.parse_args()
 
-    df = _read_table(args.data)
+    data_path = args.data
+    ts_col = args.ts_col
+    symbol_col = args.symbol_col
+
+    if args.config:
+        try:
+            with open(args.config, "r", encoding="utf-8") as f:
+                cfg_data = yaml.safe_load(f) or {}
+            cfg_data_section = cfg_data.get("data", {})
+            if not data_path and "path" in cfg_data_section:
+                data_path = cfg_data_section["path"]
+            if ts_col == "ts_ms" and "ts_col" in cfg_data_section:
+                ts_col = cfg_data_section["ts_col"]
+            if symbol_col == "symbol" and "symbol_col" in cfg_data_section:
+                symbol_col = cfg_data_section["symbol_col"]
+        except Exception as e:
+            print(f"Предупреждение: ошибка чтения --config: {e}")
+
+    if not data_path:
+        ap.error("Необходимо указать --data или --config с корректным путем к данным.")
+
+    df = _read_table(data_path)
+
+    train_span_bars = int(args.train_span_bars)
+    val_span_bars = int(args.val_span_bars)
+    step_bars = int(args.step_bars)
+
+    if args.n_splits is not None:
+        # Lite-режим: пересчитываем окна из фактической длины данных, чтобы
+        # UI-контракт (n_splits/train_size_pct) отражался в реальных барах.
+        #
+        # Скользящее окно шагает на val_span, поэтому число фолдов равно
+        # 1 + (usable - (train+val)) / val. Требуя train + n*val = usable при
+        # train/(train+val) = train_frac, получаем ровно n_splits фолдов:
+        #   span1 = usable / (train_frac + n*(1-train_frac))
+        n_splits = max(1, int(args.n_splits))
+        train_pct = float(args.train_size_pct) if args.train_size_pct is not None else 80.0
+        train_frac = min(max(train_pct / 100.0, 0.05), 0.95)
+        n_bars = int(df[ts_col].nunique()) if ts_col in df.columns else int(len(df))
+        overhead = int(args.horizon_bars) + int(args.embargo_bars)
+        usable = n_bars - overhead
+        if usable < n_splits * 4:
+            ap.error(
+                f"Недостаточно данных для n_splits={n_splits}: после вычета purge/embargo "
+                f"({overhead} баров) остаётся {usable} баров, нужно минимум {n_splits * 4}. "
+                "Уменьшите число сплитов или загрузите больше истории."
+            )
+        denom = train_frac + n_splits * (1.0 - train_frac)
+        span1 = usable / denom
+        train_span_bars = max(1, int(span1 * train_frac))
+        val_span_bars = max(1, int(round(span1)) - train_span_bars)
+        step_bars = val_span_bars
+        if train_span_bars <= int(args.horizon_bars):
+            ap.error(
+                f"train-окно ({train_span_bars} баров) не превышает purge-горизонт "
+                f"({args.horizon_bars} баров) — все фолды были бы пустыми. "
+                "Уменьшите n_splits/--horizon_bars или загрузите больше истории."
+            )
+        expected_folds = 1 + max(0, (usable - (train_span_bars + val_span_bars)) // step_bars)
+        print(
+            f"Lite-режим: n_splits={n_splits}, train_size_pct={train_pct:.0f} -> "
+            f"train_span_bars={train_span_bars}, val_span_bars={val_span_bars}, step_bars={step_bars} "
+            f"(баров в данных: {n_bars}, ожидается фолдов: ~{expected_folds})."
+        )
 
     df_out, manifest = make_walkforward_splits(
         df,
-        ts_col=args.ts_col,
-        symbol_col=(args.symbol_col if args.symbol_col in df.columns else None),
+        ts_col=ts_col,
+        symbol_col=(symbol_col if symbol_col in df.columns else None),
         interval_ms=args.interval_ms,
-        train_span_bars=int(args.train_span_bars),
-        val_span_bars=int(args.val_span_bars),
-        step_bars=int(args.step_bars),
+        train_span_bars=train_span_bars,
+        val_span_bars=val_span_bars,
+        step_bars=step_bars,
         horizon_bars=int(args.horizon_bars),
         embargo_bars=int(args.embargo_bars),
     )
 
-    base, ext = os.path.splitext(args.data)
+    base, ext = os.path.splitext(data_path)
     out_path = args.out.strip() or f"{base}_wf{ext if ext.lower() in ('.csv', '.parquet', '.pq', '.txt') else '.parquet'}"
     _write_table(df_out, out_path)
     train_paths, val_paths = _write_phase_tables(df_out, base, ext)

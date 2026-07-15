@@ -1,0 +1,73 @@
+# =============================================================================
+# FUTURES BACKTEST / SANDBOX CONFIGURATION
+# =============================================================================
+# Historical simulation config for futures (crypto perpetuals + CME).
+# Created to close audit L2-013: the historical sandbox previously reused
+# configs/config_live_futures.yaml and silently inherited live execution
+# semantics. This file contains NO broker credentials and NO live endpoints.
+# =============================================================================
+
+mode: backtest
+run_id: futures-backtest
+logs_dir: logs/futures/backtest
+artifacts_dir: artifacts/futures/backtest
+
+# ASSET CLASS
+asset_class: futures
+futures_type: "CRYPTO_PERPETUAL"   # CRYPTO_PERPETUAL | INDEX_FUTURES | COMMODITY_FUTURES
+
+# Model to evaluate (leave empty to run signal-less simulation)
+model_path: "models/futures/best_model.zip"
+
+# =============================================================================
+# DATA CONFIGURATION
+# =============================================================================
+data:
+  timeframe: "4h"
+  asset_class: futures
+
+  source: local
+
+  paths:
+    - "data/futures/*.parquet"
+    - "data/training_table.parquet"
+
+  ts_col: ts_ms
+  symbol_col: symbol
+  price_col: close
+
+# =============================================================================
+# EXECUTION SIMULATION (historical only — no live order routing)
+# =============================================================================
+execution:
+  enabled: true
+  mode: bar
+  profile: MKT_OPEN_NEXT_4H
+
+execution_config:
+  notional_threshold: 50000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 100.0
+
+# Funding / margin simulation for perpetuals
+funding:
+  enabled: true
+  interval_hours: 8
+
+margin:
+  leverage_cap: 5.0
+  maintenance_margin_frac: 0.05
+
+# =============================================================================
+# RISK GUARDS (simulation-side)
+# =============================================================================
+risk:
+  max_total_exposure_pct: 0.50
+  max_drawdown_pct: 0.20
+
+no_trade: {}
+
+out_reports: logs/sandbox_reports.csv

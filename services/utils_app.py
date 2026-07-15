@@ -8,6 +8,7 @@ import json
 import logging
 import tempfile
 import time
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -103,37 +104,107 @@ def atomic_write_with_retry(
             time.sleep(backoff)
 
 
+def atomic_write_json(path: str | Path, payload: Dict[str, Any]) -> None:
+    """Durably replace a JSON document used for process status metadata."""
+    atomic_write_with_retry(
+        path,
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+    )
+
+
 def run_cmd(cmd: List[str], cwd: Optional[str] = None, log_path: Optional[str] = None) -> int:
     """Blocking command execution with optional logging."""
+    from desktop_job_runtime import prepare_python_command, worker_environment
+
+    cmd = prepare_python_command(cmd)
+    env = worker_environment()
     if log_path:
         ensure_dir(log_path)
         with open(log_path, "a", encoding="utf-8", newline="") as f:
             f.write(f"\n$ {' '.join(cmd)}\n")
             f.flush()
-            proc = subprocess.run(cmd, cwd=cwd, stdout=f, stderr=f, text=True)
+            proc = subprocess.run(cmd, cwd=cwd, stdout=f, stderr=f, text=True, env=env)
             return int(proc.returncode)
     else:
-        proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+        proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
         if proc.stderr:
             print(proc.stderr)
         return int(proc.returncode)
 
 
 def start_background(cmd: List[str], pid_file: str, log_file: str) -> int:
-    """Start background process and save PID."""
+    """Start a process and durably track its real completion/exit status."""
+    from datetime import datetime, timezone
+    from desktop_job_runtime import prepare_python_command, worker_environment
+
+    cmd = prepare_python_command(cmd)
+    env = worker_environment()
     ensure_dir(pid_file)
     ensure_dir(log_file)
     if os.path.exists(pid_file):
         raise RuntimeError("Process already running (PID file exists). Stop it first.")
+    status_file = pid_file + ".json"
     logf = open(log_file, "a", encoding="utf-8", newline="")
     if platform.system() == "Windows":
         creationflags = 0x00000200
-        proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, creationflags=creationflags)
+        proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, creationflags=creationflags, env=env)
     else:
-        proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, preexec_fn=os.setsid)
+        proc = subprocess.Popen(cmd, stdout=logf, stderr=logf, preexec_fn=os.setsid, env=env)
     with open(pid_file, "w", encoding="utf-8") as f:
         f.write(str(proc.pid))
+
+    started_at = datetime.now(timezone.utc).isoformat()
+    atomic_write_json(status_file, {
+        "pid": int(proc.pid), "state": "running", "running": True,
+        "exit_code": None, "started_at": started_at, "finished_at": None,
+        "command": cmd,
+    })
+
+    def _watch() -> None:
+        exit_code = int(proc.wait())
+        try:
+            logf.flush()
+        finally:
+            logf.close()
+        final_state = "succeeded" if exit_code == 0 else "failed"
+        try:
+            current_status = read_json(status_file)
+            if current_status.get("state") == "stopped":
+                final_state = "stopped"
+        except Exception:
+            pass
+        atomic_write_json(status_file, {
+            "pid": int(proc.pid),
+            "state": final_state,
+            "running": False,
+            "exit_code": exit_code,
+            "started_at": started_at,
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+            "command": cmd,
+        })
+        try:
+            if os.path.exists(pid_file):
+                with open(pid_file, "r", encoding="utf-8") as fh:
+                    if fh.read().strip() == str(proc.pid):
+                        os.remove(pid_file)
+        except Exception:
+            pass
+
+    threading.Thread(target=_watch, name=f"job-watch-{proc.pid}", daemon=True).start()
     return int(proc.pid)
+
+
+def background_status(pid_file: str) -> Dict[str, Any]:
+    """Return the last durable process state, including its exit code."""
+    status_file = pid_file + ".json"
+    status = read_json(status_file)
+    if background_running(pid_file):
+        status.update({"state": "running", "running": True, "exit_code": None})
+        return status
+    if status:
+        status["running"] = False
+        return status
+    return {"state": "idle", "running": False, "exit_code": None}
 
 
 def stop_background(pid_file: str) -> bool:
@@ -157,6 +228,16 @@ def stop_background(pid_file: str) -> bool:
         os.remove(pid_file)
     except Exception:
         pass
+    try:
+        from datetime import datetime, timezone
+        current = read_json(pid_file + ".json")
+        current.update({
+            "state": "stopped", "running": False, "exit_code": None,
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+        })
+        atomic_write_json(pid_file + ".json", current)
+    except Exception:
+        pass
     return True
 
 
@@ -168,9 +249,33 @@ def background_running(pid_file: str) -> bool:
             pid = int(f.read().strip())
         if platform.system() == "Windows":
             out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True)
-            return str(pid) in (out.stdout or "")
+            is_alive = str(pid) in (out.stdout or "")
+            if not is_alive:
+                # A freshly spawned Windows process can take a moment to appear
+                # in tasklist.  Removing its pid file during that window makes
+                # the UI report a false completion before the worker has even
+                # imported its module.  Keep the durable "running" state for a
+                # short, bounded startup grace period; the watcher will still
+                # publish the real terminal state and exit code.
+                try:
+                    if time.time() - os.path.getmtime(pid_file) < 2.0:
+                        return True
+                except OSError:
+                    pass
+                try:
+                    os.remove(pid_file)
+                except Exception:
+                    pass
+            return is_alive
         else:
-            os.kill(pid, 0)
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                try:
+                    os.remove(pid_file)
+                except Exception:
+                    pass
+                return False
             
             # Check if process is zombie on Linux
             try:
@@ -181,6 +286,10 @@ def background_running(pid_file: str) -> bool:
                             if state.upper() in ("Z", "ZOMBIE"):
                                 try:
                                     os.waitpid(pid, os.WNOHANG)
+                                except Exception:
+                                    pass
+                                try:
+                                    os.remove(pid_file)
                                 except Exception:
                                     pass
                                 return False
@@ -295,10 +404,12 @@ def load_signals_full(path: str, max_rows: int = 500) -> pd.DataFrame:
 __all__ = [
     "ensure_dir",
     "atomic_write_with_retry",
+    "atomic_write_json",
     "run_cmd",
     "start_background",
     "stop_background",
     "background_running",
+    "background_status",
     "tail_file",
     "read_json",
     "read_csv",
