@@ -8675,22 +8675,29 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         return JobRunResult(STATUS_SUCCEEDED, f"архивировано {rotated}, пропущено (занято/ошибка) {skipped}")
 
     def xs_rebalance(job: ScheduledJob) -> "JobRunResult":
-        # Гейт двойного opt-in уже отработал в SchedulerService. Здесь — каркас
-        # исполнения: без явного XS-конфига честно пропускаем. Боевое наполнение
-        # (веса → Intents → CCEA) — задача P1-C гэп-анализа; каркас не имитирует его.
+        # Гейт двойного opt-in (enabled + RIVEN_ALLOW_SCHEDULED_TRADING=1) уже
+        # отработал в SchedulerService. Здесь — реальный цикл: веса → гардрейлы
+        # → Intents → CCEA Agent OMS (service_xs_rebalance).
         cfg = str(job.params.get("config") or "").strip()
         if not cfg:
             return JobRunResult(STATUS_SKIPPED, "XS-конфиг не задан (params.config) — ребаланс не выполняется")
-        if not os.path.exists(cfg):
-            return JobRunResult(STATUS_FAILED, f"XS-конфиг не найден: {cfg}")
-        if bool(job.params.get("paper_only", True)) and not (
-            _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running"
-        ):
-            return JobRunResult(STATUS_SKIPPED, "paper_only=true, но CCEA Agent не запущен — исполнять некуда")
-        return JobRunResult(
-            STATUS_SKIPPED,
-            "каркас ребаланса: авто-исполнение весов намеренно не включено (см. docs/SCHEDULER.md, P1-C)",
+        if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
+            return JobRunResult(STATUS_SKIPPED, "CCEA Agent не запущен — исполнять некуда")
+        from service_xs_rebalance import RebalanceLimits, run_rebalance
+        rec = run_rebalance(
+            cfg,
+            _CCEA_SUPERVISOR,
+            paper_only=bool(job.params.get("paper_only", True)),
+            dry_run=bool(job.params.get("dry_run", False)),
+            limits=RebalanceLimits.from_params(job.params),
+            alert_fn=(_SCHEDULER.notify if _SCHEDULER is not None else None),
         )
+        status_map = {
+            "ok": STATUS_SUCCEEDED, "noop": STATUS_SUCCEEDED, "dry_run": STATUS_SUCCEEDED,
+            "blocked": STATUS_SKIPPED, "partial": STATUS_FAILED, "failed": STATUS_FAILED,
+        }
+        detail = f"{rec['status']}: {rec.get('reason') or ''}"
+        return JobRunResult(status_map.get(rec["status"], STATUS_FAILED), detail)
 
     return {
         "data.refresh": data_refresh,
@@ -8746,6 +8753,73 @@ def api_scheduler_run(job_id: str, payload: Optional[SchedulerRunPayload] = None
         raise HTTPException(status_code=404, detail=f"задача '{job_id}' не найдена")
     except PermissionError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
+
+
+# -------------------- XS-ребаланс (P1-C) и гейт подписи моделей (§4.7) --------------------
+
+class XSRebalanceRunPayload(BaseModel):
+    config: str
+    dry_run: bool = True            # безопасный default: только план, без ордеров
+    confirm_trading: bool = False   # реальная отправка требует явного подтверждения
+    paper_only: bool = True
+    max_turnover: Optional[float] = None
+    min_trade_notional: Optional[float] = None
+    drift_band_bps: Optional[float] = None
+    max_position_weight: Optional[float] = None
+    max_orders: Optional[int] = None
+
+
+@api.post("/api/xs/rebalance/run")
+def api_xs_rebalance_run(payload: XSRebalanceRunPayload):
+    """Ручной запуск ребаланса. dry_run=true по умолчанию; боевая отправка —
+    только с confirm_trading=true (CCEA local approval, как в планировщике)."""
+    if not payload.dry_run and not payload.confirm_trading:
+        raise HTTPException(
+            status_code=409,
+            detail="Реальная отправка ордеров требует confirm_trading=true (CCEA local approval); "
+                   "для проверки плана используйте dry_run=true.",
+        )
+    if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
+        raise HTTPException(status_code=503, detail="CCEA Agent не запущен — ребаланс исполнять некуда")
+    from service_xs_rebalance import RebalanceLimits, run_rebalance
+    overrides = {k: v for k, v in {
+        "max_turnover": payload.max_turnover,
+        "min_trade_notional": payload.min_trade_notional,
+        "drift_band_bps": payload.drift_band_bps,
+        "max_position_weight": payload.max_position_weight,
+        "max_orders": payload.max_orders,
+    }.items() if v is not None}
+    return run_rebalance(
+        payload.config,
+        _CCEA_SUPERVISOR,
+        paper_only=payload.paper_only,
+        dry_run=payload.dry_run,
+        limits=RebalanceLimits.from_params(overrides),
+    )
+
+
+@api.get("/api/xs/rebalance/last")
+def api_xs_rebalance_last():
+    from service_xs_rebalance import load_last_record
+    rec = load_last_record()
+    if rec is None:
+        raise HTTPException(status_code=404, detail="ребаланс ещё не выполнялся (нет logs/xs_rebalance/last.json)")
+    return rec
+
+
+@api.get("/api/models/verify_for_live")
+def api_models_verify_for_live(path: str, policy: Optional[str] = None):
+    """Вердикт Ed25519-гейта для артефакта модели (без загрузки/десериализации).
+
+    Всегда возвращает вердикт (policy принудительно 'warn' на этом endpoint'е,
+    чтобы ошибка проверки была ответом, а не исключением); поле ok показывает,
+    пройдёт ли артефакт enforce-гейт live-загрузки.
+    """
+    from services.model_signature_gate import resolve_policy, verify_model_artifact
+    verdict = verify_model_artifact(path, policy="warn", context="api-verify")
+    out = verdict.to_dict()
+    out["effective_live_policy"] = resolve_policy(policy, live=True)
+    return out
 
 
 # ------------- Lite Mode evidence & policy endpoints (audit LITE-2026-07-14) -------------

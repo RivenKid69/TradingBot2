@@ -34,7 +34,7 @@
 | `tca_weekly` | TCA по сделкам с arrival price → `reports/tca/` | Вс 08:00 | ❌ | без arrival price — честный skip |
 | `state_backup` | zip `state/` + `logs/*.jsonl` + `configs/*.yaml`, ретенция | 03:00 | ✅ | |
 | `log_rotation` | gzip-архив `logs/*.log` старше N дней | 03:30 | ✅ | |
-| `xs_rebalance` | веса → Intents → CCEA (каркас) | 13:45 торговые дни | ❌, trading_impacting | боевое наполнение — P1-C гэп-анализа; каркас не имитирует сделки |
+| `xs_rebalance` | веса → гардрейлы → Intents → CCEA Agent OMS | 13:45 торговые дни | ❌, trading_impacting | **реальный ребаланс** (`service_xs_rebalance`); turnover-cap/no-trade-band/подпись RL-модели; см. [MODEL_SIGNATURE_AND_REBALANCE.md](MODEL_SIGNATURE_AND_REBALANCE.md) |
 
 ## REST
 
@@ -59,5 +59,5 @@
 ## Что осталось на следующие итерации
 
 - Праздничные календари per-exchange для `market_days_only` (сейчас — только Сб/Вс; движки календарей в проекте есть: `services/cme_calendar.py`, session router).
-- Боевое наполнение `xs_rebalance` (P1-C): веса → Intents → CCEA Agent с журналом решений.
+- ✅ Боевое наполнение `xs_rebalance` (P1-C) сделано — см. [MODEL_SIGNATURE_AND_REBALANCE.md](MODEL_SIGNATURE_AND_REBALANCE.md). Осталось: авто-ребаланс на live-брокере (сейчас fail-closed на paper).
 - Зависимости между задачами по артефактам (сейчас — последовательность шагов внутри задачи + разнесённые времена).

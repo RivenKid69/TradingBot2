@@ -134,7 +134,7 @@ jobs:
 
   # ------------------------------------------------- ТОРГОВЛЯ (fail-closed)
   - id: xs_rebalance
-    title: "XS-ребаланс (веса → Intents → CCEA Agent) — ТОРГОВАЯ задача"
+    title: "XS-ребаланс (веса → гардрейлы → Intents → CCEA Agent) — ТОРГОВАЯ задача"
     action: trade.xs_rebalance
     enabled: false                # двойной opt-in: enabled + RIVEN_ALLOW_SCHEDULED_TRADING=1
     daily_utc: "13:45"
@@ -145,4 +145,11 @@ jobs:
     trading_impacting: true
     params:
       config: ""                  # путь к XS-конфигу (например configs/config_xs_crypto_real.yaml)
-      paper_only: true            # false потребует live-брокера через CCEA Vault
+      paper_only: true            # v1 исполняет только на sim_paper; live заблокирован fail-closed
+      dry_run: false              # true = только план в logs/xs_rebalance/, без отправки ордеров
+      # Гардрейлы одного ребаланса (service_xs_rebalance.RebalanceLimits):
+      max_turnover: 0.25          # Σ|Δnotional| ≤ 25% equity, иначе пропорциональный скейлинг
+      min_trade_notional: 25.0
+      drift_band_bps: 25.0        # |Δw| ниже — позицию не трогаем (no-trade band)
+      max_position_weight: 0.20
+      max_orders: 50

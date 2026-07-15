@@ -76,9 +76,9 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 
 Из прошлого аудита осталось открытым всё P2 + добавления этой проверки:
 
-7. 🟡 Ed25519-подпись моделей не проверяется при загрузке в live (agentd) — registry декоративен для боевого пути.
+7. ✅ **ЗАКРЫТО 2026-07-15**: Ed25519-подпись моделей проверяется при загрузке в live — `services/model_signature_gate.py` (enforce/warn/off, fail-closed до pickle-десериализации), проводка в `service_rl_inference`, REST `/api/models/verify_for_live`, 13 тестов. См. [docs/MODEL_SIGNATURE_AND_REBALANCE.md](docs/MODEL_SIGNATURE_AND_REBALANCE.md).
 8. 🟡 Drift-retrain / авто-TCA — только по REST-вызову; **нет планировщика** (cron/scheduler-демона) ни в source, ни в десктопе.
-9. 🟡 XS-платформа: нет регулярного rebalance-раннера (weights→Intents→Agent по расписанию с журналом решений).
+9. ✅ **ЗАКРЫТО 2026-07-15**: регулярный XS-rebalance-раннер — `service_xs_rebalance.py` (веса → гардрейлы: turnover-cap/no-trade-band/концентрация → Intents → CCEA Agent OMS → журнал решений), планировщик job `xs_rebalance`, REST `/api/xs/rebalance/{run,last}`, 23 теста + live smoke (8/8 ордеров через реальный OMS). См. [docs/MODEL_SIGNATURE_AND_REBALANCE.md](docs/MODEL_SIGNATURE_AND_REBALANCE.md).
 10. 🟡 L3-симулятор не питается реальными L2/L3-книгами (P2 №13).
 11. 🟡 Multi-currency base-NAV, FX P&L, corp actions на live-позиции (P2 №14).
 12. 🟡 Model-promotion gate + champion/challenger + замыкание drift→auto-retrain (P2 №16).
