@@ -55,10 +55,24 @@
 
 Итог верификации после ревью-фиксов: **77 passed, 1 skipped** (packaged smoke — гейт `RIVEN_PACKAGED_SMOKE=1`).
 
+## Пересборка packaged EXE — ВЫПОЛНЕНО (2026-07-15)
+
+`dist/riven-backend.exe` пересобран research-профилем (`RIVEN_BUILD_PROFILE=research pyinstaller packaging/riven_backend.spec --noconfirm`, PyInstaller 6.21.0, torch 2.12.0+cpu, SB3 2.8.0, gymnasium 0.29.1; sha256 `97fe54de6ccffd58…`). В spec дополнительно добавлен `collect_submodules` для gymnasium/SB3/sb3_contrib — env-реестр gymnasium загружает модули окружений динамически по строке, и первая пересборка это выявила (ModuleNotFoundError на `gymnasium.envs.classic_control.cartpole`).
+
+Фактические packaged-проверки на новом EXE (критерий L2-005 аудита):
+
+| Проверка | Результат |
+|---|---|
+| `RIVEN_PACKAGED_SMOKE=1 pytest -k packaged_exe` (импорт SB3 внутри EXE) | **passed** |
+| Короткое реальное обучение внутри EXE: `PPO('MlpPolicy','CartPole-v1').learn(256)` → сохранение модели | **exit 0, валидный артефакт 137 КБ** |
+| Load-back артефакта внутри EXE (`PPO.load`) | **exit 0** |
+| Импорт реального тренера: `riven-backend.exe --riven-worker-script train_model_multi_patch.py --help` | **exit 0** (весь import-chain SB3/torch/distributional_ppo) |
+
+Sidecar Tauri (`desktop/src-tauri/binaries/riven-backend-x86_64-pc-windows-msvc.exe`) обновлён той же сборкой (sha256 совпадает). Устаревший EXE от 2026-07-14 удалён.
+
 ## Что осталось сделать вне этого репозитория/сессии
 
-1. **Пересобрать research-EXE**: `RIVEN_BUILD_PROFILE=research pyinstaller packaging/riven_backend.spec --noconfirm`, затем `RIVEN_PACKAGED_SMOKE=1 pytest tests/test_lite_mode_audit_2026_07_14.py -k packaged_exe` — существующий `dist/riven-backend.exe` от 2026-07-14 собран до фикса L2-005 и воспроизводит краш SB3 by design.
-2. UI-driven packaged E2E в нативном Tauri-окне (аудит отмечал ограничение среды: Windows-автоматизация не смогла получить screenshot). Логика теперь покрыта source-level E2E (`tests/test_lite_chain_e2e.py`) + контрактными тестами UI.
+1. UI-driven packaged E2E в нативном Tauri-окне (аудит отмечал ограничение среды: Windows-автоматизация не смогла получить screenshot). Логика теперь покрыта source-level E2E (`tests/test_lite_chain_e2e.py`) + контрактными тестами UI + packaged-смоуками выше.
 
 ## Полный прогон верификации
 
@@ -66,5 +80,6 @@
 pytest tests/test_lite_mode_audit_2026_07_14.py tests/test_lite_chain_e2e.py \
        tests/test_lite_mode_audit_closure.py tests/test_forward_looking_bias_fix.py \
        tests/test_desktop_e2e.py tests/test_api_config.py tests/test_pro_risk_api.py
-# 2026-07-15 (после ревью-фиксов): 77 passed, 1 skipped (packaged smoke — гейт RIVEN_PACKAGED_SMOKE)
+# 2026-07-15 (после ревью-фиксов): 77 passed, 1 skipped
+# + RIVEN_PACKAGED_SMOKE=1 pytest -k packaged_exe: 1 passed (свежесобранный research-EXE)
 ```

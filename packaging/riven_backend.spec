@@ -93,6 +93,14 @@ else:
             datas += collect_data_files(_data_pkg)
         except Exception:
             pass
+    # gymnasium's env registry imports env modules dynamically by string
+    # (gym.make("CartPole-v1") etc.), which PyInstaller's static analysis
+    # cannot see — collect the whole package so registry lookups work.
+    for _rl_pkg in ("gymnasium", "stable_baselines3", "sb3_contrib"):
+        try:
+            hiddenimports += collect_submodules(_rl_pkg)
+        except Exception:
+            pass
 
 block_cipher = None
 
