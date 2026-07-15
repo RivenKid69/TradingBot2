@@ -133,7 +133,7 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 | P0-C | Binance spot ORDER_EXECUTION адаптер (или официально сузить crypto до futures) | §3.4 |
 | P0-D | Создать `configs/agent.yaml` + smoke-тест запуска `agentd --config` по документации | §3.5 |
 | P0-E | Проверка Ed25519-подписи модели при загрузке в live-путь (agentd) — иначе registry не защищает | §4.7 |
-| P0-F | **Планировщик** (cron-демон в sidecar): данные→drift→retrain→EOD NAV→отчёты по расписанию | §4.8, §5.21 |
+| P0-F | ✅ **ЗАКРЫТО 2026-07-15**: планировщик `services/scheduler.py` + `configs/scheduler.yaml` + `/api/scheduler/*` + UI-карточка (anacron catch-up, fail-closed пайплайны, ретраи+алерты, CCEA-гейт торговых задач; 24 теста + live smoke). См. [docs/SCHEDULER.md](docs/SCHEDULER.md) | §4.8, §5.21 |
 
 ### P1 — нужно для продукта, которым пользуются каждый день
 | # | Работа | Ссылка |

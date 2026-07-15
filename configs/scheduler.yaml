@@ -1,0 +1,148 @@
+# =============================================================================
+# ПЛАНИРОВЩИК РЕГУЛЯРНЫХ ЗАДАЧ (services/scheduler.py)
+# =============================================================================
+# Семантика:
+#   * daily_utc "HH:MM" — ежедневно в это время UTC; interval_sec — каждые N секунд.
+#   * catch_up: true — anacron-поведение: пропущенный из-за выключенного
+#     приложения запуск выполняется при старте, если прошло <= catch_up_grace_sec.
+#   * market_days_only: true — пропускать субботу/воскресенье (праздничные
+#     календари per-exchange — следующая итерация).
+#   * trading_impacting: true — задача НИКОГДА не автостартует без env
+#     RIVEN_ALLOW_SCHEDULED_TRADING=1; ручной запуск требует подтверждения (CCEA).
+#   * Включение/выключение из UI перекрывает поле enabled (хранится в
+#     state/scheduler_state.json), сами расписания правятся здесь.
+#
+# По умолчанию включены только задачи, безопасные без внешних ключей и данных:
+# drift-мониторинг, EOD-отчёт, бэкап состояния, ротация логов. Задачи с
+# внешними зависимостями (ingest по вендорским API, ночной research-пайплайн,
+# авто-TCA) выключены до явного включения пользователем.
+# =============================================================================
+
+alerts:
+  # Канал алертов планировщика: noop | telegram | webhook
+  # (telegram требует TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID; webhook — ALERT_WEBHOOK_URL)
+  channel: noop
+  cooldown_sec: 900
+
+jobs:
+  # --------------------------------------------------------------- ДАННЫЕ
+  - id: data_refresh
+    title: "Обновление рыночных данных (ingest + контроль результата)"
+    action: data.refresh
+    enabled: false                # включить после настройки configs/ingest.yaml и ключей вендора
+    daily_utc: "00:15"
+    catch_up: true
+    catch_up_grace_sec: 21600
+    max_retries: 2
+    retry_backoff_sec: 600
+    timeout_sec: 5400
+    params:
+      config: "configs/ingest.yaml"
+
+  - id: research_nightly
+    title: "Ночной research-пайплайн (features → targets → no-trade → splits → training table)"
+    action: pipeline.research_nightly
+    enabled: false                # включить, когда data_refresh стабильно зелёный
+    daily_utc: "01:00"
+    catch_up: true
+    catch_up_grace_sec: 21600
+    max_retries: 1
+    retry_backoff_sec: 900
+    timeout_sec: 7200
+    params:
+      lookbacks: "60,120"
+      rsi_period: 14
+      price_col: "close"
+      horizon_bars: 5
+      fees_bps_total: 10
+      n_splits: 5
+      train_size_pct: 80
+      decision_delay_ms: 8000     # LeakGuard-минимум; меньше планировщик не примет
+
+  # ------------------------------------------------------------- МОНИТОРИНГ
+  - id: drift_check
+    title: "Drift-мониторинг (PSI) + рекомендация/запуск ретрейна"
+    action: monitor.drift_and_retrain
+    enabled: true
+    daily_utc: "06:00"
+    catch_up: true
+    catch_up_grace_sec: 43200
+    max_retries: 1
+    retry_backoff_sec: 600
+    timeout_sec: 1800
+    params:
+      psi_threshold: 0.25
+      retrain_cooldown_sec: 86400
+      auto_retrain: false         # true = drift сам запускает run_train (тяжёлая задача!)
+      retrain_timeout_sec: 21600
+
+  # -------------------------------------------------------------- POST-TRADE
+  - id: eod_close_report
+    title: "EOD: фиксация NAV (CCEA), снапшот портфеля, дневной отчёт"
+    action: eod.close_and_report
+    enabled: true
+    daily_utc: "21:15"            # после закрытия US-сессии; crypto тоже покрывается
+    catch_up: true
+    catch_up_grace_sec: 21600
+    max_retries: 1
+    retry_backoff_sec: 600
+    timeout_sec: 900
+    params:
+      reports_dir: "reports/daily"
+
+  - id: tca_weekly
+    title: "Еженедельный TCA / best-execution отчёт"
+    action: report.tca_weekly
+    enabled: false                # включить, когда появятся реальные сделки
+    daily_utc: "08:00"
+    weekdays: [6]                 # воскресенье
+    catch_up: true
+    catch_up_grace_sec: 86400
+    max_retries: 1
+    retry_backoff_sec: 600
+    timeout_sec: 900
+    params:
+      reports_dir: "reports/tca"
+
+  # ------------------------------------------------------------------- OPS
+  - id: state_backup
+    title: "Бэкап состояния (state/, журналы ledger) с ретенцией"
+    action: ops.backup_state
+    enabled: true
+    daily_utc: "03:00"
+    catch_up: true
+    catch_up_grace_sec: 43200
+    max_retries: 1
+    retry_backoff_sec: 300
+    timeout_sec: 900
+    params:
+      backups_dir: "backups"
+      keep_last: 14
+
+  - id: log_rotation
+    title: "Ротация логов (архивирование файлов старше N дней)"
+    action: ops.log_rotation
+    enabled: true
+    daily_utc: "03:30"
+    catch_up: true
+    catch_up_grace_sec: 43200
+    max_retries: 1
+    retry_backoff_sec: 300
+    timeout_sec: 600
+    params:
+      retention_days: 14
+
+  # ------------------------------------------------- ТОРГОВЛЯ (fail-closed)
+  - id: xs_rebalance
+    title: "XS-ребаланс (веса → Intents → CCEA Agent) — ТОРГОВАЯ задача"
+    action: trade.xs_rebalance
+    enabled: false                # двойной opt-in: enabled + RIVEN_ALLOW_SCHEDULED_TRADING=1
+    daily_utc: "13:45"
+    market_days_only: true
+    catch_up: false               # пропущенный ребаланс НЕ навёрстываем задним числом
+    max_retries: 0
+    timeout_sec: 1800
+    trading_impacting: true
+    params:
+      config: ""                  # путь к XS-конфигу (например configs/config_xs_crypto_real.yaml)
+      paper_only: true            # false потребует live-брокера через CCEA Vault

@@ -8371,6 +8371,383 @@ def api_run_job(payload: RunJobPayload):
     pid = start_background(cmd, pid_file=pid_file, log_file=log_file)
     return {"pid": pid, "log": log_file}
 
+# ----------------------- Планировщик регулярных задач (P0-F gap closure) -----------------------
+# Ядро — services/scheduler.py (anacron catch-up, ретраи, fail-closed пайплайны,
+# CCEA-гейт для торговых задач). Здесь — только действия (wiring к существующим
+# джобам/сервисам) и REST-поверхность. Автостарт — в конце модуля.
+
+_SCHEDULER = None  # type: Optional[Any]
+
+
+def _sched_run_worker(job_name: str, params: Dict[str, Any], timeout_sec: int):
+    """Запустить существующий фоновый job (та же машинерия, что /api/run_job)
+    и дождаться его РЕАЛЬНОГО терминального статуса (exit code из pid-статуса)."""
+    from services.scheduler import (
+        JobRunResult, STATUS_FAILED, STATUS_SUCCEEDED, STATUS_TIMEOUT,
+    )
+    try:
+        api_run_job(RunJobPayload(job=job_name, params=params))
+    except HTTPException as exc:
+        return JobRunResult(STATUS_FAILED, f"{job_name}: отклонён backend'ом ({exc.detail})")
+    except Exception as exc:
+        return JobRunResult(STATUS_FAILED, f"{job_name}: не запустился ({exc})")
+    pid_file = os.path.join(".run", f"{job_name.lstrip('/')}.pid")
+    deadline = time.time() + max(30, int(timeout_sec))
+    while time.time() < deadline:
+        st = background_status(pid_file)
+        if not st.get("running"):
+            code = st.get("exit_code")
+            if st.get("state") == "succeeded" and code == 0:
+                return JobRunResult(STATUS_SUCCEEDED, f"{job_name}: exit 0", exit_code=0)
+            return JobRunResult(
+                STATUS_FAILED,
+                f"{job_name}: state={st.get('state')} exit={code}",
+                exit_code=code if isinstance(code, int) else None,
+            )
+        time.sleep(5)
+    try:
+        stop_background(pid_file)
+    except Exception:
+        pass
+    return JobRunResult(STATUS_TIMEOUT, f"{job_name}: превышен таймаут {timeout_sec}s (процесс остановлен)")
+
+
+def _sched_parquet_rows(path: str) -> Optional[int]:
+    try:
+        import pyarrow.parquet as _pq
+        return int(_pq.ParquetFile(path).metadata.num_rows)
+    except Exception:
+        return None
+
+
+def _build_scheduler_actions() -> Dict[str, Any]:
+    from services.scheduler import (
+        JobRunResult, ScheduledJob, STATUS_FAILED, STATUS_SKIPPED, STATUS_SUCCEEDED,
+    )
+
+    def data_refresh(job: ScheduledJob) -> "JobRunResult":
+        cfg = str(job.params.get("config", "configs/ingest.yaml"))
+        if not os.path.exists(cfg):
+            return JobRunResult(STATUS_SKIPPED, f"нет конфига инжеста {cfg} — настройте и включите задачу")
+        started = time.time()
+        res = _sched_run_worker("run_ingest", {"config": cfg}, job.timeout_sec)
+        if res.status != STATUS_SUCCEEDED:
+            return res
+        # Контроль результата: файл цен реально обновился и не пуст.
+        prices = "data/prices.parquet"
+        if not os.path.exists(prices):
+            return JobRunResult(STATUS_FAILED, "ingest завершился, но data/prices.parquet не появился")
+        if os.path.getmtime(prices) < started - 60:
+            return JobRunResult(STATUS_FAILED, "ingest завершился, но data/prices.parquet не обновился (старый mtime)")
+        rows = _sched_parquet_rows(prices)
+        if rows is not None and rows <= 0:
+            return JobRunResult(STATUS_FAILED, "data/prices.parquet пуст после ingest")
+        return JobRunResult(STATUS_SUCCEEDED, f"данные обновлены ({rows if rows is not None else '?'} строк)")
+
+    def research_nightly(job: ScheduledJob) -> "JobRunResult":
+        if not os.path.exists("data/prices.parquet"):
+            return JobRunResult(STATUS_SKIPPED, "нет data/prices.parquet — сначала data_refresh")
+        p = job.params
+        delay = max(8000, int(p.get("decision_delay_ms", 8000)))  # LeakGuard-пол, не ослабляемый планировщиком
+        steps_spec = [
+            ("run_features", {
+                "in": "data/prices.parquet", "out": "data/features.parquet",
+                "lookbacks": str(p.get("lookbacks", "60,120")),
+                "rsi_period": int(p.get("rsi_period", 14)), "price_col": str(p.get("price_col", "close")),
+            }),
+            ("run_targets", {
+                "in": "data/features.parquet", "out": "data/targets.parquet",
+                "fees_bps_total": int(p.get("fees_bps_total", 10)),
+                "horizon_bars": int(p.get("horizon_bars", 5)),
+            }),
+            ("run_no_trade", {"data": "data/targets.parquet", "out": "data/targets_masked.parquet"}),
+            ("run_splits", {
+                "data": ("data/targets_masked.parquet" if os.path.exists("data/targets_masked.parquet")
+                         else "data/targets.parquet"),
+                "n_splits": int(p.get("n_splits", 5)), "train_size_pct": int(p.get("train_size_pct", 80)),
+            }),
+            ("run_training_table", {
+                "base": "data/features.parquet", "prices": "data/prices.parquet",
+                "out": "data/training_table.parquet",
+                "price_col": str(p.get("price_col", "close")), "decision_delay_ms": delay,
+            }),
+        ]
+        steps: List[Dict[str, Any]] = []
+        per_step_timeout = max(300, job.timeout_sec // len(steps_spec))
+        for name, params in steps_spec:
+            # run_splits должен видеть маску, созданную шагом run_no_trade выше.
+            if name == "run_splits" and os.path.exists("data/targets_masked.parquet"):
+                params = dict(params, data="data/targets_masked.parquet")
+            res = _sched_run_worker(name, params, per_step_timeout)
+            steps.append({"step": name, "status": res.status, "detail": res.detail})
+            if res.status != STATUS_SUCCEEDED:
+                # fail-closed: не продолжаем пайплайн на битом шаге
+                return JobRunResult(res.status, f"остановлен на шаге {name}: {res.detail}", steps=steps)
+        return JobRunResult(STATUS_SUCCEEDED, "research-пайплайн прошёл целиком", steps=steps)
+
+    def drift_and_retrain(job: ScheduledJob) -> "JobRunResult":
+        from services.automation.drift_retrain import DriftRetrainScheduler
+        if not (os.path.exists("data/training_table.parquet") or os.path.exists("data/features.parquet")):
+            return JobRunResult(STATUS_SKIPPED, "нет данных для PSI (training_table/features отсутствуют)")
+        res = _sched_run_worker("run_psi", {}, min(job.timeout_sec, 1800))
+        if res.status != STATUS_SUCCEEDED:
+            return JobRunResult(res.status, f"расчёт PSI не удался: {res.detail}")
+        report = read_json("models/drift_report.json")
+        if not report:
+            return JobRunResult(STATUS_FAILED, "run_psi прошёл, но models/drift_report.json не создан")
+
+        # Долговечный cooldown ретрейна — переживает рестарты приложения.
+        marker_path = os.path.join("state", "drift_retrain_state.json")
+        marker = read_json(marker_path)
+        sched = DriftRetrainScheduler(
+            psi_threshold=float(job.params.get("psi_threshold", 0.25)),
+            cooldown_sec=float(job.params.get("retrain_cooldown_sec", 86400)),
+        )
+        if isinstance(marker, dict) and marker.get("last_retrain_ts"):
+            sched._last_retrain_ts = float(marker["last_retrain_ts"])
+        decision = sched.check(report)
+        if not decision.should_retrain:
+            return JobRunResult(STATUS_SUCCEEDED, f"дрейф в норме: {decision.reason}")
+
+        if not bool(job.params.get("auto_retrain", False)):
+            if _SCHEDULER is not None:
+                _SCHEDULER.notify(
+                    "drift", f"⚠️ Обнаружен дрейф данных ({decision.reason}). "
+                             f"Фичи: {', '.join(decision.triggering_features[:5])}. Рекомендуется ретрейн.")
+            return JobRunResult(
+                STATUS_SUCCEEDED,
+                f"ДРЕЙФ ОБНАРУЖЕН ({decision.reason}) — auto_retrain выключен, отправлена рекомендация",
+            )
+        train_res = _sched_run_worker(
+            "run_train", {}, int(job.params.get("retrain_timeout_sec", 21600))
+        )
+        if train_res.status == STATUS_SUCCEEDED:
+            atomic_write_with_retry(marker_path, json.dumps(
+                {"last_retrain_ts": time.time(), "reason": decision.reason}, ensure_ascii=False))
+            return JobRunResult(STATUS_SUCCEEDED, f"дрейф → ретрейн выполнен ({decision.reason})")
+        return JobRunResult(train_res.status, f"дрейф обнаружен, но ретрейн упал: {train_res.detail}")
+
+    def eod_close_and_report(job: ScheduledJob) -> "JobRunResult":
+        reports_dir = str(job.params.get("reports_dir", "reports/daily"))
+        os.makedirs(reports_dir, exist_ok=True)
+        day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        report: Dict[str, Any] = {
+            "date": day,
+            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "ccea": None,
+            "kill_switch_tripped": None,
+            "note": None,
+        }
+        try:
+            import services.ops_kill_switch as _oks
+            report["kill_switch_tripped"] = bool(_oks.tripped())
+        except Exception:
+            pass
+        if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
+            eod = _CCEA_SUPERVISOR.eod_close()
+            snap = _CCEA_SUPERVISOR.portfolio_snapshot()
+            trades = _CCEA_SUPERVISOR.sync_trades(limit=1000)
+            report["ccea"] = {
+                "eod": eod,
+                "nav": (eod.get("snapshot") or {}).get("nav") if isinstance(eod, dict) else None,
+                "day_pnl": (eod.get("snapshot") or {}).get("day_pnl") if isinstance(eod, dict) else None,
+                "positions": (snap or {}).get("holdings"),
+                "trades_count": len((trades or {}).get("trades") or []),
+                "simulated": bool((snap or {}).get("simulated")),
+            }
+            if isinstance(eod, dict) and not eod.get("ok", True):
+                report["note"] = f"eod_close вернул ошибку: {eod.get('error')}"
+        else:
+            report["note"] = "CCEA Agent не запущен — NAV не фиксировался, отчёт содержит только состояние процесса."
+        json_path = os.path.join(reports_dir, f"{day}.json")
+        atomic_write_with_retry(json_path, json.dumps(report, ensure_ascii=False, indent=2))
+        md_lines = [f"# Дневной отчёт {day}", ""]
+        if report["ccea"]:
+            c = report["ccea"]
+            md_lines += [
+                f"- NAV: **{c.get('nav')}** · дневной PnL: **{c.get('day_pnl')}**"
+                + (" · PAPER" if c.get("simulated") else ""),
+                f"- Сделок в блоттере: {c.get('trades_count')}",
+            ]
+        md_lines += [f"- Kill switch: {'АКТИВЕН' if report['kill_switch_tripped'] else 'выключен'}"]
+        if report["note"]:
+            md_lines += [f"- Примечание: {report['note']}"]
+        atomic_write_with_retry(os.path.join(reports_dir, f"{day}.md"), "\n".join(md_lines) + "\n")
+        if _SCHEDULER is not None and report["ccea"]:
+            c = report["ccea"]
+            _SCHEDULER.notify("eod", f"EOD {day}: NAV {c.get('nav')} · day PnL {c.get('day_pnl')}"
+                                     + (" (PAPER)" if c.get("simulated") else ""))
+        detail = f"отчёт {json_path}" + ("" if report["ccea"] else " (CCEA off — без фиксации NAV)")
+        return JobRunResult(STATUS_SUCCEEDED, detail)
+
+    def tca_weekly(job: ScheduledJob) -> "JobRunResult":
+        from services.automation.tca_reporter import TCAReporter
+        payload = api_trades()
+        raw = payload.get("trades") if isinstance(payload, dict) else (payload or [])
+        usable = []
+        for t in raw or []:
+            meta = t.get("meta") or {}
+            arrival = meta.get("arrival_price") or meta.get("decision_price")
+            if arrival:
+                usable.append({
+                    "symbol": t.get("symbol"), "side": t.get("side"),
+                    "qty": t.get("quantity"), "fill_price": t.get("price"),
+                    "arrival_price": arrival,
+                    "benchmark_price": meta.get("benchmark_price") or arrival,
+                    "venue": meta.get("venue") or t.get("run_id") or "DEFAULT",
+                })
+        if not usable:
+            # Честный skip: без arrival price TCA выродится в нули — не рисуем его.
+            return JobRunResult(STATUS_SKIPPED, "нет сделок с arrival price — TCA не рассчитывается")
+        rep = TCAReporter().analyze(usable)
+        out_dir = str(job.params.get("reports_dir", "reports/tca"))
+        os.makedirs(out_dir, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        atomic_write_with_retry(os.path.join(out_dir, f"tca_{stamp}.json"),
+                                json.dumps(rep.to_dict(), ensure_ascii=False, indent=2))
+        atomic_write_with_retry(os.path.join(out_dir, f"tca_{stamp}.md"), TCAReporter().to_markdown(rep))
+        return JobRunResult(STATUS_SUCCEEDED, f"TCA по {rep.n_trades} сделкам → {out_dir}/tca_{stamp}.*")
+
+    def backup_state(job: ScheduledJob) -> "JobRunResult":
+        import zipfile
+        backups_dir = str(job.params.get("backups_dir", "backups"))
+        keep_last = int(job.params.get("keep_last", 14))
+        os.makedirs(backups_dir, exist_ok=True)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        out_path = os.path.join(backups_dir, f"backup-{stamp}.zip")
+        count = 0
+        with zipfile.ZipFile(out_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for root_dir in ("state",):
+                for base, _dirs, files in os.walk(root_dir):
+                    for name in files:
+                        p = os.path.join(base, name)
+                        try:
+                            zf.write(p, p)
+                            count += 1
+                        except Exception:
+                            continue
+            for pattern_dir, suffixes in (("logs", (".jsonl",)), ("configs", (".yaml",))):
+                if os.path.isdir(pattern_dir):
+                    for name in os.listdir(pattern_dir):
+                        if name.endswith(suffixes):
+                            p = os.path.join(pattern_dir, name)
+                            try:
+                                zf.write(p, p)
+                                count += 1
+                            except Exception:
+                                continue
+        # Ретенция: держим последние keep_last архивов.
+        archives = sorted(
+            (f for f in os.listdir(backups_dir) if f.startswith("backup-") and f.endswith(".zip"))
+        )
+        removed = 0
+        for old in archives[:-keep_last] if keep_last > 0 else []:
+            try:
+                os.remove(os.path.join(backups_dir, old))
+                removed += 1
+            except Exception:
+                pass
+        return JobRunResult(STATUS_SUCCEEDED, f"{out_path}: {count} файлов (удалено старых архивов: {removed})")
+
+    def log_rotation(job: ScheduledJob) -> "JobRunResult":
+        import gzip
+        import shutil as _sh
+        retention_days = int(job.params.get("retention_days", 14))
+        cutoff = time.time() - retention_days * 86400
+        archive_dir = os.path.join(GLOBAL_LOGS_DIR, "archive")
+        os.makedirs(archive_dir, exist_ok=True)
+        rotated = skipped = 0
+        for name in os.listdir(GLOBAL_LOGS_DIR):
+            p = os.path.join(GLOBAL_LOGS_DIR, name)
+            if not (os.path.isfile(p) and name.endswith(".log")):
+                continue
+            try:
+                if os.path.getmtime(p) >= cutoff:
+                    continue
+                gz_path = os.path.join(archive_dir, name + ".gz")
+                with open(p, "rb") as src, gzip.open(gz_path, "wb") as dst:
+                    _sh.copyfileobj(src, dst)
+                os.remove(p)
+                rotated += 1
+            except Exception:
+                # Файл может держать живой процесс (Windows) — пропускаем молча.
+                skipped += 1
+        return JobRunResult(STATUS_SUCCEEDED, f"архивировано {rotated}, пропущено (занято/ошибка) {skipped}")
+
+    def xs_rebalance(job: ScheduledJob) -> "JobRunResult":
+        # Гейт двойного opt-in уже отработал в SchedulerService. Здесь — каркас
+        # исполнения: без явного XS-конфига честно пропускаем. Боевое наполнение
+        # (веса → Intents → CCEA) — задача P1-C гэп-анализа; каркас не имитирует его.
+        cfg = str(job.params.get("config") or "").strip()
+        if not cfg:
+            return JobRunResult(STATUS_SKIPPED, "XS-конфиг не задан (params.config) — ребаланс не выполняется")
+        if not os.path.exists(cfg):
+            return JobRunResult(STATUS_FAILED, f"XS-конфиг не найден: {cfg}")
+        if bool(job.params.get("paper_only", True)) and not (
+            _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running"
+        ):
+            return JobRunResult(STATUS_SKIPPED, "paper_only=true, но CCEA Agent не запущен — исполнять некуда")
+        return JobRunResult(
+            STATUS_SKIPPED,
+            "каркас ребаланса: авто-исполнение весов намеренно не включено (см. docs/SCHEDULER.md, P1-C)",
+        )
+
+    return {
+        "data.refresh": data_refresh,
+        "pipeline.research_nightly": research_nightly,
+        "monitor.drift_and_retrain": drift_and_retrain,
+        "eod.close_and_report": eod_close_and_report,
+        "report.tca_weekly": tca_weekly,
+        "ops.backup_state": backup_state,
+        "ops.log_rotation": log_rotation,
+        "trade.xs_rebalance": xs_rebalance,
+    }
+
+
+def _scheduler_or_503():
+    if _SCHEDULER is None:
+        raise HTTPException(status_code=503, detail="Планировщик выключен (RIVEN_ENABLE_SCHEDULER=0 или pytest)")
+    return _SCHEDULER
+
+
+@api.get("/api/scheduler/status")
+def api_scheduler_status():
+    return _scheduler_or_503().status()
+
+
+@api.get("/api/scheduler/runs")
+def api_scheduler_runs(limit: int = 50):
+    return {"runs": _scheduler_or_503().recent_runs(limit=limit)}
+
+
+class SchedulerEnablePayload(BaseModel):
+    enabled: bool
+
+
+@api.post("/api/scheduler/job/{job_id}/enable")
+def api_scheduler_enable(job_id: str, payload: SchedulerEnablePayload):
+    try:
+        return _scheduler_or_503().set_enabled(job_id, payload.enabled)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"задача '{job_id}' не найдена")
+
+
+class SchedulerRunPayload(BaseModel):
+    confirm_trading: bool = False
+
+
+@api.post("/api/scheduler/job/{job_id}/run")
+def api_scheduler_run(job_id: str, payload: Optional[SchedulerRunPayload] = None):
+    try:
+        return _scheduler_or_503().run_now(
+            job_id, confirm_trading=bool(payload.confirm_trading if payload else False)
+        )
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"задача '{job_id}' не найдена")
+    except PermissionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
 # ------------- Lite Mode evidence & policy endpoints (audit LITE-2026-07-14) -------------
 
 @api.get("/api/config/default")
@@ -10635,3 +11012,40 @@ def _render_streamlit_ui() -> None:
 
 if _streamlit_runtime_active():
     _render_streamlit_ui()
+
+
+# ----------------------- Автостарт планировщика (после полной загрузки модуля) -----------------------
+def _start_scheduler_if_enabled() -> None:
+    """Поднимает SchedulerService фоновым потоком.
+
+    Не стартует: (а) при RIVEN_ENABLE_SCHEDULER=0; (б) под pytest — иначе каждый
+    тестовый импорт app запускал бы catch-up задачи (бэкапы, PSI-воркеры) прямо
+    в рабочей копии. Тесты создают собственные экземпляры SchedulerService.
+    """
+    global _SCHEDULER
+    if os.environ.get("RIVEN_ENABLE_SCHEDULER", "1").strip().lower() not in ("1", "true", "yes", "on"):
+        return
+    if "pytest" in sys.modules:
+        return
+    try:
+        from services.alerts import AlertManager
+        from services.scheduler import SchedulerService
+
+        alert_settings = {}
+        try:
+            with open(os.path.join("configs", "scheduler.yaml"), "r", encoding="utf-8") as f:
+                alert_settings = (yaml.safe_load(f) or {}).get("alerts") or {}
+        except Exception:
+            pass
+        _alert_mgr = AlertManager(alert_settings)
+        _SCHEDULER = SchedulerService(
+            actions=_build_scheduler_actions(),
+            alert_fn=lambda key, text: _alert_mgr.notify(key, text),
+        )
+        _SCHEDULER.start()
+    except Exception:
+        import logging as _logging
+        _logging.getLogger(__name__).exception("scheduler autostart failed")
+
+
+_start_scheduler_if_enabled()
