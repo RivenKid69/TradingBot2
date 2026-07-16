@@ -31,7 +31,7 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 | **RL-обучение** (Distributional PPO, Twin Critics, UPGD, VGS, PBT, SA-PPO, conformal) | ✅ Production, сотни тестов | ✅ Реально: движок настоящий, тесты зелёные, тренировка работает даже внутри packaged EXE (проверено 2026-07-15). 🟡 PBT/SA-PPO/conformal — опциональные ветки конфига, не дефолтный путь; нет GPU/распределённого обучения. |
 | **Бэктест/симуляция исполнения** (L2/L2+/L3, LOB, TCA-калибровка) | ✅ Production, 5 asset-классов | ✅ Движок реальный (execution_sim, lob/, параметрические TCA 84+86 тестов). 🟡 L3 не питается реальными книгами (P2 №13 прошлого аудита); реальные бэктесты (P0-1) есть для crypto/equity, для futures/forex/options — конфиги без «real trust report». |
 | **Cross-sectional платформа** (signals→Σ→μ→w*→execution) | 🚧 в claude.md, но roadmap «ВЕСЬ ПЛАН ЗАВЕРШЁН» | ✅ Все стадии A1–A13, B1–B5, C1 реализованы; 32 сигнальных класса в `signals/` — подтверждено. 🟡 Нет регулярного запуска (rebalance по расписанию); XS→Agent мост есть (`live_factory`), но боевой путь — paper. |
-| **Live-трейдинг / CCEA** | ✅ Production, «CCEA implemented» | ✅ Paper-контур в десктопе реально работает (order→firewall→journal→fill→PnL, E2E-тесты). 🟡 Live-брокеры: Alpaca/OANDA/Binance-futures/Deribit имеют ORDER_EXECUTION; 🔴 Binance **spot** execution не зарегистрирован (crypto live невозможен); ⬜ `configs/agent.yaml` из документации к agentd **не существует**. |
+| **Live-трейдинг / CCEA** | ✅ Production, «CCEA implemented» | ✅ Paper-контур в десктопе реально работает (order→firewall→journal→fill→PnL, E2E-тесты). 🟡 Live-брокеры: Alpaca/OANDA/Binance-futures/Deribit имеют ORDER_EXECUTION; ✅ Binance **spot** execution зарегистрирован (P0-C, 2026-07-16); ⬜ `configs/agent.yaml` из документации к agentd **не существует**. |
 | **Адаптеры** («Multi-Exchange ✅») | Binance/Alpaca/Polygon/Yahoo/OANDA/IB/Deribit/Theta/Dukascopy | См. матрицу §2. 🔴 theta_data — битый импорт; 🔴 dukascopy — заглушка 43 строки; 🟡 IB options не зарегистрированы в registry; 🟡 polygon — только market data (UI предлагает его для options). |
 | **Риск-менеджмент** | ✅ гварды по всем классам, kill switch, pre-trade VaR | ✅ Kill switch, asset-гварды, pre-trade VaR/сценарии — код+тесты реальные. ✅ **Enforcement-разрыв ЗАКРЫТ 2026-07-16 (P0-B):** `lite_limits` (daily loss, max DD, leverage, concentration) теперь применяются двухуровнево — pre-trade RiskChecker + intra-day circuit breaker с auto-halt. `service_signal_runner.py` по-прежнему читает `max_total_notional`/`exposure`; CCEA-путь читает всё через `services/live_risk_limits.py`. См. [docs/RISK_LIMIT_ENFORCEMENT.md](docs/RISK_LIMIT_ENFORCEMENT.md). |
 | **MLOps** (experiment tracking, Ed25519 registry, drift-retrain) | ✅ P0-4/P2 закрыты | ✅ Registry подписывает/проверяет (`service_experiment_tracking.py`), drift-движок с closed-loop есть. 🟡 Подпись **не проверяется при загрузке модели в live** (agentd не вызывает verify); ⬜ нет планировщика — drift-retrain только по REST-запросу. |
@@ -47,7 +47,7 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 | Vendor | Market data | Streaming (WS) | Order execution | Прочее | Статус |
 |---|---|---|---|---|---|
 | Alpaca | ✅ | ✅ | ✅ (equity, paper/live) | fees/hours/info | Рабочий |
-| Binance | ✅ spot | ✅ | 🔴 **spot НЕТ** / ✅ futures | fees/hours/info, futures MD | Spot-execution отсутствует |
+| Binance | ✅ spot | ✅ | ✅ spot / ✅ futures | fees/hours/info, futures MD | Spot-execution закрыт (P0-C, 2026-07-16) |
 | OANDA | ✅ | — (polling) | ✅ (forex practice/live) | fees/hours/info | Рабочий |
 | IB | ✅ futures | через ib_insync | ✅ futures (TWS/Gateway) | options.py есть, **не зарегистрирован** | Futures ок, options не подключены |
 | Deribit | ✅ options | ✅ | ✅ options | inverse margin | Рабочий |
@@ -66,7 +66,7 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 1. 🔴 `packages.shared.models` не импортируется: `cannot import name 'TimeFrame' from 'core_models'`.
 2. 🔴 `services.compliance` не импортируется: deprecated-шим ссылается на несуществующий `services.archive.mifid_financial_entity`.
 3. 🔴 `adapters.theta_data` не импортируется: `cannot import name 'Bar' from 'adapters.models'` (обещанный options-вендор недоступен).
-4. 🔴 Binance **spot** ORDER_EXECUTION не зарегистрирован — live/panic для crypto-spot невозможны (сейчас честно `unavailable`).
+4. ✅ **ЗАКРЫТО 2026-07-16**: Binance **spot** ORDER_EXECUTION зарегистрирован (`adapters/binance/order_execution.py`) — live/panic для crypto-spot работают через registry-путь. См. [docs/CRYPTO_SPOT_EXECUTION.md](docs/CRYPTO_SPOT_EXECUTION.md).
 5. 🔴 `configs/agent.yaml` отсутствует, хотя документация (claude.md) даёт команду запуска `agentd --config configs/agent.yaml`.
 6. ✅ **ЗАКРЫТО 2026-07-16**: `lite_limits` теперь enforced — pre-trade RiskChecker (leverage/drawdown/daily-loss/concentration) + intra-day `LiveRiskMonitor` circuit breaker (auto-halt при пробое дневного убытка/просадки). `/api/risk/limits` возвращает `applied_to_agent: true` при живом Agent и перезагружает лимиты без рестарта. См. [docs/RISK_LIMIT_ENFORCEMENT.md](docs/RISK_LIMIT_ENFORCEMENT.md).
 
@@ -130,7 +130,7 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 |---|---|---|
 | P0-A | Починить 3 битых импорта: `packages.shared.models` (TimeFrame), `services.compliance` (mifid_financial_entity), `adapters.theta_data` (Bar) | §3.1–3 |
 | P0-B | ✅ **ЗАКРЫТО 2026-07-16**: двухуровневый enforcement `lite_limits` — pre-trade RiskChecker (leverage/drawdown/daily-loss/concentration из формы) + intra-day `LiveRiskMonitor` circuit breaker (day-loss / max-DD → auto-halt kill switch + флэттенинг). `services/live_risk_limits.py`, `packages/agent/policy/risk_checker.py`, проводка в `ccea/desktop_supervisor.py`, REST `/api/risk/enforcement`, Lite-карточка «Применение лимитов (live)»; 16 тестов + live smoke. См. [docs/RISK_LIMIT_ENFORCEMENT.md](docs/RISK_LIMIT_ENFORCEMENT.md) | §3.6 |
-| P0-C | Binance spot ORDER_EXECUTION адаптер (или официально сузить crypto до futures) | §3.4 |
+| P0-C | ✅ **ЗАКРЫТО 2026-07-16**: `adapters/binance/order_execution.py` (`BinanceOrderExecutionAdapter`, spot `/api/v3/*`, HMAC/RestBudgetSession по образцу futures) зарегистрирован для `BINANCE`+`BINANCE_US`; panic/holdings/close для crypto теперь исполняются через registry-путь (балансы→синтетические пары→market-SELL для флэттенинга); UI различает Binance Spot/Futures. 17 тестов + live smoke. См. [docs/CRYPTO_SPOT_EXECUTION.md](docs/CRYPTO_SPOT_EXECUTION.md) | §3.4 |
 | P0-D | Создать `configs/agent.yaml` + smoke-тест запуска `agentd --config` по документации | §3.5 |
 | P0-E | Проверка Ed25519-подписи модели при загрузке в live-путь (agentd) — иначе registry не защищает | §4.7 |
 | P0-F | ✅ **ЗАКРЫТО 2026-07-15**: планировщик `services/scheduler.py` + `configs/scheduler.yaml` + `/api/scheduler/*` + UI-карточка (anacron catch-up, fail-closed пайплайны, ретраи+алерты, CCEA-гейт торговых задач; 24 теста + live smoke). См. [docs/SCHEDULER.md](docs/SCHEDULER.md) | §4.8, §5.21 |

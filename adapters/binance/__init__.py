@@ -41,6 +41,7 @@ from .market_data import BinanceMarketDataAdapter
 from .fees import BinanceFeeAdapter
 from .trading_hours import BinanceTradingHoursAdapter
 from .exchange_info import BinanceExchangeInfoAdapter
+from .order_execution import BinanceOrderExecutionAdapter
 
 # Import futures adapter implementations
 from .futures_market_data import BinanceFuturesMarketDataAdapter
@@ -84,6 +85,14 @@ def _register_adapters() -> None:
         description="Binance exchange info adapter",
     )
 
+    # Spot Order Execution (P0-C: closes the crypto-spot live/panic gap)
+    register(
+        vendor=ExchangeVendor.BINANCE,
+        adapter_type=AdapterType.ORDER_EXECUTION,
+        adapter_class=BinanceOrderExecutionAdapter,
+        description="Binance Spot order execution (submit/cancel/positions)",
+    )
+
     # Also register for Binance US (same implementations)
     register(
         vendor=ExchangeVendor.BINANCE_US,
@@ -113,6 +122,14 @@ def _register_adapters() -> None:
         adapter_class=BinanceExchangeInfoAdapter,
         default_config={"base_url": "https://api.binance.us"},
         description="Binance US exchange info adapter",
+    )
+
+    register(
+        vendor=ExchangeVendor.BINANCE_US,
+        adapter_type=AdapterType.ORDER_EXECUTION,
+        adapter_class=BinanceOrderExecutionAdapter,
+        default_config={"spot_url": "https://api.binance.us"},
+        description="Binance US spot order execution",
     )
 
     # ===========================
@@ -177,6 +194,7 @@ __all__ = [
     "BinanceFeeAdapter",
     "BinanceTradingHoursAdapter",
     "BinanceExchangeInfoAdapter",
+    "BinanceOrderExecutionAdapter",
     # Futures adapters
     "BinanceFuturesMarketDataAdapter",
     "BinanceFuturesExchangeInfoAdapter",

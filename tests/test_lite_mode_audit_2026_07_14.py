@@ -204,8 +204,11 @@ def test_panic_halt_review_fixes_in_source():
     # core_models.Order has quantity/ts, not qty — the broken kwargs are gone.
     assert "qty=abs(qty), order_type=" not in APP_SRC
     assert "create_futures_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES" in APP_SRC
-    # Binance spot has no order-execution adapter: halt must stay fail-closed.
-    assert "нет order-execution адаптера" in APP_SRC
+    # P0-C closed: Binance spot now HAS an order-execution adapter, so the halt
+    # path flattens crypto-spot for real instead of staying fail-closed. The old
+    # "no adapter" fail-closed string must be gone, and the spot flatten wired in.
+    assert "нет order-execution адаптера" not in APP_SRC
+    assert "Spot is long-only" in APP_SRC
     # Adapter results are checked, not assumed.
     assert "cancel_failures" in APP_SRC and "close_failures" in APP_SRC
     # Broker errors in holdings never fabricate live-looking positions.

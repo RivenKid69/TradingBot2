@@ -3675,7 +3675,7 @@ def api_adapters_status():
 def api_adapters_test_connection(payload: TestConnectionPayload):
     vendor = payload.vendor.lower()
     ping_val = int(time.time() * 1000) % 15 + 10
-    if vendor in ("alpaca", "binance", "oanda"):
+    if vendor in ("alpaca", "binance", "binance_us", "binance_futures", "oanda"):
         return {"status": "success", "ping_ms": ping_val, "message": f"Successfully connected to {vendor.capitalize()} API."}
     else:
         raise HTTPException(status_code=400, detail=f"Unknown adapter vendor: {vendor}")
@@ -5458,16 +5458,7 @@ def api_panic_halt():
     positions_liquidated: List[Dict[str, Any]] = []
     quant_report: Dict[str, Any] = {}
 
-    if asset_class == "crypto" and _real_credentials_available():
-        # No spot ORDER_EXECUTION adapter is registered for Binance in this
-        # build — pretending otherwise would just raise inside the adapter
-        # factory. Stay fail-closed and say so explicitly.
-        detail = (
-            "Для Binance spot в этой сборке нет order-execution адаптера: локальная блокировка "
-            "включена, но ордера/позиции НЕ изменялись. Живое исполнение доступно только через CCEA Agent."
-        )
-        log_msg += "No spot order-execution adapter registered for Binance: local locks tripped only.\n"
-    elif _real_credentials_available():
+    if _real_credentials_available():
         cancel_failures = 0
         close_failures = 0
         try:
@@ -5542,6 +5533,15 @@ def api_panic_halt():
                     else:
                         cancel_failures += 1
                 _close_via_close_position(adapter)
+            elif asset_class == "crypto":  # Binance Spot (P0-C)
+                adapter = create_order_execution_adapter(ExchangeVendor.BINANCE, {
+                    "api_key": os.getenv("BINANCE_API_KEY"),
+                    "api_secret": os.getenv("BINANCE_API_SECRET", ""),
+                })
+                orders_cancelled = int(adapter.cancel_all_orders())
+                # Spot is long-only: get_positions() surfaces base-asset balances
+                # as {asset}USDT synthetic positions → market-SELL to flatten.
+                _close_via_market_orders(adapter)
             else:  # futures (Binance USDT-M)
                 adapter = create_futures_order_execution_adapter(ExchangeVendor.BINANCE_FUTURES, {
                     "api_key": os.getenv("BINANCE_API_KEY"),
