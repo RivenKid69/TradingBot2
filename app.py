@@ -3668,14 +3668,15 @@ def api_adapters_status():
     return [
         {"vendor": "alpaca", "name": "Alpaca (Equities & Options US)", "endpoint": "https://paper-api.alpaca.markets", "ping_ms": ping_val, "status": "AUTHORIZED", "connection_type": "REST+WS"},
         {"vendor": "binance", "name": "Binance Spot/Futures (Crypto)", "endpoint": "https://fapi.binance.com", "ping_ms": ping_val + 12, "status": "AUTHORIZED", "connection_type": "REST+WS"},
-        {"vendor": "oanda", "name": "OANDA Sandbox (Forex)", "endpoint": "https://api-fxpractice.oanda.com", "ping_ms": ping_val + 35, "status": "AUTHORIZED", "connection_type": "REST+WS"}
+        {"vendor": "oanda", "name": "OANDA Sandbox (Forex)", "endpoint": "https://api-fxpractice.oanda.com", "ping_ms": ping_val + 35, "status": "AUTHORIZED", "connection_type": "REST+WS"},
+        {"vendor": "dukascopy", "name": "Dukascopy (Forex public ticks)", "endpoint": "https://datafeed.dukascopy.com", "ping_ms": ping_val + 28, "status": "PUBLIC", "connection_type": "REST (bi5)"}
     ]
 
 @api.post("/api/adapters/test_connection")
 def api_adapters_test_connection(payload: TestConnectionPayload):
     vendor = payload.vendor.lower()
     ping_val = int(time.time() * 1000) % 15 + 10
-    if vendor in ("alpaca", "binance", "binance_us", "binance_futures", "oanda"):
+    if vendor in ("alpaca", "binance", "binance_us", "binance_futures", "oanda", "dukascopy", "yahoo"):
         return {"status": "success", "ping_ms": ping_val, "message": f"Successfully connected to {vendor.capitalize()} API."}
     else:
         raise HTTPException(status_code=400, detail=f"Unknown adapter vendor: {vendor}")
@@ -7300,6 +7301,9 @@ def api_run_job(payload: RunJobPayload):
                 download_calendar = custom_cfg.get("download_calendar", False)
                 
             cmd = [py, "scripts/download_forex_data.py"]
+            # Provider: oanda (keys) or dukascopy (free public bi5 tick feed).
+            if provider:
+                cmd.extend(["--provider", provider])
             if symbols_list:
                 cmd.extend(["--pairs"] + symbols_list)
             if timeframe:

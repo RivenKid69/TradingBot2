@@ -42,7 +42,7 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_bars = sub.add_parser("bars", help="минутные бары → data/minute/")
-    p_bars.add_argument("--vendor", required=True, choices=["binance", "polygon", "alpaca", "oanda"])
+    p_bars.add_argument("--vendor", required=True, choices=["binance", "dukascopy", "polygon", "alpaca", "oanda"])
     p_bars.add_argument("--symbols", nargs="+", required=True)
     p_bars.add_argument("--timeframe", default="1m")
     p_bars.add_argument("--start", required=True, help="ISO-дата, напр. 2026-07-01")

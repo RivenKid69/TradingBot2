@@ -32,7 +32,7 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 | **Бэктест/симуляция исполнения** (L2/L2+/L3, LOB, TCA-калибровка) | ✅ Production, 5 asset-классов | ✅ Движок реальный (execution_sim, lob/, параметрические TCA 84+86 тестов). 🟡 L3 не питается реальными книгами (P2 №13 прошлого аудита); реальные бэктесты (P0-1) есть для crypto/equity, для futures/forex/options — конфиги без «real trust report». |
 | **Cross-sectional платформа** (signals→Σ→μ→w*→execution) | 🚧 в claude.md, но roadmap «ВЕСЬ ПЛАН ЗАВЕРШЁН» | ✅ Все стадии A1–A13, B1–B5, C1 реализованы; 32 сигнальных класса в `signals/` — подтверждено. 🟡 Нет регулярного запуска (rebalance по расписанию); XS→Agent мост есть (`live_factory`), но боевой путь — paper. |
 | **Live-трейдинг / CCEA** | ✅ Production, «CCEA implemented» | ✅ Paper-контур в десктопе реально работает (order→firewall→journal→fill→PnL, E2E-тесты). 🟡 Live-брокеры: Alpaca/OANDA/Binance-futures/Deribit имеют ORDER_EXECUTION; ✅ Binance **spot** execution зарегистрирован (P0-C, 2026-07-16); ✅ `configs/agent.yaml` создан + `--dry-run` проходит (P0-D, 2026-07-16); ✅ Ed25519-гейт подписи модели на пути активации артефакта демона, fail-closed для LIVE (P0-E, 2026-07-16). |
-| **Адаптеры** («Multi-Exchange ✅») | Binance/Alpaca/Polygon/Yahoo/OANDA/IB/Deribit/Theta/Dukascopy | См. матрицу §2. 🔴 theta_data — битый импорт; 🔴 dukascopy — заглушка 43 строки; 🟡 IB options не зарегистрированы в registry; 🟡 polygon — только market data (UI предлагает его для options). |
+| **Адаптеры** («Multi-Exchange ✅») | Binance/Alpaca/Polygon/Yahoo/OANDA/IB/Deribit/Theta/Dukascopy | См. матрицу §2. ✅ theta_data — импорт починен (P0-A); ✅ **dukascopy — реализован** (публичный bi5 tick-feed, 2026-07-16); 🟡 IB options не зарегистрированы в registry; 🟡 polygon — только market data (UI предлагает его для options). |
 | **Риск-менеджмент** | ✅ гварды по всем классам, kill switch, pre-trade VaR | ✅ Kill switch, asset-гварды, pre-trade VaR/сценарии — код+тесты реальные. ✅ **Enforcement-разрыв ЗАКРЫТ 2026-07-16 (P0-B):** `lite_limits` (daily loss, max DD, leverage, concentration) теперь применяются двухуровнево — pre-trade RiskChecker + intra-day circuit breaker с auto-halt. `service_signal_runner.py` по-прежнему читает `max_total_notional`/`exposure`; CCEA-путь читает всё через `services/live_risk_limits.py`. См. [docs/RISK_LIMIT_ENFORCEMENT.md](docs/RISK_LIMIT_ENFORCEMENT.md). |
 | **MLOps** (experiment tracking, Ed25519 registry, drift-retrain) | ✅ P0-4/P2 закрыты | ✅ Registry подписывает/проверяет (`service_experiment_tracking.py`), drift-движок с closed-loop есть. 🟡 Подпись **не проверяется при загрузке модели в live** (agentd не вызывает verify); ⬜ нет планировщика — drift-retrain только по REST-запросу. |
 | **Учёт/комплаенс** (P&L ledger, blotter, hash-chain, MAR) | ✅ PP-1…PP-5 закрыты | ✅ Код и 70 тестов есть, on_fill подключён к CCEA-супервизору. 🟡 Live-глубина: EOD NAV — ручная кнопка; multi-currency NAV/corp actions на live-позиции — нет (P2 №14); налоговые лоты FIFO — нет (P2 №18). 🔴 `services.compliance` — битый импорт (см. §3). |
@@ -54,10 +54,11 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 | Polygon | ✅ | ✅ | ⬜ | — | Только данные |
 | Yahoo | ✅ | ⬜ | ⬜ | corp actions, earnings | Только данные |
 | Theta Data | 🔴 битый импорт (`Bar` из adapters.models) | — | ⬜ | — | **Сломан** |
-| Dukascopy | 🔴 заглушка (43 строки `__init__`) | ⬜ | ⬜ | — | **Не реализован** |
+| Dukascopy | ✅ **публичный bi5 tick-feed (2026-07-16)** | polling | ⬜ (data-only) | forex/metals ticks→bars | **Реализован** (см. [docs/DUKASCOPY_ADAPTER.md](docs/DUKASCOPY_ADAPTER.md)) |
 
-UI (`adaptersByAsset` в index.html) предлагает комбинации options→theta_data/polygon и forex→dukascopy,
-за которыми нет рабочего бэкенда — backend честно вернёт ошибку, но выбор не должен предлагаться.
+UI (`adaptersByAsset` в index.html) предлагает options→theta_data/polygon (theta_data-импорт починен P0-A,
+но options-execution всё ещё не подключён) — за этими комбинациями бэкенд неполон. **forex→dukascopy теперь
+реально работает** (публичный bi5 tick-feed, 2026-07-16, см. §2 матрицу).
 
 ---
 

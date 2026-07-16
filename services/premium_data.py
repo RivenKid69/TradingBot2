@@ -76,6 +76,15 @@ VENDOR_CAPS: Dict[str, Dict[str, Any]] = {
         "key_envs": ["OANDA_API_KEY", "OANDA_ACCOUNT_ID"],
         "notes": "Минутки через practice/live API OANDA.",
     },
+    "dukascopy": {
+        "title": "Dukascopy (forex/metals)",
+        "asset_classes": ["forex"],
+        "bars": ["1m", "5m", "15m", "1h"],
+        "ticks": "history",          # публичный bi5 tick-feed (агрегируется в бары)
+        "paid": False,
+        "key_envs": [],              # публичный фид без авторизации
+        "notes": "Бесплатный публичный tick-feed (bi5), история с 2003, без ключей.",
+    },
 }
 
 

@@ -402,6 +402,95 @@ def download_pair_oanda(
         return pair, None, str(e)
 
 
+def download_pair_dukascopy(
+    pair: str,
+    config: ForexDownloadConfig,
+) -> Tuple[str, Optional[pd.DataFrame], Optional[str]]:
+    """
+    Download a currency pair from Dukascopy's free public tick feed (bi5).
+
+    No credentials required. Bars are aggregated from ticks by the adapter and
+    written in the SAME schema as the OANDA path (timestamp/open/high/low/close/
+    volume/spread_pips [+ bid/ask when price_type=bid_ask]), so downstream
+    features/targets are provider-agnostic.
+    """
+    try:
+        from adapters.dukascopy.market_data import DukascopyMarketDataAdapter
+
+        adapter = DukascopyMarketDataAdapter(
+            vendor=ExchangeVendor.DUKASCOPY,
+            config={"max_hours": int(getattr(config, "dukascopy_max_hours", 0)) or 24 * 45},
+        )
+        adapter.connect()
+
+        end_dt = datetime.now(timezone.utc)
+        if config.end_date:
+            end_dt = datetime.strptime(config.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        if config.start_date:
+            start_dt = datetime.strptime(config.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        else:
+            start_dt = end_dt - timedelta(days=config.lookback_days)
+
+        logger.info(f"Downloading {pair} (Dukascopy): {start_dt.date()} to {end_dt.date()}")
+        bars = adapter.get_bars(
+            symbol=pair, timeframe=config.timeframe,
+            start_ts=int(start_dt.timestamp() * 1000),
+            end_ts=int(end_dt.timestamp() * 1000),
+            limit=10_000_000,   # keep the full range; adapter caps via max_hours
+        )
+        if not bars:
+            return pair, None, "No data returned (weekend/holiday or out-of-range?)"
+
+        records = []
+        for bar in bars:
+            record = {
+                "timestamp": bar.ts // 1000,
+                "open": float(bar.open), "high": float(bar.high),
+                "low": float(bar.low), "close": float(bar.close),
+                "volume": float(bar.volume_base),
+                "spread_pips": float(bar.volume_quote) if bar.volume_quote is not None else np.nan,
+            }
+            if config.price_type == "bid_ask":
+                record.update({
+                    "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
+                    "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
+                    "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
+                    "close_bid": float(bar.bid_close) if bar.bid_close is not None else np.nan,
+                    "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
+                    "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
+                    "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
+                    "close_ask": float(bar.ask_close) if bar.ask_close is not None else np.nan,
+                })
+            records.append(record)
+
+        df = pd.DataFrame(records).sort_values("timestamp").drop_duplicates(
+            subset=["timestamp"]).reset_index(drop=True)
+        df["symbol"] = pair
+        if config.add_session_labels:
+            df["session"] = df["timestamp"].apply(
+                lambda ts: ForexCalendar.get_active_session(
+                    datetime.fromtimestamp(ts, tz=timezone.utc)))
+        if config.filter_weekends:
+            df = _filter_weekends(df)
+        if config.resample_to:
+            df = _resample_bars(df, config.resample_to)
+        logger.info(f"Downloaded {pair} (Dukascopy): {len(df)} bars")
+        return pair, df, None
+
+    except ImportError as e:
+        return pair, None, f"Dukascopy adapter not available: {e}"
+    except Exception as e:
+        logger.exception(f"Error downloading {pair} from Dukascopy")
+        return pair, None, str(e)
+
+
+def _download_pair(pair: str, config: ForexDownloadConfig):
+    """Dispatch to the configured forex data provider."""
+    if str(getattr(config, "provider", "oanda")).lower() == "dukascopy":
+        return download_pair_dukascopy(pair, config)
+    return download_pair_oanda(pair, config)
+
+
 def _filter_weekends(df: pd.DataFrame) -> pd.DataFrame:
     """
     Remove data points during forex weekend closure.
@@ -596,7 +685,7 @@ def download_all_pairs(config: ForexDownloadConfig) -> Dict[str, Any]:
     failed = []
 
     for pair in pairs:
-        pair, df, error = download_pair_oanda(pair, config)
+        pair, df, error = _download_pair(pair, config)
 
         if error:
             logger.error(f"Failed to download {pair}: {error}")
@@ -744,6 +833,12 @@ Examples:
 
     # Provider config
     parser.add_argument(
+        "--provider",
+        choices=["oanda", "dukascopy"],
+        default="oanda",
+        help="Forex data provider: oanda (needs keys) or dukascopy (free public bi5 tick feed)",
+    )
+    parser.add_argument(
         "--api-key",
         help="OANDA API key (or set OANDA_API_KEY env var)",
     )
@@ -786,6 +881,7 @@ def main() -> int:
 
     # Build configuration
     config = ForexDownloadConfig(
+        provider=args.provider,
         api_key=args.api_key,
         account_id=args.account_id,
         practice=not args.live,
