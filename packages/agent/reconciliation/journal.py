@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
@@ -127,21 +128,31 @@ class OrderJournal:
     def __init__(
         self,
         db_path: Optional[Path] = None,
+        *,
+        hmac_key: Optional[bytes] = None,
     ):
         """
         Initialize journal.
 
         Args:
             db_path: Path to SQLite database
+            hmac_key: optional key for the tamper-evident audit chain (from the
+                Agent vault). When omitted the chain is unkeyed SHA-256 (still
+                tamper-evident; keyed makes it tamper-proof against forgery).
         """
         self._db_path = db_path or Path.home() / ".ccea" / "order_journal.db"
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: Optional[sqlite3.Connection] = None
+        self._hmac_key = hmac_key
+        # OMS-запросы (submit/cancel/fill) приходят на разных потоках (uvicorn
+        # threadpool для sync-эндпоинтов), поэтому соединение переносимо между
+        # потоками, а запись в append-only hash-chain сериализуется локом.
+        self._lock = threading.RLock()
         self._init_db()
 
     def _init_db(self) -> None:
         """Initialize database schema."""
-        self._conn = sqlite3.connect(str(self._db_path))
+        self._conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
 
         self._conn.execute(
@@ -179,7 +190,74 @@ class OrderJournal:
             """
         )
 
+        # Tamper-evident append-only audit chain: an immutable hash-linked log of
+        # every order lifecycle event (logged / status changes). The `orders` table
+        # above remains the mutable working state for fast lookups; this table is
+        # the WORM record of record. INSERT-only — never UPDATE/DELETE.
+        self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS order_audit (
+                seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                client_order_id TEXT,
+                entry_id TEXT,
+                payload TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                entry_hash TEXT NOT NULL
+            )
+            """
+        )
+
         self._conn.commit()
+
+    # ---- tamper-evident audit chain -------------------------------------
+    def _audit_head_hash(self) -> str:
+        from packages.agent.audit.hash_chain import GENESIS_HASH
+        row = self._conn.execute(
+            "SELECT entry_hash FROM order_audit ORDER BY seq DESC LIMIT 1"
+        ).fetchone()
+        return row["entry_hash"] if row else GENESIS_HASH
+
+    def _append_audit(self, event_type: str, payload: Dict[str, Any]) -> None:
+        """Append a hash-chained audit event (best-effort; never breaks the order)."""
+        try:
+            from datetime import datetime as _dt
+
+            from packages.agent.audit.hash_chain import chain_hash
+            seq = int(self._conn.execute("SELECT COUNT(*) c FROM order_audit").fetchone()["c"]) + 1
+            prev = self._audit_head_hash()
+            body = {"event_type": event_type, **payload}
+            h = chain_hash(prev, body, seq, key=self._hmac_key)
+            self._conn.execute(
+                "INSERT INTO order_audit(ts, event_type, client_order_id, entry_id, payload, prev_hash, entry_hash) "
+                "VALUES(?,?,?,?,?,?,?)",
+                (_dt.utcnow().isoformat(), event_type, payload.get("client_order_id"),
+                 payload.get("entry_id"), json.dumps(body, sort_keys=True), prev, h),
+            )
+            self._conn.commit()
+        except Exception:  # pragma: no cover - audit must never break execution
+            pass
+
+    def verify_audit_chain(self) -> Dict[str, Any]:
+        """Recompute the audit chain and report integrity (tamper-evidence)."""
+        from packages.agent.audit.hash_chain import ChainRecord, verify_chain
+        rows = self._conn.execute(
+            "SELECT seq, payload, prev_hash, entry_hash FROM order_audit ORDER BY seq ASC"
+        ).fetchall()
+        recs = [ChainRecord(seq=r["seq"], payload=json.loads(r["payload"]),
+                            prev_hash=r["prev_hash"], entry_hash=r["entry_hash"]) for r in rows]
+        out = verify_chain(recs, key=self._hmac_key)
+        out["keyed"] = self._hmac_key is not None
+        out["head_hash"] = self._audit_head_hash()
+        return out
+
+    def get_audit_events(self, *, limit: int = 200) -> List[Dict[str, Any]]:
+        rows = self._conn.execute(
+            "SELECT seq, ts, event_type, client_order_id, entry_id, entry_hash "
+            "FROM order_audit ORDER BY seq DESC LIMIT ?", (int(limit),)
+        ).fetchall()
+        return [dict(r) for r in rows]
 
     def log_order(
         self,
@@ -220,29 +298,36 @@ class OrderJournal:
             metadata=metadata or {},
         )
 
-        self._conn.execute(
-            """
-            INSERT INTO orders (
-                entry_id, client_order_id, intent_id, symbol, side,
-                quantity, order_type, status, created_at, updated_at, metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                entry.entry_id,
-                entry.client_order_id,
-                entry.intent_id,
-                entry.symbol,
-                entry.side,
-                entry.quantity,
-                entry.order_type,
-                entry.status.value,
-                entry.created_at.isoformat(),
-                entry.updated_at.isoformat(),
-                json.dumps(entry.metadata),
-            ),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT INTO orders (
+                    entry_id, client_order_id, intent_id, symbol, side,
+                    quantity, order_type, status, created_at, updated_at, metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    entry.entry_id,
+                    entry.client_order_id,
+                    entry.intent_id,
+                    entry.symbol,
+                    entry.side,
+                    entry.quantity,
+                    entry.order_type,
+                    entry.status.value,
+                    entry.created_at.isoformat(),
+                    entry.updated_at.isoformat(),
+                    json.dumps(entry.metadata),
+                ),
+            )
+            self._conn.commit()
 
+            self._append_audit("order_logged", {
+                "client_order_id": entry.client_order_id, "entry_id": entry.entry_id,
+                "intent_id": entry.intent_id, "symbol": entry.symbol, "side": entry.side,
+                "quantity": entry.quantity, "order_type": entry.order_type,
+                "status": entry.status.value,
+            })
         return entry
 
     def update_status(
@@ -276,12 +361,20 @@ class OrderJournal:
 
         values.append(entry_id)
 
-        cursor = self._conn.execute(
-            f"UPDATE orders SET {', '.join(updates)} WHERE entry_id = ?",
-            values,
-        )
-        self._conn.commit()
+        with self._lock:
+            cursor = self._conn.execute(
+                f"UPDATE orders SET {', '.join(updates)} WHERE entry_id = ?",
+                values,
+            )
+            self._conn.commit()
 
+            if cursor.rowcount > 0:
+                self._append_audit(f"status_{status.value}", {
+                    "entry_id": entry_id, "status": status.value,
+                    "broker_order_id": broker_order_id,
+                    "filled_quantity": str(filled_quantity) if filled_quantity is not None else None,
+                    "avg_price": str(avg_price) if avg_price is not None else None,
+                })
         return cursor.rowcount > 0
 
     def is_duplicate(self, client_order_id: str) -> bool:
@@ -410,6 +503,18 @@ class OrderJournal:
         if self._conn:
             self._conn.close()
             self._conn = None
+
+    def __enter__(self) -> "OrderJournal":
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:  # pragma: no cover - best-effort safety net
+        try:
+            self.close()
+        except Exception:
+            pass
 
 
 class CommandStatus(str, Enum):
@@ -858,3 +963,15 @@ class CommandJournal:
         if self._conn:
             self._conn.close()
             self._conn = None
+
+    def __enter__(self) -> "CommandJournal":
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        self.close()
+
+    def __del__(self) -> None:  # pragma: no cover - best-effort safety net
+        try:
+            self.close()
+        except Exception:
+            pass

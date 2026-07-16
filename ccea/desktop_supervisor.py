@@ -580,20 +580,63 @@ class CCEASupervisor:
             "broker": self._broker_name,
         }
 
-    def close_position(self, symbol: str) -> Dict[str, Any]:
-        """Close an actual Agent position and book the resulting paper fill."""
+    def close_position(self, symbol: str, quantity: Optional[float] = None) -> Dict[str, Any]:
+        """Close (fully or partially) an Agent position through the real OMS.
+
+        ``quantity`` — сколько единиц закрыть (по модулю); None или >= |позиции|
+        закрывает целиком. Частичное закрытие идёт тем же путём (OrderIntent
+        CLOSE_POSITION → policy firewall → journal → fill → books)."""
         if self._broker is None:
             return {"ok": False, "error": "broker not available"}
         pos = self._broker.get_position(symbol)
         if pos is None or not pos.quantity:
             return {"ok": False, "error": f"no active position for {symbol}"}
 
+        cur = float(pos.quantity)
+        close_qty = abs(cur) if quantity is None else min(abs(float(quantity)), abs(cur))
+        if close_qty <= 0:
+            return {"ok": False, "error": "quantity must be > 0"}
+        partial = close_qty < abs(cur) - 1e-12
+
         if self._broker_name != "sim_paper":
-            result = self._broker.close_position(symbol)
+            # Живой брокер: закрытие позиции — reduce-only, авторизация live
+            # НЕ требуется (это снижение риска, а не наращивание экспозиции),
+            # но идёт через живой OMS (firewall/journal/collar).
+            from decimal import Decimal
+            from packages.agent.execution.fill_handler import FillEvent
+            from packages.shared.contracts.intent import IntentSide, IntentType, OrderIntent
+            engine = self._ensure_live_engine()
+            price = self._broker.get_last_price(symbol)
+            if price is None or price <= 0:
+                return {"ok": False, "error": f"no market mark for {symbol}"}
+            if self._ledger is not None:
+                try:
+                    engine.update_portfolio(self._ledger.to_portfolio_state())
+                except Exception:
+                    pass
+            intent = OrderIntent(
+                strategy_id="desktop-manual-close", symbol=symbol,
+                intent_type=IntentType.CLOSE_POSITION,
+                side=IntentSide.SHORT if cur > 0 else IntentSide.LONG,
+                target_quantity=Decimal(str(close_qty)),
+                reason=f"operator {'partial ' if partial else ''}close",
+            )
+            result = engine.execute(intent, current_price=Decimal(str(price)), origin="local")
+            if not result.success or result.order is None:
+                return {"ok": False, "error": result.error_message or "close rejected"}
+            info = self._broker.get_order(client_order_id=result.order.client_order_id)
+            if info is not None and info.filled_quantity and self._live_fill_handler is not None:
+                self._live_fill_handler.handle_event(FillEvent(
+                    client_order_id=result.order.client_order_id, event_type="fill",
+                    filled_qty=info.filled_quantity, avg_fill_price=info.avg_fill_price,
+                    broker_order_id=info.broker_order_id, cumulative=True))
+            remaining = self._broker.get_position(symbol)
             return {
                 "ok": bool(result.success), "broker": self._broker_name,
-                "broker_order_id": result.broker_order_id,
-                "error": result.error_message,
+                "partial": partial, "closed_qty": close_qty,
+                "broker_order_id": info.broker_order_id if info is not None else None,
+                "remaining_qty": float(remaining.quantity) if remaining is not None else 0.0,
+                "simulated": False,
             }
 
         from decimal import Decimal
@@ -609,9 +652,9 @@ class CCEASupervisor:
         intent = OrderIntent(
             strategy_id="desktop-manual-close", symbol=symbol,
             intent_type=IntentType.CLOSE_POSITION,
-            side=IntentSide.SHORT if pos.quantity > 0 else IntentSide.LONG,
-            target_quantity=Decimal(str(abs(pos.quantity))),
-            reason="desktop operator close position",
+            side=IntentSide.SHORT if cur > 0 else IntentSide.LONG,
+            target_quantity=Decimal(str(close_qty)),
+            reason=f"desktop operator {'partial ' if partial else ''}close position",
         )
         result = engine.execute(intent, current_price=Decimal(str(price)), origin="local")
         if not result.success or result.order is None:
@@ -626,12 +669,208 @@ class CCEASupervisor:
             ))
         remaining = self._broker.get_position(symbol)
         return {
-            "ok": remaining is None or remaining.quantity == 0,
+            "ok": (remaining is None or abs(float(remaining.quantity)) < abs(cur) - 1e-12
+                   or float(remaining.quantity) == 0.0),
             "broker": self._broker_name,
+            "partial": partial, "closed_qty": close_qty,
             "broker_order_id": info.broker_order_id if info is not None else None,
             "remaining_qty": float(remaining.quantity) if remaining is not None else 0.0,
             "simulated": True,
         }
+
+    # --------------------------------------------------- manual order ticket
+    _INTENT_TYPE_MAP = {
+        ("market", "long"): "MARKET_ENTRY", ("market", "short"): "MARKET_ENTRY",
+        ("limit", "long"): "LIMIT_ENTRY", ("limit", "short"): "LIMIT_ENTRY",
+        ("stop", "long"): "STOP_ENTRY", ("stop", "short"): "STOP_ENTRY",
+        ("stop_limit", "long"): "STOP_ENTRY", ("stop_limit", "short"): "STOP_ENTRY",
+    }
+
+    def submit_manual_order(
+        self,
+        *,
+        symbol: str,
+        side: str,                    # buy|sell|long|short
+        order_type: str = "market",   # market|limit|stop|stop_limit
+        quantity: float,
+        limit_price: Optional[float] = None,
+        stop_price: Optional[float] = None,
+        time_in_force: str = "GTC",   # GTC|DAY|IOC|FOK
+        reduce_only: bool = False,
+        strategy_id: str = "desktop-manual",
+    ) -> Dict[str, Any]:
+        """Ручной ордер оператора через настоящий Agent OMS (paper или live).
+
+        Проверки: валидность цен для типа ордера; reduce_only не может нарастить
+        и не превышает размер позиции; на live-брокере — обязательный мандат
+        авторизации, КРОМЕ reduce_only (снижение риска разрешено без мандата).
+        """
+        from decimal import Decimal
+        from packages.agent.execution.fill_handler import FillEvent
+        from packages.shared.contracts.intent import IntentSide, IntentType, OrderIntent
+
+        if self._broker is None:
+            return {"ok": False, "error": "broker not available"}
+        s = str(side).strip().lower()
+        side_long = s in ("buy", "long")
+        if s not in ("buy", "sell", "long", "short"):
+            return {"ok": False, "error": f"invalid side: {side!r}"}
+        ot = str(order_type).strip().lower()
+        if ot not in ("market", "limit", "stop", "stop_limit"):
+            return {"ok": False, "error": f"invalid order_type: {order_type!r}"}
+        try:
+            qty = float(quantity)
+        except (TypeError, ValueError):
+            return {"ok": False, "error": "invalid quantity"}
+        if qty <= 0:
+            return {"ok": False, "error": "quantity must be > 0"}
+        if ot in ("limit", "stop_limit") and not (limit_price and float(limit_price) > 0):
+            return {"ok": False, "error": f"{ot} order requires a positive limit_price"}
+        if ot in ("stop", "stop_limit") and not (stop_price and float(stop_price) > 0):
+            return {"ok": False, "error": f"{ot} order requires a positive stop_price"}
+        tif = str(time_in_force).strip().upper()
+        if tif not in ("GTC", "DAY", "IOC", "FOK"):
+            return {"ok": False, "error": f"invalid time_in_force: {time_in_force!r}"}
+
+        is_paper = self._broker_name == "sim_paper"
+
+        # reduce_only: направление обязано уменьшать позицию и не превышать её.
+        pos = self._broker.get_position(symbol)
+        cur = float(pos.quantity) if pos is not None and pos.quantity else 0.0
+        if reduce_only:
+            if cur == 0.0:
+                return {"ok": False, "error": "reduce_only, но позиции нет"}
+            reduces = (side_long and cur < 0) or (not side_long and cur > 0)
+            if not reduces:
+                return {"ok": False, "error": "reduce_only: сторона ордера не уменьшает позицию"}
+            if qty > abs(cur) + 1e-12:
+                qty = abs(cur)   # не даём перевернуть позицию в reduce-only
+
+        # Живой брокер: наращивание экспозиции требует мандата; reduce_only — нет.
+        if not is_paper and not reduce_only:
+            store = self._live_auth
+            if store is None:
+                return {"ok": False, "error": "live-брокер, но хранилище авторизаций недоступно"}
+            # Ручной ордер авторизуется по стратегии/брокеру с оценкой нотионала.
+            ref_price = float(limit_price or stop_price or (self._broker.get_last_price(symbol) or 0) or 0)
+            est_notional = qty * ref_price
+            equity = 0.0
+            try:
+                equity = float(self._broker.get_account().equity)
+            except Exception:
+                pass
+            turnover = (est_notional / equity) if equity > 0 else 1.0
+            chk = store.check(strategy_id=strategy_id, config={"manual_order": True},
+                              broker=self._broker_name, turnover=turnover,
+                              notional=est_notional, n_orders=1)
+            if not chk.allowed:
+                return {"ok": False, "error": f"live-авторизация ручного ордера: {chk.reason}",
+                        "authorization": chk.to_dict()}
+
+        engine = self._ensure_paper_engine() if is_paper else self._ensure_live_engine()
+        fill_handler = self._fill_handler if is_paper else self._live_fill_handler
+        mark = self._broker.get_last_price(symbol)
+        if is_paper and mark is None:
+            # SimBroker нужна котировка для расчёта fill; используем limit/stop как прокси.
+            proxy = limit_price or stop_price
+            if proxy:
+                self._broker.set_price(symbol, float(proxy))
+                mark = self._broker.get_last_price(symbol)
+        if mark is None or float(mark) <= 0:
+            return {"ok": False, "error": f"no market mark for {symbol}"}
+        if self._ledger is not None:
+            try:
+                engine.update_portfolio(self._ledger.to_portfolio_state())
+            except Exception:
+                pass
+
+        if reduce_only:
+            intent_type = IntentType.CLOSE_POSITION
+        else:
+            intent_type = getattr(IntentType, self._INTENT_TYPE_MAP[(ot, "long" if side_long else "short")])
+        intent = OrderIntent(
+            strategy_id=strategy_id, symbol=symbol, intent_type=intent_type,
+            side=IntentSide.LONG if side_long else IntentSide.SHORT,
+            target_quantity=Decimal(str(qty)),
+            limit_price=(Decimal(str(limit_price)) if limit_price else None),
+            stop_price=(Decimal(str(stop_price)) if stop_price else None),
+            time_in_force=tif,
+            reason=f"desktop manual {ot} order",
+        )
+        res = engine.execute(intent, current_price=Decimal(str(mark)), origin="local")
+        if res.success and res.order is not None and self._books is not None:
+            try:
+                self._books.on_order(
+                    symbol=symbol, side=str(res.order.side).upper(), action="NEW",
+                    quantity=float(res.order.quantity), price=float(mark),
+                    order_id=res.order.client_order_id, mid=float(mark))
+            except Exception:
+                pass
+        filled = False
+        if res.success and res.order is not None and fill_handler is not None:
+            try:
+                info = self._broker.get_order(client_order_id=res.order.client_order_id)
+                if info is not None and info.filled_quantity and info.filled_quantity > 0:
+                    fill_handler.handle_event(FillEvent(
+                        client_order_id=res.order.client_order_id, event_type="fill",
+                        filled_qty=info.filled_quantity, avg_fill_price=info.avg_fill_price,
+                        broker_order_id=info.broker_order_id, cumulative=True))
+                    filled = True
+            except Exception:
+                pass
+        return {
+            "ok": bool(res.success),
+            "client_order_id": res.order.client_order_id if res.order is not None else None,
+            "broker_order_id": (getattr(res.order, "broker_order_id", None) if res.order is not None else None),
+            "error": None if res.success else (res.error_message or "rejected by OMS"),
+            "order_type": ot, "side": "long" if side_long else "short",
+            "quantity": qty, "limit_price": limit_price, "stop_price": stop_price,
+            "time_in_force": tif, "reduce_only": bool(reduce_only),
+            "state": "filled" if filled else ("submitted" if res.success else "rejected"),
+            "simulated": is_paper,
+        }
+
+    def open_orders(self, symbol: Optional[str] = None) -> Dict[str, Any]:
+        """Рабочие (неисполненные) ордера активного брокера."""
+        if self._broker is None:
+            return {"ok": False, "error": "broker not available", "orders": []}
+        getter = getattr(self._broker, "get_open_orders", None)
+        if not callable(getter):
+            return {"ok": True, "orders": [], "supported": False, "broker": self._broker_name}
+        out = []
+        try:
+            for o in getter(symbol) or []:
+                out.append({
+                    "client_order_id": getattr(o, "client_order_id", None),
+                    "broker_order_id": getattr(o, "broker_order_id", None),
+                    "symbol": getattr(o, "symbol", None),
+                    "side": str(getattr(o, "side", "")).replace("OrderSide.", "").lower(),
+                    "order_type": str(getattr(o, "order_type", "")).replace("OrderType.", "").lower(),
+                    "quantity": float(getattr(o, "quantity", 0) or 0),
+                    "filled_quantity": float(getattr(o, "filled_quantity", 0) or 0),
+                    "limit_price": (float(o.limit_price) if getattr(o, "limit_price", None) else None),
+                    "stop_price": (float(o.stop_price) if getattr(o, "stop_price", None) else None),
+                    "status": str(getattr(o, "status", "")).replace("OrderStatus.", "").lower(),
+                })
+        except Exception as exc:
+            return {"ok": False, "error": str(exc), "orders": []}
+        return {"ok": True, "orders": out, "broker": self._broker_name,
+                "simulated": self._broker_name == "sim_paper"}
+
+    def cancel_order(self, client_order_id: str) -> Dict[str, Any]:
+        """Отменить рабочий ордер через активный брокер."""
+        if self._broker is None:
+            return {"ok": False, "error": "broker not available"}
+        canceller = getattr(self._broker, "cancel_order", None)
+        if not callable(canceller):
+            return {"ok": False, "error": "broker does not support cancel"}
+        try:
+            res = canceller(client_order_id=client_order_id)
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+        ok = bool(getattr(res, "success", res is True))
+        return {"ok": ok, "client_order_id": client_order_id, "broker": self._broker_name,
+                "error": None if ok else getattr(res, "error_message", "cancel failed")}
 
     def _ensure_live_engine(self):
         """LiveExecutionEngine, привязанный к активному LIVE-брокеру.

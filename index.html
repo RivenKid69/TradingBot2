@@ -2540,6 +2540,97 @@
                         </div>
                     </div>
 
+                    <!-- Manual Order Ticket + Working Orders -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Order Ticket (5 cols) -->
+                        <div class="lg:col-span-5 bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3">
+                            <h3 class="text-xs font-semibold text-white uppercase tracking-wider font-mono flex items-center justify-between border-b border-[#232329]/40 pb-2">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-ticket text-emerald-400"></i>Ордер-тикет</span>
+                                <span id="order-ticket-mode" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase">—</span>
+                            </h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="ticket-side-buy" onclick="setTicketSide('buy')" class="py-2 rounded-xl text-xs font-bold font-mono border transition-all bg-emerald-500/15 text-emerald-400 border-emerald-500/40">BUY / LONG</button>
+                                <button type="button" id="ticket-side-sell" onclick="setTicketSide('sell')" class="py-2 rounded-xl text-xs font-bold font-mono border transition-all bg-[#1A1A22] text-gray-400 border-[#2B2B36]">SELL / SHORT</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Символ</label>
+                                    <input type="text" id="ticket-symbol" value="BTCUSDT" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Тип ордера</label>
+                                    <select id="ticket-order-type" onchange="updateTicketFields()" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono cursor-pointer">
+                                        <option value="market">Market</option>
+                                        <option value="limit">Limit</option>
+                                        <option value="stop">Stop</option>
+                                        <option value="stop_limit">Stop-Limit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Количество</label>
+                                    <input type="number" id="ticket-qty" value="0.1" step="any" min="0" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Time in Force</label>
+                                    <select id="ticket-tif" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono cursor-pointer">
+                                        <option value="GTC">GTC</option>
+                                        <option value="DAY">DAY</option>
+                                        <option value="IOC">IOC</option>
+                                        <option value="FOK">FOK</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div id="ticket-limit-wrap" class="space-y-1 hidden">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Лимит-цена</label>
+                                    <input type="number" id="ticket-limit-price" step="any" min="0" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono">
+                                </div>
+                                <div id="ticket-stop-wrap" class="space-y-1 hidden">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Стоп-цена</label>
+                                    <input type="number" id="ticket-stop-price" step="any" min="0" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-200 outline-none focus:border-sky-500/50 font-mono">
+                                </div>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer text-[11px] text-gray-300 select-none pt-1">
+                                <input type="checkbox" id="ticket-reduce-only" class="w-3.5 h-3.5 rounded border-[#2B2B36] text-sky-600 bg-[#1A1A22]">
+                                <span>Reduce-only (только уменьшение позиции)</span>
+                            </label>
+                            <button onclick="submitOrderTicket()" id="ticket-submit-btn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2.5 rounded-xl transition-all active:scale-[0.98] shadow-md flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-paper-plane"></i> Отправить ордер
+                            </button>
+                            <p class="text-[9px] text-gray-500 font-mono leading-relaxed">Ордер проходит через реальный Agent OMS (policy firewall → журнал → fill → книги). На paper-брокере limit/stop исполняются моментально по своей цене (симуляция). Live-наращивание требует мандата авторизации.</p>
+                        </div>
+
+                        <!-- Working Orders (7 cols) -->
+                        <div class="lg:col-span-7 bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl flex flex-col min-h-[200px]">
+                            <h3 class="text-xs font-semibold text-white uppercase tracking-wider mb-3 font-mono flex items-center justify-between">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-hourglass-half text-sky-400"></i>Рабочие ордера (Working Orders)</span>
+                                <button onclick="refreshWorkingOrders()" class="text-gray-500 hover:text-white text-[10px] transition-colors cursor-pointer"><i class="fa-solid fa-arrows-rotate"></i></button>
+                            </h3>
+                            <div class="overflow-x-auto flex-1">
+                                <table class="w-full text-left text-xs text-gray-300">
+                                    <thead class="bg-[#18191E] text-gray-500 uppercase font-mono text-[9px] border-b border-[#232329]/80">
+                                        <tr>
+                                            <th class="p-2.5">Символ</th>
+                                            <th class="p-2.5">Сторона</th>
+                                            <th class="p-2.5">Тип</th>
+                                            <th class="p-2.5 text-right">Кол-во</th>
+                                            <th class="p-2.5 text-right">Цена</th>
+                                            <th class="p-2.5">Статус</th>
+                                            <th class="p-2.5 text-center">Действие</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-[#232329]/50 font-mono text-[11px]" id="working-orders-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div id="working-orders-empty" class="my-auto text-center py-8 text-gray-500 font-mono text-xs">
+                                <i class="fa-solid fa-check text-gray-600 text-lg mb-2 block"></i>
+                                Нет рабочих ордеров
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Main Overview Area -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <!-- Left: Open Positions Table (8 cols) -->
@@ -24223,10 +24314,12 @@ function renderPipelineStatusDetails(asset) {
 
             // Refresh data once
             await refreshLitePortfolioData();
+            updateTicketFields();
+            refreshWorkingOrders();
 
             // Establish periodic fetches (every 5 seconds)
             if (portfolioInterval) clearInterval(portfolioInterval);
-            portfolioInterval = setInterval(refreshLitePortfolioData, 5000);
+            portfolioInterval = setInterval(() => { refreshLitePortfolioData(); refreshWorkingOrders(); }, 5000);
 
             // Establish console logs update (every 3 seconds)
             if (portfolioConsoleInterval) clearInterval(portfolioConsoleInterval);
@@ -24329,9 +24422,13 @@ function renderPipelineStatusDetails(asset) {
 
                         const pnlColor = item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400';
                         const pnlSign = item.pnl >= 0 ? '+' : '';
-                        const closeButton = data.simulated && data.data_source === 'demo_mock'
+                        const absQty = Math.abs(Number(item.qty) || 0);
+                        const actionButtons = data.simulated && data.data_source === 'demo_mock'
                             ? '<button disabled title="Демо-позиция не существует у брокера" class="bg-gray-500/10 text-gray-600 font-medium px-2 py-0.5 rounded text-[10px] border border-gray-500/20 cursor-not-allowed">Demo</button>'
-                            : `<button onclick="closeLiteportPosition('${item.symbol}')" class="bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 font-medium px-2 py-0.5 rounded text-[10px] transition-colors border border-rose-500/20 cursor-pointer">Close</button>`;
+                            : `<div class="flex items-center justify-center gap-1">
+                                 <button onclick="partialCloseLiteportPosition('${item.symbol}', ${absQty})" title="Частичное закрытие" class="bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-400 font-medium px-2 py-0.5 rounded text-[10px] transition-colors border border-amber-500/20 cursor-pointer">½</button>
+                                 <button onclick="closeLiteportPosition('${item.symbol}')" class="bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 font-medium px-2 py-0.5 rounded text-[10px] transition-colors border border-rose-500/20 cursor-pointer">Close</button>
+                               </div>`;
 
                         tr.innerHTML = `
                             <td class="p-3 text-white font-semibold">${item.symbol}</td>
@@ -24341,7 +24438,7 @@ function renderPipelineStatusDetails(asset) {
                             <td class="p-3 font-mono text-right text-gray-200">$${item.current_price.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                             <td class="p-3 font-mono text-right ${pnlColor}">${pnlSign}$${item.pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                             <td class="p-3 text-center">
-                                ${closeButton}
+                                ${actionButtons}
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -24373,10 +24470,165 @@ function renderPipelineStatusDetails(asset) {
                 if (res.ok) {
                     showActionToast(`✅ Позиция по ${symbol} закрыта по рынку.`);
                     await refreshLitePortfolioData();
+                    refreshWorkingOrders();
                 } else {
                     const err = await res.json();
                     showActionToast('❌ Ошибка закрытия: ' + err.detail);
                 }
+            } catch (err) {
+                showActionToast('❌ Ошибка сети: ' + err.message);
+            }
+        }
+
+        async function partialCloseLiteportPosition(symbol, maxQty) {
+            const input = prompt(`Частичное закрытие ${symbol}. Введите количество к закрытию (макс ${maxQty}):`,
+                                 (maxQty / 2).toString());
+            if (input === null) return;
+            const qty = parseFloat(input);
+            if (isNaN(qty) || qty <= 0) { showActionToast('❌ Некорректное количество.'); return; }
+            showActionToast(`Частичное закрытие ${symbol} на ${qty}...`);
+            try {
+                const res = await fetch(API_BASE + '/api/portfolio/close', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ symbol, quantity: qty })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showActionToast(`✅ ${symbol}: закрыто ${data.closed_qty ?? qty}, остаток ${data.remaining_qty}.`);
+                    await refreshLitePortfolioData();
+                    refreshWorkingOrders();
+                } else {
+                    showActionToast('❌ Ошибка: ' + (data.detail || res.status));
+                }
+            } catch (err) {
+                showActionToast('❌ Ошибка сети: ' + err.message);
+            }
+        }
+
+        // ------------------ ORDER TICKET ------------------
+        let ticketSide = 'buy';
+        function setTicketSide(side) {
+            ticketSide = side;
+            const buy = document.getElementById('ticket-side-buy');
+            const sell = document.getElementById('ticket-side-sell');
+            const on = 'py-2 rounded-xl text-xs font-bold font-mono border transition-all';
+            if (side === 'buy') {
+                buy.className = on + ' bg-emerald-500/15 text-emerald-400 border-emerald-500/40';
+                sell.className = on + ' bg-[#1A1A22] text-gray-400 border-[#2B2B36]';
+            } else {
+                sell.className = on + ' bg-rose-500/15 text-rose-400 border-rose-500/40';
+                buy.className = on + ' bg-[#1A1A22] text-gray-400 border-[#2B2B36]';
+            }
+        }
+
+        function updateTicketFields() {
+            const t = document.getElementById('ticket-order-type').value;
+            document.getElementById('ticket-limit-wrap').classList.toggle('hidden', !(t === 'limit' || t === 'stop_limit'));
+            document.getElementById('ticket-stop-wrap').classList.toggle('hidden', !(t === 'stop' || t === 'stop_limit'));
+        }
+
+        async function submitOrderTicket() {
+            const symbol = (document.getElementById('ticket-symbol').value || '').trim().toUpperCase();
+            const orderType = document.getElementById('ticket-order-type').value;
+            const qty = parseFloat(document.getElementById('ticket-qty').value);
+            const tif = document.getElementById('ticket-tif').value;
+            const reduceOnly = document.getElementById('ticket-reduce-only').checked;
+            const limitPrice = parseFloat(document.getElementById('ticket-limit-price').value);
+            const stopPrice = parseFloat(document.getElementById('ticket-stop-price').value);
+
+            if (!symbol) { showActionToast('❌ Укажите символ.'); return; }
+            if (isNaN(qty) || qty <= 0) { showActionToast('❌ Количество должно быть > 0.'); return; }
+
+            const payload = {
+                symbol, side: ticketSide, order_type: orderType, quantity: qty,
+                time_in_force: tif, reduce_only: reduceOnly, confirm: false
+            };
+            if (orderType === 'limit' || orderType === 'stop_limit') payload.limit_price = limitPrice;
+            if (orderType === 'stop' || orderType === 'stop_limit') payload.stop_price = stopPrice;
+
+            // Осознанное подтверждение перед реальной отправкой.
+            const desc = `${ticketSide.toUpperCase()} ${qty} ${symbol} (${orderType.toUpperCase()}, ${tif}${reduceOnly ? ', reduce-only' : ''})`;
+            if (!confirm(`Отправить ордер?\n\n${desc}\n\nОрдер пойдёт через Agent OMS.`)) return;
+            payload.confirm = true;
+
+            const btn = document.getElementById('ticket-submit-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch(API_BASE + '/api/ccea/order/submit', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok && data.ok) {
+                    const st = data.state === 'filled' ? 'исполнен' : (data.state === 'submitted' ? 'принят (в работе)' : data.state);
+                    showActionToast(`✅ Ордер ${st}: ${desc}`);
+                    await refreshLitePortfolioData();
+                    refreshWorkingOrders();
+                } else {
+                    showActionToast('❌ Ордер отклонён: ' + (data.detail || data.error || res.status));
+                }
+            } catch (err) {
+                showActionToast('❌ Ошибка сети: ' + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function refreshWorkingOrders() {
+            const tbody = document.getElementById('working-orders-tbody');
+            const empty = document.getElementById('working-orders-empty');
+            const modeEl = document.getElementById('order-ticket-mode');
+            if (!tbody) return;
+            try {
+                const res = await fetch(API_BASE + '/api/ccea/open_orders');
+                if (res.status === 503) {
+                    if (modeEl) { modeEl.innerText = 'CCEA OFF'; modeEl.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase'; }
+                    tbody.innerHTML = ''; if (empty) { empty.classList.remove('hidden'); empty.innerText = 'CCEA Agent не запущен'; }
+                    return;
+                }
+                if (!res.ok) return;
+                const data = await res.json();
+                if (modeEl) {
+                    modeEl.innerText = data.simulated ? 'PAPER' : 'LIVE';
+                    modeEl.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase '
+                        + (data.simulated ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20');
+                }
+                const orders = data.orders || [];
+                if (orders.length === 0) {
+                    tbody.innerHTML = '';
+                    if (empty) { empty.classList.remove('hidden'); empty.innerHTML = '<i class="fa-solid fa-check text-gray-600 text-lg mb-2 block"></i> Нет рабочих ордеров'; }
+                    return;
+                }
+                if (empty) empty.classList.add('hidden');
+                tbody.innerHTML = orders.map(o => {
+                    const px = o.limit_price ?? o.stop_price;
+                    const sideCls = (o.side === 'buy') ? 'text-emerald-400' : 'text-rose-400';
+                    return `<tr class="hover:bg-[#18191E]/30 border-b border-[#232329]/40">
+                        <td class="p-2.5 text-white font-semibold">${o.symbol}</td>
+                        <td class="p-2.5 ${sideCls} font-bold">${(o.side || '').toUpperCase()}</td>
+                        <td class="p-2.5 text-gray-400">${(o.order_type || '').toUpperCase()}</td>
+                        <td class="p-2.5 text-right text-gray-200">${o.quantity}${o.filled_quantity ? ` <span class="text-gray-500">(${o.filled_quantity})</span>` : ''}</td>
+                        <td class="p-2.5 text-right text-gray-200">${px != null ? '$' + Number(px).toLocaleString() : '—'}</td>
+                        <td class="p-2.5 text-gray-400">${(o.status || '').toUpperCase()}</td>
+                        <td class="p-2.5 text-center"><button onclick="cancelWorkingOrder('${o.client_order_id}')" class="bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 font-medium px-2 py-0.5 rounded text-[10px] border border-rose-500/20 cursor-pointer">Cancel</button></td>
+                    </tr>`;
+                }).join('');
+            } catch (err) {
+                console.error('Error fetching working orders:', err);
+            }
+        }
+
+        async function cancelWorkingOrder(clientOrderId) {
+            if (!clientOrderId || clientOrderId === 'null') { showActionToast('❌ Нет ID ордера.'); return; }
+            try {
+                const res = await fetch(API_BASE + '/api/ccea/order/cancel', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ client_order_id: clientOrderId })
+                });
+                const data = await res.json();
+                if (res.ok) { showActionToast('✅ Ордер отменён.'); refreshWorkingOrders(); }
+                else showActionToast('❌ Отмена не удалась: ' + (data.detail || res.status));
             } catch (err) {
                 showActionToast('❌ Ошибка сети: ' + err.message);
             }

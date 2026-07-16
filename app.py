@@ -5980,21 +5980,23 @@ def api_portfolio_holdings(asset: str = None):
 
 class ClosePositionPayload(BaseModel):
     symbol: str
+    quantity: Optional[float] = None   # None = закрыть целиком; иначе частично
 
 @api.post("/api/portfolio/close")
 def api_portfolio_close(payload: ClosePositionPayload):
     import services.ops_kill_switch as ops_kill_switch
     if ops_kill_switch.tripped():
         raise HTTPException(status_code=400, detail="Kill switch is active. Cannot close individual positions.")
-        
+
     symbol = payload.symbol
     asset_class = ACTIVE_ASSET.lower()
 
     if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
-        result = _CCEA_SUPERVISOR.close_position(symbol)
+        result = _CCEA_SUPERVISOR.close_position(symbol, quantity=payload.quantity)
         if not result.get("ok"):
             raise HTTPException(status_code=404, detail=result.get("error", "position close failed"))
-        return {"status": "success", "detail": f"Position {symbol} closed", **result}
+        verb = "partially closed" if result.get("partial") else "closed"
+        return {"status": "success", "detail": f"Position {symbol} {verb}", **result}
     
     key_id = os.getenv("ALPACA_API_KEY")
     secret = os.getenv("ALPACA_API_SECRET")
@@ -10780,6 +10782,61 @@ def api_ccea_paper_order(payload: CCEAPaperOrderPayload):
         )
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+
+
+# ------------------- Ручной ордер-тикет трейдера (§5.27–28) -------------------
+# Полноценный ордер (market/limit/stop/stop_limit, TIF, reduce-only) + список
+# рабочих ордеров + отмена + частичное закрытие — всё через настоящий Agent OMS
+# (policy firewall → hash-chain журнал → fill → books). Live-путь наследует
+# авторизацию из live_trading_authorization (reduce-only разрешён без мандата).
+
+class CCEAOrderPayload(BaseModel):
+    symbol: str
+    side: str                          # buy|sell|long|short
+    order_type: str = "market"         # market|limit|stop|stop_limit
+    quantity: float
+    limit_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    time_in_force: str = "GTC"         # GTC|DAY|IOC|FOK
+    reduce_only: bool = False
+    confirm: bool = False              # осознанное подтверждение отправки ордера
+
+
+@api.post("/api/ccea/order/submit")
+def api_ccea_order_submit(payload: CCEAOrderPayload):
+    import services.ops_kill_switch as ops_kill_switch
+    if ops_kill_switch.tripped():
+        raise HTTPException(status_code=400, detail="Kill switch активен — ручные ордера заблокированы")
+    if not payload.confirm:
+        raise HTTPException(status_code=409, detail="Отправка ордера требует confirm=true")
+    sup = _ccea_or_503()
+    res = sup.submit_manual_order(
+        symbol=payload.symbol, side=payload.side, order_type=payload.order_type,
+        quantity=payload.quantity, limit_price=payload.limit_price,
+        stop_price=payload.stop_price, time_in_force=payload.time_in_force,
+        reduce_only=payload.reduce_only,
+    )
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error", "ордер отклонён"))
+    return res
+
+
+class CCEACancelPayload(BaseModel):
+    client_order_id: str
+
+
+@api.post("/api/ccea/order/cancel")
+def api_ccea_order_cancel(payload: CCEACancelPayload):
+    sup = _ccea_or_503()
+    res = sup.cancel_order(payload.client_order_id)
+    if not res.get("ok"):
+        raise HTTPException(status_code=400, detail=res.get("error", "отмена не удалась"))
+    return res
+
+
+@api.get("/api/ccea/open_orders")
+def api_ccea_open_orders(symbol: Optional[str] = None):
+    return _ccea_or_503().open_orders(symbol)
 
 
 class CCEAConnectBrokerPayload(BaseModel):

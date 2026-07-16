@@ -104,8 +104,8 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 26. ⬜ Воспроизводимость прогона одним артефактом: манифест «данные(hash)+конфиг+seed+код(sha)» создаётся частями (dataset_versioning, experiment tracking), но не единым бандлом.
 
 ### 5.2 Трейдер / PM
-27. ⬜ **Ручной ордер-тикет** в UI (limit/stop/размер/TIF) — сейчас только paper-market-кнопка CCEA и close-позиции.
-28. ⬜ Частичное закрытие/resize позиции из UI (есть только полный close).
+27. ✅ **ЗАКРЫТО 2026-07-16**: ручной ордер-тикет (market/limit/stop/stop-limit, TIF, reduce-only) через настоящий Agent OMS + панель рабочих ордеров с отменой — `submit_manual_order`/`open_orders`/`cancel_order` в supervisor, REST `/api/ccea/order/*`, UI-карточки в Lite Portfolio. 25 тестов + live smoke. См. [docs/MANUAL_ORDER_TICKET.md](docs/MANUAL_ORDER_TICKET.md).
+28. ✅ **ЗАКРЫТО 2026-07-16**: частичное закрытие позиции из UI (кнопка «½» + `POST /api/portfolio/close {symbol, quantity}`) через тот же OMS-путь.
 29. ⬜ Алерты «на телефон»: движок telegram/webhook есть (`services/alerts.py`) и используется runner-ом, но нет UI-настройки каналов и правил (PnL-порог, маржа, дисконнект).
 30. ⬜ Multi-account / суб-счета (везде один счёт).
 31. ⬜ Pre-market чеклист одним экраном (календарь сессий/праздников per-asset, статус фидов, маржа, gap-риски) — куски есть (session router, cme_calendar), сводного нет.
@@ -138,7 +138,7 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 ### P1 — нужно для продукта, которым пользуются каждый день
 | # | Работа | Ссылка |
 |---|---|---|
-| P1-A | Ручной ордер-тикет в UI (limit/stop, TIF, частичное закрытие) через CCEA Agent | §5.27–28 |
+| P1-A | ✅ **ЗАКРЫТО 2026-07-16**: ручной ордер-тикет (limit/stop/TIF/reduce-only) + частичное закрытие + рабочие ордера через CCEA Agent OMS. См. [docs/MANUAL_ORDER_TICKET.md](docs/MANUAL_ORDER_TICKET.md) | §5.27–28 |
 | P1-B | UI-настройка алертов (telegram/webhook) + правила (PnL, маржа, дисконнект, kill switch) | §5.29 |
 | P1-C | XS rebalance-раннер по расписанию: weights→Intents→Agent + журнал решений + kill-критерии | §4.9 |
 | P1-D | Автоматический EOD-процесс: NAV, сверка позиций с брокером, отчёт за день | §4.19, §5.32 |
