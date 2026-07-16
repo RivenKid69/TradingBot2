@@ -179,3 +179,4 @@ data/ticks/
 # web3/custody runtime config (per-user, not source)
 state/web3_gas_guard.json
 state/fireblocks_config.json
+state/fireblocks_withdrawals.jsonl

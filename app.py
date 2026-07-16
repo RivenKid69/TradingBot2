@@ -9697,6 +9697,193 @@ def api_fireblocks_vaults(limit: int = 25):
         raise HTTPException(status_code=502, detail=str(e))
 
 
+# ----- Fireblocks withdrawal/transfer (two-step ceremony + Gas Guard gate) -----
+# Отправка средств двигает РЕАЛЬНЫЕ деньги, поэтому: (1) preview — валидация +
+# реальная estimate_fee + Gas Guard preflight + одноразовый confirmation_token +
+# externalTxId (идемпотентность); (2) submit — тот же токен + confirm=true →
+# свежий Gas Guard gate → POST /v1/transactions (MPC co-signing на стороне
+# Fireblocks по TAP-политике). Всё пишется в долговечный журнал.
+
+_PENDING_FB_WITHDRAWALS: Dict[str, Dict[str, Any]] = {}
+FB_WITHDRAW_JOURNAL = os.path.join("state", "fireblocks_withdrawals.jsonl")
+
+
+def _fb_gas_gate(asset_id: str, *, enforce: bool) -> Dict[str, Any]:
+    """Gas Guard preflight для EVM-ассета. Гейтим только при известной сети."""
+    from services.custody import fireblocks_client as fb
+    from services.web3 import gas_oracle
+    chain = fb.asset_to_gas_chain(asset_id)
+    if chain is None:
+        return {"applicable": False, "reason": f"asset {asset_id}: сеть не сопоставлена — gas guard N/A"}
+    pf = gas_oracle.preflight(chain)
+    return {"applicable": True, "chain": chain, "allow": pf.get("allow", True),
+            "status": pf.get("status"), "gas_gwei": pf.get("gas_gwei"),
+            "threshold_gwei": pf.get("threshold_gwei"), "reason": pf.get("reason")}
+
+
+def _fb_journal(entry: Dict[str, Any]) -> None:
+    try:
+        os.makedirs(os.path.dirname(FB_WITHDRAW_JOURNAL) or ".", exist_ok=True)
+        entry = {"at": datetime.now().isoformat(), **entry}
+        with open(FB_WITHDRAW_JOURNAL, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        logger.warning("fireblocks journal write failed", exc_info=True)
+
+
+class FireblocksWithdrawPreviewPayload(BaseModel):
+    asset_id: str
+    amount: str                              # строкой (точность)
+    source_vault_id: str
+    dest_type: str = "ONE_TIME_ADDRESS"      # ONE_TIME_ADDRESS | VAULT_ACCOUNT
+    dest_id: str = ""                        # для VAULT_ACCOUNT
+    address: str = ""                        # для ONE_TIME_ADDRESS (0x…)
+    note: str = ""
+    fee_level: str = "MEDIUM"
+
+
+@api.post("/api/custody/fireblocks/withdraw/preview")
+def api_fireblocks_withdraw_preview(payload: FireblocksWithdrawPreviewPayload):
+    """Шаг 1: валидация + реальная оценка комиссии + Gas Guard + токен."""
+    import secrets as _secrets
+    from services.custody import fireblocks_client as fb
+    cfg = fb.load_config()
+    if not cfg.configured:
+        return {"ok": False, "error": "Fireblocks не настроен — сначала подключите (/connect)"}
+
+    err = fb.validate_transfer(payload.asset_id, payload.amount, payload.dest_type,
+                               payload.dest_id, payload.address)
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    external_tx_id = "riven-" + _secrets.token_hex(12)   # идемпотентность
+    body = fb.build_transfer_payload(
+        asset_id=payload.asset_id, amount=payload.amount, source_vault_id=payload.source_vault_id,
+        dest_type=payload.dest_type, dest_id=payload.dest_id, address=payload.address,
+        external_tx_id=external_tx_id, note=payload.note, fee_level=payload.fee_level)
+
+    # Реальная оценка комиссии (не блокирующая — informational).
+    fee_estimate: Any = None
+    fee_error = None
+    try:
+        fee_estimate = fb.FireblocksClient(cfg).estimate_fee(body)
+    except Exception as e:
+        fee_error = str(e)
+
+    gas = _fb_gas_gate(payload.asset_id, enforce=False)
+
+    token = _secrets.token_urlsafe(18)
+    request_id = _secrets.token_hex(8)
+    now = time.time()
+    _PENDING_FB_WITHDRAWALS[request_id] = {
+        "token": token, "created_at": now, "body": body,
+        "external_tx_id": external_tx_id, "asset_id": payload.asset_id,
+    }
+    for rid in [r for r, v in _PENDING_FB_WITHDRAWALS.items() if now - v["created_at"] > 600]:
+        _PENDING_FB_WITHDRAWALS.pop(rid, None)
+
+    return {
+        "ok": True,
+        "request_id": request_id,
+        "confirmation_token": token,
+        "expires_in_sec": 600,
+        "external_tx_id": external_tx_id,
+        "summary": {
+            "asset_id": payload.asset_id, "amount": payload.amount,
+            "source_vault_id": payload.source_vault_id,
+            "destination": (payload.address if payload.dest_type.upper() == "ONE_TIME_ADDRESS"
+                            else f"vault:{payload.dest_id}"),
+            "dest_type": payload.dest_type.upper(), "fee_level": payload.fee_level.upper(),
+        },
+        "fee_estimate": fee_estimate, "fee_error": fee_error,
+        "gas_guard": gas,
+        "warning": "Это ОТПРАВИТ реальные средства из Fireblocks-vault. Подтвердите "
+                   "тем же токеном только осознанно; подпись MPC — по TAP-политике vault'а.",
+    }
+
+
+class FireblocksWithdrawSubmitPayload(BaseModel):
+    request_id: str
+    confirmation_token: str
+    confirm: bool = False
+
+
+@api.post("/api/custody/fireblocks/withdraw/submit")
+def api_fireblocks_withdraw_submit(payload: FireblocksWithdrawSubmitPayload):
+    """Шаг 2: подтвердить токеном + confirm → свежий Gas Guard gate → отправить."""
+    from services.custody import fireblocks_client as fb
+    pending = _PENDING_FB_WITHDRAWALS.get(payload.request_id)
+    if pending is None:
+        raise HTTPException(status_code=404, detail="заявка не найдена или истекла — начните с /preview")
+    if time.time() - pending["created_at"] > 600:
+        _PENDING_FB_WITHDRAWALS.pop(payload.request_id, None)
+        raise HTTPException(status_code=410, detail="заявка истекла (>10 мин)")
+    if payload.confirmation_token != pending["token"]:
+        raise HTTPException(status_code=403, detail="неверный confirmation_token")
+    if not payload.confirm:
+        raise HTTPException(status_code=400, detail="confirm=true обязателен для отправки средств")
+
+    # Одноразовость: удаляем заявку СРАЗУ (anti-replay).
+    _PENDING_FB_WITHDRAWALS.pop(payload.request_id, None)
+
+    cfg = fb.load_config()
+    if not cfg.configured:
+        raise HTTPException(status_code=400, detail="Fireblocks не настроен")
+
+    # Свежий Gas Guard gate (газ мог подскочить между preview и submit) — fail-closed.
+    gas = _fb_gas_gate(pending["asset_id"], enforce=True)
+    if gas.get("applicable") and gas.get("allow") is False:
+        _fb_journal({"event": "withdraw_blocked_gas", "external_tx_id": pending["external_tx_id"],
+                     "asset_id": pending["asset_id"], "gas_guard": gas})
+        raise HTTPException(status_code=409,
+                            detail=f"Gas Guard заблокировал отправку: {gas.get('reason')}")
+
+    try:
+        result = fb.FireblocksClient(cfg).create_transaction(pending["body"])
+    except fb.FireblocksError as e:
+        _fb_journal({"event": "withdraw_failed", "external_tx_id": pending["external_tx_id"],
+                     "asset_id": pending["asset_id"], "error": str(e)})
+        raise HTTPException(status_code=502, detail=str(e))
+
+    tx_id = result.get("id") if isinstance(result, dict) else None
+    status = result.get("status") if isinstance(result, dict) else None
+    _fb_journal({"event": "withdraw_submitted", "external_tx_id": pending["external_tx_id"],
+                 "asset_id": pending["asset_id"], "tx_id": tx_id, "status": status,
+                 "amount": pending["body"].get("amount"),
+                 "destination": pending["body"].get("destination")})
+    return {"ok": True, "tx_id": tx_id, "status": status,
+            "external_tx_id": pending["external_tx_id"], "gas_guard": gas, "raw": result}
+
+
+@api.get("/api/custody/fireblocks/tx/{tx_id}")
+def api_fireblocks_tx_status(tx_id: str):
+    """Реальный статус транзакции Fireblocks (SUBMITTED→…→COMPLETED)."""
+    from services.custody import fireblocks_client as fb
+    cfg = fb.load_config()
+    if not cfg.configured:
+        raise HTTPException(status_code=400, detail="Fireblocks не настроен")
+    try:
+        return fb.FireblocksClient(cfg).get_transaction(tx_id)
+    except fb.FireblocksError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@api.get("/api/custody/fireblocks/withdrawals")
+def api_fireblocks_withdrawals(limit: int = 20):
+    """Долговечный журнал отправок (последние N)."""
+    rows: List[Dict[str, Any]] = []
+    try:
+        if os.path.exists(FB_WITHDRAW_JOURNAL):
+            with open(FB_WITHDRAW_JOURNAL, "r", encoding="utf-8") as f:
+                for line in f.readlines()[-int(limit):]:
+                    line = line.strip()
+                    if line:
+                        rows.append(json.loads(line))
+    except Exception:
+        pass
+    return {"withdrawals": list(reversed(rows))}
+
+
 @api.get("/api/portfolio/risk_summary")
 def api_portfolio_risk_summary():
     """Honest portfolio risk snapshot (audit L2-008).

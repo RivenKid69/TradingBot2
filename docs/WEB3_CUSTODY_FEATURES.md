@@ -89,9 +89,51 @@ Coinbase, Brave, Frame, Trust…) БЕЗ внешнего SDK, чисто чер
 - `index.html` — Gas Guard live-панель, Fireblocks connect-форма, EIP-6963 JS
 - `tests/test_web3_custody.py`; `.gitignore` — runtime config
 
+## 4. Fireblocks отправка транзакций / withdrawal flow (2026-07-16)
+
+Раньше был реализован только read (vaults/balances) + валидация кред. Теперь —
+полный **withdrawal/transfer flow** по реальному Fireblocks API, с профессио-
+нальными safeguard'ами для движения реальных денег.
+
+Клиент (`services/custody/fireblocks_client.py`):
+- `estimate_fee` → `POST /v1/transactions/estimate_fee` (реальная оценка);
+- `create_transaction` → `POST /v1/transactions` (MPC co-signing — на стороне
+  Fireblocks по TAP-политике vault'а; мы аутентифицируем вызов JWT);
+- `get_transaction` / `get_transaction_by_external_id` — статусы;
+- `validate_transfer` (EVM-адрес regex, amount>0 строкой, тип назначения) +
+  `build_transfer_payload` (**amount строкой, никогда float**; `externalTxId`
+  для идемпотентности; source/destination явными типами).
+
+Оркестрация (REST, `app.py`) — best practices движения денег:
+- **Two-step ceremony** (как CCEA live-trading): `POST …/withdraw/preview`
+  (валидация + реальная estimate_fee + Gas Guard preflight + одноразовый
+  `confirmation_token` + `externalTxId`) → `POST …/withdraw/submit` (тот же
+  токен + `confirm=true`).
+- **Идемпотентность**: `externalTxId` генерится в preview и несётся в submit —
+  Fireblocks дедупит; токен одноразовый (anti-replay: удаляется при submit),
+  TTL 10 мин.
+- **Gas Guard gate**: для EVM-ассета (известная сеть) на submit — **свежий**
+  `preflight` (газ мог подскочить между preview и submit); breach → **409,
+  отправка блокируется** (fail-closed). Неизвестный asset → gas guard N/A
+  (честно, без выдумок).
+- **Долговечный журнал** `state/fireblocks_withdrawals.jsonl`: submitted /
+  blocked_gas / failed.
+- `GET …/tx/{id}` — реальный статус (SUBMITTED→…→COMPLETED);
+  `GET …/withdrawals` — журнал.
+
+UI (Fireblocks-панель): форма отправки (asset/amount/source vault/назначение) с
+**двухшаговым** «1. Предпросмотр + оценка» → «2. Подтвердить и отправить»
+(нативный confirm перед движением реальных средств), статус Gas Guard, журнал.
+
+Проверка (в `tests/test_web3_custody.py`, всего 26): validate/build (string-
+amount, идемпотентность), estimate/create на верных endpoint'ах, полный
+two-step flow + **create вызван ровно один раз** + anti-replay токена, Gas Guard
+блокирует submit (409), honest-not-configured, UI-markup + явный confirm.
+
 ## Остаётся честно вне scope
 
 - Мобильный WalletConnect-relay (нужен онлайн-SDK) — EIP-6963 закрывает
   desktop/extension-кошельки.
-- Fireblocks transaction-signing/withdrawal flow (реализован read: vaults/
-  balances + валидация кред; отправка транзакций — следующий слой при спросе).
+- Fireblocks: whitelisted-адреса/contract-calls/webhook-подтверждения статусов —
+  реализован core-flow (estimate → two-step submit → status/journal); расширения
+  при спросе.

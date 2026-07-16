@@ -195,6 +195,99 @@ class FireblocksClient:
     def get_vault_account(self, vault_account_id: str) -> Dict[str, Any]:
         return self._request("GET", f"/v1/vault/accounts/{vault_account_id}")
 
+    # ------------------------------------------------------- transactions (send)
+
+    def estimate_fee(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """Реальная оценка комиссии: POST /v1/transactions/estimate_fee."""
+        return self._request("POST", "/v1/transactions/estimate_fee", body)
+
+    def create_transaction(self, body: Dict[str, Any]) -> Dict[str, Any]:
+        """Создать (отправить) транзакцию: POST /v1/transactions.
+
+        Подпись (MPC co-signing) выполняется на стороне Fireblocks по TAP-политике
+        vault'а — мы лишь аутентифицируем вызов JWT. ``externalTxId`` в body
+        обеспечивает идемпотентность (повтор не создаёт вторую транзакцию)."""
+        return self._request("POST", "/v1/transactions", body)
+
+    def get_transaction(self, tx_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/v1/transactions/{tx_id}")
+
+    def get_transaction_by_external_id(self, external_tx_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/v1/transactions/external_tx_id/{external_tx_id}")
+
+
+# ---------------------------------------------------------------------------
+# Валидация и сборка payload перевода (best practices: string-amount,
+# идемпотентность, явные типы источника/назначения)
+# ---------------------------------------------------------------------------
+
+# Fireblocks assetId → EVM-сеть для интеграции с Gas Guard. Гейтим ТОЛЬКО когда
+# уверены в маппинге; неизвестный asset → gas-guard N/A (честно, без выдумок).
+_ASSET_TO_CHAIN: Dict[str, str] = {
+    "ETH": "ethereum", "WETH": "ethereum", "USDC": "ethereum", "USDT": "ethereum", "DAI": "ethereum",
+    "ETH-AETH": "arbitrum", "USDC_ARB": "arbitrum",
+    "ETH-OPT": "optimism", "USDC_OPT": "optimism",
+    "MATIC": "polygon", "MATIC_POLYGON": "polygon", "USDC_POLYGON": "polygon",
+    "ETH-BASE": "base", "USDC_BASE": "base",
+}
+
+_EVM_ADDR_RE = None
+
+
+def asset_to_gas_chain(asset_id: str) -> Optional[str]:
+    return _ASSET_TO_CHAIN.get((asset_id or "").upper())
+
+
+def validate_transfer(asset_id: str, amount: str, dest_type: str,
+                      dest_id: str = "", address: str = "") -> Optional[str]:
+    """Проверить параметры перевода. Возвращает текст ошибки или None."""
+    global _EVM_ADDR_RE
+    if not asset_id:
+        return "не задан asset_id"
+    try:
+        amt = float(amount)
+    except (TypeError, ValueError):
+        return f"amount не число: {amount!r}"
+    if amt <= 0:
+        return "amount должен быть > 0"
+    dest_type = (dest_type or "").upper()
+    if dest_type == "ONE_TIME_ADDRESS":
+        if _EVM_ADDR_RE is None:
+            import re
+            _EVM_ADDR_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
+        if not address or not _EVM_ADDR_RE.match(address):
+            return "для ONE_TIME_ADDRESS нужен корректный EVM-адрес 0x…(40 hex)"
+    elif dest_type == "VAULT_ACCOUNT":
+        if dest_id == "" or dest_id is None:
+            return "для VAULT_ACCOUNT нужен id аккаунта назначения"
+    else:
+        return f"неподдерживаемый тип назначения: {dest_type!r} (VAULT_ACCOUNT|ONE_TIME_ADDRESS)"
+    return None
+
+
+def build_transfer_payload(*, asset_id: str, amount: str, source_vault_id: str,
+                           dest_type: str, dest_id: str = "", address: str = "",
+                           external_tx_id: str, note: str = "",
+                           fee_level: str = "MEDIUM",
+                           treat_as_gross: bool = False) -> Dict[str, Any]:
+    """Собрать canonical Fireblocks-payload перевода (amount строкой, идемпотентно)."""
+    dest_type = dest_type.upper()
+    destination: Dict[str, Any] = {"type": dest_type}
+    if dest_type == "VAULT_ACCOUNT":
+        destination["id"] = str(dest_id)
+    else:  # ONE_TIME_ADDRESS
+        destination["oneTimeAddress"] = {"address": address}
+    return {
+        "assetId": asset_id,
+        "source": {"type": "VAULT_ACCOUNT", "id": str(source_vault_id)},
+        "destination": destination,
+        "amount": str(amount),               # НИКОГДА не float
+        "feeLevel": fee_level.upper(),
+        "note": note or "",
+        "externalTxId": external_tx_id,      # идемпотентность
+        "treatAsGrossAmount": bool(treat_as_gross),
+    }
+
 
 def connect(config: FireblocksConfig, *, private_key_pem: Optional[str] = None,
             request_fn: Any = None) -> Dict[str, Any]:
@@ -219,5 +312,6 @@ def connect(config: FireblocksConfig, *, private_key_pem: Optional[str] = None,
 __all__ = [
     "CONFIG_PATH", "PROD_URL", "SANDBOX_URL",
     "FireblocksClient", "FireblocksConfig", "FireblocksError",
-    "connect", "load_config", "save_config",
+    "asset_to_gas_chain", "build_transfer_payload", "connect",
+    "load_config", "save_config", "validate_transfer",
 ]

@@ -2962,6 +2962,32 @@
                                         <i class="fa-solid fa-shield"></i> Подключить Fireblocks MPC
                                     </button>
                                     <div id="liteport-mpc-result" class="text-[10px] font-mono text-gray-500 leading-normal">Нужен institutional-аккаунт Fireblocks (API Key + RSA-ключ). Без валидных кред — честный отказ, не заглушка.</div>
+
+                                    <!-- Withdrawal / transfer (two-step + Gas Guard gate) -->
+                                    <div class="border-t border-[#2B2B36]/60 pt-3 space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-[9px] text-gray-500 font-mono uppercase">Отправка средств (MPC co-signing)</span>
+                                            <button onclick="refreshFireblocksWithdrawals()" class="text-gray-500 hover:text-white text-[10px]"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                                        </div>
+                                        <div class="grid grid-cols-3 gap-2">
+                                            <input id="fb-wd-asset" placeholder="ASSET (ETH/USDC)" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-[10px] rounded-lg px-2 py-1.5 font-mono outline-none focus:border-pink-500/50">
+                                            <input id="fb-wd-amount" placeholder="сумма" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-[10px] rounded-lg px-2 py-1.5 font-mono outline-none focus:border-pink-500/50">
+                                            <input id="fb-wd-source" placeholder="source vault id" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-[10px] rounded-lg px-2 py-1.5 font-mono outline-none focus:border-pink-500/50">
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <select id="fb-wd-desttype" onchange="onFbWdDestTypeChanged()" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-[10px] rounded-lg px-2 py-1.5 font-mono">
+                                                <option value="ONE_TIME_ADDRESS">на адрес (0x…)</option>
+                                                <option value="VAULT_ACCOUNT">во vault</option>
+                                            </select>
+                                            <input id="fb-wd-dest" placeholder="0x… адрес назначения" class="flex-1 bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-[10px] rounded-lg px-2 py-1.5 font-mono outline-none focus:border-pink-500/50">
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button onclick="previewFireblocksWithdraw()" class="flex-1 bg-[#1A1A22] border border-[#2B2B36] hover:border-pink-500/50 text-gray-200 text-[10px] font-mono py-1.5 rounded-lg">1. Предпросмотр + оценка</button>
+                                            <button id="fb-wd-submit" onclick="submitFireblocksWithdraw()" disabled class="flex-1 bg-pink-600/40 text-white text-[10px] font-mono py-1.5 rounded-lg opacity-50 cursor-not-allowed">2. Подтвердить и отправить</button>
+                                        </div>
+                                        <div id="fb-wd-result" class="text-[10px] font-mono text-gray-500 leading-normal"></div>
+                                        <div id="fb-wd-journal" class="text-[9px] font-mono text-gray-600 leading-normal max-h-24 overflow-y-auto custom-scrollbar"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -25152,6 +25178,77 @@ function renderPipelineStatusDetails(asset) {
             } finally { if (btn) btn.disabled = false; }
         }
 
+        // ===== Fireblocks withdrawal (two-step + Gas Guard gate) =====
+        let _fbPendingWithdraw = null;   // {request_id, confirmation_token}
+        function onFbWdDestTypeChanged() {
+            const t = document.getElementById('fb-wd-desttype').value;
+            const dest = document.getElementById('fb-wd-dest');
+            dest.placeholder = (t === 'VAULT_ACCOUNT') ? 'id vault назначения' : '0x… адрес назначения';
+        }
+        async function previewFireblocksWithdraw() {
+            const asset = document.getElementById('fb-wd-asset').value.trim();
+            const amount = document.getElementById('fb-wd-amount').value.trim();
+            const source = document.getElementById('fb-wd-source').value.trim();
+            const destType = document.getElementById('fb-wd-desttype').value;
+            const dest = document.getElementById('fb-wd-dest').value.trim();
+            const resultEl = document.getElementById('fb-wd-result');
+            const submitBtn = document.getElementById('fb-wd-submit');
+            _fbPendingWithdraw = null;
+            if (submitBtn) { submitBtn.disabled = true; submitBtn.className = 'flex-1 bg-pink-600/40 text-white text-[10px] font-mono py-1.5 rounded-lg opacity-50 cursor-not-allowed'; }
+            if (!asset || !amount || !source || !dest) { showActionToast('Заполните asset, сумму, source vault и назначение'); return; }
+            const body = {asset_id: asset, amount, source_vault_id: source, dest_type: destType};
+            if (destType === 'VAULT_ACCOUNT') body.dest_id = dest; else body.address = dest;
+            resultEl.innerHTML = '<span class="text-sky-400">Оценка…</span>';
+            try {
+                const r = await fetch(API_BASE + '/api/custody/fireblocks/withdraw/preview', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+                const d = await r.json();
+                if (!r.ok) { resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(d.detail || 'ошибка')}</span>`; return; }
+                if (!d.ok) { resultEl.innerHTML = `<span class="text-amber-400">${escapeHtml(d.error || 'не настроено')}</span>`; return; }
+                _fbPendingWithdraw = {request_id: d.request_id, confirmation_token: d.confirmation_token};
+                const g = d.gas_guard || {};
+                const gasLine = g.applicable
+                    ? `<div>Gas Guard (${escapeHtml(g.chain||'')}): <span class="${g.allow === false ? 'text-rose-400' : 'text-emerald-400'}">${g.allow === false ? 'БЛОК' : 'OK'}</span> · ${g.gas_gwei != null ? g.gas_gwei + ' Gwei' : '—'}</div>`
+                    : `<div class="text-gray-600">Gas Guard: N/A (${escapeHtml(g.reason||'')})</div>`;
+                resultEl.innerHTML =
+                    `<div class="text-gray-300">Отправить <b>${escapeHtml(amount)} ${escapeHtml(asset)}</b> из vault ${escapeHtml(source)} → ${escapeHtml(d.summary.destination)}</div>`
+                    + `<div class="text-gray-500">externalTxId: ${escapeHtml(d.external_tx_id)} · токен действует 10 мин</div>`
+                    + gasLine
+                    + (d.fee_error ? `<div class="text-amber-400">Оценка комиссии недоступна: ${escapeHtml(d.fee_error)}</div>` : '')
+                    + `<div class="text-amber-400 mt-1">${escapeHtml(d.warning)}</div>`;
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.className = 'flex-1 bg-pink-600 hover:bg-pink-500 text-white text-[10px] font-mono py-1.5 rounded-lg cursor-pointer'; }
+            } catch (e) { resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(e.message)}</span>`; }
+        }
+        async function submitFireblocksWithdraw() {
+            if (!_fbPendingWithdraw) { showActionToast('Сначала предпросмотр'); return; }
+            if (!confirm('Отправить реальные средства из Fireblocks-vault? Действие необратимо.')) return;
+            const resultEl = document.getElementById('fb-wd-result');
+            try {
+                const r = await fetch(API_BASE + '/api/custody/fireblocks/withdraw/submit', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({..._fbPendingWithdraw, confirm: true})});
+                const d = await r.json();
+                if (!r.ok) { resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(d.detail || 'ошибка')}</span>`; _fbPendingWithdraw = null; return; }
+                resultEl.innerHTML = `<span class="text-emerald-400">✅ Отправлено. tx ${escapeHtml(String(d.tx_id||'—'))} · статус ${escapeHtml(String(d.status||'—'))}</span>`;
+                showActionToast('✅ Транзакция Fireblocks создана: ' + (d.status || ''));
+                _fbPendingWithdraw = null;
+                const submitBtn = document.getElementById('fb-wd-submit');
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.className = 'flex-1 bg-pink-600/40 text-white text-[10px] font-mono py-1.5 rounded-lg opacity-50 cursor-not-allowed'; }
+                refreshFireblocksWithdrawals();
+            } catch (e) { resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(e.message)}</span>`; }
+        }
+        async function refreshFireblocksWithdrawals() {
+            const el = document.getElementById('fb-wd-journal');
+            if (!el) return;
+            try {
+                const d = await (await fetch(API_BASE + '/api/custody/fireblocks/withdrawals')).json();
+                const rows = d.withdrawals || [];
+                el.innerHTML = rows.length ? rows.map(w =>
+                    `<div>${escapeHtml((w.at||'').slice(0,19))} · ${escapeHtml(w.event||'')} · ${escapeHtml(w.asset_id||'')} ${escapeHtml(String(w.amount||''))} · ${escapeHtml(String(w.status||w.tx_id||''))}</div>`).join('')
+                    : '<div class="text-gray-700">журнал отправок пуст</div>';
+            } catch (e) { /* backend offline */ }
+        }
+
         // ===== EIP-6963 multi-wallet discovery (real, offline, no SDK) =====
         const _eip6963Providers = [];
         if (typeof window !== 'undefined') {
@@ -25315,6 +25412,8 @@ function renderPipelineStatusDetails(asset) {
                 document.getElementById('wallet-panel-safe').classList.remove('hidden');
             } else if (type === 'mpc') {
                 document.getElementById('wallet-panel-mpc').classList.remove('hidden');
+                refreshFireblocksStatus();
+                refreshFireblocksWithdrawals();
             }
         }
         

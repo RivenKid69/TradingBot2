@@ -195,3 +195,158 @@ def test_ui_walletconnect_replaced_with_eip6963():
     assert "WalletConnect — недоступен" not in HTML
     assert "eip6963:announceProvider" in HTML and "eip6963:requestProvider" in HTML
     assert "function connectAnyWallet" in HTML
+
+
+# ============================================================ Fireblocks send/withdraw
+
+class TestFireblocksTransfer:
+    def test_validate_transfer(self):
+        from services.custody import fireblocks_client as fb
+        assert fb.validate_transfer("ETH", "0.1", "ONE_TIME_ADDRESS", address="0x" + "a" * 40) is None
+        assert "адрес" in fb.validate_transfer("ETH", "0.1", "ONE_TIME_ADDRESS", address="0xbad")
+        assert "amount" in fb.validate_transfer("ETH", "-1", "ONE_TIME_ADDRESS", address="0x" + "a" * 40)
+        assert "amount" in fb.validate_transfer("ETH", "abc", "ONE_TIME_ADDRESS", address="0x" + "a" * 40)
+        assert "id" in fb.validate_transfer("ETH", "1", "VAULT_ACCOUNT", dest_id="")
+        assert "назначения" in fb.validate_transfer("ETH", "1", "SOMETHING_ELSE")
+
+    def test_build_transfer_payload_string_amount_idempotent(self):
+        from services.custody import fireblocks_client as fb
+        b = fb.build_transfer_payload(asset_id="USDC", amount="12.5", source_vault_id="0",
+                                      dest_type="ONE_TIME_ADDRESS", address="0x" + "b" * 40,
+                                      external_tx_id="riven-abc", note="test")
+        assert isinstance(b["amount"], str) and b["amount"] == "12.5"     # never float
+        assert b["externalTxId"] == "riven-abc"                          # idempotency
+        assert b["source"] == {"type": "VAULT_ACCOUNT", "id": "0"}
+        assert b["destination"]["type"] == "ONE_TIME_ADDRESS"
+        assert b["destination"]["oneTimeAddress"]["address"] == "0x" + "b" * 40
+
+    def test_estimate_and_create_transaction_hit_right_endpoints(self, rsa_pem):
+        from services.custody import fireblocks_client as fb
+        _, pem = rsa_pem
+        seen = []
+
+        def mock_req(method, url, headers, body):
+            seen.append((method, url))
+            if "estimate_fee" in url:
+                return {"medium": {"networkFee": "0.0005"}}
+            return {"id": "tx-123", "status": "SUBMITTED"}
+        c = fb.FireblocksClient(fb.FireblocksConfig(api_key="k"), private_key_pem=pem, request_fn=mock_req)
+        body = fb.build_transfer_payload(asset_id="ETH", amount="0.1", source_vault_id="0",
+                                         dest_type="ONE_TIME_ADDRESS", address="0x" + "a" * 40,
+                                         external_tx_id="riven-1")
+        est = c.estimate_fee(body)
+        tx = c.create_transaction(body)
+        assert est["medium"]["networkFee"] == "0.0005"
+        assert tx["id"] == "tx-123" and tx["status"] == "SUBMITTED"
+        assert ("POST", ANY_ESTIMATE := next(u for m, u in seen if "estimate_fee" in u))
+        assert any(m == "POST" and u.endswith("/v1/transactions") for m, u in seen)
+
+
+def _configure_fb(monkeypatch, tmp_path, rsa_pem):
+    """Point the app's fireblocks config at a temp configured vault + mock the API."""
+    from services.custody import fireblocks_client as fb
+    key, pem = rsa_pem
+    keyfile = tmp_path / "fb.key"
+    keyfile.write_text(pem, encoding="utf-8")
+    cfg = fb.FireblocksConfig(api_key="api-uuid", private_key_path=str(keyfile), base_url=fb.SANDBOX_URL)
+    monkeypatch.setattr(fb, "load_config", lambda *a, **k: cfg)
+    return cfg
+
+
+class TestWithdrawCeremony:
+    def _mock_client(self, monkeypatch, create_result=None):
+        from services.custody import fireblocks_client as fb
+        calls = {"create": 0}
+
+        def fake_request(self, method, path, body=None):
+            if "estimate_fee" in path:
+                return {"medium": {"networkFee": "0.0004"}}
+            if path == "/v1/transactions" and method == "POST":
+                calls["create"] += 1
+                return create_result or {"id": "tx-xyz", "status": "SUBMITTED"}
+            if path.startswith("/v1/transactions/"):
+                return {"id": "tx-xyz", "status": "COMPLETED"}
+            return {}
+        monkeypatch.setattr(fb.FireblocksClient, "_request", fake_request)
+        return calls
+
+    def test_preview_honest_when_not_configured(self, monkeypatch):
+        from services.custody import fireblocks_client as fb
+        monkeypatch.setattr(fb, "load_config", lambda *a, **k: fb.FireblocksConfig())
+        r = client.post("/api/custody/fireblocks/withdraw/preview", json={
+            "asset_id": "ETH", "amount": "0.1", "source_vault_id": "0",
+            "dest_type": "ONE_TIME_ADDRESS", "address": "0x" + "a" * 40})
+        assert r.status_code == 200 and r.json()["ok"] is False
+        assert "не настроен" in r.json()["error"].lower()
+
+    def test_preview_validates(self, monkeypatch, tmp_path, rsa_pem):
+        _configure_fb(monkeypatch, tmp_path, rsa_pem)
+        self._mock_client(monkeypatch)
+        r = client.post("/api/custody/fireblocks/withdraw/preview", json={
+            "asset_id": "ETH", "amount": "0.1", "source_vault_id": "0",
+            "dest_type": "ONE_TIME_ADDRESS", "address": "0xbad"})
+        assert r.status_code == 400
+
+    def test_full_two_step_flow_and_idempotency(self, monkeypatch, tmp_path, rsa_pem):
+        _configure_fb(monkeypatch, tmp_path, rsa_pem)
+        # gas guard: not enabled → allow
+        import services.web3.gas_oracle as go
+        monkeypatch.setattr(go, "load_config", lambda *a, **k: go.GasGuardConfig(enabled=False))
+        calls = self._mock_client(monkeypatch)
+        # isolate journal
+        import app as m
+        monkeypatch.setattr(m, "FB_WITHDRAW_JOURNAL", str(tmp_path / "wd.jsonl"))
+
+        prev = client.post("/api/custody/fireblocks/withdraw/preview", json={
+            "asset_id": "ETH", "amount": "0.1", "source_vault_id": "0",
+            "dest_type": "ONE_TIME_ADDRESS", "address": "0x" + "a" * 40}).json()
+        assert prev["ok"] and prev["confirmation_token"] and prev["external_tx_id"].startswith("riven-")
+        rid, tok = prev["request_id"], prev["confirmation_token"]
+
+        # submit without confirm → refused
+        assert client.post("/api/custody/fireblocks/withdraw/submit",
+                           json={"request_id": rid, "confirmation_token": tok, "confirm": False}).status_code == 400
+        # wrong token → 403
+        assert client.post("/api/custody/fireblocks/withdraw/submit",
+                           json={"request_id": rid, "confirmation_token": "nope", "confirm": True}).status_code == 403
+        # correct submit → sends
+        ok = client.post("/api/custody/fireblocks/withdraw/submit",
+                         json={"request_id": rid, "confirmation_token": tok, "confirm": True})
+        assert ok.status_code == 200, ok.text
+        body = ok.json()
+        assert body["ok"] and body["tx_id"] == "tx-xyz" and body["status"] == "SUBMITTED"
+        # single-use token: replay → 404 (anti-replay)
+        assert client.post("/api/custody/fireblocks/withdraw/submit",
+                           json={"request_id": rid, "confirmation_token": tok, "confirm": True}).status_code == 404
+        assert calls["create"] == 1                                      # sent exactly once
+        # journal recorded the submit
+        j = client.get("/api/custody/fireblocks/withdrawals").json()["withdrawals"]
+        assert any(w["event"] == "withdraw_submitted" and w["tx_id"] == "tx-xyz" for w in j)
+
+    def test_gas_guard_blocks_submit(self, monkeypatch, tmp_path, rsa_pem):
+        _configure_fb(monkeypatch, tmp_path, rsa_pem)
+        self._mock_client(monkeypatch)
+        import app as m
+        monkeypatch.setattr(m, "FB_WITHDRAW_JOURNAL", str(tmp_path / "wd.jsonl"))
+        # gas guard enabled + breached → block on submit (fresh check)
+        import services.web3.gas_oracle as go
+        monkeypatch.setattr(go, "load_config", lambda *a, **k: go.GasGuardConfig(enabled=True, threshold_gwei=10.0))
+        monkeypatch.setattr(go, "get_gas_price_gwei",
+                            lambda chain="ethereum", **k: {"ok": True, "gas_gwei": 99.0, "chain": chain})
+        prev = client.post("/api/custody/fireblocks/withdraw/preview", json={
+            "asset_id": "ETH", "amount": "0.1", "source_vault_id": "0",
+            "dest_type": "ONE_TIME_ADDRESS", "address": "0x" + "a" * 40}).json()
+        assert prev["gas_guard"]["allow"] is False    # informational at preview
+        r = client.post("/api/custody/fireblocks/withdraw/submit",
+                        json={"request_id": prev["request_id"],
+                              "confirmation_token": prev["confirmation_token"], "confirm": True})
+        assert r.status_code == 409 and "Gas Guard" in r.json()["detail"]
+
+
+def test_ui_fireblocks_withdraw_form():
+    assert "function previewFireblocksWithdraw" in HTML
+    assert "function submitFireblocksWithdraw" in HTML
+    assert "/api/custody/fireblocks/withdraw/preview" in HTML
+    assert "/api/custody/fireblocks/withdraw/submit" in HTML
+    # explicit human confirm before moving real funds
+    assert "Отправить реальные средства из Fireblocks-vault" in HTML
