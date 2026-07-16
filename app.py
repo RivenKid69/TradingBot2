@@ -2983,15 +2983,22 @@ def api_save_credentials(payload: SaveCredentialsPayload):
 @api.get("/api/compliance/clock/status")
 def api_compliance_clock_status():
     status = global_compliance_clock.sync()
-    drift_us = status.offset_ns / 1000.0 if hasattr(status, "offset_ns") and status.offset_ns is not None else 12.4
+    # Real measurement: the clock exposes offset_ms (NOT offset_ns — that
+    # attribute never existed, so this always returned a fake constant 12.4).
+    offset_ms = getattr(status, "offset_ms", None)
+    drift_us = round(float(offset_ms) * 1000.0, 1) if isinstance(offset_ms, (int, float)) else None
     severity = status.severity.value if hasattr(status, "severity") and hasattr(status.severity, "value") else "green"
+    synced = getattr(status, "synced", None)
     return {
         "status": "synchronized" if severity != "critical" else "drift_detected",
-        "drift_microseconds": drift_us,
+        "drift_microseconds": drift_us,            # None when NTP unreachable — no fabricated value
+        "drift_measured": drift_us is not None,
         "severity": severity,
         "last_sync": datetime.now().isoformat(),
         "ntp_server": "pool.ntp.org",
-        "rts25_compliant": severity != "critical"
+        "rts25_compliant": severity != "critical",
+        "data_source": "real_ntp" if drift_us is not None else "unavailable",
+        "simulated": False,
     }
 
 @api.post("/api/compliance/conformance/run")
@@ -3298,10 +3305,29 @@ def api_gdpr_export(payload: Dict[str, Any]):
         return {
             "status": status,
             "request_id": req.request_id,
-            "download_url": "/api/gdpr/download"
+            "file_size_bytes": getattr(req, "file_size_bytes", None),
+            # Points at a REAL route (below) that regenerates and serves the ZIP.
+            "download_url": f"/api/gdpr/download?request_id={req.request_id}",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@api.get("/api/gdpr/download")
+def api_gdpr_download(request_id: str):
+    """Serve the real GDPR data-subject export ZIP for a completed request."""
+    from fastapi.responses import Response
+    try:
+        req = global_gdpr_export_service.get_export_request(request_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="export request not found")
+    # export_user_data() genuinely bundles the subject's data into a ZIP.
+    zip_bytes = global_gdpr_export_service.export_user_data(req.user_id)
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="gdpr_export_{request_id}.zip"'},
+    )
 
 @api.post("/api/gdpr/delete")
 def api_gdpr_delete(payload: Dict[str, Any]):
@@ -3500,12 +3526,17 @@ def api_compliance_killswitch_trigger(payload: Dict[str, Any]):
     reason = KillSwitchTriggerReason.MANUAL
     
     global_kill_switch.trigger(scope=scope, scope_id=scope_id, reason=reason, reason_detail=reason_str)
+    # The kill switch HALTS new order flow; it does not itself cancel a fixed
+    # number of resting orders (that is broker/OMS-side and asynchronous). Do
+    # not fabricate a "cancelled_orders_count" — report the halt honestly.
     return {
         "status": "success",
-        "message": f"Kill Switch activated with scope '{scope_str}' successfully. Orders cancelled.",
-        "cancelled_orders_count": 8,
+        "message": f"Kill Switch tripped (scope '{scope_str}'): new order flow halted. "
+                   "Cancellation of resting orders is broker/OMS-side and async — verify with the broker.",
+        "tripped": True,
         "scope": scope_str,
-        "reason": reason_str
+        "reason": reason_str,
+        "simulated": False,
     }
 
 
@@ -3664,22 +3695,45 @@ class TestConnectionPayload(BaseModel):
 
 @api.get("/api/adapters/status")
 def api_adapters_status():
-    ping_val = int(time.time() * 1000) % 20 + 5
+    # Honest: report REGISTRATION (real — queried from the adapter registry),
+    # not a fabricated "AUTHORIZED" with a fake ping. Authorization needs a live
+    # credential test which this endpoint does not perform.
+    def _registered(vendor: str) -> bool:
+        try:
+            from adapters.registry import get_registry, AdapterType
+            from adapters.models import ExchangeVendor
+            reg = get_registry()
+            v = ExchangeVendor(vendor)
+            return any(reg.get_registration(v, t) is not None
+                       for t in (AdapterType.MARKET_DATA, AdapterType.ORDER_EXECUTION))
+        except Exception:
+            return False
+    rows = [
+        ("alpaca", "Alpaca (Equities & Options US)", "https://paper-api.alpaca.markets", "REST+WS"),
+        ("binance", "Binance Spot/Futures (Crypto)", "https://fapi.binance.com", "REST+WS"),
+        ("oanda", "OANDA Sandbox (Forex)", "https://api-fxpractice.oanda.com", "REST+WS"),
+        ("dukascopy", "Dukascopy (Forex public ticks)", "https://datafeed.dukascopy.com", "REST (bi5)"),
+    ]
     return [
-        {"vendor": "alpaca", "name": "Alpaca (Equities & Options US)", "endpoint": "https://paper-api.alpaca.markets", "ping_ms": ping_val, "status": "AUTHORIZED", "connection_type": "REST+WS"},
-        {"vendor": "binance", "name": "Binance Spot/Futures (Crypto)", "endpoint": "https://fapi.binance.com", "ping_ms": ping_val + 12, "status": "AUTHORIZED", "connection_type": "REST+WS"},
-        {"vendor": "oanda", "name": "OANDA Sandbox (Forex)", "endpoint": "https://api-fxpractice.oanda.com", "ping_ms": ping_val + 35, "status": "AUTHORIZED", "connection_type": "REST+WS"},
-        {"vendor": "dukascopy", "name": "Dukascopy (Forex public ticks)", "endpoint": "https://datafeed.dukascopy.com", "ping_ms": ping_val + 28, "status": "PUBLIC", "connection_type": "REST (bi5)"}
+        {"vendor": v, "name": name, "endpoint": ep, "ping_ms": None,
+         "status": "REGISTERED" if _registered(v) else "NOT_REGISTERED",
+         "connection_type": ct,
+         "note": "адаптер зарегистрирован в registry; авторизация не проверяется (нужен live-тест кредов)"}
+        for v, name, ep, ct in rows
     ]
 
 @api.post("/api/adapters/test_connection")
 def api_adapters_test_connection(payload: TestConnectionPayload):
     vendor = payload.vendor.lower()
-    ping_val = int(time.time() * 1000) % 15 + 10
-    if vendor in ("alpaca", "binance", "binance_us", "binance_futures", "oanda", "dukascopy", "yahoo"):
-        return {"status": "success", "ping_ms": ping_val, "message": f"Successfully connected to {vendor.capitalize()} API."}
-    else:
+    known = ("alpaca", "binance", "binance_us", "binance_futures", "oanda", "dukascopy", "yahoo")
+    if vendor not in known:
         raise HTTPException(status_code=400, detail=f"Unknown adapter vendor: {vendor}")
+    # Honest: we confirm the adapter is registered, NOT that a live connection
+    # + credentials succeeded (that requires the CCEA Agent + real keys).
+    return {"status": "registered", "ping_ms": None,
+            "message": f"Адаптер {vendor} зарегистрирован. Живая проверка соединения/кредов "
+                       "выполняется только через CCEA Agent с реальными ключами.",
+            "simulated": True, "data_source": "registry_only"}
 
 
 # --------------------------- Forex Session & Rollover API ---------------------------
@@ -3734,11 +3788,15 @@ def api_forex_session():
 # --------------------------- Forex Position Reconciliation & Swaps API ---------------------------
 @api.post("/api/forex/reconcile")
 def api_forex_reconcile():
+    # No real broker feed is wired here, so we do not claim positions were
+    # reconciled. Honest demo response (frontend surfaces the DEMO badge).
     return {
-        "status": "success",
-        "message": "Manual Forex position reconciliation triggered successfully.",
-        "positions_reconciled": 2,
-        "corrections_sent": 0
+        "status": "demo",
+        "message": "Демо: без подключённого forex-брокера сверка не выполняется. "
+                   "Реальная сверка — через CCEA Agent + брокерский коннектор.",
+        "positions_reconciled": 0,
+        "corrections_sent": 0,
+        "simulated": True, "data_source": "demo_mock",
     }
 
 @api.get("/api/forex/swaps")
@@ -3774,6 +3832,8 @@ class AllocateCollateralPayload(BaseModel):
 
 @api.get("/api/treasury/balances")
 def api_treasury_balances():
+    # Illustrative multi-PB balances — no real custody/PB integration is wired.
+    # Flagged so the UI shows a DEMO badge instead of passing these off as live.
     return {
         "balances": [
             {"broker": "Morgan Stanley PB", "currency": "USD", "balance": 450000.0, "margin_available": 320000.0, "funding_apr": 0.052},
@@ -3785,14 +3845,19 @@ def api_treasury_balances():
             {"symbol": "TSLA", "locate_fee_bps": 12.5, "shares_available": 50000},
             {"symbol": "NVDA", "locate_fee_bps": 8.0, "shares_available": 25000},
             {"symbol": "GME", "locate_fee_bps": 145.0, "shares_available": 5000}
-        ]
+        ],
+        "simulated": True, "data_source": "demo_mock",
+        "disclaimer": "Иллюстративные балансы — реальная интеграция с PB/custody не подключена.",
     }
 
 @api.post("/api/treasury/allocate_collateral")
 def api_treasury_allocate_collateral(payload: AllocateCollateralPayload):
+    # No real treasury movement is performed — honest demo response.
     return {
-        "status": "success",
-        "message": f"Successfully reallocated ${payload.amount:,.2f} from {payload.source_broker} to {payload.target_broker}."
+        "status": "demo",
+        "message": f"Демо: перевод ${payload.amount:,.2f} из {payload.source_broker} в "
+                   f"{payload.target_broker} НЕ выполнен (нет реальной treasury-интеграции).",
+        "simulated": True, "data_source": "demo_mock",
     }
 
 
@@ -3845,7 +3910,9 @@ def api_post_trade_clearing_status():
             {"fund_name": "Riven Quant Fund A", "target_qty": 5000, "allocated_qty": 5000, "status": "cleared"},
             {"fund_name": "Riven Alpha Fund", "target_qty": 3000, "allocated_qty": 3000, "status": "approved"},
             {"fund_name": "Riven Multi-Asset", "target_qty": 2000, "allocated_qty": 2000, "status": "draft"}
-        ]
+        ],
+        "simulated": True, "data_source": "demo_mock",
+        "disclaimer": "Демо-блоки/аллокации. Реальная аллокация — POST /api/post_trade/allocate с fills/targets.",
     }
 
 
@@ -3896,17 +3963,35 @@ def api_forex_session_config(payload: ForexSessionConfigPayload):
 
 @api.post("/api/forex/otc_config")
 def api_forex_otc_config(payload: ForexOtcConfigPayload):
-    return {
-        "status": "success",
-        "message": f"OTC Config applied: Profile={payload.dealer_profile}, Requote Prob={payload.requote_probability}%, Flicker={payload.quote_flicker}."
-    }
+    # Real persistence (was an echo that touched nothing): atomically write the
+    # dealer profile to configs/forex_otc.yaml. Fail-closed on write error.
+    cfg_path = os.path.join("configs", "forex_otc.yaml")
+    body = {"dealer_profile": payload.dealer_profile,
+            "requote_probability": payload.requote_probability,
+            "quote_flicker": payload.quote_flicker}
+    try:
+        os.makedirs("configs", exist_ok=True)
+        atomic_write_with_retry(cfg_path, yaml.safe_dump(body, allow_unicode=True, sort_keys=False))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to persist OTC config: {e}")
+    return {"status": "success", "persisted_to": cfg_path,
+            "message": f"OTC-конфиг сохранён: profile={payload.dealer_profile}, "
+                       f"requote={payload.requote_probability}%, flicker={payload.quote_flicker}."}
 
 @api.post("/api/execution/algo_config")
 def api_execution_algo_config(payload: AlgoConfigPayload):
-    return {
-        "status": "success",
-        "message": f"Execution algo settings updated: Algo={payload.algorithm}, MaxPart={payload.max_participation}%, Window={payload.window}m, Offset={payload.offset} ticks."
-    }
+    # Real persistence (was an echo): atomically write to configs/execution_algo.yaml.
+    cfg_path = os.path.join("configs", "execution_algo.yaml")
+    body = {"algorithm": payload.algorithm, "max_participation": payload.max_participation,
+            "window": payload.window, "offset": payload.offset}
+    try:
+        os.makedirs("configs", exist_ok=True)
+        atomic_write_with_retry(cfg_path, yaml.safe_dump(body, allow_unicode=True, sort_keys=False))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to persist algo config: {e}")
+    return {"status": "success", "persisted_to": cfg_path,
+            "message": f"Execution-algo сохранён: algo={payload.algorithm}, "
+                       f"maxPart={payload.max_participation}%, window={payload.window}m, offset={payload.offset}."}
 
 @api.post("/api/post_trade/clearing_approve")
 def api_post_trade_clearing_approve(payload: Optional[Dict[str, Any]] = None):
@@ -10605,9 +10690,18 @@ def get_dynamic_no_trade(symbol: str = "BTCUSDT"):
 
 @api.post("/api/risk/dynamic_no_trade/tune")
 def post_dynamic_no_trade_tune(payload: TuneNoTradePayload):
+    # Persist the tuned thresholds so this is a real config write, not an echo.
+    cfg_path = os.path.join("configs", "dynamic_no_trade.yaml")
+    try:
+        os.makedirs("configs", exist_ok=True)
+        atomic_write_with_retry(cfg_path, yaml.safe_dump(
+            payload.model_dump() if hasattr(payload, "model_dump") else dict(payload),
+            allow_unicode=True, sort_keys=False))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to persist no-trade thresholds: {e}")
     return {
-        "status": "success",
-        "detail": "Dynamic No-Trade Guard thresholds tuned and updated online."
+        "status": "success", "persisted_to": cfg_path,
+        "detail": "Пороги динамического No-Trade сохранены в конфиг (применятся при следующем запуске раннера).",
     }
 
 

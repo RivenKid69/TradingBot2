@@ -180,3 +180,8 @@ data/ticks/
 state/web3_gas_guard.json
 state/fireblocks_config.json
 state/fireblocks_withdrawals.jsonl
+
+# Pro runtime configs written by UI actions (per-user)
+configs/execution_algo.yaml
+configs/forex_otc.yaml
+configs/dynamic_no_trade.yaml
