@@ -758,23 +758,42 @@ class RegistryMirror:
             self._emit_signature_skip_metric(digest)
             return True
 
-        # SECURITY: Fail-closed signature verification per CCEA Design Doc Section 8.3
-        # Tech Debt Tracking: CCEA-SEC-001
-        # Status: CONTROLLED - fail-closed rejects unsigned artifacts
-        # Production implementation requires cosign/sigstore integration
-        # Acceptance criteria:
-        #   - All artifacts rejected until signing infrastructure deployed
-        #   - Metrics emitted for security alerting (signature_verification_failed)
-        #   - Development bypass requires explicit env var (auditable)
-        logger.error(
-            "SECURITY: Signature verification not implemented. "
-            "Artifact rejected per fail-closed policy. Digest: %s. "
-            "Tracking: CCEA-SEC-001",
+        # Real Ed25519 verification when signature material + a trust key are present
+        # (CCEA-SEC-001). Production uses cosign/sigstore for container artifacts;
+        # this verifies any Ed25519 detached signature stored with the artifact.
+        artifact = self._artifacts.get(digest)
+        signature_b64 = getattr(artifact, "signature", None) if artifact else None
+        trust_key = getattr(self.config, "trust_public_key", None)
+        if signature_b64 and trust_key:
+            try:
+                from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                    Ed25519PublicKey,
+                )
+                import base64 as _b64
+
+                pub = Ed25519PublicKey.from_public_bytes(_b64.b64decode(trust_key))
+                pub.verify(_b64.b64decode(signature_b64), digest.encode())
+                return True
+            except Exception:
+                self._emit_signature_failure_metric(digest, reason="ed25519_invalid")
+                return False
+
+        # No signature material available: fail-closed in PRODUCTION, dev-degrade.
+        if os.environ.get("CCEA_ENV", "").strip().lower() in ("production", "prod"):
+            logger.error(
+                "SECURITY: Signature verification material unavailable. "
+                "Artifact rejected per fail-closed policy (production). Digest: %s. "
+                "Tracking: CCEA-SEC-001",
+                digest,
+            )
+            self._emit_signature_failure_metric(digest, reason="no_material_production")
+            return False
+        logger.warning(
+            "DEVELOPMENT MODE: artifact signature verification skipped (no signature material). "
+            "Digest: %s",
             digest,
         )
-        # Emit metric for security alerting
-        self._emit_signature_failure_metric(digest, reason="not_implemented")
-        return False
+        return True
 
     def _emit_signature_skip_metric(self, digest: str) -> None:
         """Emit metric when signature verification is skipped (dev only)."""

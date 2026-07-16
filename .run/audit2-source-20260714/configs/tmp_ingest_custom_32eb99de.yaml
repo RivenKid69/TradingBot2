@@ -1,0 +1,9 @@
+include_greeks: true
+period:
+  end: '2024-12-31'
+  start: '2023-01-01'
+provider: theta_data
+strike_range: ATM +/- 10
+symbols:
+- AAPL
+- MSFT

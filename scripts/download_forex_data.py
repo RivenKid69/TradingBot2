@@ -111,6 +111,7 @@ class ForexDownloadConfig:
     include_spread: bool = True        # Include bid/ask prices
     add_session_labels: bool = True    # Label bars with active session
     resample_to: Optional[str] = None  # e.g., "4h" to resample 1h to 4h
+    price_type: str = "mid"            # mid, bid, ask, bid_ask
 
     # Rate limiting
     max_workers: int = 2  # Lower for OANDA due to rate limits
@@ -282,6 +283,7 @@ def download_pair_oanda(
             "api_key": config.api_key or os.environ.get("OANDA_API_KEY", ""),
             "account_id": config.account_id or os.environ.get("OANDA_ACCOUNT_ID", ""),
             "practice": config.practice,
+            "price_type": config.price_type,
         }
 
         adapter = OandaMarketDataAdapter(
@@ -339,6 +341,18 @@ def download_pair_oanda(
                     record["spread_pips"] = float(bar.volume_quote)
                 else:
                     record["spread_pips"] = np.nan
+
+                if config.price_type == "bid_ask":
+                    record.update({
+                        "open_bid": float(bar.bid_open) if bar.bid_open is not None else np.nan,
+                        "high_bid": float(bar.bid_high) if bar.bid_high is not None else np.nan,
+                        "low_bid": float(bar.bid_low) if bar.bid_low is not None else np.nan,
+                        "close_bid": float(bar.bid_close) if bar.bid_close is not None else np.nan,
+                        "open_ask": float(bar.ask_open) if bar.ask_open is not None else np.nan,
+                        "high_ask": float(bar.ask_high) if bar.ask_high is not None else np.nan,
+                        "low_ask": float(bar.ask_low) if bar.ask_low is not None else np.nan,
+                        "close_ask": float(bar.ask_close) if bar.ask_close is not None else np.nan,
+                    })
 
                 all_records.append(record)
 
@@ -458,6 +472,12 @@ def _resample_bars(df: pd.DataFrame, target_timeframe: str) -> pd.DataFrame:
         agg_dict["symbol"] = "first"
     if "session" in df_copy.columns:
         agg_dict["session"] = "first"  # Session at bar open
+    for prefix in ["bid", "ask"]:
+        if f"open_{prefix}" in df_copy.columns:
+            agg_dict[f"open_{prefix}"] = "first"
+            agg_dict[f"high_{prefix}"] = "max"
+            agg_dict[f"low_{prefix}"] = "min"
+            agg_dict[f"close_{prefix}"] = "last"
 
     # Resample
     resampled = df_copy.resample(freq).agg(agg_dict)
@@ -715,6 +735,12 @@ Examples:
         action="store_true",
         help="Don't add session labels to bars",
     )
+    parser.add_argument(
+        "--price-type",
+        choices=["mid", "bid", "ask", "bid_ask"],
+        default="mid",
+        help="Price type to download: mid, bid, ask, or bid_ask (dual feed)",
+    )
 
     # Provider config
     parser.add_argument(
@@ -774,6 +800,7 @@ def main() -> int:
         add_session_labels=not args.no_session_labels,
         resample_to=args.resample_to,
         skip_existing=not args.force,
+        price_type=args.price_type,
     )
 
     # Determine pairs

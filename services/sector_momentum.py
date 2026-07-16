@@ -741,3 +741,76 @@ def create_sector_momentum_service(
         cache_enabled=cache_enabled,
     )
     return SectorMomentumService(config)
+
+
+# =============================================================================
+# CLI Entry Point
+# =============================================================================
+
+if __name__ == "__main__":
+    import argparse
+    import json
+    import os
+    from datetime import datetime as _dt
+
+    ap = argparse.ArgumentParser(description="Compute sector momentum and write a JSON report.")
+    ap.add_argument("--window", type=int, default=DEFAULT_MOMENTUM_WINDOW, help="Momentum lookback window (trading days).")
+    ap.add_argument("--vendor", default="yahoo", help="Data vendor: yahoo, alpaca, local.")
+    ap.add_argument("--out", default="models/momentum_report.json", help="Path to write the report JSON.")
+    args = ap.parse_args()
+
+    cfg = SectorDataConfig(data_vendor=args.vendor, momentum_window=int(args.window))
+    service = SectorMomentumService(cfg)
+
+    status = "ok"
+    message = ""
+    sectors_out: List[Dict[str, Any]] = []
+    market_return = 0.0
+
+    try:
+        service.update_sector_data()
+        sector_returns = service.get_all_sector_returns()
+        market_return = float(service.get_market_return())
+
+        if not sector_returns:
+            status = "no_data"
+            message = (
+                "Не удалось загрузить данные секторных ETF "
+                "(требуется доступ к рыночным данным / yfinance)."
+            )
+        else:
+            for sector, ret in sorted(
+                sector_returns.items(), key=lambda kv: kv[1], reverse=True
+            ):
+                etf = SECTOR_ETFS.get(sector, "")
+                excess = float(ret) - market_return
+                sectors_out.append({
+                    "sector": sector,
+                    "etf": etf,
+                    "return_window": float(ret),
+                    "excess_vs_market": excess,
+                    "rank": len(sectors_out) + 1,
+                })
+    except Exception as exc:  # pragma: no cover - network/runtime dependent
+        status = "error"
+        message = f"Ошибка расчета momentum: {exc}"
+
+    report = {
+        "status": status,
+        "message": message,
+        "window": int(args.window),
+        "vendor": args.vendor,
+        "market_return": market_return,
+        "generated_at": _dt.now().isoformat(timespec="seconds"),
+        "sectors": sectors_out,
+        "n_sectors": len(sectors_out),
+    }
+
+    out_path = args.out
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    print(f"[sector_momentum] status={status} sectors={len(sectors_out)} -> {out_path}")
+    if message:
+        print(f"[sector_momentum] {message}")

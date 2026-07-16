@@ -52,8 +52,10 @@ class TestQuantileLevelsCorrectness:
         spacing = np.diff(actual_taus)
         expected_spacing = 1.0 / N
 
-        # All spacings should be uniform
-        np.testing.assert_allclose(spacing, expected_spacing, rtol=1e-6)
+        # All spacings should be uniform.
+        # taus stored as float32 (QuantileValueHead) → np.diff carries ~6e-8 rounding;
+        # atol absorbs it (matches sibling test_quantile_levels_uses_midpoint_formula).
+        np.testing.assert_allclose(spacing, expected_spacing, rtol=1e-6, atol=1e-7)
 
         print(f"\nQuantile Spacing (N={N}):")
         print(f"Spacing: {spacing[0]:.6f}")
@@ -166,55 +168,121 @@ class TestCVaRComputationConsistency:
 class TestRealWorldCVaRAccuracy:
     """Test CVaR accuracy with realistic distributions."""
 
+    @staticmethod
+    def _production_cvar(quantiles: "torch.Tensor", alpha: float) -> float:
+        """Call the PRODUCTION DistributionalPPO._cvar_from_quantiles.
+
+        The method only reads ``self.cvar_alpha``; a lightweight shim avoids constructing
+        a full model. This validates the REAL piecewise-linear quantile integration
+        (with interpolation/extrapolation), not a naive bottom-k proxy.
+        """
+        from types import SimpleNamespace
+        from distributional_ppo import DistributionalPPO
+
+        shim = SimpleNamespace(cvar_alpha=float(alpha))
+        return DistributionalPPO._cvar_from_quantiles(shim, quantiles).item()
+
     def test_cvar_standard_normal(self):
-        """Test CVaR computation with standard normal quantiles."""
+        """Production CVaR from quantiles is accurate for the standard normal tail.
+
+        Regression note: this used to test a naive ``mean(bottom-k quantiles)`` proxy
+        (~16.5% error, failed its own <15% bound). The production
+        ``_cvar_from_quantiles`` integrates the quantile function piecewise-linearly with
+        tail extrapolation and is far more accurate (~4.6% at N=21, ~1.8% at N=51).
+        """
         from scipy.stats import norm
 
         N = 21
         alpha = 0.05
 
-        # Create standard normal quantiles at correct tau levels
         head = QuantileValueHead(input_dim=64, num_quantiles=N, huber_kappa=1.0)
         taus = head.taus.cpu().numpy()
-        quantile_values = torch.tensor([norm.ppf(tau) for tau in taus]).unsqueeze(0)
+        quantile_values = torch.tensor(
+            [norm.ppf(tau) for tau in taus], dtype=torch.float64
+        ).unsqueeze(0)
 
-        # True CVaR for standard normal at alpha=0.05
-        # CVaR_alpha(X) = E[X | X <= VaR_alpha(X)]
-        # For standard normal: CVaR_0.05 ≈ -2.063
+        # True CVaR for standard normal at alpha=0.05: E[X | X <= q_alpha] ≈ -2.063
         true_cvar = norm.expect(lambda x: x, lb=-np.inf, ub=norm.ppf(alpha)) / alpha
 
-        # Simple approximation: mean of tail quantiles
+        prod_cvar = self._production_cvar(quantile_values, alpha)
+        prod_rel_err = abs(prod_cvar - true_cvar) / abs(true_cvar)
+
+        # Naive bottom-k proxy (what the old test asserted) — kept to show the contrast.
         k_tail = max(1, int(math.ceil(alpha * N)))
-        approx_cvar = quantile_values[:, :k_tail].mean().item()
+        naive_cvar = quantile_values[:, :k_tail].mean().item()
+        naive_rel_err = abs(naive_cvar - true_cvar) / abs(true_cvar)
 
         print(f"\nCVaR Standard Normal (alpha={alpha}, N={N}):")
-        print(f"True CVaR: {true_cvar:.4f}")
-        print(f"Approx CVaR (k={k_tail}): {approx_cvar:.4f}")
-        print(f"Error: {abs(approx_cvar - true_cvar):.4f}")
+        print(f"True CVaR:       {true_cvar:.4f}")
+        print(f"PRODUCTION CVaR: {prod_cvar:.4f}  rel_err={prod_rel_err*100:.1f}%")
+        print(f"naive bottom-k:  {naive_cvar:.4f}  rel_err={naive_rel_err*100:.1f}%")
 
-        # Should be reasonably close (within 10%)
-        assert abs(approx_cvar - true_cvar) / abs(true_cvar) < 0.15
+        # Production method is genuinely accurate (~4.6%) — well within 10%.
+        assert prod_rel_err < 0.10, f"production CVaR rel error too high: {prod_rel_err:.3f}"
+        # And it strictly beats the naive proxy it replaced.
+        assert prod_rel_err < naive_rel_err
+
+        # Convergence: more quantiles → smaller error.
+        N2 = 51
+        head2 = QuantileValueHead(input_dim=64, num_quantiles=N2, huber_kappa=1.0)
+        taus2 = head2.taus.cpu().numpy()
+        q2 = torch.tensor([norm.ppf(t) for t in taus2], dtype=torch.float64).unsqueeze(0)
+        err2 = abs(self._production_cvar(q2, alpha) - true_cvar) / abs(true_cvar)
+        assert err2 < prod_rel_err, "increasing N should reduce CVaR error"
 
     def test_cvar_uniform_distribution(self):
         """Test CVaR with uniform distribution."""
         N = 21
         alpha = 0.10
 
-        # Uniform distribution on [0, 1]
+        # Uniform distribution on [0, 1]: quantile function q(tau) = tau is LINEAR,
+        # so the production piecewise-linear integration should be ~exact.
         head = QuantileValueHead(input_dim=64, num_quantiles=N, huber_kappa=1.0)
-        taus = head.taus.cpu().numpy()
-        quantile_values = torch.tensor(taus).unsqueeze(0)  # Quantiles of uniform = taus
+        taus = head.taus.cpu().numpy().astype(np.float64)
+        quantile_values = torch.tensor(taus, dtype=torch.float64).unsqueeze(0)
 
         # True CVaR for uniform[0,1] at alpha=0.10 is alpha/2 = 0.05
         true_cvar = alpha / 2.0
 
-        k_tail = max(1, int(math.ceil(alpha * N)))
-        approx_cvar = quantile_values[:, :k_tail].mean().item()
+        prod_cvar = TestRealWorldCVaRAccuracy._production_cvar(quantile_values, alpha)
 
         print(f"\nCVaR Uniform Distribution (alpha={alpha}, N={N}):")
-        print(f"True CVaR: {true_cvar:.4f}")
-        print(f"Approx CVaR (k={k_tail}): {approx_cvar:.4f}")
-        print(f"Error: {abs(approx_cvar - true_cvar):.4f}")
+        print(f"True CVaR:       {true_cvar:.4f}")
+        print(f"PRODUCTION CVaR: {prod_cvar:.6f}  err={abs(prod_cvar - true_cvar):.2e}")
+
+        # Linear distribution → production CVaR is exact to numerical precision.
+        assert abs(prod_cvar - true_cvar) < 1e-6
+
+
+class TestInferenceTrainingCVaRConsistency:
+    """Inference-path CVaR (impl_rl_signal) must equal training-path CVaR (DistributionalPPO).
+
+    Closes the methodology gap: RLAlphaSignal's CVaR utility used to be a naive
+    mean-of-bottom-k proxy, while the model trains on the accurate piecewise-linear
+    integration. They must now be numerically identical.
+    """
+
+    @pytest.mark.parametrize("alpha", [0.01, 0.05, 0.10, 0.25, 0.5, 0.95])
+    @pytest.mark.parametrize("N", [11, 21, 32, 51])
+    def test_numpy_cvar_matches_torch_production(self, alpha, N):
+        from types import SimpleNamespace
+        from distributional_ppo import DistributionalPPO
+        from impl_rl_signal import cvar_from_quantiles_np
+
+        rng = np.random.default_rng(0)
+        # monotone (sorted) quantile rows across a batch
+        q = np.sort(rng.standard_normal((7, N)), axis=1)
+
+        np_cvar = cvar_from_quantiles_np(q, alpha)
+        shim = SimpleNamespace(cvar_alpha=alpha)
+        torch_cvar = (
+            DistributionalPPO._cvar_from_quantiles(
+                shim, torch.tensor(q, dtype=torch.float64)
+            )
+            .cpu()
+            .numpy()
+        )
+        np.testing.assert_allclose(np_cvar, torch_cvar, rtol=1e-9, atol=1e-9)
 
 
 if __name__ == "__main__":

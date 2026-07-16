@@ -27,7 +27,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-quant-platform"
-version = "1.0.0"
+version = "2.6.0"
 description = "AI-Powered Quantitative Research Platform for algorithmic trading with reinforcement learning"
 readme = "README.md"
 license = {text = "Proprietary"}

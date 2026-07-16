@@ -1,0 +1,90 @@
+{
+  "package_id": "ROI-PKG-BE1D7EB3",
+  "generated_at": "2026-07-11T21:34:11.797960+00:00",
+  "reference_date": "2026-07-11",
+  "format_version": "1.0",
+  "its_template_version": "DPM_4.0",
+  "provider": {
+    "provider_id": "PRV-33AF2F9C",
+    "lei": "",
+    "alternative_id": "",
+    "alternative_id_type": "",
+    "legal_name": "",
+    "trading_name": "",
+    "headquarters_country": "",
+    "headquarters_address": "",
+    "location_type": "third_country",
+    "parent_lei": "",
+    "parent_name": "",
+    "ultimate_parent_lei": "",
+    "ultimate_parent_name": "",
+    "ultimate_parent_country": "",
+    "is_intra_group_provider": false,
+    "is_designated_ctpp": false,
+    "ctpp_lead_overseer": "",
+    "primary_contact_name": "",
+    "primary_contact_email": "",
+    "primary_contact_phone": "",
+    "data_as_of_date": "2026-07-11",
+    "generated_at": "2026-07-11T21:34:10.732400+00:00"
+  },
+  "contracts": [
+    {
+      "contract_reference": "CTR-B352DB8F",
+      "provider_lei": "",
+      "provider_name": "",
+      "contract_type": "ContractType.OUTSOURCING",
+      "contract_start_date": "2025-09-30",
+      "contract_end_date": "",
+      "annual_value_eur": 0.0,
+      "notice_period_days": 30,
+      "renewal_type": "",
+      "service_types_provided": [
+        "cloud_computing"
+      ],
+      "service_descriptions": [],
+      "data_processing_countries": [],
+      "data_storage_countries": [],
+      "personal_data_processed": false,
+      "sensitive_data_processed": false,
+      "subcontracting_permitted": false,
+      "subcontractor_chain_provided": true,
+      "audit_rights_granted": true,
+      "nca_access_rights": true,
+      "exit_plan_provided": true,
+      "data_portability_supported": true,
+      "data_as_of_date": "2026-07-11",
+      "generated_at": "2026-07-11T21:34:11.797960+00:00"
+    }
+  ],
+  "services": [
+    {
+      "service_id": "SVC-A31F0787",
+      "contract_reference": "CTR-B352DB8F",
+      "service_name": "Cloud Compute and Storage",
+      "service_type": "cloud_computing",
+      "service_description": "",
+      "availability_target_pct": 99.0,
+      "rpo_hours": 24,
+      "rto_hours": 4,
+      "supports_trading_functions": false,
+      "supports_payment_functions": false,
+      "supports_custody_functions": false,
+      "supports_settlement_functions": false,
+      "supports_risk_management": false,
+      "supports_regulatory_reporting": false,
+      "data_classification": "",
+      "personal_data_involved": false,
+      "data_as_of_date": "2026-07-11",
+      "generated_at": "2026-07-11T21:34:11.797960+00:00"
+    }
+  ],
+  "subcontractors": [],
+  "is_validated": false,
+  "validation_errors": [
+    "Provider legal_name is required"
+  ],
+  "validation_warnings": [
+    "Provider LEI not provided (recommended)"
+  ]
+}

@@ -1,0 +1,347 @@
+# =============================================================================
+# EXAMPLE: Stock (US Equity) Model Training Configuration
+# =============================================================================
+# This is a well-documented example for training RL models on US equities.
+# Copy this file and customize for your needs.
+#
+# Usage:
+#   python train_model_multi_patch.py --config configs/my_train_stocks.yaml
+#
+# Prerequisites:
+#   1. Download stock data: python scripts/download_stock_data.py --popular
+#   2. Set environment variables: ALPACA_API_KEY, ALPACA_API_SECRET
+#   3. Run doctor check: python scripts/doctor.py
+#
+# Key differences from crypto:
+#   - Trading hours: NYSE 9:30-16:00 ET (vs 24/7)
+#   - Fees: Commission-free + SEC/TAF regulatory fees (vs maker/taker)
+#   - Volatility: Generally lower than crypto
+#   - Liquidity: Higher for large caps, lower for small caps
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+mode: train                         # train | sim | live
+run_id: my-stock-model              # Unique identifier for this run
+logs_dir: logs/stocks               # Where to write logs
+artifacts_dir: artifacts/stocks     # Where to save model checkpoints
+
+# -----------------------------------------------------------------------------
+# ASSET CLASS (Critical - determines fees, hours, etc.)
+# -----------------------------------------------------------------------------
+
+asset_class: equity                 # equity (stocks) | crypto
+data_vendor: alpaca                 # alpaca | polygon
+                                    # Alpaca: free real-time data (IEX feed)
+                                    # Polygon: paid, higher quality data
+
+# -----------------------------------------------------------------------------
+# DATA CONFIGURATION
+# -----------------------------------------------------------------------------
+
+data:
+  timeframe: "4h"                   # Bar timeframe: 1m, 5m, 15m, 1h, 4h, 1d
+
+  # Training period (timestamps in seconds)
+  train_start_ts: 1609459200        # 2021-01-01T00:00:00Z
+  train_end_ts: 1735689600          # 2025-01-01T00:00:00Z
+
+  # Validation period
+  val_start_ts: 1735689600          # 2025-01-01T00:00:00Z
+  val_end_ts: 1746057600            # 2025-05-01T00:00:00Z
+
+  # Test period
+  test_start_ts: 1746057600         # 2025-05-01T00:00:00Z
+  test_end_ts: 1759276800           # 2025-10-01T00:00:00Z
+
+  # Stock-specific settings
+  filter_trading_hours: true        # Only use NYSE trading hours data
+  include_extended_hours: false     # Include pre/after market (4am-8pm ET)
+
+  # Local data files
+  paths:
+    - "data/raw_stocks/*.parquet"
+    - "data/stocks/*.parquet"
+
+# -----------------------------------------------------------------------------
+# SYMBOLS TO TRADE
+# -----------------------------------------------------------------------------
+
+# Example portfolio covering different sectors
+symbols:
+  # Technology (high growth, high volatility)
+  - "AAPL"     # Apple
+  - "MSFT"     # Microsoft
+  - "GOOGL"    # Alphabet
+  - "NVDA"     # NVIDIA
+
+  # Index ETFs (diversified exposure)
+  - "SPY"      # S&P 500 ETF
+  - "QQQ"      # Nasdaq 100 ETF
+  - "IWM"      # Russell 2000 ETF
+
+  # Precious Metals ETFs (defensive)
+  - "GLD"      # SPDR Gold Trust
+  - "SLV"      # iShares Silver Trust
+
+# -----------------------------------------------------------------------------
+# MODEL CONFIGURATION
+# -----------------------------------------------------------------------------
+
+model:
+  algo: "ppo"                       # Only PPO supported currently
+
+  # ---------------------------------------------------------------------------
+  # OPTIMIZER (Same as crypto - AdaptiveUPGD recommended)
+  # ---------------------------------------------------------------------------
+
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4                      # Learning rate
+    weight_decay: 0.001             # L2 regularization
+    sigma: 0.001                    # Gaussian noise for exploration
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  # ---------------------------------------------------------------------------
+  # VGS (Variance Gradient Scaler) - Same as crypto
+  # ---------------------------------------------------------------------------
+
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    eps: 1.0e-6
+    clip_threshold: 10.0
+    min_scaling_factor: 0.1         # VGS v3.2
+    variance_cap: 50.0              # VGS v3.2
+
+  # ---------------------------------------------------------------------------
+  # PPO HYPERPARAMETERS
+  # ---------------------------------------------------------------------------
+
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99                     # Discount factor (MUST match reward.gamma!)
+    gae_lambda: 0.95
+
+    # Clipping
+    clip_range: 0.10
+    clip_range_vf: 0.7
+    max_grad_norm: 0.5
+
+    # Entropy
+    ent_coef: 0.001
+    ent_coef_final: 0.001
+
+    # Value function
+    vf_coef: 1.8
+
+    # Batch settings
+    n_steps: 2048
+    n_epochs: 4
+    batch_size: 64
+    microbatch_size: 200
+
+    # KL divergence control
+    kl_early_stop: true
+    kl:
+      target_kl: 0.08
+      early_stop:
+        enabled: true
+        exceed_stop_fraction: 0.15
+
+    # Twin Critics
+    use_twin_critics: true
+    num_atoms: 21
+    v_min: -10.0
+    v_max: 10.0
+
+    # CVaR (risk-aware optimization)
+    cvar_alpha: 0.05
+    cvar_weight: 0.15
+
+    # STOCK-SPECIFIC: Lower turnover penalty (commission-free!)
+    turnover_penalty_coef: 0.0001   # Lower than crypto (0.0005)
+
+    seed: 20240518
+
+# -----------------------------------------------------------------------------
+# ENVIRONMENT CONFIGURATION
+# -----------------------------------------------------------------------------
+
+env:
+  decision_timing: CLOSE_TO_OPEN    # Execute signals at next bar open
+
+  no_trade:
+    enabled: true
+    policy: ignore
+
+  # Stock market session (NYSE)
+  session:
+    calendar: us_equity             # NYSE calendar (9:30-16:00 ET)
+    pre_open_keepout_bars: 0        # No pre-market trading by default
+    post_close_keepout_bars: 0
+    extended_hours: false           # Enable for pre/after hours
+
+  # Liquidity filters
+  liquidity:
+    min_adv_usd: 1000000            # Min $1M daily volume
+    min_bar_quote_volume: 10000
+
+  spreads:
+    max_spread_bps: 50              # Stocks have tighter spreads than crypto
+
+# -----------------------------------------------------------------------------
+# ACTION CONFIGURATION (Same as crypto)
+# -----------------------------------------------------------------------------
+
+algo:
+  actions:
+    long_only: true                 # Long-only strategy (no shorting)
+
+  action_wrapper:
+    fixed_type: MARKET
+    bins_vol: 4                     # [0.0, 0.2, 0.6, 1.0]
+    max_asset_weight: 1.0
+
+# Only train volume fraction head
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+execution:
+  enabled: true
+  mode: bar
+
+# -----------------------------------------------------------------------------
+# FEES (US Equities - Commission-Free with Regulatory Fees)
+# -----------------------------------------------------------------------------
+
+fees:
+  structure: flat                   # Commission-free trading
+  maker_bps: 0.0                    # No maker fee
+  taker_bps: 0.0                    # No taker fee
+
+  # Regulatory fees (applies to SELLS only)
+  regulatory:
+    enabled: true
+    sec_fee_per_million: 27.80      # SEC fee: ~$0.0000278 per dollar
+    taf_fee_per_share: 0.000166     # TAF fee: $0.000166 per share
+    taf_fee_cap: 8.30               # TAF capped at $8.30 per trade
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE MODEL (Tighter than crypto)
+# -----------------------------------------------------------------------------
+
+slippage:
+  k: 0.5                            # Lower impact than crypto (0.8)
+  min_half_spread_bps: 0.0
+  default_spread_bps: 1.0           # Tighter spreads (2.0 for crypto)
+
+  dynamic:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# LATENCY MODEL (Disabled for training simplicity)
+# -----------------------------------------------------------------------------
+
+latency:
+  use_seasonality: false
+  base_ms: 0
+  jitter_ms: 0
+
+# -----------------------------------------------------------------------------
+# RISK (Disabled for training)
+# -----------------------------------------------------------------------------
+
+risk:
+  enabled: false
+
+# -----------------------------------------------------------------------------
+# REWARD CONFIGURATION
+# -----------------------------------------------------------------------------
+
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0001     # Lower for stocks
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+# -----------------------------------------------------------------------------
+# EXCHANGE CONFIGURATION
+# -----------------------------------------------------------------------------
+
+exchange:
+  vendor: alpaca
+  market_type: EQUITY
+
+  alpaca:
+    paper: true                     # Use paper trading
+    feed: iex                       # "iex" (free) or "sip" (paid)
+    extended_hours: false
+
+# -----------------------------------------------------------------------------
+# DATA SOURCES (Components)
+# -----------------------------------------------------------------------------
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/raw_stocks/*.parquet"]
+      timeframe: "4h"
+
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "SPY"                 # Default symbol
+
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+
+# =============================================================================
+# DOWNLOADING STOCK DATA
+# =============================================================================
+#
+# Before training, download historical data:
+#
+# # Popular tech + ETFs (3 years)
+# python scripts/download_stock_data.py \
+#     --symbols AAPL MSFT GOOGL NVDA SPY QQQ IWM GLD SLV \
+#     --start 2021-01-01 \
+#     --timeframe 1h \
+#     --resample 4h
+#
+# # Or use preset:
+# python scripts/download_stock_data.py --popular --start 2021-01-01
+#
+# # VIX for fear indicator:
+# python scripts/download_stock_data.py --symbols ^VIX --start 2021-01-01
+#
+# =============================================================================

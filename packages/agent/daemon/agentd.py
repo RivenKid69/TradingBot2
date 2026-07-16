@@ -19,6 +19,7 @@ import signal
 import sys
 import threading
 import time
+import weakref
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -897,8 +898,11 @@ class AgentDaemon:
         self._on_kill_switch: Optional[Callable[[HaltReason], None]] = None
         self._on_degraded_mode: Optional[Callable[[DegradedMode, DegradedModeAction], None]] = None
 
-        # Register cleanup
-        atexit.register(self._cleanup)
+        # Register cleanup without keeping the daemon alive.  Registering the
+        # bound method directly created a strong reference and left SQLite files
+        # open until interpreter exit (notably on Windows).
+        cleanup_method = weakref.WeakMethod(self._cleanup)
+        atexit.register(lambda ref=cleanup_method: (method := ref()) and method())
 
     @property
     def agent_id(self) -> str:
@@ -2241,15 +2245,56 @@ class AgentDaemon:
 
     # ===== Cleanup =====
 
+    def close(self) -> None:
+        """Release all process and durable-store resources.
+
+        ``stop()`` remains a lifecycle operation that can be triggered by a
+        cloud command.  ``close()`` is the terminal process-shutdown operation.
+        """
+        try:
+            if self._state not in (DaemonState.CREATED, DaemonState.STOPPED):
+                self.stop(reason="process_shutdown")
+        finally:
+            for component_name in ("_order_journal", "_command_journal"):
+                component = getattr(self, component_name, None)
+                if component is not None:
+                    try:
+                        component.close()
+                    except Exception:
+                        pass
+                    setattr(self, component_name, None)
+            if self._cloud_client:
+                try:
+                    self._cloud_client.close()
+                except Exception:
+                    pass
+                self._cloud_client = None
+            if self._telemetry_buffer and hasattr(self._telemetry_buffer, "close"):
+                try:
+                    self._telemetry_buffer.close()
+                except Exception:
+                    pass
+                self._telemetry_buffer = None
+            if self._broker_connector and hasattr(self._broker_connector, "disconnect"):
+                try:
+                    self._broker_connector.disconnect()
+                except Exception:
+                    pass
+            if self._vault and hasattr(self._vault, "lock"):
+                try:
+                    self._vault.lock()
+                except Exception:
+                    pass
+
     def _cleanup(self) -> None:
         """Cleanup on exit."""
-        if self._state in (DaemonState.RUNNING, DaemonState.PAUSED):
-            self.stop(reason="process_exit")
-        if self._cloud_client:
-            try:
-                self._cloud_client.close()
-            except Exception:
-                pass
+        self.close()
+
+    def __del__(self) -> None:  # pragma: no cover - best-effort safety net
+        try:
+            self.close()
+        except Exception:
+            pass
 
     # ===== API =====
 

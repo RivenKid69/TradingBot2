@@ -118,6 +118,25 @@ class Order:
 
 
 @dataclass
+class PriceCollarConfig:
+    """Fat-finger / price-collar pre-trade gate (P1 #10).
+
+    A last-line sanity check BEFORE submission, independent of the risk stack:
+      * ``max_price_distance_pct`` — reject a limit order whose price is more than
+        this fraction away from the reference (last/mid) price (fat-finger price);
+      * ``max_notional`` — reject an order whose notional exceeds this absolute cap;
+      * ``max_adv_participation`` + ``adv_provider`` — reject if the order would be a
+        larger fraction of the name's ADV than this (oversized-vs-liquidity).
+    Any ``None`` field disables that check. Enabled by default with wide bounds.
+    """
+    enabled: bool = True
+    max_price_distance_pct: Optional[float] = 0.10   # 10% from reference
+    max_notional: Optional[float] = None
+    max_adv_participation: Optional[float] = None
+    adv_provider: Optional[Callable[[str], Optional[float]]] = None
+
+
+@dataclass
 class ExecutionResult:
     """
     Result of execution attempt.
@@ -197,6 +216,9 @@ class LiveExecutionEngine:
         order_journal: Optional[OrderJournal] = None,
         deployment_id: Optional[str] = None,
         run_id: Optional[str] = None,
+        broker_cancel: Optional[Callable[[str, Optional[str]], bool]] = None,
+        broker_replace: Optional[Callable[[str, Optional[Decimal], Optional[Decimal]], tuple]] = None,
+        price_collar: Optional[PriceCollarConfig] = None,
     ):
         """
         Initialize execution engine.
@@ -215,6 +237,9 @@ class LiveExecutionEngine:
         self._hard_caps = hard_cap_enforcer or HardCapEnforcer()
         self._risk_checker = risk_checker or RiskChecker()
         self._broker_submit = broker_submit
+        self._broker_cancel = broker_cancel
+        self._broker_replace = broker_replace
+        self._price_collar = price_collar or PriceCollarConfig()
         self._broker_name = broker_name
 
         # Idempotency identifiers (Design Doc Phase 8 WI-AGENT-06)
@@ -376,6 +401,14 @@ class LiveExecutionEngine:
         # 4. Convert to order
         order = self._intent_to_order(intent, current_price)
 
+        # 4b. Fat-finger / price-collar gate (P1 #10) — last sanity check pre-submit.
+        collar_err = self._check_price_collar(order, current_price)
+        if collar_err is not None:
+            return ExecutionResult(
+                success=False, order=order,
+                error_message=f"Price-collar / fat-finger block: {collar_err}",
+            )
+
         # 5. Check idempotency
         if self._journal.is_duplicate(order.client_order_id):
             existing = self._orders_by_client_id.get(order.client_order_id)
@@ -504,6 +537,98 @@ class LiveExecutionEngine:
             time_in_force=intent.time_in_force,
             broker=self._broker_name,
         )
+
+    def _check_price_collar(self, order: Order, current_price: Optional[Decimal]) -> Optional[str]:
+        """Return a rejection reason if the order trips the fat-finger / price-collar
+        gate, else None. Reference price = order limit price's neighbourhood vs
+        ``current_price``; notional and ADV-participation are absolute sanity caps."""
+        c = self._price_collar
+        if c is None or not c.enabled:
+            return None
+        try:
+            ref = current_price if current_price is not None else order.limit_price
+            # 1) limit price far from reference (fat-finger price)
+            if (c.max_price_distance_pct is not None and order.limit_price is not None
+                    and ref is not None and float(ref) > 0):
+                dist = abs(float(order.limit_price) - float(ref)) / float(ref)
+                if dist > float(c.max_price_distance_pct) + 1e-12:
+                    return (f"limit {order.limit_price} is {dist:.1%} from reference {ref} "
+                            f"(> {c.max_price_distance_pct:.0%})")
+            # 2) absolute notional cap (fat-finger size)
+            px = order.limit_price if order.limit_price is not None else ref
+            notional = abs(float(order.quantity) * float(px)) if px is not None else None
+            if c.max_notional is not None and notional is not None and notional > float(c.max_notional):
+                return f"notional ${notional:,.0f} exceeds cap ${float(c.max_notional):,.0f}"
+            # 3) ADV participation (oversized vs liquidity)
+            if c.max_adv_participation is not None and c.adv_provider is not None and notional is not None:
+                adv = c.adv_provider(order.symbol)
+                if adv and float(adv) > 0:
+                    part = notional / float(adv)
+                    if part > float(c.max_adv_participation) + 1e-12:
+                        return (f"order is {part:.1%} of ADV (> {c.max_adv_participation:.0%})")
+        except Exception:  # pragma: no cover - never let the gate crash execution
+            return None
+        return None
+
+    def cancel_order(self, client_order_id: str) -> ExecutionResult:
+        """Cancel a working order via the broker; advance the OMS + journal."""
+        order = self._orders_by_client_id.get(client_order_id)
+        if order is None:
+            return ExecutionResult(success=False, error_message="order not found")
+        if order.status in (OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.REJECTED, OrderStatus.EXPIRED):
+            return ExecutionResult(success=False, order=order,
+                                   error_message=f"cannot cancel a {order.status.value} order")
+        if self._broker_cancel is None:
+            return ExecutionResult(success=False, order=order, error_message="no broker_cancel wired")
+        try:
+            ok = bool(self._broker_cancel(client_order_id, order.broker_order_id))
+        except Exception as exc:  # pragma: no cover
+            return ExecutionResult(success=False, order=order, error_message=f"broker cancel error: {exc}")
+        if ok:
+            self.update_order_status(client_order_id, OrderStatus.CANCELLED,
+                                     broker_order_id=order.broker_order_id)
+        return ExecutionResult(success=ok, order=order,
+                               error_message=None if ok else "broker rejected cancel")
+
+    def replace_order(
+        self, client_order_id: str, *, new_quantity: Optional[Decimal] = None,
+        new_limit_price: Optional[Decimal] = None, current_price: Optional[Decimal] = None,
+    ) -> ExecutionResult:
+        """Amend a working order's quantity and/or limit price (FIX 35=G semantics).
+
+        Runs the price-collar gate on the amended terms before sending."""
+        order = self._orders_by_client_id.get(client_order_id)
+        if order is None:
+            return ExecutionResult(success=False, error_message="order not found")
+        if order.status in (OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.REJECTED, OrderStatus.EXPIRED):
+            return ExecutionResult(success=False, order=order,
+                                   error_message=f"cannot amend a {order.status.value} order")
+        amended = Order(
+            client_order_id=order.client_order_id, intent_id=order.intent_id,
+            symbol=order.symbol, side=order.side, order_type=order.order_type,
+            quantity=(new_quantity if new_quantity is not None else order.quantity),
+            limit_price=(new_limit_price if new_limit_price is not None else order.limit_price),
+            broker=self._broker_name, broker_order_id=order.broker_order_id,
+        )
+        collar_err = self._check_price_collar(amended, current_price)
+        if collar_err is not None:
+            return ExecutionResult(success=False, order=order,
+                                   error_message=f"Price-collar block on amend: {collar_err}")
+        if self._broker_replace is None:
+            return ExecutionResult(success=False, order=order, error_message="no broker_replace wired")
+        try:
+            ok, broker_id, err = self._broker_replace(client_order_id, new_quantity, new_limit_price)
+        except Exception as exc:  # pragma: no cover
+            return ExecutionResult(success=False, order=order, error_message=f"broker replace error: {exc}")
+        if ok:
+            order.quantity = amended.quantity
+            order.limit_price = amended.limit_price
+            if broker_id:
+                order.broker_order_id = broker_id
+            self.update_order_status(client_order_id, OrderStatus.ACCEPTED,
+                                     broker_order_id=order.broker_order_id)
+        return ExecutionResult(success=ok, order=order,
+                               error_message=None if ok else (err or "broker rejected replace"))
 
     def update_order_status(
         self,

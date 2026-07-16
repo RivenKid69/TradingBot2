@@ -1,0 +1,216 @@
+# Conformal Prediction Configuration
+# ===================================
+# Reference: prompts/CONFORMAL_PREDICTION_INTEGRATION.md
+#
+# Scientific basis:
+# - CQR: Romano et al., 2019 (https://arxiv.org/abs/1905.03222)
+# - EnbPI: Xu & Xie, ICML 2021
+# - ACI: Gibbs & Candes, 2021
+# - MAPIE: https://mapie.readthedocs.io/
+
+conformal:
+  # ============================================================
+  # MASTER SWITCH
+  # ============================================================
+  # Set to false to completely disable conformal prediction.
+  # When disabled, all methods return point estimates without bounds
+  # and there is zero computational overhead.
+  enabled: true
+
+  # ============================================================
+  # CALIBRATION SETTINGS
+  # ============================================================
+  calibration:
+    # Method for conformal prediction:
+    # - "cqr": Conformalized Quantile Regression (best for quantile critics)
+    # - "enbpi": Ensemble batch Prediction Intervals (time series aware)
+    # - "aci": Adaptive Conformal Inference (adapts to distribution shift)
+    # - "naive": Simple percentile-based baseline
+    method: "cqr"
+
+    # Target coverage probability: P(true_value in interval) >= coverage_target
+    # Common values: 0.90 (90%), 0.95 (95%), 0.99 (99%)
+    coverage_target: 0.90
+
+    # Fraction of data to use for calibration (CQR only)
+    # Larger = better calibration, smaller = more training data
+    calibration_fraction: 0.15
+
+    # Minimum samples required before enabling calibrated predictions
+    # Below this threshold, returns uncalibrated point estimates
+    min_calibration_samples: 500
+
+    # Steps between automatic recalibration (0 = never recalibrate)
+    # For CQR: periodic batch recalibration
+    # For EnbPI/ACI: ignored (they use online updates)
+    recalibrate_interval: 1000
+
+  # ============================================================
+  # TIME SERIES SPECIFIC (EnbPI / ACI)
+  # ============================================================
+  time_series:
+    # Use time-series aware methods (EnbPI residual updates, ACI adaptation)
+    enabled: true
+
+    # Aggregation function for EnbPI ensemble
+    # "mean" or "median"
+    enbpi_agg_func: "mean"
+
+    # ACI adaptation rate (gamma)
+    # Higher = faster adaptation, more variance
+    # Lower = slower adaptation, more stability
+    # Recommended: 0.005 - 0.05
+    aci_gamma: 0.01
+
+    # Lookback window for residual estimation
+    # Larger = more stable, slower to adapt
+    # Smaller = faster adaptation, more variance
+    lookback_window: 100
+
+  # ============================================================
+  # CVAR BOUNDS
+  # ============================================================
+  cvar_bounds:
+    # Add conformal bounds to CVaR estimates
+    enabled: true
+
+    # EXPERIMENTAL: Use CVaR bounds in GAE computation
+    # This can make training more conservative but may reduce performance
+    # Recommended: false (for now)
+    use_for_gae: false
+
+    # Log CVaR bounds statistics every N steps (0 = disable)
+    log_interval: 100
+
+  # ============================================================
+  # RISK MANAGEMENT INTEGRATION
+  # ============================================================
+  risk_integration:
+    # Integrate conformal prediction with RiskGuard
+    enabled: true
+
+    # Scale position sizes based on uncertainty
+    # When interval is wide, reduce position size
+    uncertainty_position_scaling: true
+
+    # Baseline interval width for position scaling
+    # Intervals narrower than this get scale = 1.0
+    # Intervals wider get progressively reduced scale
+    baseline_interval_width: 0.1
+
+    # Maximum position reduction factor (0.5 = reduce to 50% at high uncertainty)
+    max_uncertainty_reduction: 0.5
+
+  # ============================================================
+  # AUTO-ESCALATION
+  # ============================================================
+  escalation:
+    # Enable automatic escalation based on uncertainty levels
+    enabled: true
+
+    # Percentile thresholds for escalation levels
+    # Based on historical interval width distribution
+    warning_percentile: 90   # Top 10% widest intervals trigger WARNING
+    critical_percentile: 99  # Top 1% widest intervals trigger CRITICAL
+
+    # Actions for each escalation level:
+    # - "log": Just log the event
+    # - "reduce_position": Reduce position size
+    # - "human_review": Flag for human decision (live trading)
+    # - "halt": Halt trading (emergency)
+    action_on_warning: "log"
+    action_on_critical: "reduce_position"
+
+  # ============================================================
+  # TRADING SIGNALS (EXPERIMENTAL)
+  # ============================================================
+  # Generate trading signals based on prediction intervals
+  # Similar to option pricing: if price outside interval, potential mispricing
+  trading_signals:
+    # Enable trading signal generation
+    enabled: false
+
+    # Signal thresholds (added to interval bounds)
+    # price < lower_bound - threshold => UNDERVALUED
+    # price > upper_bound + threshold => OVERVALUED
+    undervalued_threshold: 0.0
+    overvalued_threshold: 0.0
+
+  # ============================================================
+  # PERFORMANCE
+  # ============================================================
+  performance:
+    # Cache calibration results for faster inference
+    cache_calibration: true
+
+    # Recalibrate in background thread (non-blocking)
+    async_recalibration: true
+
+  # ============================================================
+  # DEBUGGING
+  # ============================================================
+  debug:
+    # Log calibration residuals (verbose)
+    log_residuals: false
+
+    # Save calibration dataset to disk
+    save_calibration_data: false
+
+    # Validate empirical coverage during training
+    # Logs warning if actual coverage deviates from target
+    validate_coverage: true
+
+
+# ============================================================
+# PRESET CONFIGURATIONS
+# ============================================================
+# Uncomment one of these to use a preset, or customize above
+
+# --- Conservative (for live trading) ---
+# conformal:
+#   enabled: true
+#   calibration:
+#     method: "cqr"
+#     coverage_target: 0.95
+#     min_calibration_samples: 1000
+#   risk_integration:
+#     enabled: true
+#     uncertainty_position_scaling: true
+#     max_uncertainty_reduction: 0.7
+#   escalation:
+#     enabled: true
+#     action_on_warning: "reduce_position"
+#     action_on_critical: "halt"
+
+# --- Aggressive (for backtesting) ---
+# conformal:
+#   enabled: true
+#   calibration:
+#     method: "cqr"
+#     coverage_target: 0.80
+#     min_calibration_samples: 200
+#   risk_integration:
+#     enabled: true
+#     uncertainty_position_scaling: true
+#     max_uncertainty_reduction: 0.3
+#   escalation:
+#     enabled: false
+
+# --- Time Series Focus (for regime changes) ---
+# conformal:
+#   enabled: true
+#   calibration:
+#     method: "aci"
+#   time_series:
+#     enabled: true
+#     aci_gamma: 0.02
+#     lookback_window: 50
+#   risk_integration:
+#     enabled: true
+#   escalation:
+#     enabled: true
+#     action_on_critical: "human_review"
+
+# --- Disabled (zero overhead) ---
+# conformal:
+#   enabled: false

@@ -1,0 +1,277 @@
+# =============================================================================
+# EXAMPLE: Crypto Model Training Configuration
+# =============================================================================
+# This is a well-documented example for training RL models on crypto data.
+# Copy this file and customize for your needs.
+#
+# Usage:
+#   python train_model_multi_patch.py --config configs/my_train.yaml
+#
+# Prerequisites:
+#   1. Data files in data/train/*.csv (OHLCV format)
+#   2. Updated filters: python scripts/fetch_binance_filters.py
+#   3. Run doctor check: python scripts/doctor.py
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+mode: train                      # train | sim | live
+run_id: my-crypto-model          # Unique identifier for this run
+logs_dir: logs                   # Where to write logs
+artifacts_dir: artifacts         # Where to save model checkpoints
+
+# -----------------------------------------------------------------------------
+# ASSET CLASS (determines fees, slippage profiles, trading hours)
+# -----------------------------------------------------------------------------
+
+asset_class: crypto              # crypto | equity
+                                 # - crypto: 24/7, maker/taker fees, higher slippage
+                                 # - equity: NYSE hours, regulatory fees, lower slippage
+
+data_vendor: binance             # binance | alpaca | polygon
+                                 # Must match your data source
+
+# -----------------------------------------------------------------------------
+# DATA CONFIGURATION
+# -----------------------------------------------------------------------------
+
+data:
+  timeframe: "4h"                # Bar timeframe: 1m, 5m, 15m, 1h, 4h, 1d
+
+  # Training period (timestamps in seconds)
+  train_start_ts: 1499990400     # 2017-07-14T00:00:00Z
+  train_end_ts: 1743465599       # 2025-03-31T23:59:59Z
+
+  # Validation period (for hyperparameter tuning)
+  val_start_ts: 1743465600       # 2025-04-01T00:00:00Z
+  val_end_ts: 1751327999         # 2025-06-30T23:59:59Z
+
+  # Test period (for final evaluation)
+  test_start_ts: 1751328000      # 2025-07-01T00:00:00Z
+  test_end_ts: 1759276799        # 2025-09-30T23:59:59Z
+
+# -----------------------------------------------------------------------------
+# MODEL CONFIGURATION
+# -----------------------------------------------------------------------------
+
+model:
+  algo: "ppo"                    # Only PPO supported currently
+
+  # ---------------------------------------------------------------------------
+  # OPTIMIZER (AdaptiveUPGD recommended for continual learning)
+  # See docs/UPGD_INTEGRATION.md for details
+  # ---------------------------------------------------------------------------
+
+  optimizer_class: AdaptiveUPGD  # AdaptiveUPGD (recommended) | UPGD | UPGDW | Adam
+  optimizer_kwargs:
+    lr: 1.0e-4                   # Learning rate
+    weight_decay: 0.001          # L2 regularization
+    sigma: 0.001                 # CRITICAL: Gaussian noise std for exploration
+                                 # When using VGS, keep in range 0.0005-0.001
+    beta_utility: 0.999          # EMA decay for utility tracking
+    beta1: 0.9                   # Adam-like first moment coefficient
+    beta2: 0.999                 # Adam-like second moment coefficient
+    adaptive_noise: true         # Enable adaptive noise scaling (for VGS)
+
+  # ---------------------------------------------------------------------------
+  # VARIANCE GRADIENT SCALER (VGS)
+  # Automatic per-layer gradient normalization for training stability
+  # ---------------------------------------------------------------------------
+
+  vgs:
+    enabled: true                # Enable VGS (highly recommended)
+    accumulation_steps: 4        # Steps to accumulate gradient statistics
+    warmup_steps: 10             # Warmup before applying scaling
+    eps: 1.0e-6                  # Numerical stability
+    clip_threshold: 10.0         # Clip extreme scaling factors
+
+  # ---------------------------------------------------------------------------
+  # PPO HYPERPARAMETERS
+  # ---------------------------------------------------------------------------
+
+  params:
+    # Learning
+    learning_rate: 1.0e-4        # Base learning rate
+    gamma: 0.99                  # Discount factor (MUST match reward.gamma!)
+    gae_lambda: 0.95             # GAE lambda for advantage estimation
+
+    # Clipping
+    clip_range: 0.10             # PPO policy clip range (0.1-0.2 typical)
+    clip_range_vf: 0.7           # Value function clip range (stabilizes training)
+    max_grad_norm: 0.5           # Gradient clipping
+
+    # Entropy (for exploration)
+    ent_coef: 0.001              # Entropy coefficient (higher = more exploration)
+    ent_coef_final: 0.001        # Final entropy coefficient (if using decay)
+
+    # Value function
+    vf_coef: 1.8                 # Value function loss weight
+
+    # Batch settings
+    n_steps: 2048                # Steps per rollout (larger = more stable)
+    n_epochs: 4                  # Epochs per update
+    batch_size: 64               # Minibatch size
+    microbatch_size: 200         # Microbatch for CVaR (200*0.05=10 tail samples)
+
+    # KL divergence control
+    kl_early_stop: true          # Stop epoch if KL too high
+    kl:
+      target_kl: 0.08            # Target KL divergence
+      early_stop:
+        enabled: true
+        exceed_stop_fraction: 0.15
+
+    # Distributional Value Head (for risk-aware learning)
+    use_twin_critics: true       # Enable twin critics (reduces overestimation)
+    num_atoms: 21                # Number of quantiles (1=standard, 11-51=distributional)
+    v_min: -10.0                 # Lower bound of value support
+    v_max: 10.0                  # Upper bound of value support
+
+    # CVaR (risk-aware optimization)
+    cvar_alpha: 0.05             # CVaR percentile (0.05 = worst 5%)
+    cvar_weight: 0.15            # Weight for CVaR in loss
+
+    # Trading cost penalties
+    turnover_penalty_coef: 0.0005  # Penalize excessive trading (~5 bps)
+
+    # Random seed for reproducibility
+    seed: 20240518
+
+# -----------------------------------------------------------------------------
+# ENVIRONMENT CONFIGURATION
+# -----------------------------------------------------------------------------
+
+env:
+  decision_timing: CLOSE_TO_OPEN # Execute signals at next bar open
+
+  no_trade:
+    enabled: false               # Disable no-trade windows for training
+    policy: ignore
+
+  session:
+    calendar: crypto_24x7        # 24/7 crypto calendar
+    pre_open_keepout_bars: 0
+    post_close_keepout_bars: 0
+
+# -----------------------------------------------------------------------------
+# ACTION CONFIGURATION
+# -----------------------------------------------------------------------------
+
+algo:
+  actions:
+    long_only: true              # Long-only strategy (no shorting)
+
+  action_wrapper:
+    fixed_type: MARKET           # MARKET orders only (simplifies training)
+    bins_vol: 4                  # Volume discretization: [0.0, 0.2, 0.6, 1.0]
+    max_asset_weight: 1.0        # Maximum position size (1.0 = 100%)
+
+# Only train on volume fraction head (fixed order type)
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true            # Only this head is trained
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+
+execution_profile: MKT_OPEN_NEXT_4H  # Market order at next bar open
+execution_params:
+  limit_offset_bps: 0.0          # No limit order offset
+  ttl_steps: 0                   # No TTL for orders
+  tif: GTC                       # Good-til-cancelled
+
+execution:
+  enabled: true                  # Enable execution simulation during training
+  mode: bar                      # Bar-level simulation
+
+# -----------------------------------------------------------------------------
+# FEES (Binance-style)
+# -----------------------------------------------------------------------------
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  use_bnb_discount: false        # Not using BNB for fees
+  maker_bps: 1.0                 # 0.01% maker fee
+  taker_bps: 10.0                # 0.10% taker fee
+  half_spread_bps: 5.0           # Assumed half-spread cost
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE MODEL
+# -----------------------------------------------------------------------------
+
+slippage:
+  k: 0.8                         # Impact coefficient
+  min_half_spread_bps: 0.0
+  default_spread_bps: 2.0        # Default spread if not in data
+
+  dynamic:
+    enabled: false               # Static slippage for training simplicity
+
+# -----------------------------------------------------------------------------
+# LATENCY MODEL
+# -----------------------------------------------------------------------------
+
+latency:
+  use_seasonality: false         # Disable for training (faster)
+  base_ms: 0
+  jitter_ms: 0
+
+# -----------------------------------------------------------------------------
+# RISK (Disabled for training)
+# -----------------------------------------------------------------------------
+
+risk:
+  enabled: false                 # Risk guards disabled during training
+
+# -----------------------------------------------------------------------------
+# REWARD CONFIGURATION
+# -----------------------------------------------------------------------------
+
+reward:
+  use_portfolio_pnl: true        # Use portfolio PnL for reward
+  turnover_penalty_coef: 0.0005  # Penalize excessive trading
+  clip:
+    adaptive: true               # Adaptive reward clipping
+    atr_window: 14               # ATR window for adaptive clip
+    hard_cap_pct: 2.0            # Hard cap at 2% of price
+    multiplier: 4.0              # Clip at 4x ATR
+
+# -----------------------------------------------------------------------------
+# QUANTIZER (Binance exchange filters)
+# -----------------------------------------------------------------------------
+
+quantizer:
+  filters_path: "data/binance_filters.json"
+  strict_filters: true           # Enforce exchange filters
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30          # Auto-refresh filters monthly
+
+# -----------------------------------------------------------------------------
+# DATA SOURCES (Components)
+# -----------------------------------------------------------------------------
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/*.csv"]  # Your training data files
+      timeframe: "4h"
+
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}

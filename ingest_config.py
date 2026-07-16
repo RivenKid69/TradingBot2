@@ -62,6 +62,9 @@ class IngestConfig(BaseModel):
     paths: PathsConfig = PathsConfig()
     futures: FuturesConfig = FuturesConfig()
     slowness: SlownessConfig = Field(default_factory=SlownessConfig)
+    funding_rates: bool = True
+    liquidations: bool = True
+    open_interest: bool = True
 
 
 def load_config(path: str) -> IngestConfig:

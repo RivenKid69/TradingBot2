@@ -1,0 +1,357 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# UNIFIED FUTURES CONFIGURATION TEMPLATE
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 8 - Multi-Futures Training Pipeline
+#
+# This is the master template for futures trading configuration.
+# Supports: crypto_perp, crypto_quarterly, index, commodity, currency futures
+#
+# Usage:
+#   python script_futures_backtest.py --config configs/config_futures_unified.yaml
+#   python script_futures_live.py --config configs/config_futures_unified.yaml
+#   python train_model_multi_patch.py --config configs/config_futures_unified.yaml
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CORE SETTINGS
+# ─────────────────────────────────────────────────────────────────────────────
+mode: backtest                    # train, backtest, live, eval
+futures_type: crypto_perp         # crypto_perp, crypto_quarterly, index, commodity, currency
+
+# Vendor/exchange selection
+vendor:
+  primary: binance                # binance, interactive_brokers, tradovate
+  fallback: null                  # Optional fallback for data
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CONTRACT SPECIFICATION
+# ─────────────────────────────────────────────────────────────────────────────
+contract:
+  symbol: BTCUSDT                 # Trading symbol
+  exchange: binance               # Exchange code
+  underlying: BTC                 # Underlying asset
+  quote_currency: USDT            # Quote currency
+  multiplier: 1                   # Contract multiplier (1 for crypto, $50 for ES)
+  tick_size: 0.10                 # Minimum price increment
+  min_qty: 0.001                  # Minimum order size
+  max_qty: 1000                   # Maximum order size
+  expiry: null                    # ISO date for quarterly (null for perpetual)
+  settlement: cash                # cash, physical
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LEVERAGE & MARGIN
+# ─────────────────────────────────────────────────────────────────────────────
+margin:
+  mode: cross                     # cross, isolated
+  initial_leverage: 10            # Starting leverage (1-125)
+  max_leverage: 50                # Hard cap (exchange limit)
+  maintenance_margin_rate: 0.004  # 0.4% for low leverage (tiered for crypto)
+
+  # Tiered brackets (Binance USDT-M style) - crypto only
+  brackets:
+    - notional_cap: 50000
+      max_leverage: 125
+      maint_margin_rate: 0.004
+    - notional_cap: 250000
+      max_leverage: 100
+      maint_margin_rate: 0.005
+    - notional_cap: 1000000
+      max_leverage: 50
+      maint_margin_rate: 0.01
+    - notional_cap: 10000000
+      max_leverage: 20
+      maint_margin_rate: 0.025
+    - notional_cap: null          # Unlimited
+      max_leverage: 10
+      maint_margin_rate: 0.05
+
+  # SPAN margin settings (CME only)
+  span:
+    enabled: false                # Use SPAN approximation
+    scanning_range: 0.12          # 12% price range
+    volatility_adjustment: true
+    inter_month_spread_credit: 0.70  # 70% credit for calendar spreads
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FUNDING (Perpetuals only)
+# ─────────────────────────────────────────────────────────────────────────────
+funding:
+  enabled: true                   # Enable funding rate simulation
+  interval_hours: 8               # Funding interval (8 for Binance)
+  times_utc: ["00:00", "08:00", "16:00"]  # Settlement times
+  include_in_reward: true         # Include funding P&L in reward
+  clamp_rate_bps: 75              # Max funding rate (0.75%)
+  pro_rata_settlement: true       # Calculate pro-rata for partial period
+
+  # Funding risk limits
+  limits:
+    max_cumulative_24h_bps: 150   # Max 1.5% daily funding exposure
+    skip_when_rate_exceeds_bps: 50  # Avoid high funding positions
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SETTLEMENT (Quarterly/CME only)
+# ─────────────────────────────────────────────────────────────────────────────
+settlement:
+  enabled: false                  # Enable daily settlement (CME)
+  # CME uses 14:30 CT (Central Time) = 15:30 ET for equity index futures
+  # Reference: https://www.cmegroup.com/trading/equity-index/us-index/e-mini-sandp500.html
+  time_et: "15:30"                # Daily settlement time (14:30 CT)
+  time_ct: "14:30"                # Central Time (CME native timezone)
+  variation_margin: true          # Daily P&L settlement
+  auto_roll:
+    enabled: true                 # Auto-roll before expiry
+    days_before_expiry: 8         # Roll 8 days before
+    max_roll_cost_bps: 50         # Abort roll if spread > 50bps
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIQUIDATION
+# ─────────────────────────────────────────────────────────────────────────────
+liquidation:
+  penalty_reward: -10.0           # Reward penalty on liquidation
+  simulate_cascade: true          # Simulate liquidation cascades
+  insurance_fund_deduction: true  # Deduct from insurance fund (crypto)
+  adl_simulation: true            # Auto-deleveraging simulation (crypto)
+
+  # Cross-margin priority (when multiple positions)
+  cross_margin_priority: highest_loss  # highest_loss, lowest_ratio, oldest, largest
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRADING HOURS & SESSIONS
+# ─────────────────────────────────────────────────────────────────────────────
+session:
+  calendar: crypto_24x7           # crypto_24x7, cme_futures, forex_24x5
+
+  # CME-specific (index, commodity, currency futures)
+  cme:
+    regular_hours:
+      start_et: "09:30"
+      end_et: "16:00"
+    globex_hours:
+      start_et: "18:00"           # Sunday 6pm
+      end_et: "17:00"             # Friday 5pm
+    maintenance_break:
+      start_et: "16:15"
+      end_et: "16:30"
+    holidays: us_federal           # Holiday calendar
+
+  # Circuit breakers (CME equity index futures)
+  circuit_breakers:
+    enabled: true
+    levels:
+      - threshold_pct: -7
+        halt_minutes: 15
+        applies_to: rth            # Regular trading hours only
+      - threshold_pct: -13
+        halt_minutes: 15
+        applies_to: rth
+      - threshold_pct: -20
+        halt_minutes: null         # Market closed for day
+        applies_to: rth
+
+    # Overnight limits
+    overnight_limit_pct: 5         # +/-5% from settlement price
+    velocity_logic:
+      enabled: true
+      threshold_ticks: 12          # ES: 12 ticks in short window
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEES
+# ─────────────────────────────────────────────────────────────────────────────
+fees:
+  structure: maker_taker          # maker_taker, flat, exchange_fees
+
+  # Crypto (Binance)
+  crypto:
+    maker_bps: 2.0
+    taker_bps: 4.0
+    use_bnb_discount: true
+
+  # CME via IB
+  cme:
+    commission_per_contract: 2.25  # USD per contract (one-way)
+    exchange_fee_per_contract: 1.25
+    nfa_fee_per_contract: 0.02
+    clearing_fee_per_contract: 0.10
+
+  # Regulatory (CME only)
+  regulatory:
+    enabled: true
+    sec_fee_per_million: 27.80     # Not applicable to futures, but for consistency
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SLIPPAGE & EXECUTION
+# ─────────────────────────────────────────────────────────────────────────────
+execution:
+  level: L2                       # L2 (parametric), L3 (LOB simulation)
+
+  slippage:
+    profile: crypto_futures       # crypto_futures, index_futures, commodity_futures
+    impact_coef_base: 0.09        # Almgren-Chriss k coefficient
+    default_spread_bps: 4.0
+    min_slippage_bps: 0.5
+    max_slippage_bps: 500.0
+
+    # Futures-specific adjustments
+    funding_stress_sensitivity: 8.0   # Slippage increase with high funding
+    liquidation_cascade_multiplier: 1.5  # Extra slippage during liquidations
+    oi_imbalance_sensitivity: 0.3     # Open interest imbalance impact
+
+  # L3 LOB settings (if execution.level == "L3")
+  lob:
+    latency_profile: institutional    # colocated, institutional, retail
+    queue_position_method: mbo        # mbo, mbp
+    impact_model: almgren_chriss      # kyle, almgren_chriss, gatheral
+    fill_probability_model: queue_reactive
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RISK MANAGEMENT
+# ─────────────────────────────────────────────────────────────────────────────
+risk:
+  # Position limits
+  max_position_usd: 1000000       # Max notional per symbol
+  max_open_positions: 5           # Max concurrent positions
+  max_leverage_used: 0.8          # Max 80% of available leverage
+
+  # Drawdown limits
+  max_drawdown_pct: 15            # Max 15% drawdown
+  daily_loss_limit_usd: 10000     # Max daily loss
+  trailing_stop_pct: null         # Optional trailing stop
+
+  # Funding risk (crypto)
+  max_funding_exposure_24h_pct: 2.0  # Max 2% funding exposure per day
+
+  # Concentration
+  max_concentration_pct: 50       # Max 50% in single position
+
+  # Kill switch
+  kill_switch:
+    enabled: true
+    triggers:
+      - consecutive_losses: 5
+      - drawdown_pct: 10
+      - daily_loss_usd: 5000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA SOURCES
+# ─────────────────────────────────────────────────────────────────────────────
+data:
+  # OHLCV bars
+  paths:
+    - "data/futures/*.parquet"
+  timeframe: "4h"
+
+  # Funding rate history (crypto)
+  funding_paths:
+    - "data/futures/*_funding.parquet"
+
+  # Mark price (for liquidation simulation)
+  mark_price_paths:
+    - "data/futures/*_mark_*.parquet"
+
+  # Open interest (optional)
+  open_interest_paths:
+    - "data/futures/*_oi.parquet"
+
+  # Liquidations (optional, for cascade simulation)
+  liquidation_paths:
+    - "data/futures/*_liquidations.parquet"
+
+  # Data validation
+  validation:
+    check_gaps: true
+    max_gap_bars: 2
+    check_volume_zeros: true
+    min_history_bars: 1000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FEATURES (Futures-specific)
+# ─────────────────────────────────────────────────────────────────────────────
+features:
+  # Enable futures-specific features
+  include_funding_features: true
+  include_basis_features: true
+  include_oi_features: true
+  include_liquidation_features: true
+  include_term_structure: false   # For quarterly/CME
+
+  # Feature configuration
+  funding_lookback: 8             # 8 funding periods (~2.67 days)
+  oi_lookback: 20                 # 20 bars
+  basis_lookback: 20
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODEL (Training mode)
+# ─────────────────────────────────────────────────────────────────────────────
+model:
+  algo: ppo
+  policy: RecurrentActorCriticPolicy
+  path: "models/futures_ppo.zip"
+
+  params:
+    learning_rate: 0.0001
+    n_steps: 2048
+    batch_size: 64
+    n_epochs: 10
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.001
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    use_twin_critics: true
+    num_quantiles: 21
+    cvar_alpha: 0.05
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LOGGING & MONITORING
+# ─────────────────────────────────────────────────────────────────────────────
+logging:
+  level: INFO
+  tensorboard: true
+  tensorboard_dir: "runs/futures"
+
+  # Futures-specific metrics
+  track_funding_pnl: true
+  track_liquidation_distance: true
+  track_margin_usage: true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PRESETS (Override any of the above for specific futures types)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# To use presets, copy this file and modify the following sections:
+#
+# CRYPTO PERPETUAL (default):
+#   futures_type: crypto_perp
+#   funding.enabled: true
+#   settlement.enabled: false
+#
+# CRYPTO QUARTERLY:
+#   futures_type: crypto_quarterly
+#   funding.enabled: false
+#   settlement.enabled: false
+#   contract.expiry: "2025-03-28"
+#
+# INDEX FUTURES (ES, NQ):
+#   futures_type: index
+#   vendor.primary: interactive_brokers
+#   contract.multiplier: 50
+#   funding.enabled: false
+#   settlement.enabled: true
+#   session.calendar: cme_futures
+#   margin.span.enabled: true
+#
+# COMMODITY FUTURES (GC, CL):
+#   futures_type: commodity
+#   vendor.primary: interactive_brokers
+#   contract.multiplier: 100 (GC) / 1000 (CL)
+#   funding.enabled: false
+#   settlement.enabled: true
+#
+# CURRENCY FUTURES (6E, 6J):
+#   futures_type: currency
+#   vendor.primary: interactive_brokers
+#   contract.multiplier: 125000
+#   funding.enabled: false
+#   settlement.enabled: true
+# ═══════════════════════════════════════════════════════════════════════════════

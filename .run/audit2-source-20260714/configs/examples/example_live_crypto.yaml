@@ -1,0 +1,278 @@
+# =============================================================================
+# EXAMPLE: Crypto Live Trading Configuration
+# =============================================================================
+# This is a well-documented example for live trading on Binance.
+# Copy this file and customize for your needs.
+#
+# Usage:
+#   python script_live.py --config configs/my_live.yaml
+#
+# ⚠️  SAFETY CHECKLIST - MUST DO BEFORE LIVE TRADING:
+#   1. Run `python scripts/doctor.py` to verify environment
+#   2. Test with `--dry-run` flag first
+#   3. Start with SMALL position limits
+#   4. Verify API keys have correct permissions (no withdrawals!)
+#   5. Monitor the first few trades manually
+#
+# Prerequisites:
+#   1. Trained model checkpoint
+#   2. Updated filters: python scripts/fetch_binance_filters.py
+#   3. API keys set in environment variables (NOT in this file!)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+mode: live                        # MUST be "live" for live trading
+run_id: my-live-trading           # Unique identifier for this run
+logs_dir: logs                    # Where to write logs
+artifacts_dir: artifacts          # Where to save state
+
+# -----------------------------------------------------------------------------
+# ASSET CLASS
+# -----------------------------------------------------------------------------
+
+asset_class: crypto               # crypto | equity
+data_vendor: binance              # Must match exchange
+
+# -----------------------------------------------------------------------------
+# DATA CONFIGURATION
+# -----------------------------------------------------------------------------
+
+data:
+  timeframe: "4h"                 # Must match trained model's timeframe
+
+# -----------------------------------------------------------------------------
+# API CONFIGURATION
+# -----------------------------------------------------------------------------
+
+# ⚠️  NEVER hardcode API keys in config files!
+# Set these environment variables instead:
+#   export BINANCE_API_KEY="your_key"
+#   export BINANCE_API_SECRET="your_secret"
+
+api:
+  api_key: null                   # Leave null - reads from BINANCE_API_KEY
+  api_secret: null                # Leave null - reads from BINANCE_API_SECRET
+
+# -----------------------------------------------------------------------------
+# EXECUTION SETTINGS
+# -----------------------------------------------------------------------------
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  slippage_bps: 0.0               # Real exchange handles slippage
+  limit_offset_bps: 0.0           # Offset for limit orders
+  ttl_steps: 0                    # Order TTL in steps (0 = GTC)
+  tif: GTC                        # Time-in-force: GTC, IOC, FOK
+
+execution:
+  mode: bar
+  enabled: false                  # Simulation disabled in live mode
+
+execution_config:
+  notional_threshold: 10000.0     # Orders > $10k use TWAP
+  large_order_algo: TWAP          # Algorithm for large orders
+  pov:
+    participation: 0.10           # 10% of volume
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# -----------------------------------------------------------------------------
+# TIMING (Critical for live trading)
+# -----------------------------------------------------------------------------
+
+timing:
+  enforce_closed_bars: true       # Wait for bar to close before acting
+  timeframe_ms: 14400000          # 4 hours in milliseconds
+  close_lag_ms: 8000              # Wait after bar close (accounts for exchange delay)
+
+# -----------------------------------------------------------------------------
+# CLOCK SYNCHRONIZATION (Prevent time drift issues)
+# -----------------------------------------------------------------------------
+
+clock_sync:
+  refresh_sec: 300                # Resync every 5 minutes
+  warn_threshold_ms: 500          # Warning if drift > 500ms
+  kill_threshold_ms: 2000         # STOP if drift > 2 seconds (critical!)
+  max_step_ms: 1000               # Max adjustment step
+  attempts: 5                     # Retry attempts before giving up
+
+# -----------------------------------------------------------------------------
+# GRACEFUL SHUTDOWN
+# -----------------------------------------------------------------------------
+
+shutdown:
+  grace_period: 5.0               # Seconds between stop and flush
+  drain_policy: graceful          # Wait for pending operations
+  timeouts:
+    stop: 10.0                    # Timeout for stop callbacks
+    flush: 10.0                   # Timeout for flush callbacks
+    finalize: 5.0                 # Timeout for finalize callbacks
+
+# -----------------------------------------------------------------------------
+# TTL (Time-To-Live) - Stale signal protection
+# -----------------------------------------------------------------------------
+
+ttl:
+  enabled: true                   # RECOMMENDED for live trading
+  ttl_seconds: 60                 # Signals expire after 60 seconds
+  mode: relative                  # Relative to signal generation time
+  guard_ms: 5000                  # 5 second guard period
+  absolute_failsafe_ms: 900000    # Absolute failsafe (15 minutes)
+  state_path: state/ttl_state.json
+
+# -----------------------------------------------------------------------------
+# RATE LIMITING
+# -----------------------------------------------------------------------------
+
+max_signals_per_sec: 5.0          # Max 5 signals per second
+backoff_base_s: 2.0               # Exponential backoff base
+max_backoff_s: 60.0               # Max backoff 60 seconds
+
+# -----------------------------------------------------------------------------
+# SEASONALITY (Important for realistic execution)
+# -----------------------------------------------------------------------------
+
+use_seasonality: true
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+
+# -----------------------------------------------------------------------------
+# LATENCY MODEL
+# -----------------------------------------------------------------------------
+
+latency:
+  use_seasonality: true
+  base_ms: 250                    # Base latency
+  jitter_ms: 50                   # Random jitter
+  spike_p: 0.01                   # 1% spike probability
+  spike_mult: 5.0                 # Spike multiplier
+  timeout_ms: 2500                # Request timeout
+  retries: 1                      # Retry attempts
+
+# -----------------------------------------------------------------------------
+# RISK MANAGEMENT (⚠️ CRITICAL - Start conservative!)
+# -----------------------------------------------------------------------------
+
+risk:
+  enabled: true                   # ALWAYS enable for live trading!
+
+  # Position limits (START SMALL!)
+  max_abs_position_qty: 0.0       # 0 = no limit (set a real limit!)
+  max_abs_position_notional: 1000.0  # Example: Max $1000 position
+
+  # Order limits
+  max_order_notional: 500.0       # Example: Max $500 per order
+  max_orders_per_min: 10          # Max 10 orders per minute
+  max_orders_window_s: 60
+
+  # Daily loss limit (⚠️ IMPORTANT!)
+  daily_loss_limit: 100.0         # Example: Stop after $100 daily loss
+  daily_reset_utc_hour: 0         # Reset at midnight UTC
+  pause_seconds_on_violation: 300 # 5 minute pause on violation
+
+  # Entry limits
+  max_entries_per_day: 20         # Max 20 new entries per day
+
+  # Exposure limits
+  max_total_notional: 5000.0      # Max total exposure $5000
+  max_total_exposure_pct: 0.1     # Max 10% of equity
+  exposure_buffer_frac: 0.05      # 5% buffer before trip
+
+# -----------------------------------------------------------------------------
+# QUANTIZER (Exchange filters)
+# -----------------------------------------------------------------------------
+
+quantizer:
+  filters_path: "data/binance_filters.json"
+  strict_filters: true            # Enforce exchange filters
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30
+  refresh_on_start: true          # Refresh filters on startup
+
+# -----------------------------------------------------------------------------
+# SIGNAL PIPELINE
+# -----------------------------------------------------------------------------
+
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true               # Wait for bar close
+    windows:
+      enabled: true               # Feature windows check
+    anomaly:
+      enabled: true               # Anomaly detection
+    extreme:
+      enabled: true               # Extreme value check
+    policy:
+      enabled: true               # Policy inference
+    risk:
+      enabled: true               # Risk guard check
+    ttl:
+      enabled: true               # TTL expiration check
+    dedup:
+      enabled: true               # Duplicate signal removal
+    throttle:
+      enabled: true               # Rate limiting
+    publish:
+      enabled: true               # Signal publication
+
+# -----------------------------------------------------------------------------
+# COMPONENTS
+# -----------------------------------------------------------------------------
+
+components:
+  market_data:
+    target: impl_binance_public:BinancePublicBarSource
+    params:
+      timeframe: "4h"
+
+  executor:
+    target: impl_binance_executor:BinanceExecutor  # Real executor for live
+    params:
+      symbol: "BTCUSDT"
+
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params:
+      checkpoint_path: "artifacts/best_model.zip"  # Your trained model
+
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+
+# =============================================================================
+# RECOMMENDED WORKFLOW FOR LIVE TRADING
+# =============================================================================
+#
+# 1. BEFORE FIRST RUN:
+#    python scripts/doctor.py --verbose
+#    python scripts/fetch_binance_filters.py --out data/binance_filters.json
+#
+# 2. DRY RUN (No actual trades):
+#    python script_live.py --config configs/my_live.yaml --dry-run
+#
+# 3. PAPER TRADING (if available):
+#    # Use testnet API keys for paper trading
+#
+# 4. LIVE TRADING (Start with small limits!):
+#    python script_live.py --config configs/my_live.yaml
+#
+# 5. MONITORING:
+#    - Watch logs in real-time: tail -f logs/live-run.log
+#    - Check healthcheck endpoint (if enabled)
+#    - Monitor P&L and positions
+#
+# 6. EMERGENCY STOP:
+#    - Kill switch: touch state/kill_switch.flag
+#    - Or: Ctrl+C (graceful shutdown)
+#    - Or: API key revocation (last resort)
+#
+# =============================================================================

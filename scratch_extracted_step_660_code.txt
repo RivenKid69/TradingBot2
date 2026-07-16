@@ -1,0 +1,29 @@
+﻿Created At: 2026-05-31T09:35:20Z
+Completed At: 2026-05-31T09:35:21Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -3042,8 +3042,19 @@
+ 
+         function resetWorkflowProgress() {
+             if (confirm("Вы уверены, что хотите сбросить прогресс по этому активу?")) {
+-                saveWorkflowProgress(activeAsset, quickStartMode, 0);
+-                renderWorkflowTimeline(activeAsset);
++                const asset = activeAsset;
++                saveWorkflowProgress(asset, quickStartMode, 0);
++                
++                // Clear any stored parameters for this asset
++                localStorage.removeItem('rivenquant_config_ingest_' + asset);
++                localStorage.removeItem('rivenquant_config_features_' + asset);
++                localStorage.removeItem('rivenquant_config_targets_' + asset);
++                localStorage.removeItem('rivenquant_config_train_table_' + asset);
++                localStorage.removeItem('rivenquant_config_train_' + asset);
++                localStorage.removeItem('rivenquant_config_code_' + asset);
++                localStorage.removeItem('rivenquant_config_optimize_' + asset);
++                
++                renderWorkflowTimeline(asset);
+                 showActionToast("Прогресс сброшен.");
+             }
+         }
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

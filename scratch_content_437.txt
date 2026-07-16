@@ -1,0 +1,1 @@
+﻿I will update the `selectAsset` function in `index.html` to execute the smooth transition into the workflow timeline view when running in Lite mode.

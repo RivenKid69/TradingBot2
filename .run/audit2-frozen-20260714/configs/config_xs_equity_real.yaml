@@ -1,0 +1,74 @@
+# Cross-Sectional EQUITY — РЕАЛЬНЫЕ данные с ЧЕСТНЫМ PIT-фундаменталом.
+#   • Цены: Yahoo (free, дневные).
+#   • Фундаментал: SEC EDGAR XBRL companyfacts (free) — publish_ts = дата подачи отчёта →
+#     НАСТОЯЩИЙ point-in-time (pit_quality=true). Поэтому value/quality сигналы здесь
+#     бэктестятся ЧЕСТНО (в отличие от free-снимка yfinance, pit=none).
+#
+# Подготовка фундаментала (один раз; кэшируется в parquet):
+#   SEC_EDGAR_USER_AGENT="You you@mail" PYTHONPATH=.venv/Lib/site-packages \
+#     python scripts/download_edgar_fundamentals.py \
+#       --symbols AAPL MSFT GOOGL AMZN NVDA META JPM XOM JNJ PG \
+#       --out data/fundamentals_edgar/edgar_pit.parquet
+# Запуск бэктеста:
+#   PYTHONPATH=.venv/Lib/site-packages python script_xs_backtest.py \
+#     --config configs/config_xs_equity_real.yaml --out reports/xs_equity_real_trust_report.json
+
+mode: cross_sectional
+asset_class: equity
+market_symbol: AAPL          # рыночный прокси внутри юниверса (нет SPY-фундаментала у ETF)
+
+data:
+  source: free
+  vendor: yahoo
+  timeframe: "1d"
+  symbols: [AAPL, MSFT, GOOGL, AMZN, NVDA, META, JPM, XOM, JNJ, PG]
+  cache: true
+  enrich: [edgar_fundamentals]    # настоящий PIT-фундаментал (filing dates) → pit=true
+
+# EDGAR-кэш (publish_ts = filed). Этот же путь читается enricher'ом edgar_fundamentals.
+fundamentals_path: data/fundamentals_edgar/edgar_pit.parquet
+fundamentals_fields: [earnings, book_value, fcf, roe]
+fundamentals_publish_lag_days: 1   # запас на задержку публикации (анти-look-ahead)
+
+universe:
+  type: static
+  symbols: [AAPL, MSFT, GOOGL, AMZN, NVDA, META, JPM, XOM, JNJ, PG]
+
+signals:
+  # Ценовые (честны на ценах):
+  - {name: mom_12_1, kind: equity_momentum, lookback: 252, skip: 21, transforms: [winsorize, zscore]}
+  - {name: low_vol,  kind: low_vol, vol_window: 60, transforms: [zscore]}
+  # Фундаментальные value/quality — ТЕПЕРЬ честны (EDGAR PIT):
+  - {name: earnings_yield, kind: earnings_yield, transforms: [winsorize, zscore]}
+  - {name: book_to_price,  kind: book_to_price,  transforms: [winsorize, zscore]}
+  - {name: roe,            kind: roe,            transforms: [zscore]}
+
+alpha:
+  method: ic_weighted
+
+risk:
+  type: equity_factor
+  method: ledoit_wolf
+
+momentum_lookback: 60
+sectors: {AAPL: Tech, MSFT: Tech, GOOGL: Comm, AMZN: ConsDisc, NVDA: Tech, META: Comm, JPM: Financials, XOM: Energy, JNJ: Health, PG: Staples}
+mcaps:   {AAPL: 3300, MSFT: 3100, GOOGL: 2100, AMZN: 1900, NVDA: 2900, META: 1300, JPM: 600, XOM: 480, JNJ: 380, PG: 390}
+
+optimizer:
+  objective: mean_variance
+  risk_aversion: 5.0
+  gross_max: 1.0
+  net_target: 0.0            # market-neutral
+  long_only: false
+  max_position: 0.20
+
+backtest:
+  rebalance_every: 5         # weekly
+  cov_lookback: 60
+  min_cov_obs: 30
+  alpha_refit_every: 5
+  cost_bps: 3.0
+  price_col: close
+  periods_per_year: 252
+
+n_trials: 6

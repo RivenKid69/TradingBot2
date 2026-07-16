@@ -1,0 +1,323 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# FUTURES FEATURE FLAGS CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════════════
+# Phase 8 - Multi-Futures Training Pipeline
+#
+# Feature flags for gradual futures rollout.
+# Enables safe, incremental deployment with:
+# - Shadow mode testing (run parallel without affecting positions)
+# - Canary deployment (small % of traffic)
+# - Kill switch for rapid rollback
+#
+# Stages:
+#   disabled   - Feature completely off
+#   shadow     - Run in parallel, don't affect positions
+#   canary     - Small % of traffic (configurable via canary_percentage)
+#   production - Full rollout
+#
+# Usage:
+#   from services.futures_feature_flags import load_feature_flags
+#   flags = load_feature_flags("configs/feature_flags_futures.yaml")
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Global kill switch - instantly disables ALL futures functionality
+global_kill_switch: false
+
+# Environment determines default behavior (stricter in production)
+environment: staging              # development, staging, production
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CORE TRADING FEATURES
+# Enable these first - fundamental futures trading functionality
+# ─────────────────────────────────────────────────────────────────────────────
+features:
+  # Crypto perpetual futures (BTCUSDT, ETHUSDT, etc.)
+  perpetual_trading:
+    stage: production
+    canary_percentage: 100
+
+  # Crypto quarterly futures (expiring contracts)
+  quarterly_trading:
+    stage: canary
+    canary_percentage: 25
+    allowed_symbols:
+      - BTCUSDT_QUARTERLY
+      - ETHUSDT_QUARTERLY
+
+  # CME equity index futures (ES, NQ, YM, RTY)
+  index_futures:
+    stage: shadow
+    allowed_symbols:
+      - ES
+      - NQ
+      - MES
+      - MNQ
+
+  # CME commodity futures (GC, CL, SI, NG)
+  commodity_futures:
+    stage: disabled
+
+  # CME currency futures (6E, 6J, 6B, 6A)
+  currency_futures:
+    stage: disabled
+
+  # CME bond futures (ZN, ZB, ZT)
+  bond_futures:
+    stage: disabled
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MARGIN & LEVERAGE FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+  # Cross margin mode (shared collateral)
+  cross_margin:
+    stage: production
+
+  # Isolated margin mode (per-position collateral)
+  isolated_margin:
+    stage: production
+
+  # Tiered leverage brackets (Binance-style)
+  tiered_leverage:
+    stage: production
+
+  # SPAN margin calculation (CME)
+  span_margin:
+    stage: shadow
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LIQUIDATION FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+  # Basic liquidation simulation
+  liquidation_simulation:
+    stage: production
+
+  # Liquidation cascade simulation
+  liquidation_cascade:
+    stage: canary
+    canary_percentage: 50
+
+  # Auto-deleveraging (ADL) simulation
+  adl_simulation:
+    stage: canary
+    canary_percentage: 50
+
+  # Insurance fund deduction
+  insurance_fund:
+    stage: canary
+    canary_percentage: 75
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FUNDING FEATURES (Perpetuals only)
+# ─────────────────────────────────────────────────────────────────────────────
+  # Funding rate tracking
+  funding_rate_tracking:
+    stage: production
+
+  # Include funding P&L in reward
+  funding_in_reward:
+    stage: production
+
+  # Pro-rata funding settlement (partial period calculation)
+  pro_rata_funding:
+    stage: canary
+    canary_percentage: 20
+
+  # Funding rate prediction features
+  funding_prediction:
+    stage: shadow
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SETTLEMENT FEATURES (Quarterly/CME)
+# ─────────────────────────────────────────────────────────────────────────────
+  # Daily settlement (CME)
+  daily_settlement:
+    stage: shadow
+
+  # Variation margin
+  variation_margin:
+    stage: shadow
+
+  # Auto-roll before expiry
+  auto_roll:
+    stage: disabled
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXECUTION FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+  # L2 execution (parametric slippage)
+  l2_execution:
+    stage: production
+
+  # L3 execution (LOB simulation)
+  l3_execution:
+    stage: shadow
+    allowed_symbols:
+      - BTCUSDT
+      - ETHUSDT
+
+  # Funding stress slippage adjustment
+  funding_stress_slippage:
+    stage: production
+
+  # Liquidation cascade slippage multiplier
+  liquidation_cascade_slippage:
+    stage: canary
+    canary_percentage: 30
+
+  # Open interest imbalance slippage
+  oi_slippage:
+    stage: production
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RISK MANAGEMENT FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+  # Unified futures risk guard
+  futures_risk_guards:
+    stage: production
+
+  # Leverage limit guard
+  leverage_guard:
+    stage: production
+
+  # Margin monitoring guard
+  margin_guard:
+    stage: production
+
+  # Funding exposure guard
+  funding_exposure_guard:
+    stage: production
+
+  # ADL risk monitoring
+  adl_risk_guard:
+    stage: canary
+    canary_percentage: 50
+
+  # CME circuit breaker awareness
+  circuit_breaker_guard:
+    stage: shadow
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DATA & FEATURES PIPELINE
+# ─────────────────────────────────────────────────────────────────────────────
+  # Futures-specific features pipeline
+  futures_features_pipeline:
+    stage: production
+
+  # Funding rate features
+  funding_features:
+    stage: production
+
+  # Basis features (spot-futures spread)
+  basis_features:
+    stage: production
+
+  # Open interest features
+  oi_features:
+    stage: production
+
+  # Liquidation data features
+  liquidation_features:
+    stage: canary
+    canary_percentage: 75
+
+  # Term structure features (quarterly/CME)
+  term_structure_features:
+    stage: canary
+    canary_percentage: 50
+
+  # Basis trading signals
+  basis_trading_features:
+    stage: production
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TRAINING FEATURES
+# ─────────────────────────────────────────────────────────────────────────────
+  # Futures environment wrapper
+  futures_env_wrapper:
+    stage: production
+
+  # Leverage action space
+  leverage_action:
+    stage: canary
+    canary_percentage: 50
+
+  # Multi-futures training (train on multiple contracts)
+  multi_futures_training:
+    stage: shadow
+
+  # Curriculum learning (start simple, increase complexity)
+  curriculum_learning:
+    stage: disabled
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OBSERVATION AUGMENTATION
+# ─────────────────────────────────────────────────────────────────────────────
+  # Add leverage to observation
+  obs_leverage:
+    stage: production
+
+  # Add margin ratio to observation
+  obs_margin_ratio:
+    stage: production
+
+  # Add funding rate to observation
+  obs_funding_rate:
+    stage: production
+
+  # Add liquidation distance to observation
+  obs_liquidation_distance:
+    stage: production
+
+  # Add open interest to observation
+  obs_open_interest:
+    stage: canary
+    canary_percentage: 50
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ROLLOUT SCHEDULE
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Recommended rollout order:
+#
+# Week 1 - Core Infrastructure (Production):
+#   - perpetual_trading
+#   - cross_margin, isolated_margin
+#   - l2_execution
+#   - futures_risk_guards, leverage_guard, margin_guard
+#   - funding_rate_tracking, funding_in_reward
+#
+# Week 2 - Basic Features (Production):
+#   - liquidation_simulation
+#   - futures_features_pipeline
+#   - funding_features, basis_features, oi_features
+#   - obs_leverage, obs_margin_ratio, obs_funding_rate
+#
+# Week 3 - Advanced Liquidation (Canary 50%):
+#   - liquidation_cascade
+#   - adl_simulation
+#   - insurance_fund
+#   - liquidation_features
+#
+# Week 4 - Slippage Refinements (Canary 25%):
+#   - liquidation_cascade_slippage
+#   - funding_stress_slippage
+#   - oi_slippage
+#
+# Week 5 - L3 Execution (Shadow):
+#   - l3_execution (shadow mode)
+#   - Compare L2 vs L3 fills
+#
+# Week 6 - L3 Canary (Canary 10%):
+#   - l3_execution (canary 10%)
+#   - Monitor fill quality metrics
+#
+# Week 7-8 - CME Futures (Shadow):
+#   - index_futures, commodity_futures
+#   - daily_settlement, variation_margin
+#   - span_margin
+#
+# Week 9+ - Full Production:
+#   - Promote all canary features to production
+#   - Enable quarterly_trading production
+#
+# ═══════════════════════════════════════════════════════════════════════════════

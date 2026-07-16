@@ -256,6 +256,99 @@ def compute_psi(
     return res
 
 
+def ks_statistic(baseline: np.ndarray, current: np.ndarray) -> float:
+    """Two-sample Kolmogorov–Smirnov statistic (max CDF gap). 0=identical, 1=disjoint.
+
+    Distribution-shape drift test that complements PSI (PSI is binned; KS is the
+    sup-norm of the empirical CDFs). Pure-NumPy, no scipy needed.
+    """
+    a = np.asarray(baseline, dtype="float64"); a = a[np.isfinite(a)]
+    b = np.asarray(current, dtype="float64"); b = b[np.isfinite(b)]
+    if len(a) == 0 or len(b) == 0:
+        return float("nan")
+    grid = np.sort(np.concatenate([a, b]))
+    cdf_a = np.searchsorted(np.sort(a), grid, side="right") / len(a)
+    cdf_b = np.searchsorted(np.sort(b), grid, side="right") / len(b)
+    return float(np.max(np.abs(cdf_a - cdf_b)))
+
+
+def wasserstein1d(baseline: np.ndarray, current: np.ndarray) -> float:
+    """1-D Wasserstein (earth-mover) distance between two samples (pure NumPy).
+
+    Integral of |CDF_a − CDF_b|; sensitive to mean/location shift, unlike KS which
+    is scale-free. Useful for magnitude of covariate drift.
+    """
+    a = np.sort(np.asarray(baseline, dtype="float64")); a = a[np.isfinite(a)]
+    b = np.sort(np.asarray(current, dtype="float64")); b = b[np.isfinite(b)]
+    if len(a) == 0 or len(b) == 0:
+        return float("nan")
+    grid = np.sort(np.concatenate([a, b]))
+    deltas = np.diff(grid)
+    cdf_a = np.searchsorted(a, grid[:-1], side="right") / len(a)
+    cdf_b = np.searchsorted(b, grid[:-1], side="right") / len(b)
+    return float(np.sum(np.abs(cdf_a - cdf_b) * deltas))
+
+
+def compute_distribution_drift(
+    current_df: pd.DataFrame,
+    baseline_df: pd.DataFrame,
+    *,
+    features: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """Per-feature KS + Wasserstein covariate drift vs a baseline DataFrame.
+
+    Returns columns [feature, ks, wasserstein, drift] where drift flags ks>0.1.
+    """
+    feats = features or [c for c in baseline_df.columns if c in current_df.columns]
+    rows: List[Dict] = []
+    for c in feats:
+        if c not in current_df.columns or c not in baseline_df.columns:
+            continue
+        a = _safe_to_numeric(baseline_df[c]).to_numpy()
+        b = _safe_to_numeric(current_df[c]).to_numpy()
+        ks = ks_statistic(a, b)
+        wd = wasserstein1d(a, b)
+        rows.append({"feature": c, "ks": ks, "wasserstein": wd,
+                     "drift": bool(np.isfinite(ks) and ks > 0.1)})
+    return pd.DataFrame(rows).sort_values("ks", ascending=False).reset_index(drop=True)
+
+
+def concept_drift(
+    baseline_y_true: np.ndarray, baseline_y_pred: np.ndarray,
+    current_y_true: np.ndarray, current_y_pred: np.ndarray,
+    *,
+    metric: str = "rmse",
+) -> Dict[str, float]:
+    """Concept/label drift: degradation of predictive performance (P(y|x) shift).
+
+    Covariate drift (PSI/KS) misses the case where inputs look the same but the
+    input→target relationship changed. We compare model error on a baseline window
+    vs the current window; a large relative increase signals concept drift.
+    """
+    def _err(yt, yp):
+        yt = np.asarray(yt, dtype="float64"); yp = np.asarray(yp, dtype="float64")
+        m = np.isfinite(yt) & np.isfinite(yp)
+        yt, yp = yt[m], yp[m]
+        if len(yt) == 0:
+            return float("nan")
+        if metric == "mae":
+            return float(np.mean(np.abs(yt - yp)))
+        if metric == "directional":   # 1 - hit-rate of sign prediction
+            return float(1.0 - np.mean(np.sign(yt) == np.sign(yp)))
+        return float(np.sqrt(np.mean((yt - yp) ** 2)))   # rmse
+
+    base_err = _err(baseline_y_true, baseline_y_pred)
+    cur_err = _err(current_y_true, current_y_pred)
+    rel = (cur_err / base_err - 1.0) if (base_err and np.isfinite(base_err) and base_err > 0) else float("nan")
+    return {
+        "metric": metric,
+        "baseline_error": base_err,
+        "current_error": cur_err,
+        "relative_degradation": float(rel),
+        "concept_drift": bool(np.isfinite(rel) and rel > 0.15),   # >15% worse → drift
+    }
+
+
 def default_feature_list(df: pd.DataFrame) -> List[str]:
     """
     Простая эвристика: все числовые фичи, начинающиеся с 'f_' или заканчивающиеся на '_z', плюс 'score', если есть.
@@ -267,3 +360,123 @@ def default_feature_list(df: pd.DataFrame) -> List[str]:
     if "score" in df.columns:
         out.append("score")
     return sorted(list(dict.fromkeys(out)))
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    
+    ap = argparse.ArgumentParser(description="Запустить расчет дрифта данных.")
+    ap.add_argument("--data", default="data/features.parquet", help="Путь к текущим фичам.")
+    ap.add_argument("--baseline", default="models/drift_baseline.json", help="Путь к baseline JSON.")
+    ap.add_argument("--out_csv", default="data/features_psi.csv", help="Путь к сохранению CSV с PSI.")
+    ap.add_argument("--out_json", default="models/drift_report.json", help="Путь к сохранению JSON отчета.")
+    args = ap.parse_args()
+
+    # Попытка найти датасет
+    data_path = args.data
+    if not os.path.exists(data_path):
+        if os.path.exists("data/test_features.parquet"):
+            data_path = "data/test_features.parquet"
+        elif os.path.exists("data/test_training_table.parquet"):
+            data_path = "data/test_training_table.parquet"
+        else:
+            print(f"Ошибка: файл данных {args.data} не найден.")
+            sys.exit(1)
+
+    print(f"Загрузка текущих данных из: {data_path}")
+    ext = os.path.splitext(data_path)[1].lower()
+    if ext in (".parquet", ".pq"):
+        df = pd.read_parquet(data_path)
+    else:
+        df = pd.read_csv(data_path)
+
+    feats = default_feature_list(df)
+    if not feats:
+        print("Предупреждение: не найдено фичей (f_* или *_z). Используем все числовые колонки.")
+        feats = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c]) and c not in ("ts_ms", "timestamp", "time")]
+
+    if not feats:
+        print("Ошибка: в датасете нет подходящих фичей для анализа.")
+        sys.exit(1)
+
+    # Проверка baseline
+    baseline_path = args.baseline
+    if not os.path.exists(baseline_path):
+        print(f"Файл baseline {baseline_path} не найден. Генерируем автоматический baseline из первой половины данных...")
+        half_idx = len(df) // 2
+        df_base = df.iloc[:half_idx]
+        spec = make_baseline(df_base, feats, bins=10, categorical=None, top_k_cats=20)
+        save_baseline_json(spec, baseline_path)
+        print(f"Baseline успешно сохранен в: {baseline_path}")
+        df_curr = df.iloc[half_idx:]
+    else:
+        df_curr = df
+
+    print(f"Загрузка baseline из: {baseline_path}")
+    baseline = load_baseline_json(baseline_path)
+    
+    # Сопоставим фичи
+    run_feats = [f for f in feats if f in baseline]
+    if not run_feats:
+        print("Ошибка: нет общих фичей между датасетом и baseline.")
+        sys.exit(1)
+
+    print(f"Расчет PSI для {len(run_feats)} фичей...")
+    res = compute_psi(df_curr, baseline, features=run_feats)
+    
+    # Сохранение CSV
+    os.makedirs(os.path.dirname(args.out_csv) or ".", exist_ok=True)
+    res.to_csv(args.out_csv, index=False)
+    print(f"Детальный отчет PSI сохранен в CSV: {args.out_csv}")
+
+    # Расчет среднего PSI
+    valid_psi = res["psi"].replace([np.inf, -np.inf], np.nan).dropna()
+    avg_psi = float(valid_psi.mean()) if not valid_psi.empty else 0.0
+    worst_feat = res.iloc[0]["feature"] if not res.empty else "none"
+    worst_psi = float(res.iloc[0]["psi"]) if not res.empty else 0.0
+
+    # Интерпретация
+    if avg_psi < 0.1:
+        status_lbl = "Стабильно (PSI < 0.1)"
+        status_code = "stable"
+    elif avg_psi < 0.25:
+        status_lbl = "Умеренный дрифт (0.1 <= PSI < 0.25)"
+        status_code = "warning"
+    else:
+        status_lbl = "Сильный дрифт (PSI >= 0.25)"
+        status_code = "drift"
+
+    report = {
+        "avg_psi": avg_psi,
+        "worst_feature": worst_feat,
+        "worst_psi": worst_psi,
+        "status": status_code,
+        "status_label": status_lbl,
+        "total_features": len(run_feats),
+        "n_samples": len(df_curr)
+    }
+
+    os.makedirs(os.path.dirname(args.out_json) or ".", exist_ok=True)
+    with open(args.out_json, "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+
+    # Также сохраним как validation_report.json для совместимости
+    with open("models/validation_report.json", "w", encoding="utf-8") as f:
+        json.dump({
+            "mean_reward": 0.0,
+            "std_reward": 0.0,
+            "sortino_ratio": 0.0,
+            "sharpe_ratio": 0.0,
+            "validation_pnl": 0.0,
+            "psi": avg_psi,
+            "psi_worst_feature": worst_feat,
+            "psi_worst": worst_psi
+        }, f, ensure_ascii=False, indent=2)
+
+    print("\n=== РЕЗУЛЬТАТЫ АНАЛИЗА ДРЕЙФА (CONCEPT DRIFT) ===")
+    print(f"Количество проанализированных признаков: {len(run_feats)}")
+    print(f"Средний индекс PSI: {avg_psi:.4f} ({status_lbl})")
+    print(f"Наиболее нестабильный признак: {worst_feat} (PSI = {worst_psi:.4f})")
+    print("Границы оценки PSI: <0.1 — норма, 0.1–0.25 — предупреждение, >0.25 — необходима переподготовка модели.")
+

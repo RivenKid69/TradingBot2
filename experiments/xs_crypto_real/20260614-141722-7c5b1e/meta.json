@@ -1,0 +1,67 @@
+{
+  "run_id": "20260614-141722-7c5b1e",
+  "experiment": "xs_crypto_real",
+  "status": "FINISHED",
+  "start_ms": 1781428642848,
+  "end_ms": 1781428642958,
+  "params": {
+    "universe_size": 14,
+    "timeframe": "1d",
+    "n_trials": 8,
+    "vendor": "binance (public, no keys)"
+  },
+  "tags": {
+    "asset_class": "crypto",
+    "data_pit_quality": "true (observed prices)"
+  },
+  "metrics": {
+    "deflated_sharpe::mom+rev, weekly": 0.0007,
+    "sharpe::mom+rev, weekly": -2.3726,
+    "deflated_sharpe::mom only, weekly": 0.001,
+    "sharpe::mom only, weekly": -2.4849,
+    "deflated_sharpe::mom only, biweekly": 0.0477,
+    "sharpe::mom only, biweekly": -0.4787,
+    "deflated_sharpe::mom only, monthly": 0.0136,
+    "sharpe::mom only, monthly": -2.2814,
+    "deflated_sharpe::mom-long, biweekly": 0.0101,
+    "sharpe::mom-long, biweekly": -1.9329,
+    "deflated_sharpe::mom-long, monthly": 0.0007,
+    "sharpe::mom-long, monthly": -4.1707,
+    "deflated_sharpe::mom only, monthly, rp": 0.3177,
+    "sharpe::mom only, monthly, rp": 3.1692,
+    "deflated_sharpe::mom-long, monthly, rp": 0.3177,
+    "sharpe::mom-long, monthly, rp": 3.1692,
+    "best_sharpe": 3.1692,
+    "best_deflated_sharpe": 0.3177
+  },
+  "lineage": {
+    "data_hash": "2023-09-19_2026-06-14_14000",
+    "config_hash": "a899447c0b42892ead089430865eb2fa26a8897076a2752c444d90aacef79d04",
+    "git_commit": "4c8fa991a3f741716c1c9b420cb86c227be6c3a4",
+    "git_dirty": true,
+    "dataset_uri": "binance:BTCUSDT,ETHUSDT,BNBUSDT,SOLUSDT,XRPUSDT,ADAUSDT,DOGEUSDT,LINKUSDT,LTCUSDT,BCHUSDT,AVAXUSDT,DOTUSDT,TRXUSDT,ATOMUSDT@1d",
+    "config_uri": "configs/config_xs_crypto_real.yaml",
+    "parent_run_id": null,
+    "extra": {}
+  },
+  "artifacts": [
+    {
+      "path": "C:\\Users\\Зефирка\\StartUp\\experiments\\xs_crypto_real\\20260614-141722-7c5b1e\\artifacts\\xs_crypto_real_sweep.json",
+      "sha256": "2fac01fc5caadedf46c880d09c7ce2733b33cdc8925dd2922ec9f45274c8b4ef",
+      "size_bytes": 5677,
+      "algo": "ed25519",
+      "signature": "de85b0d09d609d857014ffc0899216cf6c883b2211c9c4cccd66c400a75e79768ffafca3a52fc75cd5bf9405245ea94bb95d65a0e4b0431e39b29768cb51670a",
+      "public_key": "6d83edb2307bfb7c7d11ee8c3bbff02d3d2cc04f14d1fc7bb29bd5c15ff57490",
+      "name": "xs_crypto_real_sweep.json"
+    },
+    {
+      "path": "C:\\Users\\Зефирка\\StartUp\\experiments\\xs_crypto_real\\20260614-141722-7c5b1e\\artifacts\\XS_CRYPTO_REAL_TRUST_REPORT.md",
+      "sha256": "3aafc0b6ea8cfbea4999694493b293ca03ada5abdd4d7ca03d8eae09bc0af926",
+      "size_bytes": 3631,
+      "algo": "ed25519",
+      "signature": "1b60a07e6cf50c4178bb092053e954657adcc5bf576aa5ac6b41b9226d80106d23f706266f8985b49b23612e0e1c7c39dafa5d4b9e2bec70c532a80eadbc3508",
+      "public_key": "6d83edb2307bfb7c7d11ee8c3bbff02d3d2cc04f14d1fc7bb29bd5c15ff57490",
+      "name": "XS_CRYPTO_REAL_TRUST_REPORT.md"
+    }
+  ]
+}

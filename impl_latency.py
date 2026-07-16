@@ -39,11 +39,7 @@ except Exception:  # pragma: no cover - fallback when module not found
 from utils_time import hour_of_week
 from utils.prometheus import Counter
 
-_logging_spec = importlib.util.spec_from_file_location(
-    "py_logging", Path(sysconfig.get_path("stdlib")) / "logging/__init__.py"
-)
-logging = importlib.util.module_from_spec(_logging_spec)
-_logging_spec.loader.exec_module(logging)
+import logging  # stdlib (no local 'logging' module shadows it); frozen-bundle safe
 
 try:
     from utils_time import (

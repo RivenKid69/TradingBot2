@@ -1,0 +1,36 @@
+mode: backtest
+symbol: BTCUSDT
+latency_steps: 0
+sim_config_path: configs/config_sim.yaml
+exchange_specs_path: data/exchange_specs.json
+sim_guards:
+  min_history_bars: 180
+  gap_cooldown_bars: 10
+  gap_threshold_ms: 21600000
+min_signal_gap_s: 300
+no_trade: {}
+policy:
+  module: strategies.momentum
+  class_name: MomentumStrategy
+  params:
+    lookback: 5
+    enter_threshold: 0.0
+    exit_threshold: 0.0
+    order_qty: 0.1
+data:
+  path: data/train.parquet
+  ts_col: ts_ms
+  symbol_col: symbol
+  price_col: ref_price
+dynamic_spread:
+  enabled: true
+  base_bps: 0.0
+  alpha_vol: 0.25000000000000017
+  beta_illiquidity: 0.0
+  vol_mode: hl
+  liq_col: number_of_trades
+  liq_ref: 240000.0
+  min_bps: 1.0
+  max_bps: 25.0
+out_reports: logs/sandbox_reports.csv
+bar_report_path: null

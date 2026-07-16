@@ -872,32 +872,38 @@ class TUFRepository:
 
     async def _sign(self, data: bytes, private_key: bytes) -> bytes:
         """
-        Sign data with private key.
+        Sign data with an Ed25519 private key.
 
-        SECURITY: Tech Debt Tracking CCEA-SEC-002
-        Status: CONTROLLED - development placeholder with production guard
-
-        In production, this uses ed25519 signing via cryptography library.
-        The placeholder is only active when CCEA_TUF_DEVELOPMENT_MODE is set.
-
-        Raises:
-            RuntimeError: In production mode (fail-closed)
+        Uses real Ed25519 signing via the cryptography library (CCEA-SEC-002
+        resolved). The first 32 bytes of ``private_key`` are the Ed25519 seed.
+        A SHA-256 placeholder remains available ONLY when both cryptography is
+        absent and CCEA_TUF_DEVELOPMENT_MODE=ENABLED; otherwise fail-closed.
         """
-        import os
-        if os.environ.get("CCEA_TUF_DEVELOPMENT_MODE") != "ENABLED":
-            # Fail-closed: reject placeholder signing in production
-            raise RuntimeError(
-                "TUF signing not implemented for production. "
-                "Requires ed25519 key infrastructure. Tracking: CCEA-SEC-002"
-            )
+        from packages.cloud.enterprise.crypto import CRYPTO_AVAILABLE
 
-        # Development placeholder - logs warning for audit trail
-        import logging
-        logging.getLogger(__name__).warning(
-            "SECURITY: Using placeholder TUF signing (DEVELOPMENT_MODE). "
-            "Not cryptographically secure. Tracking: CCEA-SEC-002"
+        if CRYPTO_AVAILABLE:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                Ed25519PrivateKey,
+            )
+            try:
+                signer = Ed25519PrivateKey.from_private_bytes(private_key[:32])
+                return signer.sign(data)
+            except Exception as exc:  # pragma: no cover - defensive
+                raise RuntimeError(f"TUF Ed25519 signing failed: {exc}")
+
+        import os
+        if os.environ.get("CCEA_TUF_DEVELOPMENT_MODE") == "ENABLED":
+            import logging
+            logging.getLogger(__name__).warning(
+                "SECURITY: placeholder TUF signing (DEVELOPMENT_MODE, no cryptography). "
+                "Not cryptographically secure. Tracking: CCEA-SEC-002"
+            )
+            return hashlib.sha256(private_key + data).digest()
+
+        raise RuntimeError(
+            "TUF signing requires the cryptography library (Ed25519). "
+            "Tracking: CCEA-SEC-002"
         )
-        return hashlib.sha256(private_key + data).digest()
 
     async def _write_metadata(self) -> None:
         """Write all metadata to disk."""

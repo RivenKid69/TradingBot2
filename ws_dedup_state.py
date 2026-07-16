@@ -7,13 +7,8 @@ from typing import Dict
 import sys
 import sysconfig
 
-# Ensure we use stdlib logging despite local logging module
-_stdlib_path = sysconfig.get_path("stdlib")
-if _stdlib_path:
-    sys.path.insert(0, _stdlib_path)
+# stdlib logging (no local 'logging' module shadows it); frozen-bundle safe.
 import logging as _std_logging
-if _stdlib_path:
-    sys.path.pop(0)
 
 logger = _std_logging.getLogger(__name__)
 

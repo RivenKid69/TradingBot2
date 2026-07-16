@@ -36,7 +36,9 @@ class TestExecutionEngineIdempotency:
     @pytest.fixture
     def journal(self, temp_journal_path):
         """Create test journal."""
-        return OrderJournal(db_path=temp_journal_path)
+        journal = OrderJournal(db_path=temp_journal_path)
+        yield journal
+        journal.close()
 
     @pytest.fixture
     def intent(self):
@@ -383,7 +385,9 @@ class TestJournalGetAllEntries:
     @pytest.fixture
     def journal(self, temp_journal_path):
         """Create test journal."""
-        return OrderJournal(db_path=temp_journal_path)
+        journal = OrderJournal(db_path=temp_journal_path)
+        yield journal
+        journal.close()
 
     def test_get_all_entries_empty(self, journal):
         """Test get_all_entries on empty journal."""

@@ -1,0 +1,155 @@
+{
+  "input": "data/test_training_table.parquet",
+  "price_col": "close",
+  "n_obs": 3485,
+  "has_statsmodels": true,
+  "find_min_ffd_d": {
+    "table": [
+      {
+        "d": 0.0,
+        "adf_pvalue": 0.687237,
+        "corr_with_original": 1.0,
+        "stationary": false
+      },
+      {
+        "d": 0.05,
+        "adf_pvalue": 0.186973,
+        "corr_with_original": 0.987898,
+        "stationary": false
+      },
+      {
+        "d": 0.1,
+        "adf_pvalue": null,
+        "corr_with_original": null,
+        "stationary": false
+      },
+      {
+        "d": 0.15,
+        "adf_pvalue": null,
+        "corr_with_original": null,
+        "stationary": false
+      },
+      {
+        "d": 0.2,
+        "adf_pvalue": 0.260023,
+        "corr_with_original": 0.944038,
+        "stationary": false
+      },
+      {
+        "d": 0.25,
+        "adf_pvalue": 4e-06,
+        "corr_with_original": 0.654855,
+        "stationary": true
+      },
+      {
+        "d": 0.3,
+        "adf_pvalue": 5.5e-05,
+        "corr_with_original": 0.854377,
+        "stationary": true
+      },
+      {
+        "d": 0.35,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.795422,
+        "stationary": true
+      },
+      {
+        "d": 0.4,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.688638,
+        "stationary": true
+      },
+      {
+        "d": 0.45,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.590349,
+        "stationary": true
+      },
+      {
+        "d": 0.5,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.481169,
+        "stationary": true
+      },
+      {
+        "d": 0.55,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.376505,
+        "stationary": true
+      },
+      {
+        "d": 0.6,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.328358,
+        "stationary": true
+      },
+      {
+        "d": 0.65,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.258085,
+        "stationary": true
+      },
+      {
+        "d": 0.7,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.197499,
+        "stationary": true
+      },
+      {
+        "d": 0.75,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.148845,
+        "stationary": true
+      },
+      {
+        "d": 0.8,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.109942,
+        "stationary": true
+      },
+      {
+        "d": 0.85,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.083319,
+        "stationary": true
+      },
+      {
+        "d": 0.9,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.06535,
+        "stationary": true
+      },
+      {
+        "d": 0.95,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.045441,
+        "stationary": true
+      },
+      {
+        "d": 1.0,
+        "adf_pvalue": 0.0,
+        "corr_with_original": 0.01701,
+        "stationary": true
+      }
+    ],
+    "min_d_stationary": 0.25,
+    "method": "adf"
+  },
+  "chosen_d": 0.25,
+  "fracdiff_sample": {
+    "d": 0.25,
+    "n_finite": 682,
+    "first_values": [
+      78.580281,
+      77.660279,
+      76.892407,
+      78.587489,
+      78.066627,
+      78.843698,
+      78.847916,
+      78.449706,
+      78.389131,
+      79.091499
+    ]
+  }
+}

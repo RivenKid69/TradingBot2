@@ -1,0 +1,16 @@
+# Rust / Cargo
+/target/
+
+# Machine-specific WDAC build workaround (relocates target-dir to %TEMP%)
+/.cargo/
+
+# Tauri generated
+/gen/
+
+# Bundled sidecar binaries (produced by the build scripts)
+/binaries/riven-backend-*
+!/binaries/README.md
+
+# Generated icons (run `tauri icon` to regenerate)
+/icons/*
+!/icons/README.md

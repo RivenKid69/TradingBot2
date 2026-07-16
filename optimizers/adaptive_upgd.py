@@ -14,8 +14,13 @@ Algorithm:
     2. Update first moment: m = beta1 * m + (1-beta1) * grad
     3. Update second moment: v = beta2 * v + (1-beta2) * grad^2
     4. Apply bias correction to all three
-    5. Scale utility using sigmoid(utility / global_max)
+    5. Scale utility via MIN-MAX normalization then sigmoid (NOT sigmoid(u/global_max)):
+       normalized = (u - global_min) / (global_max - global_min + eps)
+       scaled_utility = sigmoid(2 * (normalized - 0.5))
+       (Dividing by global_max INVERTS protection under negative utilities —
+        see CLAUDE.md "НЕ БАГИ" #5/#19/#28. The code uses min-max; do not "simplify".)
     6. Update: param -= lr * (m / (sqrt(v) + eps) + noise) * (1 - scaled_utility)
+       High utility → scaled_utility→1 → small update (protect); low → large update.
 
 This is particularly effective for RL tasks with PPO where parameter scales vary.
 """

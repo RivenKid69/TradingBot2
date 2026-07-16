@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -506,6 +507,8 @@ class CorporateActionsService:
         symbol: str,
         dates: Sequence[str],
         prices_by_date: Optional[Dict[str, float]] = None,
+        *,
+        strict: bool = True,
     ) -> Dict[str, float]:
         """
         Compute cumulative dividend adjustment factors for dates.
@@ -550,18 +553,43 @@ class CorporateActionsService:
 
                 if div_amount > 0:
                     ex_date = div_record["ex_date"]
-                    # Get price at ex-date if available, else use approximation
+                    # Total-return adjustment REQUIRES the actual ex-date close. We do
+                    # NOT fabricate a baseline price — a made-up price silently
+                    # corrupts the total-return series (the whole point of the
+                    # adjustment). If the price is unavailable we either fail loudly
+                    # (strict, default) or skip that dividend (non-strict) rather than
+                    # invent data.
+                    price_at_ex = None
                     if prices_by_date and ex_date in prices_by_date:
-                        price_at_ex = prices_by_date[ex_date]
-                    else:
-                        # Fallback: use a reasonable price estimate (100 as baseline)
-                        # In practice, caller should provide prices_by_date for accuracy
-                        price_at_ex = 100.0
+                        try:
+                            price_at_ex = float(prices_by_date[ex_date])
+                        except (TypeError, ValueError):
+                            price_at_ex = None
 
-                    if price_at_ex > 0:
-                        # Adjustment factor: (price - div) / price
-                        adjustment = (price_at_ex - div_amount) / price_at_ex
-                        cumulative *= max(adjustment, 0.9)  # Floor at 10% drop to prevent extreme adjustments
+                    if price_at_ex is None or not math.isfinite(price_at_ex) or price_at_ex <= 0:
+                        msg = (
+                            f"compute_dividend_factors({symbol}): missing/invalid ex-date "
+                            f"close for {ex_date} (dividend {div_amount}). Provide "
+                            f"prices_by_date[{ex_date}] for an accurate total-return factor."
+                        )
+                        if strict:
+                            raise ValueError(msg)
+                        logger.warning("%s — skipping this dividend (factor unchanged).", msg)
+                        div_idx += 1
+                        continue
+
+                    # Adjustment factor: (price - div) / price. A dividend larger than
+                    # the ex-date price is a data error; clamp into (0, 1] and warn
+                    # instead of applying an arbitrary 10% floor that distorts returns.
+                    adjustment = (price_at_ex - div_amount) / price_at_ex
+                    if adjustment <= 0.0 or adjustment > 1.0:
+                        logger.warning(
+                            "compute_dividend_factors(%s): implausible adjustment %.4f "
+                            "(price=%.4f, div=%.4f) at %s — clamping to (0,1].",
+                            symbol, adjustment, price_at_ex, div_amount, ex_date,
+                        )
+                        adjustment = min(1.0, max(adjustment, 1e-6))
+                    cumulative *= adjustment
 
                 div_idx += 1
 
@@ -744,7 +772,10 @@ class CorporateActionsService:
                     if price > 0:
                         prices_by_date[date_str] = price
 
-            dividend_factors = self.compute_dividend_factors(symbol, dates, prices_by_date)
+            # Bulk price adjustment: skip (with warning) any dividend whose ex-date
+            # close isn't in this frame rather than fabricate a price or crash.
+            dividend_factors = self.compute_dividend_factors(
+                symbol, dates, prices_by_date, strict=False)
             for d in dates:
                 combined_factor[d] *= dividend_factors.get(d, 1.0)
 
@@ -1257,3 +1288,130 @@ def add_earnings_features(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
         DataFrame with earnings features
     """
     return get_service().add_earnings_features_to_df(df, symbol)
+
+
+# =============================================================================
+# CLI Entry Point
+# =============================================================================
+
+# Default universe used when none is supplied (liquid US large caps).
+_DEFAULT_CA_UNIVERSE = [
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    "JPM", "JNJ", "KO", "XOM", "PFE", "WMT", "HD",
+]
+
+
+def _build_corporate_actions_report(symbols: List[str]) -> Dict[str, Any]:
+    """Fetch splits, dividends, and survivorship data for a universe.
+
+    Returns an honest report. When market-data adapters are unavailable the
+    individual sections come back empty with a descriptive status message —
+    no fabricated rows are emitted.
+    """
+    service = get_service()
+
+    splits_out: List[Dict[str, Any]] = []
+    dividends_out: List[Dict[str, Any]] = []
+    errors: List[str] = []
+
+    for sym in symbols:
+        try:
+            for s in service.get_splits(sym) or []:
+                ratio = s.get("ratio") or [None, None]
+                splits_out.append({
+                    "symbol": s.get("symbol", sym),
+                    "ex_date": s.get("ex_date"),
+                    "ratio_new": ratio[0] if len(ratio) > 0 else None,
+                    "ratio_old": ratio[1] if len(ratio) > 1 else None,
+                    "is_reverse": bool(s.get("is_reverse", False)),
+                })
+        except Exception as exc:  # pragma: no cover - network dependent
+            errors.append(f"splits {sym}: {exc}")
+        try:
+            for d in service.get_dividends(sym) or []:
+                dividends_out.append({
+                    "symbol": d.get("symbol", sym),
+                    "ex_date": d.get("ex_date"),
+                    "pay_date": d.get("pay_date"),
+                    "amount": d.get("amount"),
+                    "yield_pct": d.get("yield_pct"),
+                })
+        except Exception as exc:  # pragma: no cover - network dependent
+            errors.append(f"dividends {sym}: {exc}")
+
+    # Survivorship: only emit data that has actually been persisted/loaded.
+    survivorship_out: List[Dict[str, Any]] = []
+    try:
+        from services.survivorship import get_delisting_tracker
+
+        tracker = get_delisting_tracker()
+        for ev in tracker.get_delistings():
+            d = ev.to_dict()
+            survivorship_out.append({
+                "symbol": d.get("symbol"),
+                "delist_date": d.get("delist_date"),
+                "reason": d.get("reason"),
+                "successor_symbol": d.get("successor_symbol"),
+            })
+    except Exception as exc:  # pragma: no cover
+        errors.append(f"survivorship: {exc}")
+
+    # Sort for stable display (most recent first by ex/delist date).
+    splits_out.sort(key=lambda r: r.get("ex_date") or "", reverse=True)
+    dividends_out.sort(key=lambda r: r.get("ex_date") or "", reverse=True)
+    survivorship_out.sort(key=lambda r: r.get("delist_date") or "", reverse=True)
+
+    has_any = bool(splits_out or dividends_out or survivorship_out)
+    if has_any:
+        status = "ok"
+        message = ""
+    else:
+        status = "no_data"
+        message = (
+            "Нет данных по корпоративным действиям "
+            "(требуется доступ к рыночным данным / yfinance). "
+            "Survivorship-реестр пуст до загрузки данных о делистингах."
+        )
+
+    return {
+        "status": status,
+        "message": message,
+        "universe": symbols,
+        "splits": splits_out,
+        "dividends": dividends_out,
+        "survivorship": survivorship_out,
+        "errors": errors,
+    }
+
+
+if __name__ == "__main__":
+    import argparse
+    import json as _json
+    import os as _os
+    from datetime import datetime as _dt
+
+    ap = argparse.ArgumentParser(description="Fetch corporate actions and write a JSON report.")
+    ap.add_argument("--symbols", default="", help="Comma-separated symbols (defaults to a liquid US universe).")
+    ap.add_argument("--out", default="models/corporate_actions.json", help="Path to write the report JSON.")
+    args = ap.parse_args()
+
+    if args.symbols.strip():
+        universe = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
+    else:
+        universe = list(_DEFAULT_CA_UNIVERSE)
+
+    report = _build_corporate_actions_report(universe)
+    report["generated_at"] = _dt.now().isoformat(timespec="seconds")
+
+    out_path = args.out
+    _os.makedirs(_os.path.dirname(out_path) or ".", exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        _json.dump(report, f, ensure_ascii=False, indent=2)
+
+    print(
+        f"[corporate_actions] status={report['status']} "
+        f"splits={len(report['splits'])} dividends={len(report['dividends'])} "
+        f"survivorship={len(report['survivorship'])} -> {out_path}"
+    )
+    if report["message"]:
+        print(f"[corporate_actions] {report['message']}")

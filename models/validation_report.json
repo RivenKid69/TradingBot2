@@ -1,0 +1,10 @@
+{
+  "mean_reward": 0.0,
+  "std_reward": 0.0,
+  "sortino_ratio": 0.0,
+  "sharpe_ratio": 0.0,
+  "validation_pnl": 0.0,
+  "psi": 1.5741499952251898,
+  "psi_worst_feature": "keltner_upper_480",
+  "psi_worst": 7.071319956662011
+}

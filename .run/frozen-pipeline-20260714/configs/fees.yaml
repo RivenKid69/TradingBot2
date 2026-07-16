@@ -1,0 +1,85 @@
+# Пример расширенной конфигурации торговых комиссий.
+# Можно подключить через fees.path в основных конфигурациях.
+fees:
+  enabled: true                    # Глобальный флаг применения комиссий (дефолт true).
+  path: "data/fees/fees_by_symbol.json"  # Файл со ставками по символам (JSON/YAML).
+  refresh_days: 7                  # Проверять свежесть таблицы каждые N дней; null отключает (дефолт null).
+  maker_bps: 1.0                   # Глобальная ставка мейкера (bps) при отсутствии записей (дефолт 1.0).
+  taker_bps: 5.0                   # Глобальная ставка тейкера (bps) при отсутствии записей (дефолт 5.0).
+  use_bnb_discount: false          # Применять ли скидки BNB/VIP; true → множители по умолчанию 0.75.
+  maker_discount_mult: null        # Принудительный множитель мейкера; null → авто по use_bnb_discount.
+  taker_discount_mult: null        # Принудительный множитель тейкера; null → авто по use_bnb_discount.
+  vip_tier: null                   # VIP-уровень Binance (int); null → берём из таблицы/дефолты.
+  maker_share_default: null        # Override доли maker [0..1]; null → использовать значение блока maker_taker_share.
+  spread_cost_maker_bps: null      # Доп. издержки maker (bps) поверх комиссии; null → 0.0.
+  spread_cost_taker_bps: null      # Доп. издержки taker (bps) поверх комиссии; null → 0.0.
+  taker_fee_override_bps: null     # Жёсткий override тейкерской комиссии (bps); null → не применяется.
+  rounding:
+    enabled: true                  # Включить округление комиссий; false → возвращать сырые значения.
+    step: 0.0001                   # Глобальный шаг округления; null → использовать commission_step из фильтров/таблицы.
+    mode: "up"                    # Режим округления шага: up (ceil, поведение Binance) | nearest | down.
+    minimum_fee: null              # Нижняя граница комиссии после округления; null → без ограничения.
+    maximum_fee: null              # Верхняя граница комиссии после округления; null → без ограничения.
+    per_symbol:                    # Переопределения для отдельных символов.
+      BTCUSDT:
+        step: 0.00005              # Более тонкий шаг округления для BTCUSDT.
+        minimum_fee: 0.0001        # Минимальная комиссия после округления.
+      ETHUSDT:
+        enabled: false             # Локально отключить округление для ETHUSDT.
+  settlement:
+    enabled: false                 # Разрешить расчёт комиссий альтернативным активом (BNB и т. п.).
+    mode: "bnb"                   # "bnb" → предпочитать BNB; null → авто по аккаунту/таблице.
+    currency: "BNB"               # Жёсткий код валюты расчёта; null → определять автоматически.
+    prefer_discount_asset: true    # Принудительно запрашивать скидочную валюту (BNB), когда доступна.
+    per_symbol:
+      ETHUSDT:
+        enabled: false             # На уровне символа можно отключить альтернативное взыскание комиссий.
+  public_snapshot:                 # Опции для автоматического публичного снапшота (без приватных API).
+    vip_tier: null                 # Явный VIP-уровень аккаунта; null → используем конфиг/метаданные.
+    vip_label: null                # Текстовая метка VIP (override metadata.vip_tier).
+    use_bnb_discount: null         # true/false → принудительно считать скидку BNB активной/выключенной.
+    maker_discount_mult: null      # Множитель мейкера при BNB/VIP скидке (например 0.75).
+    taker_discount_mult: null      # Множитель тейкера при BNB/VIP скидке.
+    bnb_discount_rate: null        # Номинальная скидка Binance (по умолчанию 0.25 → множитель 0.75).
+  symbol_fee_table:                # Inline-таблица ставок; может дополнять/override внешний файл.
+    BTCUSDT:
+      maker_bps: 1.8
+      taker_bps: 3.6
+      vip_tier: 1
+    ETHUSDT:
+      maker_bps: 2.0
+      taker_bps: 4.0
+      quantizer:
+        commission_step: 0.0001    # Доп. шаг из фильтров; подхватится как fallback для rounding.step.
+  metadata:
+    source: "binance"
+    fetched_at: "2024-01-01T00:00:00Z"
+  account_info:
+    enabled: false                # Подтягивать ли vip-tier и ставки из приватного API.
+    endpoint: "https://api.binance.com"  # Базовый URL SAPI (дефолт: https://api.binance.com).
+    recv_window_ms: 5000          # recvWindow для подписанных запросов (мс).
+    timeout_s: 10                 # HTTP таймаут запроса (секунды).
+    api_key: null                 # Ключ Binance; null → возьмётся из BINANCE_API_KEY.
+    api_secret: null              # Секрет Binance; null → возьмётся из BINANCE_API_SECRET.
+  maker_taker_share:
+    enabled: false                 # Переключатель динамического деления потока.
+    mode: "fixed"                  # fixed | model | predictor.
+    maker_share_default: 0.5       # Базовая доля maker при отсутствии модели (дефолт 0.5).
+    spread_cost_maker_bps: 0.0     # Доп. издержки maker (bps) при активном делении.
+    spread_cost_taker_bps: 0.0     # Доп. издержки taker (bps) при активном делении.
+    taker_fee_override_bps: null   # Override тейкерской комиссии (bps) при активном делении.
+    model:
+      distance_to_mid:             # Настройка фичи distance-to-mid (bps) для модели.
+        value: null
+        min: 0.0
+        max: null
+        fallback: null
+      latency:                     # Настройка фичи latency (мс) для модели.
+        value: null
+        min: 0.0
+        max: null
+        fallback: null
+      coefficients:                # Линейные коэффициенты модели; ключи приводятся к lower-case.
+        intercept: 0.0
+        distance_to_mid: 0.0
+        latency: 0.0

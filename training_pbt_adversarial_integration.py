@@ -565,8 +565,148 @@ DEFAULT_PBT_ADVERSARIAL_CONFIG = PBTAdversarialConfig(
 
 
 if __name__ == "__main__":
-    # Example usage
-    print("PBT + Adversarial Training Integration Module")
-    print(f"PBT enabled by default: {DEFAULT_PBT_ADVERSARIAL_CONFIG.pbt_enabled}")
-    print(f"Adversarial enabled by default: {DEFAULT_PBT_ADVERSARIAL_CONFIG.adversarial_enabled}")
-    print(f"System default enabled: {is_pbt_adversarial_enabled_by_default()}")
+    import argparse
+    import numpy as np
+
+    # Configure logging
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+    parser = argparse.ArgumentParser(description="PBT + Adversarial Training Coordinator CLI")
+    parser.add_argument("--config", default="configs/config_pbt_adversarial.yaml", help="Path to PBT + Adversarial YAML configuration")
+    parser.add_argument("--steps", type=int, default=15, help="Number of simulated training steps to run")
+    parser.add_argument("--seed", type=int, default=42, help="RNG seed")
+
+    args = parser.parse_args()
+
+    print("=" * 80)
+    print("RUNNING PBT + ADVERSARIAL TRAINING COORDINATOR DEMO")
+    print("=" * 80)
+    print(f"Loading configuration from: {args.config}")
+
+    if not os.path.exists(args.config):
+        print(f"Error: Config file not found at: {args.config}")
+        print("Creating a temporary config file with reasonable defaults...")
+        os.makedirs(os.path.dirname(args.config), exist_ok=True)
+        default_yaml = """
+pbt:
+  enabled: true
+  population_size: 4
+  perturbation_interval: 5
+  exploit_method: truncation
+  explore_method: both
+  truncation_ratio: 0.25
+  checkpoint_dir: artifacts/pbt_checkpoints
+  metric_name: mean_reward
+  metric_mode: max
+  ready_percentage: 0.5
+  hyperparams:
+    - name: learning_rate
+      min_value: 1.0e-5
+      max_value: 5.0e-4
+      perturbation_factor: 1.2
+      resample_probability: 0.25
+      is_log_scale: true
+adversarial:
+  enabled: true
+  perturbation:
+    epsilon: 0.05
+    attack_steps: 3
+    attack_lr: 0.02
+    random_init: true
+    norm_type: linf
+    attack_method: pgd
+  adversarial_ratio: 0.5
+  robust_kl_coef: 0.1
+  warmup_updates: 2
+  attack_policy: true
+  attack_value: true
+"""
+        with open(args.config, "w", encoding="utf-8") as f:
+            f.write(default_yaml.strip())
+
+    config = load_pbt_adversarial_config(args.config)
+    print(f"PBT Enabled: {config.pbt_enabled}")
+    print(f"Adversarial Enabled: {config.adversarial_enabled}")
+
+    coordinator = PBTTrainingCoordinator(config, seed=args.seed)
+    population = coordinator.initialize_population()
+
+    # Define a simple PPO model to mock the training update
+    class DemoPPOModel(torch.nn.Module):
+        def __init__(self, learning_rate=3e-4):
+            super().__init__()
+            self.policy = torch.nn.Sequential(
+                torch.nn.Linear(10, 32),
+                torch.nn.ReLU(),
+                torch.nn.Linear(32, 2)
+            )
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
+
+        def state_dict(self):
+            return self.policy.state_dict()
+
+        def load_state_dict(self, state_dict):
+            self.policy.load_state_dict(state_dict)
+
+        def train_step(self, states, actions, advantages, returns, old_log_probs):
+            self.optimizer.zero_grad()
+            outputs = self.policy(states)
+            loss = torch.mean((outputs - 0.5) ** 2)
+            loss.backward()
+            self.optimizer.step()
+            return loss.item()
+
+    # Instantiate models for the population
+    models = {}
+    for member in population:
+        def model_factory(**kwargs):
+            lr = kwargs.get("learning_rate", 3e-4)
+            return DemoPPOModel(learning_rate=lr)
+
+        model, sa_ppo = coordinator.create_member_model(member, model_factory)
+        models[member.member_id] = (model, sa_ppo)
+
+    print(f"\nCreated population models for {len(population)} members.")
+    print("Running PBT training loop...")
+
+    # Run the coordination loop
+    for step in range(1, args.steps + 1):
+        print(f"\n--- Step {step}/{args.steps} ---")
+        for member in population:
+            model, sa_ppo = models[member.member_id]
+
+            # Start update
+            coordinator.on_member_update_start(member)
+
+            # Simulated training inputs
+            states = torch.randn(4, 10)
+            actions = torch.randn(4, 2)
+            advantages = torch.randn(4)
+            returns = torch.randn(4)
+            old_log_probs = torch.randn(4)
+
+            # Execute step
+            loss = model.train_step(states, actions, advantages, returns, old_log_probs)
+
+            # Simulated performance reward metric (minimize loss -> maximize reward)
+            performance = 1.0 / (0.1 + loss) + np.random.normal(0.0, 0.1)
+
+            # End update
+            new_state, new_hp, checkpoint_format = coordinator.on_member_update_end(
+                member,
+                performance=performance,
+                step=step,
+                model_state_dict=model.state_dict()
+            )
+
+            print(f"  Member {member.member_id}: Performance={performance:.4f}, LR={member.hyperparams['learning_rate']:.2e}, Loss={loss:.4f}")
+
+            if new_state is not None:
+                print(f"  >> Exploited! Member {member.member_id} updated weights and hyperparams: {new_hp}")
+                coordinator.apply_exploited_parameters(model, new_state, member)
+
+    print("\n" + "=" * 80)
+    print("PBT + ADVERSARIAL COORDINATOR DEMO RUN COMPLETE")
+    print("=" * 80)
+    print(f"Final stats: {coordinator.get_stats()}")
+

@@ -66,6 +66,21 @@ class BaseSignalPolicy(SignalPolicy):
         self._signal_state: dict[str, SignalPosition] = {}
         self._dirty_signal_state: set[str] = set()
         self._pending_transitions: dict[str, Dict[str, Any]] = {}
+        
+        # History Manager state
+        self._history_len = int(self.params.get("history_len", 200))
+        self._candles: dict[str, deque] = {}
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if "decide" in cls.__dict__:
+            orig_decide = cls.decide
+            if not getattr(orig_decide, "_is_wrapped", False):
+                def wrapped_decide(self, features: Mapping[str, Any], ctx: PolicyCtx) -> List[Order]:
+                    self.update_history(features, ctx)
+                    return orig_decide(self, features, ctx)
+                wrapped_decide._is_wrapped = True
+                cls.decide = wrapped_decide
 
     # ------------------------------------------------------------------
     # Utilities
@@ -83,7 +98,64 @@ class BaseSignalPolicy(SignalPolicy):
 
     def decide(self, features: Mapping[str, Any], ctx: PolicyCtx) -> List[Order]:
         self._validate_inputs(features, ctx)
+        self.update_history(features, ctx)
         return []
+
+    def update_history(self, features: Mapping[str, Any], ctx: PolicyCtx) -> None:
+        """Update historical candles cache for the active symbol."""
+        symbol = ctx.symbol
+        if not symbol:
+            return
+        if symbol not in self._candles:
+            self._candles[symbol] = deque(maxlen=self._history_len)
+            
+        candles = self._candles[symbol]
+        # Avoid duplicate entries for same timestamp
+        if candles and candles[-1].get("ts") == ctx.ts:
+            return
+            
+        ref_price = features.get("close")
+        if ref_price is None:
+            ref_price = features.get("ref_price")
+        if ref_price is None:
+            ref_price = ctx.ref_price
+            
+        candles.append({
+            "ts": ctx.ts,
+            "price": float(ref_price) if ref_price is not None else None,
+            "volume": float(features.get("volume", 0.0)),
+            "features": dict(features)
+        })
+
+    def get_history(self, symbol: str, n: int = 10) -> List[Dict[str, Any]]:
+        """Get the last n candles for a given symbol."""
+        candles = self._candles.get(symbol)
+        if not candles:
+            return []
+        return list(candles)[-n:]
+
+    def get_history_series(self, symbol: str, key: str, n: int = 10) -> List[Any]:
+        """Get a list of the last n values of a specific feature key (e.g. 'price', 'rsi')."""
+        candles = self._candles.get(symbol)
+        if not candles:
+            return []
+        
+        slice_data = list(candles)[-n:]
+        res = []
+        for c in slice_data:
+            val = None
+            if key in c:
+                val = c[key]
+            elif "features" in c and key in c["features"]:
+                val = c["features"][key]
+            res.append(val)
+        return res
+
+    def set_history_length(self, n: int) -> None:
+        """Set history window size."""
+        self._history_len = int(n)
+        for symbol in self._candles:
+            self._candles[symbol] = deque(self._candles[symbol], maxlen=self._history_len)
 
     # ------------------------------------------------------------------
     # Signal state management

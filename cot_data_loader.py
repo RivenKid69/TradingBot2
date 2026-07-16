@@ -832,3 +832,45 @@ def get_cot_for_pair(
         zscore = -zscore
 
     return (net_normalized, zscore, valid)
+
+
+if __name__ == "__main__":
+    import argparse
+    import logging
+    from datetime import datetime
+    
+    parser = argparse.ArgumentParser(description="CFTC COT Data Loader CLI")
+    parser.add_argument("--symbols", default="", help="Comma-separated symbols to process (e.g. EUR,GBP,JPY)")
+    parser.add_argument("--lookback", type=int, default=52, help="Lookback weeks for Z-score calculation")
+    parser.add_argument("--report-type", default="legacy_combined", choices=["legacy_futures", "legacy_combined", "disaggregated", "tff"], help="Type of CFTC COT report")
+    parser.add_argument("--cache-dir", default="data/cot_cache", help="Path to cache directory")
+    args = parser.parse_args()
+
+    # Configure logging to see download progress
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    
+    # Map report types for COTDataLoader
+    # The config expects report_type to be legacy or tff or disaggregated.
+    mapped_report_type = "legacy"
+    if args.report_type == "tff":
+        mapped_report_type = "tff"
+    elif args.report_type == "disaggregated":
+        mapped_report_type = "disaggregated"
+
+    # Initialize loader
+    cfg = COTConfig(
+        cache_dir=args.cache_dir,
+        report_type=mapped_report_type,
+        zscore_lookback=args.lookback,
+        auto_download=True
+    )
+    
+    loader = COTDataLoader(cfg)
+    
+    print(f"Запуск загрузки CFTC COT данных... Report Type: {args.report_type}, Cache: {args.cache_dir}")
+    # Download and load data from 2020 to current year
+    current_year = datetime.now().year
+    loader.load_data(start_year=2020, end_year=current_year)
+    loader.save_cache()
+    print("Готово. COT кэш успешно сохранен.")
+

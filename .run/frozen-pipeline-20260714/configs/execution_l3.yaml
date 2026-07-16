@@ -1,0 +1,276 @@
+# L3 LOB Execution Simulation Configuration
+# Stage 7 of L3 LOB Simulation (v7.0)
+#
+# This configuration controls the L3 execution provider which provides
+# high-fidelity order book simulation for US equities.
+#
+# Usage:
+#   python script_backtest.py --config configs/config_sim.yaml --execution-config configs/execution_l3.yaml
+#
+# Or include in your main config:
+#   execution:
+#     level: L3
+#     l3_config_path: configs/execution_l3.yaml
+
+# Master switch
+enabled: true
+
+# LOB Data Source Configuration
+lob_data:
+  source: internal  # lobster, itch, internal, synthetic
+  reconstruction_mode: full  # full or incremental
+  max_depth: 20  # Maximum depth levels to maintain
+  snapshot_interval_ms: 1000  # Snapshot interval
+  message_path: null  # Path to LOBSTER/ITCH message files
+
+# Latency Simulation
+latency:
+  enabled: true
+  profile: institutional  # colocated, proximity, retail, institutional, custom
+
+  # Feed latency (market data)
+  feed_latency:
+    enabled: true
+    distribution: lognormal  # constant, uniform, lognormal, pareto, gamma
+    mean_us: 200.0
+    std_us: 50.0
+    min_us: 50.0
+    max_us: 2000.0
+    spike_prob: 0.001
+    spike_mult: 10.0
+
+  # Order submission latency
+  order_latency:
+    enabled: true
+    distribution: lognormal
+    mean_us: 300.0
+    std_us: 80.0
+    min_us: 100.0
+    max_us: 3000.0
+    spike_prob: 0.001
+    spike_mult: 10.0
+
+  # Exchange processing latency
+  exchange_latency:
+    enabled: true
+    distribution: lognormal
+    mean_us: 100.0
+    std_us: 30.0
+    min_us: 20.0
+    max_us: 1000.0
+    spike_prob: 0.0005
+    spike_mult: 5.0
+
+  # Fill notification latency
+  fill_latency:
+    enabled: true
+    distribution: lognormal
+    mean_us: 150.0
+    std_us: 40.0
+    min_us: 50.0
+    max_us: 1500.0
+    spike_prob: 0.001
+    spike_mult: 10.0
+
+  # Adjustments
+  time_of_day_adjustment: true
+  volatility_adjustment: true
+
+# Fill Probability Model
+fill_probability:
+  enabled: true
+  model: queue_reactive  # poisson, queue_reactive, historical, distance_based
+  base_rate: 100.0  # Base volume rate (qty/sec)
+  queue_decay_alpha: 0.01  # Queue size decay factor
+  spread_sensitivity_beta: 0.5  # Spread sensitivity
+  imbalance_factor: 0.3  # Book imbalance sensitivity
+  volatility_factor: 0.2  # Volatility sensitivity
+  confidence_threshold: 0.5  # Minimum confidence for estimates
+
+# Queue Value Computation (Moallemi & Yuan)
+queue_value:
+  enabled: true
+  hold_threshold: 0.001  # Threshold for HOLD decision
+  cancel_threshold: -0.002  # Threshold for CANCEL decision
+  adverse_selection_lambda: 0.1  # Adverse selection parameter
+  time_horizon_sec: 60.0  # Default time horizon
+  discount_rate: 0.0  # Discount rate for future fills
+
+# Market Impact Model
+market_impact:
+  enabled: true
+  model: almgren_chriss  # kyle, almgren_chriss, gatheral, linear
+
+  # Almgren-Chriss parameters
+  eta: 0.05  # Temporary impact coefficient
+  gamma: 0.03  # Permanent impact coefficient
+  delta: 0.5  # Impact exponent (0.5 = square-root)
+  tau_ms: 30000  # Decay time constant (ms)
+  beta: 1.5  # Power-law decay exponent
+
+  # Decay function
+  decay_type: power_law  # exponential, power_law, linear, none
+
+  # Application
+  apply_to_lob: true  # Apply impact effects to LOB state
+  momentum_detection: true  # Enable momentum/trend detection
+
+# Hidden Liquidity Detection
+hidden_liquidity:
+  enabled: true
+
+  # Iceberg order detection
+  iceberg:
+    enabled: true
+    min_refills_to_confirm: 2  # Minimum refills to confirm iceberg
+    lookback_window_sec: 60.0  # Time window for pattern detection
+    min_display_size: 10.0  # Minimum display size to track
+    hidden_ratio_estimate: 0.15  # Default hidden:display ratio
+
+  # Hidden liquidity estimation
+  default_hidden_ratio: 0.15
+  use_historical_estimates: true
+
+# Dark Pool Simulation
+dark_pools:
+  enabled: true
+  max_dark_fill_pct: 0.5  # Maximum % of order to fill in dark pools
+  routing_strategy: sequential  # sequential, parallel, smart
+
+  # Dark pool venues
+  venues:
+    - venue_id: sigma_x
+      venue_type: midpoint_cross
+      enabled: true
+      min_order_size: 100.0
+      max_order_size: 0  # 0 = unlimited
+      base_fill_probability: 0.30
+      size_penalty_factor: 0.5
+      info_leakage_probability: 0.10
+      latency_ms: 5.0
+
+    - venue_id: iex_dark
+      venue_type: midpoint_cross
+      enabled: true
+      min_order_size: 50.0
+      max_order_size: 0
+      base_fill_probability: 0.25
+      size_penalty_factor: 0.4
+      info_leakage_probability: 0.15
+      latency_ms: 3.0
+
+    - venue_id: liquidnet
+      venue_type: negotiation
+      enabled: true
+      min_order_size: 10000.0  # Block trades only
+      max_order_size: 0
+      base_fill_probability: 0.15
+      size_penalty_factor: 0.2
+      info_leakage_probability: 0.05
+      latency_ms: 50.0
+
+# Queue Position Tracking
+queue_tracking:
+  enabled: true
+  estimation_method: pessimistic  # pessimistic, probabilistic, mbo
+  use_mbo_when_available: true
+  max_tracked_orders: 10000
+  cleanup_interval_sec: 60.0
+
+# Event Scheduling
+event_scheduling:
+  enabled: true
+  race_condition_buffer_us: 100.0  # Buffer for race condition detection
+  max_events_per_step: 1000
+  deterministic_ordering: true
+
+
+# =============================================================================
+# Pre-configured Profiles
+# =============================================================================
+#
+# Use these by setting 'profile' at the top level:
+#   profile: equity_institutional
+#
+# Or programmatically:
+#   from lob.config import create_l3_config
+#   config = create_l3_config("equity")
+#
+# Available profiles:
+#   - equity_institutional: US equities, institutional latency
+#   - equity_retail: US equities, retail latency
+#   - equity_hft: US equities, co-located latency
+#   - crypto_spot: Crypto spot markets
+#   - minimal: Matching engine only (fastest)
+# =============================================================================
+
+# Profiles can override settings:
+profiles:
+  equity_institutional:
+    latency:
+      profile: institutional
+    market_impact:
+      model: almgren_chriss
+      eta: 0.05
+      gamma: 0.03
+    dark_pools:
+      enabled: true
+
+  equity_retail:
+    latency:
+      profile: retail
+      feed_latency:
+        mean_us: 5000.0
+      order_latency:
+        mean_us: 10000.0
+    market_impact:
+      eta: 0.08
+      gamma: 0.04
+    dark_pools:
+      enabled: false
+
+  equity_hft:
+    latency:
+      profile: colocated
+      feed_latency:
+        mean_us: 10.0
+      order_latency:
+        mean_us: 15.0
+    market_impact:
+      eta: 0.02
+      gamma: 0.01
+    hidden_liquidity:
+      enabled: true
+    dark_pools:
+      enabled: false
+
+  crypto_spot:
+    latency:
+      profile: retail
+      feed_latency:
+        mean_us: 1000.0
+      order_latency:
+        mean_us: 2000.0
+    market_impact:
+      model: almgren_chriss
+      eta: 0.10
+      gamma: 0.05
+    hidden_liquidity:
+      enabled: false
+    dark_pools:
+      enabled: false
+
+  minimal:
+    enabled: true
+    latency:
+      enabled: false
+    fill_probability:
+      enabled: false
+    queue_value:
+      enabled: false
+    market_impact:
+      enabled: false
+    hidden_liquidity:
+      enabled: false
+    dark_pools:
+      enabled: false

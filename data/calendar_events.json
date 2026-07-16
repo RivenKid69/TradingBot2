@@ -1,0 +1,20 @@
+{
+  "macro": [
+    {"time": "2026-06-04 14:00:00", "event": "FOMC Interest Rate Decision", "actual": "5.25%", "forecast": "5.25%", "previous": "5.25%", "impact": "HIGH"},
+    {"time": "2026-06-05 12:30:00", "event": "US Non-Farm Payrolls (NFP)", "actual": "—", "forecast": "180K", "previous": "175K", "impact": "HIGH"},
+    {"time": "2026-06-10 12:30:00", "event": "US CPI YoY", "actual": "—", "forecast": "3.4%", "previous": "3.5%", "impact": "HIGH"},
+    {"time": "2026-06-11 12:30:00", "event": "US PPI MoM", "actual": "—", "forecast": "0.1%", "previous": "0.5%", "impact": "MEDIUM"}
+  ],
+  "earnings": [
+    {"symbol": "NVDA", "date": "2026-06-15", "period": "Q1 2026", "time_of_day": "After Market Close", "blackout_active": true},
+    {"symbol": "AAPL", "date": "2026-06-20", "period": "Q3 2026", "time_of_day": "Before Market Open", "blackout_active": false},
+    {"symbol": "MSFT", "date": "2026-06-25", "period": "Q4 2026", "time_of_day": "After Market Close", "blackout_active": false},
+    {"symbol": "TSLA", "date": "2026-07-01", "period": "Q2 2026", "time_of_day": "After Market Close", "blackout_active": false}
+  ],
+  "cme": {
+    "active_contract": "ESM6 (Jun 2026)",
+    "days_to_expire": 14,
+    "rollover_trigger": "IDLE",
+    "trading_hours": "RTH: 14:30 - 21:00 UTC, ETH: 21:00 - 14:30 UTC"
+  }
+}

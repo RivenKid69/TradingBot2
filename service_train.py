@@ -386,3 +386,130 @@ def from_config(cfg: CommonRunConfig, *, trainer: Trainer, train_cfg: TrainConfi
 
 
 __all__ = ["TrainConfig", "ServiceTrain", "from_config"]
+
+
+if __name__ == "__main__":
+    import argparse
+    import glob
+    from core_config import load_config
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+    parser = argparse.ArgumentParser(description="Offline ML Training Service CLI")
+    parser.add_argument("--config", default="configs/config_train.yaml", help="Path to YAML run configuration")
+    parser.add_argument("--input-path", "--input_path", default=None, help="Path to input data (CSV/Parquet)")
+    parser.add_argument("--input-format", "--input_format", default=None, choices=["parquet", "csv"], help="Format of input data")
+    parser.add_argument("--artifacts-dir", "--artifacts_dir", default=None, help="Directory to save training artifacts")
+    parser.add_argument("--dataset-name", "--dataset_name", default="train_dataset", help="Base name for the dataset files")
+    parser.add_argument("--model-name", "--model_name", default="model", help="Base name for the saved model")
+    parser.add_argument("--trainer", default=None, help="Dotted path (module:Class) of the trainer")
+
+    args = parser.parse_args()
+
+    # Load configuration
+    cfg = load_config(args.config)
+
+    # Build DI graph
+    container = di_registry.build_graph(cfg.components, cfg)
+
+    # Resolve trainer
+    trainer = None
+    if args.trainer:
+        try:
+            from di_registry import _load_class
+            trainer_cls = _load_class(args.trainer)
+            trainer = trainer_cls()
+            logger.info(f"Loaded custom trainer class: {args.trainer}")
+        except Exception as e:
+            logger.error(f"Failed to load trainer from dotted path '{args.trainer}': {e}")
+            raise
+
+    if trainer is None:
+        # Fallback to policy in container
+        policy = container.get("policy")
+        # Check if policy has fit and save methods
+        if policy is not None and hasattr(policy, "fit") and hasattr(policy, "save"):
+            trainer = policy
+            logger.info(f"Using policy from container as trainer: {policy.__class__.__name__}")
+        else:
+            # Fallback dummy trainer if no valid trainer is configured or if strategy doesn't support learning
+            class FallbackDummyTrainer:
+                def fit(self, X, y=None, sample_weight=None):
+                    logger.info("FallbackDummyTrainer.fit() called (strategy does not support learning).")
+                    return self
+                def save(self, path):
+                    logger.info(f"FallbackDummyTrainer.save() saving mock model to: {path}")
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(f"mock model for {policy.__class__.__name__ if policy else 'None'}")
+                    return path
+
+            trainer = FallbackDummyTrainer()
+            policy_name = policy.__class__.__name__ if policy else "None"
+            logger.warning(
+                f"Policy '{policy_name}' does not implement Trainer protocol (missing fit/save). "
+                f"Using FallbackDummyTrainer wrapper."
+            )
+
+    # Determine input path
+    input_path = args.input_path
+    if not input_path:
+        # Try to extract paths from components config
+        md_params = getattr(cfg.components.market_data, "params", {}) or {}
+        paths = md_params.get("paths")
+        if paths and isinstance(paths, list) and len(paths) > 0:
+            raw_path = paths[0]
+            # Resolve glob pattern if necessary
+            resolved_paths = glob.glob(raw_path)
+            if resolved_paths:
+                input_path = resolved_paths[0]
+                logger.info(f"Resolved input path from market_data config: {input_path}")
+            else:
+                input_path = raw_path
+
+    if not input_path:
+        # Check standard processed path
+        default_processed = "data/processed/BTCUSDT.parquet"
+        if os.path.exists(default_processed):
+            input_path = default_processed
+            logger.info(f"Using default processed dataset path: {input_path}")
+        else:
+            # Check if there is any parquet or csv file in data/processed
+            parquet_files = glob.glob("data/processed/*.parquet")
+            if parquet_files:
+                input_path = parquet_files[0]
+                logger.info(f"Found processed parquet dataset: {input_path}")
+            else:
+                csv_files = glob.glob("data/train/*.csv")
+                if csv_files:
+                    input_path = csv_files[0]
+                    logger.info(f"Found train CSV dataset: {input_path}")
+                else:
+                    input_path = default_processed
+                    logger.warning(f"No datasets found. Defaulting to: {input_path}")
+
+    # Determine input format
+    input_format = args.input_format
+    if not input_format:
+        if input_path.endswith(".csv"):
+            input_format = "csv"
+        else:
+            input_format = "parquet"
+
+    # Determine artifacts directory
+    artifacts_dir = args.artifacts_dir or getattr(cfg, "artifacts_dir", "artifacts")
+
+    # Build TrainConfig
+    train_cfg = TrainConfig(
+        input_path=input_path,
+        input_format=input_format,
+        artifacts_dir=artifacts_dir,
+        dataset_name=args.dataset_name,
+        model_name=args.model_name,
+        snapshot_config_path=args.config
+    )
+
+    logger.info(f"Starting ServiceTrain with input_path={input_path}, format={input_format}, artifacts_dir={artifacts_dir}")
+    results = from_config(cfg, trainer=trainer, train_cfg=train_cfg)
+    print(f"Training completed successfully. Results: {results}")
+

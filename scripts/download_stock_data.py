@@ -111,6 +111,8 @@ class DownloadConfig:
     include_extended_hours: bool = False
     filter_market_hours: bool = True
     resample_to: Optional[str] = None  # e.g., "4h" to resample 1h to 4h
+    adjustment: str = "all"
+    corporate_actions: bool = False
 
     # Rate limiting
     max_workers: int = 4
@@ -248,6 +250,7 @@ def download_symbol_alpaca(
             "api_key": config.api_key or os.environ.get("ALPACA_API_KEY", ""),
             "api_secret": config.api_secret or os.environ.get("ALPACA_API_SECRET", ""),
             "feed": config.feed,
+            "adjustment": config.adjustment,
         }
 
         adapter = AlpacaMarketDataAdapter(
@@ -461,7 +464,7 @@ def download_symbol_polygon(
 
         params = {
             "apiKey": api_key,
-            "adjusted": "true",
+            "adjusted": "false" if config.adjustment == "raw" else "true",
             "sort": "asc",
             "limit": 50000,
         }
@@ -731,6 +734,56 @@ def download_all_symbols(config: DownloadConfig) -> Dict[str, Any]:
                 results["failed"] += 1
                 results["errors"][symbol] = str(e)
 
+    # Download corporate actions if requested
+    if config.corporate_actions:
+        logger.info("Downloading corporate actions (splits and dividends) using Yahoo...")
+        try:
+            from adapters.yahoo.corporate_actions import YahooCorporateActionsAdapter
+            from adapters.models import ExchangeVendor
+            
+            ca_adapter = YahooCorporateActionsAdapter(vendor=ExchangeVendor.YAHOO)
+            
+            for symbol in symbols:
+                if symbol.startswith("^") or "=" in symbol or "-Y." in symbol:
+                    continue
+                
+                logger.info(f"Fetching corporate actions for {symbol}...")
+                try:
+                    start_str = config.start_date
+                    end_str = config.end_date
+                    
+                    splits = ca_adapter.get_splits(symbol, start_date=start_str, end_date=end_str)
+                    dividends = ca_adapter.get_dividends(symbol, start_date=start_str, end_date=end_str)
+                    
+                    ca_records = []
+                    for s in splits:
+                        ca_records.append({
+                            "date": s.ex_date,
+                            "type": "split",
+                            "factor": float(s.adjustment_factor),
+                        })
+                    for d in dividends:
+                        ca_records.append({
+                            "date": d.ex_date,
+                            "type": "dividend",
+                            "amount": float(d.amount),
+                        })
+                        
+                    if ca_records:
+                        ca_df = pd.DataFrame(ca_records)
+                        ca_df = ca_df.sort_values("date").reset_index(drop=True)
+                        
+                        safe_symbol = sanitize_filename(symbol)
+                        ca_path = output_dir / f"{safe_symbol}_corporate_actions.parquet"
+                        ca_df.to_parquet(ca_path, index=False)
+                        logger.info(f"Saved {len(ca_df)} corporate actions for {symbol} to {ca_path}")
+                    else:
+                        logger.info(f"No corporate actions found for {symbol}")
+                except Exception as ex:
+                    logger.warning(f"Failed to fetch corporate actions for {symbol}: {ex}")
+        except Exception as ex:
+            logger.error(f"Failed to initialize corporate actions adapter: {ex}")
+
     return results
 
 
@@ -862,6 +915,29 @@ Examples:
         action="store_true",
         help="Don't filter by market hours",
     )
+    parser.add_argument(
+        "--adjustment",
+        choices=["all", "split", "raw"],
+        default="all",
+        help="Data adjustment type: all (splits+dividends), split (splits only), or raw (unadjusted)",
+    )
+    parser.add_argument(
+        "--corporate-actions",
+        action="store_true",
+        help="Download corporate actions (dividends and splits) to JSON/Parquet file",
+    )
+    parser.add_argument(
+        "--rollover",
+        choices=["volume", "open_interest", "expiry"],
+        default="volume",
+        help="Rollover rule for continuous futures contracts (Volume, OI, Expiry)",
+    )
+    parser.add_argument(
+        "--adjust",
+        choices=["panama", "ratio", "raw"],
+        default="panama",
+        help="Rollover adjustment method (Panama, Ratio, Raw)",
+    )
 
     # Execution
     parser.add_argument(
@@ -925,6 +1001,8 @@ def main() -> int:
         max_workers=args.workers,
         skip_existing=not args.no_skip_existing,
         feed=args.feed,
+        adjustment=args.adjustment,
+        corporate_actions=args.corporate_actions,
     )
 
     # Run download

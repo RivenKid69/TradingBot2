@@ -1,0 +1,269 @@
+# =============================================================================
+# CRYPTO PERPETUALS - Quick Start Reference Pipeline
+# =============================================================================
+#
+# Стратегия: Funding Rate Arbitrage + Momentum
+# Asset Class: Crypto Perpetual Futures (Binance USDT-M)
+# Сложность: ⭐⭐⭐⭐ (Advanced)
+#
+# Характеристики:
+#   - 24/7 торговля
+#   - Leverage до 125x (осторожно!)
+#   - Funding rate каждые 8 часов
+#   - Mark price execution
+#   - Liquidation risk
+#
+# Требования:
+#   export BINANCE_API_KEY="your_key"
+#   export BINANCE_API_SECRET="your_secret"
+#
+# Запуск:
+#   python scripts/download_funding_history.py --symbols BTCUSDT ETHUSDT --days 365
+#   python script_backtest.py --config configs/quickstart/crypto_perp.yaml
+#   python train_model_multi_patch.py --config configs/quickstart/crypto_perp.yaml
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# БАЗОВЫЕ НАСТРОЙКИ
+# -----------------------------------------------------------------------------
+mode: train
+run_id: crypto_perp
+logs_dir: logs/quickstart
+artifacts_dir: artifacts/quickstart
+
+asset_class: crypto
+market: futures                    # Futures, not spot!
+data_vendor: binance
+
+# -----------------------------------------------------------------------------
+# ДАННЫЕ
+# -----------------------------------------------------------------------------
+data:
+  timeframe: "4h"
+  paths: ["data/futures/crypto/*.parquet"]
+
+  # Символы (perpetual contracts)
+  symbols:
+    - "BTCUSDT"                    # Bitcoin perpetual
+    - "ETHUSDT"                    # Ethereum perpetual
+
+  # Периоды
+  train_start_ts: 1640995200
+  train_end_ts: 1735689599
+  val_start_ts: 1735689600
+  val_end_ts: 1743465599
+  test_start_ts: 1743465600
+  test_end_ts: 1751327999
+
+# -----------------------------------------------------------------------------
+# МОДЕЛЬ
+# -----------------------------------------------------------------------------
+model:
+  algo: "ppo"
+
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4
+    weight_decay: 0.001
+    sigma: 0.001
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    clip_threshold: 10.0
+
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.10
+    clip_range_vf: 0.7
+    ent_coef: 0.001
+    vf_coef: 1.8
+    max_grad_norm: 0.5
+    n_steps: 2048
+    n_epochs: 4
+    batch_size: 64
+    seed: 42
+
+    use_twin_critics: true
+    num_atoms: 21
+    v_min: -10.0
+    v_max: 10.0
+
+    cvar_alpha: 0.05
+    cvar_weight: 0.20              # Higher for futures risk
+
+# -----------------------------------------------------------------------------
+# ОКРУЖЕНИЕ
+# -----------------------------------------------------------------------------
+env:
+  decision_timing: CLOSE_TO_OPEN
+
+  session:
+    calendar: crypto_24x7
+
+  liquidity:
+    min_adv_usd: 0
+    min_bar_quote_volume: 0
+
+  no_trade:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# LEVERAGE & MARGIN
+# -----------------------------------------------------------------------------
+leverage:
+  max_leverage: 10.0               # Conservative! (Binance allows up to 125x)
+  default_leverage: 5.0
+  margin_mode: cross               # cross or isolated
+  margin_warning: 1.50             # 150% margin ratio
+  margin_call: 1.10                # 110% margin ratio
+  liquidation: 1.00                # 100% = liquidation
+
+# -----------------------------------------------------------------------------
+# FUNDING RATE
+# -----------------------------------------------------------------------------
+funding:
+  enabled: true
+  data_path: "data/futures/funding_rates.parquet"
+  funding_times_utc: [0, 8, 16]    # Every 8 hours
+  max_funding_exposure_bps: 50    # Max 50 bps funding exposure per day
+
+# -----------------------------------------------------------------------------
+# ДЕЙСТВИЯ
+# -----------------------------------------------------------------------------
+algo:
+  actions:
+    long_only: false               # Allow shorts for hedging
+
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    bins_vol: 5                    # [-100%, -50%, 0%, 50%, 100%]
+    max_asset_weight: 1.0
+
+# -----------------------------------------------------------------------------
+# КОМИССИИ (Futures)
+# -----------------------------------------------------------------------------
+fees:
+  structure: maker_taker
+  maker_bps: 2.0
+  taker_bps: 4.0
+  use_bnb_discount: true
+
+  # Liquidation fee
+  liquidation_fee_bps: 50.0        # 0.5% to insurance fund
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE (Futures-specific)
+# -----------------------------------------------------------------------------
+slippage:
+  profile: crypto_futures
+  k: 0.12                          # Higher than spot
+  default_spread_bps: 4.0
+
+  # Futures-specific factors
+  futures:
+    funding_impact_sensitivity: 5.0
+    liquidation_cascade_sensitivity: 5.0
+    liquidation_cascade_max_factor: 3.0
+    open_interest_liquidity_factor: 0.1
+    open_interest_max_penalty: 2.0
+    use_mark_price_execution: true
+
+  dynamic:
+    enabled: true
+
+# -----------------------------------------------------------------------------
+# РИСК-МЕНЕДЖМЕНТ (Futures-specific)
+# -----------------------------------------------------------------------------
+risk:
+  enabled: true
+  max_abs_position_notional: 50000
+  daily_loss_limit: 0.05
+
+  # Futures-specific guards
+  futures:
+    leverage_guard:
+      enabled: true
+      max_account_leverage: 10.0
+      max_symbol_leverage: 20.0
+
+    margin_guard:
+      enabled: true
+      warning_ratio: 1.50
+      danger_ratio: 1.20
+      critical_ratio: 1.05
+
+    funding_guard:
+      enabled: true
+      warning_threshold: 0.0001    # 0.01% per 8h
+      excessive_threshold: 0.0003  # 0.03% per 8h
+
+    concentration_guard:
+      enabled: true
+      single_symbol_limit: 0.50
+      correlated_group_limit: 0.70
+
+    adl_guard:
+      enabled: true
+      warning_percentile: 75.0
+      critical_percentile: 90.0
+
+# -----------------------------------------------------------------------------
+# REWARD
+# -----------------------------------------------------------------------------
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0005
+  include_funding_costs: true      # Include funding in P&L
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+execution:
+  enabled: true
+  mode: bar
+  use_mark_price: true             # Execute at mark price
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+# -----------------------------------------------------------------------------
+# КОМПОНЕНТЫ
+# -----------------------------------------------------------------------------
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/futures/crypto/*.parquet"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

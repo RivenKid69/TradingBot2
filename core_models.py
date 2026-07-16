@@ -151,6 +151,14 @@ class Bar:
     vwap: Optional[Decimal] = None
     taker_buy_base: Optional[Decimal] = None  # объём покупок taker в базовом активе
     is_final: bool = True
+    bid_open: Optional[Decimal] = None
+    bid_high: Optional[Decimal] = None
+    bid_low: Optional[Decimal] = None
+    bid_close: Optional[Decimal] = None
+    ask_open: Optional[Decimal] = None
+    ask_high: Optional[Decimal] = None
+    ask_low: Optional[Decimal] = None
+    ask_close: Optional[Decimal] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return as_dict(self)
@@ -170,6 +178,14 @@ class Bar:
             vwap=to_decimal_opt(d.get("vwap")),
             taker_buy_base=to_decimal_opt(d.get("taker_buy_base")),
             is_final=bool(d.get("is_final", True)),
+            bid_open=to_decimal_opt(d.get("bid_open")),
+            bid_high=to_decimal_opt(d.get("bid_high")),
+            bid_low=to_decimal_opt(d.get("bid_low")),
+            bid_close=to_decimal_opt(d.get("bid_close")),
+            ask_open=to_decimal_opt(d.get("ask_open")),
+            ask_high=to_decimal_opt(d.get("ask_high")),
+            ask_low=to_decimal_opt(d.get("ask_low")),
+            ask_close=to_decimal_opt(d.get("ask_close")),
         )
 
 

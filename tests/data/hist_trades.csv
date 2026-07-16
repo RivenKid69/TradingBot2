@@ -1,0 +1,4 @@
+ts_ms,run_id,symbol,side,order_type,price,qty,pnl,latency_ms,exec_status,meta
+1000,test,BTCUSDT,BUY,MARKET,100.0,1.0,1.0,50.0,FILLED,"{}"
+2000,test,BTCUSDT,SELL,MARKET,101.0,0.5,2.0,60.0,FILLED,"{}"
+3000,test,BTCUSDT,BUY,MARKET,102.0,1.5,2.0,70.0,FILLED,"{}"

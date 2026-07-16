@@ -469,16 +469,22 @@ class OandaMarketDataAdapter(MarketDataAdapter):
             bid = candle.get("bid", mid)
             ask = candle.get("ask", mid)
 
-            # Use mid price for OHLC
-            open_price = float(mid.get("o", 0))
-            high_price = float(mid.get("h", 0))
-            low_price = float(mid.get("l", 0))
-            close_price = float(mid.get("c", 0))
+            # Retrieve distinct values
+            mid_o, mid_h, mid_l, mid_c = float(mid.get("o", 0)), float(mid.get("h", 0)), float(mid.get("l", 0)), float(mid.get("c", 0))
+            bid_o, bid_h, bid_l, bid_c = float(bid.get("o", mid_o)), float(bid.get("h", mid_h)), float(bid.get("l", mid_l)), float(bid.get("c", mid_c))
+            ask_o, ask_h, ask_l, ask_c = float(ask.get("o", mid_o)), float(ask.get("h", mid_h)), float(ask.get("l", mid_l)), float(ask.get("c", mid_c))
+
+            # Use selected price type for main OHLC
+            price_type = self._config.get("price_type", "mid")
+            if price_type == "bid":
+                open_price, high_price, low_price, close_price = bid_o, bid_h, bid_l, bid_c
+            elif price_type == "ask":
+                open_price, high_price, low_price, close_price = ask_o, ask_h, ask_l, ask_c
+            else:
+                open_price, high_price, low_price, close_price = mid_o, mid_h, mid_l, mid_c
 
             # Calculate spread from bid/ask (in price units)
-            close_bid = float(bid.get("c", close_price))
-            close_ask = float(ask.get("c", close_price))
-            spread = close_ask - close_bid
+            spread = ask_c - bid_c
 
             # Volume (OANDA returns tick volume)
             volume = int(candle.get("volume", 0))
@@ -491,8 +497,15 @@ class OandaMarketDataAdapter(MarketDataAdapter):
                 low=Decimal(str(low_price)),
                 close=Decimal(str(close_price)),
                 volume_base=Decimal(str(volume)),  # Tick volume
-                # Store spread info in volume_quote for forex
                 volume_quote=Decimal(str(spread * 10000)),  # Spread in pips approx
+                bid_open=Decimal(str(bid_o)),
+                bid_high=Decimal(str(bid_h)),
+                bid_low=Decimal(str(bid_l)),
+                bid_close=Decimal(str(bid_c)),
+                ask_open=Decimal(str(ask_o)),
+                ask_high=Decimal(str(ask_h)),
+                ask_low=Decimal(str(ask_l)),
+                ask_close=Decimal(str(ask_c)),
             )
         except Exception as e:
             logger.warning(f"Failed to parse candle: {e}")

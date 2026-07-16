@@ -1,0 +1,118 @@
+mode: train
+run_id: spot-bar-demo
+logs_dir: logs
+artifacts_dir: artifacts
+market: spot
+symbols:
+  - BTCUSDT
+
+data:
+  symbols:
+    - BTCUSDT
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
+  train_start_ts: 1672531200
+  train_end_ts: 1698796799
+  val_start_ts: 1698796800
+  val_end_ts: 1704067199
+
+execution:
+  enabled: true
+  mode: bar
+
+no_trade:
+  enabled: false
+  cooldown_bars: 0
+  block_when_low_liquidity: false
+
+liquidity:
+  adv_min_share: 0.0
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  taker_bps: 10.0
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
+
+reward:
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+risk:
+  enabled: false
+  cvar:
+    use_constraint: false
+    alpha: 0.05
+    limit_pct: -0.02
+    lambda_lr: 0.01
+    use_penalty: true
+    penalty_cap: 0.7
+    weight: 0.15
+    cap: 0.5
+    winsor_pct: 0.1
+    ema_beta: 0.9
+
+model:
+  algo: "ppo"
+  params:
+    turnover_penalty_coef: 0.0005
+    reward_return_clip: 10.0
+    turnover_norm_cap: 1.0
+    reward_cap: 10.0
+    value_scale_update_enabled: true
+
+    clip_range_vf: 0.7                 # ✅ FIX (2025-11-24): Enable VF clipping for PPO stability & Twin Critics
+    vf_clip_warmup_updates: 10         # Warmup: gradually enable VF clipping over first 10 updates
+    vf_clip_threshold_ev: 9999.0
+
+
+
+    normalize_returns: true
+
+
+    gae_lambda: 0.95
+    # PopArt контроллер отключён и конфигурация игнорируется.
+    value_scale_controller: {}
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
+
+algo:
+  actions:
+    long_only: true
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
+    bins_vol: 4
+    max_asset_weight: 1.0
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths:
+        - "data/processed/*.feather"
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

@@ -128,7 +128,10 @@ class TestDividendAdjustment:
         # Mock dividends
         with patch.object(service, 'get_dividends', return_value=sample_dividends):
             dates = ["2024-01-01", "2024-03-01", "2024-06-01", "2024-12-01"]
-            prices_by_date = {d: 150.0 for d in dates}
+            # Total-return adjustment needs the close at each *ex-date* (no longer
+            # fabricated to $100). Provide ex-date prices alongside requested dates.
+            ex_dates = ["2024-01-15", "2024-04-15", "2024-07-15", "2024-10-15"]
+            prices_by_date = {d: 150.0 for d in dates + ex_dates}
 
             factors = service.compute_dividend_factors("AAPL", dates, prices_by_date)
 

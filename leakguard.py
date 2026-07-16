@@ -61,7 +61,7 @@ class LeakGuard:
             # STRICT MODE: Environment variable can enforce hard error
             if os.getenv("STRICT_LEAK_GUARD", "").lower() == "true":
                 raise ValueError(
-                    f"CRITICAL: decision_delay_ms={self.cfg.decision_delay_ms} is below recommended minimum of {RECOMMENDED_MIN_DELAY_MS}ms! "
+                    f"STRICT mode: CRITICAL: decision_delay_ms={self.cfg.decision_delay_ms} is below recommended minimum of {RECOMMENDED_MIN_DELAY_MS}ms! "
                     "Insufficient delay creates forward-looking bias. "
                     f"Recommended: decision_delay_ms >= {RECOMMENDED_MIN_DELAY_MS}. "
                     "To override: unset STRICT_LEAK_GUARD or set to 'false'. "

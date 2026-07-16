@@ -4154,6 +4154,10 @@ def objective(trial: optuna.Trial,
         try:
             env_tr.training = False
             env_tr.save(str(train_stats_path))
+            save_sidecar_metadata(
+                str(train_stats_path),
+                extra={"kind": "vecnorm_stats", "phase": "train"},
+            )
         except Exception as exc:
             print(f"Failed to resave training VecNormalize stats: {exc}")
         env_tr.close()
@@ -5287,7 +5291,7 @@ def main():
     norm_stats = {}  # Empty dict maintained for backward compatibility with test fixtures
 
     HPO_TRIALS = 1 # Общее количество испытаний (DEMO: was 20)
-    HPO_BUDGET_PER_TRIAL = 150_000 # Таймстепы для каждого испытания (DEMO: was 1_000_000)
+    HPO_BUDGET_PER_TRIAL = 1000 # Таймстепы для каждого испытания (DEMO: was 1_000_000)
 
     print(f"\n===== Starting Unified HPO Process ({HPO_TRIALS} trials) =====")
 
@@ -5404,7 +5408,63 @@ def main():
             print("[WARN] Skipping final validation: evaluation split is empty.")
         else:
             def _make_env_val(symbol: str, df: pd.DataFrame):
-                params = best_trial.params
+                params = best_trial.params.copy()
+                slowest_window = max(
+                    MA5_WINDOW,
+                    MA20_WINDOW,
+                    ATR_WINDOW,
+                    RSI_WINDOW,
+                    MACD_SLOW,
+                    MOMENTUM_WINDOW,
+                    CCI_WINDOW,
+                    BB_WINDOW,
+                    OBV_MA_WINDOW
+                )
+                warmup_period = slowest_window * 2
+                def _get_val(key, default):
+                    model_cfg = getattr(cfg, "model", None)
+                    if model_cfg is not None:
+                        params_cfg = getattr(model_cfg, "params", None)
+                        if isinstance(params_cfg, dict) and key in params_cfg:
+                            return params_cfg[key]
+                        if hasattr(params_cfg, key):
+                            return getattr(params_cfg, key)
+                        if hasattr(model_cfg, key):
+                            return getattr(model_cfg, key)
+                    return default
+                reward_clip_defaults = {
+                    "adaptive": True,
+                    "atr_window": 14,
+                    "hard_cap_pct": 2.0,
+                    "multiplier": 4.0,
+                }
+                reward_clip_cfg_raw = _get_val("reward_clip", {})
+                if isinstance(reward_clip_cfg_raw, dict):
+                    reward_clip_params = dict(reward_clip_defaults)
+                    reward_clip_params.update(reward_clip_cfg_raw)
+                elif hasattr(reward_clip_cfg_raw, "__dict__"):
+                    reward_clip_params = dict(reward_clip_defaults)
+                    reward_clip_params.update({
+                        k: getattr(reward_clip_cfg_raw, k)
+                        for k in reward_clip_defaults
+                        if hasattr(reward_clip_cfg_raw, k)
+                    })
+                else:
+                    reward_clip_params = reward_clip_defaults
+                for key, default in [
+                    ("window_size", 20),
+                    ("gamma", 0.99),
+                    ("atr_multiplier", 2.0),
+                    ("trailing_atr_mult", 1.5),
+                    ("tp_atr_mult", 3.0),
+                    ("trade_frequency_penalty", 0.0),
+                    ("turnover_penalty_coef", 0.0),
+                    ("reward_return_clip", 10.0),
+                    ("turnover_norm_cap", 1.0),
+                    ("reward_cap", 10.0),
+                ]:
+                    if key not in params:
+                        params[key] = _get_val(key, default)
                 env_val_params = {
                     "norm_stats": norm_stats,
                     "window_size": params["window_size"],
@@ -5502,16 +5562,23 @@ def main():
             sortino = sortino_ratio(flat_returns, annualization_sqrt=ann_sqrt)
             sharpe = sharpe_ratio(flat_returns, annualization_sqrt=ann_sqrt)
 
+            val_pnl_pcts = []
+            for curve in equity_curves:
+                if len(curve) > 1 and curve[0] != 0.0:
+                    val_pnl_pcts.append((curve[-1] - curve[0]) / curve[0])
+            mean_val_return = float(np.mean(val_pnl_pcts)) * 100.0 if val_pnl_pcts else 0.0
+
             report = {
                 "mean_reward": float(np.mean(rewards)),
-                "std_reward": float(np.std(rewards, ddof=1)),
+                "std_reward": float(np.std(rewards, ddof=1)) if len(rewards) > 1 else 0.0,
                 "sortino_ratio": float(sortino),
                 "sharpe_ratio": float(sharpe),
+                "validation_pnl": mean_val_return,
             }
             with open(ensemble_dir / "validation_report.json", "w") as f:
                 json.dump(report, f, indent=4)
             print(
-                f"Validation metrics -> Sortino: {sortino:.4f}, Sharpe: {sharpe:.4f}. "
+                f"Validation metrics -> Sortino: {sortino:.4f}, Sharpe: {sharpe:.4f}, PnL: {mean_val_return:.2f}%. "
                 f"Report saved to '{ensemble_dir / 'validation_report.json'}'"
             )
     else:

@@ -1,0 +1,262 @@
+adv:
+  auto_refresh: true
+  dataset: null
+  default_quote: null
+  enabled: false
+  floor_quote: null
+  missing_symbol_policy: warn
+  path: null
+  refresh_days: 7
+  seasonality_path: null
+  seasonality_profile: null
+  window_days: 30
+artifacts_dir: artifacts
+asset_class: crypto
+components:
+  backtest_engine:
+    params: {}
+    target: service_backtest:ServiceBacktest
+  executor:
+    params:
+      symbol: BTCUSDT
+    target: impl_sim_executor:SimExecutor
+  feature_pipe:
+    params: {}
+    target: feature_pipe:FeaturePipe
+  market_data:
+    params:
+      paths:
+      - data/sample.csv
+      timeframe: 4h
+    target: impl_offline_data:OfflineCSVBarSource
+  policy:
+    params:
+      order_qty: 10
+    target: strategies.custom_options:OptionsDeltaNeutralStrategy
+  risk_guards:
+    params: {}
+    target: impl_risk_basic:RiskBasicImpl
+costs:
+  taker_fee_bps: 5.0
+data:
+  paths:
+  - data/options/AAPL_options_features.parquet
+  prices_path: data/options/AAPL_options_features.parquet
+  timeframe: 4h
+data_vendor: binance
+env:
+  initial_balance: 100000.0
+  initial_cash: 100000.0
+execution:
+  bar_capacity_base:
+    adv_base_path: data/liquidity/adv_base.json
+    capacity_frac_of_ADV_base: 1.0
+    enabled: false
+    floor_base: null
+    timeframe_ms: 14400000
+  bridge:
+    intrabar_price_model: bridge
+    latency_constant_ms: null
+    reference_prices_path: null
+    timeframe_ms: 14400000
+    use_latency_from: null
+  clip_to_bar:
+    enabled: true
+    strict_open_fill: false
+  costs:
+    taker_fee_bps: 5.0
+  enabled: true
+  entry_mode: default
+  fill_policy: next_open_market
+  intrabar_price_model: bridge
+  latency_constant_ms: 50.0
+  mode: bar
+  reference_prices_path: null
+  spot_only: true
+  timeframe_ms: 14400000
+  use_latency_from: null
+execution_config:
+  large_order_algo: TWAP
+  notional_threshold: 10000.0
+  pov:
+    child_interval_s: 60
+    min_child_notional: 20.0
+    participation: 0.1
+execution_params:
+  limit_offset_bps: 0.0
+  slippage_bps: 0.0
+  tif: GTC
+  ttl_steps: 0
+execution_profile: MKT_OPEN_NEXT_4H
+fees:
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
+  maker_bps: null
+  maker_discount_mult: null
+  maker_share_default: null
+  maker_taker_share:
+    enabled: false
+    maker_share_default: 0.5
+    mode: fixed
+    model:
+      coefficients: {}
+      distance_to_mid: null
+      latency: null
+    spread_cost_maker_bps: 0.0
+    spread_cost_taker_bps: 0.0
+    taker_fee_override_bps: null
+  path: data/fees/fees_by_symbol.json
+  refresh_days: null
+  rounding:
+    enabled: true
+    maximum_fee: null
+    minimum_fee: null
+    mode: up
+    step: null
+  settlement:
+    currency: null
+    enabled: false
+    mode: null
+    prefer_discount_asset: false
+  spread_cost_maker_bps: null
+  spread_cost_taker_bps: null
+  taker_bps: 10.0
+  taker_discount_mult: null
+  taker_fee_override_bps: null
+  use_bnb_discount: null
+  vip_tier: null
+latency:
+  base_ms: 250
+  debug_log: false
+  jitter_ms: 50
+  latency_seasonality_path: null
+  max_ms: 10000
+  min_ms: 0
+  refresh_period_days: 30
+  retries: 1
+  seasonality_default: 1.0
+  seed: 0
+  spike_mult: 5.0
+  spike_p: 0.01
+  timeout_ms: 2500
+  use_seasonality: true
+  vol_debug_log: false
+  vol_metric: sigma
+  vol_window: 120
+  volatility_gamma: 0.0
+  zscore_clip: 3.0
+latency_seasonality_path: data/latency/liquidity_latency_seasonality.json
+liquidity_seasonality_hash: null
+liquidity_seasonality_override_path: null
+liquidity_seasonality_path: data/latency/liquidity_latency_seasonality.json
+logs_dir: logs
+market: spot
+mode: sim
+model:
+  algo: ppo
+  params: {}
+no_trade:
+  custom_ms: []
+  daily_utc: []
+  dynamic_guard:
+    atr_window: 14
+    cooldown_bars: 10
+    enable: false
+    hysteresis: 0.1
+    log_reason: true
+    sigma_window: 120
+    spread_abs_bps: null
+    spread_pctile: 0.99
+    vol_abs: null
+    vol_pctile: 0.99
+  enabled: false
+  funding_buffer_min: 0
+portfolio:
+  equity_usd: 100000.0
+quantizer:
+  auto_refresh_days: 30
+  enforce_percent_price_by_side: true
+  filters_path: data/binance_filters.json
+  quantize_mode: inward
+  refresh_on_start: false
+  strict_filters: true
+risk:
+  daily_loss_limit: 0.0
+  daily_reset_utc_hour: 0
+  enabled: true
+  exposure_buffer_frac: 0.0
+  max_abs_position_notional: 0.0
+  max_abs_position_qty: 0.0
+  max_entries_per_day: null
+  max_order_notional: 0.0
+  max_orders_per_min: 60
+  max_orders_window_s: 60
+  max_total_exposure_pct: null
+  max_total_notional: null
+  pause_seconds_on_violation: 300
+run_id: default-run
+seasonality_log_level: INFO
+slippage:
+  adv:
+    enabled: false
+    fallback_adv: null
+    hash: null
+    liquidity_buffer: 1.0
+    max_adv: null
+    min_adv: null
+    multipliers: []
+    override_path: null
+    profile_kind: null
+    seasonality_path: null
+    smoothing_alpha: null
+    window_days: 30
+    zscore_clip: null
+  default_spread_bps: 2.0
+  dynamic:
+    alpha_bps: 0.0
+    beta_coef: 0.0
+    enabled: false
+    fallback_spread_bps: null
+    gamma: 0.0
+    hash: null
+    last_refresh_ts: null
+    max_spread_bps: 20.0
+    min_spread_bps: 0.0
+    multipliers: []
+    override_path: null
+    path: null
+    profile_kind: hourly
+    refresh_fail_days: null
+    refresh_on_start: false
+    refresh_warn_days: null
+    smoothing_alpha: null
+    use_volatility: false
+    vol_metric: null
+    vol_window: null
+    zscore_clip: null
+  dynamic_impact:
+    beta_participation: 0.0
+    beta_vol: 0.0
+    enabled: false
+    fallback_k: null
+    max_k: null
+    min_k: null
+    participation_metric: null
+    participation_window: null
+    smoothing_alpha: null
+    vol_metric: null
+    vol_window: null
+    zscore_clip: null
+  eps: 1e-12
+  k: 0.8
+  min_half_spread_bps: 0.0
+  tail_shock:
+    decay_halflife_bars: null
+    enabled: false
+    max_multiplier: null
+    min_multiplier: null
+    probability: 0.0
+    seed: null
+    shock_bps: 0.0
+    shock_multiplier: 1.0
+use_seasonality: true

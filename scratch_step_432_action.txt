@@ -1,0 +1,78 @@
+﻿Created At: 2026-05-31T09:20:06Z
+Completed At: 2026-05-31T09:20:06Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -2813,6 +2813,349 @@
+             }
+         }
+ 
++        const aiSteps = [
++            {
++                key: 'ingest',
++                title: 'Сбор данных (Ingest)',
++                desc: 'Импорт исторических цен закрытия и свечей.',
++                icon: 'fa-cloud-download',
++                color: 'text-sky-400',
++                job: 'run_ingest',
++                btnText: 'Настроить сбор',
++                action: () => openIngestConfig(),
++                tip: 'Рекомендация: Сбор исторических данных — первый шаг. Выберите тикеры и период тестирования.'
++            },
++            {
++                key: 'features',
++                title: 'Генерация признаков (Features)',
++                desc: 'Расчет математических индикаторов (RSI, скользящие средние, волатильность).',
++                icon: 'fa-calculator',
++                color: 'text-indigo-400',
++                job: 'run_features',
++                btnText: 'Настроить признаки',
++                action: () => openFeaturesConfig(),
++                tip: 'Рекомендация: Признаки (Features) — это "глаза" вашей модели. Настройте нужные скользящие средние или индикаторы силы тренда.'
++            },
++            {
++                key: 'targets',
++                title: 'Создание меток (Targets)',
++                desc: 'Построение cost-aware целевых перем
+<truncated 16307 bytes>
+ctive:scale-[0.98] shadow-md flex items-center gap-1.5 cursor-pointer mt-2 w-fit">
++                            <span>${step.btnText}</span>
++                        </button>
++                    `;
++                    
++                    const tipTextEl = document.getElementById('workflow-tip-text');
++                    if (tipTextEl) tipTextEl.innerText = step.tip;
++                } else {
++                    iconClass = 'fa-circle text-gray-800 bg-[#131316]';
++                    contentClass = 'opacity-30 pointer-events-none';
++                }
++
++                stepEl.innerHTML = `
++                    <div class="absolute -left-[30px] top-1 z-10 flex items-center justify-center w-4 h-4 rounded-full bg-[#131316]">
++                        <i class="fa-solid ${iconClass} text-xs"></i>
++                    </div>
++                    <div class="flex-1 space-y-1 pb-2 ${contentClass}">
++                        <h4 class="text-xs font-semibold text-white flex items-center gap-2">
++                            <span>Шаг ${index + 1}: ${step.title}</span>
++                        </h4>
++                        <p class="text-[10px] text-gray-500 leading-relaxed max-w-xl font-sans">${step.desc}</p>
++                        ${actionHtml}
++                    </div>
++                `;
++
++                if (index === currentStep) {
++                    const btn = stepEl.querySelector('button');
++                    if (btn) {
++                        btn.onclick = step.action;
++                    }
++                }
++
++                container.appendChild(stepEl);
++            });
++        }
++
+         // Product Mode State & Transition Handlers
+         let currentProductMode = 'lite';
+         let proTargetModule = null;
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

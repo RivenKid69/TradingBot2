@@ -1,0 +1,401 @@
+mode: train
+run_id: default-run
+logs_dir: logs
+artifacts_dir: artifacts
+seasonality_log_level: INFO
+
+# =============================================================================
+# ASSET CLASS CONFIGURATION (Phase 4.5 Unification)
+# =============================================================================
+# asset_class: crypto | equity
+#   - crypto: 24/7 trading, Binance-style maker/taker fees, higher slippage
+#   - equity: NYSE hours (9:30-16:00 ET), commission-free with regulatory fees
+#
+# data_vendor: binance | alpaca | polygon
+#   - binance: Crypto data from Binance
+#   - alpaca: US equities via Alpaca Markets
+#   - polygon: US equities via Polygon.io
+#
+# These settings auto-configure:
+#   - FeeProvider (CryptoFeeProvider / EquityFeeProvider)
+#   - SlippageProvider (crypto / equity profile)
+#   - TradingHoursAdapter (24/7 or NYSE calendar)
+# =============================================================================
+asset_class: crypto
+data_vendor: binance
+
+execution_profile: MKT_OPEN_NEXT_4H  # Changed from H1 to 4H for 4-hour timeframe
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+execution:
+  enabled: true              # оффлайн-тренировка симулирует сделки ради реварда
+  mode: bar
+execution_config:
+  notional_threshold: 10000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# Optional path to 168 hourly liquidity multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Optional SHA256 hash of the above liquidity multipliers for integrity checking
+liquidity_seasonality_hash: null
+# Optional path to 168 hourly liquidity overrides multiplied with the above multipliers
+liquidity_seasonality_override_path: null
+# Optional path to 168 hourly latency multipliers (indexed by UTC hour-of-week;
+# values clamped to [0.1, 10.0])
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+# Set false to ignore liquidity and latency multipliers
+use_seasonality: false
+
+market: spot
+
+data:
+  timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма; symbols are loaded from data/universe/symbols.json
+  # Training window (train_start_ts/train_end_ts); legacy aliases start_ts/end_ts remain supported.
+  train_start_ts: 1499990400     # 2017-07-14T00:00:00Z (aka start_ts)
+  train_end_ts: 1743465599       # 2025-03-31T23:59:59Z (aka end_ts)
+  # start_ts: 1499990400         # Uncomment for legacy-style configs (kept for compatibility)
+  # end_ts: 1743465599           # Uncomment for legacy-style configs (kept for compatibility)
+  val_start_ts: 1743465600       # 2025-04-01T00:00:00Z
+  val_end_ts: 1751327999         # 2025-06-30T23:59:59Z
+  test_start_ts: 1751328000      # 2025-07-01T00:00:00Z
+  test_end_ts: 1759276799        # 2025-09-30T23:59:59Z
+
+model:
+  algo: "ppo"
+
+  # OPTIMIZER CONFIGURATION (AdaptiveUPGD - default for continual learning)
+  # See docs/UPGD_INTEGRATION.md for details
+  optimizer_class: AdaptiveUPGD  # Options: AdaptiveUPGD (recommended), UPGD, UPGDW
+  optimizer_kwargs:
+    lr: 1.0e-4                   # Learning rate (will be set from params.learning_rate if not specified)
+    weight_decay: 0.001          # L2 regularization coefficient
+    sigma: 0.001                 # CRITICAL: Gaussian noise std (tune to 0.0005-0.001 for VGS interaction)
+    beta_utility: 0.999          # EMA decay for utility tracking (forgetting prevention)
+    beta1: 0.9                   # First moment coefficient (AdaptiveUPGD only)
+    beta2: 0.999                 # Second moment coefficient (AdaptiveUPGD only)
+    adaptive_noise: true         # ✅ FIX (2025-11-22): Enable adaptive noise scaling when using VGS + UPGD
+
+  # VARIANCE GRADIENT SCALER (VGS) - Automatic per-layer gradient normalization
+  # See variance_gradient_scaler.py for algorithm details
+  vgs:
+    enabled: true                # Enable VGS for training stability
+    accumulation_steps: 4        # Number of backward passes to accumulate gradient statistics
+    warmup_steps: 10             # Warmup updates before applying scaling
+    eps: 1.0e-6                  # Numerical stability epsilon
+    clip_threshold: 10.0         # Clip extreme scaling factors to prevent instability
+
+  optimizer_lr_min: &default_min_lr 5.0e-6
+  scheduler_min_lr: *default_min_lr
+  params:
+    learning_rate: 1.0e-4              # Base learning rate (осторожно повышаем шаг обучения)
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.10                   # не душим обновления (0.1-0.2 норма)
+
+    clip_range_vf: 0.7                 # ✅ FIX (2025-11-24): Enable VF clipping for PPO stability & Twin Critics
+    vf_clip_warmup_updates: 10         # Warmup: gradually enable VF clipping over first 10 updates
+    vf_clip_threshold_ev: null         # или задать порог explained variance для активации клипа
+
+    ent_coef: 0.001
+    ent_coef_final: 0.001
+    ent_coef_decay_steps: 400          # плавнее убывание (≈ первые 30% апдейтов)
+    ent_coef_min: 0.0005
+    ent_coef_plateau_window: 24
+    ent_coef_plateau_tolerance: 0.002
+    ent_coef_plateau_min_updates: 40
+    vf_coef: 1.8
+    # Явно отключаем «raw» лимит ценности (чтобы политика не подставляла ±max(|v_min|,|v_max|)):
+    value_clip_limit: null
+    vf_coef_warmup: 1.8
+    vf_coef_warmup_updates: 0
+    vf_bad_explained_scale: 1.0
+    vf_bad_explained_floor: 0.0
+    bad_explained_patience: 2
+    max_grad_norm: 0.5
+    n_steps: 2000                      # больше контекста/стабильнее Â
+    n_epochs: 4                        # разумный компромисс вместо 1
+    batch_size: 200                    # типичный минибатч для PPO
+    microbatch_size: 200               # ✅ FIX (2025-11-24): Increase for CVaR stability (200*0.05=10 tail samples)
+    seed: 20240518
+    # target_kl можно переопределить через вложенный блок algo.params.kl
+    kl_early_stop: true
+    kl_exceed_stop_fraction: 0.15      # стопим эпоху, если ≥15% батчей вышли за target_kl
+    kl_epoch_decay: 1.0
+    kl:
+      target_kl: 0.08
+      early_stop:
+        enabled: true
+        use_ema: true
+        ema_updates: 10
+        ema_alpha: null
+        exceed_stop_fraction: 0.15
+        consec_minibatches: 2
+        absolute_stop_factor: 2.5
+      use_lr_decay: false
+      penalty:
+        type: adaptive_beta
+        beta_init: 0.01
+        pid:
+          kp: 0.5
+          ki: 0.05
+          kd: 0.10
+          beta_min: 1.0e-4
+          beta_max: 1.0
+    optimizer_lr_min: *default_min_lr
+    trade_frequency_penalty: 0.0
+    turnover_penalty_coef: 0.0005      # ≈ комиссия 5 bps в долях
+    reward_return_clip: 10.0           # Лимит лог-доходности
+    turnover_norm_cap: 1.0             # Макс. нормализованный оборот (в долях equity)
+    reward_cap: 10.0                   # Лимит вознаграждения
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
+    cql_alpha: 0.0
+    cql_beta: 5.0
+    cvar_alpha: 0.05
+    cvar_weight: 0.15
+    cvar_activation_threshold: 0.15
+    cvar_activation_hysteresis: 0.05
+    cvar_ramp_updates: 12
+    cvar_cap: 0.5
+    use_torch_compile: false
+    bc_warmup_steps: 200000
+    bc_decay_steps: 800000
+    bc_final_coef: 0.0
+
+    # DISTRIBUTIONAL VALUE HEAD & TWIN CRITICS CONFIGURATION
+    # See docs/twin_critics.md for architecture details
+    use_twin_critics: true       # Enable Twin Critics (default: true, can omit)
+    num_atoms: 21                # Distributional critic: number of quantiles (1=standard, 11-51=distributional)
+    v_min: -10.0                 # Lower bound of value support
+    v_max: 10.0                  # Upper bound of value support (v_max > v_min)
+    v_range_ema_alpha: 0.005     # EMA alpha for adaptive v_min/v_max range adjustment
+    value_scale:
+      ema_beta: 0.9
+      max_rel_step: 0.5
+      std_floor: 0.003
+      window_updates: 16
+      warmup_updates: 6
+      freeze_after_updates: null
+      never_freeze: true
+      max_change_pct: 0.06
+      target_scale_ema_beta: 0.9
+      range_max_rel_step: 0.5
+      freeze_after: null
+      stability:
+        min_explained_variance: 0.0
+        max_abs_p95: 6.0
+        patience: 2
+    # PopArt контроллер отключён и настройка игнорируется.
+    value_scale_controller: {}
+    clip_range_warmup: 0.18
+    clip_range_warmup_updates: 16
+    # Количество апдейтов, в течение которых критик получает стоп-градиент (scale=0)
+    # на shared LSTM; после warmup масштаб восстанавливается до 1.0.
+    critic_grad_warmup_updates: 0
+    entropy_boost_factor: 1.5
+
+env:
+  decision_timing: CLOSE_TO_OPEN
+  no_trade:
+    enabled: false         # полностью отключаем блокировки на трейне
+    policy: ignore
+  session:
+    calendar: crypto_24x7
+    pre_open_keepout_bars: 0
+    post_close_keepout_bars: 0
+  liquidity:
+    min_adv_usd: 0
+    min_bar_quote_volume: 0
+  spreads:
+    max_spread_bps: 1000000000
+  warmup:
+    bars: 0
+
+optimization:
+  scheduler:
+    enabled: false
+
+algo:
+  actions:
+    long_only: true            # <-- ВКЛЮЧАЕМ лонг-онли из конфига
+  action_wrapper:
+    fixed_type: MARKET         # фиксируем тип действия
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
+    bins_vol: 4            # BAR volume head fixed to four discrete fractions [0.0, 0.2, 0.6, 1.0]
+    max_asset_weight: 1.0
+
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true
+
+quantizer:
+  filters_path: "data/binance_filters.json"
+  # strict_filters=true → строго придерживаться актуальных фильтров; false включает мягкий фолбек к кешу/легаси-логике.
+  # Поле strict остаётся легаси-алиасом для strict_filters и может опускаться в новых конфигурациях.
+  strict_filters: true
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30
+  refresh_on_start: false
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  use_bnb_discount: false
+  maker_bps: 1.0
+  taker_bps: 10.0
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
+  rounding:
+    enabled: true
+    mode: up
+
+slippage:
+  k: 0.8
+  min_half_spread_bps: 0.0
+  default_spread_bps: 2.0
+  eps: 1e-12
+  dynamic:
+    enabled: false           # Отключено → модель использует статический спред (легаси-поведение).
+    alpha_bps: 0.0           # Аддитивная надбавка к базовому спреду (в bps) при активном динамическом режиме.
+    beta_coef: 0.0           # Коэффициент при волатильности/ликвидности; 0.0 отключает масштабирование.
+    min_spread_bps: 0.0      # Нижняя граница рассчитанного динамического спреда.
+    max_spread_bps: 20.0     # Верхняя граница рассчитанного динамического спреда.
+    smoothing_alpha: null    # Опциональная EMA-сглаживание [0,1]; null оставляет спред без сглаживания.
+    vol_metric: null         # Имя метрики волатильности (например, "sigma") для beta_coef; null = по умолчанию.
+    vol_window: null         # Окно (в барах) для vol_metric; null = используем источник данных.
+    fallback_spread_bps: null  # Фолбек-спред (bps), когда нет данных; null → используем default_spread_bps.
+    refresh_warn_days: null  # Предупреждать, если профиль сезонности устарел; null → без проверки.
+    refresh_fail_days: null  # Прерывать выполнение при сильно устаревшем профиле; null → без проверки.
+    refresh_on_start: false  # Принудительно обновлять профиль при старте (если поддерживается).
+    profile_kind: hourly
+    multipliers: []          # 168 нормированных коэффициентов (например, со средним 1.0)
+    path: null               # Опционально: путь к JSON-профилю (см. data/slippage/hourly_profile.sample.json)
+    override_path: null      # Опциональный путь к локальным поправкам поверх базового профиля.
+    hash: null               # Опциональный SHA256 от базового профиля для контроля целостности.
+    use_volatility: false    # Легаси-переключатель; оставьте false, если используете beta_coef.
+    gamma: 0.0
+    zscore_clip: null        # Z-score клип при нормализации волатильности; null → без клипа.
+    last_refresh_ts: null    # Последняя отметка обновления профиля (мс); заполняется автообновлением.
+  dynamic_impact:
+    enabled: false           # Включить масштабирование коэффициента impact (k) по рыночным условиям.
+    beta_vol: 0.0            # Линейный коэффициент на нормализованную волатильность; 0.0 = отключено.
+    beta_participation: 0.0  # Линейный коэффициент на нормализованную долю участия/размер ордера.
+    min_k: null              # Нижняя граница для результирующего k (null = без ограничений).
+    max_k: null              # Верхняя граница для результирующего k (null = без ограничений).
+    fallback_k: null         # Опциональный k, используемый, если входные метрики недоступны.
+    vol_metric: null         # Имя метрики волатильности для beta_vol.
+    vol_window: null         # Окно (в барах) для метрики волатильности.
+    participation_metric: null   # Источник participation (например, "participation").
+    participation_window: null   # Окно (в барах) для participation_metric.
+    smoothing_alpha: null    # EMA-сглаживание результирующего k [0,1]; null = без сглаживания.
+    zscore_clip: null        # Клип z-score при нормализации метрик; null = без клипа.
+  tail_shock:
+    enabled: false           # Включить редкие «хвостовые» шоки спреда/слиппеджа.
+    probability: 0.0         # Вероятность шока на шаг (0..1).
+    shock_bps: 0.0           # Дополнительный фиксированный шок в bps при срабатывании.
+    shock_multiplier: 1.0    # Мультипликатор к рассчитанному слиппеджу при шоке.
+    decay_halflife_bars: null  # Полупериод затухания эффекта шока (в барах); null = без затухания.
+    min_multiplier: null     # Нижняя граница итогового мультипликатора.
+    max_multiplier: null     # Верхняя граница итогового мультипликатора.
+    seed: null               # Опциональный seed для генератора шоков.
+  adv:
+    enabled: false           # Включить динамику ликвидности на основе ADV/оборотной статистики.
+    window_days: 30          # Горизонт окна (в днях) для расчёта ADV.
+    smoothing_alpha: null    # EMA-сглаживание ADV [0,1]; null = без сглаживания.
+    fallback_adv: null       # Опциональный ADV по умолчанию при отсутствии данных.
+    min_adv: null            # Нижняя граница ADV (в базовой валюте).
+    max_adv: null            # Верхняя граница ADV (в базовой валюте).
+    seasonality_path: null   # Путь к сезонному профилю ликвидности (JSON/YAML) или null.
+    override_path: null      # Путь к локальному override-сезонности или null.
+    hash: null               # Контрольная сумма сезонного профиля (опционально).
+    profile_kind: null       # Имя профиля в файле сезонности (например, "hourly").
+    multipliers: []          # Inline-мультипликаторы сезонности (по умолчанию пусто).
+    zscore_clip: null        # Клип при нормализации ADV (z-score); null = без клипа.
+    liquidity_buffer: 1.0    # Доп. буфер ликвидности (>1 увеличивает оценку доступного ADV).
+
+latency:
+  use_seasonality: false
+  base_ms: 0
+  jitter_ms: 0
+  latency_seasonality_path: null
+  refresh_period_days: 30
+  seasonality_default: 1.0
+  spike_p: 0.01
+  spike_mult: 5.0
+  timeout_ms: 2500
+  retries: 1
+  seed: 0  # RNG seed; seasonality multipliers do not affect RNG state
+
+risk:
+  enabled: false
+  cvar:
+    use_constraint: false
+    alpha: 0.05
+    limit_pct: -0.02
+    lambda_lr: 0.01
+    use_penalty: true
+    penalty_cap: 0.7
+    weight: 0.15
+    cap: 0.5
+    winsor_pct: 0.1
+    ema_beta: 0.9
+
+no_trade:
+  enabled: false
+  cooldown_bars: 0
+  block_when_low_liquidity: false
+
+liquidity:
+  adv_min_share: 0.0
+
+costs:
+  taker_bps: 10
+  half_spread_bps: 5
+  impact_coeff: 0.0
+
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0005
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/*.csv"]
+      timeframe: "4h"  # Изменено с 1m на 4h для 4-часового таймфрейма
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

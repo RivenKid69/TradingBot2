@@ -1,0 +1,142 @@
+mode: live
+run_id: live-run
+logs_dir: logs
+artifacts_dir: artifacts
+seasonality_log_level: INFO
+runtime_config: runtime.yaml
+execution_config:
+  notional_threshold: 10000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.1
+    child_interval_s: 60
+    min_child_notional: 20.0
+max_signals_per_sec: 5.0
+backoff_base_s: 2.0
+max_backoff_s: 60.0
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  slippage_bps: 0.0
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+execution:
+  mode: bar
+  enabled: false
+timing:
+  enforce_closed_bars: true
+  timeframe_ms: 14400000
+  close_lag_ms: 8000
+clock_sync:
+  refresh_sec: 300
+  warn_threshold_ms: 500
+  kill_threshold_ms: 2000
+  max_step_ms: 1000
+  attempts: 5
+shutdown:
+  grace_period: 5.0
+  drain_policy: graceful
+  timeouts:
+    stop: 10.0
+    flush: 10.0
+    finalize: 5.0
+ttl:
+  enabled: false
+  ttl_seconds: 60
+  mode: relative
+  guard_ms: 5000
+  absolute_failsafe_ms: 900000
+  state_path: state/ttl_state.json
+  out_csv: null
+  dedup_persist: null
+api:
+  api_key: null
+  api_secret: null
+data:
+  timeframe: 4h
+liquidity_seasonality_path: data/latency/liquidity_latency_seasonality.json
+liquidity_seasonality_hash: null
+liquidity_seasonality_override_path: null
+latency_seasonality_path: data/latency/liquidity_latency_seasonality.json
+use_seasonality: true
+latency:
+  use_seasonality: true
+  latency_seasonality_path: null
+  refresh_period_days: 30
+  seasonality_default: 1.0
+  base_ms: 250
+  jitter_ms: 50
+  spike_p: 0.01
+  spike_mult: 5.0
+  timeout_ms: 2500
+  retries: 1
+  seed: 0
+  vol_metric: sigma
+  vol_window: 120
+  volatility_gamma: 0.0
+  zscore_clip: 3.0
+  min_ms: 0
+  max_ms: 10000
+  debug_log: false
+  vol_debug_log: false
+risk:
+  enabled: true
+  max_abs_position_qty: 0.0
+  max_abs_position_notional: 0.0
+  max_order_notional: 0.0
+  max_orders_per_min: 60
+  max_orders_window_s: 60
+  daily_loss_limit: 0.0
+  pause_seconds_on_violation: 300
+  daily_reset_utc_hour: 0
+  max_entries_per_day: null
+  max_total_notional: null
+  max_total_exposure_pct: null
+  exposure_buffer_frac: 0.0
+quantizer:
+  filters_path: data/binance_filters.json
+  strict_filters: true
+  enforce_percent_price_by_side: true
+  auto_refresh_days: 30
+  refresh_on_start: false
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true
+    windows:
+      enabled: true
+    anomaly:
+      enabled: true
+    extreme:
+      enabled: true
+    policy:
+      enabled: true
+    risk:
+      enabled: true
+    ttl:
+      enabled: true
+    dedup:
+      enabled: true
+    throttle:
+      enabled: true
+    publish:
+      enabled: true
+components:
+  market_data:
+    target: impl_binance_public:BinancePublicBarSource
+    params:
+      timeframe: 4h
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: BTCUSDT
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}

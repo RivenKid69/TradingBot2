@@ -31,7 +31,42 @@ def norm_pdf(x):
     """Normal probability density function."""
     return math.exp(-0.5 * x**2) / math.sqrt(2.0 * math.pi)
 
-def generate_synthetic_options(underlying: str, start_date: str, end_date: str, strike_range: str, include_greeks: bool, output_dir: str):
+def is_dte_in_range(dte: int, dte_range: str) -> bool:
+    if dte_range == "all":
+        return True
+    elif dte_range == "0-7":
+        return 0 <= dte <= 7
+    elif dte_range == "7-45":
+        return 7 < dte <= 45
+    elif dte_range == "45-90":
+        return 45 < dte <= 90
+    return True
+
+def get_simulated_expirations(d: date) -> list[date]:
+    exps = set()
+    # 1. Weekly Fridays for the next 14 weeks (approx 100 days)
+    for w in range(1, 15):
+        days_ahead = (4 - d.weekday()) % 7
+        if days_ahead == 0:
+            days_ahead = 7
+        exp = d + timedelta(days=days_ahead + (w - 1) * 7)
+        exps.add(exp)
+    
+    # 2. Monthly third Fridays for the next 6 months
+    for m_offset in range(1, 7):
+        target_year = d.year
+        target_month = d.month + m_offset
+        while target_month > 12:
+            target_month -= 12
+            target_year += 1
+        first_day = date(target_year, target_month, 1)
+        first_friday_offset = (4 - first_day.weekday()) % 7
+        third_friday = first_day + timedelta(days=first_friday_offset + 14)
+        exps.add(third_friday)
+        
+    return sorted(list(exps))
+
+def generate_synthetic_options(underlying: str, start_date: str, end_date: str, strike_range: str, include_greeks: bool, output_dir: str, dte_range: str = "all"):
     print(f"Generating synthetic options data for {underlying}...")
     os.makedirs(output_dir, exist_ok=True)
     
@@ -54,30 +89,26 @@ def generate_synthetic_options(underlying: str, start_date: str, end_date: str, 
     
     spot_base = base_prices.get(underlying.upper(), 150.0)
     
-    # Option contract specifications
-    # Generate expirations: e.g. next Friday, monthly, etc.
-    expirations = []
-    current = end_dt
-    for i in range(1, 5): # 4 expirations
-        days_ahead = (4 - current.weekday()) % 7
-        if days_ahead == 0:
-            days_ahead = 7
-        exp = current + timedelta(days=days_ahead + (i - 1) * 7)
-        expirations.append(exp)
-        
-    records = []
-    
     # ATM strike offsets based on strike range parameter
-    num_strikes = 10 if "10" in strike_range else 20
+    num_strikes = 10
+    if "20" in strike_range:
+        num_strikes = 20
+    elif "50" in strike_range:
+        num_strikes = 50
     strike_increment = 2.5 if spot_base < 300 else 5.0
+    
+    records = []
     
     for d in dates:
         # Simulate spot price drift
         spot = spot_base + np.random.normal(0, spot_base * 0.01)
         
+        expirations = get_simulated_expirations(d)
         for exp in expirations:
             dte = (exp - d).days
             if dte <= 0:
+                continue
+            if not is_dte_in_range(dte, dte_range):
                 continue
             t = max(1 / 365.0, dte / 365.0)
             
@@ -158,7 +189,7 @@ def generate_synthetic_options(underlying: str, start_date: str, end_date: str, 
     print(f"Saved {len(df)} options records to {filepath}")
     return True
 
-def download_theta_data(underlying: str, start_date: str, end_date: str, include_greeks: bool, output_dir: str, config: dict):
+def download_theta_data(underlying: str, start_date: str, end_date: str, include_greeks: bool, output_dir: str, config: dict, dte_range: str = "all"):
     if not THETA_DATA_AVAILABLE:
         print("ThetaData library is not available, falling back to synthetic data.")
         return False
@@ -186,12 +217,18 @@ def download_theta_data(underlying: str, start_date: str, end_date: str, include
             
         records = []
         for contract in chain.contracts:
+            exp_date = datetime.strptime(str(contract.expiration_date), "%Y-%m-%d").date() if isinstance(contract.expiration_date, str) else contract.expiration_date
+            dte = (exp_date - date.today()).days
+            if not is_dte_in_range(dte, dte_range):
+                continue
+                
             records.append({
                 "occ_symbol": contract.occ_symbol,
                 "underlying": contract.symbol,
                 "option_type": contract.option_type.value,
                 "strike": contract.strike_price,
                 "expiration": str(contract.expiration_date),
+                "dte": dte,
                 "bid": contract.bid,
                 "ask": contract.ask,
                 "mid": contract.mid_price,
@@ -203,6 +240,10 @@ def download_theta_data(underlying: str, start_date: str, end_date: str, include
                 "vega": contract.vega,
                 "implied_volatility": contract.implied_volatility,
             })
+            
+        if not records:
+            print("No options contracts match the DTE filter, falling back to synthetic.")
+            return False
             
         df = pd.DataFrame(records)
         os.makedirs(output_dir, exist_ok=True)
@@ -219,7 +260,8 @@ def main():
     parser.add_argument("--underlyings", nargs="+", required=True, help="Underlying symbols (e.g. AAPL MSFT)")
     parser.add_argument("--start", required=True, help="Start date (YYYY-MM-DD)")
     parser.add_argument("--end", required=True, help="End date (YYYY-MM-DD)")
-    parser.add_argument("--strike-range", default="ATM +/- 10", choices=["ATM +/- 10", "ATM +/- 20"], help="Strikes range around ATM")
+    parser.add_argument("--strike-range", default="ATM +/- 10", choices=["ATM +/- 10", "ATM +/- 20", "ATM +/- 50"], help="Strikes range around ATM")
+    parser.add_argument("--dte-range", default="all", choices=["all", "0-7", "7-45", "45-90"], help="DTE range filter")
     parser.add_argument("--provider", default="theta_data", choices=["theta_data", "polygon", "ib"], help="Data provider")
     parser.add_argument("--username", help="ThetaData username")
     parser.add_argument("--password", help="ThetaData password")
@@ -239,10 +281,10 @@ def main():
     for underlying in args.underlyings:
         success = False
         if args.provider == "theta_data" and (args.username or args.api_key):
-            success = download_theta_data(underlying, args.start, args.end, args.include_greeks, args.output_dir, config)
+            success = download_theta_data(underlying, args.start, args.end, args.include_greeks, args.output_dir, config, args.dte_range)
             
         if not success:
-            generate_synthetic_options(underlying, args.start, args.end, args.strike_range, args.include_greeks, args.output_dir)
+            generate_synthetic_options(underlying, args.start, args.end, args.strike_range, args.include_greeks, args.output_dir, args.dte_range)
 
 if __name__ == "__main__":
     main()

@@ -38,9 +38,9 @@ def main():
             "с учётом кулдауна и no-trade."
         )
     )
+    ap.add_argument("--config", help="Путь к YAML-файлу конфигурации.")
     ap.add_argument(
         "--data",
-        required=True,
         help=(
             "Файл с предсказаниями и таргетом (CSV/Parquet). "
             "Должны быть колонки ts_ms,symbol,score и y или eff_ret."
@@ -121,18 +121,55 @@ def main():
     )
     args = ap.parse_args()
 
-    df = _read_table(args.data)
+    data_path = args.data
+    ts_col = args.ts_col
+    symbol_col = args.symbol_col
+    y_col = args.y_col
+    ret_col = args.ret_col
+
+    if args.config:
+        try:
+            import yaml
+            with open(args.config, "r", encoding="utf-8") as f:
+                cfg_data = yaml.safe_load(f) or {}
+            cfg_data_section = cfg_data.get("data", {})
+            if not data_path and "path" in cfg_data_section:
+                data_path = cfg_data_section["path"]
+            if ts_col == "ts_ms" and "ts_col" in cfg_data_section:
+                ts_col = cfg_data_section["ts_col"]
+            if symbol_col == "symbol" and "symbol_col" in cfg_data_section:
+                symbol_col = cfg_data_section["symbol_col"]
+            if not ret_col and "price_col" in cfg_data_section:
+                ret_col = cfg_data_section["price_col"]
+        except Exception as e:
+            print(f"Предупреждение: ошибка чтения --config: {e}")
+
+    if not data_path:
+        ap.error("Необходимо указать --data или --config с корректным путем к данным.")
+
+    df = _read_table(data_path)
 
     min_gap = args.min_signal_gap_s
     if min_gap is None:
         min_gap = load_min_signal_gap_s_from_yaml(args.realtime_config)
 
+    # If neither y_col nor ret_col is specified and we have no classification label y_col,
+    # let's try to infer if we have a default column or default to ret_col
+    if not y_col.strip() and not ret_col.strip():
+        # default to ret_col or use score/y heuristics
+        if "y" in df.columns:
+            y_col = "y"
+        elif "eff_ret" in df.columns:
+            ret_col = "eff_ret"
+        elif "ref_price" in df.columns:
+            ret_col = "ref_price"
+
     cfg = TuneConfig(
         score_col=args.score_col,
-        y_col=(args.y_col if args.y_col.strip() else None),
-        ret_col=(args.ret_col if args.ret_col.strip() else None),
-        ts_col=args.ts_col,
-        symbol_col=args.symbol_col,
+        y_col=(y_col if y_col.strip() else None),
+        ret_col=(ret_col if ret_col.strip() else None),
+        ts_col=ts_col,
+        symbol_col=symbol_col,
         direction=args.direction,
         target_signals_per_day=float(args.target_signals_per_day),
         tolerance=float(args.tolerance),
@@ -147,7 +184,7 @@ def main():
 
     res, best = tune_threshold(df, cfg)
 
-    base, ext = os.path.splitext(args.data)
+    base, ext = os.path.splitext(data_path)
     out_csv = args.out_csv.strip() or f"{base}_thrscan.csv"
     _write_table(res, out_csv)
 

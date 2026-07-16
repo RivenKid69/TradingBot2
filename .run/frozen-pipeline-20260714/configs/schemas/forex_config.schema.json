@@ -1,0 +1,479 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tradingbot2.local/schemas/forex_config.schema.json",
+  "title": "Forex Configuration Schema",
+  "description": "JSON Schema for forex configuration files (Phase 8). Validates configs/forex_defaults.yaml and forex sections in other configs.",
+  "type": "object",
+  "properties": {
+    "forex": {
+      "$ref": "#/definitions/ForexConfig"
+    }
+  },
+  "definitions": {
+    "ForexConfig": {
+      "type": "object",
+      "description": "Main forex configuration block",
+      "properties": {
+        "asset_class": {
+          "type": "string",
+          "const": "forex",
+          "description": "Asset class identifier (must be 'forex')"
+        },
+        "data_vendor": {
+          "type": "string",
+          "enum": ["oanda", "ig", "dukascopy"],
+          "default": "oanda",
+          "description": "Data vendor for market data and execution"
+        },
+        "market": {
+          "type": "string",
+          "enum": ["spot", "forward", "swap"],
+          "default": "spot",
+          "description": "Market type"
+        },
+        "session": {
+          "$ref": "#/definitions/TradingSessionConfig"
+        },
+        "fees": {
+          "$ref": "#/definitions/FeeConfig"
+        },
+        "slippage": {
+          "$ref": "#/definitions/SlippageConfig"
+        },
+        "dealer_simulation": {
+          "$ref": "#/definitions/DealerSimulationConfig"
+        },
+        "leverage": {
+          "$ref": "#/definitions/LeverageConfig"
+        },
+        "position_sync": {
+          "$ref": "#/definitions/PositionSyncConfig"
+        },
+        "data_sources": {
+          "$ref": "#/definitions/DataSourcesConfig"
+        }
+      },
+      "additionalProperties": true
+    },
+    "TradingSessionConfig": {
+      "type": "object",
+      "description": "Forex trading session configuration",
+      "properties": {
+        "calendar": {
+          "type": "string",
+          "default": "forex_24x5",
+          "description": "Trading calendar type"
+        },
+        "weekend_filter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Filter out weekend data (forex closes Fri 5pm - Sun 5pm ET)"
+        },
+        "rollover_time_et": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23,
+          "default": 17,
+          "description": "Daily rollover time in Eastern Time (5pm ET = 17)"
+        },
+        "rollover_keepout_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 120,
+          "default": 30,
+          "description": "Minutes before/after rollover to avoid trading"
+        },
+        "dst_aware": {
+          "type": "boolean",
+          "default": true,
+          "description": "Adjust for Daylight Saving Time"
+        },
+        "sessions": {
+          "type": "object",
+          "description": "Individual trading session definitions",
+          "additionalProperties": {
+            "$ref": "#/definitions/SessionConfig"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "SessionConfig": {
+      "type": "object",
+      "description": "Individual session configuration (Sydney/Tokyo/London/NY)",
+      "properties": {
+        "start_hour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23,
+          "description": "Session start hour (UTC)"
+        },
+        "end_hour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23,
+          "description": "Session end hour (UTC)"
+        },
+        "liquidity_mult": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "default": 1.0,
+          "description": "Liquidity multiplier (higher = better liquidity = less slippage)"
+        },
+        "spread_mult": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5,
+          "default": 1.0,
+          "description": "Spread multiplier (higher = wider spreads)"
+        }
+      },
+      "required": ["start_hour", "end_hour"],
+      "additionalProperties": false
+    },
+    "FeeConfig": {
+      "type": "object",
+      "description": "Fee configuration for forex trading",
+      "properties": {
+        "structure": {
+          "type": "string",
+          "enum": ["spread_only", "ecn"],
+          "default": "spread_only",
+          "description": "Fee structure type (retail=spread_only, institutional=ecn)"
+        },
+        "maker_bps": {
+          "type": "number",
+          "minimum": -5,
+          "maximum": 10,
+          "default": 0,
+          "description": "Maker fee in basis points (negative = rebate)"
+        },
+        "taker_bps": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 0,
+          "description": "Taker fee in basis points"
+        },
+        "commission_per_lot": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 20,
+          "default": 0,
+          "description": "Commission per standard lot ($100k) for ECN"
+        },
+        "swap_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable swap/rollover cost calculation"
+        },
+        "swap_data_source": {
+          "type": "string",
+          "enum": ["oanda", "ig", "cached", "manual"],
+          "default": "oanda",
+          "description": "Source for swap rate data"
+        },
+        "swap_cache_path": {
+          "type": "string",
+          "default": "data/forex/swap_rates.json",
+          "description": "Path to cached swap rates"
+        },
+        "swap_cache_ttl_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 168,
+          "default": 24,
+          "description": "Cache TTL in hours"
+        },
+        "wednesday_triple_swap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Apply triple swap on Wednesday (standard practice)"
+        }
+      },
+      "additionalProperties": true
+    },
+    "SlippageConfig": {
+      "type": "object",
+      "description": "Slippage model configuration. Maps to ForexParametricConfig internally.",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["L2", "L2+"],
+          "default": "L2+",
+          "description": "Slippage model fidelity level (L2+=parametric TCA)"
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["retail", "institutional", "conservative"],
+          "default": "retail",
+          "description": "Spread profile preset"
+        },
+        "impact_coef_base": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.2,
+          "default": 0.03,
+          "description": "Base Almgren-Chriss impact coefficient (k)"
+        },
+        "impact_coef_range": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "default": [0.02, 0.05],
+          "description": "Adaptive impact coefficient bounds [min, max]"
+        },
+        "spread_pips": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 100,
+          "default": 1.2,
+          "description": "Base spread in pips for major pairs"
+        },
+        "min_slippage_pips": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 0.1,
+          "description": "Minimum slippage floor in pips"
+        },
+        "max_slippage_pips": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 500,
+          "default": 50,
+          "description": "Maximum slippage cap in pips"
+        },
+        "session_adjustment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable session-based liquidity adjustment"
+        },
+        "volatility_adjustment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable volatility regime adjustment"
+        },
+        "carry_stress_adjustment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable interest rate differential stress adjustment"
+        },
+        "dxy_correlation_adjustment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable DXY (dollar index) correlation decay for non-USD pairs"
+        },
+        "news_event_adjustment": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable economic news event slippage multipliers"
+        }
+      },
+      "additionalProperties": true
+    },
+    "DealerSimulationConfig": {
+      "type": "object",
+      "description": "OTC dealer simulation configuration for forex",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable dealer simulation (recommended for realistic forex)"
+        },
+        "num_dealers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20,
+          "default": 5,
+          "description": "Number of simulated dealers"
+        },
+        "last_look_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable last-look rejection (standard practice)"
+        },
+        "base_rejection_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.3,
+          "default": 0.02,
+          "description": "Base last-look rejection rate (0.02 = 2%)"
+        },
+        "rejection_vol_sensitivity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "default": 0.5,
+          "description": "How much volatility increases rejection rate"
+        },
+        "size_tier_thresholds": {
+          "type": "array",
+          "items": { "type": "number" },
+          "default": [100000, 1000000, 10000000],
+          "description": "Order size tiers in notional value"
+        },
+        "dealer_tiers": {
+          "type": "object",
+          "description": "Configuration per dealer tier",
+          "additionalProperties": {
+            "$ref": "#/definitions/DealerTierConfig"
+          }
+        },
+        "quote_validity_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 10000,
+          "default": 500,
+          "description": "Quote validity window in milliseconds"
+        },
+        "rfq_threshold_usd": {
+          "type": "number",
+          "minimum": 1000000,
+          "maximum": 100000000,
+          "default": 10000000,
+          "description": "Threshold for Request-for-Quote (large orders)"
+        },
+        "stats_window_trades": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 1000,
+          "default": 100,
+          "description": "Number of trades to track for statistics"
+        }
+      },
+      "additionalProperties": true
+    },
+    "DealerTierConfig": {
+      "type": "object",
+      "description": "Configuration for a specific dealer tier",
+      "properties": {
+        "spread_mult": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 3,
+          "default": 1.0,
+          "description": "Spread multiplier for this tier"
+        },
+        "rejection_mult": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 3,
+          "default": 1.0,
+          "description": "Rejection rate multiplier for this tier"
+        },
+        "max_size": {
+          "type": "number",
+          "minimum": 10000,
+          "description": "Maximum order size this tier can handle"
+        }
+      },
+      "additionalProperties": false
+    },
+    "LeverageConfig": {
+      "type": "object",
+      "description": "Leverage and margin configuration",
+      "properties": {
+        "max_leverage": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 50,
+          "description": "Maximum leverage (50:1 = CFTC US retail limit)"
+        },
+        "default_leverage": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 30,
+          "description": "Default leverage for position sizing"
+        },
+        "margin_warning": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 2.0,
+          "default": 1.2,
+          "description": "Margin warning threshold (1.2 = 120%)"
+        },
+        "margin_call": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.5,
+          "default": 1.0,
+          "description": "Margin call threshold (1.0 = 100%)"
+        },
+        "stop_out": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "Stop-out threshold (0.5 = 50%)"
+        },
+        "jurisdiction": {
+          "type": "string",
+          "enum": ["us_retail", "eu_retail", "professional", "institutional"],
+          "default": "us_retail",
+          "description": "Regulatory jurisdiction for leverage limits"
+        }
+      },
+      "additionalProperties": true
+    },
+    "PositionSyncConfig": {
+      "type": "object",
+      "description": "Position synchronization configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable position sync with broker"
+        },
+        "sync_interval_sec": {
+          "type": "number",
+          "minimum": 5,
+          "maximum": 300,
+          "default": 30,
+          "description": "Sync interval in seconds"
+        },
+        "tolerance_pct": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.1,
+          "default": 0.01,
+          "description": "Position mismatch tolerance (0.01 = 1%)"
+        },
+        "auto_reconcile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reconcile position mismatches"
+        }
+      },
+      "additionalProperties": true
+    },
+    "DataSourcesConfig": {
+      "type": "object",
+      "description": "Data sources configuration",
+      "properties": {
+        "historical": {
+          "type": "string",
+          "enum": ["oanda", "dukascopy", "cached"],
+          "default": "dukascopy",
+          "description": "Historical data source"
+        },
+        "live": {
+          "type": "string",
+          "enum": ["oanda", "ig"],
+          "default": "oanda",
+          "description": "Live data source"
+        },
+        "economic_calendar": {
+          "type": "string",
+          "default": "investing.com",
+          "description": "Economic calendar source"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

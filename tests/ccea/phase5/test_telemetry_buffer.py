@@ -137,7 +137,9 @@ class TestTelemetryBuffer:
             db_path=temp_dir / "telemetry.db",
             batch_size=10,
         )
-        return TelemetryBuffer(config=config, agent_id="test-agent")
+        buffer = TelemetryBuffer(config=config, agent_id="test-agent")
+        yield buffer
+        buffer.close()
 
     def test_add_event(self, buffer):
         """Test adding event."""
@@ -267,8 +269,9 @@ class TestTelemetryBuffer:
         buffer.flush(send_fn=send_fn)
 
         # Set old timestamp by directly modifying DB
+        import contextlib
         import sqlite3
-        with sqlite3.connect(str(buffer.config.db_path)) as conn:
+        with contextlib.closing(sqlite3.connect(str(buffer.config.db_path))) as conn:
             old_time = (datetime.utcnow() - timedelta(days=10)).isoformat()
             conn.execute("UPDATE telemetry_events SET timestamp = ?", (old_time,))
             conn.commit()

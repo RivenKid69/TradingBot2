@@ -1,0 +1,124 @@
+mode: train
+run_id: signal-only-bar-spot-demo
+logs_dir: logs
+artifacts_dir: artifacts
+market: spot
+
+data:
+  timeframe: "4h"
+  train_start_ts: 1672531200     # 2023-01-01
+  train_end_ts: 1711929599       # 2024-03-31
+  val_start_ts: 1711929600       # 2024-04-01
+  val_end_ts: 1727740799         # 2024-09-30
+
+execution:
+  enabled: true
+  mode: bar
+
+# Signal only mode - no real orders
+env:
+  decision_timing: CLOSE_TO_OPEN
+  no_trade:
+    enabled: false
+    policy: ignore
+
+model:
+  algo: "ppo"
+
+  # Simplified optimizer for demo
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 3.0e-4
+    weight_decay: 0.001
+    sigma: 0.001
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 5
+    clip_threshold: 10.0
+
+  params:
+    learning_rate: 3.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.15
+    clip_range_vf: 0.7
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    n_steps: 256
+    n_epochs: 4
+    batch_size: 64
+    seed: 42
+
+    # Smaller model for demo
+    use_twin_critics: true
+    num_atoms: 11
+    v_min: -5.0
+    v_max: 5.0
+
+    # Reward settings
+    turnover_penalty_coef: 0.0005
+    reward_return_clip: 5.0
+    reward_cap: 5.0
+
+algo:
+  actions:
+    long_only: true
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
+    bins_vol: 4
+    max_asset_weight: 1.0
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  taker_bps: 10.0
+  half_spread_bps: 5.0
+  impact_coeff: 0.0
+
+slippage:
+  k: 0.5
+  min_half_spread_bps: 0.0
+  default_spread_bps: 2.0
+
+latency:
+  base_ms: 0
+  jitter_ms: 0
+
+risk:
+  enabled: false
+
+no_trade:
+  enabled: false
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/*.csv"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

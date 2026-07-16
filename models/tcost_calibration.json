@@ -1,0 +1,22 @@
+{
+  "config_in": "C:\\Users\\Зефирка\\StartUp\\configs\\sandbox.yaml",
+  "config_out": "C:\\Users\\Зефирка\\StartUp\\configs\\sandbox.yaml",
+  "data_path": "C:\\Users\\Зефирка\\StartUp\\data\\train.parquet",
+  "price_col": "ref_price",
+  "vol_mode": "hl",
+  "target": "hl",
+  "k": 0.25,
+  "liq_col": "number_of_trades",
+  "liq_ref": 240000.0,
+  "fitted_params": {
+    "base_bps": 0.0,
+    "alpha_vol": 0.25000000000000017,
+    "beta_illiquidity": 0.0
+  },
+  "stats": {
+    "rmse": 8.226994042137886e-15,
+    "mae": 6.114859933563854e-15,
+    "r2": 1.0,
+    "n": 3485
+  }
+}

@@ -1,0 +1,991 @@
+# MiFID II Compliance Configuration
+# Phase 1: Foundation (LEI, Clock Sync, Algorithm Registry)
+# Phase 2: Transaction Reporting (RTS 22)
+# Phase 3: Algorithmic Trading Controls (RTS 6)
+# Phase 4: Record Keeping & Audit Trail (MiFIR Article 25)
+# Phase 5: Best Execution (MiFID II Article 27)
+# Phase 6: Governance & Documentation (RTS 6 Articles 3, 9)
+#
+# References:
+#   - MiFID II (Directive 2014/65/EU) Article 17
+#   - MiFIR (Regulation 600/2014) Articles 25-26
+#   - RTS 6 (Regulation 2017/589) - Algorithmic Trading
+#   - RTS 22 (Regulation 2017/590) - Transaction Reporting
+#   - RTS 24 (Regulation 2017/580) - Order Book Data
+#   - RTS 25 (Regulation 2017/574) - Clock Synchronisation
+#   - ISO 17442 - Legal Entity Identifier (LEI)
+#   - ISO 6166 - ISIN (International Securities Identification Number)
+#   - ISO 10383 - MIC (Market Identifier Code)
+
+compliance:
+  # Enable/disable MiFID II compliance checks
+  enabled: true
+
+  # Compliance mode: production, testing, or disabled
+  # Production mode requires LEI and NCA jurisdiction
+  mode: testing
+
+  # Path for compliance audit log
+  audit_log_path: "logs/compliance/mifid_audit.log"
+
+  # LEI Configuration (ISO 17442)
+  # "No LEI, No Trade" - Required for transaction reporting
+  lei:
+    # Your firm's LEI (20 characters)
+    # Format: 18 alphanumeric + 2 check digits
+    # Get LEI: https://www.gleif.org/en/about-lei/get-an-lei-find-lei-issuing-organizations
+    own_lei: ""
+
+    # GLEIF API for LEI verification
+    gleif_api_url: "https://api.gleif.org/api/v1"
+
+    # Cache TTL for GLEIF API responses (hours)
+    cache_ttl_hours: 24
+
+    # Verify LEI status before each trade
+    verify_before_trade: true
+
+    # Days before LEI expiry to generate warning
+    renewal_warning_days: 30
+
+    # Allow trading with PENDING_TRANSFER/PENDING_ARCHIVAL status
+    allow_pending_status: true
+
+  # Clock Synchronisation (RTS 25)
+  # Per RTS 25, algo trading systems must maintain clocks synchronized to UTC
+  clock:
+    # NTP servers for synchronisation (priority order)
+    ntp_servers:
+      - "time.google.com"
+      - "pool.ntp.org"
+      - "time.windows.com"
+      - "time.cloudflare.com"
+
+    # Maximum allowed clock offset in milliseconds
+    # RTS 25 requirements:
+    #   - HFT systems: ±100 microseconds
+    #   - Algorithmic trading: ±1 millisecond
+    #   - Voice trading: ±1 second
+    max_offset_ms: 100.0
+
+    # Interval between NTP sync attempts (seconds)
+    sync_interval_seconds: 60
+
+    # Clock drift thresholds (milliseconds)
+    warning_threshold_ms: 50.0
+    critical_threshold_ms: 100.0
+    kill_switch_threshold_ms: 1000.0
+
+    # Timestamp precision for audit trail
+    # Options: nanosecond, microsecond, millisecond
+    timestamp_precision: "nanosecond"
+
+    # Use system clock if all NTP servers fail
+    fallback_to_system: true
+
+    # Maximum acceptable NTP stratum level
+    stratum_max: 3
+
+  # Algorithm Registry (Article 17(2) MiFID II)
+  # Investment firms must notify NCA of algorithmic trading activities
+  algorithm_registry:
+    # Path to persist algorithm registry
+    registry_path: "state/compliance/algorithm_registry.json"
+
+    # Automatically register new algorithms on first use
+    auto_register: true
+
+    # Require responsible person for production algorithms
+    require_responsible_person: true
+
+    # Auto-increment version on parameter modifications
+    version_on_modification: true
+
+    # National Competent Authority jurisdiction code
+    # Examples: FCA (UK), BaFin (Germany), AMF (France), CONSOB (Italy)
+    nca_jurisdiction: ""
+
+    # Legal name of the investment firm
+    firm_name: ""
+
+    # Contact information for algorithm inquiries
+    contact_email: ""
+    contact_phone: ""
+
+  # Pre-Trade Risk Controls (RTS 6 Article 15)
+  pre_trade_controls:
+    # Maximum price deviation from reference price (%)
+    price_collar_pct: 5.0
+
+    # Maximum single order value in EUR equivalent
+    max_order_value_eur: 1000000.0
+
+    # Maximum single order volume (units)
+    max_order_volume: 10000.0
+
+    # Maximum messages per second per venue
+    max_messages_per_second: 100
+
+    # Fat finger protection
+    fat_finger_price_deviation_pct: 10.0
+    fat_finger_volume_multiplier: 10.0
+
+  # ============================================================================
+  # Phase 2: Transaction Reporting (RTS 22)
+  # ============================================================================
+  # MiFIR Article 26 requires investment firms to report transactions to NCAs
+  # via Approved Reporting Mechanisms (ARMs) within T+1.
+
+  transaction_reporting:
+    # Enable transaction reporting
+    enabled: true
+
+    # Default currency for prices/amounts
+    default_currency: "EUR"
+
+    # Country code of the supervising branch (ISO 3166-1 alpha-2)
+    country_of_branch: ""
+
+    # Trading capacity for proprietary trading
+    # Options: DEAL (dealing on own account), MTCH (matched principal), AOTC (agency)
+    trading_capacity: "DEAL"
+
+    # ARM (Approved Reporting Mechanism) Configuration
+    arm:
+      # ARM provider
+      # Options: mock (testing), bloomberg_btrl, cme_trax, lseg_unavista, tradeweb
+      provider: "mock"
+
+      # Environment
+      # Options: production, uat, sandbox
+      environment: "sandbox"
+
+      # API credentials (required for production)
+      api_key: ""
+      api_secret: ""
+
+      # Custom API base URL (optional, overrides default)
+      base_url: ""
+
+      # Request timeout in seconds
+      timeout_seconds: 30.0
+
+      # Maximum retry attempts for failed submissions
+      max_retries: 3
+
+      # Rate limit (requests per minute)
+      rate_limit_per_minute: 60
+
+    # Reporting Pipeline Configuration
+    pipeline:
+      # Maximum reports per batch submission
+      batch_size: 100
+
+      # Maximum wait time before sending incomplete batch (seconds)
+      batch_interval_seconds: 60.0
+
+      # Delay between retry attempts (seconds)
+      retry_delay_seconds: 30.0
+
+      # Hours before T+1 deadline to trigger urgent flush
+      # Default: 20 hours (submit by 8pm for next working day deadline)
+      t_plus_one_deadline_hours: 20.0
+
+      # Enable local caching for disaster recovery
+      enable_local_cache: true
+
+      # Directory for cached reports (not yet submitted)
+      cache_directory: "state/compliance/report_cache"
+
+    # Validation Settings
+    validation:
+      # Strict ISIN validation (verify checksum)
+      strict_isin_validation: true
+
+      # Strict MIC validation (only accept known MICs)
+      strict_mic_validation: false
+
+      # Require counterparty LEI for all transactions
+      require_counterparty_lei: false
+
+  # ============================================================================
+  # Reference Data
+  # ============================================================================
+  # Static reference data for transaction reporting
+
+  reference_data:
+    # Known trading venues (MIC codes)
+    # Add your commonly used venues here for faster validation
+    known_venues:
+      - "XLON"  # London Stock Exchange
+      - "XPAR"  # Euronext Paris
+      - "XETR"  # Deutsche Börse Xetra
+      - "XAMS"  # Euronext Amsterdam
+      - "XMIL"  # Borsa Italiana
+      - "XMAD"  # BME Spanish Exchanges
+      - "XOFF"  # Off-exchange
+      - "XXXX"  # No venue (SI)
+
+    # Supported currencies for reporting
+    supported_currencies:
+      - "EUR"
+      - "USD"
+      - "GBP"
+      - "CHF"
+      - "JPY"
+
+  # ============================================================================
+  # Phase 3: Algorithmic Trading Controls (RTS 6)
+  # ============================================================================
+  # RTS 6 (Regulation 2017/589) defines requirements for algorithmic trading:
+  # - Article 12: Kill switch / emergency cancellation
+  # - Article 15: Pre-trade risk controls
+  # - Article 17: Real-time monitoring
+
+  # Enhanced Kill Switch Configuration (RTS 6 Article 12)
+  # "Cancel immediately, as an emergency measure, any or all unexecuted orders"
+  kill_switch:
+    enabled: true
+
+    # Contact Information (required per RTS 6 Article 12)
+    # Compliance staff must be able to contact person who can cancel
+    primary_contact_name: ""
+    primary_contact_email: ""
+    primary_contact_phone: ""
+    escalation_contact_name: ""
+    escalation_contact_email: ""
+    escalation_contact_phone: ""
+    out_of_hours_phone: ""
+
+    # Timing settings
+    cooldown_seconds: 300.0              # Cooldown after trigger (5 minutes)
+    auto_recovery_enabled: false         # Auto-recover after cooldown
+    max_triggers_per_hour: 10            # Rate limit on triggers
+
+    # Automatic trigger thresholds
+    error_threshold_rest: 100            # REST API errors before trigger
+    error_threshold_ws: 50               # WebSocket errors before trigger
+    position_limit_pct: 95.0             # % of max position before trigger
+    capital_threshold_pct: 90.0          # % of capital used before warning
+
+    # Integration settings
+    notify_venues: true                  # Send cancel to venues
+    notify_compliance: true              # Notify compliance team
+    persist_events: true                 # Persist events to disk
+    event_log_path: "state/compliance/kill_switch_events.jsonl"
+
+  # Pre-Trade Risk Controls Configuration (RTS 6 Article 15)
+  # All orders must pass these checks before submission
+  pre_trade_controls_v2:
+    enabled: true
+
+    # Price Collars (Article 15(1))
+    price_collar_pct: 5.0                # Max deviation from reference (%)
+    price_collar_enabled: true
+    fat_finger_price_deviation_pct: 10.0 # Fat finger protection
+    fat_finger_enabled: true
+
+    # Maximum Order Values (Article 15(2))
+    max_order_value_eur: 1000000.0       # EUR 1M default
+    max_order_value_enabled: true
+    min_order_value_eur: 0.0
+
+    # Maximum Order Volumes (Article 15(3))
+    max_order_volume: 10000.0            # Units
+    max_order_volume_enabled: true
+    max_volume_vs_adv_pct: 10.0          # Max % of ADV per order
+    adv_check_enabled: true
+
+    # Message Rate Limits (Article 15(4))
+    max_messages_per_second: 100
+    max_messages_per_minute: 3000
+    burst_window_ms: 100
+    max_burst_messages: 10
+    message_rate_enabled: true
+
+    # Authorization Controls (Article 15(5))
+    require_trader_authorization: true
+    require_instrument_authorization: false
+    require_venue_authorization: false
+
+    # Position/Risk Limits
+    max_position_pct_of_limit: 95.0
+    max_daily_loss_eur: 100000.0
+    daily_loss_check_enabled: true
+    max_notional_per_instrument: 5000000.0
+    max_concentration_pct: 25.0          # Max % of portfolio in one position
+
+  # Real-Time Monitoring Configuration (RTS 6 Article 17)
+  # "Alerts shall be generated within 5 seconds after the relevant event"
+  realtime_monitoring:
+    enabled: true
+
+    # RTS 6 Article 17 requirement: alerts within 5 seconds
+    max_alert_delay_seconds: 5.0
+
+    # Monitoring intervals
+    check_interval_seconds: 1.0
+    aggregation_window_seconds: 60.0
+
+    # Order-to-Trade Ratio thresholds
+    otr_warning_threshold: 50.0          # 50:1
+    otr_critical_threshold: 100.0        # 100:1
+    otr_emergency_threshold: 200.0       # 200:1 - trigger kill switch
+
+    # P&L thresholds (as % of daily limit)
+    pnl_warning_pct: 50.0
+    pnl_critical_pct: 75.0
+    pnl_emergency_pct: 90.0
+
+    # Position limit thresholds (as % of max)
+    position_warning_pct: 80.0
+    position_critical_pct: 90.0
+    position_emergency_pct: 95.0
+
+    # Message rate thresholds (as % of max)
+    message_rate_warning_pct: 70.0
+    message_rate_critical_pct: 90.0
+
+    # Latency thresholds (milliseconds)
+    latency_warning_ms: 100.0
+    latency_critical_ms: 500.0
+    latency_emergency_ms: 1000.0
+
+    # Clock drift thresholds (milliseconds per RTS 25)
+    clock_drift_warning_ms: 50.0
+    clock_drift_critical_ms: 100.0
+    clock_drift_emergency_ms: 1000.0
+
+    # System capacity thresholds
+    cpu_warning_pct: 70.0
+    cpu_critical_pct: 90.0
+    memory_warning_pct: 80.0
+    memory_critical_pct: 95.0
+
+    # Alert management
+    max_alerts_per_category_per_minute: 10
+    alert_deduplication_window_seconds: 60.0
+    persist_alerts: true
+    alert_log_path: "logs/compliance/realtime_alerts.jsonl"
+
+  # Order-to-Trade Ratio (OTR) Monitoring
+  # Per RTS 6 and RTS 9 requirements
+  otr_monitoring:
+    enabled: true
+
+    # OTR thresholds (orders per trade)
+    otr_normal_max: 10.0                 # Normal: up to 10:1
+    otr_elevated_threshold: 20.0         # Elevated: 20:1
+    otr_warning_threshold: 50.0          # Warning: 50:1
+    otr_critical_threshold: 100.0        # Critical: 100:1
+    otr_breach_threshold: 200.0          # Breach: 200:1
+
+    # Monitoring windows
+    bucket_size_seconds: 1
+    window_1min: 60
+    window_5min: 300
+    window_1hour: 3600
+
+    # Cancellation rate thresholds
+    cancellation_warning_pct: 50.0
+    cancellation_critical_pct: 80.0
+
+    # Response actions
+    throttle_on_warning: true
+    throttle_delay_ms: 100
+    block_on_critical: true
+    trigger_kill_switch_on_breach: true
+
+    # Logging
+    log_all_events: false
+    persist_breach_events: true
+    breach_log_path: "state/compliance/otr_breaches.jsonl"
+
+  # ============================================================================
+  # Phase 4: Record Keeping & Audit Trail (MiFIR Article 25)
+  # ============================================================================
+  # MiFIR Article 25 requires investment firms to keep records for 5 years
+  # (7 years on NCA request). Records must be tamper-proof and retrievable.
+
+  # Audit Trail Configuration
+  audit_trail:
+    enabled: true
+
+    # Writer mode: sync, async, batch
+    # - sync: Synchronous writes (lowest latency, highest overhead)
+    # - async: Asynchronous with background worker (recommended)
+    # - batch: Batch writes for high throughput
+    writer_mode: "async"
+
+    # Batch mode settings
+    batch_size: 100                      # Records per batch
+    batch_interval_ms: 1000              # Max wait before flushing batch
+
+    # Queue settings (for async/batch modes)
+    queue_size: 10000                    # Max pending records
+
+    # Verification settings
+    verify_on_write: false               # Verify hash after each write
+    auto_sequence: true                  # Auto-increment sequence numbers
+
+  # Storage Backend Configuration
+  audit_storage:
+    # Backend type: memory, sqlite, file, postgresql
+    backend_type: "sqlite"
+
+    # SQLite settings
+    database_path: "state/compliance/audit_trail.db"
+    table_name: "audit_trail"
+
+    # PostgreSQL settings (if using postgresql backend)
+    database_url: ""                     # postgresql://user:pass@host:port/db
+
+    # Performance settings
+    sync_mode: "normal"                  # off, normal, full
+    max_batch_size: 1000                 # Max records per batch write
+
+    # Integrity settings
+    integrity_check_on_read: false       # Verify hash on every read
+    compression_enabled: false           # Compress archived records
+
+    # Backup settings
+    backup_enabled: true
+    backup_path: "state/compliance/audit_backup"
+
+  # Retention Policy Configuration (MiFIR Article 25)
+  retention_policy:
+    # Standard retention: 5 years per MiFIR Article 25
+    default_retention_years: 5
+
+    # Extended retention: 7 years on NCA request
+    extended_retention_years: 7
+
+    # Archive to cold storage after N days
+    archive_after_days: 365
+
+    # Cold storage path
+    cold_storage_path: "state/compliance/audit_archive"
+
+    # Compression for archived records
+    enable_compression: true
+
+    # Require manual approval for deletions
+    deletion_requires_approval: true
+
+    # Automatically extend retention on NCA request
+    auto_extend_on_nca_request: true
+
+    # Log all deletion operations
+    deletion_audit_enabled: true
+
+    # Number of overwrite passes for secure deletion
+    secure_deletion_passes: 3
+
+    # Background check interval (hours)
+    check_interval_hours: 24
+
+  # NCA (National Competent Authority) Export Settings
+  nca_export:
+    # Default export format: json, csv, xml
+    default_format: "json"
+
+    # Include chain verification in exports
+    include_chain_verification: true
+
+    # Export directory
+    export_directory: "state/compliance/nca_exports"
+
+    # Compress exports
+    compress_exports: true
+
+    # Maximum records per export file
+    max_records_per_file: 100000
+
+  # ============================================================================
+  # Phase 5: Best Execution (MiFID II Article 27)
+  # ============================================================================
+  # MiFID II Article 27 requires investment firms to take "all sufficient steps"
+  # to obtain the best possible result for clients taking into account:
+  # price, costs, speed, likelihood of execution and settlement, size, nature,
+  # or any other consideration relevant to the execution of the order.
+
+  # Best Execution Policy Configuration
+  best_execution:
+    enabled: true
+
+    # Policy document settings
+    policy_version: "1.0.0"
+    policy_effective_date: ""  # Auto-set to today if empty
+    policy_review_frequency_days: 365  # Annual review per MiFID II
+
+    # Factor weights (must sum to 1.0)
+    # These define the relative importance of each execution factor
+    default_factor_weights:
+      price: 0.35          # Price achieved vs. reference
+      cost: 0.25           # Total cost (explicit + implicit)
+      speed: 0.15          # Execution latency
+      likelihood: 0.15     # Probability of fill
+      settlement: 0.05     # Settlement certainty
+      size: 0.03           # Ability to handle order size
+      nature: 0.02         # Order type considerations
+
+    # Asset class specific weight overrides (optional)
+    # Example: equity might prioritize price, FX might prioritize speed
+    asset_class_weights: {}
+
+    # Monitoring thresholds
+    price_improvement_threshold_bps: -10.0   # Alert if worse than -10bps
+    cost_threshold_bps: 50.0                 # Alert if cost exceeds 50bps
+    latency_threshold_ms: 1000.0             # Alert if latency > 1 second
+    fill_rate_threshold_pct: 90.0            # Alert if fill rate < 90%
+
+    # Execution quality scoring
+    price_score_scale_bps: 50.0              # ±50bps maps to ±1.0 score
+    cost_score_scale_bps: 100.0              # 100bps cost = 0 score
+    speed_score_scale_ms: 1000.0             # 1000ms latency = 0 score
+
+    # Quality level thresholds
+    excellent_threshold: 0.80                # >= 80% = excellent
+    good_threshold: 0.60                     # >= 60% = good
+    acceptable_threshold: 0.40               # >= 40% = acceptable
+    below_standard_threshold: 0.20           # >= 20% = below standard
+                                             # < 20% = poor
+
+  # Transaction Cost Analysis (TCA) Configuration
+  tca:
+    enabled: true
+
+    # Market impact model: "almgren_chriss", "linear", "square_root"
+    impact_model: "almgren_chriss"
+
+    # Almgren-Chriss model parameters
+    permanent_impact_coefficient: 0.1
+    temporary_impact_coefficient: 0.1
+    volatility_scaling: 1.0
+
+    # Alpha decay for timing cost
+    alpha_decay: 0.5
+
+    # Confidence level for cost estimates
+    default_confidence_level: 0.95
+
+    # Alert if cost exceeds estimate by this much
+    alert_threshold_bps: 50.0
+
+    # Strategy recommendation thresholds (participation rate)
+    low_urgency_participation_pct: 5.0
+    normal_urgency_participation_pct: 10.0
+    high_urgency_participation_pct: 20.0
+
+  # Venue Analysis Configuration
+  venue_analysis:
+    enabled: true
+
+    # Minimum samples for reliable metrics
+    min_samples: 30
+
+    # Rolling window for venue performance
+    rolling_window_days: 30
+
+    # Venue quality metric weights (must sum to 1.0)
+    metric_weights:
+      spread: 0.20
+      latency: 0.15
+      fill_rate: 0.20
+      price_improvement: 0.25
+      rejection_rate: 0.10
+      cost: 0.10
+
+    # Auto-update venue rankings based on performance
+    auto_update_rankings: true
+
+    # Include dark pools in routing
+    dark_pool_enabled: false
+
+    # Alert thresholds
+    spread_threshold_bps: 20.0
+    latency_threshold_ms: 500.0
+    rejection_rate_threshold_pct: 10.0
+
+  # Smart Order Routing (SOR) Configuration
+  smart_order_routing:
+    enabled: true
+
+    # Default routing mode: "smart", "direct", "split"
+    default_mode: "smart"
+
+    # Consider historical venue performance
+    use_historical_performance: true
+
+    # Real-time quote-based routing
+    use_realtime_quotes: true
+
+    # Log all routing decisions for audit
+    log_decisions: true
+
+    # Split order routing
+    max_split_venues: 3
+    min_split_size_pct: 10.0
+
+  # Execution Quality Reporting Configuration
+  execution_quality_reports:
+    enabled: true
+
+    # Report generation schedule
+    auto_generate_monthly: true
+    auto_generate_quarterly: true
+    auto_generate_annual: true
+
+    # Top N venues to include per asset class
+    top_venues_count: 5
+
+    # Include TCA metrics in reports
+    include_tca_metrics: true
+
+    # Include recommendations in reports
+    include_recommendations: true
+
+    # Output directory for reports
+    output_directory: "state/compliance/reports"
+
+    # Default report format: json, text, csv, html
+    default_format: "json"
+
+    # Compliance thresholds for flagging issues
+    min_execution_score: 50.0
+    max_avg_cost_bps: 100.0
+    min_fill_rate_pct: 90.0
+    max_latency_ms: 1000.0
+
+  # Execution Venue Configuration
+  execution_venues:
+    # Default venues for equity (can be overridden per instrument)
+    equity:
+      - mic: "XLON"
+        name: "London Stock Exchange"
+        type: "regulated_market"
+        country: "GB"
+        currency: "GBP"
+        ranking: 1
+      - mic: "XETR"
+        name: "Deutsche Börse Xetra"
+        type: "regulated_market"
+        country: "DE"
+        currency: "EUR"
+        ranking: 2
+      - mic: "XPAR"
+        name: "Euronext Paris"
+        type: "regulated_market"
+        country: "FR"
+        currency: "EUR"
+        ranking: 3
+      - mic: "XAMS"
+        name: "Euronext Amsterdam"
+        type: "regulated_market"
+        country: "NL"
+        currency: "EUR"
+        ranking: 4
+      - mic: "XMIL"
+        name: "Borsa Italiana"
+        type: "regulated_market"
+        country: "IT"
+        currency: "EUR"
+        ranking: 5
+
+    # Off-exchange / OTC
+    otc:
+      - mic: "XOFF"
+        name: "Off-Exchange"
+        type: "otc"
+        country: "XX"
+        currency: "EUR"
+        ranking: 99
+
+  # ============================================================================
+  # Phase 6: Governance & Documentation (RTS 6 Articles 3, 9)
+  # ============================================================================
+  # RTS 6 Article 9 requires annual self-assessment
+  # RTS 6 Article 3 requires business continuity arrangements
+
+  # Annual Self-Assessment Configuration (RTS 6 Article 9)
+  # Investment firms must perform and document annual self-assessment
+  self_assessment:
+    enabled: true
+
+    # Firm identification
+    firm_name: ""                        # Legal name of the firm
+    lei: ""                              # Legal Entity Identifier
+
+    # Assessment settings
+    assessment_year: 2024                # Year of assessment
+    scope: "all_systems"                 # all_systems, trading_only, risk_only
+
+    # Categories to assess
+    assessment_categories:
+      - governance_arrangements
+      - risk_controls
+      - testing_procedures
+      - business_continuity
+      - record_keeping
+      - kill_switch
+      - best_execution
+      - transaction_reporting
+
+    # Compliance thresholds
+    minimum_compliance_score_pct: 75.0   # Min score to pass assessment
+    critical_findings_allowed: 0         # Max critical findings before fail
+
+    # Remediation settings
+    auto_create_remediation: true        # Auto-create remediation plans
+    default_remediation_days: 90         # Default days to remediate
+    high_priority_remediation_days: 30   # High priority deadline
+    critical_remediation_days: 14        # Critical issues deadline
+
+    # NCA reporting
+    nca_report_enabled: true
+    nca_jurisdiction: ""                 # FCA, BaFin, AMF, etc.
+    report_format: "json"                # json, xml, pdf
+
+    # Storage
+    assessment_storage_path: "state/compliance/self_assessments"
+    evidence_storage_path: "state/compliance/assessment_evidence"
+
+  # Business Continuity Plan Configuration (RTS 6 Article 3)
+  # Investment firms must have effective BCP arrangements
+  business_continuity:
+    enabled: true
+
+    # Plan identification
+    plan_name: "Algorithmic Trading BCP"
+    plan_version: "1.0.0"
+
+    # Emergency contacts (required)
+    primary_contact_name: ""
+    primary_contact_email: ""
+    primary_contact_phone: ""
+    backup_contact_name: ""
+    backup_contact_email: ""
+    backup_contact_phone: ""
+
+    # Recovery targets
+    rto_minutes: 60                      # Recovery Time Objective
+    rpo_minutes: 15                      # Recovery Point Objective
+    max_acceptable_downtime_minutes: 240 # Maximum acceptable downtime
+
+    # Scenario categories to cover
+    bcp_scenarios:
+      - system_failure
+      - algorithm_malfunction
+      - market_data_failure
+      - network_failure
+      - exchange_connectivity_failure
+      - cybersecurity_incident
+      - market_circuit_breaker
+      - power_failure
+      - data_center_failure
+      - key_person_unavailability
+      - regulatory_action
+      - vendor_failure
+      - pandemic
+
+    # Alert thresholds
+    alert_on_system_failure: true
+    alert_on_connectivity_loss: true
+    alert_on_data_feed_failure: true
+    alert_delay_seconds: 30
+
+    # Trading halt settings
+    auto_halt_on_critical: true          # Auto-halt trading on critical BCP
+    halt_threshold_alerts: 3             # Alerts before auto-halt
+    halt_recovery_approval_required: true
+
+    # Drill requirements
+    drill_frequency_days: 90             # BCP drill every 90 days
+    min_drills_per_year: 4
+    drill_notification_days: 7           # Notify team before drill
+
+    # Storage
+    bcp_storage_path: "state/compliance/bcp"
+    incident_log_path: "state/compliance/bcp_incidents.jsonl"
+
+  # Governance Framework Configuration
+  governance:
+    enabled: true
+
+    # Framework identification
+    framework_name: "MiFID II Compliance Governance Framework"
+    framework_version: "1.0.0"
+
+    # Organization
+    firm_name: ""
+    compliance_officer: ""
+    compliance_email: ""
+    compliance_phone: ""
+
+    # Policy management
+    policy_storage_path: "state/compliance/policies"
+    require_dual_approval: true          # Require 2 approvers for policies
+    auto_archive_superseded: true        # Auto-archive old versions
+
+    # Review schedules (days)
+    standard_review_frequency_days: 365  # Annual review
+    critical_review_frequency_days: 180  # Semi-annual for critical policies
+    review_reminder_days: 30             # Remind before review due
+
+    # Required policies (per MiFID II)
+    required_policies:
+      - algorithmic_trading
+      - risk_management
+      - best_execution
+      - order_handling
+      - conflicts_of_interest
+      - kill_switch
+      - transaction_reporting
+      - market_abuse_prevention
+      - business_continuity
+      - record_keeping
+
+    # Policy approval levels
+    approval_requirements:
+      algorithmic_trading: "board"       # Board approval required
+      risk_management: "board"
+      best_execution: "senior_management"
+      order_handling: "compliance"
+      conflicts_of_interest: "compliance"
+      kill_switch: "senior_management"
+      transaction_reporting: "compliance"
+      market_abuse_prevention: "compliance"
+      business_continuity: "senior_management"
+      record_keeping: "compliance"
+
+    # Version control
+    version_format: "semver"             # semver, date, sequential
+    require_change_summary: true
+    require_approval_comments: true
+
+    # Export settings
+    export_format: "json"                # json, pdf, docx
+    export_path: "state/compliance/policy_exports"
+
+  # ============================================================================
+  # Phase 7: Testing & Certification (RTS 6 Article 5)
+  # ============================================================================
+  # RTS 6 Article 5 requires conformance testing before algorithm deployment
+  # RTS 6 Article 7 requires approval before go-live
+  # Article 17(2) requires NCA notification of algorithmic trading activities
+
+  # Conformance Testing Configuration (RTS 6 Article 5)
+  # "Investment firms shall test trading algorithms prior to deployment"
+  conformance_testing:
+    enabled: true
+
+    # Test suite settings
+    default_test_environment: "uat"      # sandbox, uat, staging, production_replica
+    stop_on_critical_failure: true       # Stop suite if critical test fails
+    collect_evidence: true               # Collect evidence for each test
+    parallel_execution: false            # Run tests in parallel
+    max_parallel_tests: 4
+
+    # Test timeout settings (seconds)
+    default_test_timeout: 60
+    suite_timeout: 3600                  # 1 hour max for full suite
+
+    # Required test categories for certification
+    required_categories:
+      - kill_switch
+      - pre_trade
+      - clock_sync
+      - record_keeping
+
+    # Critical test thresholds
+    critical_pass_rate_pct: 100.0        # Must pass 100% critical tests
+    overall_pass_rate_pct: 90.0          # Must pass 90% overall
+
+    # Retry settings
+    retry_failed_tests: true
+    max_retries: 2
+
+    # Evidence storage
+    evidence_storage_path: "state/compliance/test_evidence"
+    retain_evidence_days: 365
+
+  # Test Scenarios Configuration
+  test_scenarios:
+    enabled: true
+
+    # Scenario execution settings
+    default_timeout_seconds: 300         # 5 minutes per scenario
+    stop_on_step_failure: true
+
+    # Scenario categories to include
+    enabled_scenario_types:
+      - functional
+      - stress
+      - integration
+      - negative
+      - disaster_recovery
+
+    # Storage
+    scenario_storage_path: "state/compliance/test_scenarios"
+
+  # Certification Configuration (RTS 6 Article 7)
+  # "Investment firms shall not deploy an algorithm until certified"
+  certification:
+    enabled: true
+
+    # Certificate validity
+    default_validity_days: 365           # 1 year certificate validity
+    expiry_warning_days: 30              # Warn 30 days before expiry
+    auto_expire_certificates: true       # Auto-mark expired certificates
+
+    # Approval requirements
+    require_compliance_approval: true    # Compliance officer must approve
+    require_dual_approval: false         # Require 2 approvers
+    approval_timeout_days: 7             # Max days to approve
+
+    # Recertification triggers
+    recertify_on_version_change: true    # New version needs certification
+    recertify_on_material_change: true   # Material change needs recert
+    annual_recertification: true         # Annual recertification required
+
+    # Certificate storage
+    certificate_storage_path: "state/compliance/certificates"
+
+    # Deployment requirements
+    deployment_requires_certificate: true
+    deployment_requires_all_conditions: true
+
+  # NCA Notification Configuration (MiFID II Article 17(2))
+  # "Investment firms shall notify the competent authority"
+  nca_notification:
+    enabled: true
+
+    # Default NCA jurisdiction
+    # Options: fca, bafin, amf, afm, consob, cnmv, cssf, fsma, cbi
+    default_jurisdiction: ""             # Set to your NCA
+
+    # Firm identification (required for notifications)
+    firm_lei: ""                         # Firm's LEI
+    firm_name: ""                        # Legal name
+    firm_address: ""                     # Registered address
+    authorized_person: ""                # Contact person
+    authorized_email: ""                 # Contact email
+    authorized_phone: ""                 # Contact phone
+
+    # Notification requirements
+    notify_before_new_algorithm: true    # Notify NCA before new algo
+    notify_on_material_change: true      # Notify on material changes
+    notify_on_decommission: true         # Notify when decommissioning
+    annual_review_notification: true     # Annual review notification
+
+    # Approval workflow
+    require_internal_review: true        # Internal compliance review
+    require_senior_approval: true        # Senior management approval
+    approval_timeout_days: 5
+
+    # Storage
+    notification_storage_path: "state/compliance/nca_notifications"
+
+    # Document generation
+    generate_xml_format: true            # Generate XML for e-submission
+    generate_pdf_format: false           # Generate PDF for manual submission

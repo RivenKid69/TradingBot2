@@ -1,0 +1,69 @@
+# Cross-Sectional FUTURES preset (Stage B3) — диверсифицированный CTA на готовый движок.
+# Запуск:  python script_xs_backtest.py --config configs/config_xs_futures.yaml
+# Источник synthetic → работает без данных (уже-непрерывные синтетические серии).
+#
+# ⚠️ HONEST-NOTE (continuous-contract):
+#   • Фьючерсы экспирируются → торгуем BACK-ADJUSTED непрерывные серии (impl_continuous_futures).
+#   • Бесплатные continuous-серии (yahoo ES=F / stooq) — УЖЕ back-adjusted прокси НЕИЗВЕСТНЫМ
+#     методом → pit_quality=approx (метод ролла непрозрачен).
+#   • Для точных roll-accurate серий подайте BYO контракты + расписание роллов
+#     (impl_continuous_futures.build_continuous_panel, method=ratio|diff).
+#   • Carry/roll-yield требует front/back контрактов (BYO) — закомментирован.
+
+mode: cross_sectional
+asset_class: futures
+
+data:
+  source: synthetic        # synthetic | free (yahoo continuous-прокси) | parquet (BYO)
+  vendor: yahoo
+  symbols: [ES, NQ, YM, ZN, ZB, CL, NG, GC, SI, HG, 6E, 6J, ZC, ZS]
+  synthetic_bars: 520      # ~2 года дневных
+  synthetic_seed: 17
+  cache: true
+  # Stage D4 — source: free → ContinuousProxySource (yahoo ES=F/NQ=F/…): back-adjusted прокси,
+  #   pit_quality=approx (метод ролла непрозрачен). Точные roll-accurate серии — BYO контракты
+  #   через loaders.futures_enrich.build_roll_accurate_panel(method=ratio|diff) → pit=true.
+  #   carry (front/back) — BYO (free continuous-прокси не несёт contango).
+
+universe:
+  type: static
+  symbols: [ES, NQ, YM, ZN, ZB, CL, NG, GC, SI, HG, 6E, 6J, ZC, ZS]
+
+signals:
+  # Трендовые (time-series momentum) — честны на непрерывных ценах:
+  - {name: trend_50,  kind: trend, lookback: 50,  vol_normalize: true,  vol_window: 60, transforms: [winsorize, zscore]}
+  - {name: trend_100, kind: trend, lookback: 100, vol_normalize: true,  vol_window: 60, transforms: [zscore]}
+  - {name: trend_200, kind: trend, lookback: 200, vol_normalize: true,  vol_window: 60, transforms: [zscore]}
+  - {name: fut_value, kind: futures_value, lookback: 250, transforms: [zscore]}
+  # Carry / roll-yield — требует front/back или carry колонку (BYO). Раскомментируйте при наличии:
+  # - {name: carry, kind: carry, transforms: [winsorize, zscore]}
+
+alpha:
+  method: ic_weighted
+
+risk:
+  type: futures_factor     # market-beta + vol + asset-class факторная модель (Σ = BFBᵀ+D)
+  method: ledoit_wolf
+
+momentum_lookback: 60      # = vol_lookback для vol-фактора
+# Класс актива (для risk.type=futures_factor) — диверсификация по asset-class:
+asset_classes: {ES: equity_index, NQ: equity_index, YM: equity_index, ZN: rates, ZB: rates, CL: energy, NG: energy, GC: metals, SI: metals, HG: metals, 6E: fx, 6J: fx, ZC: ag, ZS: ag}
+
+optimizer:
+  objective: mean_variance # μ(trend) → направление; Σ(vol/asset-class) → vol-target сайзинг
+  risk_aversion: 5.0
+  gross_max: 1.0
+  net_target: 0.0          # cross-sectional market-neutral
+  long_only: false
+  max_position: 0.20
+
+backtest:
+  rebalance_every: 5       # weekly на дневных барах
+  cov_lookback: 60
+  min_cov_obs: 30
+  alpha_refit_every: 5
+  cost_bps: 1.5            # фьючерсы дёшевы (ликвидные)
+  price_col: close
+  periods_per_year: 252
+
+n_trials: 6

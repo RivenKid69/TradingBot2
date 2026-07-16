@@ -1,0 +1,256 @@
+artifacts_dir: artifacts/stocks
+asset_class: equity
+data:
+  api:
+    symbols:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - AMZN
+    - NVDA
+    - META
+    - TSLA
+    - SPY
+    - QQQ
+    - IWM
+    - GLD
+    - IAU
+    - SGOL
+    - SLV
+  asset_class: equity
+  filter_trading_hours: true
+  include_extended_hours: false
+  paths:
+  - data/raw_stocks/*.parquet
+  - data/stocks/*.parquet
+  - data/stocks/*.feather
+  source: local
+  test_end_ts: 1759276800
+  test_start_ts: 1746057600
+  timeframe: 4h
+  train_end_ts: 1735689600
+  train_start_ts: 1609459200
+  val_end_ts: 1746057600
+  val_start_ts: 1735689600
+data_vendor: alpaca
+env:
+  decision_timing: CLOSE_TO_OPEN
+  liquidity:
+    min_adv_usd: 1000000
+    min_bar_quote_volume: 10000
+  no_trade:
+    enabled: true
+    enforce_trading_hours: true
+    policy: ignore
+  session:
+    calendar: us_equity
+    extended_hours: false
+    post_close_keepout_bars: 0
+    pre_open_keepout_bars: 0
+  spreads:
+    max_spread_bps: 50
+  warmup:
+    min_bars: 60
+exchange:
+  alpaca:
+    extended_hours: false
+    feed: iex
+    paper: true
+  market_type: EQUITY
+  vendor: alpaca
+execution:
+  enabled: true
+  mode: bar
+execution_config:
+  large_order_algo: TWAP
+  notional_threshold: 10000.0
+  pov:
+    child_interval_s: 60
+    min_child_notional: 20.0
+    participation: 0.1
+execution_params:
+  limit_offset_bps: 0.0
+  tif: GTC
+  ttl_steps: 0
+execution_profile: MKT_OPEN_NEXT_4H
+fees:
+  maker_bps: 0.0
+  regulatory:
+    enabled: true
+    sec_fee_per_million: 27.8
+    taf_fee_cap: 8.3
+    taf_fee_per_share: 0.000166
+  structure: flat
+  taker_bps: 0.0
+liquidity_seasonality_path: null
+logs_dir: logs/stocks
+market: spot
+mode: train
+model:
+  algo: ppo
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    adaptive_noise: true
+    beta1: 0.9
+    beta2: 0.999
+    beta_utility: 0.999
+    lr: 0.0001
+    sigma: 0.001
+    weight_decay: 0.001
+  optimizer_lr_min: 5.0e-06
+  params:
+    bad_explained_patience: 2
+    batch_size: 64
+    bc_decay_steps: 800000
+    bc_final_coef: 0.0
+    bc_warmup_steps: 200000
+    clip_range: 0.1
+    clip_range_vf: 0.7
+    clip_range_warmup: 0.18
+    clip_range_warmup_updates: 16
+    cql_alpha: 0.0
+    cql_beta: 5.0
+    critic_grad_warmup_updates: 0
+    cvar_activation_hysteresis: 0.05
+    cvar_activation_threshold: 0.15
+    cvar_alpha: 0.05
+    cvar_cap: 0.5
+    cvar_ramp_updates: 12
+    cvar_weight: 0.15
+    ent_coef: 0.001
+    ent_coef_decay_steps: 400
+    ent_coef_final: 0.001
+    ent_coef_min: 0.0005
+    ent_coef_plateau_min_updates: 40
+    ent_coef_plateau_tolerance: 0.002
+    ent_coef_plateau_window: 24
+    entropy_boost_factor: 1.5
+    gae_lambda: 0.95
+    gamma: 0.99
+    kl:
+      early_stop:
+        absolute_stop_factor: 2.5
+        consec_minibatches: 2
+        ema_alpha: null
+        ema_updates: 10
+        enabled: true
+        exceed_stop_fraction: 0.15
+        use_ema: true
+      penalty:
+        beta_init: 0.01
+        pid:
+          beta_max: 1.0
+          beta_min: 0.0001
+          kd: 0.1
+          ki: 0.05
+          kp: 0.5
+        type: adaptive_beta
+      target_kl: 0.08
+      use_lr_decay: false
+    kl_early_stop: true
+    kl_epoch_decay: 1.0
+    kl_exceed_stop_fraction: 0.15
+    learning_rate: 0.0001
+    max_grad_norm: 0.5
+    microbatch_size: 64
+    n_epochs: 4
+    n_steps: 2048
+    num_atoms: 21
+    optimizer_lr_min: 5.0e-06
+    reward_cap: 10.0
+    reward_clip:
+      adaptive: true
+      atr_window: 14
+      hard_cap_pct: 2.0
+      multiplier: 4.0
+    reward_return_clip: 10.0
+    seed: 20240518
+    trade_frequency_penalty: 0.0
+    turnover_norm_cap: 1.0
+    turnover_penalty_coef: 0.0001
+    use_torch_compile: false
+    use_twin_critics: true
+    v_max: 10.0
+    v_min: -10.0
+    v_range_ema_alpha: 0.005
+    value_clip_limit: null
+    value_scale:
+      ema_beta: 0.9
+      freeze_after: null
+      freeze_after_updates: null
+      max_change_pct: 0.06
+      max_rel_step: 0.5
+      never_freeze: true
+      range_max_rel_step: 0.5
+      stability:
+        max_abs_p95: 6.0
+        min_explained_variance: 0.0
+        patience: 2
+      std_floor: 0.003
+      target_scale_ema_beta: 0.9
+      warmup_updates: 6
+      window_updates: 16
+    value_scale_controller: {}
+    vf_bad_explained_floor: 0.0
+    vf_bad_explained_scale: 1.0
+    vf_clip_warmup_updates: 10
+    vf_coef: 1.8
+    vf_coef_warmup: null
+    vf_coef_warmup_updates: 0
+  scheduler_min_lr: 5.0e-06
+  vgs:
+    accumulation_steps: 4
+    clip_threshold: 10.0
+    enabled: true
+    eps: 1.0e-06
+    min_scaling_factor: 0.1
+    variance_cap: 50.0
+    warmup_steps: 10
+risk:
+  daily_loss_limit: 0.05
+  max_drawdown: 0.2
+  max_position: 1.0
+  pdt_rule:
+    enabled: false
+    min_equity: 25000.0
+run_id: stock-training
+seasonality_log_level: INFO
+training:
+  eval_freq: 2000
+  n_envs: 1
+  n_eval_episodes: 2
+  save_freq: 5000
+  save_path: models/demo_stocks
+  tb_log_name: stock_ppo
+  tensorboard: false
+  total_timesteps: 10000
+  verbose: 1
+use_seasonality: false
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/raw_stocks/*.parquet"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "SPY"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}
+
+algo:
+  actions:
+    long_only: true
+

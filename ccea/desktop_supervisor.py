@@ -146,6 +146,7 @@ class CCEASupervisor:
         self._books = None           # BooksAndRecords (ledger + blotter + cash + surveillance)
         self._ledger = None          # PnLLedger alias (== self._books.ledger)
         self._live_auth = None       # LiveTradingAuthorizationStore (Agent zone)
+        self._risk_monitor = None    # LiveRiskMonitor (intra-day circuit breaker)
         self._last_paper: Optional[Dict[str, Any]] = None
         self._enroll: Dict[str, str] = {}
         self._cp_url: str = ""
@@ -339,11 +340,95 @@ class CCEASupervisor:
             logger.warning("live-auth store init failed: %s", exc)
             self._live_auth = None
 
+        # Live risk-limit ENFORCEMENT (P0-B): intra-day circuit breaker that
+        # trips a halt when the user's daily-loss or max-drawdown limit is
+        # breached — the pre-trade RiskChecker alone can't catch losses driven
+        # by market moves without new orders.
+        try:
+            from services.live_risk_limits import LiveRiskMonitor
+            self._risk_monitor = LiveRiskMonitor(
+                halt_callback=self._on_risk_breach,
+                peak_state_path=str(agent_dir / "live_risk_peak.json"),
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("live-risk monitor init failed: %s", exc)
+            self._risk_monitor = None
+
         ok, err = self._daemon.start()
         if not ok:
             raise RuntimeError(f"agent daemon start() failed: {err}")
 
+    # ----------------------------------------------- risk-limit enforcement
+    def _on_risk_breach(self, payload: Dict[str, Any]) -> None:
+        """Circuit-breaker callback: trip kill switch + flatten via emergency halt.
+
+        Account-level stop-loss — при пробое дневного лимита убытка / макс.
+        просадки закрываем всё и останавливаем торговлю (kill switch)."""
+        try:
+            import services.ops_kill_switch as _oks
+            _oks._trip()
+        except Exception:
+            pass
+        try:
+            self.emergency_halt()
+        except Exception:
+            logger.exception("live-risk: emergency_halt from breach failed")
+        # Также снимаем любые live-мандаты авто-торговли.
+        if self._live_auth is not None:
+            try:
+                self._live_auth.revoke_all(reason=f"risk breach: {payload.get('reason')}")
+            except Exception:
+                pass
+
+    def _evaluate_risk(self) -> Optional[Dict[str, Any]]:
+        """Прогнать intra-day монитор против текущего снимка леджера."""
+        if self._risk_monitor is None or self._ledger is None:
+            return None
+        try:
+            return self._risk_monitor.evaluate(self._ledger.snapshot())
+        except Exception:
+            logger.exception("live-risk: evaluate failed")
+            return None
+
+    def reload_risk_limits(self) -> Dict[str, Any]:
+        """Перечитать lite_limits: пересобрать pre-trade RiskChecker (сбросить
+        движки — пересоздадутся с новыми лимитами) и вернуть текущий статус."""
+        self._paper_engine = None
+        self._fill_handler = None
+        self._live_engine = None
+        self._live_fill_handler = None
+        return self._evaluate_risk() or {"status": "no_data"}
+
+    def risk_enforcement_status(self) -> Dict[str, Any]:
+        """Реальный статус enforcement для UI/REST: лимиты, текущее
+        использование (день/просадка/плечо), armed/breached."""
+        st = self._evaluate_risk()
+        if st is None:
+            return {"status": "unavailable", "enforced": False}
+        try:
+            import services.ops_kill_switch as _oks
+            st["kill_switch_tripped"] = bool(_oks.tripped())
+        except Exception:
+            st["kill_switch_tripped"] = None
+        return st
+
+    def reset_risk_breach(self) -> None:
+        if self._risk_monitor is not None:
+            self._risk_monitor.reset_breach()
+
     # ----------------------------------------------------------- paper trade
+    def _build_user_risk_checker(self):
+        """RiskChecker, питаемый пользовательскими lite_limits (P0-B enforcement):
+        leverage cap / concentration / daily loss / max drawdown применяются
+        pre-trade. Не заданные лимиты остаются на безопасных дефолтах."""
+        try:
+            from services.live_risk_limits import build_risk_checker, load_live_risk_limits
+            eq = float(self._ledger.equity) if self._ledger is not None else 100_000.0
+            return build_risk_checker(load_live_risk_limits(), equity=eq)
+        except Exception:
+            logger.warning("live-risk: не удалось построить RiskChecker из lite_limits", exc_info=True)
+            return None
+
     def _ensure_paper_engine(self):
         if self._paper_engine is not None:
             return self._paper_engine
@@ -359,25 +444,43 @@ class CCEASupervisor:
             db_path=self.config.data_dir / "agent" / "paper_orders.db", hmac_key=hmac_key)
         # Real OMS: PolicyFirewall + HardCapEnforcer + RiskChecker stack, journaled +
         # idempotent, with engine-level cancel/replace (FIX 35=G semantics) and a
-        # fat-finger / price-collar pre-trade gate (P1 #10).
+        # fat-finger / price-collar pre-trade gate (P1 #10). RiskChecker is fed
+        # from the user's lite_limits (P0-B) — leverage/concentration/daily-loss/
+        # drawdown are enforced pre-trade, not just displayed.
         self._paper_engine = LiveExecutionEngine(
             broker_submit=make_broker_submit(self._broker),
             broker_cancel=make_broker_cancel(self._broker),
             broker_replace=make_broker_replace(self._broker),
             broker_name="sim_paper",
             order_journal=journal,
+            risk_checker=self._build_user_risk_checker(),
             price_collar=PriceCollarConfig(max_price_distance_pct=0.20, max_notional=5_000_000.0),
             deployment_id="desktop-paper",
             run_id="desktop-paper-run",
         )
         # FillHandler advances the real OMS lifecycle (SUBMITTED->FILLED) AND books
         # each fill across ALL records (P&L ledger + immutable blotter + cash GL) and
-        # feeds live MAR surveillance — via the BooksAndRecords facade.
+        # feeds live MAR surveillance — via the BooksAndRecords facade. The on_fill
+        # is wrapped so the intra-day risk monitor evaluates AFTER every booked fill
+        # (equity/day_pnl are fresh) and can trip the account-level circuit breaker.
         on_fill = None
         if self._books is not None:
-            on_fill = self._books.fill_handler_callback(strategy_id="desktop-demo")
+            on_fill = self._risk_wrapped_on_fill(
+                self._books.fill_handler_callback(strategy_id="desktop-demo"))
         self._fill_handler = FillHandler(self._paper_engine, on_fill=on_fill)
         return self._paper_engine
+
+    def _risk_wrapped_on_fill(self, inner):
+        """Оборачивает books on_fill: после booking каждого fill'а прогоняет
+        intra-day risk monitor (авто-halt при пробое дневного лимита/просадки)."""
+        def _wrapped(*args, **kwargs):
+            result = inner(*args, **kwargs) if inner is not None else None
+            try:
+                self._evaluate_risk()
+            except Exception:
+                logger.exception("live-risk: post-fill evaluate failed")
+            return result
+        return _wrapped
 
     def paper_trade(
         self,
@@ -526,12 +629,22 @@ class CCEASupervisor:
 
     def eod_close(self) -> Dict[str, Any]:
         """Take an EOD NAV snapshot on the Agent ledger and roll the trading day."""
+        result: Dict[str, Any]
         if self._books is not None:
-            return {"ok": True, "snapshot": self._books.eod_close()}
-        if self._ledger is None:
+            result = {"ok": True, "snapshot": self._books.eod_close()}
+        elif self._ledger is None:
             return {"ok": False, "error": "ledger not available"}
-        snap = self._ledger.eod_close()
-        return {"ok": True, "snapshot": snap.to_dict()}
+        else:
+            snap = self._ledger.eod_close()
+            result = {"ok": True, "snapshot": snap.to_dict()}
+        # Roll the risk monitor's day too: peak equity resets, breach cleared —
+        # the daily-loss / drawdown limits are measured against the new day.
+        if self._risk_monitor is not None and self._ledger is not None:
+            try:
+                self._risk_monitor.reset_day(equity=float(self._ledger.equity))
+            except Exception:
+                pass
+        return result
 
     def portfolio_snapshot(self) -> Dict[str, Any]:
         """Authoritative holdings view from the active Agent broker/books."""
@@ -897,13 +1010,15 @@ class CCEASupervisor:
             broker_replace=make_broker_replace(self._broker),
             broker_name=self._broker_name,
             order_journal=journal,
+            risk_checker=self._build_user_risk_checker(),   # P0-B: lite_limits enforced pre-trade
             price_collar=PriceCollarConfig(max_price_distance_pct=0.20, max_notional=5_000_000.0),
             deployment_id="desktop-live",
             run_id="desktop-live-rebalance",
         )
         on_fill = None
         if self._books is not None:
-            on_fill = self._books.fill_handler_callback(strategy_id="xs-rebalance")
+            on_fill = self._risk_wrapped_on_fill(
+                self._books.fill_handler_callback(strategy_id="xs-rebalance"))
         self._live_fill_handler = FillHandler(self._live_engine, on_fill=on_fill)
         return self._live_engine
 
@@ -1379,6 +1494,7 @@ class CCEASupervisor:
             "pnl_ledger": (self._ledger.snapshot() if self._ledger is not None else None),
             "books": self._books_status(),
             "live_trading": (self._live_auth.status() if self._live_auth is not None else None),
+            "risk_enforcement": self.risk_enforcement_status(),
         }
 
     def _books_status(self) -> Optional[Dict[str, Any]]:

@@ -1,0 +1,212 @@
+# =============================================================================
+# EXAMPLE: Crypto Backtest/Simulation Configuration
+# =============================================================================
+# This is a well-documented example for backtesting strategies on crypto data.
+# Copy this file and customize for your needs.
+#
+# Usage:
+#   python script_backtest.py --config configs/my_backtest.yaml
+#
+# Prerequisites:
+#   1. Trained model checkpoint
+#   2. Test data in data/sample.csv or similar
+#   3. Updated filters: python scripts/fetch_binance_filters.py
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+mode: sim                        # sim = simulation/backtest mode
+run_id: my-backtest              # Unique identifier for this run
+logs_dir: logs                   # Where to write logs
+artifacts_dir: artifacts         # Where to save results
+
+# -----------------------------------------------------------------------------
+# ASSET CLASS
+# -----------------------------------------------------------------------------
+
+asset_class: crypto              # crypto | equity
+data_vendor: binance             # Must match data source
+
+# -----------------------------------------------------------------------------
+# DATA CONFIGURATION
+# -----------------------------------------------------------------------------
+
+data:
+  timeframe: "4h"                # Must match trained model's timeframe
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION (More realistic than training)
+# -----------------------------------------------------------------------------
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  slippage_bps: 0.0              # Additional slippage (model handles this)
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+execution:
+  mode: bar
+  enabled: true
+  spot_only: true
+  fill_policy: next_open_market  # Close signal -> Execute at next open
+
+  # Intrabar simulation settings
+  intrabar_price_model: "bridge" # linear | bridge | reference
+  timeframe_ms: 14400000         # 4 hours in milliseconds
+
+  clip_to_bar:
+    enabled: true                # Clip prices to bar range (realistic)
+    strict_open_fill: false
+
+execution_config:
+  notional_threshold: 10000.0    # Orders > $10k use TWAP
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10          # 10% of volume
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# -----------------------------------------------------------------------------
+# SEASONALITY (Enable for realistic simulation)
+# -----------------------------------------------------------------------------
+
+# Enable liquidity/latency seasonality for more realistic results
+use_seasonality: true
+liquidity_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+latency_seasonality_path: "data/latency/liquidity_latency_seasonality.json"
+
+# -----------------------------------------------------------------------------
+# FEES (Match production environment)
+# -----------------------------------------------------------------------------
+
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  taker_bps: 10.0                # 0.10% taker (conservative estimate)
+  half_spread_bps: 5.0           # Half-spread cost
+  impact_coeff: 0.0              # Market impact (set based on your size)
+
+  rounding:
+    enabled: true
+    mode: "up"                   # Round fees up (conservative)
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE MODEL
+# -----------------------------------------------------------------------------
+
+slippage:
+  k: 0.8                         # Impact coefficient
+  min_half_spread_bps: 0.0
+  default_spread_bps: 2.0
+
+  # Enable dynamic slippage for more realistic simulation
+  dynamic:
+    enabled: false               # Set to true for more realism
+    alpha_bps: 0.0
+    beta_coef: 0.0
+    min_spread_bps: 0.0
+    max_spread_bps: 20.0
+
+# -----------------------------------------------------------------------------
+# LATENCY MODEL
+# -----------------------------------------------------------------------------
+
+latency:
+  use_seasonality: true          # Enable for realism
+  base_ms: 250                   # Base latency (250ms)
+  jitter_ms: 50                  # Random jitter
+  spike_p: 0.01                  # 1% chance of latency spike
+  spike_mult: 5.0                # Spike is 5x normal latency
+  timeout_ms: 2500               # Order timeout
+  retries: 1
+
+# -----------------------------------------------------------------------------
+# RISK MANAGEMENT (Enable for realistic P&L)
+# -----------------------------------------------------------------------------
+
+risk:
+  enabled: true                  # Enable risk guards
+  max_abs_position_qty: 0.0      # 0 = no limit
+  max_abs_position_notional: 0.0 # 0 = no limit
+  max_order_notional: 0.0        # 0 = no limit
+  max_orders_per_min: 60         # Rate limit
+  daily_loss_limit: 0.0          # 0 = no daily loss limit
+  pause_seconds_on_violation: 300
+
+# -----------------------------------------------------------------------------
+# NO-TRADE WINDOWS (Optional - for realistic simulation)
+# -----------------------------------------------------------------------------
+
+no_trade:
+  enabled: false                 # Enable for realistic simulation
+
+  # Example: Block trading during funding periods
+  # funding_buffer_min: 5
+
+  # Example: Block during high volatility
+  # dynamic_guard:
+  #   enable: true
+  #   vol_pctile: 0.99           # Block when vol > 99th percentile
+
+# -----------------------------------------------------------------------------
+# ADV (Average Daily Volume) - for capacity modeling
+# -----------------------------------------------------------------------------
+
+adv:
+  enabled: false                 # Set true to model capacity constraints
+  # path: "data/adv/adv_by_symbol.json"
+  # window_days: 30
+
+# -----------------------------------------------------------------------------
+# QUANTIZER
+# -----------------------------------------------------------------------------
+
+quantizer:
+  filters_path: "data/binance_filters.json"
+  strict_filters: true
+  quantize_mode: "inward"        # Round toward valid range
+  enforce_percent_price_by_side: true
+
+# -----------------------------------------------------------------------------
+# MODEL SETTINGS (Minimal - just need algo type)
+# -----------------------------------------------------------------------------
+
+model:
+  algo: "ppo"
+  params: {}
+
+# -----------------------------------------------------------------------------
+# DATA SOURCES
+# -----------------------------------------------------------------------------
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/sample.csv"]  # Your test data
+      timeframe: "4h"
+
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params:
+      enter_threshold: 0.0
+      exit_threshold: 0.0
+
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

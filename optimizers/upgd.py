@@ -10,8 +10,11 @@ low-utility parameters to maintain plasticity.
 Algorithm:
     1. Compute utility for each parameter: u = -grad * param
     2. Track exponential moving average of utility with bias correction
-    3. Find global maximum utility across all parameters
-    4. Scale utility using sigmoid(utility / global_max)
+    3. Find global MIN and MAX utility across all parameters
+    4. Scale utility via min-max normalization then sigmoid (NOT sigmoid(u/global_max),
+       which inverts protection under negative utilities — CLAUDE.md "НЕ БАГИ" #5/#19/#28):
+       normalized = (u - global_min) / (global_max - global_min + eps)
+       scaled_utility = sigmoid(2 * (normalized - 0.5))
     5. Apply gradient update with perturbation: param -= lr * (grad + noise) * (1 - scaled_utility)
 
 Hyperparameters:

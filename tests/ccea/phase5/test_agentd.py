@@ -116,7 +116,9 @@ class TestAgentDaemon:
                 skip_network_check=True,
             ),
         )
-        return AgentDaemon(config)
+        daemon = AgentDaemon(config)
+        yield daemon
+        daemon.close()
 
     def test_initial_state(self, daemon):
         """Test initial state."""
@@ -276,7 +278,7 @@ class TestAgentDaemon:
         daemon1 = AgentDaemon(config)
         daemon1.initialize()
         daemon1.start()
-        daemon1.stop()
+        daemon1.close()
 
         # Create new daemon
         daemon2 = AgentDaemon(config)
@@ -284,6 +286,7 @@ class TestAgentDaemon:
 
         # Should have same agent ID
         assert daemon2.agent_id == "persistent-agent"
+        daemon2.close()
 
     def test_set_components(self, daemon):
         """Test setting external components."""

@@ -93,6 +93,8 @@ def load_all_data(feather_paths: List[str], synthetic_fraction: float = 0.0, see
     fng = _read_fng()
     for p in feather_paths:
         sym = os.path.splitext(os.path.basename(p))[0]
+        if any(suffix in sym for suffix in ["_corporate_actions", "_features", "_targets", "_training_table", "_predictions"]):
+            continue
         if p.endswith(".parquet"):
             df = pd.read_parquet(p)
         else:

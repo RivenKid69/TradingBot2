@@ -5651,7 +5651,15 @@ def api_panic_halt():
 def api_panic_reset():
     import services.ops_kill_switch as ops_kill_switch
     ops_kill_switch.manual_reset()
-    
+
+    # Снять breach-флаг risk-монитора: после ручного сброса kill switch
+    # circuit breaker снова вооружён (иначе он больше не сработает).
+    if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
+        try:
+            _CCEA_SUPERVISOR.reset_risk_breach()
+        except Exception:
+            pass
+
     snap = {}
     if os.path.exists(GLOBAL_SNAPSHOT_JSON):
         try:
@@ -9200,16 +9208,55 @@ def api_risk_limits_save(payload: RiskLimitsPayload):
     import hashlib as _hashlib
     with open(RISK_LIMITS_CONFIG_PATH, "rb") as f:
         digest = _hashlib.sha256(f.read()).hexdigest()[:16]
+
+    # P0-B: реально применить лимиты в live-контуре Agent'а — пересобрать
+    # pre-trade RiskChecker и прогнать intra-day монитор с новыми порогами.
+    enforced = False
+    enforcement_status = None
+    if _CCEA_SUPERVISOR is not None and _CCEA_STATE == "running":
+        try:
+            enforcement_status = _CCEA_SUPERVISOR.reload_risk_limits()
+            enforced = True
+        except Exception:
+            enforced = False
+
     return {
         "status": "saved",
         "path": RISK_LIMITS_CONFIG_PATH,
         "applied": applied,
         "policy_version": digest,
-        # Honesty: saving the YAML is not proof of live enforcement — the
-        # Agent applies the policy when the next RUN starts.
-        "applied_to_agent": False,
-        "note": "Политика сохранена и перечитана с диска. Активный Agent применит её при следующем запуске RUN.",
+        # Now honest: with a running CCEA Agent the limits ARE enforced live
+        # (pre-trade RiskChecker + intra-day circuit breaker). Without it,
+        # they are persisted and will be enforced when the Agent starts.
+        "applied_to_agent": enforced,
+        "enforcement": enforcement_status,
+        "note": ("Лимиты применены к живому Agent-контуру (pre-trade + intra-day circuit breaker)."
+                 if enforced else
+                 "Политика сохранена; будет применена при запуске CCEA Agent."),
     }
+
+
+@api.get("/api/risk/enforcement")
+def api_risk_enforcement():
+    """Реальный статус enforcement риск-лимитов (P0-B).
+
+    Показывает не «сохранено», а фактическое применение: текущий дневной P&L /
+    лимит, просадка от пика / лимит, плечо / потолок, armed/breached. Без
+    запущенного CCEA Agent — честный статус недоступности."""
+    if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
+        limits = None
+        try:
+            from services.live_risk_limits import load_live_risk_limits
+            limits = load_live_risk_limits().as_public()
+        except Exception:
+            pass
+        return {
+            "status": "agent_offline",
+            "enforced": False,
+            "limits": limits,
+            "note": "CCEA Agent не запущен — лимиты сохранены, но intra-day enforcement неактивен.",
+        }
+    return _CCEA_SUPERVISOR.risk_enforcement_status()
 
 
 @api.get("/api/portfolio/risk_summary")

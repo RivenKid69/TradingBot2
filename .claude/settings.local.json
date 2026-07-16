@@ -32,7 +32,14 @@
       "Bash(mkdir:*)",
       "Bash(for dir in docs/reports/*)",
       "Bash(done)",
-      "Bash(python3 -m pytest:*)"
+      "Bash(python3 -m pytest:*)",
+      "Bash(ls -la CLAUDE.md claude.md)",
+      "Bash(wc -c CLAUDE.md)",
+      "Bash(wc -l CLAUDE.md)",
+      "Bash(ls docs/)",
+      "Bash(ls docs/futures/)",
+      "Bash(ls docs/options/)",
+      "Bash(ls docs/l3_simulator/)"
     ],
     "deny": [],
     "ask": []

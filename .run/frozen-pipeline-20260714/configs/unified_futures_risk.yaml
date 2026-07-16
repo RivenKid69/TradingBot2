@@ -1,0 +1,231 @@
+# Unified Futures Risk Management Configuration
+# Phase 7 - Unifies crypto and CME futures risk management
+#
+# This configuration file provides settings for:
+# - Crypto perpetual futures (Binance USDT-M)
+# - CME futures (ES, NQ, GC, CL, 6E, ZN, etc.)
+# - Portfolio-level risk aggregation
+
+# ============================================================================
+# Crypto Futures Risk Settings (Phase 6A)
+# ============================================================================
+crypto:
+  # Leverage limits
+  max_account_leverage: 20.0        # Maximum total account leverage
+  max_symbol_leverage: 125.0        # Maximum per-symbol leverage (Binance max)
+
+  # Margin thresholds (ratio = equity / margin_used)
+  margin_warning_threshold: 1.5     # 150% - alert
+  margin_danger_threshold: 1.2      # 120% - reduce position recommended
+  margin_critical_threshold: 1.05   # 105% - urgent action required
+
+  # Concentration limits
+  max_single_symbol_pct: 0.5        # Max 50% in any single symbol
+  max_correlated_group_pct: 0.7     # Max 70% in correlated group (BTC+alts)
+
+  # Funding rate thresholds (per 8-hour period)
+  funding_warning_threshold: 0.0001   # 0.01% per 8h = ~10.95% APR
+  funding_excessive_threshold: 0.0003 # 0.03% per 8h = ~32.85% APR
+
+  # ADL (Auto-Deleveraging) risk thresholds
+  adl_warning_percentile: 75.0      # Top 25% - increased ADL risk
+  adl_critical_percentile: 90.0     # Top 10% - high ADL risk
+
+  # Behavior
+  strict_mode: true                 # Enforce all checks (false = warnings only)
+
+
+# ============================================================================
+# CME Futures Risk Settings (Phase 6B)
+# ============================================================================
+cme:
+  # SPAN margin thresholds
+  margin_warning_ratio: 1.5         # 150% of maintenance margin
+  margin_danger_ratio: 1.2          # 120% of maintenance margin
+  margin_critical_ratio: 1.05       # 105% of maintenance margin
+
+  # Circuit breaker behavior (Rule 80B)
+  prevent_trades_on_halt: true      # Block new positions during CB halt
+  pre_cb_warning_pct: -0.05         # -5% decline triggers warning
+
+  # Settlement risk timing (minutes before daily settlement)
+  settlement_warn_minutes: 60       # 1 hour warning
+  settlement_critical_minutes: 30   # 30 minutes - critical
+  settlement_block_minutes: 15      # 15 minutes - block new positions
+
+  # Rollover risk timing (days before contract expiration)
+  rollover_warn_days: 8             # 8 days - start monitoring
+  rollover_critical_days: 3         # 3 days - critical
+  rollover_block_days: 1            # 1 day - block new positions in expiring
+
+  # Position limits
+  enforce_speculative_limits: true  # Enforce CME speculative limits
+  enforce_accountability_levels: true  # Warn at accountability levels
+
+  # Behavior
+  strict_mode: true
+
+
+# ============================================================================
+# Portfolio-Level Risk Settings (Cross-Asset)
+# ============================================================================
+portfolio:
+  # Cross-asset correlation tracking
+  enable_correlation_tracking: true
+  correlation_lookback_days: 30     # Days of data for correlation
+  correlation_spike_threshold: 0.8  # High correlation trigger
+  correlation_risk_multiplier: 1.5  # Margin increase at max correlation
+
+  # VaR (Value at Risk) calculation
+  enable_var_calculation: false     # Disabled by default (expensive)
+  var_confidence_95: 0.95
+  var_confidence_99: 0.99
+  var_warning_threshold: 0.1        # 10% of equity at risk
+  var_critical_threshold: 0.2       # 20% of equity at risk
+
+  # Cross-asset margin aggregation
+  aggregate_margin_across_types: true
+  cross_margin_benefit_factor: 0.0  # No cross-margin benefit (conservative)
+
+
+# ============================================================================
+# Global Settings
+# ============================================================================
+
+# Notifications
+enable_notifications: true
+notification_cooldown_seconds: 300  # 5 minutes between same event notifications
+
+# Logging
+log_all_checks: false               # Log every check (verbose)
+log_risk_events: true               # Log only risk events
+
+
+# ============================================================================
+# Profiles (Pre-configured settings)
+# ============================================================================
+# Usage: load profile then override specific settings
+
+profiles:
+  # Conservative profile - lower risk tolerance
+  conservative:
+    crypto:
+      max_account_leverage: 10.0
+      margin_warning_threshold: 2.0
+      margin_danger_threshold: 1.5
+      max_single_symbol_pct: 0.3
+    cme:
+      margin_warning_ratio: 2.0
+      margin_danger_ratio: 1.5
+    portfolio:
+      correlation_risk_multiplier: 2.0
+
+  # Aggressive profile - higher risk tolerance
+  aggressive:
+    crypto:
+      max_account_leverage: 50.0
+      margin_warning_threshold: 1.2
+      margin_danger_threshold: 1.1
+      max_single_symbol_pct: 0.7
+    cme:
+      margin_warning_ratio: 1.2
+      margin_danger_ratio: 1.1
+    portfolio:
+      correlation_risk_multiplier: 1.2
+
+  # Crypto-only profile
+  crypto_only:
+    crypto:
+      max_account_leverage: 20.0
+      strict_mode: true
+    cme:
+      strict_mode: false  # Relaxed for unused
+    portfolio:
+      enable_correlation_tracking: true
+
+  # CME-only profile
+  cme_only:
+    crypto:
+      strict_mode: false  # Relaxed for unused
+    cme:
+      strict_mode: true
+      enforce_speculative_limits: true
+    portfolio:
+      enable_correlation_tracking: true
+
+  # Institutional profile - very conservative
+  institutional:
+    crypto:
+      max_account_leverage: 5.0
+      margin_warning_threshold: 3.0
+      margin_danger_threshold: 2.0
+      max_single_symbol_pct: 0.2
+      max_correlated_group_pct: 0.4
+    cme:
+      margin_warning_ratio: 3.0
+      margin_danger_ratio: 2.0
+      settlement_warn_minutes: 120
+      rollover_warn_days: 14
+    portfolio:
+      enable_var_calculation: true
+      correlation_risk_multiplier: 2.0
+
+
+# ============================================================================
+# Symbol Overrides (Optional)
+# ============================================================================
+# Override settings for specific symbols
+
+symbol_overrides:
+  # BTC - allow higher leverage
+  BTCUSDT:
+    max_leverage: 125.0
+    concentration_limit: 0.4
+
+  # ETH - allow medium leverage
+  ETHUSDT:
+    max_leverage: 100.0
+    concentration_limit: 0.35
+
+  # ES - equity index
+  ES:
+    settlement_warn_minutes: 45
+    rollover_warn_days: 10
+
+  # CL - more volatile energy
+  CL:
+    margin_multiplier: 1.2
+
+
+# ============================================================================
+# Correlation Groups (for concentration limits)
+# ============================================================================
+correlation_groups:
+  # Crypto majors (high correlation)
+  btc_ecosystem:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+
+  # Stablecoins (low risk)
+  stablecoins:
+    - USDCUSDT
+    - BUSDUSDT
+
+  # CME equity index (high correlation)
+  equity_index:
+    - ES
+    - NQ
+    - YM
+    - RTY
+
+  # Precious metals
+  precious_metals:
+    - GC
+    - SI
+
+  # Energy
+  energy:
+    - CL
+    - NG

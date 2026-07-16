@@ -783,6 +783,16 @@ class CommonRunConfig(BaseModel):
             "(pre-market and after-hours sessions). Ignored for 24/7 crypto markets."
         ),
     )
+    mode: str = Field(
+        default="single_instrument",
+        description=(
+            "Run paradigm (additive, see CROSS_SECTIONAL_PLATFORM_DESIGN.md). "
+            "'single_instrument' (default, current MVP behavior): per-symbol "
+            "strategy / RL agent. 'cross_sectional': universe-wide signals -> risk "
+            "model -> portfolio optimization. No behavior is wired to this field at "
+            "Stage A1; it only declares intent for the new cross-sectional contour."
+        ),
+    )
     liquidity_seasonality_path: Optional[str] = Field(default=None)
     liquidity_seasonality_hash: Optional[str] = Field(default=None)
     seasonality_log_level: str = Field(

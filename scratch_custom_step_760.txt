@@ -1,0 +1,1 @@
+﻿{"step_index":760,"source":"MODEL","type":"GREP_SEARCH","status":"DONE","created_at":"2026-05-31T10:15:19Z","content":"Created At: 2026-05-31T10:15:19Z\nCompleted At: 2026-05-31T10:15:19Z\n{\"File\":\"c:/Users/Зефирка/StartUp/index.html\",\"LineNumber\":2909,\"LineContent\":\"            const steps = mode === 'ai' ? aiSteps : customSteps;\"}"}

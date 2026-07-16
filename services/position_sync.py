@@ -112,6 +112,10 @@ class SyncResult:
     discrepancies: List[PositionDiscrepancy] = field(default_factory=list)
     open_orders: int = 0
     error: Optional[str] = None
+    # Auto-reconciliation outcome (P1 #9)
+    halted: bool = False
+    halt_reason: Optional[str] = None
+    reconcile_actions: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def has_discrepancies(self) -> bool:
@@ -147,6 +151,13 @@ class SyncConfig:
 
     # Whether to auto-resolve discrepancies (dangerous!)
     auto_resolve: bool = False
+
+    # --- Auto-reconciliation policy (P1 #9): act on persistent drift, don't just
+    #     detect it. A discrepancy that survives N consecutive syncs is "persistent".
+    halt_on_unreconciled: bool = True       # block new orders while drift persists
+    consecutive_halt_threshold: int = 2     # syncs a discrepancy must persist before halt
+    auto_flatten: bool = False              # also close the drifted position at the broker
+    max_flatten_qty: float = 1e9            # safety cap on auto-flatten size
 
     # Symbols to include (None = all)
     include_symbols: Optional[List[str]] = None
@@ -195,6 +206,8 @@ class PositionSynchronizer:
         on_discrepancy: Optional[Callable[[PositionDiscrepancy], None]] = None,
         on_sync_complete: Optional[Callable[[SyncResult], None]] = None,
         order_provider: Optional[OrderProvider] = None,
+        on_halt: Optional[Callable[[str], None]] = None,
+        flatten_fn: Optional[Callable[[str, Decimal], Any]] = None,
     ) -> None:
         """
         Initialize position synchronizer.
@@ -213,6 +226,12 @@ class PositionSynchronizer:
         self._on_discrepancy = on_discrepancy
         self._on_sync_complete = on_sync_complete
         self._order_provider = order_provider
+        # Auto-reconciliation state (P1 #9)
+        self._on_halt = on_halt
+        self._flatten_fn = flatten_fn
+        self._consecutive: Dict[str, int] = {}   # symbol -> consecutive unreconciled syncs
+        self._halted = False
+        self._halt_reason: Optional[str] = None
 
         # Background sync state
         self._sync_task: Optional[asyncio.Task] = None
@@ -282,6 +301,11 @@ class PositionSynchronizer:
                 local_positions, remote_positions, remote_meta
             )
 
+            # Auto-reconciliation (P1 #9): act on PERSISTENT drift, not just detect.
+            halted, halt_reason, actions = self._auto_reconcile(
+                discrepancies, remote_positions
+            )
+
             # Create result
             result = SyncResult(
                 timestamp=timestamp,
@@ -290,6 +314,9 @@ class PositionSynchronizer:
                 remote_positions=remote_positions,
                 discrepancies=discrepancies,
                 open_orders=open_orders,
+                halted=halted,
+                halt_reason=halt_reason,
+                reconcile_actions=actions,
             )
 
             # Invoke callbacks
@@ -321,6 +348,100 @@ class PositionSynchronizer:
             )
             self._last_sync = result
             return result
+
+    # ------------------------------------------------------------------
+    # Auto-reconciliation (P1 #9)
+    # ------------------------------------------------------------------
+    def _auto_reconcile(self, discrepancies, remote_positions):
+        """Act on persistent drift: alert → halt new orders → optional auto-flatten.
+
+        A discrepancy is "persistent" once it survives ``consecutive_halt_threshold``
+        consecutive syncs. On persistence we halt new orders (always, if
+        ``halt_on_unreconciled``) and, when ``auto_flatten`` is enabled, flatten the
+        drifted symbol at the broker via ``flatten_fn``. Returns (halted, reason, actions).
+        """
+        cfg = self._config
+        actions: List[Dict[str, Any]] = []
+        current_syms = {d.symbol for d in discrepancies}
+
+        # decay counters for symbols that are no longer drifting (self-healed)
+        for sym in list(self._consecutive.keys()):
+            if sym not in current_syms:
+                self._consecutive.pop(sym, None)
+
+        persistent: List[str] = []
+        for d in discrepancies:
+            self._consecutive[d.symbol] = self._consecutive.get(d.symbol, 0) + 1
+            if self._consecutive[d.symbol] >= max(1, int(cfg.consecutive_halt_threshold)):
+                persistent.append(d.symbol)
+
+        # drift self-healed everywhere -> clear halt
+        if not discrepancies:
+            if self._halted:
+                logger.info("position drift cleared — releasing reconciliation halt")
+            self._halted = False
+            self._halt_reason = None
+            return False, None, actions
+
+        if not persistent:
+            return self._halted, self._halt_reason, actions
+
+        # --- persistent drift: halt new orders ---
+        if cfg.halt_on_unreconciled and not self._halted:
+            self._halted = True
+            self._halt_reason = (
+                f"persistent position drift on {persistent} "
+                f"(>= {cfg.consecutive_halt_threshold} consecutive syncs)"
+            )
+            logger.error("RECONCILIATION HALT: %s", self._halt_reason)
+            actions.append({"action": "halt_new_orders", "symbols": list(persistent),
+                            "reason": self._halt_reason})
+            if self._on_halt:
+                try:
+                    self._on_halt(self._halt_reason)
+                except Exception as e:  # pragma: no cover
+                    logger.error("on_halt callback error: %s", e)
+
+        # --- optional auto-flatten of the drifted broker position ---
+        if cfg.auto_flatten and self._flatten_fn is not None:
+            for sym in persistent:
+                rq = remote_positions.get(sym, Decimal("0"))
+                if rq == 0:
+                    continue
+                if abs(float(rq)) > float(cfg.max_flatten_qty):
+                    actions.append({"action": "flatten_skipped_cap", "symbol": sym,
+                                    "remote_qty": str(rq)})
+                    continue
+                try:
+                    self._flatten_fn(sym, rq)
+                    actions.append({"action": "auto_flatten", "symbol": sym, "remote_qty": str(rq)})
+                    logger.warning("auto-flatten issued for %s (remote qty %s)", sym, rq)
+                except Exception as e:  # pragma: no cover
+                    logger.error("auto-flatten failed for %s: %s", sym, e)
+                    actions.append({"action": "flatten_error", "symbol": sym, "error": str(e)})
+
+        return self._halted, self._halt_reason, actions
+
+    @property
+    def is_halted(self) -> bool:
+        """Whether reconciliation has halted new-order flow (check before trading)."""
+        return self._halted
+
+    @property
+    def halt_reason(self) -> Optional[str]:
+        return self._halt_reason
+
+    def should_block_new_orders(self) -> bool:
+        """The live loop calls this before submitting; True => do not send new orders."""
+        return self._halted
+
+    def clear_halt(self, approval: str = "") -> bool:
+        """Manually clear the reconciliation halt (after operator review)."""
+        self._halted = False
+        self._halt_reason = None
+        self._consecutive.clear()
+        logger.info("reconciliation halt cleared (approval=%s)", approval or "n/a")
+        return True
 
     def _extract_qty(self, position: Any) -> Optional[Decimal]:
         """Extract quantity from position object."""

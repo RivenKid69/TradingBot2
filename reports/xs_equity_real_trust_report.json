@@ -1,0 +1,127 @@
+{
+  "summary": {
+    "n_periods": 129,
+    "total_return": 0.15108762996905378,
+    "mean_return": 0.0011677679280436724,
+    "sharpe": 1.4989436741856466,
+    "sortino": 2.2874275462486438,
+    "calmar": 3.783028666407295,
+    "ann_return": 0.29427751786700546,
+    "ann_vol": 0.19632326613398732,
+    "max_drawdown": -0.077788868078147,
+    "hit_rate": 0.5426356589147286,
+    "benchmark_ann_return": 1.3283318836416989,
+    "tracking_error": 0.24999115452625204,
+    "information_ratio": -4.136363815488941,
+    "beta": 0.37262059058157754,
+    "alpha": -0.20068629310390368,
+    "avg_turnover": 0.21437799926172005,
+    "avg_gross": 0.9984496124031008,
+    "total_costs": 0.008296428571428566,
+    "n_rebalances": 130
+  },
+  "trust_report": {
+    "n_obs": 129,
+    "sharpe_annual": 1.4989436741856466,
+    "total_return": 0.15108762996905378,
+    "max_drawdown": -0.077788868078147,
+    "probabilistic_sharpe": 0.8564111729763706,
+    "deflated_sharpe": 0.410616605254443,
+    "n_trials": 6,
+    "pbo": null,
+    "capacity": {
+      "base_sharpe": 1.582419743913926,
+      "threshold_sharpe": 0.791209871956963,
+      "sharpe_threshold_frac": 0.5,
+      "capacity_aum": 0.0,
+      "adv_usd": 10000000.0,
+      "impact_coef": 0.1,
+      "curve": [
+        {
+          "aum": 100000.0,
+          "sharpe": -0.43659710695722237,
+          "avg_cost_bps": 15.855641317813728
+        },
+        {
+          "aum": 1000000.0,
+          "sharpe": -3.92654631571459,
+          "avg_cost_bps": 50.13994032696506
+        },
+        {
+          "aum": 10000000.0,
+          "sharpe": -8.075588185479424,
+          "avg_cost_bps": 158.55641317813726
+        },
+        {
+          "aum": 50000000.0,
+          "sharpe": -9.391546763896672,
+          "avg_cost_bps": 354.5429181348584
+        },
+        {
+          "aum": 100000000.0,
+          "sharpe": -9.662078853341901,
+          "avg_cost_bps": 501.3994032696507
+        },
+        {
+          "aum": 500000000.0,
+          "sharpe": -9.977982539031709,
+          "avg_cost_bps": 1121.163149588769
+        },
+        {
+          "aum": 1000000000.0,
+          "sharpe": -10.04393647797196,
+          "avg_cost_bps": 1585.5641317813727
+        },
+        {
+          "aum": 5000000000.0,
+          "sharpe": -10.126078117342882,
+          "avg_cost_bps": 3545.429181348584
+        },
+        {
+          "aum": 10000000000.0,
+          "sharpe": -10.144523146465612,
+          "avg_cost_bps": 5013.994032696507
+        }
+      ]
+    },
+    "bootstrap": {
+      "sharpe": {
+        "point": 1.4931225117125728,
+        "mean": 1.4995786187432114,
+        "se": 1.2457916182061706,
+        "ci_low": -0.9940332853483409,
+        "ci_high": 3.91443885830679,
+        "p_value": 0.1145,
+        "n_boot": 2000,
+        "mean_block": 5.05277434720856,
+        "method": "stationary"
+      },
+      "cagr": {
+        "point": 0.3163595336785525,
+        "mean": 0.3626388006009008,
+        "se": 0.3320671673503771,
+        "ci_low": -0.18308206516884148,
+        "ci_high": 1.1078695410860755,
+        "p_value": 0.1245,
+        "n_boot": 2000,
+        "mean_block": 5.05277434720856,
+        "method": "stationary"
+      },
+      "max_drawdown": {
+        "point": 0.07778886807814696,
+        "mean": 0.09934421935306588,
+        "se": 0.03678583168220836,
+        "ci_low": 0.04930246433635004,
+        "ci_high": 0.187680862088788,
+        "p_value": 0.0,
+        "n_boot": 2000,
+        "mean_block": 5.05277434720856,
+        "method": "stationary"
+      }
+    },
+    "sharpe_ci_excludes_zero": false,
+    "sharpe_bootstrap_pvalue": 0.1145,
+    "verdict": "likely_overfit"
+  },
+  "n_rebalances": 130
+}

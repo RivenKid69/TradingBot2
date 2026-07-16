@@ -1,0 +1,282 @@
+# =============================================================================
+# Futures Live Trading Configuration
+# =============================================================================
+#
+# This configuration file controls the futures live trading system.
+# Supports both crypto perpetual futures (Binance) and CME futures (IB).
+#
+# Usage:
+#   python script_futures_live.py --config configs/config_live_futures.yaml
+#   python script_futures_live.py --config configs/config_live_futures.yaml --paper
+#   python script_futures_live.py --config configs/config_live_futures.yaml --live
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+# Futures type: CRYPTO_PERPETUAL, CRYPTO_QUARTERLY, INDEX_FUTURES, COMMODITY_FUTURES
+# Auto-detected from exchange/symbols if not specified
+futures_type: "CRYPTO_PERPETUAL"
+
+# Exchange: binance, ib (Interactive Brokers)
+exchange: "binance"
+
+# Symbols to trade
+symbols:
+  - "BTCUSDT"
+  - "ETHUSDT"
+
+# Paper trading mode (recommended for testing)
+# Override with --paper or --live CLI flags
+paper_trading: true
+
+
+# -----------------------------------------------------------------------------
+# EXCHANGE CREDENTIALS
+# -----------------------------------------------------------------------------
+# Credentials can be set here or via environment variables:
+# - BINANCE_API_KEY, BINANCE_API_SECRET (for Binance)
+# - IB credentials are managed via TWS/Gateway
+
+# Binance API credentials (set via env; keep null here)
+api_key: null
+api_secret: null
+
+# Interactive Brokers settings (for CME futures)
+ib_host: "127.0.0.1"
+ib_port: 7497  # 7497 = TWS Paper, 7496 = TWS Live, 4002 = Gateway Paper, 4001 = Gateway Live
+ib_client_id: 1
+
+
+# -----------------------------------------------------------------------------
+# MODEL / SIGNAL PROVIDER
+# -----------------------------------------------------------------------------
+
+# Path to trained model (leave empty to run without signals)
+model_path: ""
+
+# Model configuration
+model_config:
+  # Add model-specific settings here
+  pass
+
+
+# -----------------------------------------------------------------------------
+# TIMING & INTERVALS
+# -----------------------------------------------------------------------------
+
+# Main loop interval (seconds)
+main_loop_interval_sec: 1.0
+
+# Position synchronization interval (seconds)
+position_sync_interval_sec: 5.0
+
+# Margin check interval (seconds)
+margin_check_interval_sec: 10.0
+
+# Funding rate check interval (seconds) - crypto only
+funding_check_interval_sec: 60.0
+
+# Heartbeat interval (seconds)
+heartbeat_interval_sec: 30.0
+
+
+# -----------------------------------------------------------------------------
+# FEATURE FLAGS
+# -----------------------------------------------------------------------------
+
+# Enable background position synchronization
+enable_position_sync: true
+
+# Enable margin monitoring and alerts
+enable_margin_monitoring: true
+
+# Enable funding rate tracking (crypto perpetuals only)
+enable_funding_tracking: true
+
+# Enable ADL (Auto-Deleveraging) monitoring (crypto only)
+enable_adl_monitoring: true
+
+# Enable circuit breaker monitoring (CME only)
+enable_circuit_breaker_monitoring: false
+
+
+# -----------------------------------------------------------------------------
+# RISK MANAGEMENT
+# -----------------------------------------------------------------------------
+
+# Strict mode: enforce all risk checks
+strict_mode: true
+
+# Maximum leverage allowed
+max_leverage: 10
+
+# Maximum position value (USD) per symbol
+max_position_value: 100000
+
+# Maximum total exposure (USD)
+max_total_exposure: 500000
+
+
+# -----------------------------------------------------------------------------
+# CONNECTION & RELIABILITY
+# -----------------------------------------------------------------------------
+
+# Maximum reconnection attempts
+max_reconnect_attempts: 10
+
+# Reconnection backoff settings
+reconnect_backoff_base: 1.0
+reconnect_backoff_max: 60.0
+
+
+# -----------------------------------------------------------------------------
+# MARGIN MONITORING
+# -----------------------------------------------------------------------------
+
+margin:
+  # Margin ratio thresholds (equity / margin_used)
+  warning_ratio: 1.5    # 150% - monitor closely
+  danger_ratio: 1.2     # 120% - consider reducing
+  critical_ratio: 1.1   # 110% - urgent action needed
+  liquidation_ratio: 1.0  # 100% - liquidation risk
+
+  # Alert cooldown (seconds)
+  alert_cooldown_sec: 300
+
+  # Enable auto-reduction suggestions
+  enable_auto_reduction: true
+
+  # Target margin ratio after reduction
+  target_ratio: 2.0
+
+
+# -----------------------------------------------------------------------------
+# POSITION SYNC
+# -----------------------------------------------------------------------------
+
+position_sync:
+  # Synchronization interval (seconds)
+  interval_sec: 5.0
+
+  # Position quantity tolerance (fraction)
+  tolerance: 0.01
+
+  # Enable auto-reconciliation
+  auto_reconcile: false
+
+  # Maximum reconciliation quantity
+  max_reconcile_qty: 0.1
+
+
+# -----------------------------------------------------------------------------
+# FUNDING TRACKING (Crypto Only)
+# -----------------------------------------------------------------------------
+
+funding:
+  # Data directory for funding history
+  data_dir: "data/futures"
+
+  # Enable funding rate predictions
+  enable_predictions: true
+
+  # Prediction method: last, avg, ewma
+  prediction_method: "ewma"
+
+  # Cache TTL for statistics (seconds)
+  cache_ttl_sec: 300
+
+
+# -----------------------------------------------------------------------------
+# LOGGING
+# -----------------------------------------------------------------------------
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+
+  # Log to file
+  file_enabled: true
+  file_path: "logs/futures_live.log"
+  file_max_bytes: 10485760  # 10MB
+  file_backup_count: 5
+
+
+# -----------------------------------------------------------------------------
+# NOTIFICATIONS (Optional)
+# -----------------------------------------------------------------------------
+
+notifications:
+  # Enable notifications
+  enabled: false
+
+  # Notification channels
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+
+  slack:
+    enabled: false
+    webhook_url: ""
+
+  email:
+    enabled: false
+    smtp_server: ""
+    smtp_port: 587
+    sender: ""
+    recipients: []
+
+
+# =============================================================================
+# CME FUTURES SPECIFIC SETTINGS
+# =============================================================================
+# Uncomment and modify for CME futures trading
+
+# futures_type: "INDEX_FUTURES"
+# exchange: "ib"
+#
+# symbols:
+#   - "ES"  # E-mini S&P 500
+#   - "NQ"  # E-mini NASDAQ 100
+#
+# # CME-specific risk settings
+# cme:
+#   # Enable circuit breaker monitoring
+#   enable_circuit_breaker_monitoring: true
+#
+#   # Prevent new trades during circuit breaker halts
+#   prevent_trades_on_halt: true
+#
+#   # Settlement window settings
+#   settlement_warn_minutes: 60
+#   settlement_critical_minutes: 30
+#
+#   # Rollover settings
+#   rollover_warn_days: 8
+#   rollover_critical_days: 3
+
+
+# =============================================================================
+# CRYPTO PERPETUAL SPECIFIC SETTINGS
+# =============================================================================
+
+crypto:
+  # Enable Binance testnet
+  testnet: true
+
+  # Default margin mode: CROSS or ISOLATED
+  margin_mode: "CROSS"
+
+  # Default leverage
+  default_leverage: 10
+
+  # Funding rate thresholds
+  funding_warning_threshold: 0.0001   # 0.01% per 8h = ~10% APR
+  funding_excessive_threshold: 0.0003  # 0.03% per 8h = ~33% APR
+
+  # ADL monitoring
+  adl_warning_percentile: 75
+  adl_critical_percentile: 90

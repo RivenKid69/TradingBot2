@@ -102,12 +102,12 @@ class BinanceMarketDataAdapter(MarketDataAdapter):
         limit = min(limit, 1000)
 
         raw_klines = client.get_klines(
+            market="futures" if self._use_futures else "spot",
             symbol=symbol,
             interval=timeframe,
             limit=limit,
             start_ms=start_ts,
             end_ms=end_ts,
-            use_futures=self._use_futures,
         )
 
         bars = []

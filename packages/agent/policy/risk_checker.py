@@ -26,6 +26,8 @@ class RiskCheckType(str, Enum):
     MARGIN = "margin"
     BUYING_POWER = "buying_power"
     DAILY_LOSS = "daily_loss"
+    LEVERAGE = "leverage"
+    MAX_DRAWDOWN = "max_drawdown"
     RATE_LIMIT = "rate_limit"
     SYMBOL_RESTRICTION = "symbol_restriction"
     TIME_RESTRICTION = "time_restriction"
@@ -157,14 +159,25 @@ class RiskChecker:
         max_daily_loss: Decimal = Decimal("1000"),
         max_orders_per_minute: int = 10,
         max_orders_per_day: int = 100,
+        max_leverage: Optional[Decimal] = None,
+        max_drawdown_pct: Optional[Decimal] = None,
     ):
-        """Initialize risk checker."""
+        """Initialize risk checker.
+
+        ``max_leverage`` — потолок gross_exposure / equity ПОСЛЕ ордера
+        (None = не проверять). ``max_drawdown_pct`` — макс. просадка от пика
+        equity в долях (0.15 = 15%; None = не проверять). Оба применяются только
+        к наращивающим экспозицию ордерам (reduce/exit пропускаются — они
+        снижают риск).
+        """
         self.max_position_size = max_position_size
         self.max_order_size = max_order_size
         self.max_concentration_pct = max_concentration_pct
         self.max_daily_loss = max_daily_loss
         self.max_orders_per_minute = max_orders_per_minute
         self.max_orders_per_day = max_orders_per_day
+        self.max_leverage = max_leverage
+        self.max_drawdown_pct = max_drawdown_pct
 
         # Restricted symbols
         self._restricted_symbols: set = set()
@@ -222,6 +235,12 @@ class RiskChecker:
 
         # 5. Daily loss check
         result.add_check(self._check_daily_loss(portfolio))
+
+        # 5a. Leverage cap (post-order gross exposure / equity)
+        result.add_check(self._check_leverage(intent, portfolio, notional))
+
+        # 5b. Max drawdown from peak equity
+        result.add_check(self._check_drawdown(intent, portfolio))
 
         # 6. Rate limit check
         result.add_check(self._check_rate_limits(portfolio))
@@ -361,6 +380,62 @@ class RiskChecker:
             passed=True,
             current_value=portfolio.buying_power - notional,
             limit_value=portfolio.buying_power,
+        )
+
+    def _check_leverage(
+        self, intent: OrderIntent, portfolio: PortfolioState, notional: Decimal,
+    ) -> PreTradeCheck:
+        """Post-order leverage cap: (gross_exposure + added_notional) / equity.
+
+        Skipped for exits/reduce-only — those lower exposure. Conservative:
+        assumes the order fully adds to gross exposure."""
+        if self.max_leverage is None or intent.is_exit:
+            return PreTradeCheck(check_type=RiskCheckType.LEVERAGE, passed=True)
+        equity = portfolio.equity
+        if equity <= 0:
+            return PreTradeCheck(
+                check_type=RiskCheckType.LEVERAGE, passed=False,
+                message="equity <= 0 — leverage undefined", current_value=None,
+                limit_value=self.max_leverage,
+            )
+        projected = (portfolio.gross_exposure + abs(notional)) / equity
+        if projected > self.max_leverage:
+            return PreTradeCheck(
+                check_type=RiskCheckType.LEVERAGE, passed=False,
+                message=f"Leverage would reach {projected:.2f}x > cap {self.max_leverage}x",
+                current_value=projected, limit_value=self.max_leverage,
+            )
+        if projected > self.max_leverage * Decimal("0.9"):
+            return PreTradeCheck(
+                check_type=RiskCheckType.LEVERAGE, passed=False,
+                message=f"Leverage approaching cap: {projected:.2f}x / {self.max_leverage}x",
+                current_value=projected, limit_value=self.max_leverage, is_warning=True,
+            )
+        return PreTradeCheck(
+            check_type=RiskCheckType.LEVERAGE, passed=True,
+            current_value=projected, limit_value=self.max_leverage,
+        )
+
+    def _check_drawdown(self, intent: OrderIntent, portfolio: PortfolioState) -> PreTradeCheck:
+        """Block risk-increasing orders once drawdown from peak breaches the limit.
+
+        Reduce/exit orders are always allowed (they help recover)."""
+        if self.max_drawdown_pct is None or intent.is_exit:
+            return PreTradeCheck(check_type=RiskCheckType.MAX_DRAWDOWN, passed=True)
+        peak = portfolio.peak_equity
+        if peak <= 0:
+            return PreTradeCheck(check_type=RiskCheckType.MAX_DRAWDOWN, passed=True)
+        dd = (peak - portfolio.equity) / peak
+        if dd > self.max_drawdown_pct:
+            return PreTradeCheck(
+                check_type=RiskCheckType.MAX_DRAWDOWN, passed=False,
+                message=f"Drawdown {dd:.1%} exceeds limit {self.max_drawdown_pct:.1%} — "
+                        "new risk-increasing orders blocked",
+                current_value=dd, limit_value=self.max_drawdown_pct,
+            )
+        return PreTradeCheck(
+            check_type=RiskCheckType.MAX_DRAWDOWN, passed=True,
+            current_value=dd, limit_value=self.max_drawdown_pct,
         )
 
     def _check_daily_loss(self, portfolio: PortfolioState) -> PreTradeCheck:

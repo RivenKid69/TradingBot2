@@ -1,0 +1,77 @@
+# Cross-Sectional EQUITY preset (Stage B2) — US equity market-neutral на готовый движок.
+# Запуск:  python script_xs_backtest.py --config configs/config_xs_equity.yaml
+# Источник synthetic → работает без данных. Для реальных бесплатных данных:
+#   data.source: free, data.vendor: yahoo  (дневные бары через adapters/yahoo, без ключей).
+#
+# ⚠️ HONEST-NOTE (качество бесплатных данных):
+#   • Бесплатный фундаментал (yfinance) — СНИМОК «сейчас», НЕ настоящий point-in-time →
+#     value/quality сигналы на free-данных бэктестить НЕЧЕСТНО (look-ahead). pit_quality=approx.
+#   • Бесплатный список SP500/NDX — survivorship-biased (нет делистнутых).
+#   Для честного бэктеста подайте BYO PIT-фундаментал (Sharadar/Compustat) и PIT-юниверс.
+#   Поэтому пресет по умолчанию использует ТОЛЬКО ценовые сигналы (momentum/low-vol),
+#   которые честны на ценах. Фундаментальные — закомментированы (BYO-слот).
+
+mode: cross_sectional
+asset_class: equity
+market_symbol: SPY          # рыночный фактор; если нет в данных — равновзвешенный прокси
+
+data:
+  source: synthetic         # synthetic | free (yahoo) | parquet (BYO)
+  vendor: yahoo
+  symbols: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, XOM, JNJ, PG, UNH, HD, V, MA, SPY]
+  synthetic_bars: 320
+  synthetic_seed: 11
+  cache: true               # parquet-кэш баров
+  # Stage D2 — для source: free раскомментируйте:
+  # enrich: [total_return, pit_fundamentals]   # total_return=approx (yahoo div), pit_fundamentals=true(BYO)/none(free снимок)
+
+# Stage D2: BYO PIT-фундаментал (для ЧЕСТНОГО backtest value/quality). Без него free yfinance = СНИМОК (pit=none):
+# fundamentals_path: data/fundamentals/sharadar_sf1.parquet   # parquet с колонкой publish_ts → pit=true
+fundamentals_fields: [earnings, book_value, fcf, roe]
+fundamentals_publish_lag_days: 1   # запас на задержку публикации отчётности (анти-look-ahead)
+
+universe:
+  type: static              # free-списки survivorship-biased; BYO PIT-юниверс для честности
+  symbols: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, XOM, JNJ, PG, UNH, HD, V, MA, SPY]
+
+signals:
+  # Ценовые сигналы — честны на бесплатных ценах:
+  - {name: mom_12_1, kind: equity_momentum, lookback: 252, skip: 21, transforms: [winsorize, zscore]}
+  - {name: low_vol,  kind: low_vol, vol_window: 60, transforms: [zscore]}
+  # Фундаментальные (value/quality) — требуют PIT-фундаментал (BYO). Раскомментируйте при наличии колонок:
+  # - {name: earnings_yield, kind: earnings_yield, transforms: [winsorize, zscore]}
+  # - {name: book_to_price,  kind: book_to_price,  transforms: [winsorize, zscore]}
+  # - {name: roe,            kind: roe,            transforms: [zscore]}
+  # - {name: accruals,       kind: accruals,       transforms: [zscore]}
+  # - {name: eq_size,        kind: equity_size,    transforms: [zscore]}
+
+alpha:
+  method: ic_weighted
+
+risk:
+  type: equity_factor       # Barra-lite: market-beta + size + value + momentum + sector (Σ = BFBᵀ+D)
+  method: ledoit_wolf
+
+momentum_lookback: 60
+# Equity-факторы (для risk.type=equity_factor) — sectors/mcaps как BYO-метаданные:
+sectors: {AAPL: Tech, MSFT: Tech, NVDA: Tech, AMZN: ConsDisc, GOOGL: Comm, META: Comm, JPM: Financials, XOM: Energy, JNJ: Health, PG: Staples, UNH: Health, HD: ConsDisc, V: Financials, MA: Financials, SPY: Index}
+mcaps:   {AAPL: 3300, MSFT: 3100, NVDA: 2900, AMZN: 1900, GOOGL: 2100, META: 1300, JPM: 600, XOM: 480, JNJ: 380, PG: 390, UNH: 470, HD: 360, V: 560, MA: 430, SPY: 0.001}
+
+optimizer:
+  objective: mean_variance
+  risk_aversion: 5.0
+  gross_max: 1.0
+  net_target: 0.0           # market-neutral (long-short)
+  long_only: false
+  max_position: 0.15
+
+backtest:
+  rebalance_every: 5        # weekly на дневных барах
+  cov_lookback: 60
+  min_cov_obs: 30
+  alpha_refit_every: 5
+  cost_bps: 3.0             # equity косты ниже крипто
+  price_col: close
+  periods_per_year: 252
+
+n_trials: 5

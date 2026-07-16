@@ -1,0 +1,273 @@
+# =============================================================================
+# FOREX CARRY/MOMENTUM - Quick Start Reference Pipeline
+# =============================================================================
+#
+# Стратегия: Carry Trade + Momentum на мажорах
+# Asset Class: Forex OTC (OANDA)
+# Сложность: ⭐⭐⭐ (Intermediate)
+#
+# Характеристики:
+#   - 24/5 торговля (Sun 5pm - Fri 5pm ET)
+#   - Spread-only комиссии (без maker/taker)
+#   - OTC рынок (dealer simulation)
+#   - Leverage до 50:1 (CFTC limit)
+#   - Swap/rollover costs
+#
+# Требования:
+#   export OANDA_API_KEY="your_api_key"
+#   export OANDA_ACCOUNT_ID="your_account_id"
+#
+# Запуск:
+#   python scripts/download_forex_data.py --pairs EURUSD GBPUSD USDJPY --start 2023-01-01
+#   python script_backtest.py --config configs/quickstart/forex_carry.yaml
+#   python train_model_multi_patch.py --config configs/quickstart/forex_carry.yaml
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# БАЗОВЫЕ НАСТРОЙКИ
+# -----------------------------------------------------------------------------
+mode: train
+run_id: forex_carry
+logs_dir: logs/quickstart
+artifacts_dir: artifacts/quickstart
+
+# Asset class определяет автоматические настройки
+asset_class: forex
+data_vendor: oanda
+
+# -----------------------------------------------------------------------------
+# ДАННЫЕ
+# -----------------------------------------------------------------------------
+data:
+  timeframe: "4h"
+
+  # Путь к данным
+  paths: ["data/forex/*.parquet"]
+
+  # Валютные пары (OANDA формат)
+  pairs:
+    - "EUR_USD"      # Euro/Dollar
+    - "GBP_USD"      # Pound/Dollar
+    - "USD_JPY"      # Dollar/Yen
+    - "AUD_USD"      # Aussie/Dollar
+    - "USD_CAD"      # Dollar/CAD
+
+  # Периоды
+  train_start_ts: 1640995200      # 2022-01-01
+  train_end_ts: 1735689599        # 2024-12-31
+  val_start_ts: 1735689600        # 2025-01-01
+  val_end_ts: 1743465599          # 2025-03-31
+  test_start_ts: 1743465600       # 2025-04-01
+  test_end_ts: 1751327999         # 2025-06-30
+
+# -----------------------------------------------------------------------------
+# МОДЕЛЬ (PPO с Distributional Critic)
+# -----------------------------------------------------------------------------
+model:
+  algo: "ppo"
+
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4
+    weight_decay: 0.001
+    sigma: 0.001
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    clip_threshold: 10.0
+
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.10
+    clip_range_vf: 0.7
+    ent_coef: 0.001
+    vf_coef: 1.8
+    max_grad_norm: 0.5
+    n_steps: 2048
+    n_epochs: 4
+    batch_size: 64
+    seed: 42
+
+    use_twin_critics: true
+    num_atoms: 21
+    v_min: -10.0
+    v_max: 10.0
+
+    cvar_alpha: 0.05
+    cvar_weight: 0.15
+
+# -----------------------------------------------------------------------------
+# ОКРУЖЕНИЕ
+# -----------------------------------------------------------------------------
+env:
+  decision_timing: CLOSE_TO_OPEN
+
+  # Trading session (Forex 24/5)
+  session:
+    calendar: forex_24x5           # Sun 5pm - Fri 5pm ET
+    weekend_filter: true           # Filter weekend gaps
+    rollover_time_et: 17           # 5pm ET daily rollover
+    rollover_keepout_minutes: 30   # Avoid trading around rollover
+    dst_aware: true
+
+  # Liquidity (varies by session)
+  liquidity:
+    min_adv_usd: 0
+    session_liquidity: true
+
+  # No-trade windows
+  no_trade:
+    enabled: true
+    policy: hold                   # Hold positions over weekend
+    enforce_trading_hours: true
+    weekend_filter: true
+    rollover_keepout: true
+
+# -----------------------------------------------------------------------------
+# ДЕЙСТВИЯ
+# -----------------------------------------------------------------------------
+algo:
+  actions:
+    long_only: false               # Forex позволяет шорты (но можно включить long_only)
+
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    bins_vol: 5                    # [-100%, -50%, 0%, 50%, 100%]
+    max_asset_weight: 1.0
+
+# -----------------------------------------------------------------------------
+# КОМИССИИ (Spread-only)
+# -----------------------------------------------------------------------------
+fees:
+  structure: spread_only
+  maker_bps: 0.0                   # No maker/taker for retail forex
+  taker_bps: 0.0
+
+  # Swap rates (overnight financing)
+  swap:
+    enabled: true
+    data_source: oanda
+
+  regulatory:
+    enabled: false                 # No SEC/TAF for forex
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE (Forex-specific, session-aware)
+# -----------------------------------------------------------------------------
+slippage:
+  profile: forex
+  k: 0.03                          # Low impact coefficient
+  default_spread_pips: 1.2         # EUR/USD typical retail spread
+  min_slippage_pips: 0.1
+  max_slippage_pips: 50.0
+
+  # Session-aware spread multipliers
+  session_multipliers:
+    sydney: 1.5                    # Wide spreads
+    tokyo: 1.3
+    london: 1.0                    # Tightest spreads
+    new_york: 1.0
+    london_ny_overlap: 0.8         # Best liquidity
+
+  dynamic:
+    enabled: true
+    use_session_curve: true
+
+# -----------------------------------------------------------------------------
+# LEVERAGE
+# -----------------------------------------------------------------------------
+leverage:
+  max_leverage: 50.0               # CFTC limit for US retail
+  default_leverage: 10.0           # Conservative default
+  margin_warning: 1.20             # 120% margin warning
+  margin_call: 1.00                # 100% margin call
+  stop_out: 0.50                   # 50% stop-out level
+
+# -----------------------------------------------------------------------------
+# РИСК-МЕНЕДЖМЕНТ
+# -----------------------------------------------------------------------------
+risk:
+  enabled: true
+  max_abs_position_notional: 100000  # Max $100K notional
+  daily_loss_limit: 0.02             # -2% daily loss limit
+  pause_seconds_on_violation: 300
+
+# -----------------------------------------------------------------------------
+# FOREX-SPECIFIC FEATURES
+# -----------------------------------------------------------------------------
+forex_features:
+  # Session detection
+  sessions:
+    enabled: true
+    use_for_features: true
+
+  # Interest rate differentials (carry)
+  carry:
+    enabled: true
+    use_forward_points: true
+
+  # Economic calendar
+  calendar:
+    enabled: false                 # Отключено для простоты
+    avoid_high_impact: true
+
+# -----------------------------------------------------------------------------
+# REWARD
+# -----------------------------------------------------------------------------
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0005
+  include_swap_costs: true         # Include swap in P&L
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+execution:
+  enabled: true
+  mode: bar
+  dealer_simulation: true          # OTC dealer simulation
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+# -----------------------------------------------------------------------------
+# КОМПОНЕНТЫ
+# -----------------------------------------------------------------------------
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/forex/*.parquet"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "EUR_USD"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

@@ -1,0 +1,472 @@
+{
+  "datasets": [
+    {
+      "id": "98dbb223bfaa",
+      "path": "C:\\Users\\\u0417\u0435\u0444\u0438\u0440\u043a\u0430\\StartUp\\data\\test_training_table.parquet",
+      "file_sha256": "df63e35f352418e60504b93e2ea1a57d781069f3d2fde10a0f5fe52542ebfbd4",
+      "content_hash": "98dbb223bfaa1fa4836498a708631aec1eb8f0863a3d8c6eb727d125a8e13f5c",
+      "schema": [
+        {
+          "name": "adx_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "adx_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "adx_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "ao",
+          "dtype": "float64"
+        },
+        {
+          "name": "atr_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "atr_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "atr_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_bandwidth_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_bandwidth_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_bandwidth_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_lower_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_lower_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_lower_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_percent_b_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_percent_b_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_percent_b_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_upper_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_upper_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "bollinger_upper_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "cci_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "cci_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "cci_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "close",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmf_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmf_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmf_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmo_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmo_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "cmo_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "decision_ts",
+          "dtype": "int64"
+        },
+        {
+          "name": "donchian_lower_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_lower_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_lower_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_middle_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_middle_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_middle_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_upper_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_upper_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "donchian_upper_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "ema_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "ema_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "ema_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "garch_4h",
+          "dtype": "float64"
+        },
+        {
+          "name": "garch_8h",
+          "dtype": "float64"
+        },
+        {
+          "name": "high",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_lower_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_lower_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_lower_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_middle_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_middle_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_middle_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_upper_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_upper_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "keltner_upper_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "label_price0",
+          "dtype": "float64"
+        },
+        {
+          "name": "label_price1",
+          "dtype": "float64"
+        },
+        {
+          "name": "label_ret",
+          "dtype": "float64"
+        },
+        {
+          "name": "label_t0_ts",
+          "dtype": "int64"
+        },
+        {
+          "name": "label_t1_ts",
+          "dtype": "int64"
+        },
+        {
+          "name": "low",
+          "dtype": "float64"
+        },
+        {
+          "name": "macd",
+          "dtype": "float64"
+        },
+        {
+          "name": "macd_histogram",
+          "dtype": "float64"
+        },
+        {
+          "name": "macd_signal",
+          "dtype": "float64"
+        },
+        {
+          "name": "mfi_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "mfi_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "mfi_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "minus_di_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "minus_di_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "minus_di_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "mom_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "mom_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "mom_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "obv",
+          "dtype": "float64"
+        },
+        {
+          "name": "open",
+          "dtype": "float64"
+        },
+        {
+          "name": "parkinson_4h",
+          "dtype": "float64"
+        },
+        {
+          "name": "parkinson_8h",
+          "dtype": "float64"
+        },
+        {
+          "name": "plus_di_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "plus_di_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "plus_di_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "pvt",
+          "dtype": "float64"
+        },
+        {
+          "name": "ref_price",
+          "dtype": "float64"
+        },
+        {
+          "name": "ret_1h",
+          "dtype": "float64"
+        },
+        {
+          "name": "ret_4h",
+          "dtype": "float64"
+        },
+        {
+          "name": "ret_8h",
+          "dtype": "float64"
+        },
+        {
+          "name": "roc_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "roc_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "roc_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "rsi",
+          "dtype": "float64"
+        },
+        {
+          "name": "slope_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "slope_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "slope_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "sma_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "sma_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "sma_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "std_returns_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "std_returns_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "std_returns_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_d_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_d_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_d_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_k_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_k_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "stoch_k_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "symbol",
+          "dtype": "str"
+        },
+        {
+          "name": "timestamp",
+          "dtype": "int64"
+        },
+        {
+          "name": "ts_ms",
+          "dtype": "int64"
+        },
+        {
+          "name": "volume",
+          "dtype": "int64"
+        },
+        {
+          "name": "williams_r_240",
+          "dtype": "float64"
+        },
+        {
+          "name": "williams_r_480",
+          "dtype": "float64"
+        },
+        {
+          "name": "williams_r_60",
+          "dtype": "float64"
+        },
+        {
+          "name": "yang_zhang_4h",
+          "dtype": "float64"
+        },
+        {
+          "name": "yang_zhang_8h",
+          "dtype": "float64"
+        }
+      ],
+      "n_rows": 3485,
+      "n_cols": 112,
+      "time_range": {
+        "col": "ts_ms",
+        "start": 1701354600000,
+        "end": 1764340200000
+      },
+      "size_bytes": 2218837,
+      "created_at": "2026-06-05T17:39:36.519021Z",
+      "last_seen": "2026-06-05T17:39:36.519021Z",
+      "parent_id": null,
+      "config": null
+    }
+  ]
+}

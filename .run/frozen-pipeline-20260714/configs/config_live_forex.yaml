@@ -1,0 +1,153 @@
+mode: live
+run_id: live-forex-run
+logs_dir: logs
+artifacts_dir: artifacts
+
+api:
+  api_key: null
+  api_secret: null
+
+exchange:
+  vendor: "oanda"
+  market_type: "FOREX"
+  oanda:
+    api_key: "${OANDA_API_KEY}"
+    account_id: "${OANDA_ACCOUNT_ID}"
+    paper: true
+    max_leverage: 50
+    margin_call_level: 0.5
+    rollover_time_utc: 21
+
+trading_hours:
+  allow_extended: true
+  use_exchange_calendar: true
+
+runtime_config: runtime.yaml
+
+execution_config:
+  notional_threshold: 100000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.05
+    child_interval_s: 60
+    min_child_notional: 10000.0
+
+max_signals_per_sec: 5.0
+backoff_base_s: 2.0
+max_backoff_s: 60.0
+
+execution_profile: MKT_OPEN_NEXT_H1
+
+execution_params:
+  slippage_bps: 0.5
+  limit_offset_bps: 2.0
+  ttl_steps: 0
+  tif: GTC
+
+execution:
+  mode: bar
+  enabled: true
+
+timing:
+  enforce_closed_bars: true
+  timeframe_ms: 3600000
+  close_lag_ms: 5000
+
+clock_sync:
+  refresh_sec: 300
+  warn_threshold_ms: 500
+  kill_threshold_ms: 2000
+  max_step_ms: 1000
+  attempts: 5
+
+data:
+  timeframe: "1h"
+  symbols_path: "data/universe/forex_symbols.json"
+
+use_seasonality: false
+
+latency:
+  use_seasonality: false
+  base_ms: 150
+  jitter_ms: 30
+  spike_p: 0.002
+  spike_mult: 4.0
+  timeout_ms: 2500
+  retries: 2
+  min_ms: 0
+  max_ms: 8000
+  debug_log: false
+
+risk:
+  enabled: true
+  max_abs_position_qty: 0.0
+  max_abs_position_notional: 100000.0
+  max_order_notional: 50000.0
+  max_orders_per_min: 30
+  max_orders_window_s: 60
+  daily_loss_limit: 2000.0
+  pause_seconds_on_violation: 300
+  daily_reset_utc_hour: 22
+  max_entries_per_day: null
+  max_total_notional: 200000.0
+  max_total_exposure_pct: 0.8
+
+quantizer:
+  use_adapter: true
+  strict_filters: true
+  enforce_percent_price_by_side: false
+  auto_refresh_days: 7
+
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true
+    windows:
+      enabled: true
+    anomaly:
+      enabled: true
+    extreme:
+      enabled: true
+    policy:
+      enabled: true
+    risk:
+      enabled: true
+    ttl:
+      enabled: false
+    dedup:
+      enabled: true
+    throttle:
+      enabled: true
+    publish:
+      enabled: true
+
+components:
+  market_data:
+    target: adapters.oanda:OANDAMarketDataAdapter
+    params:
+      timeframe: "1h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "EUR_USD"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+
+shutdown:
+  grace_period: 5.0
+  drain_policy: graceful
+  timeouts:
+    stop: 10.0
+    flush: 10.0
+    finalize: 5.0
+
+ttl:
+  enabled: false

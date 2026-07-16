@@ -1,0 +1,212 @@
+# =============================================================================
+# CRYPTO MOMENTUM - Quick Start Reference Pipeline
+# =============================================================================
+#
+# Стратегия: Trend-following momentum на 4H таймфрейме
+# Asset Class: Crypto Spot (Binance)
+# Сложность: ⭐⭐ (Beginner-friendly)
+#
+# Характеристики:
+#   - 24/7 торговля
+#   - Long-only (без шортов для простоты)
+#   - BTC + ETH + Top altcoins
+#   - Maker/Taker комиссии (4 bps)
+#
+# Запуск:
+#   python script_backtest.py --config configs/quickstart/crypto_momentum.yaml
+#   python train_model_multi_patch.py --config configs/quickstart/crypto_momentum.yaml
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# БАЗОВЫЕ НАСТРОЙКИ
+# -----------------------------------------------------------------------------
+mode: train                        # train | sim | live
+run_id: crypto_momentum            # Имя запуска для логов
+logs_dir: logs/quickstart
+artifacts_dir: artifacts/quickstart
+
+# Asset class определяет автоматические настройки fees/slippage/hours
+asset_class: crypto
+data_vendor: binance
+
+# -----------------------------------------------------------------------------
+# ДАННЫЕ
+# -----------------------------------------------------------------------------
+data:
+  # Таймфрейм: 4h хорошо балансирует noise vs signal
+  timeframe: "4h"
+
+  # Путь к данным (создайте через scripts/prepare_training_data.py)
+  paths: ["data/train/crypto/*.parquet"]
+
+  # Периоды (Unix timestamps)
+  # Train: 2022-2024, Val: Q1 2025, Test: Q2 2025
+  train_start_ts: 1640995200      # 2022-01-01
+  train_end_ts: 1735689599        # 2024-12-31
+  val_start_ts: 1735689600        # 2025-01-01
+  val_end_ts: 1743465599          # 2025-03-31
+  test_start_ts: 1743465600       # 2025-04-01
+  test_end_ts: 1751327999         # 2025-06-30
+
+# -----------------------------------------------------------------------------
+# МОДЕЛЬ (PPO с Distributional Critic)
+# -----------------------------------------------------------------------------
+model:
+  algo: "ppo"
+
+  # Оптимизатор: AdaptiveUPGD для continual learning
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4
+    weight_decay: 0.001
+    sigma: 0.001                   # Noise для exploration
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  # Variance Gradient Scaler для стабильности
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    clip_threshold: 10.0
+
+  # Гиперпараметры PPO
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99                    # Discount factor
+    gae_lambda: 0.95               # GAE lambda
+    clip_range: 0.10               # PPO clip range
+    clip_range_vf: 0.7             # Value function clip
+    ent_coef: 0.001                # Entropy coefficient
+    vf_coef: 1.8                   # Value loss coefficient
+    max_grad_norm: 0.5             # Gradient clipping
+    n_steps: 2048                  # Steps per update
+    n_epochs: 4                    # Epochs per update
+    batch_size: 64                 # Mini-batch size
+    seed: 42                       # Reproducibility
+
+    # Twin Critics для стабильности value estimation
+    use_twin_critics: true
+    num_atoms: 21                  # Distributional critic quantiles
+    v_min: -10.0
+    v_max: 10.0
+
+    # CVaR для risk-aware learning
+    cvar_alpha: 0.05               # Tail risk (worst 5%)
+    cvar_weight: 0.15              # CVaR weight in loss
+
+# -----------------------------------------------------------------------------
+# ОКРУЖЕНИЕ
+# -----------------------------------------------------------------------------
+env:
+  decision_timing: CLOSE_TO_OPEN   # Решение на close, исполнение на open
+
+  # Trading session (crypto = 24/7)
+  session:
+    calendar: crypto_24x7
+    pre_open_keepout_bars: 0
+    post_close_keepout_bars: 0
+
+  # Liquidity filters (отключены для простоты)
+  liquidity:
+    min_adv_usd: 0
+    min_bar_quote_volume: 0
+
+  # No-trade windows (отключены для crypto)
+  no_trade:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# ДЕЙСТВИЯ (Long-only)
+# -----------------------------------------------------------------------------
+algo:
+  actions:
+    long_only: true                # Только лонг позиции
+
+  action_wrapper:
+    fixed_type: MARKET             # Market orders only
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    bins_vol: 4                    # Дискретизация: [0%, 20%, 60%, 100%]
+    max_asset_weight: 1.0          # Максимум 100% капитала в позиции
+
+# -----------------------------------------------------------------------------
+# КОМИССИИ (Binance Spot)
+# -----------------------------------------------------------------------------
+fees:
+  path: "data/fees/fees_by_symbol.json"
+  maker_bps: 2.0                   # 0.02% maker
+  taker_bps: 4.0                   # 0.04% taker
+  use_bnb_discount: true           # 25% скидка при оплате BNB
+  rounding:
+    enabled: true
+    mode: up
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE (Crypto-specific)
+# -----------------------------------------------------------------------------
+slippage:
+  k: 0.10                          # Market impact coefficient
+  default_spread_bps: 5.0          # Default half-spread
+  min_half_spread_bps: 1.0
+  dynamic:
+    enabled: false                 # Static slippage для простоты
+
+# -----------------------------------------------------------------------------
+# РИСК-МЕНЕДЖМЕНТ
+# -----------------------------------------------------------------------------
+risk:
+  enabled: true
+  max_abs_position_notional: 100000  # Max $100K position
+  daily_loss_limit: 0.05             # -5% daily loss limit
+  pause_seconds_on_violation: 300    # 5 min pause
+
+# -----------------------------------------------------------------------------
+# REWARD (Log-return based)
+# -----------------------------------------------------------------------------
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0005    # Penalty for high turnover
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+execution:
+  enabled: true
+  mode: bar
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+# -----------------------------------------------------------------------------
+# КОМПОНЕНТЫ (автоматически настраиваются)
+# -----------------------------------------------------------------------------
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/crypto/*.parquet"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "BTCUSDT"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}

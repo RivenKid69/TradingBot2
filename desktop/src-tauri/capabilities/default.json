@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core webview permissions. The UI talks only to the local Python backend over HTTP; it does not use Tauri IPC, so no plugin commands are exposed to the (remote-origin) page.",
+  "windows": ["main", "splash"],
+  "permissions": ["core:default"]
+}

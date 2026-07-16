@@ -161,6 +161,25 @@ class AlpacaMarketDataAdapter(MarketDataAdapter):
         feed = self._config.get("feed", "iex")
         request_params["feed"] = feed
 
+        adjustment = self._config.get("adjustment")
+        if adjustment:
+            from alpaca.data.enums import Adjustment
+            if isinstance(adjustment, str):
+                try:
+                    # Map standard values to enum values
+                    adj_str = adjustment.lower()
+                    if adj_str == "raw":
+                        adj_str = "raw"
+                    elif adj_str == "split":
+                        adj_str = "split"
+                    elif adj_str == "all":
+                        adj_str = "all"
+                    request_params["adjustment"] = Adjustment(adj_str)
+                except ValueError:
+                    logger.warning(f"Invalid adjustment value: {adjustment}. Using default.")
+            elif isinstance(adjustment, Adjustment):
+                request_params["adjustment"] = adjustment
+
         request = StockBarsRequest(**request_params)
         bars_response = client.get_stock_bars(request)
 

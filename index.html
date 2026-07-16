@@ -2676,6 +2676,17 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Live Risk-Limit Enforcement (P0-B) -->
+                            <div class="bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3">
+                                <h3 class="text-xs font-semibold text-white uppercase tracking-wider font-mono border-b border-[#232329]/40 pb-2 flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-shield-heart text-emerald-400"></i>Применение лимитов (live)</span>
+                                    <span id="risk-enforce-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase">—</span>
+                                </h3>
+                                <div id="risk-enforce-body" class="space-y-2.5 font-mono text-[11px]">
+                                    <div class="text-[10px] text-gray-500 text-center py-2">Загрузка…</div>
+                                </div>
+                            </div>
+
                             <!-- Live Risk Audit Status widget -->
                             <div class="bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3.5">
                                 <h3 class="text-xs font-semibold text-white uppercase tracking-wider font-mono border-b border-[#232329]/40 pb-2 flex items-center gap-1.5">
@@ -24316,10 +24327,11 @@ function renderPipelineStatusDetails(asset) {
             await refreshLitePortfolioData();
             updateTicketFields();
             refreshWorkingOrders();
+            refreshRiskEnforcement();
 
             // Establish periodic fetches (every 5 seconds)
             if (portfolioInterval) clearInterval(portfolioInterval);
-            portfolioInterval = setInterval(() => { refreshLitePortfolioData(); refreshWorkingOrders(); }, 5000);
+            portfolioInterval = setInterval(() => { refreshLitePortfolioData(); refreshWorkingOrders(); refreshRiskEnforcement(); }, 5000);
 
             // Establish console logs update (every 3 seconds)
             if (portfolioConsoleInterval) clearInterval(portfolioConsoleInterval);
@@ -24739,6 +24751,77 @@ function renderPipelineStatusDetails(asset) {
             }
         }
 
+        // ------------------ RISK-LIMIT ENFORCEMENT (P0-B) ------------------
+        // Реальное применение лимитов: не «сохранено», а текущее использование
+        // (день/просадка/плечо vs лимиты) + статус ARMED/BREACHED из backend.
+        async function refreshRiskEnforcement() {
+            const badge = document.getElementById('risk-enforce-badge');
+            const body = document.getElementById('risk-enforce-body');
+            if (!body) return;
+            try {
+                const res = await fetch(API_BASE + '/api/risk/enforcement');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const d = await res.json();
+
+                if (d.status === 'agent_offline') {
+                    if (badge) { badge.innerText = 'AGENT OFF'; badge.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase'; }
+                    body.innerHTML = `<div class="text-[10px] text-gray-500 leading-relaxed">CCEA Agent не запущен — лимиты сохранены, но intra-day enforcement неактивен. Лимиты применятся при запуске Agent.</div>`;
+                    return;
+                }
+                if (!d.enforced) {
+                    if (badge) { badge.innerText = 'НЕ ЗАДАНЫ'; badge.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase'; }
+                    body.innerHTML = `<div class="text-[10px] text-gray-500 leading-relaxed">Лимиты не заданы. Установите их во вкладке «Параметры контроля рисков» — они будут применяться pre-trade и как intra-day стоп.</div>`;
+                    return;
+                }
+
+                const breached = d.status === 'breached' || d.already_halted;
+                if (badge) {
+                    badge.innerText = breached ? 'СРАБОТАЛ' : 'АКТИВЕН';
+                    badge.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded font-bold uppercase '
+                        + (breached ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20');
+                }
+                const L = d.limits || {};
+                const rows = [];
+                const barRow = (label, cur, limit, usagePct, fmtCur, danger) => {
+                    if (limit === null || limit === undefined) return '';
+                    const pct = Math.max(0, Math.min(100, usagePct || 0));
+                    const barCls = pct >= 100 ? 'bg-rose-500' : pct >= 80 ? 'bg-amber-400' : 'bg-emerald-400';
+                    return `<div class="space-y-1">
+                        <div class="flex justify-between"><span class="text-gray-500">${label}</span><span class="${danger ? 'text-rose-400' : 'text-gray-200'}">${fmtCur(cur)} / ${fmtCur(limit)}</span></div>
+                        <div class="w-full h-1 bg-[#1A1A22] rounded-full overflow-hidden"><div class="${barCls} h-full transition-all" style="width:${pct}%"></div></div>
+                    </div>`;
+                };
+                const u = d.usage || {};
+                if (L.daily_loss_limit_usd != null) {
+                    const loss = Math.max(0, -d.day_pnl);
+                    rows.push(barRow('Дневной убыток', loss, L.daily_loss_limit_usd,
+                        u.daily_loss_pct, v => '$' + Number(v).toLocaleString(undefined, {maximumFractionDigits:0}),
+                        loss >= L.daily_loss_limit_usd));
+                }
+                if (L.max_drawdown_pct != null) {
+                    rows.push(barRow('Просадка от пика', d.drawdown_pct, L.max_drawdown_pct,
+                        u.drawdown_pct_of_limit, v => Number(v).toFixed(1) + '%',
+                        d.drawdown_pct >= L.max_drawdown_pct));
+                }
+                if (L.max_leverage != null) {
+                    rows.push(barRow('Плечо (leverage)', d.leverage, L.max_leverage,
+                        u.leverage_pct_of_cap, v => Number(v).toFixed(2) + 'x',
+                        d.leverage >= L.max_leverage));
+                }
+                let banner = '';
+                if (breached) {
+                    banner = `<div class="p-2 bg-rose-500/10 border border-rose-500/25 rounded-lg text-[10px] text-rose-400 leading-relaxed">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i><strong>Circuit breaker сработал:</strong> ${(d.breaches||[]).map(b => b==='daily_loss'?'дневной лимит убытка':'макс. просадка').join(', ')}. Торговля остановлена, позиции закрыты. Сбросьте аварийный режим, чтобы возобновить.</div>`;
+                }
+                body.innerHTML = banner + (rows.join('') || '<div class="text-[10px] text-gray-500">Лимиты активны.</div>')
+                    + `<div class="text-[9px] text-gray-600 pt-1">Equity $${Number(d.equity||0).toLocaleString(undefined,{maximumFractionDigits:0})} · пик $${Number(d.peak_equity||0).toLocaleString(undefined,{maximumFractionDigits:0})} · день ${d.day_pnl>=0?'+':''}$${Number(d.day_pnl||0).toLocaleString(undefined,{maximumFractionDigits:0})}</div>`;
+            } catch (err) {
+                if (badge) { badge.innerText = 'ОШИБКА'; badge.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/25 font-bold uppercase'; }
+                body.innerHTML = `<div class="text-[10px] text-rose-400">Ошибка: ${err.message}</div>`;
+            }
+        }
+
         async function updateLiveAuditDetails(data) {
             // Real risk snapshot from the backend (audit L2-008). Anything the
             // backend cannot actually compute is shown as N/A — no interface
@@ -24871,9 +24954,11 @@ function renderPipelineStatusDetails(asset) {
                     showActionToast('❌ Лимиты отклонены: ' + (data.detail || saveRes.status));
                     return;
                 }
-                // Read-back: show what is actually on disk, no "применено" claims.
+                // Read-back: show what is actually on disk.
                 applyRiskLimitsToForm(data.applied || {});
-                showActionToast(`✅ Политика сохранена (версия ${data.policy_version || '—'}). ${data.note || ''}`);
+                const enforcedMark = data.applied_to_agent ? '🛡️ применены live' : '💾 сохранены';
+                showActionToast(`✅ Лимиты ${enforcedMark} (версия ${data.policy_version || '—'}). ${data.note || ''}`);
+                refreshRiskEnforcement();
             } catch (err) {
                 showActionToast('❌ Сетевая ошибка при сохранении: ' + err.message);
             }

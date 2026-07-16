@@ -1,0 +1,54 @@
+# Cross-sectional pipeline — шаблон конфига (Stage A12)
+# Запуск:  python script_xs_backtest.py --config configs/config_xs_template.yaml
+# Источник данных synthetic → работает без внешних данных (демо/smoke).
+# Для реальных данных смените data.source на 'parquet' (BYO) или 'free' (адаптеры).
+
+mode: cross_sectional
+asset_class: crypto
+
+data:
+  source: synthetic          # synthetic | parquet | free
+  symbols: [BTC, ETH, SOL, BNB, ADA, XRP, DOGE, LINK]
+  timeframe: 1d
+  parquet_root: null         # для source=parquet
+  vendor: yahoo              # для source=free
+  synthetic_bars: 150
+  synthetic_seed: 42
+
+universe:
+  type: static               # static | index_membership
+  symbols: [BTC, ETH, SOL, BNB, ADA, XRP, DOGE, LINK]
+
+signals:
+  - {name: mom_60, kind: momentum, lookback: 60, skip: 1, transforms: [winsorize, zscore]}
+  - {name: mom_20, kind: momentum, lookback: 20, skip: 1, transforms: [zscore]}
+  - {name: reversal_5, kind: momentum, lookback: 5, skip: 0, transforms: [zscore]}
+
+alpha:
+  method: ic_weighted        # equal_weight | ic_weighted | ridge
+  alpha: 1.0
+
+risk:
+  type: stat                 # stat (Ledoit-Wolf + PCA)
+  method: ledoit_wolf
+  n_factors: null
+
+optimizer:
+  objective: mean_variance   # equal_weight | min_variance | mean_variance | max_sharpe | risk_parity | black_litterman
+  risk_aversion: 5.0
+  gross_max: 1.0
+  net_target: 0.0            # market-neutral
+  long_only: false
+  max_position: 0.25
+  max_turnover: null
+
+backtest:
+  rebalance_every: 1
+  cov_lookback: 30
+  min_cov_obs: 10
+  alpha_refit_every: 10      # переобучать alpha-модель раз в 10 ребалансов (perf + реализм)
+  cost_bps: 5.0
+  price_col: close
+  periods_per_year: 365      # crypto: 24/7
+
+n_trials: 3                  # для Deflated Sharpe (число конфигов, что вы перебрали)

@@ -1,0 +1,1 @@
+{"pid":14464,"state":"succeeded","running":false,"exit_code":0,"started_at":"2026-07-14T18:13:34.353090+00:00","finished_at":"2026-07-14T18:15:17.414808+00:00","command":["C:\\Users\\Зефирка\\StartUp\\dist\\riven-backend.exe","--riven-worker-script","make_features.py","--in","data/prices.parquet","--out","data/features.parquet","--price-col","ref_price"]}

@@ -1,0 +1,20 @@
+﻿Created At: 2026-05-31T09:35:19Z
+Completed At: 2026-05-31T09:35:19Z
+File Path: `file:///c:/Users/%D0%97%D0%B5%D1%84%D0%B8%D1%80%D0%BA%D0%B0/StartUp/index.html`
+Total Lines: 9293
+Total Bytes: 650149
+Showing lines 3045 to 3055
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3045:                 saveWorkflowProgress(activeAsset, quickStartMode, 0);
+3046:                 renderWorkflowTimeline(activeAsset);
+3047:                 showActionToast("Прогресс сброшен.");
+3048:             }
+3049:         }
+3050: 
+3051:         function goBackToAssetSelection() {
+3052:             const panel = document.getElementById('lite-workflow-panel');
+3053:             const welcome = document.getElementById('lite-welcome-header');
+3054:             const selector = document.getElementById('lite-asset-selector-card');
+3055: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

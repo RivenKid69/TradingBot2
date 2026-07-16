@@ -1,0 +1,1 @@
+{"pid":28104,"state":"failed","running":false,"exit_code":1,"started_at":"2026-07-14T19:18:21.644904+00:00","finished_at":"2026-07-14T19:18:23.857052+00:00","command":["C:\\Users\\Зефирка\\StartUp\\dist\\riven-backend.exe","--riven-worker-script","tools/check_feature_parity.py","--data","data/missing.parquet"]}

@@ -50,9 +50,9 @@ def test_critical_2_default_lookbacks():
     spec = FeatureSpec(lookbacks_prices=[], bar_duration_minutes=240)
 
     # Должны быть установлены дефолтные значения
-    assert spec.lookbacks_prices == [1, 3, 6, 50], f"Expected [1, 3, 6, 50] bars, got {spec.lookbacks_prices}"
-    assert spec._lookbacks_prices_minutes == [240, 720, 1440, 12000], \
-        f"Expected [240, 720, 1440, 12000] minutes, got {spec._lookbacks_prices_minutes}"
+    assert spec.lookbacks_prices == [1, 3, 5, 6, 21, 42, 50], f"Expected [1, 3, 5, 6, 21, 42, 50] bars, got {spec.lookbacks_prices}"
+    assert spec._lookbacks_prices_minutes == [240, 720, 1200, 1440, 5040, 10080, 12000], \
+        f"Expected [240, 720, 1200, 1440, 5040, 10080, 12000] minutes, got {spec._lookbacks_prices_minutes}"
 
     print("✅ PASSED: Default lookbacks включает 12000 минут (50 баров)")
     return True

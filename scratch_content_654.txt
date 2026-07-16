@@ -1,0 +1,68 @@
+﻿Created At: 2026-05-31T09:35:15Z
+Completed At: 2026-05-31T09:35:15Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -3194,6 +3194,360 @@
+ 
+                 container.appendChild(stepEl);
+             });
++
++            // Render the project/process telemetry details
++            renderPipelineStatusDetails(asset);
++        }
++
++        function renderPipelineStatusDetails(asset) {
++            const statusCard = document.getElementById('workflow-pipeline-status');
++            const detailsContainer = document.getElementById('workflow-pipeline-steps-details');
++            const overallStatusBadge = document.getElementById('workflow-pipeline-overall-status');
++            if (!statusCard || !detailsContainer) return;
++
++            const mode = quickStartMode;
++            const currentStep = getWorkflowProgress(asset, mode);
++            const steps = mode === 'ai' ? aiSteps : customSteps;
++
++            if (currentStep === 0) {
++                // Not started yet
++                overallStatusBadge.innerText = 'ИНИЦИАЛИЗАЦИЯ';
++                overallStatusBadge.className = 'text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold';
++                
++                detailsContainer.innerHTML = `
++                    <div class="flex flex-col items-center justify-center py-6 text-center space-y-2">
++                        <i class="fa-solid fa-hourglass-start text-gray-600 text-lg animate-pulse"></i>
++                        <div class="text-[11px] text-gray-400 font-medium font-sans">Ожидание запуска проекта</div>
++                        <p class="text-[9px] text-gray-500 leading-normal max-w-[200px] font-sans">
++                            Настройте и запустите <strong>Шаг 1: ${steps[0].titl
+<truncated 25378 bytes>
+nt-mono px-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold uppercase">ПРОЙДЕНО</span>
++                            </div>
++                            <div class="text-[9px] font-sans text-gray-400 leading-normal">
++                                Запущен форвард-тест на демо-сервере. Conformal Risk Guard активен.
++                            </div>
++                        </div>
++                    `;
++                }
++            }
++
++            // Also show what the *active* step is (the one the user is currently working on)
++            if (currentStep < steps.length) {
++                html += `
++                    <div class="bg-[#1A1A22]/40 border border-dashed border-[#2B2B36] rounded-xl p-3 space-y-1.5 animate-pulse">
++                        <div class="flex items-center justify-between">
++                            <span class="text-[10px] text-gray-400 font-semibold flex items-center gap-1.5">
++                                <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-[10px]"></i> Текущий: ${steps[currentStep].title}
++                            </span>
++                            <span class="text-[8px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold uppercase">В ОЖИДАНИИ</span>
++                        </div>
++                        <p class="text-[9px] text-gray-500 font-sans leading-relaxed">${steps[currentStep].desc}</p>
++                    </div>
++                `;
++            }
++
++            detailsContainer.innerHTML = html;
++            statusCard.classList.remove('hidden');
+         }
+ 
+         // Product Mode State & Transition Handlers
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

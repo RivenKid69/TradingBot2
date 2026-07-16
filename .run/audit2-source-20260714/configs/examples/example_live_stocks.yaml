@@ -1,0 +1,359 @@
+# =============================================================================
+# EXAMPLE: Stock (US Equity) Live Trading Configuration
+# =============================================================================
+# This is a well-documented example for live trading US stocks via Alpaca.
+# Copy this file and customize for your needs.
+#
+# Usage:
+#   python script_live.py --config configs/my_live_stocks.yaml --asset-class equity
+#
+# ⚠️  SAFETY CHECKLIST - MUST DO BEFORE LIVE TRADING:
+#   1. Run `python scripts/doctor.py` to verify environment
+#   2. Test with `--dry-run` flag first
+#   3. Use PAPER TRADING until confident (paper: true)
+#   4. Start with SMALL position limits
+#   5. Monitor the first few trades manually
+#   6. Understand PDT rule if account < $25,000
+#
+# Prerequisites:
+#   1. Alpaca account (paper or live): https://alpaca.markets
+#   2. Set environment variables: ALPACA_API_KEY, ALPACA_API_SECRET
+#   3. Trained model checkpoint
+#   4. Run: python scripts/fetch_alpaca_universe.py
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# BASIC SETTINGS
+# -----------------------------------------------------------------------------
+
+mode: live                          # MUST be "live" for live trading
+run_id: my-stock-live               # Unique identifier for this run
+logs_dir: logs/stocks               # Where to write logs
+artifacts_dir: artifacts/stocks     # Where to save state
+
+# -----------------------------------------------------------------------------
+# ASSET CLASS
+# -----------------------------------------------------------------------------
+
+asset_class: equity                 # equity (stocks)
+data_vendor: alpaca                 # Alpaca for execution and data
+
+# -----------------------------------------------------------------------------
+# EXCHANGE CONFIGURATION (Alpaca)
+# -----------------------------------------------------------------------------
+
+exchange:
+  vendor: alpaca
+  market_type: EQUITY
+
+  alpaca:
+    # ⚠️ NEVER hardcode credentials! Use environment variables:
+    #    export ALPACA_API_KEY="your_key"
+    #    export ALPACA_API_SECRET="your_secret"
+    api_key: "${ALPACA_API_KEY}"
+    api_secret: "${ALPACA_API_SECRET}"
+
+    # PAPER vs LIVE Trading
+    paper: true                     # ⚠️ Start with paper=true!
+                                    # Change to false ONLY after extensive testing
+
+    # Data feed options
+    feed: "iex"                     # "iex" (free, 15-min delayed for some)
+                                    # "sip" (paid, real-time consolidated)
+
+    # Extended hours trading
+    extended_hours: false           # Pre-market (4am) and after-hours (8pm ET)
+    allow_extended_hours: true      # Allow extended hours orders
+
+    # Include SEC/FINRA fees in cost calculations
+    include_regulatory_fees: true
+
+  trading_hours:
+    allow_extended: false           # Set true for pre/after hours
+    use_exchange_calendar: true     # Use NYSE calendar
+
+# -----------------------------------------------------------------------------
+# DATA CONFIGURATION
+# -----------------------------------------------------------------------------
+
+data:
+  timeframe: "1h"                   # Match your trained model
+  symbols_path: "data/universe/alpaca_symbols.json"
+
+# Disable crypto-style seasonality (stocks have different patterns)
+use_seasonality: false
+
+# -----------------------------------------------------------------------------
+# EXECUTION SETTINGS
+# -----------------------------------------------------------------------------
+
+execution_profile: MKT_OPEN_NEXT_1H
+execution_params:
+  slippage_bps: 1.0                 # Stocks have tighter spreads than crypto
+  limit_offset_bps: 5.0             # Offset for limit orders
+  ttl_steps: 0
+  tif: DAY                          # DAY (expires at close) vs GTC (crypto)
+
+execution:
+  mode: bar
+  enabled: true                     # Enable live execution
+
+execution_config:
+  notional_threshold: 10000.0       # Orders > $10k use TWAP
+  large_order_algo: TWAP
+  pov:
+    participation: 0.10
+    child_interval_s: 60
+    min_child_notional: 20.0
+
+# -----------------------------------------------------------------------------
+# TIMING (US Market Hours - Critical!)
+# -----------------------------------------------------------------------------
+
+timing:
+  enforce_closed_bars: true         # Wait for bar to close
+  timeframe_ms: 3600000             # 1 hour in milliseconds
+  close_lag_ms: 5000                # 5 second lag after bar close
+
+# NYSE Trading Hours (Eastern Time):
+#   Pre-market:  4:00 AM - 9:30 AM
+#   Regular:     9:30 AM - 4:00 PM
+#   After-hours: 4:00 PM - 8:00 PM
+#
+# IMPORTANT: Most liquidity is during regular hours!
+
+# -----------------------------------------------------------------------------
+# CLOCK SYNCHRONIZATION
+# -----------------------------------------------------------------------------
+
+clock_sync:
+  refresh_sec: 300                  # Resync every 5 minutes
+  warn_threshold_ms: 500            # Warning if drift > 500ms
+  kill_threshold_ms: 2000           # STOP if drift > 2 seconds
+  max_step_ms: 1000
+  attempts: 5
+
+# -----------------------------------------------------------------------------
+# LATENCY MODEL (Lower for regulated markets)
+# -----------------------------------------------------------------------------
+
+latency:
+  use_seasonality: false
+  base_ms: 50                       # Lower than crypto (50ms vs 250ms)
+  jitter_ms: 20
+  spike_p: 0.001                    # Rare spikes in regulated markets
+  spike_mult: 3.0
+  timeout_ms: 2000
+  retries: 2
+  min_ms: 0
+  max_ms: 5000
+
+# -----------------------------------------------------------------------------
+# RISK MANAGEMENT (⚠️ CRITICAL - Start conservative!)
+# -----------------------------------------------------------------------------
+
+risk:
+  enabled: true                     # ALWAYS enable for live trading!
+
+  # Position limits (START SMALL!)
+  max_abs_position_qty: 0.0         # 0 = no limit (set a real limit!)
+  max_abs_position_notional: 5000.0 # Example: Max $5,000 per position
+
+  # Order limits
+  max_order_notional: 1000.0        # Example: Max $1,000 per order
+  max_orders_per_min: 10            # Rate limit
+  max_orders_window_s: 60
+
+  # Daily loss limit (⚠️ IMPORTANT!)
+  daily_loss_limit: 200.0           # Example: Stop after $200 daily loss
+  pause_seconds_on_violation: 300   # 5 minute pause
+
+  # Reset time (9:30 AM ET = 14:30 UTC for summer, 13:30 for winter)
+  daily_reset_utc_hour: 14          # Adjust for daylight savings!
+
+  # Entry limits
+  max_entries_per_day: 10           # Max 10 new entries per day
+
+  # Exposure limits
+  max_total_notional: 25000.0       # Max total exposure $25,000
+  max_total_exposure_pct: 0.5       # Max 50% of equity
+
+# -----------------------------------------------------------------------------
+# PDT RULE WARNING
+# -----------------------------------------------------------------------------
+#
+# Pattern Day Trader (PDT) Rule applies if:
+#   - Account equity < $25,000
+#   - Execute 4+ day trades in 5 business days
+#
+# If your account is under $25k, enable PDT protection:
+#
+# pdt_rule:
+#   enabled: true
+#   max_day_trades: 3               # Max 3 day trades per 5 days
+#   min_equity: 25000.0
+#
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# QUANTIZER (Stock-specific)
+# -----------------------------------------------------------------------------
+
+quantizer:
+  use_adapter: true                 # Use Alpaca exchange info
+  strict_filters: true
+  enforce_percent_price_by_side: false  # Not applicable for stocks
+  auto_refresh_days: 7
+
+# -----------------------------------------------------------------------------
+# SIGNAL PIPELINE
+# -----------------------------------------------------------------------------
+
+pipeline:
+  enabled: true
+  stages:
+    closed_bar:
+      enabled: true
+    windows:
+      enabled: true
+    anomaly:
+      enabled: true
+    extreme:
+      enabled: true
+    policy:
+      enabled: true
+    risk:
+      enabled: true
+    ttl:
+      enabled: false                # Less critical for slower stock trading
+    dedup:
+      enabled: true
+    throttle:
+      enabled: true
+    publish:
+      enabled: true
+
+# -----------------------------------------------------------------------------
+# GRACEFUL SHUTDOWN
+# -----------------------------------------------------------------------------
+
+shutdown:
+  grace_period: 5.0
+  drain_policy: graceful
+  timeouts:
+    stop: 10.0
+    flush: 10.0
+    finalize: 5.0
+
+# -----------------------------------------------------------------------------
+# TTL (Disabled for stocks - less time-sensitive)
+# -----------------------------------------------------------------------------
+
+ttl:
+  enabled: false
+
+# -----------------------------------------------------------------------------
+# RATE LIMITING
+# -----------------------------------------------------------------------------
+
+max_signals_per_sec: 5.0
+backoff_base_s: 2.0
+max_backoff_s: 60.0
+
+# -----------------------------------------------------------------------------
+# COMPONENTS
+# -----------------------------------------------------------------------------
+
+components:
+  market_data:
+    target: adapters.alpaca:AlpacaMarketDataAdapter
+    params:
+      timeframe: "1h"
+
+  executor:
+    target: adapters.alpaca:AlpacaOrderExecutionAdapter  # Real Alpaca executor
+    params:
+      symbol: "AAPL"
+
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params:
+      checkpoint_path: "artifacts/stocks/best_model.zip"
+
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+
+# =============================================================================
+# ALPACA API PERMISSIONS
+# =============================================================================
+#
+# Your API key should have:
+#   ✅ Trading access (to execute orders)
+#   ✅ Data access (for market data)
+#   ❌ NO transfer/withdrawal access (for security)
+#
+# Generate API keys at: https://app.alpaca.markets/paper/dashboard/overview
+#
+# =============================================================================
+
+# =============================================================================
+# RECOMMENDED WORKFLOW FOR STOCK LIVE TRADING
+# =============================================================================
+#
+# 1. PREREQUISITES:
+#    - Create Alpaca account: https://alpaca.markets
+#    - Generate API keys (paper trading first!)
+#    - Set environment variables:
+#      export ALPACA_API_KEY="your_paper_key"
+#      export ALPACA_API_SECRET="your_paper_secret"
+#
+# 2. VERIFY SETUP:
+#    python scripts/doctor.py --verbose
+#    python scripts/fetch_alpaca_universe.py --output data/universe/alpaca_symbols.json
+#
+# 3. PAPER TRADING (paper: true in config):
+#    python script_live.py --config configs/my_live_stocks.yaml --asset-class equity
+#    # Run for at least 1-2 weeks of paper trading!
+#
+# 4. DRY RUN (test with real keys, no actual trades):
+#    python script_live.py --config configs/my_live_stocks.yaml --dry-run
+#
+# 5. LIVE TRADING (paper: false - CAUTION!):
+#    # Update config: paper: false
+#    # Update API keys to live keys
+#    # Start with MINIMAL position sizes!
+#    python script_live.py --config configs/my_live_stocks.yaml --asset-class equity
+#
+# 6. MONITORING:
+#    - Alpaca Dashboard: https://app.alpaca.markets
+#    - Logs: tail -f logs/stocks/my-stock-live.log
+#    - Check P&L and positions regularly
+#
+# 7. EMERGENCY STOP:
+#    - Kill switch: touch state/kill_switch.flag
+#    - Alpaca web: Close all positions manually
+#    - Or: Ctrl+C (graceful shutdown)
+#
+# =============================================================================
+
+# =============================================================================
+# DIFFERENCES FROM CRYPTO TRADING
+# =============================================================================
+#
+# | Aspect           | Crypto (Binance)      | Stocks (Alpaca)       |
+# |------------------|----------------------|------------------------|
+# | Trading Hours    | 24/7                 | 9:30 AM - 4:00 PM ET  |
+# | Order TIF        | GTC (good til cancel)| DAY (expires at close)|
+# | Fees             | Maker/Taker %        | Commission-free + SEC |
+# | Latency          | ~250ms               | ~50ms                 |
+# | Min Order        | Varies by symbol     | 1 share (fractional OK)|
+# | Short Selling    | Futures only         | Available (restricted)|
+# | Settlement       | T+0                  | T+2                   |
+# | PDT Rule         | N/A                  | Yes (if < $25k)       |
+#
+# =============================================================================

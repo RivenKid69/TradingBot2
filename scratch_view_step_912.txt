@@ -1,0 +1,39 @@
+﻿Created At: 2026-05-31T10:17:53Z
+Completed At: 2026-05-31T10:17:53Z
+File Path: `file:///c:/Users/%D0%97%D0%B5%D1%84%D0%B8%D1%80%D0%BA%D0%B0/StartUp/scratch_extracted_step_660_code.txt`
+Total Lines: 30
+Total Bytes: 1817
+Showing lines 1 to 30
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: Created At: 2026-05-31T09:35:20Z
+2: Completed At: 2026-05-31T09:35:21Z
+3: The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+4: [diff_block_start]
+5: @@ -3042,8 +3042,19 @@
+6:  
+7:          function resetWorkflowProgress() {
+8:              if (confirm("Вы уверены, что хотите сбросить прогресс по этому активу?")) {
+9: -                saveWorkflowProgress(activeAsset, quickStartMode, 0);
+10: -                renderWorkflowTimeline(activeAsset);
+11: +                const asset = activeAsset;
+12: +                saveWorkflowProgress(asset, quickStartMode, 0);
+13: +                
+14: +                // Clear any stored parameters for this asset
+15: +                localStorage.removeItem('rivenquant_config_ingest_' + asset);
+16: +                localStorage.removeItem('rivenquant_config_features_' + asset);
+17: +                localStorage.removeItem('rivenquant_config_targets_' + asset);
+18: +                localStorage.removeItem('rivenquant_config_train_table_' + asset);
+19: +                localStorage.removeItem('rivenquant_config_train_' + asset);
+20: +                localStorage.removeItem('rivenquant_config_code_' + asset);
+21: +                localStorage.removeItem('rivenquant_config_optimize_' + asset);
+22: +                
+23: +                renderWorkflowTimeline(asset);
+24:                  showActionToast("Прогресс сброшен.");
+25:              }
+26:          }
+27: [diff_block_end]
+28: 
+29: Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+30: 
+The above content shows the entire, complete file contents of the requested file.
+

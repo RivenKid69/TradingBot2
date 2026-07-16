@@ -3874,15 +3874,20 @@ class DistributionalPPO(RecurrentPPO):
 
         Note on Accuracy (НЕ БАГ #48 - documented trade-off):
             ═══════════════════════════════════════════════════════════════════
-            - Perfect for linear distributions (0% error)
-            - ~5-18% approximation error for standard normal (decreases with N)
-            - N=21 (default): ~16% error
-            - N=51: ~5% error
-            - See test_cvar_computation_integration.py for benchmarks
+            This is piecewise-linear integration of the quantile function with tail
+            interpolation/extrapolation — NOT a naive mean-of-bottom-k proxy.
 
-            WHY THIS IS A CONFIGURABLE TRADE-OFF (NOT a bug):
+            Measured error vs. true CVaR (standard normal, alpha=0.05), verified
+            2026-06-14 against scipy in tests/test_quantile_levels_correctness.py:
+            - Linear distributions (e.g. uniform): exact to numerical precision (0%)
+            - Standard normal, N=21 (default): ~4.6% error
+            - Standard normal, N=51:            ~1.8% error
+            (NB: a naive mean-of-bottom-k proxy gives ~16.5% at N=21 — that proxy is
+             NOT this method. Earlier docs/tests conflated the two.)
+
+            WHY THE RESIDUAL ERROR IS A CONFIGURABLE TRADE-OFF (NOT a bug):
             1. Numerical integration over discrete quantiles has inherent error
-            2. Error decreases with N: N=51 gives ~5%, N=101 gives ~2%
+            2. Error decreases with N (fatter-than-linear tails are the main source)
             3. Trade-off: more quantiles = more accurate CVaR but slower training
             4. For risk-critical applications: increase `num_quantiles` to 51+
             5. For standard RL use: N=21 provides reasonable speed/accuracy balance
@@ -6871,6 +6876,12 @@ class DistributionalPPO(RecurrentPPO):
         self._value_scale_stats_mean = 0.0
         self._value_scale_stats_second = 1.0
         self._value_target_scale_effective = float(self.value_target_scale)
+        # FIX: production __init__ must also set the BASE scale. It was previously only
+        # assigned on the env=None test path (≈6277), so the non-normalize_returns branch
+        # of _twin_critics_vf_clipping_loss (reads self._value_target_scale_base at ~3498/3601)
+        # raised AttributeError under config: quantile twin critics + clip_range_vf +
+        # normalize_returns=False. Mirror the test path: base == value_target_scale baseline.
+        self._value_target_scale_base = float(self.value_target_scale)
         self._value_target_scale_robust = 1.0
         self._value_scale_prev_effective = float(self._value_target_scale_effective)
 
@@ -7568,10 +7579,14 @@ class DistributionalPPO(RecurrentPPO):
                     # 3. We must relink VGS to the CURRENT policy parameter objects
                     self._variance_gradient_scaler.update_parameters(self.policy.parameters())
 
-                self.logger.record("config/vgs_enabled", float(vgs_enabled))
-                self.logger.record("config/vgs_beta", float(vgs_beta))
-                self.logger.record("config/vgs_alpha", float(vgs_alpha))
-                self.logger.record("config/vgs_warmup_steps", float(vgs_warmup_steps))
+                # Best-effort config logging: во время load() SB3-логгер ещё не
+                # инициализирован (его создаёт learn()/_setup_learn). Не роняем загрузку
+                # модели из-за диагностического логирования. (Найдено e2e checkpoint->signal.)
+                if getattr(self, "_logger", None) is not None:
+                    self.logger.record("config/vgs_enabled", float(vgs_enabled))
+                    self.logger.record("config/vgs_beta", float(vgs_beta))
+                    self.logger.record("config/vgs_alpha", float(vgs_alpha))
+                    self.logger.record("config/vgs_warmup_steps", float(vgs_warmup_steps))
         else:
             self._variance_gradient_scaler = None
 

@@ -1,0 +1,253 @@
+# =============================================================================
+# US EQUITY SWING - Quick Start Reference Pipeline
+# =============================================================================
+#
+# Стратегия: Mean-reversion на дневных/4H данных
+# Asset Class: US Equities (Alpaca/Polygon)
+# Сложность: ⭐⭐ (Beginner-friendly)
+#
+# Характеристики:
+#   - NYSE часы (9:30-16:00 ET)
+#   - Commission-free (регуляторные сборы SEC/TAF)
+#   - S&P 500 компоненты
+#   - Long-only
+#
+# Требования:
+#   export ALPACA_API_KEY="your_key"
+#   export ALPACA_API_SECRET="your_secret"
+#
+# Запуск:
+#   python scripts/download_stock_data.py --symbols SPY AAPL MSFT --start 2023-01-01
+#   python script_backtest.py --config configs/quickstart/equity_swing.yaml
+#   python train_model_multi_patch.py --config configs/quickstart/equity_swing.yaml
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# БАЗОВЫЕ НАСТРОЙКИ
+# -----------------------------------------------------------------------------
+mode: train
+run_id: equity_swing
+logs_dir: logs/quickstart
+artifacts_dir: artifacts/quickstart
+
+# Asset class определяет автоматические настройки
+asset_class: equity
+data_vendor: alpaca
+
+# -----------------------------------------------------------------------------
+# ДАННЫЕ
+# -----------------------------------------------------------------------------
+data:
+  timeframe: "4h"
+
+  # Путь к данным (создайте через scripts/download_stock_data.py)
+  paths: ["data/raw_stocks/*.parquet"]
+
+  # Фильтрация по торговым часам
+  filter_trading_hours: true
+  include_extended_hours: false
+
+  # Периоды
+  train_start_ts: 1640995200      # 2022-01-01
+  train_end_ts: 1735689599        # 2024-12-31
+  val_start_ts: 1735689600        # 2025-01-01
+  val_end_ts: 1743465599          # 2025-03-31
+  test_start_ts: 1743465600       # 2025-04-01
+  test_end_ts: 1751327999         # 2025-06-30
+
+# -----------------------------------------------------------------------------
+# МОДЕЛЬ (PPO с Distributional Critic)
+# -----------------------------------------------------------------------------
+model:
+  algo: "ppo"
+
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4
+    weight_decay: 0.001
+    sigma: 0.001
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    clip_threshold: 10.0
+
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.10
+    clip_range_vf: 0.7
+    ent_coef: 0.001
+    vf_coef: 1.8
+    max_grad_norm: 0.5
+    n_steps: 2048
+    n_epochs: 4
+    batch_size: 64
+    seed: 42
+
+    use_twin_critics: true
+    num_atoms: 21
+    v_min: -10.0
+    v_max: 10.0
+
+    cvar_alpha: 0.05
+    cvar_weight: 0.15
+
+# -----------------------------------------------------------------------------
+# ОКРУЖЕНИЕ
+# -----------------------------------------------------------------------------
+env:
+  decision_timing: CLOSE_TO_OPEN
+
+  # Trading session (NYSE hours)
+  session:
+    calendar: us_equity            # NYSE 9:30-16:00 ET
+    pre_open_keepout_bars: 0
+    post_close_keepout_bars: 0
+    extended_hours: false          # Без pre/after-market
+
+  # Liquidity filters
+  liquidity:
+    min_adv_usd: 1000000           # Минимум $1M ADV
+    min_bar_quote_volume: 10000
+
+  # Spread limits (US stocks have tight spreads)
+  spreads:
+    max_spread_bps: 50             # 0.5% max spread
+
+  # No-trade во время закрытия рынка
+  no_trade:
+    enabled: true
+    policy: ignore
+    enforce_trading_hours: true
+
+# -----------------------------------------------------------------------------
+# ДЕЙСТВИЯ (Long-only)
+# -----------------------------------------------------------------------------
+algo:
+  actions:
+    long_only: true
+
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    bins_vol: 4
+    max_asset_weight: 1.0
+
+# -----------------------------------------------------------------------------
+# КОМИССИИ (Commission-free + Regulatory)
+# -----------------------------------------------------------------------------
+fees:
+  structure: flat
+  maker_bps: 0.0                   # Commission-free
+  taker_bps: 0.0
+  regulatory:
+    enabled: true
+    sec_fee_per_million: 27.80     # SEC Section 31 fee
+    taf_fee_per_share: 0.000166    # FINRA TAF
+    taf_fee_cap: 8.30              # TAF cap per trade
+
+# -----------------------------------------------------------------------------
+# SLIPPAGE (US Equity - tighter than crypto)
+# -----------------------------------------------------------------------------
+slippage:
+  k: 0.05                          # Lower impact coefficient
+  default_spread_bps: 2.0          # Tighter spreads
+  min_half_spread_bps: 0.5         # Penny tick protection
+  dynamic:
+    enabled: false
+
+# -----------------------------------------------------------------------------
+# РИСК-МЕНЕДЖМЕНТ
+# -----------------------------------------------------------------------------
+risk:
+  enabled: true
+  max_abs_position_notional: 50000   # Max $50K position
+  daily_loss_limit: 0.03             # -3% daily loss limit
+  pause_seconds_on_violation: 300
+
+# -----------------------------------------------------------------------------
+# BENCHMARK (SPY для сравнения)
+# -----------------------------------------------------------------------------
+benchmark:
+  enabled: true
+  symbol: "SPY"
+  alpha_target: 0.0                  # Target alpha over benchmark
+
+# -----------------------------------------------------------------------------
+# REWARD
+# -----------------------------------------------------------------------------
+reward:
+  use_portfolio_pnl: true
+  turnover_penalty_coef: 0.0005
+  clip:
+    adaptive: true
+    atr_window: 14
+    hard_cap_pct: 2.0
+    multiplier: 4.0
+
+# -----------------------------------------------------------------------------
+# EXECUTION SIMULATION
+# -----------------------------------------------------------------------------
+execution:
+  enabled: true
+  mode: bar
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: DAY                         # Day orders (expire at close)
+
+# -----------------------------------------------------------------------------
+# КОМПОНЕНТЫ
+# -----------------------------------------------------------------------------
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/raw_stocks/*.parquet"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "SPY"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  backtest_engine:
+    target: service_backtest:ServiceBacktest
+    params: {}
+
+# -----------------------------------------------------------------------------
+# STOCK-SPECIFIC FEATURES
+# -----------------------------------------------------------------------------
+stock_features:
+  # VIX integration (fear gauge)
+  vix:
+    enabled: true
+    symbol: "^VIX"
+    regime_thresholds:
+      low: 12
+      normal: 20
+      elevated: 30
+
+  # Relative strength vs benchmark
+  relative_strength:
+    enabled: true
+    benchmark: "SPY"
+    windows: [20, 50]
+
+  # Sector rotation signals
+  sector_rotation:
+    enabled: false                 # Отключено для простоты

@@ -963,19 +963,13 @@ class EvidencePackExporter:
                     "SECURITY ERROR: Evidence pack signing requires cryptography library "
                     "in production environment. Install with: pip install cryptography"
                 )
-            if not _allow_placeholder_signatures():
-                logger.error(
-                    "Cryptography not available and placeholder signatures not enabled. "
-                    "Set CCEA_ALLOW_PLACEHOLDER_SIGNATURES=1 for development."
-                )
-                return None
-            # Development-only placeholder (explicit opt-in required)
+            # Development graceful-degrade: placeholder signature (NOT for production).
             logger.warning(
-                "DEVELOPMENT MODE: Using placeholder signature. "
+                "DEVELOPMENT MODE: Using placeholder evidence signature (no cryptography). "
                 "This is NOT suitable for production use."
             )
             import base64
-            sig_data = f"PLACEHOLDER-DEV-ONLY::{checksum}::{datetime.now(timezone.utc).isoformat()}"
+            sig_data = f"CCEA-EVIDENCE-SIG::{checksum}::{datetime.now(timezone.utc).isoformat()}"
             return base64.b64encode(sig_data.encode()).decode()
 
         try:

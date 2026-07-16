@@ -199,3 +199,6 @@ def main():
 
     print("--- DIAG SUMMARY ---")
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+if __name__ == "__main__":
+    main()

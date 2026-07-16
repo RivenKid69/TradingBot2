@@ -1,0 +1,17 @@
+data:
+  path: data/raw_stocks/*.parquet
+  price_col: ref_price
+  symbol_col: symbol
+  ts_col: ts_ms
+latency_steps: 0
+min_signal_gap_s: 300
+mode: backtest
+no_trade:
+  enabled: true
+out_reports: logs/sandbox_reports.csv
+sim_config_path: configs/tmp_config_sim_539d29d9.yaml
+sim_guards:
+  gap_cooldown_bars: 10
+  gap_threshold_ms: 21600000
+  min_history_bars: 180
+symbol: SPY

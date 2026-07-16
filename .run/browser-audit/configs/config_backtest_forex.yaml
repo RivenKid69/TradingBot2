@@ -1,0 +1,312 @@
+# =============================================================================
+# FOREX BACKTEST CONFIGURATION (Phase 9)
+# =============================================================================
+# Backtest configuration for Forex strategies.
+# Uses ForexParametricSlippageProvider (L2+) and OTC dealer simulation.
+#
+# Key features:
+# - Session-based liquidity and spread adjustments
+# - Swap/rollover cost simulation
+# - Last-look rejection modeling
+# - Economic calendar event impact
+# - Carry trade cost tracking
+#
+# Usage:
+#   python script_backtest.py --config configs/config_backtest_forex.yaml
+#
+# =============================================================================
+
+mode: backtest
+run_id: forex-backtest
+logs_dir: logs/forex/backtest
+artifacts_dir: artifacts/forex/backtest
+
+# ASSET CLASS CONFIGURATION
+asset_class: forex
+data_vendor: oanda
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+execution:
+  enabled: true
+  mode: bar
+
+execution_config:
+  notional_threshold: 100000.0
+  large_order_algo: TWAP
+  pov:
+    participation: 0.05
+    child_interval_s: 60
+    min_child_notional: 10000.0
+
+market: forex
+
+# =============================================================================
+# DATA CONFIGURATION
+# =============================================================================
+data:
+  timeframe: "4h"
+  asset_class: forex
+
+  # Data source
+  source: local
+
+  # Local file paths
+  paths:
+    - "data/raw_forex/*.parquet"
+    - "data/forex/*.parquet"
+
+  # Backtest window
+  start_ts: 1672531200        # 2023-01-01T00:00:00Z
+  end_ts: 1735689600          # 2025-01-01T00:00:00Z
+
+  # Pairs to backtest
+  pairs:
+    - "EUR_USD"
+    - "GBP_USD"
+    - "USD_JPY"
+    - "EUR_JPY"
+    - "GBP_JPY"
+
+  # Forex-specific options
+  filter_weekends: true
+  add_session_features: true
+  merge_swap_rates: true
+  merge_interest_rates: true
+  merge_calendar: true
+
+  # Data directories
+  swap_dir: "data/forex/swaps"
+  rate_dir: "data/forex/rates"
+  calendar_dir: "data/forex/calendar"
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+env:
+  max_position: 1.0
+  initial_balance: 100000.0
+  leverage: 30.0
+
+  session:
+    calendar: forex_24x5
+    filter_weekends: true
+    rollover_keepout_minutes: 30
+
+  reward:
+    gamma: 0.99
+    reward_scaling: 1.0
+    clip_reward: 10.0
+    include_swap_cost: true
+    swap_penalty_scale: 0.1
+
+# =============================================================================
+# SLIPPAGE CONFIGURATION (L2+ Parametric)
+# =============================================================================
+slippage:
+  level: "L2+"
+  provider: ForexParametricSlippageProvider
+  profile: retail
+
+  # Core parameters
+  impact_coef_base: 0.03
+  spread_pips: 1.2
+  session_adjustment: true
+  volatility_adjustment: true
+  carry_stress_adjustment: true
+  news_event_adjustment: true
+
+  # Bounds
+  min_slippage_pips: 0.1
+  max_slippage_pips: 50.0
+
+# =============================================================================
+# OTC DEALER SIMULATION
+# =============================================================================
+dealer_simulation:
+  enabled: true
+  num_dealers: 5
+
+  # Last-look simulation
+  last_look_enabled: true
+  adverse_selection_threshold_pips: 0.3
+  latency_arbitrage_detection: true
+
+  # Quote behavior
+  quote_flickering_enabled: true
+  quote_validity_ms: 200
+
+  # Dealer profiles
+  profiles:
+    tier1:
+      count: 2
+      spread_factor: 0.8
+      base_reject_prob: 0.02
+      last_look_window_ms: 100
+    tier2:
+      count: 2
+      spread_factor: 1.0
+      base_reject_prob: 0.05
+      last_look_window_ms: 200
+    tier3:
+      count: 1
+      spread_factor: 1.3
+      base_reject_prob: 0.10
+      last_look_window_ms: 300
+
+# =============================================================================
+# FEES CONFIGURATION (Spread-based)
+# =============================================================================
+fees:
+  structure: spread_only
+  maker_bps: 0.0
+  taker_bps: 0.0
+
+  # Swap costs
+  swap_enabled: true
+  swap_data_source: cache
+  wednesday_triple_swap: true
+
+# =============================================================================
+# RISK MANAGEMENT
+# =============================================================================
+risk:
+  max_position_pct: 1.0
+  max_total_exposure: 3.0
+  max_drawdown_pct: 0.20
+  daily_loss_limit_pct: 0.05
+
+  max_leverage: 50.0
+
+  margin:
+    warning_level: 1.20
+    call_level: 1.00
+    stop_out_level: 0.50
+
+  session:
+    block_rollover_window: true
+    block_weekend: true
+    min_liquidity_factor: 0.50
+
+# =============================================================================
+# REPORTING CONFIGURATION
+# =============================================================================
+reporting:
+  # Output formats
+  output_formats:
+    - csv
+    - json
+    - html
+
+  # Metrics to track
+  metrics:
+    # PnL metrics
+    - total_pnl
+    - total_pnl_pct
+    - annualized_return
+    - sharpe_ratio
+    - sortino_ratio
+    - calmar_ratio
+
+    # Risk metrics
+    - max_drawdown
+    - max_drawdown_duration
+    - var_95
+    - cvar_95
+
+    # Trade metrics
+    - total_trades
+    - win_rate
+    - profit_factor
+    - avg_trade_pnl
+    - avg_holding_period
+
+    # Forex-specific metrics
+    - total_swap_cost
+    - avg_slippage_pips
+    - last_look_rejection_rate
+    - session_pnl_breakdown
+    - carry_pnl
+
+  # Session breakdown
+  by_session: true
+
+  # Pair breakdown
+  by_pair: true
+
+  # Monthly/weekly breakdown
+  time_breakdown:
+    - monthly
+    - weekly
+    - daily
+
+# =============================================================================
+# BENCHMARK CONFIGURATION
+# =============================================================================
+benchmark:
+  # Benchmark strategies
+  strategies:
+    - buy_and_hold
+    - carry_strategy       # Simple carry trade
+    - momentum_10d         # 10-day momentum
+
+  # Benchmark pairs (for comparison)
+  reference_pairs:
+    - EUR_USD
+    - DXY
+
+# =============================================================================
+# VALIDATION & DEBUGGING
+# =============================================================================
+validation:
+  # Data quality checks
+  check_data_gaps: true
+  max_gap_hours: 8           # Max acceptable gap (London-NY handoff)
+
+  # Session checks
+  verify_session_labels: true
+  verify_weekend_filter: true
+
+  # Execution checks
+  track_execution_quality: true
+  log_rejected_trades: true
+
+debugging:
+  # Verbose logging
+  log_every_trade: false
+  log_session_transitions: true
+  log_swap_costs: true
+  log_last_look_rejections: true
+
+  # Save detailed logs
+  save_trade_log: true
+  save_position_log: true
+  save_execution_log: true
+
+# =============================================================================
+# OUTPUT CONFIGURATION
+# =============================================================================
+output:
+  # Output directory
+  dir: "results/forex/backtest"
+
+  # Report filename template
+  filename_template: "{pair}_{start_date}_{end_date}_{run_id}"
+
+  # Charts
+  generate_charts: true
+  charts:
+    - equity_curve
+    - drawdown
+    - pnl_by_session
+    - pnl_by_pair
+    - slippage_distribution
+    - swap_costs_cumulative
+
+  # Export trades
+  export_trades: true
+  trades_format: csv

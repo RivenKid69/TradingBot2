@@ -1,0 +1,404 @@
+# =============================================================================
+# FOREX TRAINING CONFIGURATION (Phase 9)
+# =============================================================================
+# Training configuration for Forex via OANDA/Dukascopy data providers.
+# Based on config_train.yaml and config_train_stocks.yaml with forex-specific adjustments.
+#
+# Key differences from crypto/equity:
+# - Trading hours: 24/5 (Sun 5pm - Fri 5pm ET) with session-based liquidity
+# - No Fear & Greed index (use carry differential, COT positioning instead)
+# - Spread-based fee structure (no maker/taker commission)
+# - OTC dealer execution model with last-look simulation
+# - High leverage (up to 50:1 for US retail)
+# - Swap/rollover costs for overnight positions
+#
+# References:
+# - BIS Triennial Survey 2022
+# - CFTC Retail Forex Rules
+# - Brunnermeier et al. (2008): Carry Trades and Currency Crashes
+# =============================================================================
+
+mode: train
+run_id: forex-training
+logs_dir: logs/forex
+artifacts_dir: artifacts/forex
+seasonality_log_level: INFO
+
+# ASSET CLASS CONFIGURATION
+asset_class: forex
+data_vendor: oanda  # Options: oanda, ig, dukascopy
+
+execution_profile: MKT_OPEN_NEXT_4H
+execution_params:
+  limit_offset_bps: 0.0
+  ttl_steps: 0
+  tif: GTC
+
+execution:
+  enabled: true
+  mode: bar
+
+execution_config:
+  notional_threshold: 100000.0  # $100k threshold for execution algo
+  large_order_algo: TWAP
+  pov:
+    participation: 0.05  # Lower participation for OTC market
+    child_interval_s: 60
+    min_child_notional: 10000.0  # Minimum $10k child orders
+
+# Forex market seasonality (session-based liquidity)
+liquidity_seasonality_path: null  # Use session-based liquidity from forex_defaults
+use_seasonality: false
+
+market: spot
+
+# =============================================================================
+# DATA CONFIGURATION
+# =============================================================================
+data:
+  timeframe: "4h"
+  asset_class: forex
+
+  # Data source: local files or API
+  source: local  # Options: local, oanda, dukascopy
+
+  # Local file paths (for source=local)
+  paths:
+    - "data/raw_forex/*.parquet"
+    - "data/forex/*.parquet"
+    - "data/forex/*.feather"
+
+  # API configuration (for source=oanda)
+  api:
+    pairs:
+      # Major pairs (most liquid)
+      - "EUR_USD"
+      - "GBP_USD"
+      - "USD_JPY"
+      - "USD_CHF"
+      - "AUD_USD"
+      - "USD_CAD"
+      - "NZD_USD"
+      # Cross pairs
+      - "EUR_JPY"
+      - "GBP_JPY"
+      - "EUR_GBP"
+    # Credentials from environment: OANDA_API_KEY, OANDA_ACCOUNT_ID
+
+  # Training window
+  train_start_ts: 1609459200     # 2021-01-01T00:00:00Z
+  train_end_ts: 1735689600       # 2025-01-01T00:00:00Z
+
+  val_start_ts: 1735689600       # 2025-01-01T00:00:00Z
+  val_end_ts: 1746057600         # 2025-05-01T00:00:00Z
+
+  test_start_ts: 1746057600      # 2025-05-01T00:00:00Z
+  test_end_ts: 1759276800        # 2025-10-01T00:00:00Z
+
+  # Forex-specific options
+  filter_weekends: true          # Remove weekend gaps
+  add_session_features: true     # Add session indicators (Sydney/Tokyo/London/NY)
+  merge_swap_rates: true         # Include swap/rollover costs
+  merge_interest_rates: true     # Include rate differentials for carry
+  merge_calendar: true           # Include economic calendar proximity
+
+  # Data directories
+  swap_dir: "data/forex/swaps"
+  rate_dir: "data/forex/rates"
+  calendar_dir: "data/forex/calendar"
+
+# =============================================================================
+# MODEL CONFIGURATION
+# =============================================================================
+model:
+  algo: "ppo"
+
+  # OPTIMIZER - Same as crypto/equity
+  optimizer_class: AdaptiveUPGD
+  optimizer_kwargs:
+    lr: 1.0e-4
+    weight_decay: 0.001
+    sigma: 0.001
+    beta_utility: 0.999
+    beta1: 0.9
+    beta2: 0.999
+    adaptive_noise: true
+
+  # VGS Configuration
+  vgs:
+    enabled: true
+    accumulation_steps: 4
+    warmup_steps: 10
+    eps: 1.0e-6
+    clip_threshold: 10.0
+    min_scaling_factor: 0.1      # VGS v3.2: prevent gradient blocking
+    variance_cap: 50.0           # VGS v3.2: cap extreme variance
+
+  optimizer_lr_min: &default_min_lr 5.0e-6
+  scheduler_min_lr: *default_min_lr
+
+  params:
+    learning_rate: 1.0e-4
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.10
+
+    clip_range_vf: 0.7
+    vf_clip_warmup_updates: 10
+
+    ent_coef: 0.001
+    ent_coef_final: 0.001
+    ent_coef_decay_steps: 400
+    ent_coef_min: 0.0005
+    ent_coef_plateau_window: 24
+    ent_coef_plateau_tolerance: 0.002
+    ent_coef_plateau_min_updates: 40
+
+    vf_coef: 1.8
+    value_clip_limit: null
+    vf_coef_warmup: 1.8
+
+    # Twin Critics - Default enabled
+    use_twin_critics: true
+    twin_critics_weighted_avg: false
+    twin_critics_pessimism: 0.0
+
+    # Distributional RL (IQN/QR-DQN style)
+    num_atoms: 21
+    v_min: -10.0
+    v_max: 10.0
+
+    # CVaR Risk-Aware Learning
+    cvar_alpha: 0.05
+    cvar_weight: 0.15
+    cvar_warmup: 30
+
+    # Gradient clipping
+    max_grad_norm: 0.5
+    microbatch_size: 256
+
+    # Policy architecture
+    policy_kwargs:
+      net_arch:
+        - 256
+        - 256
+        - 128
+      activation_fn: "tanh"
+      lstm_hidden_size: 128
+      n_lstm_layers: 1
+      shared_lstm: true
+      enable_critic_lstm: true
+
+  # Training parameters
+  total_timesteps: 2000000
+  n_steps: 256
+  batch_size: 256
+  n_epochs: 4
+  n_envs: 8
+
+  # Checkpoint
+  save_freq: 10000
+  eval_freq: 5000
+
+# =============================================================================
+# ENVIRONMENT CONFIGURATION
+# =============================================================================
+env:
+  # Base environment settings
+  max_position: 1.0
+  initial_balance: 100000.0  # $100k starting capital
+  leverage: 30.0             # Default leverage (conservative)
+
+  # Session handling
+  session:
+    calendar: forex_24x5
+    filter_weekends: true
+    rollover_keepout_minutes: 30
+
+  # Reward configuration
+  reward:
+    gamma: 0.99              # Must match model.params.gamma!
+    reward_scaling: 1.0
+    clip_reward: 10.0
+    bankruptcy_penalty: -10.0
+
+    # Forex-specific reward adjustments
+    include_swap_cost: true  # Deduct swap costs from reward
+    swap_penalty_scale: 0.1  # Scale factor for swap in reward
+
+  # Observation space
+  observation:
+    include_session_features: true    # Session indicators
+    include_carry_differential: true  # Interest rate differential
+    include_calendar_proximity: true  # Economic event proximity
+    include_dxy_features: false       # Dollar index (optional)
+
+  # Action space
+  action:
+    mode: continuous         # continuous or discrete
+    long_only: false         # Allow short positions in forex
+    symmetric: true          # Symmetric long/short limits
+
+# =============================================================================
+# SLIPPAGE CONFIGURATION (L2+ Parametric)
+# =============================================================================
+slippage:
+  level: "L2+"
+  provider: ForexParametricSlippageProvider
+  profile: retail            # retail, institutional, conservative
+
+  # Core parameters
+  impact_coef_base: 0.03
+  spread_pips: 1.2
+  session_adjustment: true
+  volatility_adjustment: true
+  carry_stress_adjustment: true
+  news_event_adjustment: true
+
+  # Bounds (in pips)
+  min_slippage_pips: 0.1
+  max_slippage_pips: 50.0
+
+# =============================================================================
+# OTC DEALER SIMULATION
+# =============================================================================
+dealer_simulation:
+  enabled: true
+  num_dealers: 5
+  last_look_enabled: true
+  adverse_selection_threshold_pips: 0.3
+
+# =============================================================================
+# FEES CONFIGURATION (Spread-based)
+# =============================================================================
+fees:
+  structure: spread_only
+  maker_bps: 0.0
+  taker_bps: 0.0
+
+  # Swap costs
+  swap_enabled: true
+  swap_data_source: cache    # oanda, cache, manual
+  wednesday_triple_swap: true
+
+# =============================================================================
+# RISK MANAGEMENT
+# =============================================================================
+risk:
+  # Position limits
+  max_position_pct: 1.0      # 100% of capital per position
+  max_total_exposure: 3.0    # 300% total exposure (with leverage)
+
+  # Drawdown limits
+  max_drawdown_pct: 0.20     # 20% max drawdown
+  daily_loss_limit_pct: 0.05 # 5% daily loss limit
+
+  # Leverage limits
+  max_leverage: 50.0
+  leverage_warning: 45.0
+
+  # Margin monitoring
+  margin:
+    warning_level: 1.20
+    call_level: 1.00
+    stop_out_level: 0.50
+
+  # Session-based restrictions
+  session:
+    block_rollover_window: true
+    block_weekend: true
+    min_liquidity_factor: 0.50
+
+# =============================================================================
+# FEATURES CONFIGURATION
+# =============================================================================
+features:
+  # Forex-specific features
+  forex:
+    carry_differential: true
+    session_liquidity: true
+    economic_calendar_proximity: true
+    spread_regime: true
+    dxy_correlation: false    # Optional
+
+  # General technical features (same as crypto/equity)
+  technical:
+    sma_windows: [5, 10, 20, 50]
+    ema_windows: [5, 10, 20]
+    rsi_period: 14
+    macd: true
+    bollinger_bands: true
+    atr_period: 14
+
+  # Volatility features
+  volatility:
+    realized_vol_windows: [5, 10, 20]
+    yang_zhang: true
+
+# =============================================================================
+# LOGGING AND MONITORING
+# =============================================================================
+logging:
+  level: INFO
+  tensorboard: true
+  wandb: false
+
+  # Component-specific logging
+  components:
+    forex_dealer: DEBUG
+    forex_session: INFO
+    forex_position: INFO
+
+# =============================================================================
+# VALIDATION
+# =============================================================================
+validation:
+  # Pre-training checks
+  check_data_quality: true
+  check_feature_parity: true
+  check_session_coverage: true
+  min_bars_per_session: 100
+
+  # Alerts
+  alert_on_weekend_data: true
+  alert_on_missing_swaps: true
+  alert_on_stale_rates: true
+
+components:
+  market_data:
+    target: impl_offline_data:OfflineCSVBarSource
+    params:
+      paths: ["data/train/*.csv"]
+      timeframe: "4h"
+  executor:
+    target: impl_sim_executor:SimExecutor
+    params:
+      symbol: "EUR_USD"
+  feature_pipe:
+    target: feature_pipe:FeaturePipe
+    params: {}
+  policy:
+    target: strategies.momentum:MomentumStrategy
+    params: {}
+  risk_guards:
+    target: impl_risk_basic:RiskBasicImpl
+    params: {}
+
+algo:
+  actions:
+    long_only: false
+  action_wrapper:
+    fixed_type: MARKET
+    lock_price_offset: true
+    fixed_price_offset_ticks: 0
+    lock_ttl: true
+    fixed_ttl_steps: 0
+    bins_vol: 4
+    max_asset_weight: 1.0
+
+loss_masks:
+  include_heads:
+    type: false
+    price_offset_ticks: false
+    ttl_steps: false
+    volume_frac: true

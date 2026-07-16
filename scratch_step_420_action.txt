@@ -1,0 +1,73 @@
+﻿Created At: 2026-05-31T09:19:50Z
+Completed At: 2026-05-31T09:19:50Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -2689,8 +2689,19 @@
+                 quickActionInterval = null;
+             }
+ 
+-            const resultPanel = document.getElementById('quick-start-result');
+-            const outputPre = document.getElementById('quick-start-output');
++            const isLite = (currentProductMode === 'lite');
++            
++            const resultPanel = document.getElementById(isLite ? 'workflow-console-card' : 'quick-start-result');
++            const outputPre = document.getElementById(isLite ? 'workflow-console-output' : 'quick-start-output');
++
++            // Hide the other console if open
++            if (isLite) {
++                const oldResult = document.getElementById('quick-start-result');
++                if (oldResult) oldResult.classList.add('hidden');
++            } else {
++                const newResult = document.getElementById('workflow-console-card');
++                if (newResult) newResult.classList.add('hidden');
++            }
+ 
+             if (resultPanel && outputPre) {
+                 resultPanel.classList.remove('hidden');
+@@ -2706,8 +2706,13 @@
+                 }
+ 
+                 // Hide evaluation results panel at start of action
+-                const evalResultPanel = document.getElementById('quick-start-eval-result');
+-                if (evalResultPanel) evalResultPanel.classList.add('hidden');
++                if (isLite) {
++                    const evalCard = document.getElementById('workflow-eval-card');
++                    if (evalCard) evalCard.classList.add('hidden');
++                } else {
++                    const evalResultPanel = document.getElementById('quick-start-eval-result');
++                    if (evalResultPanel) evalResu
+<truncated 2683 bytes>
+/image?path=logs/equity.png&t=' + new Date().getTime();
++                                                    wfChartImg.onload = () => {
++                                                        if (wfSpinner) wfSpinner.classList.add('hidden');
++                                                        wfChartImg.classList.remove('opacity-0');
++                                                    };
++                                                    wfChartImg.onerror = () => {
++                                                        if (wfSpinner) wfSpinner.classList.add('hidden');
++                                                    };
++                                                }
++                                            } else {
++                                                await loadEvaluationResults();
++                                            }
++                                        }
++
++                                        // Auto-advance step in Lite mode
++                                        if (isLite) {
++                                            advanceWorkflowStep(activeAsset, quickStartMode, body.job);
++                                        }
++                                        return;
+                                     }
+                                 }
+                             } catch (err) {
+@@ -2754,7 +2754,7 @@
+                             }
+                             
+                             pollCount++;
+-                            if (pollCount > 60) {
++                            if (pollCount > 180) { // extended limit
+                                 clearInterval(quickActionInterval);
+                                 quickActionInterval = null;
+                             }
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

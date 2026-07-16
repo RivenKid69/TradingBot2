@@ -26,6 +26,7 @@ import json
 import logging
 import threading
 import uuid
+import dataclasses
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -723,7 +724,54 @@ class AlertingService:
         # Initialize default handlers
         self._init_handlers()
 
+        # Durable persistence (P2 #21): alerts survive restarts.
+        self._durable = None
+        try:
+            from services.core.durable_store import DurableAlertStore
+            self._durable = DurableAlertStore(str(self._log_path / "alerts.db"))
+            self._rehydrate_alerts()
+        except Exception as e:  # pragma: no cover - persistence must not block startup
+            logger.warning("durable alert store unavailable: %s", e)
+
         logger.info("AlertingService initialized")
+
+    def _rehydrate_alerts(self) -> None:
+        """Reload persisted alerts into memory after a restart (P2 #21)."""
+        if self._durable is None:
+            return
+        loaded = 0
+        for d in self._durable.load_all():
+            try:
+                a = self._alert_from_dict(d)
+                self._alerts[a.alert_id] = a
+                if a.status == AlertStatus.TRIGGERED and a.fingerprint:
+                    self._active_fingerprints[a.fingerprint] = a.alert_id
+                loaded += 1
+            except Exception:
+                continue
+        if loaded:
+            logger.info("rehydrated %d persisted alerts", loaded)
+
+    @staticmethod
+    def _alert_from_dict(d: Dict[str, Any]) -> "Alert":
+        d = dict(d)
+        def _enum(cls, val, default):
+            try:
+                return cls(val)
+            except Exception:
+                return default
+        d["severity"] = _enum(AlertSeverity, d.get("severity"), AlertSeverity.MEDIUM)
+        d["status"] = _enum(AlertStatus, d.get("status"), AlertStatus.TRIGGERED)
+        d["escalation_level"] = _enum(EscalationLevel, d.get("escalation_level"), EscalationLevel.L1)
+        known = {f.name for f in dataclasses.fields(Alert)}
+        return Alert(**{k: v for k, v in d.items() if k in known})
+
+    def _persist_alert(self, alert: "Alert") -> None:
+        if self._durable is not None:
+            try:
+                self._durable.save(alert)
+            except Exception:  # pragma: no cover
+                pass
 
     def _init_handlers(self) -> None:
         """Initialize notification handlers."""
@@ -897,6 +945,7 @@ class AlertingService:
         with self._lock:
             self._alerts[alert.alert_id] = alert
             self._active_fingerprints[alert.fingerprint] = alert.alert_id
+            self._persist_alert(alert)   # P2 #21: durable
 
         # Send notifications
         self._send_notifications(alert, rule.channels)
@@ -927,6 +976,7 @@ class AlertingService:
             alert.acknowledged_by = acknowledged_by
             if notes:
                 alert.resolution_notes = notes
+            self._persist_alert(alert)   # P2 #21: durable
 
         self._log_event("alert_acknowledged", {
             "alert_id": alert_id,
@@ -955,6 +1005,7 @@ class AlertingService:
             # Remove from active fingerprints
             if alert.fingerprint in self._active_fingerprints:
                 del self._active_fingerprints[alert.fingerprint]
+            self._persist_alert(alert)   # P2 #21: durable
 
         self._log_event("alert_resolved", {
             "alert_id": alert_id,

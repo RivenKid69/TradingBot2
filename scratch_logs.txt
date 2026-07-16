@@ -1,0 +1,204 @@
+I will edit `index.html` using the `multi_replace_file_content` tool to add the mode toggle at the top of the quick start panel, define the custom non-AI actions mapping, conditionally hide the model path in backtests when in custom mode, and add a template code popup modal.
+
+Created At: 2026-05-30T10:29:15Z
+Completed At: 2026-05-30T10:29:15Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -207,14 +207,18 @@
+                 <div id="quick-start-panel" class="hidden p-6 bg-[#131316]/90 border rounded-3xl space-y-4 shadow-xl backdrop-blur-md relative overflow-hidden transition-all duration-300">
+                     <div class="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-xl"></div>
+                     
+-                    <div class="flex items-center justify-between border-b border-[#232329]/60 pb-3">
+-                        <h3 class="text-xs font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2">
++                    <div class="flex items-center justify-between border-b border-[#232329]/60 pb-3 gap-2 flex-wrap sm:flex-nowrap">
++                        <h3 class="text-xs font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2 shrink-0">
+                             <i class="fa-solid fa-rocket text-blue-400"></i> Быстрый старт: <span id="quick-start-title" class="text-gradient">US Equities</span>
+                         </h3>
+-                        <span class="text-[9px] text-gray-500 font-mono">Simple Mode</span>
+-                    </div>
+-                    
+-                    <p class="text-[10px] text-gray-400 leading-normal">Основные действия для быстрого запуска процессов, проверки лимитов и симуляции по выбранному активу.</p>
++                        <!-- Segmented Mode Control -->
++                        <div class="flex p-0.5 bg-[#0E0E11]/90 rounded-xl border border-[#232329] select-none font-mono text-[9px] relative shrink-0">
++                            <button id="tog
+<truncated 25710 bytes>
+ve('scale-100');
++                modal.querySelector('div').classList.add('scale-95');
++                setTimeout(() => {
++                    modal.classList.add('hidden');
++                }, 300);
++            }
++        }
++
++        function copyStrategyTemplateCode() {
++            const pre = document.getElementById('strategy-template-code');
++            if (pre) {
++                navigator.clipboard.writeText(pre.innerText.trim())
++                    .then(() => showActionToast('Код шаблона скопирован в буфер обмена!'))
++                    .catch(err => console.error('Ошибка копирования:', err));
++            }
++        }
++
+         async function runQuickAction(cmd, payload) {
+             // Clear any previous interval
+             if (quickActionInterval) {
+@@ -4210,7 +4210,7 @@
+                             <input type="text" id="backtest-config-file" value="${defaultConfig}" class="w-full bg-[#131316] border border-[#232329] text-gray-300 text-xs rounded-xl px-3 py-2 outline-none focus:border-emerald-500/50 transition-all font-mono">
+                         </div>
+ 
+-                        <div class="space-y-1.5 col-span-2">
++                        <div class="space-y-1.5 col-span-2 ${quickStartMode === 'custom' ? 'hidden' : ''}">
+                             <label class="block text-gray-400 font-medium">Путь к обученной модели <span class="text-red-500">*</span></label>
+                             <input type="text" id="backtest-model-path" value="${defaultModel}" class="w-full bg-[#131316] border border-[#232329] text-gray-300 text-xs rounded-xl px-3 py-2 outline-none focus:border-emerald-500/50 transition-all font-mono">
+                         </div>
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+
+Created At: 2026-05-30T10:30:34Z
+Completed At: 2026-05-30T10:30:34Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -213,8 +213,8 @@
+                         </h3>
+                         <!-- Segmented Mode Control -->
+                         <div class="flex p-0.5 bg-[#0E0E11]/90 rounded-xl border border-[#232329] select-none font-mono text-[9px] relative shrink-0">
+-                            <button id="toggle-qs-ai" onclick="switchQuickStartMode('ai')" class="px-2.5 py-1 rounded-lg text-white bg-blue-600 font-semibold transition-all duration-200 cursor-pointer">ИИ-пайплайн (8 шагов)</button>
+-                            <button id="toggle-qs-custom" onclick="switchQuickStartMode('custom')" class="px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition-all duration-200 cursor-pointer">Собственные стратегии</button>
++                            <button id="toggle-qs-ai" onclick="switchQuickStartMode('ai')" class="px-2.5 py-1 rounded-lg text-white bg-blue-600 font-semibold transition-all duration-200 cursor-pointer">AI Strategy</button>
++                            <button id="toggle-qs-custom" onclick="switchQuickStartMode('custom')" class="px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition-all duration-200 cursor-pointer">Custom Strategy</button>
+                         </div>
+                     </div>
+                     
+@@ -1787,11 +1787,11 @@
+                 if (mode === 'ai') {
+                     btnAi.className = 'px-2.5 py-1 rounded-lg text-white bg-blue-600 font-semibold transition-all duration-200 cursor-pointer';
+                     btnCustom.className = 'px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition-all duration-200 cursor-pointer';
+-                    descEl.innerText = 'Основные действия для быстрого запуска процессов ИИ-пайплайна, обучения и симуляции PPO-моделей.';
++                    descEl.innerText = 'Основные действия для запуска полного ИИ-пайплайна (AI Strategy: 8 шагов), обучения и симуляции PPO-моделей.';
+                 } else {
+                     btnCustom.className = 'px-2.5 py-1 rounded-lg text-white bg-blue-600 font-semibold transition-all duration-200 cursor-pointer';
+                     btnAi.className = 'px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition-all duration-200 cursor-pointer';
+-                    descEl.innerText = 'Основные действия для разработки, редактирования конфигураций, бэктеста и лайв-запуска ваших собственных не-ИИ стратегий.';
++                    descEl.innerText = 'Основные действия для разработки собственных не-ИИ стратегий (Custom Strategy), редактирования конфигураций, бэктеста и лайв-запуска.';
+                 }
+             }
+             renderQuickStartPanel(activeAsset);
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+
+Created At: 2026-05-30T10:44:16Z
+Completed At: 2026-05-30T10:44:16Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -1159,174 +1159,58 @@
+                     title: 'Создание меток (Targets)',
+                     desc: 'Построение cost-aware целевых переменных для криптовалют с учетом спот/перп комиссий мейкер/тейкер.',
+                     icon: 'fa-crosshairs',
+-                    color: 'text-red-400',
+-                    btnText: 'Настроить разметку',
+-                    action: () => openTargetsConfig()
+-                },
+-                {
+-                    title: 'Сборка таблицы (Train Table)',
+-                    desc: 'Объединение признаков и меток, привязка асинхронных источников и защита от утечек LeakGuard.',
+-                    icon: 'fa-table-list',
+-                    color: 'text-teal-400',
+-                    btnText: 'Собрать таблицу',
+-                    action: () => openTrainingTableConfig()
+-                },
+-                {
+-                    title: 'Обучение модели (Model Train)',
+-                    desc: 'Запуск обучения PPO-агента на цифровых активах с учетом мейкер/тейкер комиссий.',
+-                    icon: 'fa-brain',
+-                    color: 'text-pink-400',
+-                    btnText: 'Начать обучение',
+-                    action: () => openTrainingConfig()
+-                },
+-                {
+-                    title: 'Исторический бэктест (Sandbox Backtest)',
+-                    desc: 'Запуск симуляции то
+<truncated 10886 bytes>
+ванием разрывов (roll gaps).',
++                    icon: 'fa-cloud-download',
++                    color: 'text-sky-400',
++                    btnText: 'Настроить сбор',
++                    action: () => openIngestConfig()
++                }
++            ],
++            'crypto': [
++                {
++                    title: 'Исследование и подготовка данных (Research & Ingest)',
++                    desc: 'Импорт спотовых/фьючерсных свечей Binance API, ставок финансирования и истории ликвидаций.',
++                    icon: 'fa-cloud-download',
++                    color: 'text-sky-400',
++                    btnText: 'Настроить сбор',
++                    action: () => openIngestConfig()
++                }
++            ],
++            'options': [
++                {
++                    title: 'Исследование и подготовка данных (Research & Ingest)',
++                    desc: 'Импорт опционных цепочек ThetaData/IB или математическая генерация греков Black-Scholes.',
++                    icon: 'fa-cloud-download',
++                    color: 'text-sky-400',
++                    btnText: 'Настроить сбор',
++                    action: () => openIngestConfig()
++                }
++            ]
++        };{
+                     title: 'Шаблон стратегии (Template)',
+                     desc: 'Просмотр шаблона и подробных инструкций по написанию собственной не-ИИ стратегии для Forex.',
+                     icon: 'fa-file-code',
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+
+I will search for `replace_file_content` calls in the log's `content` field to retrieve the modifications made to `index.html`.
+
+Created At: 2026-05-30T10:44:43Z
+Completed At: 2026-05-30T10:44:43Z
+
+				The command completed successfully.
+				Output:
+				I will edit `index.html` using the `multi_replace_file_content` tool to add the mode toggle at the top of the quick start panel, define the custom non-AI actions mapping, conditionally hide the model path in backtests when in custom mode, and add a template code popup modal.
+Created At: 2026-05-30T10:29:15Z
+Completed At: 2026-05-30T10:29:15Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\�\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -207,14 +207,18 @@
+                 <div id="quick-start-panel" class="hidden p-6 bg-[#131316]/90 border rounded-3xl space-y-4 shadow-xl backdrop-blur-md relative overflow-hidden transition-all duration-300">
+                     <div class="absolute -top-12 -right-12 w-24 h-24 bg-blue-500/5 rounded-full blur-xl"></div>
+                     
+-                    <div class="flex items-center justify-between border-b border-[#232329]/60 pb-3">
+-                        <h3 class="text-xs font-semibold uppercase tracking-wider text-white font-mono flex items-center gap-2">
++                    <div class="flex items-center justify-between border-b border-[#232329]/60 pb-3 gap-2 f
+Created At: 2026-05-30T10:30:34Z
+Completed At: 2026-05-30T10:30:34Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\�\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -213,8 +213,8 @@
+                         </h3>
+                         <!-- Segmented Mode Control -->
+                         <div class="flex p-0.5 bg-[#0E0E11]/90 rounded-xl border border-[#232329] select-none font-mono text-[9px] relative shrink-0">
+-                            <button id="toggle-qs-ai" onclick="switchQuickStartMode('ai')" class="px-2.5 py-1 rounded-lg text-white bg-blue-600 font-semibold transition-all duration-200 cursor-pointer">�-� (8 �)</button>
+-                            <button id="toggle-qs-custom" onclick="switchQuickStartMode('custom')" class="px-2.5 py-1 rounded-lg text-gray-400 hover:text-white transition-all duration-200 cursor
+Created At: 2026-05-30T10:44:16Z
+Completed At: 2026-05-30T10:44:16Z
+The following changes were made by the replace_file_content tool to: c:\Users\�\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -1159,174 +1159,58 @@
+                     title: '� � (Targets)',
+                     desc: '� cost-aware � � � � � � �/� � �/�.',
+                     icon: 'fa-crosshairs',
+-                    color: 'text-red-400',
+-                    btnText: '� �',
+-                    action: () => openTargetsConfig()
+-                },
+-                {
+-                    title: '� � (Train Table)',
+-                    desc: '� � � �, � � � � � � � LeakGuard.',
+-                    icon: 'fa-table-list',
+-               
+

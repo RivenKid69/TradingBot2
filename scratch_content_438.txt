@@ -1,0 +1,42 @@
+﻿Created At: 2026-05-31T09:20:13Z
+Completed At: 2026-05-31T09:20:13Z
+The following changes were made by the replace_file_content tool to: c:\Users\Зефирка\StartUp\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -2442,6 +2442,34 @@
+             populateAdapterSelect(assetClass, activeAdapter);
+             updateUIContext();
+ 
++            if (currentProductMode === 'lite') {
++                const panel = document.getElementById('lite-workflow-panel');
++                const welcome = document.getElementById('lite-welcome-header');
++                const selector = document.getElementById('lite-asset-selector-card');
++                const bottomCards = document.getElementById('home-lite-bottom-cards');
++                const quickStart = document.getElementById('quick-start-panel');
++                
++                if (quickStart) quickStart.classList.add('hidden');
++                if (welcome) welcome.classList.add('opacity-0', '-translate-y-4');
++                if (selector) selector.classList.add('opacity-0', 'translate-y-4');
++                if (bottomCards) bottomCards.classList.add('opacity-0', 'translate-y-4');
++                
++                setTimeout(() => {
++                    if (welcome) welcome.classList.add('hidden');
++                    if (selector) selector.classList.add('hidden');
++                    if (bottomCards) bottomCards.classList.add('hidden');
++
++                    if (panel) {
++                        panel.classList.remove('hidden');
++                        panel.offsetHeight; // reflow
++                        panel.classList.remove('opacity-0', 'translate-y-4');
++                        panel.classList.add('opacity-100', 'translate-y-0');
++                    }
++                    
++                    renderWorkflowTimeline(assetClass);
++                }, 300);
++            }
++
+             try {
+                 await fetch(API_BASE + '/api/system_state', {
+                     method: 'POST',
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
