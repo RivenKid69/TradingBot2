@@ -212,6 +212,7 @@ def run_rebalance(
     paper_only: bool = True,
     dry_run: bool = False,
     limits: Optional[RebalanceLimits] = None,
+    strategy_id: str = "xs-rebalance",
     out_dir: str = os.path.join("logs", "xs_rebalance"),
     alert_fn: Optional[Callable[[str, str], None]] = None,
 ) -> Dict[str, Any]:
@@ -225,12 +226,14 @@ def run_rebalance(
     record: Dict[str, Any] = {
         "started_at": _utc_now_iso(),
         "config": config_path,
+        "strategy_id": strategy_id,
         "paper_only": bool(paper_only),
         "dry_run": bool(dry_run),
         "limits": asdict(limits),
         "status": "blocked",
         "reason": None,
         "signature": None,
+        "authorization": None,
         "equity": None,
         "weights": {},
         "plan": None,
@@ -267,16 +270,51 @@ def run_rebalance(
     if not isinstance(snap, dict) or not snap.get("ok"):
         return _finish("blocked", f"портфель Agent'а недоступен: {snap.get('error') if isinstance(snap, dict) else snap}")
     is_paper = bool(snap.get("simulated"))
+    broker = str(snap.get("broker") or "").strip().lower()
+    record["broker"] = broker
+    record["is_paper"] = is_paper
     if paper_only and not is_paper:
         return _finish("blocked", "paper_only=true, а активный брокер — live; авто-ребаланс на live запрещён")
 
-    # --- Конфиг + подпись RL-модели (до загрузки пайплайна) ------------------
+    # --- Конфиг (нужен ДО авторизации: мандат привязан к хешу конфига) --------
     try:
         from service_xs_pipeline import latest_target_weights, load_config_dict, load_panel
         with open(config_path, "r", encoding="utf-8") as fh:
-            cfg = load_config_dict(yaml.safe_load(fh) or {})
+            raw_cfg = yaml.safe_load(fh) or {}
+        cfg = load_config_dict(raw_cfg)
     except Exception as exc:
         return _finish("blocked", f"не удалось загрузить XS-конфиг: {exc}")
+
+    # --- Авторизация live-торговли (для live-брокера — обязательна) -----------
+    # Precheck (нулевые параметры): проверяет наличие активного мандата,
+    # совпадение хеша конфига и не-исчерпанность бюджета; возвращает потолок,
+    # к которому будут прижаты рантайм-лимиты ДО построения плана.
+    live_store = None
+    live_auth_id = None
+    if not is_paper:
+        live_store = getattr(supervisor, "live_auth_store", None)
+        if live_store is None:
+            return _finish("blocked", "live-брокер, но хранилище авторизаций недоступно")
+        from packages.agent.approval.live_trading_authorization import canonical_config_hash
+        record["config_hash"] = canonical_config_hash(raw_cfg)
+        precheck = live_store.check(
+            strategy_id=strategy_id, config=raw_cfg, broker=broker,
+            turnover=0.0, notional=0.0, n_orders=0,
+        )
+        record["authorization"] = precheck.to_dict()
+        if not precheck.allowed:
+            return _finish("blocked", f"live-авторизация: {precheck.reason}")
+        live_auth_id = precheck.auth_id
+        ceiling = precheck.effective_ceiling
+        # Прижать рантайм-лимиты к потолку мандата (строже — можно, слабее — нет).
+        limits = RebalanceLimits(
+            max_turnover=min(limits.max_turnover, ceiling.max_turnover),
+            min_trade_notional=limits.min_trade_notional,
+            drift_band_bps=limits.drift_band_bps,
+            max_position_weight=limits.max_position_weight,
+            max_orders=min(limits.max_orders, ceiling.max_orders_per_rebalance),
+        )
+        record["limits"] = asdict(limits)
 
     rl_checkpoint = getattr(getattr(cfg, "rl", None), "checkpoint", None)
     if rl_checkpoint:
@@ -322,23 +360,52 @@ def run_rebalance(
     if dry_run:
         return _finish("dry_run", f"план из {len(plan['orders'])} ордеров построен, отправка отключена")
 
+    planned_notional = sum(abs(o.notional) for o in plan["orders"])
+
+    # --- Финальная авторизация: точные числа плана против потолка/бюджета -----
+    if not is_paper:
+        final = live_store.check(
+            strategy_id=strategy_id, config=raw_cfg, broker=broker,
+            turnover=float(plan["turnover_planned"]),
+            notional=float(planned_notional),
+            n_orders=len(plan["orders"]),
+        )
+        record["authorization_final"] = final.to_dict()
+        if not final.allowed:
+            return _finish("blocked", f"live-авторизация (финальная проверка): {final.reason}")
+
     # --- Исполнение через Agent OMS --------------------------------------------
     ok_count = 0
     for order in plan["orders"]:
         try:
             res = supervisor.submit_rebalance_order(
                 order.symbol, order.qty, order.price,
+                strategy_id=strategy_id,
                 reason=f"XS rebalance {os.path.basename(config_path)}",
+                allow_live=(not is_paper),
             )
         except Exception as exc:
             res = {"ok": False, "error": f"exception: {exc}"}
         record["executions"].append({**order.to_dict(), **{
             "ok": bool(res.get("ok")),
             "client_order_id": res.get("client_order_id"),
+            "broker_order_id": res.get("broker_order_id"),
+            "state": res.get("state"),
             "error": res.get("error"),
         }})
         if res.get("ok"):
             ok_count += 1
+
+    # --- Зафиксировать использование мандата (по фактически отправленному) ----
+    if not is_paper and live_auth_id is not None and ok_count > 0:
+        sent_notional = sum(
+            abs(o.notional) for o, e in zip(plan["orders"], record["executions"]) if e["ok"]
+        )
+        try:
+            consume = live_store.consume(live_auth_id, notional=sent_notional, n_orders=ok_count)
+            record["authorization_consumed"] = consume
+        except Exception as exc:
+            record["authorization_consumed"] = {"ok": False, "error": str(exc)}
 
     total = len(plan["orders"])
     if ok_count == total:

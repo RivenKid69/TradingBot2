@@ -59,5 +59,5 @@
 ## Что осталось на следующие итерации
 
 - Праздничные календари per-exchange для `market_days_only` (сейчас — только Сб/Вс; движки календарей в проекте есть: `services/cme_calendar.py`, session router).
-- ✅ Боевое наполнение `xs_rebalance` (P1-C) сделано — см. [MODEL_SIGNATURE_AND_REBALANCE.md](MODEL_SIGNATURE_AND_REBALANCE.md). Осталось: авто-ребаланс на live-брокере (сейчас fail-closed на paper).
+- ✅ Боевое наполнение `xs_rebalance` (P1-C) сделано, включая **авто-торговлю на live-брокере** через CCEA operator-approval (мандат по хешу конфига + потолок лимитов + TTL + бюджет, двухшаговая церемония, hash-chained аудит) — см. [MODEL_SIGNATURE_AND_REBALANCE.md](MODEL_SIGNATURE_AND_REBALANCE.md) §3.
 - Зависимости между задачами по артефактам (сейчас — последовательность шагов внутри задачи + разнесённые времена).

@@ -145,7 +145,8 @@ jobs:
     trading_impacting: true
     params:
       config: ""                  # путь к XS-конфигу (например configs/config_xs_crypto_real.yaml)
-      paper_only: true            # v1 исполняет только на sim_paper; live заблокирован fail-closed
+      paper_only: true            # false открывает live ТОЛЬКО при действующем мандате
+                                  # (POST /api/ccea/live_trading/request→grant; см. docs)
       dry_run: false              # true = только план в logs/xs_rebalance/, без отправки ордеров
       # Гардрейлы одного ребаланса (service_xs_rebalance.RebalanceLimits):
       max_turnover: 0.25          # Σ|Δnotional| ≤ 25% equity, иначе пропорциональный скейлинг

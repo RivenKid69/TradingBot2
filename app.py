@@ -8684,12 +8684,16 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
             return JobRunResult(STATUS_SKIPPED, "CCEA Agent не запущен — исполнять некуда")
         from service_xs_rebalance import RebalanceLimits, run_rebalance
+        # paper_only=true по умолчанию. Live-путь открывается только если
+        # оператор явно поставил paper_only=false И выдал live-авторизацию
+        # (проверяется внутри run_rebalance по хешу конфига и потолку лимитов).
         rec = run_rebalance(
             cfg,
             _CCEA_SUPERVISOR,
             paper_only=bool(job.params.get("paper_only", True)),
             dry_run=bool(job.params.get("dry_run", False)),
             limits=RebalanceLimits.from_params(job.params),
+            strategy_id=str(job.params.get("strategy_id", "xs-rebalance")),
             alert_fn=(_SCHEDULER.notify if _SCHEDULER is not None else None),
         )
         status_map = {
@@ -8820,6 +8824,151 @@ def api_models_verify_for_live(path: str, policy: Optional[str] = None):
     out = verdict.to_dict()
     out["effective_live_policy"] = resolve_policy(policy, live=True)
     return out
+
+
+# --------- Авторизация авто-торговли на LIVE-брокере (CCEA operator approval) ---------
+# Двухшаговая церемония человека-оператора (по образцу algo-governance / RTS 6):
+#   1) POST /api/ccea/live_trading/request — сервер выдаёт одноразовый
+#      confirmation_token + резюме того, что будет разрешено (config hash,
+#      брокер, потолки лимитов, TTL). Оператор ЧИТАЕТ и осознанно подтверждает.
+#   2) POST /api/ccea/live_trading/grant — оператор возвращает тот же токен;
+#      только тогда выдаётся долговечный мандат (Agent-зона, hash-chain аудит).
+# Cloud выдать мандат не может: эти эндпоинты — локальные, под loopback-auth.
+
+_PENDING_LIVE_GRANTS: Dict[str, Dict[str, Any]] = {}
+
+
+def _ccea_or_503():
+    if _CCEA_SUPERVISOR is None or _CCEA_STATE != "running":
+        raise HTTPException(status_code=503, detail="CCEA Agent не запущен")
+    return _CCEA_SUPERVISOR
+
+
+class LiveTradingRequestPayload(BaseModel):
+    strategy_id: str = "xs-rebalance"
+    config: str                       # путь к XS-конфигу (мандат привязан к его хешу)
+    broker: str                       # целевой live-брокер (не sim_paper)
+    ttl_sec: int = 8 * 3600
+    max_turnover: float = 0.10
+    max_notional_per_rebalance: float = 100_000.0
+    max_orders_per_rebalance: int = 25
+    max_total_notional: Optional[float] = None
+    max_rebalances: Optional[int] = None
+    note: str = ""
+
+
+@api.post("/api/ccea/live_trading/request")
+def api_live_trading_request(payload: LiveTradingRequestPayload):
+    """Шаг 1 церемонии: выдать одноразовый токен + резюме мандата для подтверждения."""
+    _ccea_or_503()
+    if payload.broker.strip().lower() == "sim_paper":
+        raise HTTPException(status_code=400, detail="sim_paper не требует авторизации")
+    if not os.path.exists(payload.config):
+        raise HTTPException(status_code=404, detail=f"XS-конфиг не найден: {payload.config}")
+    from packages.agent.approval.live_trading_authorization import (
+        HARD_MAX_NOTIONAL_PER_REBALANCE, HARD_MAX_TTL_SEC, HARD_MAX_TURNOVER,
+        canonical_config_hash,
+    )
+    with open(payload.config, "r", encoding="utf-8") as f:
+        raw_cfg = yaml.safe_load(f) or {}
+    cfg_hash = canonical_config_hash(raw_cfg)
+    import secrets as _secrets
+    token = _secrets.token_urlsafe(18)
+    request_id = _secrets.token_hex(8)
+    _PENDING_LIVE_GRANTS[request_id] = {
+        "token": token,
+        "created_at": time.time(),
+        "payload": payload.model_dump(),
+        "config_hash": cfg_hash,
+    }
+    # Периодически подчищаем протухшие заявки (>10 мин).
+    now = time.time()
+    for rid in [r for r, v in _PENDING_LIVE_GRANTS.items() if now - v["created_at"] > 600]:
+        _PENDING_LIVE_GRANTS.pop(rid, None)
+    return {
+        "request_id": request_id,
+        "confirmation_token": token,
+        "expires_in_sec": 600,
+        "summary": {
+            "strategy_id": payload.strategy_id,
+            "broker": payload.broker,
+            "config": payload.config,
+            "config_hash": cfg_hash,
+            "config_hash_short": cfg_hash[:12],
+            "ttl_sec": min(payload.ttl_sec, HARD_MAX_TTL_SEC),
+            "ceiling": {
+                "max_turnover": min(payload.max_turnover, HARD_MAX_TURNOVER),
+                "max_notional_per_rebalance": min(payload.max_notional_per_rebalance, HARD_MAX_NOTIONAL_PER_REBALANCE),
+                "max_orders_per_rebalance": payload.max_orders_per_rebalance,
+            },
+            "budget": {
+                "max_total_notional": payload.max_total_notional,
+                "max_rebalances": payload.max_rebalances,
+            },
+        },
+        "warning": "Это разрешит АВТОМАТИЧЕСКУЮ отправку ордеров на РЕАЛЬНЫЙ счёт. "
+                   "Подтвердите только если осознанно принимаете риск.",
+    }
+
+
+class LiveTradingGrantPayload(BaseModel):
+    request_id: str
+    confirmation_token: str
+
+
+@api.post("/api/ccea/live_trading/grant")
+def api_live_trading_grant(payload: LiveTradingGrantPayload):
+    """Шаг 2 церемонии: подтвердить токеном → выдать долговечный мандат."""
+    sup = _ccea_or_503()
+    pending = _PENDING_LIVE_GRANTS.get(payload.request_id)
+    if pending is None:
+        raise HTTPException(status_code=404, detail="заявка не найдена или истекла — начните заново с /request")
+    if time.time() - pending["created_at"] > 600:
+        _PENDING_LIVE_GRANTS.pop(payload.request_id, None)
+        raise HTTPException(status_code=410, detail="заявка истекла (>10 мин) — начните заново")
+    p = pending["payload"]
+    with open(p["config"], "r", encoding="utf-8") as f:
+        raw_cfg = yaml.safe_load(f) or {}
+    result = sup.grant_live_trading(
+        strategy_id=p["strategy_id"],
+        config=raw_cfg,
+        broker=p["broker"],
+        confirmation_token=payload.confirmation_token,
+        expected_token=pending["token"],
+        ttl_sec=p["ttl_sec"],
+        max_turnover=p["max_turnover"],
+        max_notional_per_rebalance=p["max_notional_per_rebalance"],
+        max_orders_per_rebalance=p["max_orders_per_rebalance"],
+        max_total_notional=p.get("max_total_notional"),
+        max_rebalances=p.get("max_rebalances"),
+        note=p.get("note", ""),
+    )
+    if not result.get("ok"):
+        # Неверный токен (опечатка) НЕ сжигает заявку — оператор может повторить
+        # в пределах TTL; brute-force исключён энтропией токена (18 байт) и
+        # 10-минутным сроком. Прочие отказы store — тоже без сжигания.
+        raise HTTPException(status_code=409, detail=result.get("error", "grant отклонён"))
+    # Успех: токен одноразовый — сжигаем заявку, чтобы мандат нельзя было
+    # выдать повторно тем же токеном (anti-replay).
+    _PENDING_LIVE_GRANTS.pop(payload.request_id, None)
+    return result
+
+
+class LiveTradingRevokePayload(BaseModel):
+    auth_id: Optional[str] = None     # None = отозвать все активные мандаты
+    reason: str = "operator revoke"
+
+
+@api.post("/api/ccea/live_trading/revoke")
+def api_live_trading_revoke(payload: Optional[LiveTradingRevokePayload] = None):
+    sup = _ccea_or_503()
+    payload = payload or LiveTradingRevokePayload()
+    return sup.revoke_live_trading(payload.auth_id, reason=payload.reason)
+
+
+@api.get("/api/ccea/live_trading/status")
+def api_live_trading_status():
+    return _ccea_or_503().live_trading_status()
 
 
 # ------------- Lite Mode evidence & policy endpoints (audit LITE-2026-07-14) -------------

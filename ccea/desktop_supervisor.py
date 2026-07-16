@@ -26,11 +26,14 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import os
 import secrets
 import socket
 import threading
 import time
+
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -137,9 +140,12 @@ class CCEASupervisor:
         self._vault = None           # LocalVault (Agent zone) for broker credentials
         self._broker_name = "sim_paper"
         self._paper_engine = None    # LiveExecutionEngine wired to the paper broker
+        self._live_engine = None     # LiveExecutionEngine wired to the active live broker
+        self._live_fill_handler = None
         self._fill_handler = None    # FillHandler -> drives OMS + books P&L into ledger
         self._books = None           # BooksAndRecords (ledger + blotter + cash + surveillance)
         self._ledger = None          # PnLLedger alias (== self._books.ledger)
+        self._live_auth = None       # LiveTradingAuthorizationStore (Agent zone)
         self._last_paper: Optional[Dict[str, Any]] = None
         self._enroll: Dict[str, str] = {}
         self._cp_url: str = ""
@@ -310,6 +316,28 @@ class CCEASupervisor:
                 )
         except Exception as exc:  # pragma: no cover
             self._error = f"books-and-records wiring failed: {exc}"
+
+        # Live-trading authorization store (Agent zone): durable, hash-chained
+        # operator mandates that open the auto-rebalance path on a LIVE broker.
+        # Audit is keyed by the same vault master key as the books tamper-chains.
+        try:
+            from packages.agent.approval.live_trading_authorization import (
+                LiveTradingAuthorizationStore,
+            )
+            _auth_key = None
+            try:
+                from packages.agent.daemon.keychain import KeychainManager
+                _auth_key = KeychainManager(self._keychain_config).get_master_key()
+            except Exception:
+                _auth_key = None
+            self._live_auth = LiveTradingAuthorizationStore(
+                state_path=str(agent_dir / "live_trading_authorizations.json"),
+                audit_path=str(agent_dir / "live_trading_audit.jsonl"),
+                audit_key=_auth_key,
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("live-auth store init failed: %s", exc)
+            self._live_auth = None
 
         ok, err = self._daemon.start()
         if not ok:
@@ -605,6 +633,41 @@ class CCEASupervisor:
             "simulated": True,
         }
 
+    def _ensure_live_engine(self):
+        """LiveExecutionEngine, привязанный к активному LIVE-брокеру.
+
+        Тот же OMS-стек, что и paper (PolicyFirewall + HardCapEnforcer +
+        RiskChecker + hash-chain журнал + price-collar), но broker_submit идёт
+        в реальный коннектор. Собирается лениво при первой live-отправке и
+        сбрасывается при смене брокера.
+        """
+        if self._live_engine is not None:
+            return self._live_engine
+        from packages.agent.execution.engine import LiveExecutionEngine, PriceCollarConfig
+        from packages.agent.execution.fill_handler import FillHandler
+        from packages.agent.execution.live_factory import (
+            make_broker_submit, make_broker_cancel, make_broker_replace)
+        from packages.agent.reconciliation.journal import OrderJournal
+
+        hmac_key = getattr(getattr(self._books, "blotter", None), "_key", None)
+        journal = OrderJournal(
+            db_path=self.config.data_dir / "agent" / "live_orders.db", hmac_key=hmac_key)
+        self._live_engine = LiveExecutionEngine(
+            broker_submit=make_broker_submit(self._broker),
+            broker_cancel=make_broker_cancel(self._broker),
+            broker_replace=make_broker_replace(self._broker),
+            broker_name=self._broker_name,
+            order_journal=journal,
+            price_collar=PriceCollarConfig(max_price_distance_pct=0.20, max_notional=5_000_000.0),
+            deployment_id="desktop-live",
+            run_id="desktop-live-rebalance",
+        )
+        on_fill = None
+        if self._books is not None:
+            on_fill = self._books.fill_handler_callback(strategy_id="xs-rebalance")
+        self._live_fill_handler = FillHandler(self._live_engine, on_fill=on_fill)
+        return self._live_engine
+
     def submit_rebalance_order(
         self,
         symbol: str,
@@ -613,6 +676,7 @@ class CCEASupervisor:
         *,
         strategy_id: str = "xs-rebalance",
         reason: str = "scheduled XS rebalance",
+        allow_live: bool = False,
     ) -> Dict[str, Any]:
         """Submit ONE rebalance order through the real Agent OMS.
 
@@ -621,9 +685,9 @@ class CCEASupervisor:
         hash-chained journal -> broker fill -> FillHandler (P&L ledger, blotter,
         cash GL) + live MAR surveillance.
 
-        v1 executes on the sim_paper broker only: авто-ребаланс на live-брокере
-        сознательно отклоняется (fail-closed), пока не будет отдельного
-        включения через CCEA approval-процесс.
+        На LIVE-брокере отправка разрешена ТОЛЬКО при ``allow_live=True`` — этот
+        флаг runner выставляет после проверки локальной авторизации оператора
+        (LiveTradingAuthorizationStore). Без него live-путь fail-closed.
         """
         from decimal import Decimal
 
@@ -632,9 +696,10 @@ class CCEASupervisor:
 
         if self._broker is None:
             return {"ok": False, "error": "broker not available"}
-        if self._broker_name != "sim_paper":
+        is_paper = self._broker_name == "sim_paper"
+        if not is_paper and not allow_live:
             return {"ok": False,
-                    "error": "auto-rebalance on a live broker is disabled (fail-closed v1; CCEA approval required)"}
+                    "error": "auto-rebalance on a live broker requires an operator authorization (CCEA approval)"}
         try:
             qty = float(qty)
             price = float(price)
@@ -643,8 +708,13 @@ class CCEASupervisor:
         if qty == 0 or price <= 0:
             return {"ok": False, "error": "invalid qty/price"}
 
-        eng = self._ensure_paper_engine()
-        self._broker.set_price(symbol, price)
+        if is_paper:
+            eng = self._ensure_paper_engine()
+            fill_handler = self._fill_handler
+            self._broker.set_price(symbol, price)
+        else:
+            eng = self._ensure_live_engine()
+            fill_handler = self._live_fill_handler
         if self._ledger is not None:
             try:
                 eng.update_portfolio(self._ledger.to_portfolio_state())
@@ -682,30 +752,94 @@ class CCEASupervisor:
                     order_id=res.order.client_order_id, mid=price)
             except Exception:
                 pass
-        if res.success and res.order is not None and self._fill_handler is not None:
+        # Провести fill в книги. Paper-брокер исполняет мгновенно; live-брокер
+        # исполняет асинхронно — если моментального fill'а нет, ордер остаётся
+        # SUBMITTED и реконсилируется штатным путём Agent'а (мы НЕ выдумываем fill).
+        filled = False
+        if res.success and res.order is not None and fill_handler is not None:
             try:
                 info = self._broker.get_order(client_order_id=res.order.client_order_id)
                 if info is not None and info.filled_quantity and info.filled_quantity > 0:
-                    self._fill_handler.handle_event(FillEvent(
+                    fill_handler.handle_event(FillEvent(
                         client_order_id=res.order.client_order_id,
                         event_type="fill", filled_qty=info.filled_quantity,
                         avg_fill_price=info.avg_fill_price,
                         broker_order_id=info.broker_order_id,
                         cumulative=True,
                     ))
+                    filled = True
             except Exception:
                 pass
 
         return {
             "ok": bool(res.success),
             "client_order_id": res.order.client_order_id if res.order is not None else None,
+            "broker_order_id": (getattr(res.order, "broker_order_id", None) if res.order is not None else None),
             "error": None if res.success else (res.error_message or "rejected by OMS"),
             "intent_type": intent_type.value,
             "side": side.value,
             "qty": abs(qty),
             "price": price,
-            "simulated": True,
+            "filled": filled,
+            "state": "filled" if filled else ("submitted" if res.success else "rejected"),
+            "simulated": is_paper,
         }
+
+    # ------------------------------------------------ live-trading authorization
+    def grant_live_trading(
+        self,
+        *,
+        strategy_id: str,
+        config: Any,
+        broker: str,
+        confirmation_token: str,
+        expected_token: str,
+        ttl_sec: int = 8 * 3600,
+        max_turnover: float = 0.10,
+        max_notional_per_rebalance: float = 100_000.0,
+        max_orders_per_rebalance: int = 25,
+        max_total_notional: Optional[float] = None,
+        max_rebalances: Optional[int] = None,
+        note: str = "",
+    ) -> Dict[str, Any]:
+        """Выдать локальный мандат авто-торговли на live-брокере (двухшаговая
+        церемония). Только оператор Agent-зоны; Cloud выдать не может."""
+        if self._live_auth is None:
+            return {"ok": False, "error": "live-authorization store недоступен"}
+        from packages.agent.approval.live_trading_authorization import LimitCeiling
+        return self._live_auth.grant(
+            strategy_id=strategy_id,
+            config=config,
+            broker=broker,
+            limit_ceiling=LimitCeiling(
+                max_turnover=max_turnover,
+                max_notional_per_rebalance=max_notional_per_rebalance,
+                max_orders_per_rebalance=max_orders_per_rebalance,
+            ),
+            ttl_sec=ttl_sec,
+            confirmation_token=confirmation_token,
+            expected_token=expected_token,
+            max_total_notional=max_total_notional,
+            max_rebalances=max_rebalances,
+            note=note,
+        )
+
+    def revoke_live_trading(self, auth_id: Optional[str] = None,
+                            *, reason: str = "operator revoke") -> Dict[str, Any]:
+        if self._live_auth is None:
+            return {"ok": False, "error": "live-authorization store недоступен"}
+        if auth_id:
+            return self._live_auth.revoke(auth_id, reason=reason)
+        return self._live_auth.revoke_all(reason=reason)
+
+    def live_trading_status(self) -> Dict[str, Any]:
+        if self._live_auth is None:
+            return {"active": [], "recent": [], "store": "unavailable"}
+        return self._live_auth.status()
+
+    @property
+    def live_auth_store(self):
+        return self._live_auth
 
     def emergency_halt(self) -> Dict[str, Any]:
         """Pause the Agent, cancel working orders, and flatten actual positions.
@@ -717,6 +851,14 @@ class CCEASupervisor:
         """
         if self._broker is None:
             return {"ok": False, "error": "broker not available"}
+
+        # Экстренная остановка снимает ВСЕ live-мандаты: авто-ребаланс не должен
+        # возобновиться после halt без явной новой авторизации оператора.
+        if self._live_auth is not None:
+            try:
+                self._live_auth.revoke_all(reason="emergency halt")
+            except Exception:
+                pass
 
         lifecycle = self.request_lifecycle("stop")
         try:
@@ -931,6 +1073,16 @@ class CCEASupervisor:
                 self._broker = connector
                 self._broker_name = requested_broker
                 self._paper_engine = None
+                # Смена брокера аннулирует любой live-движок и (из осторожности)
+                # активные мандаты: они привязаны к конкретному брокеру, но
+                # переезд коннектора — повод потребовать явную повторную выдачу.
+                self._live_engine = None
+                self._live_fill_handler = None
+                if self._live_auth is not None:
+                    try:
+                        self._live_auth.revoke_all(reason="broker connection changed")
+                    except Exception:
+                        pass
                 try:
                     self._daemon.set_broker_connector(connector)
                     self._daemon.status.broker_connected = True
@@ -987,6 +1139,7 @@ class CCEASupervisor:
             "last_paper": self._last_paper,
             "pnl_ledger": (self._ledger.snapshot() if self._ledger is not None else None),
             "books": self._books_status(),
+            "live_trading": (self._live_auth.status() if self._live_auth is not None else None),
         }
 
     def _books_status(self) -> Optional[Dict[str, Any]]:

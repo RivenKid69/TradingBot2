@@ -147,24 +147,28 @@ def test_plan_max_orders_cap_journals_dropped():
 # ------------------------------------------------------------------- runner
 
 class FakeSupervisor:
-    def __init__(self, *, simulated=True, equity=10_000.0, holdings=None, fail_symbols=()):
+    def __init__(self, *, simulated=True, equity=10_000.0, holdings=None, fail_symbols=(),
+                 broker=None, live_auth_store=None):
         self.simulated = simulated
         self.equity = equity
         self.holdings = holdings or []
         self.fail_symbols = set(fail_symbols)
         self.submitted = []
+        self.broker = broker or ("sim_paper" if simulated else "binance")
+        self.live_auth_store = live_auth_store
 
     def portfolio_snapshot(self):
         return {"ok": True, "holdings": self.holdings,
                 "metrics": {"net_liquidation_value": self.equity},
-                "simulated": self.simulated,
+                "simulated": self.simulated, "broker": self.broker,
                 "data_source": "paper_broker" if self.simulated else "live_broker"}
 
-    def submit_rebalance_order(self, symbol, qty, price, **kw):
-        self.submitted.append((symbol, qty, price))
+    def submit_rebalance_order(self, symbol, qty, price, allow_live=False, **kw):
+        self.submitted.append((symbol, qty, price, allow_live))
         if symbol in self.fail_symbols:
             return {"ok": False, "error": "rejected by firewall"}
-        return {"ok": True, "client_order_id": f"oid-{symbol}", "error": None}
+        return {"ok": True, "client_order_id": f"oid-{symbol}", "error": None,
+                "state": "filled" if self.simulated else "submitted"}
 
 
 @pytest.fixture()
@@ -285,6 +289,95 @@ def test_runner_signature_gate_blocks_rl_checkpoint(xs_env, tmp_path, monkeypatc
     assert rec["signature"] and rec["signature"]["ok"] is False
 
 
+# --------------------------------------------------- live-брокер + авторизация
+
+def _make_auth_store(tmp_path):
+    from packages.agent.approval.live_trading_authorization import LiveTradingAuthorizationStore
+    return LiveTradingAuthorizationStore(
+        state_path=str(tmp_path / "auth.json"),
+        audit_path=str(tmp_path / "audit.jsonl"),
+        audit_key=b"k",
+    )
+
+
+def test_live_broker_without_authorization_is_fail_closed(xs_env, tmp_path):
+    """Live-брокер, но мандата нет → blocked, ни одного ордера."""
+    store = _make_auth_store(tmp_path / "a")
+    sup = FakeSupervisor(simulated=False, broker="binance", live_auth_store=store,
+                         equity=1_000_000.0)
+    rec = run_rebalance(str(xs_env), sup, paper_only=False, limits=LIM,
+                        strategy_id="xs-rebalance", out_dir=str(tmp_path / "j"))
+    assert rec["status"] == "blocked" and "авторизаци" in rec["reason"]
+    assert sup.submitted == []
+
+
+def test_live_broker_with_authorization_executes_and_consumes(xs_env, tmp_path):
+    import yaml as _yaml
+    raw_cfg = _yaml.safe_load((xs_env).read_text(encoding="utf-8"))
+    store = _make_auth_store(tmp_path / "a")
+    from packages.agent.approval.live_trading_authorization import LimitCeiling
+    g = store.grant(strategy_id="xs-rebalance", config=raw_cfg, broker="binance",
+                    limit_ceiling=LimitCeiling(max_turnover=1.0,
+                                               max_notional_per_rebalance=1e9,
+                                               max_orders_per_rebalance=50),
+                    ttl_sec=3600, confirmation_token="T", expected_token="T",
+                    max_rebalances=5)
+    sup = FakeSupervisor(simulated=False, broker="binance", live_auth_store=store,
+                         equity=1_000_000.0)
+    rec = run_rebalance(str(xs_env), sup, paper_only=False, limits=LIM,
+                        strategy_id="xs-rebalance", out_dir=str(tmp_path / "j"))
+    assert rec["status"] == "ok"
+    assert len(sup.submitted) == 2
+    # allow_live должен быть True на live-пути.
+    assert all(s[3] is True for s in sup.submitted)
+    # Мандат потреблён.
+    assert rec["authorization_consumed"]["consumed_rebalances"] == 1
+    active = store.status()["active"][0]
+    assert active["consumed_rebalances"] == 1
+
+
+def test_live_config_change_blocks(xs_env, tmp_path, monkeypatch):
+    """Мандат выдан на один конфиг; файл изменился → повторная авторизация."""
+    import yaml as _yaml
+    raw_cfg = _yaml.safe_load((xs_env).read_text(encoding="utf-8"))
+    store = _make_auth_store(tmp_path / "a")
+    from packages.agent.approval.live_trading_authorization import LimitCeiling
+    store.grant(strategy_id="xs-rebalance", config=raw_cfg, broker="binance",
+                limit_ceiling=LimitCeiling(), ttl_sec=3600,
+                confirmation_token="T", expected_token="T")
+    # оператор поменял стратегию в файле
+    (xs_env).write_text("name: test\nchanged: true\n", encoding="utf-8")
+    sup = FakeSupervisor(simulated=False, broker="binance", live_auth_store=store,
+                         equity=1_000_000.0)
+    rec = run_rebalance(str(xs_env), sup, paper_only=False, limits=LIM,
+                        strategy_id="xs-rebalance", out_dir=str(tmp_path / "j"))
+    assert rec["status"] == "blocked" and "конфиг" in rec["reason"]
+    assert sup.submitted == []
+
+
+def test_live_ceiling_clamps_runtime_limits(xs_env, tmp_path):
+    """Потолок мандата строже рантайм-лимитов → план ужимается под потолок."""
+    import yaml as _yaml
+    from service_xs_rebalance import RebalanceLimits
+    raw_cfg = _yaml.safe_load((xs_env).read_text(encoding="utf-8"))
+    store = _make_auth_store(tmp_path / "a")
+    from packages.agent.approval.live_trading_authorization import LimitCeiling
+    store.grant(strategy_id="xs-rebalance", config=raw_cfg, broker="binance",
+                limit_ceiling=LimitCeiling(max_turnover=0.05,          # жёстче
+                                           max_notional_per_rebalance=1e9,
+                                           max_orders_per_rebalance=50),
+                ttl_sec=3600, confirmation_token="T", expected_token="T")
+    sup = FakeSupervisor(simulated=False, broker="binance", live_auth_store=store,
+                         equity=1_000_000.0)
+    rec = run_rebalance(str(xs_env), sup, paper_only=False,
+                        limits=RebalanceLimits(max_turnover=0.5,       # мягче — должно ужаться
+                                               min_trade_notional=1.0, drift_band_bps=1.0),
+                        strategy_id="xs-rebalance", out_dir=str(tmp_path / "j"))
+    # Рантайм-лимит прижат к потолку 0.05.
+    assert rec["limits"]["max_turnover"] == pytest.approx(0.05)
+    assert rec["plan"]["turnover_planned"] <= 0.05 + 1e-9
+
+
 # ------------------------------------------------------------------- REST
 
 def test_api_run_requires_confirmation_for_real_send(monkeypatch):
@@ -319,6 +412,106 @@ def test_api_models_verify_endpoint_returns_verdict(tmp_path):
     body = res.json()
     assert body["ok"] is False and body["registered"] is False
     assert body["effective_live_policy"] == "enforce"
+
+
+# ---------------------------------------------- live-trading approval ceremony
+
+class _CeremonySupervisor:
+    """Мини-supervisor: делегирует grant в реальный auth-store."""
+    def __init__(self, store):
+        self._store = store
+
+    def grant_live_trading(self, **kw):
+        from packages.agent.approval.live_trading_authorization import LimitCeiling
+        return self._store.grant(
+            strategy_id=kw["strategy_id"], config=kw["config"], broker=kw["broker"],
+            limit_ceiling=LimitCeiling(
+                max_turnover=kw["max_turnover"],
+                max_notional_per_rebalance=kw["max_notional_per_rebalance"],
+                max_orders_per_rebalance=kw["max_orders_per_rebalance"]),
+            ttl_sec=kw["ttl_sec"],
+            confirmation_token=kw["confirmation_token"], expected_token=kw["expected_token"],
+            max_total_notional=kw.get("max_total_notional"),
+            max_rebalances=kw.get("max_rebalances"), note=kw.get("note", ""))
+
+    def revoke_live_trading(self, auth_id=None, reason="operator revoke"):
+        return self._store.revoke(auth_id, reason=reason) if auth_id else self._store.revoke_all(reason=reason)
+
+    def live_trading_status(self):
+        return self._store.status()
+
+
+def _wire_ceremony(monkeypatch, tmp_path):
+    from packages.agent.approval.live_trading_authorization import LiveTradingAuthorizationStore
+    store = LiveTradingAuthorizationStore(
+        state_path=str(tmp_path / "auth.json"),
+        audit_path=str(tmp_path / "audit.jsonl"), audit_key=b"k")
+    sup = _CeremonySupervisor(store)
+    monkeypatch.setattr(app_module, "_CCEA_SUPERVISOR", sup, raising=False)
+    monkeypatch.setattr(app_module, "_CCEA_STATE", "running", raising=False)
+    app_module._PENDING_LIVE_GRANTS.clear()
+    return store, sup
+
+
+def test_ceremony_request_then_grant(tmp_path, monkeypatch):
+    store, _sup = _wire_ceremony(monkeypatch, tmp_path)
+    cfg = tmp_path / "xs.yaml"
+    cfg.write_text("name: crypto\nuniverse: [BTC, ETH]\n", encoding="utf-8")
+
+    req = client.post("/api/ccea/live_trading/request", json={
+        "strategy_id": "xs-rebalance", "config": str(cfg), "broker": "binance",
+        "max_turnover": 0.08, "ttl_sec": 3600})
+    assert req.status_code == 200
+    body = req.json()
+    assert "confirmation_token" in body and body["summary"]["broker"] == "binance"
+    assert "РЕАЛЬНЫЙ" in body["warning"]
+
+    # неверный токен → 409
+    bad = client.post("/api/ccea/live_trading/grant", json={
+        "request_id": body["request_id"], "confirmation_token": "nope"})
+    assert bad.status_code == 409
+
+    # тот же токен → мандат выдан
+    ok = client.post("/api/ccea/live_trading/grant", json={
+        "request_id": body["request_id"], "confirmation_token": body["confirmation_token"]})
+    assert ok.status_code == 200 and ok.json()["ok"] is True
+    assert len(store.status()["active"]) == 1
+
+    # токен одноразовый: повтор → 404
+    again = client.post("/api/ccea/live_trading/grant", json={
+        "request_id": body["request_id"], "confirmation_token": body["confirmation_token"]})
+    assert again.status_code == 404
+
+
+def test_ceremony_request_rejects_sim_paper_and_missing_config(tmp_path, monkeypatch):
+    _wire_ceremony(monkeypatch, tmp_path)
+    cfg = tmp_path / "xs.yaml"; cfg.write_text("name: x\n", encoding="utf-8")
+    assert client.post("/api/ccea/live_trading/request", json={
+        "config": str(cfg), "broker": "sim_paper"}).status_code == 400
+    assert client.post("/api/ccea/live_trading/request", json={
+        "config": str(tmp_path / "nope.yaml"), "broker": "binance"}).status_code == 404
+
+
+def test_ceremony_revoke_and_status(tmp_path, monkeypatch):
+    store, _sup = _wire_ceremony(monkeypatch, tmp_path)
+    cfg = tmp_path / "xs.yaml"; cfg.write_text("name: x\n", encoding="utf-8")
+    req = client.post("/api/ccea/live_trading/request",
+                      json={"config": str(cfg), "broker": "binance"}).json()
+    client.post("/api/ccea/live_trading/grant", json={
+        "request_id": req["request_id"], "confirmation_token": req["confirmation_token"]})
+    st = client.get("/api/ccea/live_trading/status").json()
+    assert len(st["active"]) == 1 and st["audit_valid"] is True
+    rev = client.post("/api/ccea/live_trading/revoke", json={"reason": "test"})
+    assert rev.status_code == 200 and rev.json()["revoked"] == 1
+    assert client.get("/api/ccea/live_trading/status").json()["active"] == []
+
+
+def test_ceremony_503_without_ccea(monkeypatch):
+    monkeypatch.setattr(app_module, "_CCEA_SUPERVISOR", None, raising=False)
+    monkeypatch.setattr(app_module, "_CCEA_STATE", "stopped", raising=False)
+    assert client.get("/api/ccea/live_trading/status").status_code == 503
+    assert client.post("/api/ccea/live_trading/request",
+                       json={"config": "x", "broker": "binance"}).status_code == 503
 
 
 # ------------------------------------------------------- планировщик-действие

@@ -94,10 +94,10 @@ OMS-намерение неоднозначно); ордера сортирую�
 
 1. kill switch активен → `blocked`;
 2. нет конфига / нет CCEA Agent → `blocked`;
-3. `paper_only=true`, а брокер live → `blocked` (v1 исполняет **только** на
-   sim_paper; авто-ребаланс на живом брокере сознательно запрещён до отдельного
-   включения через CCEA approval);
-4. RL-модель в конфиге не прошла подпись → `blocked`.
+3. `paper_only=true`, а брокер live → `blocked`;
+4. брокер live и **нет действующего мандата авторизации** (или конфиг
+   изменился / бюджет исчерпан / превышен потолок) → `blocked` (см. §3);
+5. RL-модель в конфиге не прошла подпись → `blocked`.
 
 ### Статусы записи решения
 
@@ -122,9 +122,79 @@ Agent OMS → 8 позиций в портфеле Agent'а + 8 записей �
 `confirm_trading=false` при `dry_run=false` вернул 409; гейт подписи вернул честный
 вердикт с `effective_live_policy=enforce`.
 
+---
+
+## 3. Авторизация авто-торговли на LIVE-брокере (CCEA operator approval)
+
+**Файлы:** `packages/agent/approval/live_trading_authorization.py` (Agent-зона) ·
+проводка — `ccea/desktop_supervisor.py` (`grant/revoke_live_trading`,
+`live_trading_status`, `submit_rebalance_order(allow_live=...)`, `_ensure_live_engine`) ·
+гейт в `service_xs_rebalance.run_rebalance` · REST
+`/api/ccea/live_trading/{request,grant,revoke,status}` · тесты
+`tests/test_live_trading_authorization.py` (20) + live-ветки в `tests/test_xs_rebalance.py`.
+
+### Зачем отдельный контур авторизации
+
+Автоматическая отправка ордеров на **реальный счёт** — самый чувствительный
+контур платформы. Он открывается ТОЛЬКО через явную локальную авторизацию
+оператора, спроектированную по образцу реального algo-governance (MiFID II RTS 6:
+«material change to an algorithm requires re-authorisation») и prime-brokerage
+pre-trade mandates.
+
+### Модель мандата
+
+| Свойство | Смысл |
+|---|---|
+| **Human-in-the-loop, локально** | выдаёт только оператор Agent-зоны; **Cloud выдать не может** (CCEA-принцип) |
+| **Привязка к хешу конфига** | мандат действителен только для того конфига (sha256 канонизированного YAML), который оператор видел; любое изменение → мандат невалиден → снова fail-closed |
+| **Привязка к брокеру** | мандат для `binance` не открывает `oanda` |
+| **Потолок лимитов** | max turnover / notional-на-ребаланс / orders-на-ребаланс; рантайм-лимиты ребаланса прижимаются к потолку (строже — можно, слабее — нет) |
+| **TTL** | мандаты истекают (жёсткий максимум — неделя) |
+| **Бюджет** | опционально: макс. суммарный нотионал и/или число ребалансов; при исчерпании мандат закрывается |
+| **Revoke** | в любой момент; авто-снятие при emergency halt и смене брокера |
+| **Hard-caps** | оператор не может превысить жёсткие пределы (turnover ≤ 1.0, notional/ребаланс ≤ $5M, TTL ≤ 7 дней) даже вручную |
+| **Долговечность + tamper-evidence** | состояние — JSON (atomic); каждое событие (GRANT/CONSUME/REVOKE/EXPIRE/REJECT/SUPERSEDE) — в keyed hash-chain аудит Agent-зоны; переживает рестарт |
+
+### Двухшаговая церемония
+
+1. `POST /api/ccea/live_trading/request` — сервер выдаёт **одноразовый
+   confirmation_token** + резюме мандата (config hash, брокер, потолки, TTL,
+   бюджет) + предупреждение «это разрешит АВТОМАТИЧЕСКУЮ отправку ордеров на
+   РЕАЛЬНЫЙ счёт». Оператор читает и осознанно подтверждает.
+2. `POST /api/ccea/live_trading/grant` `{request_id, confirmation_token}` —
+   оператор возвращает токен; только тогда выдаётся мандат. Токен одноразовый
+   (anti-replay: после успеха заявка сжигается); неверный ввод не сжигает заявку
+   (можно повторить в пределах 10-мин TTL; brute-force исключён энтропией токена).
+
+Управление: `POST /api/ccea/live_trading/revoke` (`auth_id` или все),
+`GET /api/ccea/live_trading/status` (активные мандаты + валидность аудита).
+
+### Как ребаланс использует мандат
+
+При live-брокере `run_rebalance`: **precheck** (наличие мандата + совпадение
+хеша конфига + не-исчерпанность бюджета → потолок) → прижать рантайм-лимиты к
+потолку → построить план → **финальная проверка** точных чисел плана (turnover,
+notional, orders) против потолка/бюджета → отправка с `allow_live=True` через тот
+же OMS-стек (firewall/journal/collar/books) на live-движке → **consume** (учёт
+использования). Любой провал на любом шаге → `blocked`, ноль ордеров.
+
+Live-ордера идут через `_ensure_live_engine` — настоящий `LiveExecutionEngine`,
+привязанный к live-коннектору (тот же firewall/hash-chain журнал/price-collar,
+что и paper). Live-брокер исполняет асинхронно: если моментального fill'а нет,
+ордер остаётся `submitted` и реконсилируется штатным путём Agent'а — мы **не
+выдумываем fill**.
+
+### Проверено вживую (2026-07-15)
+
+Церемония на реальном сервере: request (config_hash, ceiling) → grant с неверным
+токеном 409 → grant с верным токеном → активный мандат (binance, TTL 3600s,
+max_rebalances=3) → replay того же токена 404 (anti-replay) → status
+(active=1, **audit_valid=True**) → revoke → status (active=0). Paper-ребаланс на
+том же сервере не затронут (`authorization: null`, sim_paper мандата не требует).
+
 ## Что осталось на следующие итерации
 
-- Авто-ребаланс на **live-брокере** (сейчас fail-closed на paper) — через отдельный
-  CCEA approval-процесс.
+- Live fill-reconciliation loop для десктопа (сейчас live-fill приходит через
+  штатный путь Agent'а; полноценный polling-цикл в супервизоре — отдельная задача).
 - Champion/challenger + автоматический promote (`RIVEN_REQUIRE_PRODUCTION_MODEL`
   уже даёт stage-gate; полное замыкание drift→retrain→promote — P2 №16).
