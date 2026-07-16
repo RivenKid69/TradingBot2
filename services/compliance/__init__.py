@@ -295,13 +295,23 @@ from services.algo_integration import (
 
 # =============================================================================
 # Re-export from ARCHIVE (services.archive.mifid_financial_entity)
-# Financial Entity modules - NOT for ICT Providers
-# Import suppresses the archive warning since we're already in deprecated mode
+# Financial Entity modules - NOT for ICT Providers.
+#
+# This platform ships as an ICT Provider (see module docstring): the MiFID II
+# *Financial Entity* archive (LEI/GLEIF/transaction-reporting/NCA) is
+# deliberately NOT part of the build. It is optional — if the archive package is
+# absent, the facade degrades gracefully and still re-exports the CORE risk
+# controls + INTEGRATION toolkit that ICT Providers actually use, instead of
+# hard-crashing the whole `services.compliance` import (that crash was the
+# P0-A ImportError). ``ARCHIVE_AVAILABLE`` reflects presence honestly.
 # =============================================================================
+ARCHIVE_AVAILABLE = False
+_ARCHIVE_NAMES: list = []
 import warnings as _warnings
-with _warnings.catch_warnings():
-    _warnings.simplefilter("ignore", DeprecationWarning)
-    from services.archive.mifid_financial_entity import (
+try:
+    with _warnings.catch_warnings():
+        _warnings.simplefilter("ignore", DeprecationWarning)
+        from services.archive.mifid_financial_entity import (
         # Config
         ComplianceMode,
         LEIStatus,
@@ -411,6 +421,17 @@ with _warnings.catch_warnings():
         create_algorithm_description,
         create_nca_notification_manager,
     )
+    ARCHIVE_AVAILABLE = True
+except ImportError as _archive_exc:  # MiFID Financial-Entity archive absent (ICT build)
+    _warnings.warn(
+        "services.archive.mifid_financial_entity is not installed (ICT Provider "
+        "build): MiFID II Financial-Entity symbols (LEI/GLEIF/transaction "
+        "reporting/NCA) are unavailable. CORE risk controls and INTEGRATION "
+        f"toolkit remain available via services.compliance. ({_archive_exc})",
+        RuntimeWarning,
+        stacklevel=2,
+    )
+    ARCHIVE_AVAILABLE = False
 
 # =============================================================================
 # Backward compatibility aliases
@@ -763,4 +784,12 @@ __all__ = [
     "NCANotificationManager",
     "create_algorithm_description",
     "create_nca_notification_manager",
+    # Honest availability flag for the archive block
+    "ARCHIVE_AVAILABLE",
 ]
+
+# When the MiFID Financial-Entity archive is absent (ICT Provider build), drop
+# its symbols from the public API so `from services.compliance import *` and
+# __all__ introspection stay honest instead of referencing missing names.
+if not ARCHIVE_AVAILABLE:
+    __all__ = [_n for _n in __all__ if _n in globals()]

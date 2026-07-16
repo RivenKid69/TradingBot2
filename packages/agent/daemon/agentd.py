@@ -242,6 +242,14 @@ class RunControllerConfig:
     require_policy_validation: bool = True
     require_risk_checks: bool = True
 
+    # Model signature (P0-E / Design Doc §15 "Artifact Signature Verification:
+    # REQUIRED"). When enabled, the artifact's model checkpoint(s) must pass the
+    # Ed25519 gate before any pickle is loaded. Policy resolves to 'enforce' for
+    # LIVE (fail-closed) and 'warn' otherwise, unless overridden here / via
+    # RIVEN_MODEL_SIGNATURE_POLICY.
+    require_model_signature: bool = True
+    model_signature_policy: Optional[str] = None
+
     # Idempotency (Design Doc 9.5)
     deployment_id: Optional[str] = None
     run_id: Optional[str] = None
@@ -412,6 +420,10 @@ class RunController:
 
                 # Initialize live runner if artifact available
                 if self._current_artifact and self._current_artifact.extracted_path:
+                    # P0-E: verify Ed25519 model signature BEFORE any strategy
+                    # code / SB3 pickle is loaded from the artifact. Fail-closed
+                    # for LIVE (raises → initialize returns False, run aborts).
+                    self._verify_model_signature()
                     self._init_live_runner()
 
                 self._is_initialized = True
@@ -491,6 +503,29 @@ class RunController:
             except Exception as e:
                 return (False, None, str(e))
         return submit
+
+    def _verify_model_signature(self) -> None:
+        """Ed25519-verify the artifact's model checkpoint(s) before load (P0-E).
+
+        Fail-closed for LIVE: an unsigned/unregistered/tampered checkpoint raises
+        ``ModelSignatureError``, which aborts ``initialize`` (the run never
+        starts). No-op when disabled or when the artifact carries no checkpoint.
+        """
+        if not getattr(self.config, "require_model_signature", True):
+            return
+        if not self._current_artifact or not self._current_artifact.extracted_path:
+            return
+
+        from packages.agent.daemon.model_gate import verify_artifact_models
+
+        live = self.config.execution_mode == ExecutionMode.LIVE
+        artifact_id = getattr(self._current_artifact, "artifact_id", "")
+        verify_artifact_models(
+            self._current_artifact.extracted_path,
+            live=live,
+            policy=getattr(self.config, "model_signature_policy", None),
+            context=f"agentd:{artifact_id}",
+        )
 
     def _init_live_runner(self) -> None:
         """Initialize live runner for strategy execution."""

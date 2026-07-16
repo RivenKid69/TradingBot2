@@ -9227,6 +9227,16 @@ NZD -> RBNZCTR</textarea>
                         </div>
                     </div>
 
+                    <!-- Agent daemon live-safety posture (P0-D config + P0-E signature gate) -->
+                    <div class="pro-card p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="pro-h"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1.5"></i> Agent-демон: конфиг и гейт подписи модели</h3>
+                            <span id="agentd-posture-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-gray-700 text-gray-300">…</span>
+                        </div>
+                        <p class="text-xs text-gray-500 -mt-1">Валидация <span class="font-mono">configs/agent.yaml</span> (документированный запуск демона) и статус Ed25519-гейта подписи модели на пути активации артефакта в live.</p>
+                        <div id="agentd-posture-body" class="text-[11px] font-mono text-gray-400 pro-card-inset p-3">Загрузка…</div>
+                    </div>
+
                     <!-- SBOM Details Panel -->
                     <div class="pro-card p-5 space-y-4">
                         <div class="flex justify-between items-center border-b border-[#232329]/20 pb-1.5">
@@ -25956,10 +25966,11 @@ function renderPipelineStatusDetails(asset) {
 
         function initProSecurity() {
             switchProSecuritySubTab(activeProSecuritySubTabId);
-            
+
             fetchProApprovals();
             fetchDegradedStatus();
             fetchSandboxViolations();
+            refreshAgentDaemonPosture();
 
             if (securityInterval) clearInterval(securityInterval);
             securityInterval = setInterval(() => {
@@ -25972,6 +25983,35 @@ function renderPipelineStatusDetails(asset) {
                     securityInterval = null;
                 }
             }, 3000);
+        }
+
+        async function refreshAgentDaemonPosture() {
+            const badge = document.getElementById('agentd-posture-badge');
+            const body = document.getElementById('agentd-posture-body');
+            if (!badge || !body) return;
+            try {
+                const r = await fetch('/api/agent/daemon/config');
+                const d = await r.json();
+                if (d.ok) {
+                    badge.textContent = 'VALID';
+                    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300';
+                    const sig = d.model_signature || {};
+                    const ks = d.kill_switch || {};
+                    body.innerHTML =
+                        `configs/agent.yaml: <span class="text-emerald-400">OK</span> · агент: ${escapeHtml(d.agent_name || '—')} · cloud: ${escapeHtml(String(d.cloud_endpoint || '—'))}<br>` +
+                        `kill-switch: daily-loss ${ks.max_daily_loss_pct != null ? (ks.max_daily_loss_pct*100).toFixed(0)+'%' : '—'}, max-DD ${ks.max_drawdown_pct != null ? (ks.max_drawdown_pct*100).toFixed(0)+'%' : '—'}<br>` +
+                        `гейт подписи модели на активации артефакта: <span class="${sig.enforced_on_load ? 'text-emerald-400' : 'text-red-400'}">${sig.enforced_on_load ? 'ENFORCED' : 'OFF'}</span> · live-политика: <span class="text-amber-300">${escapeHtml(String(sig.live_policy || '—'))}</span><br>` +
+                        `запуск: <span class="text-gray-300">${escapeHtml(String(d.launch || ''))}</span>`;
+                } else {
+                    badge.textContent = 'INVALID';
+                    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-red-900/60 text-red-300';
+                    body.innerHTML = `<span class="text-red-400">${escapeHtml(String(d.detail || 'config error'))}</span>`;
+                }
+            } catch (e) {
+                badge.textContent = 'ERR';
+                badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-red-900/60 text-red-300';
+                body.textContent = 'Не удалось получить статус агент-демона';
+            }
         }
 
         async function runProArtifactVerification() {

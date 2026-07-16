@@ -1,0 +1,90 @@
+# =============================================================================
+# CCEA Agent Daemon configuration (P0-D)
+# =============================================================================
+# Reference config for the local Agent daemon. The daemon is the ONLY execution
+# zone (holds broker secrets, creates/sends orders, enforces risk). The Cloud
+# never appears here with any order-like field — it only issues lifecycle
+# requests. See docs/CCEA_OVERVIEW.md and docs/CCEA_DESKTOP.md.
+#
+# Launch:
+#   python -m packages.agent.daemon --config configs/agent.yaml
+#   python -m packages.agent.daemon --config configs/agent.yaml --dry-run   # validate & exit
+#   python -m packages.agent.daemon --config configs/agent.yaml --dump-config
+#
+# Priority (highest wins): CLI args > ENV vars > this file > code defaults.
+# Values below are the safe code defaults, made explicit and documented.
+# =============================================================================
+
+agent:
+  # agent_id: generated (UUID) if omitted; set to pin a stable identity.
+  # agent_id: "ccea-agent-01"
+  name: "ccea-agent"
+  version: "1.0.0"
+  # State/logs/artifacts directory. Defaults to ~/.ccea when omitted.
+  # data_dir: "~/.ccea"
+  state_file: "daemon_state.json"
+  auto_recover: true          # attempt safe auto-recovery from degraded states
+  require_preflight: true     # run preflight checks before first live tick
+  enable_telemetry: true      # buffer + redact telemetry to Cloud (redaction is mandatory)
+  safe_shutdown_timeout_seconds: 30
+
+cloud:
+  # Control-plane endpoint. Omit / leave null to run standalone (no Cloud link);
+  # the daemon logs "standalone mode" and still enforces all local controls.
+  endpoint: null
+  # endpoint: "https://cloud.example.com"
+  timeout_seconds: 30
+  heartbeat_interval_seconds: 30
+  # Secrets: prefer ENV (CCEA_ENROLLMENT_TOKEN / CCEA_ACCESS_TOKEN) over the file.
+  enrollment_token: null      # one-time, TTL-limited; obtained from Cloud enrollment
+  access_token: null          # set automatically after successful enrollment
+
+components:
+  # --- Kill switch (account-level circuit breaker; hard caps, cannot be relaxed
+  #     from Cloud). Mirrors institutional desk stop-loss discipline. ---
+  kill_switch:
+    max_daily_loss_pct: 0.30
+    max_drawdown_pct: 0.50
+    max_broker_errors_per_minute: 5
+    max_broker_errors_per_hour: 20
+    max_consecutive_errors: 3
+
+  # --- Time sync: refuse to trade on a badly-skewed clock (order-timestamp
+  #     integrity, exchange recvWindow). ---
+  time_sync:
+    max_drift_seconds: 5.0
+    check_interval_seconds: 60
+    ntp_servers:
+      - "pool.ntp.org"
+
+  # --- Degraded mode: safe behaviour when Cloud is unreachable or the data feed
+  #     goes stale (never trade blind). ---
+  degraded_mode:
+    cloud_timeout_seconds: 120           # tolerate Cloud silence this long before degrading
+    data_stale_threshold_seconds: 30     # data feed older than this → pause
+    auto_recover: true
+
+  # --- Telemetry buffer (durable, redacted before egress). ---
+  telemetry:
+    max_buffer_size: 100000
+    max_age_days: 7
+    batch_size: 100
+    flush_interval_seconds: 30
+
+  # --- Sandbox: strategy artifacts run under resource/egress limits. For live
+  #     production prefer readonly_fs: true and an explicit egress_allowlist. ---
+  sandbox:
+    type: "process"           # process | (container/vm where available)
+    cpu_limit: null           # e.g. 0.5 = half a core; null = unmanaged
+    memory_limit_mb: null     # e.g. 2048; null = unmanaged
+    timeout_seconds: 3600
+    readonly_fs: false
+    egress_allowlist: []      # e.g. ["api.binance.com", "api.alpaca.markets"]
+
+  # --- Keychain / vault: where broker secrets live (Agent zone only). Set
+  #     require_keychain_for_live: true to forbid env/file fallback in live. ---
+  keychain:
+    use_keychain: true
+    fallback_to_env: true
+    fallback_to_file: true
+    require_keychain_for_live: false

@@ -10,13 +10,18 @@ from typing import Final
 
 ZONE: Final[str] = "shared"
 
-# Re-export from core_models
+# Re-export from core_models (base data layer; TimeFrame added for P0-A closure)
 from core_models import (
     OrderIntent,
     TimeFrame,
     Bar,
-    OrderSide,
     OrderType,
+)
+# OrderSide / PositionSide are canonically defined in core_futures (a zone-safe
+# core_* module). They were never in core_models — importing them from there was
+# the P0-A ImportError. Re-export from their real home.
+from core_futures import (
+    OrderSide,
     PositionSide,
 )
 

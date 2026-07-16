@@ -166,9 +166,13 @@ def build_daemon_config(
     kill_switch_cfg = None
     ks_config = components_config.get("kill_switch", {})
     if ks_config:
+        # pct fields are Decimal-typed in KillSwitchConfig; convert from YAML
+        # floats via str() so the hard-cap thresholds are exact (0.30, not
+        # 0.2999999…) and never mix float/Decimal in downstream arithmetic.
+        from decimal import Decimal as _Decimal
         kill_switch_cfg = KillSwitchConfig(
-            max_daily_loss_pct=ks_config.get("max_daily_loss_pct", 0.30),
-            max_drawdown_pct=ks_config.get("max_drawdown_pct", 0.50),
+            max_daily_loss_pct=_Decimal(str(ks_config.get("max_daily_loss_pct", 0.30))),
+            max_drawdown_pct=_Decimal(str(ks_config.get("max_drawdown_pct", 0.50))),
             max_broker_errors_per_minute=ks_config.get("max_broker_errors_per_minute", 5),
             max_broker_errors_per_hour=ks_config.get("max_broker_errors_per_hour", 20),
             max_consecutive_errors=ks_config.get("max_consecutive_errors", 3),
@@ -186,9 +190,18 @@ def build_daemon_config(
     degraded_cfg = None
     dg_config = components_config.get("degraded_mode", {})
     if dg_config:
+        # Map YAML keys to the real DegradedModeConfig fields. Older keys
+        # (cloud_unreachable_threshold_seconds / data_feed_stale_threshold_seconds)
+        # are accepted as aliases so existing configs keep working.
         degraded_cfg = DegradedModeConfig(
-            cloud_unreachable_threshold_seconds=dg_config.get("cloud_unreachable_threshold_seconds", 120),
-            data_feed_stale_threshold_seconds=dg_config.get("data_feed_stale_threshold_seconds", 30),
+            cloud_timeout_seconds=dg_config.get(
+                "cloud_timeout_seconds",
+                dg_config.get("cloud_unreachable_threshold_seconds", 60),
+            ),
+            data_stale_threshold_seconds=dg_config.get(
+                "data_stale_threshold_seconds",
+                dg_config.get("data_feed_stale_threshold_seconds", 30),
+            ),
             auto_recover=dg_config.get("auto_recover", True),
         )
 

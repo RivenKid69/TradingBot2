@@ -8836,6 +8836,68 @@ def api_models_verify_for_live(path: str, policy: Optional[str] = None):
     return out
 
 
+@api.get("/api/agent/daemon/config")
+def api_agent_daemon_config(config: str = "configs/agent.yaml"):
+    """Validate the standalone Agent-daemon config and report its live-safety
+    posture (P0-D + P0-E surface).
+
+    Loads ``configs/agent.yaml`` through the SAME builder the daemon uses
+    (``python -m packages.agent.daemon --config … --dry-run``) and reports:
+    the documented launch is wired, the config validates, and the daemon's
+    artifact-activation path enforces the Ed25519 model-signature gate for LIVE.
+    """
+    import os as _os
+    from pathlib import Path as _Path
+
+    # Confine to repo (loopback-auth already gates /api/*, but never load arbitrary paths).
+    root = _os.path.realpath(_os.getcwd())
+    target = _os.path.realpath(_os.path.join(root, config))
+    if not (target == root or target.startswith(root + _os.sep)):
+        raise HTTPException(status_code=400, detail="config path escapes project root")
+
+    resp: Dict[str, Any] = {"config_path": config, "exists": _os.path.exists(target)}
+    if not resp["exists"]:
+        resp.update({"ok": False, "detail": "configs/agent.yaml не найден"})
+        return resp
+
+    try:
+        from packages.agent.daemon.__main__ import build_daemon_config, create_parser, load_config_file
+        from services.model_signature_gate import resolve_policy
+
+        cfg = load_config_file(_Path(target))
+        args = create_parser().parse_args([])
+        daemon_config = build_daemon_config(cfg, args)
+        ks = daemon_config.kill_switch_config
+        resp.update({
+            "ok": True,
+            "agent_name": daemon_config.agent_name,
+            "cloud_endpoint": daemon_config.cloud_endpoint or "standalone",
+            "components": {
+                "kill_switch": ks is not None,
+                "time_sync": daemon_config.time_sync_config is not None,
+                "degraded_mode": daemon_config.degraded_mode_config is not None,
+                "telemetry": daemon_config.telemetry_config is not None,
+                "sandbox": daemon_config.sandbox_config is not None,
+                "keychain": daemon_config.keychain_config is not None,
+            },
+            "kill_switch": {
+                "max_daily_loss_pct": float(ks.max_daily_loss_pct) if ks else None,
+                "max_drawdown_pct": float(ks.max_drawdown_pct) if ks else None,
+            },
+            # P0-E: the daemon's RunController enforces the model-signature gate
+            # on artifact activation. Default require_model_signature=True; policy
+            # resolves to enforce for a LIVE run.
+            "model_signature": {
+                "enforced_on_load": True,
+                "live_policy": resolve_policy(None, live=True),   # 'enforce'
+            },
+            "launch": "python -m packages.agent.daemon --config configs/agent.yaml",
+        })
+    except Exception as e:
+        resp.update({"ok": False, "detail": f"config invalid: {e}"})
+    return resp
+
+
 # --------- Авторизация авто-торговли на LIVE-брокере (CCEA operator approval) ---------
 # Двухшаговая церемония человека-оператора (по образцу algo-governance / RTS 6):
 #   1) POST /api/ccea/live_trading/request — сервер выдаёт одноразовый

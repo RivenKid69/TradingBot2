@@ -15,6 +15,19 @@ import pytest
 import warnings
 from typing import Any
 
+# The MiFID II Financial-Entity archive is intentionally NOT part of the ICT
+# Provider build (see services/compliance/__init__.py). The facade degrades
+# gracefully; archive-specific tests skip when the archive is unavailable
+# instead of hard-failing on a deliberately-removed module.
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from services.compliance import ARCHIVE_AVAILABLE
+
+_archive_only = pytest.mark.skipif(
+    not ARCHIVE_AVAILABLE,
+    reason="MiFID Financial-Entity archive intentionally absent (ICT Provider build)",
+)
+
 
 class TestFacadeDeprecationWarning:
     """Test that facade emits proper deprecation warnings."""
@@ -268,6 +281,7 @@ class TestIntegrationReexports:
         assert ExecutionQualityReport is not None
 
 
+@_archive_only
 class TestArchiveReexports:
     """Test that ARCHIVE (mifid_financial_entity) symbols are re-exported."""
 
@@ -408,6 +422,7 @@ class TestNewImportPaths:
                 "Integration imports should not produce deprecation warnings"
             )
 
+    @_archive_only
     def test_archive_imports_emit_warning(self) -> None:
         """Verify archive imports emit deprecation warnings."""
         import sys
@@ -461,13 +476,16 @@ class TestStarImport:
             "AlgorithmRegistry",
             "ConformanceTestRunner",
             "CertificateManager",
-            # ARCHIVE
-            "LEIManager",
-            "GLEIFClient",
-            "TransactionReport",
-            "ARMClient",
-            "NCANotificationManager",
         ]
+        if ARCHIVE_AVAILABLE:
+            # ARCHIVE symbols only when the MiFID Financial-Entity archive ships.
+            key_exports += [
+                "LEIManager",
+                "GLEIFClient",
+                "TransactionReport",
+                "ARMClient",
+                "NCANotificationManager",
+            ]
 
         for export in key_exports:
             assert export in __all__, f"{export} should be in __all__"

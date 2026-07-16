@@ -102,6 +102,8 @@ git add . && git commit -m "message" && git push origin main
 | **IB market data** (CME futures) | `adapters/ib/market_data.py` | `pytest tests/test_ib_adapters.py::TestIBMarketDataAdapter` |
 | **IB order execution** (CME) | `adapters/ib/order_execution.py` | `pytest tests/test_ib_adapters.py::TestIBOrderExecutionAdapter` |
 | **Binance spot order execution** (crypto live/panic) | `adapters/binance/order_execution.py` | `pytest tests/test_binance_spot_execution.py` |
+| **Agent daemon config** (standalone launch) | `configs/agent.yaml`, `packages/agent/daemon/__main__.py` | `pytest tests/test_agent_config.py` |
+| **Model signature gate in daemon** (Ed25519, fail-closed LIVE) | `packages/agent/daemon/model_gate.py`, `services/model_signature_gate.py` | `pytest tests/test_agent_model_signature.py` |
 | **CME settlement** (daily variation) | `impl_cme_settlement.py` | `pytest tests/test_cme_settlement.py::TestCMESettlementEngine` |
 | **CME rollover** (contract expiry) | `impl_cme_rollover.py` | `pytest tests/test_cme_settlement.py::TestContractRolloverManager` |
 | **CME trading calendar** | `services/cme_calendar.py` | `pytest tests/test_cme_calendar.py::TestCMETradingCalendar` |
@@ -346,7 +348,8 @@ Agent = secrets + live loop + risk enforce + order creation/sending
 
 **Запуск:**
 ```bash
-python -m packages.agent.daemon.agentd --config configs/agent.yaml   # live execution
+python -m packages.agent.daemon --config configs/agent.yaml            # live execution
+python -m packages.agent.daemon --config configs/agent.yaml --dry-run  # validate config & exit
 python script_live.py --config configs/config_live.yaml --dry-run     # dev/testing only
 ```
 
@@ -591,6 +594,7 @@ Auth: middleware на всех `/api/*` (`RIVEN_API_AUTH_MODE`, default `loopbac
 
 | Дата | Исправление | Влияние |
 |------|-------------|---------|
+| **2026-07-16** | fix(P0-A/D/E): битые импорты + `configs/agent.yaml` + Ed25519-гейт в демоне | **P0-A**: `packages.shared.models` (TimeFrame→`core_models`, OrderSide/PositionSide→`core_futures`, +4 имени в contracts), `adapters.theta_data` (Bar→`core_models`), `services.compliance` (graceful degrade mifid-архива, `ARCHIVE_AVAILABLE`). **P0-D**: `configs/agent.yaml` (полная схема) + фикс `build_daemon_config` (stale `DegradedModeConfig` поля→реальные, Decimal kill-switch пороги) + smoke `--dry-run` + фикс команды запуска. **P0-E**: `packages/agent/daemon/model_gate.py` + `RunController._verify_model_signature` — тот же `verify_model_artifact`, что у RL-загрузчика, на пути активации артефакта демона, fail-closed для LIVE ДО pickle. MVP: `/api/agent/daemon/config` + карточка Pro Security. 16 новых тестов (agent_config 6 + agent_model_signature 10) + compat-facade (29 pass/9 skip) + live smoke. См. [docs/P0_ADE_CLOSURE_2026-07-16.md](docs/P0_ADE_CLOSURE_2026-07-16.md) |
 | **2026-07-16** | feat(crypto): Binance **spot** order-execution адаптер (P0-C, §3.4 — crypto live/panic был невозможен) | Закрыт последний недостающий execution-путь: `adapters/binance/order_execution.py` (`BinanceOrderExecutionAdapter`, spot `/api/v3/*`, HMAC/RestBudgetSession по образцу futures — submit/cancel/status/open-orders/cancel-all/positions-из-балансов/account/last-price + `submit_spot_order` со STOP/TAKE_PROFIT), зарегистрирован для `BINANCE`+`BINANCE_US`. Проводка: panic-halt crypto-ветка теперь реально флэттенит (балансы→синтетические `{asset}USDT`-пары→market-SELL), holdings/close уже звали фабрику. Spot-семантика: long-only, нет leverage/reduceOnly, `avg_entry_price=0` (cost basis честно недоступен). UI различает Binance Spot/Futures в Vault. 17 тестов (вкл. интеграционный panic-flatten) + live smoke; снят lock старого fail-closed поведения. См. [docs/CRYPTO_SPOT_EXECUTION.md](docs/CRYPTO_SPOT_EXECUTION.md) |
 | **2026-07-16** | feat(risk): enforcement риск-лимитов Lite в live-контуре (P0-B, §3.6 — «самый опасный» гэп) | Двухуровневая защита: pre-trade RiskChecker с leverage/drawdown/daily-loss/concentration из `lite_limits` + intra-day `LiveRiskMonitor` circuit breaker (day-loss/max-DD → auto-halt kill switch + флэттенинг + отзыв live-мандатов). `packages/agent/policy/risk_checker.py` (новые `LEVERAGE`/`MAX_DRAWDOWN` checks, обратно совместимо), `services/live_risk_limits.py` (loader+builder+monitor, durable peak equity), проводка в `ccea/desktop_supervisor.py` (оба движка + on_fill hook + reload без рестарта + EOD reset). REST `/api/risk/enforcement`, обновлённые `/api/risk/limits` (честный `applied_to_agent`) + `/api/panic_reset`. Lite-карточка «Применение лимитов (live)» (usage-бары + ARMED/BREACHED). 16 тестов + live smoke (armed→pre-trade block→breach→auto-halt→reset). См. [docs/RISK_LIMIT_ENFORCEMENT.md](docs/RISK_LIMIT_ENFORCEMENT.md) |
 | **2026-07-16** | feat(trade): ручной ордер-тикет + частичное закрытие позиций (§5.27–28) | `submit_manual_order` (market/limit/stop/stop-limit, TIF, reduce-only) + `close_position(quantity)` partial + `open_orders`/`cancel_order` в `ccea/desktop_supervisor.py`; REST `/api/ccea/order/{submit,cancel}`, `/api/ccea/open_orders`, `/api/portfolio/close` partial; UI-карточки «Ордер-тикет» + «Рабочие ордера» в Lite Portfolio; всё через настоящий Agent OMS (firewall/journal/fill/books). Журнал сделан thread-safe (check_same_thread=False + lock). 25 тестов + live smoke. См. [docs/MANUAL_ORDER_TICKET.md](docs/MANUAL_ORDER_TICKET.md) |

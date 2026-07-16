@@ -13,12 +13,15 @@ Key Types:
 """
 
 from .intent import OrderIntent, IntentType, IntentSide
-from .strategy import StrategyContract, StrategyResult, StrategyContext
+from .strategy import StrategyContract, StrategyResult, StrategyContext, MarketSnapshot
 from .config import (
     StrategyConfig,
     RiskConfig,
     ExecutionConfig,
     ConfigContract,
+    ExecutionMode,
+    RiskLevel,
+    ChangeClass,
 )
 from .telemetry import (
     TelemetryEvent,
@@ -41,11 +44,15 @@ __all__ = [
     "StrategyContract",
     "StrategyResult",
     "StrategyContext",
+    "MarketSnapshot",
     # Config
     "StrategyConfig",
     "RiskConfig",
     "ExecutionConfig",
     "ConfigContract",
+    "ExecutionMode",
+    "RiskLevel",
+    "ChangeClass",
     # Telemetry
     "TelemetryEvent",
     "TelemetryLevel",

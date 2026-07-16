@@ -54,7 +54,8 @@ from typing import (
 import pandas as pd
 
 from adapters.base import MarketDataAdapter
-from adapters.models import ExchangeVendor, Bar
+from adapters.models import ExchangeVendor
+from core_models import Bar  # Bar is a core model, not an adapters.models symbol
 from core_options import (
     OptionsContractSpec,
     OptionType,
