@@ -9596,6 +9596,107 @@ def api_risk_enforcement():
     return _CCEA_SUPERVISOR.risk_enforcement_status()
 
 
+# ============================================================================
+# Web3: Gas Guard (реальный on-chain gas oracle + порог) — закрытие NOT-IMPL
+# ============================================================================
+
+@api.get("/api/web3/gas")
+def api_web3_gas(chain: str = None):
+    """Живой вердикт Gas Guard: текущая цена газа (public RPC) vs порог."""
+    from services.web3 import gas_oracle
+    cfg = gas_oracle.load_config()
+    return gas_oracle.evaluate(chain, cfg=cfg)
+
+
+class GasGuardPayload(BaseModel):
+    enabled: bool = False
+    threshold_gwei: float = 35.0
+    chain: str = "ethereum"
+
+
+@api.post("/api/web3/gas_guard")
+def api_web3_gas_guard_save(payload: GasGuardPayload):
+    """Сохранить порог Gas Guard (долговечно) и вернуть свежий вердикт."""
+    from services.web3 import gas_oracle
+    if payload.threshold_gwei <= 0:
+        raise HTTPException(status_code=400, detail="threshold_gwei должен быть > 0")
+    cfg = gas_oracle.load_config()
+    cfg.enabled = bool(payload.enabled)
+    cfg.threshold_gwei = float(payload.threshold_gwei)
+    cfg.chain = str(payload.chain or cfg.chain)
+    gas_oracle.save_config(cfg)
+    return {"ok": True, "saved": cfg.to_dict(), "verdict": gas_oracle.evaluate(cfg.chain, cfg=cfg)}
+
+
+@api.get("/api/web3/gas_guard/preflight")
+def api_web3_gas_preflight(chain: str = None):
+    """Pre-trade gate: allow=False → on-chain транзакцию слать нельзя."""
+    from services.web3 import gas_oracle
+    return gas_oracle.preflight(chain)
+
+
+# ============================================================================
+# Custody: Fireblocks MPC co-signing vault (реальный API-клиент) — закрытие стаба
+# ============================================================================
+
+@api.get("/api/custody/fireblocks/status")
+def api_fireblocks_status():
+    """Честный статус: настроен ли Fireblocks (без раскрытия секретов)."""
+    from services.custody import fireblocks_client as fb
+    cfg = fb.load_config()
+    return {"configured": cfg.configured, **cfg.public_dict()}
+
+
+class FireblocksConfigPayload(BaseModel):
+    api_key: str
+    private_key_path: str = ""      # путь к .key (ключ НЕ копируется)
+    private_key_pem: Optional[str] = None   # разовый PEM (в память, не персистится)
+    base_url: Optional[str] = None
+    default_vault_account_id: str = ""
+    sandbox: bool = False
+    save: bool = True
+
+
+@api.post("/api/custody/fireblocks/connect")
+def api_fireblocks_connect(payload: FireblocksConfigPayload):
+    """Реальное подключение к Fireblocks (валидирует креды вызовом API).
+
+    Без валидных кред честно возвращает ok:false + причину — это не заглушка,
+    а рабочий connector (нужен institutional-аккаунт Fireblocks)."""
+    from services.custody import fireblocks_client as fb
+    base = payload.base_url or (fb.SANDBOX_URL if payload.sandbox else fb.PROD_URL)
+    cfg = fb.FireblocksConfig(
+        api_key=payload.api_key.strip(),
+        private_key_path=payload.private_key_path.strip(),
+        base_url=base,
+        default_vault_account_id=payload.default_vault_account_id.strip(),
+    )
+    result = fb.connect(cfg, private_key_pem=payload.private_key_pem)
+    # Персистим ТОЛЬКО если подключение успешно и есть путь (raw PEM не храним).
+    if result.get("ok") and payload.save and cfg.private_key_path:
+        try:
+            fb.save_config(cfg)
+            result["saved"] = True
+        except Exception as e:
+            result["saved"] = False
+            result["save_error"] = str(e)
+    return result
+
+
+@api.get("/api/custody/fireblocks/vaults")
+def api_fireblocks_vaults(limit: int = 25):
+    """Список vault accounts (реальный вызов; 400 если не настроено)."""
+    from services.custody import fireblocks_client as fb
+    cfg = fb.load_config()
+    if not cfg.configured:
+        raise HTTPException(status_code=400, detail="Fireblocks не настроен — сначала /connect")
+    try:
+        client = fb.FireblocksClient(cfg)
+        return client.list_vault_accounts(limit=limit)
+    except fb.FireblocksError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @api.get("/api/portfolio/risk_summary")
 def api_portfolio_risk_summary():
     """Honest portfolio risk snapshot (audit L2-008).

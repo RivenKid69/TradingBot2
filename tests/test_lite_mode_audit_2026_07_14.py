@@ -370,12 +370,17 @@ def test_lite_ui_saves_all_risk_fields_via_typed_endpoint():
 
 
 # ---------------------------------------------------------------------------
-# L2-007 — Gas Guard no longer claims an active DEX guard
+# L2-007 — Gas Guard is now a REAL on-chain gas oracle + threshold (2026-07-16),
+# no longer a fabricated "active" guard NOR a permanent "NOT IMPLEMENTED" stub.
 # ---------------------------------------------------------------------------
 
-def test_gas_guard_is_marked_not_implemented():
+def test_gas_guard_is_real_not_fabricated_or_stub():
+    # Not a fabricated always-green "active" guard...
     assert "Gas Guard Active" not in HTML
-    assert "NOT IMPLEMENTED" in HTML
+    # ...and no longer a dead "NOT IMPLEMENTED" placeholder either — it's wired
+    # to the real oracle endpoint with a live verdict.
+    assert "Gas Guard — NOT IMPLEMENTED" not in HTML
+    assert "/api/web3/gas_guard" in HTML and "function saveGasGuard" in HTML
 
 
 # ---------------------------------------------------------------------------

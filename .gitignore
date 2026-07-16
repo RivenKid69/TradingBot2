@@ -175,3 +175,7 @@ state/close_state.json
 # intraday feeds (downloaded, reproducible via scripts/download_premium_data.py)
 data/minute/
 data/ticks/
+
+# web3/custody runtime config (per-user, not source)
+state/web3_gas_guard.json
+state/fireblocks_config.json

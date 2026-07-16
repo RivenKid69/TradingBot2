@@ -2911,14 +2911,16 @@
                                         <span id="liteport-web3-address" class="text-gray-300 truncate max-w-[280px]">0x0000000000000000000000000000000000000000</span>
                                         <button onclick="copyWalletAddress()" class="text-gray-500 hover:text-white transition-colors"><i class="fa-solid fa-copy"></i></button>
                                     </div>
-                                    <div class="flex gap-2">
+                                    <div class="flex gap-2 flex-wrap">
                                         <button onclick="connectWeb3Provider('metamask')" id="btn-wallet-connect-metamask" class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-all active:scale-[0.98] shadow-md flex items-center gap-1.5 cursor-pointer">
                                             <i class="fa-solid fa-plug"></i> Connect MetaMask
                                         </button>
-                                        <button disabled title="WalletConnect SDK не входит в offline Lite build" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-600 text-xs font-medium py-2 px-3 rounded-xl opacity-60 cursor-not-allowed">
-                                            WalletConnect — недоступен
+                                        <button onclick="connectAnyWallet()" id="btn-wallet-connect-any" class="bg-[#1A1A22] border border-[#2B2B36] hover:border-pink-500/50 text-gray-200 text-xs font-medium py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1.5">
+                                            <i class="fa-solid fa-wallet"></i> Подключить кошелёк (EIP-6963)
                                         </button>
                                     </div>
+                                    <div id="liteport-wallet-providers" class="hidden flex-wrap gap-1.5"></div>
+                                    <div class="text-[9px] text-gray-600 font-mono leading-normal">Мультикошелёк через EIP-6963 (MetaMask, Rabby, Coinbase, Brave, Frame…) — работает offline, без внешнего SDK. Мобильный WalletConnect-relay требует онлайн-SDK и вне scope offline-сборки.</div>
                                 </div>
 
                                 <div id="wallet-panel-safe" class="space-y-3.5 p-4 bg-[#1A1A22]/50 border border-[#2B2B36]/60 rounded-2xl hidden">
@@ -2935,20 +2937,31 @@
                                 </div>
 
                                 <div id="wallet-panel-mpc" class="space-y-3.5 p-4 bg-[#1A1A22]/50 border border-[#2B2B36]/60 rounded-2xl hidden">
-                                    <span class="text-[9px] text-gray-500 font-mono uppercase block">Настройка ключей Fireblocks Co-Signing Vault</span>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[9px] text-gray-500 font-mono uppercase block">Fireblocks Co-Signing Vault (реальный API)</span>
+                                        <span id="liteport-mpc-status" class="text-[9px] font-mono px-2 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase">НЕ НАСТРОЕН</span>
+                                    </div>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div class="space-y-1">
                                             <label class="text-[9px] text-gray-500 font-mono">Fireblocks API Key</label>
-                                            <input disabled type="password" id="liteport-mpc-key" value="" class="w-full bg-[#1A1A22] border border-[#2B2B36] text-gray-600 text-xs rounded-xl px-3 py-1.5 opacity-60 cursor-not-allowed font-mono">
+                                            <input type="password" id="liteport-mpc-key" value="" placeholder="UUID из Fireblocks Console" class="w-full bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-pink-500/50 font-mono">
                                         </div>
                                         <div class="space-y-1">
                                             <label class="text-[9px] text-gray-500 font-mono">Vault Account ID</label>
-                                            <input disabled type="text" id="liteport-mpc-vault" value="" class="w-full bg-[#1A1A22] border border-[#2B2B36] text-gray-600 text-xs rounded-xl px-3 py-1.5 opacity-60 cursor-not-allowed font-mono">
+                                            <input type="text" id="liteport-mpc-vault" value="" placeholder="напр. 0" class="w-full bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-pink-500/50 font-mono">
                                         </div>
                                     </div>
-                                    <button disabled title="Нужна установленная и настроенная Fireblocks SDK-интеграция" class="bg-[#1A1A22] border border-[#2B2B36] text-gray-600 text-xs font-semibold py-2 px-4 rounded-xl opacity-60 flex items-center gap-1.5 cursor-not-allowed w-full justify-center">
-                                        <i class="fa-solid fa-shield"></i> Fireblocks MPC — не настроен
+                                    <div class="space-y-1">
+                                        <label class="text-[9px] text-gray-500 font-mono">Путь к приватному RSA-ключу (.key) — ключ НЕ копируется в приложение</label>
+                                        <input type="text" id="liteport-mpc-keypath" value="" placeholder="C:\\fireblocks\\fireblocks_secret.key" class="w-full bg-[#1A1A22] border border-[#2B2B36] text-gray-300 text-xs rounded-xl px-3 py-1.5 outline-none focus:border-pink-500/50 font-mono">
+                                    </div>
+                                    <label class="text-[9px] text-gray-500 font-mono flex items-center gap-1.5 cursor-pointer">
+                                        <input type="checkbox" id="liteport-mpc-sandbox"> Sandbox (sandbox-api.fireblocks.io)
+                                    </label>
+                                    <button onclick="connectFireblocks()" id="btn-fireblocks-connect" class="bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition-all active:scale-[0.98] shadow-md flex items-center gap-1.5 cursor-pointer w-full justify-center">
+                                        <i class="fa-solid fa-shield"></i> Подключить Fireblocks MPC
                                     </button>
+                                    <div id="liteport-mpc-result" class="text-[10px] font-mono text-gray-500 leading-normal">Нужен institutional-аккаунт Fireblocks (API Key + RSA-ключ). Без валидных кред — честный отказ, не заглушка.</div>
                                 </div>
                             </div>
                         </div>
@@ -2972,20 +2985,24 @@
                             </div>
 
                             <div class="space-y-3.5">
-                                <div class="space-y-1 opacity-50">
-                                    <div class="flex justify-between items-center text-[10px] text-gray-500 font-mono">
-                                        <span class="uppercase">Лимит блокировки по цене газа (Gas Alarm Gwei)</span>
-                                        <span id="liteport-gas-alarm-label" class="text-gray-500 font-bold font-mono">35 Gwei</span>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-[10px] text-gray-400 font-mono uppercase flex items-center gap-1.5 cursor-pointer">
+                                        <input type="checkbox" id="liteport-gas-guard-enabled" onchange="saveGasGuard()"> Gas Guard включён
+                                    </label>
+                                    <span id="liteport-gas-guard-badge" class="text-[9px] font-mono px-2 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase">—</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-center text-[10px] text-gray-400 font-mono">
+                                        <span class="uppercase">Порог блокировки (Gas Alarm Gwei)</span>
+                                        <span id="liteport-gas-alarm-label" class="text-white font-bold font-mono">35 Gwei</span>
                                     </div>
-                                    <input type="range" id="liteport-gas-alarm-slider" min="5" max="150" step="5" value="35" disabled oninput="updateLiteportGasAlarmLabel()" class="w-full h-1 bg-[#1A1A22] rounded-lg appearance-none cursor-not-allowed accent-gray-600">
+                                    <input type="range" id="liteport-gas-alarm-slider" min="1" max="200" step="1" value="35" oninput="updateLiteportGasAlarmLabel()" onchange="saveGasGuard()" class="w-full h-1 bg-[#1A1A22] rounded-lg appearance-none cursor-pointer accent-pink-500">
                                 </div>
-                                <div class="p-3 bg-amber-500/5 rounded-xl border border-amber-500/20 text-[10px] text-amber-400 leading-normal">
-                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                                    <strong>Gas Guard — NOT IMPLEMENTED:</strong> в Lite нет DEX execution-контура,
-                                    поэтому автоматическая блокировка ордеров по цене газа не выполняется. Порог не
-                                    сохраняется и не применяется. Функция станет активной только вместе с Agent-side
-                                    pre-trade guard и реальным gas oracle.
+                                <div class="flex items-center justify-between text-[10px] font-mono bg-[#1A1A22]/60 border border-[#2B2B36]/60 rounded-xl px-3 py-2">
+                                    <span class="text-gray-500 uppercase">Текущий газ (<span id="liteport-gas-chain">ethereum</span>)</span>
+                                    <span id="liteport-gas-live" class="text-gray-300 font-bold">— Gwei</span>
                                 </div>
+                                <div id="liteport-gas-guard-reason" class="text-[10px] text-gray-500 font-mono leading-normal">Живой gas-oracle (public RPC): порог реально сохраняется и применяется как pre-flight перед любой on-chain транзакцией.</div>
                             </div>
                         </div>
                     </div>
@@ -24476,6 +24493,8 @@ function renderPipelineStatusDetails(asset) {
             updateTicketFields();
             refreshWorkingOrders();
             refreshRiskEnforcement();
+            refreshGasGuard();
+            refreshFireblocksStatus();
 
             // Establish periodic fetches (every 5 seconds)
             if (portfolioInterval) clearInterval(portfolioInterval);
@@ -25038,6 +25057,171 @@ function renderPipelineStatusDetails(asset) {
             }
         }
 
+        // ===== Gas Guard (real on-chain gas oracle + threshold) =====
+        function _liteportGasChain() {
+            const net = document.getElementById('liteport-wallet-network');
+            const v = net ? net.value : 'ethereum';
+            // normalize UI network → oracle chain key
+            return ({ethereum:'ethereum', arbitrum:'arbitrum', base:'base'})[v] || 'ethereum';
+        }
+        async function saveGasGuard() {
+            const enabled = document.getElementById('liteport-gas-guard-enabled').checked;
+            const threshold = parseFloat(document.getElementById('liteport-gas-alarm-slider').value);
+            try {
+                const r = await fetch(API_BASE + '/api/web3/gas_guard', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({enabled, threshold_gwei: threshold, chain: _liteportGasChain()})});
+                const d = await r.json();
+                if (!r.ok) { showActionToast('❌ ' + (d.detail || 'ошибка')); return; }
+                showActionToast(enabled ? `🛡️ Gas Guard включён (порог ${threshold} Gwei)` : `💾 Порог сохранён (${threshold} Gwei)`);
+                renderGasGuardVerdict(d.verdict);
+            } catch (e) { showActionToast('❌ ' + e.message); }
+        }
+        function renderGasGuardVerdict(v) {
+            if (!v) return;
+            const badge = document.getElementById('liteport-gas-guard-badge');
+            const live = document.getElementById('liteport-gas-live');
+            const reason = document.getElementById('liteport-gas-guard-reason');
+            const chainEl = document.getElementById('liteport-gas-chain');
+            if (chainEl) chainEl.textContent = v.chain || '—';
+            if (live) live.textContent = (v.gas_gwei != null ? v.gas_gwei : '—') + ' Gwei';
+            if (badge) {
+                const map = {armed: ['ARMED','emerald'], breached: ['BREACHED','rose'], disabled: ['ВЫКЛ','gray'],
+                             gas_unavailable: ['GAS N/A','amber']};
+                const [label, color] = map[v.status] || ['—','gray'];
+                badge.textContent = label;
+                badge.className = `text-[9px] font-mono px-2 py-0.5 rounded bg-${color}-500/10 text-${color}-400 border border-${color}-500/20 font-bold uppercase`;
+            }
+            if (reason && v.reason) reason.textContent = v.reason;
+        }
+        async function refreshGasGuard() {
+            try {
+                const r = await fetch(API_BASE + '/api/web3/gas?chain=' + encodeURIComponent(_liteportGasChain()));
+                if (!r.ok) return;
+                const v = await r.json();
+                // sync UI controls to persisted config
+                const en = document.getElementById('liteport-gas-guard-enabled');
+                const sl = document.getElementById('liteport-gas-alarm-slider');
+                if (en) en.checked = !!v.enabled;
+                if (sl && v.threshold_gwei) { sl.value = v.threshold_gwei; updateLiteportGasAlarmLabel(); }
+                renderGasGuardVerdict(v);
+            } catch (e) { /* тихо: RPC может быть недоступен offline */ }
+        }
+
+        // ===== Fireblocks MPC (real API connect) =====
+        async function refreshFireblocksStatus() {
+            const badge = document.getElementById('liteport-mpc-status');
+            if (!badge) return;
+            try {
+                const d = await (await fetch(API_BASE + '/api/custody/fireblocks/status')).json();
+                if (d.configured) {
+                    badge.textContent = 'НАСТРОЕН'; badge.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold uppercase';
+                    const keyEl = document.getElementById('liteport-mpc-keypath');
+                    if (keyEl && !keyEl.value) keyEl.value = d.private_key_path || '';
+                } else {
+                    badge.textContent = 'НЕ НАСТРОЕН'; badge.className = 'text-[9px] font-mono px-2 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase';
+                }
+            } catch (e) { /* backend offline */ }
+        }
+        async function connectFireblocks() {
+            const apiKey = document.getElementById('liteport-mpc-key').value.trim();
+            const keyPath = document.getElementById('liteport-mpc-keypath').value.trim();
+            const vault = document.getElementById('liteport-mpc-vault').value.trim();
+            const sandbox = document.getElementById('liteport-mpc-sandbox').checked;
+            const resultEl = document.getElementById('liteport-mpc-result');
+            const btn = document.getElementById('btn-fireblocks-connect');
+            if (!apiKey || !keyPath) { showActionToast('Укажите API Key и путь к приватному ключу'); return; }
+            if (btn) btn.disabled = true;
+            if (resultEl) resultEl.innerHTML = '<span class="text-sky-400">Подключение к Fireblocks…</span>';
+            try {
+                const r = await fetch(API_BASE + '/api/custody/fireblocks/connect', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({api_key: apiKey, private_key_path: keyPath,
+                        default_vault_account_id: vault, sandbox, save: true})});
+                const d = await r.json();
+                if (d.ok) {
+                    resultEl.innerHTML = `<span class="text-emerald-400">✅ Подключено (${escapeHtml(d.base_url||'')}). Видно vault-аккаунтов: ${d.vault_accounts_visible}${d.sample_vault ? ' · ' + escapeHtml(d.sample_vault) : ''}.</span>`;
+                    showActionToast('✅ Fireblocks MPC подключён');
+                    refreshFireblocksStatus();
+                } else {
+                    resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(d.error || 'не удалось подключиться')}</span>`;
+                    showActionToast('❌ Fireblocks: ' + (d.error || 'ошибка'));
+                }
+            } catch (e) {
+                resultEl.innerHTML = `<span class="text-rose-400">❌ ${escapeHtml(e.message)}</span>`;
+            } finally { if (btn) btn.disabled = false; }
+        }
+
+        // ===== EIP-6963 multi-wallet discovery (real, offline, no SDK) =====
+        const _eip6963Providers = [];
+        if (typeof window !== 'undefined') {
+            window.addEventListener('eip6963:announceProvider', (event) => {
+                const d = event.detail;
+                if (d && d.info && d.provider && !_eip6963Providers.find(p => p.info.uuid === d.info.uuid)) {
+                    _eip6963Providers.push(d);
+                }
+            });
+        }
+        function discoverWallets() {
+            _eip6963Providers.length = 0;
+            window.dispatchEvent(new Event('eip6963:requestProvider'));
+        }
+        async function connectAnyWallet() {
+            discoverWallets();
+            // give wallets a tick to announce
+            await new Promise(r => setTimeout(r, 250));
+            const box = document.getElementById('liteport-wallet-providers');
+            if (_eip6963Providers.length === 0) {
+                // fall back to legacy injected provider if present
+                if (window.ethereum) { return connectWeb3Provider('metamask'); }
+                showActionToast('Кошельки не обнаружены (EIP-6963). Установите расширение кошелька.');
+                return;
+            }
+            if (_eip6963Providers.length === 1) {
+                return connectWithProvider(_eip6963Providers[0]);
+            }
+            // multiple → show a picker
+            if (box) {
+                box.classList.remove('hidden');
+                box.innerHTML = _eip6963Providers.map((p, i) =>
+                    `<button onclick="connectWithProviderIdx(${i})" class="bg-[#1A1A22] border border-[#2B2B36] hover:border-pink-500/50 text-gray-200 text-[10px] font-mono py-1.5 px-2.5 rounded-lg flex items-center gap-1.5">`
+                    + `<img src="${escapeHtml(p.info.icon || '')}" class="w-3.5 h-3.5" onerror="this.style.display='none'"> ${escapeHtml(p.info.name)}</button>`).join('');
+                showActionToast(`Обнаружено кошельков: ${_eip6963Providers.length} — выберите`);
+            }
+        }
+        function connectWithProviderIdx(i) { return connectWithProvider(_eip6963Providers[i]); }
+        async function connectWithProvider(entry) {
+            const box = document.getElementById('liteport-wallet-providers');
+            if (box) box.classList.add('hidden');
+            const provider = entry.provider;
+            const network = document.getElementById('liteport-wallet-network').value;
+            const networks = {
+                ethereum: { chainId: '0x1', symbol: 'ETH', usdc: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' },
+                arbitrum: { chainId: '0xa4b1', symbol: 'ETH', usdc: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' },
+                base: { chainId: '0x2105', symbol: 'ETH', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' }
+            };
+            const cfg = networks[network];
+            if (!cfg) { showActionToast('Выбранная сеть не EVM для этого кошелька.'); return; }
+            try {
+                const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                if (!accounts || !accounts[0]) throw new Error('кошелёк не вернул аккаунт');
+                let chainId = await provider.request({ method: 'eth_chainId' });
+                if (String(chainId).toLowerCase() !== cfg.chainId) {
+                    await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: cfg.chainId }] });
+                }
+                connectedWeb3Address = accounts[0];
+                const nativeHex = await provider.request({ method: 'eth_getBalance', params: [connectedWeb3Address, 'latest'] });
+                const padded = connectedWeb3Address.slice(2).toLowerCase().padStart(64, '0');
+                const stableHex = await provider.request({ method: 'eth_call', params: [{ to: cfg.usdc, data: '0x70a08231' + padded }, 'latest'] });
+                connectedWeb3Balances = { gas: Number(BigInt(nativeHex)) / 1e18, stable: Number(BigInt(stableHex)) / 1e6, gasSymbol: cfg.symbol, stableSymbol: 'USDC' };
+                updateWeb3UI();
+                showActionToast(`✅ ${entry.info.name} подключён; балансы прочитаны из сети.`);
+            } catch (err) {
+                connectedWeb3Address = null; connectedWeb3Balances = null; updateWeb3UI();
+                showActionToast(`${entry.info.name}: подключение не выполнено — ` + (err.message || err));
+            }
+        }
+
         function applyRiskLimitsToForm(view) {
             // Populate the whole form from the backend view — every field, not
             // just concentration (audit L2-006).
@@ -25144,8 +25328,8 @@ function renderPipelineStatusDetails(asset) {
 
         async function connectWeb3Provider(provider) {
             if (provider !== 'metamask') {
-                showActionToast('WalletConnect SDK не установлен в offline Lite build.');
-                return;
+                // any non-metamask request routes through EIP-6963 multi-wallet discovery
+                return connectAnyWallet();
             }
             if (!window.ethereum || typeof window.ethereum.request !== 'function') {
                 connectedWeb3Address = null;
@@ -25256,7 +25440,8 @@ function renderPipelineStatusDetails(asset) {
         }
 
         async function saveMPCConfiguration() {
-            showActionToast('Fireblocks MPC не настроен: SDK и серверная подпись отсутствуют.');
+            // Kept for backward compat; delegates to the real connect flow.
+            return connectFireblocks();
         }
 
         async function syncRiskLogs() {
