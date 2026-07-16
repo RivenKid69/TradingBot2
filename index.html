@@ -25897,6 +25897,7 @@ function renderPipelineStatusDetails(asset) {
         const proRiskFactorCharts = {};
         function renderProRiskFactor() {
             if (typeof Chart === 'undefined') return;
+            showSimBadge(true, 'DEMO — иллюстративные факторные беты (не расчёт по реальным позициям)', activeModuleId);
             const factors = [
                 { f: 'Market (beta)', beta: 0.34, lim: 0.50, t: 4.1 },
                 { f: 'Momentum', beta: 0.62, lim: 0.60, t: 5.8 },
@@ -25938,6 +25939,7 @@ function renderPipelineStatusDetails(asset) {
         const proRiskScenarioCharts = {};
         function renderProRiskScenario(notify) {
             if (typeof Chart === 'undefined') return;
+            showSimBadge(true, 'DEMO — иллюстративный стресс-сценарий (не по реальному портфелю). Реальные сценарии: XS pre-trade / /api/xs/pretrade_risk', activeModuleId);
             const scn = document.getElementById('pro-risk-scenario-select').value;
             const mult = parseFloat(document.getElementById('pro-risk-scenario-mult').value) || 1;
             // base shock sensitivity per strategy class (fraction of NAV)
@@ -26040,27 +26042,20 @@ function renderPipelineStatusDetails(asset) {
                     document.getElementById('leak-gap-ms').value = leak.max_gap_ms;
                 }
 
-                // Update audit trail table
+                // Audit trail: show ONLY the real, current kill-switch/firewall
+                // state (no fabricated COMPLIANCE_SYNC/LIMIT_CHECK rows or fake
+                // hashes). The full hash-chained audit lives in the durable
+                // journal — Pro → Dashboard → Books & Records (/api/agent/journal/integrity).
                 const trailBody = document.getElementById('killswitch-trail-body');
                 if (trailBody) {
-                    trailBody.innerHTML = '';
-                    const logs = [
-                        {ts: new Date().toLocaleTimeString(), event: data.kill_switch_active ? "HALT_TRIGGERED" : "FIREWALL_ARMED", scope: "ALL", reason: data.kill_switch_reason, hash: data.kill_switch_active ? "8d2b7a91..." : "5f3c9e12..."},
-                        {ts: "14:15:22", event: "COMPLIANCE_SYNC", scope: "CLOCK", reason: "DRIFT_OK", hash: "9a2f7c3b..."},
-                        {ts: "13:02:10", event: "LIMIT_CHECK", scope: "PDT", reason: "MARGIN_OK", hash: "a3b5c7d9..."}
-                    ];
-                    logs.forEach(l => {
-                        const tr = document.createElement('tr');
-                        tr.className = 'border-b border-[#232329]/20';
-                        tr.innerHTML = `
-                            <td class="py-2 text-white">${l.ts}</td>
-                            <td class="text-rose-400 font-semibold">${l.event}</td>
-                            <td>${l.scope}</td>
-                            <td>${l.reason}</td>
-                            <td class="text-right text-gray-500 font-mono">${l.hash}</td>
-                        `;
-                        trailBody.appendChild(tr);
-                    });
+                    const ev = data.kill_switch_active ? "HALT_TRIGGERED" : "FIREWALL_ARMED";
+                    const reason = data.kill_switch_reason || (data.kill_switch_active ? '—' : 'armed');
+                    trailBody.innerHTML =
+                        `<tr class="border-b border-[#232329]/20">`
+                        + `<td class="py-2 text-white">${new Date().toLocaleTimeString()}</td>`
+                        + `<td class="${data.kill_switch_active ? 'text-rose-400' : 'text-emerald-400'} font-semibold">${ev}</td>`
+                        + `<td>ALL</td><td>${escapeHtml(String(reason))}</td>`
+                        + `<td class="text-right text-gray-600 font-mono text-[9px]">полный hash-chain → Books &amp; Records</td></tr>`;
                 }
             } catch (err) {
                 console.error("Error fetching risk summary:", err);
@@ -26212,7 +26207,7 @@ function renderPipelineStatusDetails(asset) {
         function triggerCmeContractRollover(symbol) {
             showActionToast(`Запуск авто-спреда ролловера для ${symbol}...`);
             setTimeout(() => {
-                showActionToast(`✓ Ликвидация ESM6 и покупка ESU6 завершена успешно.`);
+                showActionToast(`DEMO: ролловер ${symbol} НЕ выполнен (нет реального фьючерсного брокера). Реальный ролловер — через CCEA Agent + IB.`);
             }, 1000);
         }
 
@@ -26350,11 +26345,9 @@ function renderPipelineStatusDetails(asset) {
             const tr = parseFloat(document.getElementById('cython-atr-trailing').value);
             const cash = parseFloat(document.getElementById('cython-cash-threshold').value);
 
-            showActionToast("Сохранение параметров ядра рисков...");
-            // Simulate saving to local agent config / vault
-            setTimeout(() => {
-                showActionToast(`✓ Настройки сохранены. SL: ${enabled ? 'ВКЛ' : 'ВЫКЛ'} (${sl}x), TP: ${tp}x, Trailing: ${tr}x, Bankruptcy: $${cash}`);
-            }, 500);
+            // Honest: this panel does not persist to the agent risk config.
+            // Real risk limits with live enforcement: Lite → Портфель → Риск-лимиты.
+            showActionToast(`DEMO: параметры (SL ${enabled ? 'ВКЛ' : 'ВЫКЛ'} ${sl}x, TP ${tp}x) НЕ сохраняются здесь. Реальные лимиты с enforcement — Lite → Портфель.`);
         }
 
         // ------------------ PRO MODE CCEA SECURITY & DEPLOYMENT LOGIC (TAB 7) ------------------
@@ -26626,7 +26619,7 @@ function renderPipelineStatusDetails(asset) {
         function rotateVaultMasterKey() {
             showActionToast("Ротация Master Key...");
             setTimeout(() => {
-                showActionToast("✓ Master Key перегенерирован и сохранен в OS Keychain.");
+                showActionToast("DEMO: ротация Master Key здесь не выполняется (нет реальной перегенерации ключа vault).");
             }, 800);
         }
 
@@ -26774,7 +26767,7 @@ function renderPipelineStatusDetails(asset) {
             const ping = document.getElementById('degraded-latency-limit').value;
             const grace = document.getElementById('degraded-grace-period').value;
             
-            showActionToast(`✓ Настройки таймаутов сохранены: Cloud ${cloud}s, Feed ${feed}s, Latency ${ping}ms, Grace ${grace}s`);
+            showActionToast(`DEMO: таймауты degraded-mode (Cloud ${cloud}s, Feed ${feed}s) НЕ сохраняются здесь. Реальные — configs/agent.yaml → components.degraded_mode.`);
         }
 
         async function fetchSandboxViolations() {
@@ -27279,8 +27272,14 @@ function renderPipelineStatusDetails(asset) {
                     });
                 }
                 
+                // Surface the backend's honesty disclaimer — this is a DEMO
+                // mock executor that FORCES PASS; it is NOT a certified RTS-6 run.
+                if (data.simulated || data.data_source === 'mock_executor') {
+                    log += `\n⚠️ ${data.disclaimer || 'DEMO: mock-исполнитель форсирует PASS — это НЕ сертифицированный прогон RTS 6.'}\n`;
+                    if (typeof flagFromPayload === 'function') flagFromPayload(data, 'Conformance: DEMO mock-executor (forced PASS) — не сертификация', 'pro-compliance');
+                }
                 consoleBox.textContent = log;
-                showActionToast("✓ Conformance тесты пройдены успешно.");
+                showActionToast(data.simulated ? "DEMO: conformance — mock-исполнитель (forced PASS), не сертификация." : "Conformance-прогон завершён.");
             } catch (err) {
                 consoleBox.textContent = "Ошибка: " + err.message;
                 showActionToast("❌ Ошибка при выполнении Conformance тестов");
@@ -27291,7 +27290,7 @@ function renderPipelineStatusDetails(asset) {
             const quarter = document.getElementById('mifid-report-quarter').value;
             showActionToast(`Инициализирован сбор данных для отчета ${quarter} RTS 27/28...`);
             setTimeout(() => {
-                showActionToast(`✓ Отчет ${quarter} скомпилирован в формате XML.`);
+                showActionToast(`DEMO: MiFID-отчёт ${quarter} здесь не генерируется. Реальные выгрузки: Compliance → DORA ROI / GDPR export.`);
             }, 1000);
         }
 
@@ -27403,6 +27402,9 @@ function renderPipelineStatusDetails(asset) {
                 const response = await fetch('/api/ai-act/conformity/status');
                 const data = await response.json();
                 
+                const demoNote = (data.simulated || data.data_source === 'demo_checklist')
+                    ? `\n\n⚠️ ${data.disclaimer || 'DEMO: чек-лист захардкожен (не реальная самооценка) — НЕ юридическая декларация соответствия.'}` : '';
+                if (data.simulated && typeof flagFromPayload === 'function') flagFromPayload(data, 'AI-Act: DEMO чек-лист — не реальная декларация', 'pro-compliance');
                 alert(`EU AI Act Conformity Declaration:\n\n` +
                       `1. Risk Management System: ${data.risk_management_system.toUpperCase()}\n` +
                       `2. Data Governance Framework: ${data.data_governance.toUpperCase()}\n` +
@@ -27411,7 +27413,7 @@ function renderPipelineStatusDetails(asset) {
                       `5. Transparency & User Disclosure: ${data.transparency_disclosure.toUpperCase()}\n` +
                       `6. Human Oversight Controls: ${data.human_oversight.toUpperCase()}\n` +
                       `7. Robustness & Cybersecurity: ${data.accuracy_robustness_cybersecurity.toUpperCase()}\n\n` +
-                      `✓ Declaration conformity issued: ${data.conformity_declaration_issued ? "YES" : "NO"}`);
+                      `Declaration conformity issued: ${data.conformity_declaration_issued ? "YES" : "NO"}${demoNote}`);
             } catch (err) {
                 showActionToast("❌ Ошибка при получении AI Act статуса");
             }
@@ -27653,8 +27655,9 @@ function renderPipelineStatusDetails(asset) {
             pollProDashboardTelemetry();
         }
 
-        // ===== 1.11 Trading-Event Alerts =====
+        // ===== 1.11 Trading-Event Alerts (DEMO illustration) =====
         function renderProDashAlerts() {
+            showSimBadge(true, 'DEMO — иллюстративные торговые алерты. Реальные алерты: Dashboard → Alerts & On-Call (/api/alerts/active)', activeModuleId);
             const kpis = [
                 { l: 'Активных триггеров', v: '7', c: 'text-white' },
                 { l: 'Сработало (24ч)', v: '3', c: 'text-amber-400' },
@@ -28291,11 +28294,11 @@ function renderPipelineStatusDetails(asset) {
                                         <tr class="border-b border-[#232329]/40 hover:bg-[#1A1A22]/20">
                                             <td class="py-2.5 font-bold text-gray-200">${h.symbol}</td>
                                             <td class="py-2.5 text-gray-300 font-mono">${h.qty}</td>
-                                            <td class="py-2.5 text-gray-300 font-mono">${h.qty}</td>
+                                            <td class="py-2.5 text-gray-500 font-mono">—</td>
                                             <td class="py-2.5 ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-semibold font-mono">${pnl > 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
                                             <td class="py-2.5 text-center">
-                                                <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                    SYNCED
+                                                <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-gray-500/10 text-gray-400 border border-gray-500/20" title="Нет отдельного брокер-фида для сверки; реальная сверка — CCEA Agent PositionReconciler">
+                                                    не сверено
                                                 </span>
                                             </td>
                                         </tr>
@@ -28319,11 +28322,11 @@ function renderPipelineStatusDetails(asset) {
                                         <tr class="border-b border-[#232329]/40 hover:bg-[#1A1A22]/20">
                                             <td class="py-2.5 font-bold text-gray-200">${h.symbol}</td>
                                             <td class="py-2.5 text-gray-300 font-mono">${h.qty}</td>
-                                            <td class="py-2.5 text-gray-300 font-mono">${h.qty}</td>
+                                            <td class="py-2.5 text-gray-500 font-mono">—</td>
                                             <td class="py-2.5 text-gray-300 font-mono">${Number(h.entry_price).toFixed(2)} / ${Number(h.current_price).toFixed(2)}</td>
                                             <td class="py-2.5 text-center">
-                                                <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                                    OK
+                                                <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-gray-500/10 text-gray-400 border border-gray-500/20" title="Нет отдельного брокер-фида для сверки; реальная сверка — CCEA Agent PositionReconciler">
+                                                    не сверено
                                                 </span>
                                             </td>
                                         </tr>
@@ -28740,7 +28743,7 @@ function renderPipelineStatusDetails(asset) {
         function applyRateLimitOverrides() {
             const rps = document.getElementById('rate-global-rps-range').value;
             const burst = document.getElementById('rate-global-burst-range').value;
-            showActionToast(`Лимиты перенастроены: Global RPS = ${rps}, Global Burst = ${burst}`);
+            showActionToast(`DEMO: rate-лимиты (RPS=${rps}, Burst=${burst}) НЕ применены — панель не подключена к живому rate-limiter.`);
         }
 
         async function runManualReconciliation() {
@@ -31999,7 +32002,8 @@ function renderPipelineStatusDetails(asset) {
                     <td class="p-2.5 text-gray-500">Ограничение на максимальное отклонение цены ордера от спреда</td>
                 </tr>
             `;
-            showActionToast("Биржевые фильтры обновлены.");
+            showSimBadge(true, 'DEMO — иллюстративные фильтры Binance. Реальные: scripts/fetch_binance_filters.py → data/binance_filters.json', activeModuleId);
+            showActionToast("Показаны иллюстративные фильтры (демо) — реальные обновляются через fetch_binance_filters.py.");
         }
 
         // Sandbox Run actions
@@ -32397,7 +32401,7 @@ function renderPipelineStatusDetails(asset) {
             }).join('');
         }
         function exportProOmsTca() {
-            if (typeof showActionToast === 'function') showActionToast('TCA отчёт экспортирован (MiFID II RTS 28 best-execution)');
+            if (typeof showActionToast === 'function') showActionToast('DEMO: TCA-панель иллюстративная — файл не создаётся. Реальный best-exec отчёт: Compliance → Best-Execution.');
             else alert('TCA CSV экспортирован.');
         }
 
@@ -32605,7 +32609,9 @@ function renderPipelineStatusDetails(asset) {
                 const res = await fetch(API_BASE + '/api/portfolio/holdings');
                 if (!res.ok) return;
                 const data = await res.json();
-                
+                // Surface the backend's simulated/paper flag instead of dropping it.
+                if (typeof flagFromPayload === 'function') flagFromPayload(data, 'Портфель — paper/simulated (нет реальных ключей брокера)', 'pro-oms');
+
                 if (document.getElementById('oms-port-nlv')) document.getElementById('oms-port-nlv').innerText = '$' + data.metrics.net_liquidation_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 if (document.getElementById('oms-port-margin')) document.getElementById('oms-port-margin').innerText = '$' + data.metrics.margin_used.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 if (document.getElementById('oms-port-leverage')) document.getElementById('oms-port-leverage').innerText = data.metrics.leverage;
@@ -32969,7 +32975,7 @@ function renderPipelineStatusDetails(asset) {
         async function requestLocateShares(symbol) {
             showActionToast(`Locate request sent for ${symbol}...`);
             setTimeout(() => {
-                showActionToast(`✅ Locate approved for ${symbol}. Borrow secured.`);
+                showActionToast(`DEMO: locate для ${symbol} НЕ выполнен (нет интеграции с prime-broker/HTB-desk).`);
             }, 1000);
         }
 
@@ -33195,11 +33201,11 @@ function renderPipelineStatusDetails(asset) {
         }
 
         function exportProPaBarReport() {
-            showActionToast("CSV отчет по барам успешно экспортирован в logs/sandbox_bar_report.csv!");
+            showActionToast("DEMO: экспорт CSV здесь не реализован (файл не создаётся). Данные баров — в logs/reports.csv.");
         }
 
         function downloadProPaMetricsPdf() {
-            showActionToast("PDF отчет о результатах тестирования успешно сгенерирован!");
+            showActionToast("DEMO: PDF-экспорт здесь не реализован (файл не создаётся).");
         }
 
         // ===================================================================
@@ -34504,7 +34510,7 @@ function renderPipelineStatusDetails(asset) {
         }
 
         function applyProPortfolioRebalance() {
-            if (typeof showToast === 'function') showToast('Сформированы ордера ребалансировки (отправлены в OMS draft)', 'success');
+            if (typeof showToast === 'function') showToast('DEMO: ордера НЕ отправлены. Реальный ребаланс: Lite → Портфель (XS rebalance через CCEA OMS).', 'info');
             else alert('Ордера ребалансировки сформированы и отправлены в OMS как draft.');
         }
 
@@ -34646,7 +34652,7 @@ function renderPipelineStatusDetails(asset) {
         }
 
         function exportProPortfolioTearsheet() {
-            if (typeof showToast === 'function') showToast('Tear Sheet PDF сгенерирован (pyfolio-style)', 'success');
+            if (typeof showToast === 'function') showToast('DEMO: PDF не создаётся. Реальный tear-sheet: «Загрузить из движка» → XS backtest.', 'info');
             else alert('Tear Sheet PDF экспортирован.');
         }
 
@@ -34718,7 +34724,7 @@ function renderPipelineStatusDetails(asset) {
         }
 
         function proPortfolioRegisterAlpha() {
-            if (typeof showToast === 'function') showToast('Открыта форма регистрации новой альфы (artifact + metadata)', 'info');
+            if (typeof showToast === 'function') showToast('DEMO: регистрация альфы здесь не реализована. Реальный реестр моделей: Pro → MLOps.', 'info');
             else alert('Регистрация новой альфы: загрузите артефакт и метаданные.');
         }
 
@@ -34876,7 +34882,7 @@ function renderPipelineStatusDetails(asset) {
             if (typeof showActionToast === 'function') showActionToast('Run All: ноутбук выполнен (kernel python3)');
         }
         function proNotebookAddCell() { proNbCells.push({ type: 'code', src: '# new cell', out: '', ran: false }); proNbRenderCells(); }
-        function proNotebookSave() { if (typeof showActionToast === 'function') showActionToast('Ноутбук сохранён (nbformat v4) через notebook_service.py'); }
+        function proNotebookSave() { if (typeof showActionToast === 'function') showActionToast('DEMO: ноутбук-панель иллюстративная (нет notebook_service backend). Реальный код-путь: Dev-Suite → Strategy Coder / CLI.'); }
 
         /* ===================================================================
            EXTRA PRO SUB-TABS — Research(2.13-2.16), ModelLab(3.5-3.7),
@@ -35020,6 +35026,7 @@ function renderPipelineStatusDetails(asset) {
             return out;})();
         function renderProModelExperiments(){
             if(typeof Chart==='undefined') return;
+            showSimBadge(true, 'DEMO — иллюстративные прогоны. Реальный трекинг: Pro → MLOps', activeModuleId);
             const best=proExpRuns.slice().sort((a,b)=>b.sharpe-a.sharpe)[0];
             document.getElementById('pro-exp-tbody').innerHTML=proExpRuns.map(r=>`<tr class="border-b border-[#232329]/20 hover:bg-[#0E0E11]/40 ${r.id===best.id?'bg-pink-500/5':''}">
                 <td class="py-2 pr-3 text-white">${r.id}${r.id===best.id?' <span class="text-[8px] text-pink-400">★best</span>':''}</td>
@@ -35040,8 +35047,9 @@ function renderPipelineStatusDetails(asset) {
                 options:{...PP_CHART_OPTS,plugins:{legend:{display:false}}}});
         }
 
-        // ---------- 3.6 Model Registry ----------
+        // ---------- 3.6 Model Registry (DEMO illustration — real registry lives in Pro → MLOps) ----------
         function renderProModelRegistry(){
+            showSimBadge(true, 'DEMO — иллюстративный реестр. Реальный реестр с Ed25519-подписью: Pro → MLOps', activeModuleId);
             const cc=[['Champion','rl_ppo v3.2 (prod)','1.95','text-emerald-400'],['Challenger','rl_ppo v3.3-rc (staging)','2.08','text-amber-400'],['Δ Sharpe','+0.13 (challenger)','','text-cyan-400'],['A/B статус','shadow + 10% live','','text-white']];
             document.getElementById('pro-reg-cc').innerHTML=cc.map(c=>`<div class="flex justify-between bg-[#0E0E11]/50 rounded-xl p-2 border border-[#232329]/40"><span class="text-gray-500 uppercase">${c[0]}</span><span class="font-bold ${c[3]}">${c[1]}${c[2]?' · '+c[2]:''}</span></div>`).join('');
             const reg=[
@@ -35058,8 +35066,8 @@ function renderPipelineStatusDetails(asset) {
                 <td class="py-2 px-3 text-right text-white">${r.sh}</td><td class="py-2 px-3 text-right text-rose-400">${r.dd}</td>
                 <td class="py-2 px-3 ${r.sig==='verified'?'text-emerald-400':'text-amber-400'}">${r.sig}</td><td class="py-2 px-3 text-gray-500">${r.by}</td></tr>`).join('');
         }
-        function proModelPromote(){ proToast('Challenger rl_ppo v3.3-rc продвинут в Production (требует local approval — CCEA TRADING_IMPACTING)'); }
-        function proModelRollback(){ proToast('Откат к предыдущему Production-чекпоинту выполнен'); }
+        function proModelPromote(){ proToast('DEMO-панель: promote здесь не выполняется. Реальный promote — Pro → MLOps (Transition, требует local approval CCEA TRADING_IMPACTING).'); }
+        function proModelRollback(){ proToast('DEMO-панель: rollback здесь не выполняется. Реальный rollback — Pro → MLOps (Rollback).'); }
 
         // ---------- 3.7 Prediction Drift ----------
         function renderProModelDrift(){
@@ -35181,7 +35189,7 @@ function renderPipelineStatusDetails(asset) {
                 <td class="py-2 px-3 text-right ${hwm==='выше'?'text-emerald-400':'text-amber-400'}">${hwm}</td>
                 <td class="py-2 px-3"><button onclick="proLpExport('one')" class="text-[9px] text-teal-400 hover:text-teal-300 cursor-pointer"><i class="fa-solid fa-download mr-1"></i>PDF</button></td></tr>`;}).join('');
         }
-        function proLpExport(kind){ const m={tearsheet:'Tear Sheet фонда',statement:'Capital account statements',returns:'Returns track record (GIPS-style)',fees:'Fee calculation (HWM)',one:'LP statement'}; proToast((m[kind]||'Отчёт')+' экспортирован (PDF/CSV)'); }
+        function proLpExport(kind){ const m={tearsheet:'Tear Sheet фонда',statement:'Capital account statements',returns:'Returns track record (GIPS-style)',fees:'Fee calculation (HWM)',one:'LP statement'}; proToast('DEMO: '+(m[kind]||'Отчёт')+' — панель иллюстративная, файл не создаётся.'); }
     </script>
 <!-- Cross-Sectional Pro integration (Stage A13) — единый драйвер для всех ✦ под-вкладок -->
 <script>
@@ -36003,7 +36011,7 @@ function renderPipelineStatusDetails(asset) {
       if (!el) return;
       try {
         var d = await (await fetch('/api/data_quality/demo')).json();
-        if (typeof flagFromPayload === 'function') flagFromPayload(d, 'Data-QA: representative feeds', 'pro-research');
+        if (typeof flagFromPayload === 'function') flagFromPayload(d, 'Data-QA: demo/representative feeds (не реальный фид)', 'pro-dashboard');
         var reps = d.reports || {}; var fo = d.failover || {}; var cv = d.cross_vendor || {};
         function badge(label, clean) {
           return '<span class="px-1.5 py-0.5 rounded border ' +
