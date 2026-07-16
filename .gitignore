@@ -171,3 +171,7 @@ state/close_state.json
 /dist/
 /build/
 .tmp_*
+
+# intraday feeds (downloaded, reproducible via scripts/download_premium_data.py)
+data/minute/
+data/ticks/

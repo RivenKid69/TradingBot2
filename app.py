@@ -7678,7 +7678,13 @@ def api_run_job(payload: RunJobPayload):
                 print(f"Error saving temp training config: {e}")
                 
         cmd = [py, "train_model_multi_patch.py", "--config", train_cfg]
-        
+
+        # P2-H: устройство обучения из UI (auto|cpu|cuda) — честный auto-детект
+        # и деградация в CPU происходят внутри train CLI (services/hardware.py).
+        device = str(params.get("device", "")).strip().lower()
+        if device in ("auto", "cpu", "cuda") or device.startswith("cuda:"):
+            cmd.extend(["--device", device])
+
         # Market regimes
         regime_content = params.get("regime_config_content")
         if regime_content and regime_content.strip():
@@ -8713,15 +8719,280 @@ def _build_scheduler_actions() -> Dict[str, Any]:
         detail = f"{rec['status']}: {rec.get('reason') or ''}"
         return JobRunResult(status_map.get(rec["status"], STATUS_FAILED), detail)
 
+    def pipeline_run(job: ScheduledJob) -> "JobRunResult":
+        """DAG-пайплайн по расписанию: params.pipeline → services/research_pipeline.
+
+        Планировщик отвечает за «когда», DAG-движок — за «что и в каком
+        порядке» (зависимости, blocked-шаги fail-closed, LeakGuard-пол,
+        долговечный журнал + resume). pipeline.research_nightly остаётся как
+        legacy-линейный пресет; это — его DAG-наследник.
+        """
+        from services.research_pipeline import load_spec
+        name = str(job.params.get("pipeline", "research_nightly"))
+        spec = load_spec(name)
+        if spec is None:
+            return JobRunResult(STATUS_FAILED, f"pipeline {name!r} не найден в configs/pipelines/")
+        runner = _get_pipeline_runner()
+        state = runner.run(spec)
+        steps = [{"step": s["id"], "status": s["status"], "detail": s.get("detail", "")}
+                 for s in state["steps"]]
+        if state["status"] == "succeeded":
+            return JobRunResult(STATUS_SUCCEEDED, f"DAG {name} прошёл целиком (run {state['run_id']})", steps=steps)
+        return JobRunResult(STATUS_FAILED, f"DAG {name}: {state['status']} (run {state['run_id']})", steps=steps)
+
     return {
         "data.refresh": data_refresh,
         "pipeline.research_nightly": research_nightly,
+        "pipeline.run": pipeline_run,
         "monitor.drift_and_retrain": drift_and_retrain,
         "eod.close_and_report": eod_close_and_report,
         "report.tca_weekly": tca_weekly,
         "ops.backup_state": backup_state,
         "ops.log_rotation": log_rotation,
         "trade.xs_rebalance": xs_rebalance,
+    }
+
+
+# =============================================================================
+# DAG research-пайплайн + GPU + интрадей-фиды + сравнение экспериментов
+# (закрытие квант-гэпов §5.21+/22/24/25 — P2-H/I/M)
+# =============================================================================
+
+_PIPELINE_RUNNER = None
+
+
+def _get_pipeline_runner():
+    """Ленивый singleton DAG-раннера; воркером служит тот же bridge, что у
+    планировщика (_sched_run_worker) — единые контракты джобов."""
+    global _PIPELINE_RUNNER
+    if _PIPELINE_RUNNER is None:
+        from services.research_pipeline import PipelineRunner
+
+        def _worker(name: str, params: Dict[str, Any], timeout_sec: int):
+            res = _sched_run_worker(name, params, timeout_sec)
+            return res.status, res.detail, res.exit_code
+        _PIPELINE_RUNNER = PipelineRunner(_worker)
+    return _PIPELINE_RUNNER
+
+
+@api.get("/api/pipeline/list")
+def api_pipeline_list():
+    from services.research_pipeline import list_specs
+    runner = _get_pipeline_runner()
+    return {"pipelines": [s.to_dict() for s in list_specs()],
+            "runs": runner.list_runs(limit=10)}
+
+
+class PipelineRunPayload(BaseModel):
+    name: str = "research_nightly"
+    resume_run_id: Optional[str] = None
+
+
+@api.post("/api/pipeline/run")
+def api_pipeline_run(payload: PipelineRunPayload):
+    from services.research_pipeline import load_spec
+    spec = load_spec(payload.name)
+    if spec is None:
+        raise HTTPException(status_code=404, detail=f"pipeline {payload.name!r} не найден")
+    runner = _get_pipeline_runner()
+    if payload.resume_run_id:
+        prior = runner.load_run(payload.resume_run_id)
+        if prior is None:
+            raise HTTPException(status_code=404, detail="run для resume не найден")
+        run_id = payload.resume_run_id
+        kwargs = {"run_id": run_id, "resume": True}
+    else:
+        import uuid as _uuid
+        run_id = f"{spec.name}-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{_uuid.uuid4().hex[:6]}"
+        kwargs = {"run_id": run_id}
+    t = threading.Thread(target=runner.run, args=(spec,), kwargs=kwargs, daemon=True)
+    t.start()
+    return {"ok": True, "run_id": run_id, "resumed": bool(payload.resume_run_id)}
+
+
+@api.get("/api/pipeline/status")
+def api_pipeline_status(run_id: Optional[str] = None):
+    runner = _get_pipeline_runner()
+    if run_id:
+        state = runner.load_run(run_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail="run не найден")
+        return state
+    runs = runner.list_runs(limit=1)
+    if not runs:
+        return {"status": "no_runs"}
+    return runner.load_run(runs[0]["run_id"]) or {"status": "no_runs"}
+
+
+class PipelineCancelPayload(BaseModel):
+    run_id: str
+
+
+@api.post("/api/pipeline/cancel")
+def api_pipeline_cancel(payload: PipelineCancelPayload):
+    if not payload.run_id:
+        raise HTTPException(status_code=400, detail="run_id обязателен")
+    _get_pipeline_runner().cancel(payload.run_id)
+    return {"ok": True, "run_id": payload.run_id}
+
+
+# --------------------------- GPU / устройство обучения (P2-H) ---------------
+
+@api.get("/api/hardware/gpu")
+def api_hardware_gpu(bench: int = 0):
+    from services.hardware import gpu_status, quick_benchmark, resolve_device
+    out = gpu_status()
+    out["resolution"] = {d: resolve_device(d) for d in ("auto", "cpu", "cuda")}
+    if bench:
+        out["benchmark"] = quick_benchmark()
+    return out
+
+
+# --------------------------- Интрадей-фиды: минутки/тики (P2-M) -------------
+
+@api.get("/api/data/premium/vendors")
+def api_premium_vendors():
+    from services.premium_data import vendor_status
+    return {"vendors": vendor_status()}
+
+
+class PremiumDownloadPayload(BaseModel):
+    kind: str = "bars"                 # bars | ticks
+    vendor: str = "binance"
+    symbols: List[str]
+    timeframe: str = "1m"
+    start: str                          # ISO-дата
+    end: str
+
+
+@api.post("/api/data/premium/download")
+def api_premium_download(payload: PremiumDownloadPayload):
+    """Фоновая закачка минуток/тиков через canonical CLI (единые контракты)."""
+    if payload.kind not in ("bars", "ticks"):
+        raise HTTPException(status_code=400, detail="kind: bars | ticks")
+    if not payload.symbols:
+        raise HTTPException(status_code=400, detail="symbols обязательны")
+    py = sys.executable
+    if payload.kind == "bars":
+        cmd = [py, "scripts/download_premium_data.py", "bars",
+               "--vendor", payload.vendor, "--symbols", *payload.symbols,
+               "--timeframe", payload.timeframe,
+               "--start", payload.start, "--end", payload.end]
+    else:
+        cmd = [py, "scripts/download_premium_data.py", "ticks",
+               "--symbols", *payload.symbols,
+               "--start", payload.start, "--end", payload.end]
+    pid_file = os.path.join(".run", "premium_download.pid")
+    log_file = os.path.join(GLOBAL_LOGS_DIR, "premium_download.log")
+    if background_running(pid_file):
+        raise HTTPException(status_code=409, detail="закачка уже идёт — дождитесь завершения")
+    pid = start_background(cmd, pid_file, log_file)
+    return {"ok": True, "pid": pid, "log": log_file}
+
+
+@api.get("/api/data/premium/download/status")
+def api_premium_download_status():
+    pid_file = os.path.join(".run", "premium_download.pid")
+    st = background_status(pid_file)
+    # хвост лога — построчные JSON-результаты CLI
+    tail: List[str] = []
+    log_file = os.path.join(GLOBAL_LOGS_DIR, "premium_download.log")
+    try:
+        with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+            tail = f.readlines()[-12:]
+    except Exception:
+        pass
+    return {"status": st, "log_tail": [line.rstrip() for line in tail]}
+
+
+# ----------------- Сравнение экспериментов + reproducibility (P2-I) ---------
+
+@api.get("/api/experiments/{experiment}/compare")
+def api_experiments_compare(experiment: str, runs: str):
+    """Сравнение прогонов бок-о-бок: union параметров/метрик + флаг differs."""
+    from service_experiment_tracking import get_tracker
+    run_ids = [r.strip() for r in runs.split(",") if r.strip()]
+    if len(run_ids) < 2:
+        raise HTTPException(status_code=400, detail="нужно >= 2 run_id через запятую")
+    tracker = get_tracker()
+    records = []
+    for rid in run_ids:
+        rec = tracker.get_run(experiment, rid)
+        if rec is None:
+            raise HTTPException(status_code=404, detail=f"run {rid!r} не найден")
+        records.append(rec)
+
+    def _rows(dicts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        keys = sorted({k for d in dicts for k in d})
+        rows = []
+        for k in keys:
+            values = {rid: d.get(k) for rid, d in zip(run_ids, dicts)}
+            normalized = {json.dumps(v, sort_keys=True, default=str) for v in values.values()}
+            rows.append({"key": k, "values": values, "differs": len(normalized) > 1})
+        return rows
+
+    return {
+        "experiment": experiment,
+        "runs": [{"run_id": r.run_id, "name": getattr(r, "name", r.run_id),
+                  "status": getattr(r, "status", None)} for r in records],
+        "params": _rows([dict(r.params or {}) for r in records]),
+        "metrics": _rows([dict(r.metrics or {}) for r in records]),
+    }
+
+
+@api.get("/api/experiments/{experiment}/runs/{run_id}/bundle")
+def api_experiment_bundle(experiment: str, run_id: str):
+    """Reproducibility-бандл: run record + истории метрик + среда + registry-ссылки."""
+    from service_experiment_tracking import get_tracker, get_registry
+    tracker = get_tracker()
+    rec = tracker.get_run(experiment, run_id)
+    if rec is None:
+        raise HTTPException(status_code=404, detail="run не найден")
+    rec_d = rec.to_dict()
+
+    histories: Dict[str, Any] = {}
+    for key in (rec_d.get("metrics") or {}):
+        try:
+            histories[key] = tracker.read_metric_history(experiment, run_id, key)
+        except Exception:
+            histories[key] = None
+
+    registry_refs = []
+    try:
+        reg = get_registry()
+        for name in os.listdir(reg.root):
+            if not os.path.isdir(os.path.join(reg.root, name)):
+                continue
+            for mv in reg.list_versions(name):
+                if getattr(mv, "run_id", None) == run_id:
+                    registry_refs.append({
+                        "model": name, "version": mv.version, "stage": mv.stage,
+                        "sha256": getattr(mv.artifact, "sha256", None),
+                        "signed": bool(getattr(mv.artifact, "signature", None)),
+                    })
+    except Exception:
+        pass
+
+    env_info: Dict[str, Any] = {"python": sys.version.split()[0]}
+    try:
+        import torch as _torch
+        env_info["torch"] = str(_torch.__version__)
+    except Exception:
+        env_info["torch"] = None
+    try:
+        import subprocess as _sp
+        env_info["git_sha"] = _sp.run(["git", "rev-parse", "HEAD"], capture_output=True,
+                                      text=True, timeout=10).stdout.strip() or None
+    except Exception:
+        env_info["git_sha"] = None
+
+    return {
+        "bundle_version": 1,
+        "experiment": experiment,
+        "run": rec_d,
+        "metric_histories": histories,
+        "registry": registry_refs,
+        "environment": env_info,
     }
 
 

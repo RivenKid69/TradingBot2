@@ -1,0 +1,75 @@
+# =============================================================================
+# Research-пайплайн как DAG (services/research_pipeline.py)
+# =============================================================================
+# Ночной research-цикл: prices → features → (targets → no-trade → splits)
+#                                         → training_table (независимая ветка)
+#
+# Семантика:
+#   * worker      — имя джоба из реестра приложения (те же контракты, что у
+#                   /api/run_job и планировщика).
+#   * depends_on  — DAG-зависимости; упавшая зависимость блокирует шаг
+#                   (fail-closed), resume докатывает прогон без повторов.
+#   * decision_delay_ms клампится движком к >= 8000 (LeakGuard-пол,
+#     ослабить из YAML невозможно).
+#
+# Запуск: POST /api/pipeline/run {"name": "research_nightly"}
+#   или по расписанию: action pipeline.run в configs/scheduler.yaml.
+# =============================================================================
+name: research_nightly
+title: "Ночной research-пайплайн (DAG)"
+description: "features → targets → no-trade → splits; training_table — параллельная ветка от features"
+
+steps:
+  - id: features
+    title: "Фичи из цен"
+    worker: run_features
+    params:
+      in: "data/prices.parquet"
+      out: "data/features.parquet"
+      lookbacks: "60,120"
+      rsi_period: 14
+      price_col: "close"
+    timeout_sec: 1800
+    retries: 1
+
+  - id: targets
+    title: "Таргеты (с учётом издержек)"
+    worker: run_targets
+    depends_on: [features]
+    params:
+      in: "data/features.parquet"
+      out: "data/targets.parquet"
+      fees_bps_total: 10
+      horizon_bars: 5
+    timeout_sec: 1200
+
+  - id: no_trade
+    title: "No-trade маска"
+    worker: run_no_trade
+    depends_on: [targets]
+    params:
+      data: "data/targets.parquet"
+      out: "data/targets_masked.parquet"
+    timeout_sec: 900
+
+  - id: splits
+    title: "Walk-forward сплиты"
+    worker: run_splits
+    depends_on: [no_trade]
+    params:
+      data: "data/targets_masked.parquet"
+      n_splits: 5
+      train_size_pct: 80
+    timeout_sec: 900
+
+  - id: training_table
+    title: "Training table (LeakGuard-пол 8000 мс)"
+    worker: run_training_table
+    depends_on: [features]
+    params:
+      base: "data/features.parquet"
+      prices: "data/prices.parquet"
+      out: "data/training_table.parquet"
+      price_col: "close"
+      decision_delay_ms: 8000
+    timeout_sec: 1800

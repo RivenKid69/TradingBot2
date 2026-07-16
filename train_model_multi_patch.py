@@ -3904,6 +3904,9 @@ def objective(trial: optuna.Trial,
         v_range_ema_alpha=params["v_range_ema_alpha"],
         policy=CustomActorCriticPolicy,
         env=env_tr,
+        # P2-H: устройство обучения (auto|cpu|cuda[:N]) — из --device CLI через
+        # env-мост; SB3 принимает device и сам кладёт policy на GPU.
+        device=os.environ.get("RIVEN_TRAIN_DEVICE_EFFECTIVE", "auto"),
         cql_alpha=0.0,
         cql_beta=params["cql_beta"],
         cvar_alpha=params["cvar_alpha"],
@@ -4474,7 +4477,24 @@ def main():
         default=None,
         help="Override the number of parallel training environments (falls back to config or default 8)",
     )
+    parser.add_argument(
+        "--device",
+        default=None,
+        help="Training device: auto | cpu | cuda | cuda:N (default: auto — CUDA if available)",
+    )
     args, unknown = parser.parse_known_args()
+
+    # GPU/device resolution (P2-H): honest auto-detect with explicit override.
+    # Effective device is passed to the model ctor via env (same bridge pattern
+    # as MARKET_REGIMES_JSON) so deep call sites don't need arg threading.
+    try:
+        from services.hardware import resolve_device as _resolve_device
+        _dev = _resolve_device(args.device)
+        os.environ["RIVEN_TRAIN_DEVICE_EFFECTIVE"] = _dev["effective"]
+        print(f"[device] requested={_dev['requested']} effective={_dev['effective']} — {_dev['reason']}")
+    except Exception as _dev_exc:  # никогда не роняем тренировку из-за детекции
+        os.environ.setdefault("RIVEN_TRAIN_DEVICE_EFFECTIVE", args.device or "auto")
+        print(f"[device] detection failed ({_dev_exc}) — using {os.environ['RIVEN_TRAIN_DEVICE_EFFECTIVE']}")
 
     raw_tensorboard_dir = (args.tensorboard_log_dir or "").strip()
     if raw_tensorboard_dir.lower() in {"", "none", "null"}:

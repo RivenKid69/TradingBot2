@@ -984,7 +984,20 @@
                                     <input type="number" id="quantlab-train-envs" value="4" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-300 outline-none focus:border-sky-500/50 font-mono">
                                 </div>
                             </div>
-                            
+
+                            <!-- P2-H: устройство обучения (GPU) — честный статус + выбор -->
+                            <div class="grid grid-cols-2 gap-4 border-t border-[#232329]/30 pt-3 items-end">
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Устройство (GPU/CPU)</label>
+                                    <select id="quantlab-train-device" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-3 py-1.5 text-xs text-gray-300 outline-none focus:border-sky-500/50 font-mono">
+                                        <option value="auto">auto (CUDA если доступна)</option>
+                                        <option value="cuda">cuda (GPU)</option>
+                                        <option value="cpu">cpu</option>
+                                    </select>
+                                </div>
+                                <div id="quantlab-gpu-status" class="text-[9px] font-mono text-gray-500 pb-1.5">GPU: проверка…</div>
+                            </div>
+
                             <div class="grid grid-cols-3 gap-4 border-t border-[#232329]/30 pt-3">
                                 <div class="space-y-1">
                                     <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Gamma</label>
@@ -1692,7 +1705,49 @@
 
                     <!-- RIGHT COLUMN: Telemetry & Monitoring (5 cols) -->
                     <div class="lg:col-span-5 space-y-6">
-                        
+
+                        <!-- P2-M: интрадей-фиды (минутки/тики) — честная entitlement-матрица -->
+                        <div class="bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3">
+                            <h3 class="text-xs font-semibold text-white uppercase tracking-wider border-b border-[#232329]/40 pb-2 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5 font-mono"><i class="fa-solid fa-bolt text-amber-400"></i> Интрадей-фиды (минутки / тики)</span>
+                                <button onclick="refreshPremiumVendors()" class="text-gray-500 hover:text-white text-[10px]"><i class="fa-solid fa-arrows-rotate"></i></button>
+                            </h3>
+                            <div id="premium-vendors-list" class="space-y-1.5 text-[10px] font-mono text-gray-400">Загрузка…</div>
+                            <div class="grid grid-cols-2 gap-2 border-t border-[#232329]/30 pt-3">
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Тип / вендор</label>
+                                    <div class="flex gap-1.5">
+                                        <select id="premium-kind" class="flex-1 bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+                                            <option value="bars">минутки</option>
+                                            <option value="ticks">тики (Binance)</option>
+                                        </select>
+                                        <select id="premium-vendor" class="flex-1 bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+                                            <option value="binance">binance</option>
+                                            <option value="polygon">polygon</option>
+                                            <option value="alpaca">alpaca</option>
+                                            <option value="oanda">oanda</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Символы (через пробел)</label>
+                                    <input id="premium-symbols" value="BTCUSDT" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Начало</label>
+                                    <input id="premium-start" type="date" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[9px] text-gray-500 font-mono uppercase font-bold">Конец</label>
+                                    <input id="premium-end" type="date" class="w-full bg-[#1A1A22] border border-[#2B2B36] rounded-xl px-2 py-1.5 text-[10px] text-gray-300 font-mono">
+                                </div>
+                            </div>
+                            <button onclick="startPremiumDownload()" class="w-full bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl px-3 py-2 text-[10px] font-mono uppercase font-bold hover:bg-amber-500/20 transition-colors">
+                                <i class="fa-solid fa-download"></i> Скачать в data/minute · data/ticks
+                            </button>
+                            <div id="premium-download-status" class="text-[9px] font-mono text-gray-500"></div>
+                        </div>
+
                         <!-- Data Health Summary -->
                         <div class="bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3.5">
                             <h3 class="text-xs font-semibold text-white uppercase tracking-wider border-b border-[#232329]/40 pb-2 flex items-center justify-between">
@@ -1725,6 +1780,25 @@
                             <div class="flex items-center justify-between text-[9px] text-gray-500 font-mono border-t border-[#232329]/30 pt-2">
                                 <span>Журнал: <span id="scheduler-last-run" class="text-gray-400">—</span></span>
                                 <button onclick="fetchSchedulerStatus()" class="text-gray-500 hover:text-white transition-colors cursor-pointer"><i class="fa-solid fa-arrows-rotate"></i> Обновить</button>
+                            </div>
+                        </div>
+
+                        <!-- Research-пайплайн (DAG): зависимости, resume, LeakGuard-пол -->
+                        <div class="bg-[#131316] border border-[#232329]/60 rounded-3xl p-5 shadow-xl space-y-3">
+                            <h3 class="text-xs font-semibold text-white uppercase tracking-wider border-b border-[#232329]/40 pb-2 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5 font-mono"><i class="fa-solid fa-diagram-project text-sky-400"></i> Research-пайплайн (DAG)</span>
+                                <span id="pipeline-status-badge" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 border border-gray-500/20 font-bold uppercase">—</span>
+                            </h3>
+                            <div id="pipeline-steps-list" class="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1">
+                                <div class="text-[10px] text-gray-500 font-mono text-center py-3">Загрузка…</div>
+                            </div>
+                            <div class="flex items-center justify-between gap-2 text-[9px] font-mono border-t border-[#232329]/30 pt-2">
+                                <span class="text-gray-500">run: <span id="pipeline-last-run" class="text-gray-400">—</span></span>
+                                <div class="flex gap-2">
+                                    <button onclick="runResearchPipeline(false)" class="text-sky-400 hover:text-sky-300 transition-colors cursor-pointer"><i class="fa-solid fa-play"></i> Запустить</button>
+                                    <button onclick="runResearchPipeline(true)" class="text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"><i class="fa-solid fa-rotate-right"></i> Resume</button>
+                                    <button onclick="refreshPipelineStatus()" class="text-gray-500 hover:text-white transition-colors cursor-pointer"><i class="fa-solid fa-arrows-rotate"></i></button>
+                                </div>
                             </div>
                         </div>
 
@@ -10373,7 +10447,21 @@ NZD -> RBNZCTR</textarea>
                     <div class="bg-[#131316]/80 border border-[#232329]/60 rounded-2xl p-4">
                         <div class="text-xs text-gray-400 font-mono uppercase mb-2">Прогоны</div>
                         <div id="mlops-runs" class="space-y-1 text-xs max-h-72 overflow-auto custom-scrollbar">Выберите эксперимент…</div>
+                        <button onclick="mlopsCompareSelected()" class="mt-2 w-full bg-sky-500/10 border border-sky-500/30 text-sky-300 rounded-xl px-3 py-1.5 text-[10px] font-mono uppercase font-bold hover:bg-sky-500/20 transition-colors">
+                            <i class="fa-solid fa-code-compare"></i> Сравнить выбранные (2+)
+                        </button>
                     </div>
+                </div>
+
+                <!-- P2-I: экран сравнения экспериментов (params-diff + метрики бок-о-бок) -->
+                <div id="mlops-compare-card" class="hidden bg-[#131316]/80 border border-[#232329]/60 rounded-2xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="text-xs text-gray-400 font-mono uppercase">Сравнение прогонов (диф параметров · метрики бок-о-бок)</div>
+                        <label class="text-[10px] text-gray-500 font-mono flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="mlops-compare-diff-only" checked onchange="mlopsRenderCompare()"> только отличия
+                        </label>
+                    </div>
+                    <div id="mlops-compare-body" class="overflow-x-auto text-[10px] font-mono"></div>
                 </div>
                 <div class="bg-[#131316]/80 border border-[#232329]/60 rounded-2xl p-4">
                     <div class="flex items-center justify-between mb-3">
@@ -15313,6 +15401,7 @@ function renderPipelineStatusDetails(asset) {
         let tunerScanResults = null;
 
         function switchQuantLabSubTab(tabName) {
+            if (tabName === 'train') { try { refreshGpuStatus(); } catch (e) {} }
             const tabs = ['sim', 'features', 'train', 'backtest', 'registry'];
             tabs.forEach(t => {
                 const panel = document.getElementById(`quantlab-panel-${t}`);
@@ -16442,6 +16531,7 @@ function renderPipelineStatusDetails(asset) {
                             total_timesteps: timesteps,
                             learning_rate: lr,
                             n_envs: envs,
+                            device: (document.getElementById('quantlab-train-device') || {value: 'auto'}).value,
                             initial_cash: document.getElementById('quantlab-sim-cash').value,
                             
                             // Advanced hyperparameters:
@@ -22435,6 +22525,8 @@ function renderPipelineStatusDetails(asset) {
             updateLiteDataCostLabel();
             await checkDataFiles();
             fetchSchedulerStatus();
+            refreshPipelineStatus();
+            refreshPremiumVendors();
         }
 
         function showAssetSpecificOptions(assetType) {
@@ -29907,11 +29999,179 @@ function renderPipelineStatusDetails(asset) {
                     const sh = (m.best_deflated_sharpe ?? m.deflated_sharpe ?? m.sharpe);
                     const git = (r.lineage && r.lineage.git_commit) ? String(r.lineage.git_commit).slice(0, 8) : '—';
                     return `<div class="px-2 py-1.5 rounded-lg bg-[#0E0E11]/40 border border-[#232329]/40">`
-                        + `<div class="flex justify-between"><span class="text-gray-300 font-mono">${escapeHtml(r.run_id)}</span>`
-                        + `<span class="${r.status === 'FINISHED' ? 'text-emerald-400' : 'text-amber-400'}">${escapeHtml(r.status)}</span></div>`
+                        + `<div class="flex justify-between items-center gap-2">`
+                        + `<label class="flex items-center gap-1.5 cursor-pointer min-w-0"><input type="checkbox" class="mlops-cmp-cb" value="${escapeHtml(r.run_id)}">`
+                        + `<span class="text-gray-300 font-mono truncate">${escapeHtml(r.run_id)}</span></label>`
+                        + `<span class="flex items-center gap-2 whitespace-nowrap">`
+                        + `<a class="text-gray-500 hover:text-sky-300 cursor-pointer" title="Reproducibility-бандл" `
+                        + `href="${API_BASE}/api/experiments/${encodeURIComponent(exp)}/runs/${encodeURIComponent(r.run_id)}/bundle" target="_blank"><i class="fa-solid fa-box-archive"></i></a>`
+                        + `<span class="${r.status === 'FINISHED' ? 'text-emerald-400' : 'text-amber-400'}">${escapeHtml(r.status)}</span></span></div>`
                         + `<div class="text-gray-500 mt-0.5 font-mono">git ${escapeHtml(git)} · DSR ${sh != null ? (+sh).toFixed(2) : '—'}</div></div>`;
                 }).join('') || '<div class="text-gray-500">Нет прогонов</div>';
             } catch (err) { document.getElementById('mlops-runs').innerHTML = '<div class="text-rose-400">Ошибка</div>'; }
+        }
+
+        // ===== P2-I: сравнение экспериментов бок-о-бок =====
+        let mlopsCompareData = null;
+        // Направление «лучше» для известных метрик (подсветка лучшего значения).
+        const MLOPS_METRIC_DIRECTION = {
+            sharpe: 'max', deflated_sharpe: 'max', best_deflated_sharpe: 'max',
+            sortino: 'max', calmar: 'max', ir: 'max', pnl: 'max', total_return: 'max',
+            win_rate: 'max', loss: 'min', drawdown: 'min', max_drawdown: 'min',
+            value_loss: 'min', policy_loss: 'min', turnover: 'min',
+        };
+        async function mlopsCompareSelected() {
+            const ids = Array.from(document.querySelectorAll('.mlops-cmp-cb:checked')).map(cb => cb.value);
+            if (ids.length < 2) { showActionToast('Отметьте минимум 2 прогона для сравнения'); return; }
+            try {
+                const r = await fetch(API_BASE + '/api/experiments/' + encodeURIComponent(mlopsActiveExp)
+                    + '/compare?runs=' + encodeURIComponent(ids.join(',')));
+                if (!r.ok) { const d = await r.json(); showActionToast('❌ ' + (d.detail || 'ошибка сравнения')); return; }
+                mlopsCompareData = await r.json();
+                document.getElementById('mlops-compare-card').classList.remove('hidden');
+                mlopsRenderCompare();
+            } catch (e) { showActionToast('❌ Сравнение не удалось: ' + e.message); }
+        }
+        function mlopsRenderCompare() {
+            const d = mlopsCompareData;
+            if (!d) return;
+            const diffOnly = document.getElementById('mlops-compare-diff-only').checked;
+            const runIds = d.runs.map(r => r.run_id);
+            const head = '<tr class="text-gray-500 border-b border-[#232329]/40"><th class="text-left py-1 pr-3">ключ</th>'
+                + runIds.map(id => `<th class="text-left py-1 px-3">${escapeHtml(id.slice(0, 14))}</th>`).join('') + '</tr>';
+            const section = (title, rows, isMetric) => {
+                const filtered = rows.filter(r => !diffOnly || r.differs || isMetric);
+                if (!filtered.length) return '';
+                const body = filtered.map(row => {
+                    let best = null;
+                    if (isMetric) {
+                        const dir = MLOPS_METRIC_DIRECTION[String(row.key).toLowerCase()];
+                        const nums = runIds.map(id => Number(row.values[id])).filter(v => Number.isFinite(v));
+                        if (dir && nums.length) best = dir === 'max' ? Math.max(...nums) : Math.min(...nums);
+                    }
+                    const cells = runIds.map(id => {
+                        const v = row.values[id];
+                        const num = Number(v);
+                        const isBest = best !== null && Number.isFinite(num) && num === best;
+                        const cls = isBest ? 'text-emerald-400 font-bold' : (row.differs ? 'text-amber-300' : 'text-gray-400');
+                        return `<td class="py-1 px-3 ${cls}">${v === null || v === undefined ? '—' : escapeHtml(String(v)).slice(0, 40)}</td>`;
+                    }).join('');
+                    return `<tr class="border-b border-[#232329]/20"><td class="py-1 pr-3 text-gray-300">${escapeHtml(row.key)}</td>${cells}</tr>`;
+                }).join('');
+                return `<div class="text-gray-500 uppercase mt-2 mb-1">${title}</div><table class="w-full">${head}${body}</table>`;
+            };
+            document.getElementById('mlops-compare-body').innerHTML =
+                section('Метрики (лучшее — зелёным)', d.metrics, true) + section('Параметры (отличия — жёлтым)', d.params, false)
+                || '<div class="text-gray-500">Нет данных для сравнения</div>';
+        }
+
+        // ===== P2-H: GPU-статус для Quant Lab train =====
+        async function refreshGpuStatus() {
+            const el = document.getElementById('quantlab-gpu-status');
+            if (!el) return;
+            try {
+                const d = await (await fetch(API_BASE + '/api/hardware/gpu')).json();
+                if (d.cuda_available) {
+                    const g = (d.devices && d.devices[0]) || {};
+                    el.innerHTML = `<span class="text-emerald-400">GPU: ${escapeHtml(g.name || 'CUDA')}</span> · VRAM ${g.vram_free_mb || '?'}/${g.vram_total_mb || '?'} MB`;
+                } else {
+                    el.innerHTML = `<span class="text-amber-400">GPU недоступна</span> — ${escapeHtml(String(d.reason || '')).slice(0, 90)}`;
+                }
+            } catch (e) { el.textContent = 'GPU: статус недоступен'; }
+        }
+
+        // ===== P2-M: интрадей-фиды =====
+        async function refreshPremiumVendors() {
+            const el = document.getElementById('premium-vendors-list');
+            if (!el) return;
+            try {
+                const d = await (await fetch(API_BASE + '/api/data/premium/vendors')).json();
+                el.innerHTML = (d.vendors || []).map(v => {
+                    const ready = v.ready ? '<span class="text-emerald-400">READY</span>'
+                        : (v.adapter_available ? '<span class="text-amber-400">НУЖНЫ КЛЮЧИ</span>' : '<span class="text-rose-400">НЕТ АДАПТЕРА</span>');
+                    const ticks = v.ticks === 'history' ? ' · тики: история' : '';
+                    const paid = v.paid ? ' · <span class="text-amber-300">платный</span>' : '';
+                    return `<div class="flex justify-between gap-2 px-2 py-1 rounded bg-[#0E0E11]/40 border border-[#232329]/30">`
+                        + `<span class="truncate">${escapeHtml(v.title)} <span class="text-gray-600">(${v.bars.join('/')}${ticks}${paid})</span></span>${ready}</div>`;
+                }).join('');
+            } catch (e) { el.textContent = 'Матрица вендоров недоступна'; }
+        }
+        let premiumPollTimer = null;
+        async function startPremiumDownload() {
+            const kind = document.getElementById('premium-kind').value;
+            const payload = {
+                kind, vendor: document.getElementById('premium-vendor').value,
+                symbols: document.getElementById('premium-symbols').value.trim().split(/\s+/).filter(Boolean),
+                timeframe: '1m',
+                start: document.getElementById('premium-start').value,
+                end: document.getElementById('premium-end').value,
+            };
+            if (!payload.symbols.length || !payload.start || !payload.end) { showActionToast('Заполните символы и диапазон дат'); return; }
+            try {
+                const r = await fetch(API_BASE + '/api/data/premium/download', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+                const d = await r.json();
+                if (!r.ok) { showActionToast('❌ ' + (d.detail || 'не удалось запустить закачку')); return; }
+                showActionToast('⬇️ Закачка запущена (PID ' + d.pid + ')');
+                if (premiumPollTimer) clearInterval(premiumPollTimer);
+                premiumPollTimer = setInterval(pollPremiumDownload, 3000);
+            } catch (e) { showActionToast('❌ ' + e.message); }
+        }
+        async function pollPremiumDownload() {
+            const el = document.getElementById('premium-download-status');
+            try {
+                const d = await (await fetch(API_BASE + '/api/data/premium/download/status')).json();
+                const running = d.status && d.status.running;
+                el.innerHTML = (running ? '<span class="text-sky-400">идёт закачка…</span> '
+                    : '<span class="text-gray-400">завершено</span> ')
+                    + escapeHtml((d.log_tail || []).slice(-2).join(' · ')).slice(0, 160);
+                if (!running && premiumPollTimer) { clearInterval(premiumPollTimer); premiumPollTimer = null; }
+            } catch (e) { /* тихо */ }
+        }
+
+        // ===== DAG research-пайплайн =====
+        let pipelineLastRunId = null;
+        async function refreshPipelineStatus() {
+            const badge = document.getElementById('pipeline-status-badge');
+            const list = document.getElementById('pipeline-steps-list');
+            if (!badge || !list) return;
+            try {
+                const d = await (await fetch(API_BASE + '/api/pipeline/status')).json();
+                if (d.status === 'no_runs') {
+                    badge.textContent = 'IDLE';
+                    list.innerHTML = '<div class="text-[10px] text-gray-500 font-mono text-center py-3">Запусков ещё не было — нажмите «Запустить»</div>';
+                    return;
+                }
+                pipelineLastRunId = d.run_id;
+                document.getElementById('pipeline-last-run').textContent = d.run_id || '—';
+                const clsMap = {succeeded: 'text-emerald-400', failed: 'text-rose-400', running: 'text-sky-400',
+                                blocked: 'text-amber-400', pending: 'text-gray-500', cancelled: 'text-gray-400'};
+                badge.textContent = String(d.status || '—').toUpperCase();
+                badge.className = 'text-[9px] font-mono px-1.5 py-0.5 rounded border font-bold uppercase '
+                    + (d.status === 'succeeded' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : d.status === 'failed' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                        : 'bg-sky-500/10 text-sky-400 border-sky-500/20');
+                list.innerHTML = (d.steps || []).map(s =>
+                    `<div class="flex justify-between gap-2 px-2 py-1 rounded bg-[#0E0E11]/40 border border-[#232329]/30 text-[10px] font-mono">`
+                    + `<span class="text-gray-300 truncate">${escapeHtml(s.title || s.id)}</span>`
+                    + `<span class="${clsMap[s.status] || 'text-gray-500'}">${escapeHtml(s.status)}</span></div>`).join('');
+                if (d.status === 'running') setTimeout(refreshPipelineStatus, 4000);
+            } catch (e) { badge.textContent = 'ERR'; }
+        }
+        async function runResearchPipeline(resume) {
+            const body = {name: 'research_nightly'};
+            if (resume) {
+                if (!pipelineLastRunId) { showActionToast('Нет прогона для resume'); return; }
+                body.resume_run_id = pipelineLastRunId;
+            }
+            try {
+                const r = await fetch(API_BASE + '/api/pipeline/run', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+                const d = await r.json();
+                if (!r.ok) { showActionToast('❌ ' + (d.detail || 'не удалось запустить DAG')); return; }
+                showActionToast((resume ? '♻️ Resume' : '▶️ DAG запущен') + ': ' + d.run_id);
+                setTimeout(refreshPipelineStatus, 1500);
+            } catch (e) { showActionToast('❌ ' + e.message); }
         }
         async function mlopsLoadModels() {
             const el = document.getElementById('mlops-models');

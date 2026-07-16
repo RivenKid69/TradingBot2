@@ -28,7 +28,7 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 
 | Домен | Заявлено (claude.md / доки) | Фактически |
 |---|---|---|
-| **RL-обучение** (Distributional PPO, Twin Critics, UPGD, VGS, PBT, SA-PPO, conformal) | ✅ Production, сотни тестов | ✅ Реально: движок настоящий, тесты зелёные, тренировка работает даже внутри packaged EXE (проверено 2026-07-15). 🟡 PBT/SA-PPO/conformal — опциональные ветки конфига, не дефолтный путь; нет GPU/распределённого обучения. |
+| **RL-обучение** (Distributional PPO, Twin Critics, UPGD, VGS, PBT, SA-PPO, conformal) | ✅ Production, сотни тестов | ✅ Реально: движок настоящий, тесты зелёные, тренировка работает даже внутри packaged EXE (проверено 2026-07-15). 🟡 PBT/SA-PPO/conformal — опциональные ветки конфига, не дефолтный путь; ✅ GPU-обучение закрыто 2026-07-16 (`--device`+детекция, §5.22); распределённое (DDP/Ray) — нет. |
 | **Бэктест/симуляция исполнения** (L2/L2+/L3, LOB, TCA-калибровка) | ✅ Production, 5 asset-классов | ✅ Движок реальный (execution_sim, lob/, параметрические TCA 84+86 тестов). 🟡 L3 не питается реальными книгами (P2 №13 прошлого аудита); реальные бэктесты (P0-1) есть для crypto/equity, для futures/forex/options — конфиги без «real trust report». |
 | **Cross-sectional платформа** (signals→Σ→μ→w*→execution) | 🚧 в claude.md, но roadmap «ВЕСЬ ПЛАН ЗАВЕРШЁН» | ✅ Все стадии A1–A13, B1–B5, C1 реализованы; 32 сигнальных класса в `signals/` — подтверждено. 🟡 Нет регулярного запуска (rebalance по расписанию); XS→Agent мост есть (`live_factory`), но боевой путь — paper. |
 | **Live-трейдинг / CCEA** | ✅ Production, «CCEA implemented» | ✅ Paper-контур в десктопе реально работает (order→firewall→journal→fill→PnL, E2E-тесты). 🟡 Live-брокеры: Alpaca/OANDA/Binance-futures/Deribit имеют ORDER_EXECUTION; ✅ Binance **spot** execution зарегистрирован (P0-C, 2026-07-16); ✅ `configs/agent.yaml` создан + `--dry-run` проходит (P0-D, 2026-07-16); ✅ Ed25519-гейт подписи модели на пути активации артефакта демона, fail-closed для LIVE (P0-E, 2026-07-16). |
@@ -38,7 +38,7 @@ ubuntu+windows с ruff/black/guardrails/coverage), а не витрина. Сл�
 | **Учёт/комплаенс** (P&L ledger, blotter, hash-chain, MAR) | ✅ PP-1…PP-5 закрыты | ✅ Код и 70 тестов есть, on_fill подключён к CCEA-супервизору. 🟡 Live-глубина: EOD NAV — ручная кнопка; multi-currency NAV/corp actions на live-позиции — нет (P2 №14); налоговые лоты FIFO — нет (P2 №18). 🔴 `services.compliance` — битый импорт (см. §3). |
 | **Desktop-приложение** | Tauri + sidecar, NSIS, «MVP 1:1» | ✅ Работает, packaged research-EXE собирается и обучает (2026-07-15), sidecar обновлён. ⬜ Нет автообновлений (tauri.conf без updater), лицензирования/активации, crash-reporting; 🟡 часть Pro-панелей — seeded-PRNG demo (честно бейджится): Regime, Attribution, Tearsheet, Consistency/Capacity. |
 | **Тесты/CI** | «654+ файлов, 14 000+ функций» | ✅ Фактически **больше**: 747 файлов, 21 675 собираемых тестов; CI: build+test на ubuntu/windows, ruff, black, CCEA guardrails, coverage. 🟡 Часть тестов скипается без Cython-модулей; заявленные в claude.md точечные числа1 местами устарели (в меньшую сторону — реальность лучше). |
-| **Данные** (PIT EDGAR, corp actions, universe, QC, feature store, TS-DB) | ✅ P0-2/P2 закрыты | ✅ Загрузчики stock/forex/options/EDGAR/calendar работают (Lite E2E проходит), data-QC + failover есть. 🟡 Feature store/TS-DB — сервисы существуют, но train/live их не обязаны использовать; corp actions лежат отдельно от live-позиций; нет минутных/тиковых платных фидов и L2-глубины. |
+| **Данные** (PIT EDGAR, corp actions, universe, QC, feature store, TS-DB) | ✅ P0-2/P2 закрыты | ✅ Загрузчики stock/forex/options/EDGAR/calendar работают (Lite E2E проходит), data-QC + failover есть. 🟡 Feature store/TS-DB — сервисы существуют, но train/live их не обязаны использовать; corp actions лежат отдельно от live-позиций; ✅ минутки/тики закрыты 2026-07-16 (`services/premium_data.py`, §5.25); L2-глубины нет. |
 
 ---
 
@@ -97,10 +97,10 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 
 ### 5.1 Квант-исследователь (ежедневная работа)
 21. ⬜ **Планировщик задач** (обновление данных → пересчёт фичей → retrain → отчёт) — сейчас всё руками.
-22. ⬜ GPU/распределённое обучение (torch CPU-lock в requirements; ни DDP, ни Ray).
+22. 🟡 **GPU ЗАКРЫТ 2026-07-16**: `services/hardware.py` (честная детекция: torch-сборка/CUDA/VRAM/nvidia-smi + причина и install-hint) + `train_model_multi_patch.py --device auto|cpu|cuda` → `DistributionalPPO(device=…)` + `run_train.params.device` из UI + `/api/hardware/gpu` + GPU-чип в Quant Lab. Распределённое (DDP/Ray) — остаётся ⬜. См. [docs/QUANT_GAPS_P2HIM_CLOSURE.md](docs/QUANT_GAPS_P2HIM_CLOSURE.md)
 23. ⬜ Гиперпараметрический поиск как сервис (optuna в excludes сборки; PBT есть, но не как «tune-кнопка»).
-24. ⬜ Сравнение экспериментов бок-о-бок в UI (registry/tracking есть, экрана сравнения кривых/метрик нет).
-25. ⬜ Данные: минутные/тиковые платные фиды, L2-глубина, borrow/short-availability, детальные delistings (survivorship-контроль только через index-membership).
+24. ✅ **ЗАКРЫТО 2026-07-16**: экран сравнения экспериментов — `/api/experiments/{exp}/compare` (union params/metrics + differs) + reproducibility-бандл `/runs/{id}/bundle` (run+истории метрик+registry-ссылки+среда) + UI в Pro MLOps (чекбоксы→сравнение, лучшее зелёным, отличия жёлтым, «только отличия»). См. [docs/QUANT_GAPS_P2HIM_CLOSURE.md](docs/QUANT_GAPS_P2HIM_CLOSURE.md)
+25. 🟡 **Минутки/тики ЗАКРЫТЫ 2026-07-16**: `services/premium_data.py` (честная entitlement-матрица binance/polygon/alpaca/oanda; минутки через оконную пагинацию `get_bars` → `data/minute/*` в схеме download_stock_data + sha256-манифест; **настоящий тиковый бэкфилл** Binance aggTrades с fromId-пагинацией → `data/ticks/*`) + CLI + `/api/data/premium/*` + карточка в Data Manager; реальный сетевой смоук (120 баров, 1834 тика). L2-глубина/borrow/delistings — остаются ⬜. См. [docs/QUANT_GAPS_P2HIM_CLOSURE.md](docs/QUANT_GAPS_P2HIM_CLOSURE.md)
 26. ⬜ Воспроизводимость прогона одним артефактом: манифест «данные(hash)+конфиг+seed+код(sha)» создаётся частями (dataset_versioning, experiment tracking), но не единым бандлом.
 
 ### 5.2 Трейдер / PM
@@ -160,12 +160,12 @@ UI (`adaptersByAsset` в index.html) предлагает комбинации o
 | P2-E | Drop-copy, NBBO-роутинг, TCA impact-decomposition, FIFO/tax-lots |
 | P2-F | GDPR/DORA (DSAR/consent/breach/BCP) в product runtime |
 | P2-G | Multi-account/суб-счета |
-| P2-H | GPU/распределённое обучение + optuna-tune как сервис |
-| P2-I | Экран сравнения экспериментов; единый reproducibility-бандл |
+| P2-H | 🟡 **GPU ЗАКРЫТ 2026-07-16** (`services/hardware.py` + `--device` + UI, см. §5.22); распределённое обучение + optuna-tune — остаются |
+| P2-I | ✅ **ЗАКРЫТО 2026-07-16**: экран сравнения экспериментов + reproducibility-бандл (см. §5.24) |
 | P2-J | Prometheus/OTel-метрики; docker/helm в CI; бэкапы+миграции state |
 | P2-K | Лицензирование/активация |
 | P2-L | Feature store/TS-DB как обязательный путь данных (или удалить) |
-| P2-M | Платные датафиды: минутки/тики, borrow, полноценные delistings |
+| P2-M | 🟡 **Минутки/тики ЗАКРЫТЫ 2026-07-16** (`services/premium_data.py` + Binance aggTrades тик-бэкфилл + entitlement-матрица + UI, см. §5.25); borrow/delistings — остаются |
 
 ### P3 — полировка
 | # | Работа |
