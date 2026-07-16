@@ -231,6 +231,47 @@ def test_ui_review_honesty_fixes():
 
 
 # ---------------------------------------------------------------------------
+# L2-009 (follow-up) — lite-data Drift Monitor widget must reflect REAL PSI,
+# never a hardcoded reassuring "stable / 0.000" (the widget was dead: 0 JS
+# writes, permanently green while real drift could be severe).
+# ---------------------------------------------------------------------------
+
+def test_drift_widget_no_fabricated_stable_default():
+    # The hardcoded green "PSI 0.000 / Стабильно" initial values are gone.
+    assert 'id="litedata-drift-val" class="text-emerald-400 font-bold font-mono">0.000<' not in HTML
+    assert 'id="litedata-drift-status" class="text-[11px] font-semibold text-white uppercase font-mono">Стабильно' not in HTML
+
+
+def test_drift_widget_is_wired_to_real_source():
+    # A real updater exists, reads the honest telemetry drift source, and is
+    # invoked on data-manager load + after computing PSI.
+    assert "function refreshLiteDataDrift" in HTML
+    assert "/api/telemetry/live" in HTML
+    # widget ids are actually written now (were 0 JS writes before)
+    assert "getElementById('litedata-drift-status')" in HTML
+    assert "getElementById('litedata-drift-val')" in HTML
+    assert "refreshLiteDataDrift()" in HTML  # wired into load / triggerLitePsi
+
+
+def test_analytics_status_defaults_not_falsely_green():
+    # WS/Broker/PSI must not start as hardcoded green "OK"/"Стабильно" before a
+    # real check — they self-correct from /api/telemetry/live, but the initial
+    # paint must be neutral.
+    assert 'id="lite-status-ws" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK' not in HTML
+    assert 'id="lite-status-broker-api" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK' not in HTML
+    assert 'id="lite-psi-val" class="font-bold text-emerald-400">0.05 (Стабильно)' not in HTML
+
+
+def test_telemetry_live_exposes_honest_drift_shape():
+    res = client.get("/api/telemetry/live")
+    assert res.status_code == 200
+    drift = res.json().get("drift", {})
+    # the widget depends on these keys; psi_avg is a number or None (no fabrication)
+    assert "psi_avg" in drift and "status" in drift
+    assert drift["psi_avg"] is None or isinstance(drift["psi_avg"], (int, float))
+
+
+# ---------------------------------------------------------------------------
 # L2-005 — packaged RL training stack ships its data files
 # ---------------------------------------------------------------------------
 

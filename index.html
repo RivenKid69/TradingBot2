@@ -1853,10 +1853,10 @@
                                 <button onclick="triggerLitePsi()" class="text-[9px] text-gray-400 hover:text-white bg-[#1A1A22] border border-[#2B2B36] px-2 py-0.5 rounded font-mono transition-colors cursor-pointer select-none">Рассчитать PSI</button>
                             </h3>
                             <div class="flex items-center gap-3">
-                                <div id="litedata-drift-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
+                                <div id="litedata-drift-indicator" class="w-2.5 h-2.5 rounded-full bg-gray-600 shrink-0"></div>
                                 <div class="leading-tight">
-                                    <span id="litedata-drift-status" class="text-[11px] font-semibold text-white uppercase font-mono">Стабильно (PSI &lt; 0.1)</span>
-                                    <span class="text-[9px] text-gray-500 font-mono block mt-0.5">Значение PSI: <span id="litedata-drift-val" class="text-emerald-400 font-bold font-mono">0.000</span> (Лимит: 0.25)</span>
+                                    <span id="litedata-drift-status" class="text-[11px] font-semibold text-gray-400 uppercase font-mono">Нет данных</span>
+                                    <span class="text-[9px] text-gray-500 font-mono block mt-0.5">Значение PSI: <span id="litedata-drift-val" class="text-gray-400 font-bold font-mono">—</span> (Лимит: 0.25)</span>
                                 </div>
                             </div>
                         </div>
@@ -2090,7 +2090,7 @@
                                 <div class="space-y-4 pt-2">
                                     <div class="flex justify-between items-baseline font-mono text-xs">
                                         <span class="text-gray-500">Feature Stability Index (PSI Avg)</span>
-                                        <span id="lite-psi-val" class="font-bold text-emerald-400">0.05 (Стабильно)</span>
+                                        <span id="lite-psi-val" class="font-bold text-gray-400">— (проверка…)</span>
                                     </div>
                                     <div class="w-full bg-[#1A1A22] h-2 rounded-full overflow-hidden">
                                         <div id="lite-psi-progress" class="bg-emerald-400 h-full w-[5%] transition-all duration-500"></div>
@@ -2117,11 +2117,11 @@
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <span class="text-gray-500">WebSocket Feed</span>
-                                        <span id="lite-status-ws" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK</span>
+                                        <span id="lite-status-ws" class="text-gray-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span> —</span>
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <span class="text-gray-500">Брокер-адаптер API</span>
-                                        <span id="lite-status-broker-api" class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> OK</span>
+                                        <span id="lite-status-broker-api" class="text-gray-400 font-bold flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span> —</span>
                                     </div>
                                 </div>
                             </div>
@@ -22528,6 +22528,7 @@ function renderPipelineStatusDetails(asset) {
             fetchSchedulerStatus();
             refreshPipelineStatus();
             refreshPremiumVendors();
+            refreshLiteDataDrift();
         }
 
         function showAssetSpecificOptions(assetType) {
@@ -23092,6 +23093,49 @@ function renderPipelineStatusDetails(asset) {
         async function triggerLitePsi() {
             const params = {};
             await triggerLiteDataJob('run_psi', params, 'run_psi.log');
+            // Reflect the freshly-computed PSI in the drift widget (it used to
+            // hardcode a reassuring green "Стабильно / 0.000" — audit L2-009).
+            setTimeout(refreshLiteDataDrift, 1500);
+        }
+
+        // Populate the Drift Monitor widget from the SAME honest source the
+        // Analytics → Health tab uses (/api/telemetry/live → drift). No data →
+        // neutral "Нет данных", never a fabricated stable reading.
+        async function refreshLiteDataDrift() {
+            const dot = document.getElementById('litedata-drift-indicator');
+            const statusEl = document.getElementById('litedata-drift-status');
+            const valEl = document.getElementById('litedata-drift-val');
+            if (!dot || !statusEl || !valEl) return;
+            try {
+                const res = await fetch(API_BASE + '/api/telemetry/live');
+                if (!res.ok) throw new Error('telemetry');
+                const tel = await res.json();
+                const drift = tel.drift || {};
+                const psi = (typeof drift.psi_avg === 'number') ? drift.psi_avg : null;
+                if (psi === null || drift.status === 'no_data') {
+                    dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-600 shrink-0';
+                    statusEl.className = 'text-[11px] font-semibold text-gray-400 uppercase font-mono';
+                    statusEl.textContent = 'Нет данных';
+                    valEl.className = 'text-gray-400 font-bold font-mono';
+                    valEl.textContent = '—';
+                    return;
+                }
+                let color, label;
+                if (psi < 0.1) { color = 'emerald-400'; label = 'Стабильно (PSI < 0.1)'; }
+                else if (psi < 0.25) { color = 'amber-400'; label = 'Предупреждение (PSI < 0.25)'; }
+                else { color = 'rose-400'; label = 'Дрейф! (PSI ≥ 0.25)'; }
+                dot.className = `w-2.5 h-2.5 rounded-full bg-${color} ${psi >= 0.25 ? 'animate-pulse' : ''} shrink-0`;
+                statusEl.className = `text-[11px] font-semibold text-${color} uppercase font-mono`;
+                statusEl.textContent = label;
+                valEl.className = `text-${color} font-bold font-mono`;
+                valEl.textContent = psi.toFixed(3);
+            } catch (e) {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-600 shrink-0';
+                statusEl.className = 'text-[11px] font-semibold text-gray-400 uppercase font-mono';
+                statusEl.textContent = 'Нет данных';
+                valEl.className = 'text-gray-400 font-bold font-mono';
+                valEl.textContent = '—';
+            }
         }
 
         async function triggerLiteAutoHeal() {
