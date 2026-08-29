@@ -185,3 +185,16 @@ state/fireblocks_withdrawals.jsonl
 configs/execution_algo.yaml
 configs/forex_otc.yaml
 configs/dynamic_no_trade.yaml
+
+# Ephemeral pipeline run output and local snapshots
+.run/
+backups/
+*.refactor_backup
+all_edits.json
+
+# Local tooling / editor / assistant configuration
+.claude/
+.codex/
+.cursor/
+.idea/
+.vscode/

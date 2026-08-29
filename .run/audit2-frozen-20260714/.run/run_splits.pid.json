@@ -1,1 +1,0 @@
-{"pid":24560,"state":"failed","running":false,"exit_code":2,"started_at":"2026-07-14T19:27:41.919608+00:00","finished_at":"2026-07-14T19:27:42.690932+00:00","command":["C:\\Users\\Зефирка\\StartUp\\dist\\riven-backend.exe","--riven-worker-script","make_walkforward_splits.py","--config","configs/config_backtest_stocks.yaml"]}
