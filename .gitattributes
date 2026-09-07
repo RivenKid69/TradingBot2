@@ -1,0 +1,38 @@
+# Normalise line endings. Checked-in content is LF everywhere, including on
+# Windows checkouts: ccea/guardrails/design_doc_check.py hashes a text snapshot,
+# and a CRLF working tree makes that hash disagree with the recorded one.
+* text=auto eol=lf
+
+# Windows-only scripts that must keep CRLF to run under cmd.exe
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets — never touch
+*.parquet binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.so binary
+*.pyd binary
+*.dll binary
+*.dylib binary
+*.pkl binary
+*.npz binary
+*.sig binary
+
+# Generated Cython sources, when present, are not worth diffing
+*.c linguist-generated=true
+*.cpp linguist-vendored=false
+
+# Vendored front-end assets should not count towards language statistics
+web_assets/** linguist-vendored=true
