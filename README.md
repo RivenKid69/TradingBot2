@@ -15,7 +15,7 @@ with the execution side deliberately kept out of the cloud.
   customer-hosted Agent; the cloud sends lifecycle commands and signed artifacts, never
   order payloads. CI enforces it: seven guardrails under [`ccea/guardrails/`](ccea/guardrails/)
   (`import_check`, `intent_prohibition`, `cloud_allowlist`, `schema_check`, `protocol_check`,
-  `design_doc_check`, `traceability_check`) plus six import-linter contracts in
+  `design_doc_check`, `traceability_check`) plus seven import-linter contracts in
   [`importlinter.ini`](importlinter.ini). The build fails if the Cloud package imports a
   trading module.
 - **Distributional PPO with twin critics** — CVaR-constrained objectives, PopArt value
